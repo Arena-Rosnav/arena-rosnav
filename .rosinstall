@@ -1,0 +1,71 @@
+- git:
+    local-name: ../forks/flatland
+    uri: https://github.com/ignc-research/flatland
+    version: dev_multi_lei
+
+- git:
+    local-name: ../forks/stable-baselines3
+    uri: https://github.com/ignc-research/stable-baselines3
+    version: master
+
+- git:
+    local-name: ../forks/navigation/msgs/ford
+    uri: https://bitbucket.org/acl-swarm/ford_msgs/src/master/
+    version: master
+
+- git:
+    local-name: ../forks/pedsim_ros
+    uri: https://github.com/ignc-research/pedsim_ros
+    version: master
+
+- git:
+    local-name: ../forks/arena-tools
+    uri: https://github.com/ignc-research/arena-tools
+    version: main
+
+- git:
+    local-name: ../forks/arena-simulation-setup
+    uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
+    version: master
+
+- git:
+    local-name: ../forks/arena-utils
+    uri: https://github.com/Arena-Rosnav/arena-utils.git
+    version: master
+
+- git:
+    local-name: ../forks/waypoint-generators
+    uri: https://github.com/Arena-Rosnav/waypoint-generators.git
+    version: master
+
+### PLANNERS
+
+- git:
+    local-name: ../planners/rosnav
+    uri: https://github.com/Arena-Rosnav/rosnav.git
+    version: master
+
+- git:
+    local-name: ../planners/arena-ros
+    uri: https://github.com/Arena-Rosnav/arena-ros.git
+    version: master
+
+- git:
+    local-name: ../planners/cadrl-ros
+    uri: https://github.com/Arena-Rosnav/cadrl-ros.git
+    version: master
+
+- git:
+    local-name: ../planners/crowdnav-ros
+    uri: https://github.com/Arena-Rosnav/crowdnav-ros.git
+    version: master
+
+- git:
+    local-name: ../planners/rlca-ros
+    uri: https://github.com/Arena-Rosnav/rlca-ros.git
+    version: master
+
+- git:
+    local-name: ../planners/sarl-star
+    uri: https://github.com/Arena-Rosnav/sarl-star.git
+    version: master

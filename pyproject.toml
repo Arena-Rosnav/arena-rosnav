@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "arena-rosnav"
+version = "0.1.0"
+description = ""
+authors = ["ReykCS <reyk-carstens@web.de>"]
+
+[tool.poetry.dependencies]
+python = "^3.8,<3.11"
+torch = "^1.11.0"
+rospkg = "^1.4.0"
+PyYAML = "^6.0"
+filelock = "^3.7.1"
+scipy = "^1.8.1"
+PyQt5 = "^5.15.7"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

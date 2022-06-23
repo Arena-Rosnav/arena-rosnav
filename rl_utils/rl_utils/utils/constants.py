@@ -1,0 +1,5 @@
+class Constants:
+    DEFAULT_LASER_BEAMS = 360
+    DEFAULT_LASER_RANGE = 3.5
+
+    GOAL_RADIUS = 0.33
