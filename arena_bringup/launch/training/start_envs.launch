@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
   <arg name="num_envs" default="1" />
-  <arg name="ns" default="sim" />
+  <arg name="ns_prefix" default="sim" />
 
   <include file="$(find arena_bringup)/launch/training/single_env_training.launch">
     <arg name="ns" value="$(arg ns_prefix)$(arg num_envs)" />
@@ -9,6 +9,6 @@
 
   <include file="$(find arena_bringup)/launch/training/start_envs.launch" if="$(eval arg('num_envs') > 1)">
     <arg name="num_envs" value="$(eval arg('num_envs') - 1)" />
-    <arg name="ns" value="$(arg ns)" />
+    <arg name="ns_prefix" value="$(arg ns_prefix)" />
   </include>
 </launch>

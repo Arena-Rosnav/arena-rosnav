@@ -298,6 +298,7 @@ def get_paths(agent_name: str, args: argparse.Namespace) -> dict:
     """
     training_dir = rospkg.RosPack().get_path("training")
     robot_model = rospy.get_param("model")
+    simulation_setup = rospkg.RosPack().get_path("arena-simulation-setup")
 
     PATHS = {
         "model": os.path.join(rospkg.RosPack().get_path("rosnav"), "agents", agent_name, robot_model),
@@ -306,14 +307,15 @@ def get_paths(agent_name: str, args: argparse.Namespace) -> dict:
         "eval": os.path.join(training_dir, "training_logs", "train_eval_log", agent_name),
 
         "robot_setting": os.path.join(
-            rospkg.RosPack().get_path("arena-simulation-setup"),
+            simulation_setup,
             "robot",
+            robot_model,
             f"{robot_model}.model.yaml",
         ),
 
         "hyperparams": os.path.join(training_dir, "configs", "hyperparameters"),
-        "robot_as": os.path.join(training_dir, "configs", f"default_settings_{robot_model}.yaml"),
-        "curriculum": os.path.join(training_dir, "configs", "training_curriculum_map1small.yaml"),
+        "robot_as": os.path.join(simulation_setup, "robot", robot_model, "default_settings.yaml"),
+        "curriculum": os.path.join(training_dir, "configs", "training_curriculums", "map1small.yaml"),
     }
     # check for mode
     if args.load is None:
@@ -363,7 +365,7 @@ def make_envs(
     """
 
     def _init() -> Union[gym.Env, gym.Wrapper]:
-        train_ns = f"sim_{rank+1}" if with_ns else ""
+        train_ns = f"sim{rank + 1}" if with_ns else ""
         eval_ns = f"eval_sim" if with_ns else ""
 
         if train:
@@ -420,7 +422,7 @@ def wait_for_nodes(with_ns: bool, n_envs: int, timeout: int = 30, nodes_per_ns: 
 
     for i in range(n_envs):
         for k in range(timeout):
-            ns = "sim_" + str(i + 1) if with_ns else ""
+            ns = "sim" + str(i + 1) if with_ns else ""
             namespaces = rosnode.get_node_names(namespace=ns)
 
             if len(namespaces) >= nodes_per_ns:

@@ -3,10 +3,12 @@ from operator import is_
 from random import randint
 import time
 import math
+import traceback
 import gym
 from gym import spaces
 from gym.spaces import space
 from typing import Union
+from rospy.impl.tcpros_service import wait_for_service
 from stable_baselines3.common.env_checker import check_env
 import yaml
 
@@ -62,7 +64,8 @@ class FlatlandEnv(gym.Env):
         try:
             # given every environment enough time to initialize, if we dont put sleep,
             # the training script may crash.
-            ns_int = int(ns.split("_")[1])
+            import re
+            ns_int = int(re.search(r'\d+', ns)[0])
             time.sleep(ns_int * 2)
         except Exception:
             rospy.logwarn(f"Can't not determinate the number of the environment, training script may crash!")
@@ -70,11 +73,13 @@ class FlatlandEnv(gym.Env):
         # process specific namespace in ros system
         self.ns_prefix = "" if (ns == "" or ns is None) else "/" + ns + "/"
 
-        if not debug:
-            if train_mode:
-                rospy.init_node(f"train_env_{self.ns}", disable_signals=False)
-            else:
-                rospy.init_node(f"eval_env_{self.ns}", disable_signals=False)
+        # if not debug:
+        #     if train_mode:
+        #         print("choose ", 1)
+        #         rospy.init_node(f"train_env_{self.ns}", disable_signals=False)
+        #     else:
+        #         print("choose ", 2)
+        #         rospy.init_node(f"eval_env_{self.ns}", disable_signals=False)
 
         self._extended_eval = extended_eval
         self._is_train_mode = rospy.get_param("/train_mode")

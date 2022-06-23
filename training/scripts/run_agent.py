@@ -57,7 +57,7 @@ def get_paths(args: dict, AGENT: str):
             args.scenario + ".json",
         ),
         "curriculum": os.path.join(
-            dir, "configs", "training_curriculum_map1small.yaml"
+            dir, "configs", "training_curriculums", "map1small.yaml"
         ),
         "log": os.path.join(dir, "evaluation_logs", AGENT),
     }

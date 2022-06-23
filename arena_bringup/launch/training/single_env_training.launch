@@ -3,7 +3,7 @@
   <arg name="ns" />
 
   <!-- use fake localization-->
-  <group ns="ns">
+  <group ns="$(arg ns)">
     <include file="$(find arena_bringup)/launch/utils/fake_localization.launch">
       <arg name="ns" value="$(arg ns)" />
       <arg name="odom_frame_id" value="$(arg ns)_odom" />

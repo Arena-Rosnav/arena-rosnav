@@ -19,6 +19,10 @@
     version: master
 
 - git:
+    local-name: ../forks/jackal
+    uri: https://github.com/jackal/jackal.git
+
+- git:
     local-name: ../forks/arena-tools
     uri: https://github.com/ignc-research/arena-tools
     version: main

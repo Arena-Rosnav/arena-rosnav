@@ -165,7 +165,7 @@ def process_run_agent_args(parsed_args):
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
-def parse_training_args(args=None, ignore_unknown=False):
+def parse_training_args(args=None, ignore_unknown=True):
     """parser for training script"""
     arg_populate_funcs = [training_args, custom_mlp_args]
     arg_check_funcs = [process_training_args]
