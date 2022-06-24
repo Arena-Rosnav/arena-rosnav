@@ -2,6 +2,7 @@
 from typing import Type, Union
 
 import os, sys, rospy, time
+from rl_utils.utils.utils import create_params_for_robot
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
@@ -45,6 +46,12 @@ def main():
         load_target=args.load,
         config_name=args.config,
         n_envs=args.n_envs,
+    )
+
+    create_params_for_robot(
+        PATHS["robot_setting"], 
+        PATHS["robot_as"], 
+        params["discrete_action_space"]
     )
 
     # instantiate train environment

@@ -1,28 +1,18 @@
 #! /usr/bin/env python3
-from operator import is_
-from random import randint
 import time
 import math
-import traceback
 import gym
-from gym import spaces
-from gym.spaces import space
-from typing import Union
-from rospy.impl.tcpros_service import wait_for_service
 from stable_baselines3.common.env_checker import check_env
-import yaml
 
 import numpy as np
 import rospy
 from geometry_msgs.msg import Twist
-from std_msgs.msg import String
-from flatland_msgs.srv import StepWorld, StepWorldRequest
-from std_msgs.msg import Bool
+from flatland_msgs.srv import StepWorld
 
-from ..utils.debug import timeit
 from ..utils.reward import RewardCalculator
 from ..utils.observation_collector import ObservationCollector
 from task_generator.tasks import *
+from ..utils.model_space_manager.model_space_manager import ModelSpaceManager
 
 
 class FlatlandEnv(gym.Env):
@@ -70,45 +60,35 @@ class FlatlandEnv(gym.Env):
         except Exception:
             rospy.logwarn(f"Can't not determinate the number of the environment, training script may crash!")
 
+        # rospy.init_node("TEST", anonymous=True)
+
         # process specific namespace in ros system
         self.ns_prefix = "" if (ns == "" or ns is None) else "/" + ns + "/"
-
-        # if not debug:
-        #     if train_mode:
-        #         print("choose ", 1)
-        #         rospy.init_node(f"train_env_{self.ns}", disable_signals=False)
-        #     else:
-        #         print("choose ", 2)
-        #         rospy.init_node(f"eval_env_{self.ns}", disable_signals=False)
 
         self._extended_eval = extended_eval
         self._is_train_mode = rospy.get_param("/train_mode")
         self._is_action_space_discrete = is_action_space_discrete
 
-        self.setup_by_configuration(PATHS["robot_setting"], PATHS["robot_as"])
+        self.model_space_encoder = ModelSpaceManager()
 
         # observation collector
         self.observation_collector = ObservationCollector(
             self.ns,
-            self._laser_num_beams,
-            self._laser_max_range,
+            self.model_space_encoder._laser_num_beams,
+            self.model_space_encoder._laser_max_range,
             external_time_sync=False,
         )
-        self.observation_space = self.observation_collector.get_observation_space()
 
-        # csv writer # TODO: @Elias: uncomment when csv-writer exists
-        # self.csv_writer=CSVWriter()
-        # rospy.loginfo("======================================================")
-        # rospy.loginfo("CSVWriter initialized.")
-        # rospy.loginfo("======================================================")
+        self.action_space = self.model_space_encoder.get_action_space()
+        self.observation_space = self.model_space_encoder.get_observation_space()
 
         # reward calculator
         if safe_dist is None:
-            safe_dist = self._robot_radius + 0.1
+            safe_dist = self.model_space_encoder._radius + 0.1
 
         self.reward_calculator = RewardCalculator(
-            holonomic=self._holonomic,
-            robot_radius=self._robot_radius,
+            holonomic=self.model_space_encoder._is_holonomic,
+            robot_radius=self.model_space_encoder._radius,
             safe_dist=safe_dist,
             goal_radius=goal_radius,
             rule=reward_fnc,
@@ -149,95 +129,15 @@ class FlatlandEnv(gym.Env):
         }
         self._done_hist = 3 * [0]
 
-    def setup_by_configuration(self, robot_yaml_path: str, settings_yaml_path: str):
-        """get the configuration from the yaml file, including robot radius, discrete action space and continuous action space.
-
-        Args:
-            robot_yaml_path (str): [description]
-        """
-        self._robot_radius = rospy.get_param("radius") + 0.25
-        with open(robot_yaml_path, "r") as fd:
-            robot_data = yaml.safe_load(fd)
-
-            # get laser related information
-            for plugin in robot_data["plugins"]:
-                if plugin["type"] == "Laser" and plugin["name"] == "static_laser":
-                    laser_angle_min = plugin["angle"]["min"]
-                    laser_angle_max = plugin["angle"]["max"]
-                    laser_angle_increment = plugin["angle"]["increment"]
-                    self._laser_num_beams = int(round((laser_angle_max - laser_angle_min) / laser_angle_increment))
-                    self._laser_max_range = plugin["range"]
-
-        with open(settings_yaml_path, "r") as fd:
-            setting_data = yaml.safe_load(fd)
-
-            self._holonomic = setting_data["robot"]["holonomic"]
-
-            if self._is_action_space_discrete:
-                # self._discrete_actions is a list, each element is a dict with the keys ["name", 'linear','angular']
-                assert not self._holonomic, "Discrete action space currently not supported for holonomic robots"
-                self._discrete_acitons = setting_data["robot"]["discrete_actions"]
-                self.action_space = spaces.Discrete(len(self._discrete_acitons))
-            else:
-                linear_range = setting_data["robot"]["continuous_actions"]["linear_range"]
-                angular_range = setting_data["robot"]["continuous_actions"]["angular_range"]
-
-                if not self._holonomic:
-                    self.action_space = spaces.Box(
-                        low=np.array([linear_range[0], angular_range[0]]),
-                        high=np.array([linear_range[1], angular_range[1]]),
-                        dtype=np.float,
-                    )
-                else:
-                    linear_range_x, linear_range_y = (
-                        linear_range["x"],
-                        linear_range["y"],
-                    )
-                    self.action_space = spaces.Box(
-                        low=np.array(
-                            [
-                                linear_range_x[0],
-                                linear_range_y[0],
-                                angular_range[0],
-                            ]
-                        ),
-                        high=np.array(
-                            [
-                                linear_range_x[1],
-                                linear_range_y[1],
-                                angular_range[1],
-                            ]
-                        ),
-                        dtype=np.float,
-                    )
-
     def _pub_action(self, action: np.ndarray) -> Twist:
         assert len(action) == 3
+
         action_msg = Twist()
         action_msg.linear.x = action[0]
         action_msg.linear.y = action[1]
         action_msg.angular.z = action[2]
+        
         self.agent_action_pub.publish(action_msg)
-
-    def _translate_disc_action(self, action):
-        assert not self._holonomic, "Discrete action space currently not supported for holonomic robots"
-        new_action = np.array([])
-        new_action = np.append(new_action, self._discrete_acitons[action]["linear"])
-        new_action = np.append(new_action, self._discrete_acitons[action]["angular"])
-
-        return new_action
-
-    def _extend_action_array(self, action: np.ndarray) -> np.ndarray:
-        if self._holonomic:
-            assert (
-                self._holonomic and len(action) == 3
-            ), "Robot is holonomic but action with only two freedoms of movement provided"
-            return action
-        else:
-            assert (
-                not self._holonomic and len(action) == 2
-            ), "Robot is non-holonomic but action with more than two freedoms of movement provided"
-            return np.array([action[0], 0, action[1]])
 
     def step(self, action: np.ndarray):
         """
@@ -245,23 +145,20 @@ class FlatlandEnv(gym.Env):
                         1   -   collision with obstacle
                         2   -   goal reached
         """
-        if self._is_action_space_discrete:
-            action = self._translate_disc_action(action)
-        action = self._extend_action_array(action)
+        obs_dict = self.observation_collector.get_observations(last_action=self._last_action)
+        
+        decoded_action = self.model_space_encoder.decode_action(action)
+        self._last_action = decoded_action
 
-        self._pub_action(action)
+        self._pub_action(decoded_action)
         # print(f"Linear: {action[0]}, Angular: {action[1]}")
         self._steps_curr_episode += 1
-
-        # wait for new observations
-        merged_obs, obs_dict = self.observation_collector.get_observations(last_action=self._last_action)
-        self._last_action = action
 
         # calculate reward
         reward, reward_info = self.reward_calculator.get_reward(
             obs_dict["laser_scan"],
             obs_dict["goal_in_robot_frame"],
-            action=action,
+            action=decoded_action,
             global_plan=obs_dict["global_plan"],
             robot_pose=obs_dict["robot_pose"],
         )
@@ -301,7 +198,8 @@ class FlatlandEnv(gym.Env):
                 )
                 self._done_hist = [0] * 3
             self._done_hist[int(info["done_reason"])] += 1
-        return merged_obs, reward, done, info
+
+        return self.model_space_encoder.encode_observation(obs_dict), reward, done, info
 
     def reset(self):
         # set task
@@ -322,8 +220,8 @@ class FlatlandEnv(gym.Env):
             self._safe_dist_counter = 0
             self._collisions = 0
 
-        obs, _ = self.observation_collector.get_observations()
-        return obs  # reward, done, info can't be included
+        obs_dict = self.observation_collector.get_observations()
+        return self.model_space_encoder.encode_observation(obs_dict)  # reward, done, info can't be included
 
     def close(self):
         pass

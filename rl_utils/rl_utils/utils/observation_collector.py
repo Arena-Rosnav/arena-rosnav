@@ -28,7 +28,6 @@ import message_filters
 # for transformations
 from tf.transformations import *
 
-from gym import spaces
 import numpy as np
 
 from std_msgs.msg import Bool
@@ -56,56 +55,8 @@ class ObservationCollector:
         else:
             self.ns_prefix = "/" + ns + "/"
 
-        self._action_in_obs = rospy.get_param("actions_in_obs", default=False)
+        print("PREFIX", self.ns_prefix)
 
-        # define observation_space
-        if not self._action_in_obs:
-            self.observation_space = ObservationCollector._stack_spaces(
-                (
-                    spaces.Box(
-                        low=0,
-                        high=lidar_range,
-                        shape=(num_lidar_beams,),
-                        dtype=np.float32,
-                    ),
-                    spaces.Box(low=0, high=15, shape=(1,), dtype=np.float32),
-                    spaces.Box(
-                        low=-np.pi, high=np.pi, shape=(1,), dtype=np.float32
-                    ),
-                )
-            )
-        else:
-            self.observation_space = ObservationCollector._stack_spaces(
-                (
-                    spaces.Box(
-                        low=0,
-                        high=lidar_range,
-                        shape=(num_lidar_beams,),
-                        dtype=np.float32,
-                    ),
-                    spaces.Box(
-                        low=0, high=15, shape=(1,), dtype=np.float32
-                    ),  # rho
-                    spaces.Box(
-                        low=-np.pi,
-                        high=np.pi,
-                        shape=(1,),
-                        dtype=np.float32,  # theta
-                    ),
-                    spaces.Box(
-                        low=-2.0,
-                        high=2.0,
-                        shape=(2,),
-                        dtype=np.float32,  # linear vel
-                    ),
-                    spaces.Box(
-                        low=-4.0,
-                        high=4.0,
-                        shape=(1,),
-                        dtype=np.float32,  # angular vel
-                    ),
-                )
-            )
 
         self._laser_num_beams = num_lidar_beams
         # for frequency controlling
@@ -165,6 +116,8 @@ class ObservationCollector:
                 tcp_nodelay=True,
             )
 
+            print("SUBSCRIBED TO TOPIC")
+
         # self._clock_sub = rospy.Subscriber(
         #     f'{self.ns_prefix}clock', Clock, self.callback_clock, tcp_nodelay=True)
 
@@ -182,9 +135,6 @@ class ObservationCollector:
             self._sim_step_client = rospy.ServiceProxy(
                 self._service_name_step, StepWorld
             )
-
-    def get_observation_space(self):
-        return self.observation_space
 
     def get_observations(self, *args, **kwargs):
         # apply action time horizon
@@ -215,18 +165,6 @@ class ObservationCollector:
             self._subgoal, self._robot_pose
         )
 
-        merged_obs = (
-            np.hstack([scan, np.array([rho, theta])])
-            if not self._action_in_obs
-            else np.hstack(
-                [
-                    scan,
-                    np.array([rho, theta]),
-                    kwargs.get("last_action", np.array([0, 0, 0])),
-                ]
-            )
-        )
-
         obs_dict = {
             "laser_scan": scan,
             "goal_in_robot_frame": [rho, theta],
@@ -237,7 +175,7 @@ class ObservationCollector:
 
         self._laser_deque.clear()
         self._rs_deque.clear()
-        return merged_obs, obs_dict
+        return obs_dict
 
     @staticmethod
     def _get_goal_pose_in_robot_frame(goal_pos: Pose2D, robot_pos: Pose2D):
@@ -323,6 +261,7 @@ class ObservationCollector:
     def callback_scan(self, msg_laserscan):
         if len(self._laser_deque) == self.max_deque_size:
             self._laser_deque.popleft()
+
         self._laser_deque.append(msg_laserscan)
 
     def callback_robot_state(self, msg_robotstate):
@@ -388,15 +327,6 @@ class ObservationCollector:
         yaw = euler[2]
         pose2d.theta = yaw
         return pose2d
-
-    @staticmethod
-    def _stack_spaces(ss: Tuple[spaces.Box]):
-        low = []
-        high = []
-        for space in ss:
-            low.extend(space.low.tolist())
-            high.extend(space.high.tolist())
-        return spaces.Box(np.array(low).flatten(), np.array(high).flatten())
 
 
 if __name__ == "__main__":
