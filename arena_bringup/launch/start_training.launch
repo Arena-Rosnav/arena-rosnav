@@ -41,6 +41,10 @@
   <!-- if it's false flatland server will not publish any debug related infomation and you will not able to visuzalize e.g robot, dynamic obstacles  -->
 
   <param name="space_encoder" value="UniformSpaceEncoder" />
+  <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
+  <param name="robot_yaml_path" value="$(find arena-simulation-setup)/robot/$(arg model)/$(arg model).model.yaml" />
+  <param name="robot_name" value="$(arg model)" />
+  <param name="tmp_model_path" value="/tmp" />
 
   <!--  PARAMS DON'T CHANGE THEM  -->
   <param name="update_rate" value="$(arg update_rate)" />

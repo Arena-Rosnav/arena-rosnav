@@ -50,6 +50,9 @@
   <param name="use_rviz" value="$(arg use_rviz)"/>
   <param name="single_env" value="true"/>
 
+  <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
+  <param name="robot_yaml_path" value="$(find arena-simulation-setup)/robot/$(arg model)/$(arg model).model.yaml" />
+  <param name="tmp_model_path" value="/tmp" />
 
   <!-- the folder name under the path arena-simulation-setup/maps  -->
   <param name="world_path" value="$(find arena-simulation-setup)/maps/$(arg map_file)/map.world.yaml" />
@@ -75,6 +78,8 @@
   <arg name="odom_frame_id" value="odom"/>
   <arg name="base_frame_id" value="base_footprint"/>
   <arg name="odom_ground_truth" default="/odometry/ground_truth"/>
+
+  <param name="robot_name" value="$(arg model)" />
 
   <!-- data recorder -->
   <param name="local_planner"  value="$(arg local_planner)"/>

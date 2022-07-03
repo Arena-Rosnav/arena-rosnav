@@ -9,9 +9,10 @@ import rospy
 from geometry_msgs.msg import Twist
 from flatland_msgs.srv import StepWorld
 
+from task_generator.tasks.utils import get_predefined_task_outside
+
 from ..utils.reward import RewardCalculator
 from ..utils.observation_collector import ObservationCollector
-from task_generator.tasks import *
 from ..utils.model_space_manager.model_space_manager import ModelSpaceManager
 
 
@@ -107,7 +108,7 @@ class FlatlandEnv(gym.Env):
             self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
 
         # instantiate task manager
-        self.task = get_predefined_task(ns, mode=task_mode, start_stage=kwargs["curr_stage"], PATHS=PATHS)
+        self.task = get_predefined_task_outside(ns, mode=task_mode, start_stage=kwargs["curr_stage"], paths=PATHS)
 
         self._steps_curr_episode = 0
         self._episode = 0
@@ -256,7 +257,7 @@ class FlatlandEnv(gym.Env):
         self._last_robot_pose = obs_dict["robot_pose"]
 
     @staticmethod
-    def get_distance(pose_1: Pose2D, pose_2: Pose2D):
+    def get_distance(pose_1, pose_2):
         return math.hypot(pose_2.x - pose_1.x, pose_2.y - pose_1.y)
 
 

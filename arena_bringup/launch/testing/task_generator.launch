@@ -6,13 +6,13 @@
     <arg name="task_mode" default="scenario"/>
     <arg name="delta" default="1.0"/>
     <arg name="timeout" default="2.0"/>
-    <!--  ************** minute  ***************  -->
+
+    <param name="task_mode" value="$(arg task_mode)" />
 
     <!--  ************** task generator  ***************  -->
-    <node pkg="task_generator" name="task_generator_node" type="task_generator_node.py" output="screen">
+    <node pkg="task-generator" name="task_generator_node" type="task_generator_node.py" output="screen">
         <param name="scenarios_json_path" value="$(arg scenarios_json_path)"/>
-        <param name="auto_reset" value="$(arg auto_reset )" />
-        <param name="task_mode" value="$(arg task_mode)"/>
+        <param name="auto_reset" value="$(arg auto_reset)" />
         <param name="delta" value="$(arg delta)"/>
         <param name="timeout" value="$(arg timeout)"/>
     </node>

@@ -21,7 +21,7 @@ class ModelSpaceManager:
     def __init__(self):
         self._laser_num_beams = rospy.get_param("laser_num_beams")
         self._laser_max_range = rospy.get_param("laser_max_range")
-        self._radius = rospy.get_param("radius")
+        self._radius = rospy.get_param("robot_radius")
         self._is_holonomic = rospy.get_param("is_holonomic")
             
         encoder_name = rospy.get_param("space_encoder", "RobotSpecificEncoder")

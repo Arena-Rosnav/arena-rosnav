@@ -127,7 +127,7 @@ class BaseDRLAgent(ABC):
         """
         self._num_laser_beams = None
         self._laser_range = None
-        self._robot_radius = rospy.get_param("radius") * 1.05
+        self._robot_radius = rospy.get_param("robot_radius") * 1.05
         with open(robot_setting_yaml, "r") as fd:
             robot_data = yaml.safe_load(fd)
 

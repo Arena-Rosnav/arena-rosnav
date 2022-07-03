@@ -72,7 +72,7 @@ def read_robot_default_settings(settings_yaml_path, is_action_space_discrete):
 
         actions = robot["discrete_actions"] if is_action_space_discrete else robot["continuous_actions"]
 
-        return robot["radius"], robot["holonomic"], actions
+        return robot["holonomic"], actions
 
 def create_params_for_robot(robot_yaml_path, settings_yaml_path, is_action_space_discrete):
     (laser_angle_min, 
@@ -81,12 +81,11 @@ def create_params_for_robot(robot_yaml_path, settings_yaml_path, is_action_space
     laser_num_beams, 
     laser_range, 
     laser_update_rate) = read_robot_model_yaml(robot_yaml_path)
-    radius, is_holonomic, actions = read_robot_default_settings(settings_yaml_path, is_action_space_discrete)
+    is_holonomic, actions = read_robot_default_settings(settings_yaml_path, is_action_space_discrete)
 
     rospy.set_param("laser_angle_min", laser_angle_min)
     rospy.set_param("laser_angle_max", laser_angle_max)
     rospy.set_param("laser_angle_increment", laser_angle_increment)
-    rospy.set_param("radius", radius)
     rospy.set_param("laser_num_beams", laser_num_beams)
     rospy.set_param("is_holonomic", is_holonomic)
     rospy.set_param("laser_max_range", laser_range)
