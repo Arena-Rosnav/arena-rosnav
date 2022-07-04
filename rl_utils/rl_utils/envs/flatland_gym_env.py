@@ -76,7 +76,6 @@ class FlatlandEnv(gym.Env):
         self.observation_collector = ObservationCollector(
             self.ns,
             self.model_space_encoder._laser_num_beams,
-            self.model_space_encoder._laser_max_range,
             external_time_sync=False,
         )
 

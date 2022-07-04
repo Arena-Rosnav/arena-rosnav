@@ -26,9 +26,9 @@ class UniformSpaceEncoder(BaseSpaceEncoder):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self._laser_angle_min = rospy.get_param("laser_angle_min")
-        self._laser_angle_max = rospy.get_param("laser_angle_max")
-        self._laser_angle_increment = rospy.get_param("laser_angle_increment")
+        self._laser_angle_min = rospy.get_param("laser/angle/min")
+        self._laser_angle_max = rospy.get_param("laser/angle/max")
+        self._laser_angle_increment = rospy.get_param("laser/angle/increment")
 
         self._missing_lasers = int((2 * math.pi - abs(self._laser_angle_min) - abs(self._laser_angle_max)) / self._laser_num_beams)
 

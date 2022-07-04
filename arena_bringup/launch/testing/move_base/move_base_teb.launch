@@ -7,7 +7,7 @@
   <arg name="speed" default="0.22"/>
 
   <!-- move_base -->
-  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base">
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/global_costmap_params.yaml" command="load" />
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/teb_local_planner_params.yaml" command="load" />

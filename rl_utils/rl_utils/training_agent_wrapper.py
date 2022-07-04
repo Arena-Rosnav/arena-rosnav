@@ -6,7 +6,6 @@ from geometry_msgs.msg import Twist
 
 
 from .base_agent_wrapper import BaseDRLAgent
-from .utils.utils import get_robot_default_settings_path
 
 
 class TrainingDRLAgent(BaseDRLAgent):
@@ -15,7 +14,6 @@ class TrainingDRLAgent(BaseDRLAgent):
         ns: str,
         robot_name: str,
         hyperparameter_path: str,
-        action_space_path: str = get_robot_default_settings_path(),
         *args,
         **kwargs
     ) -> None:
@@ -49,15 +47,11 @@ class TrainingDRLAgent(BaseDRLAgent):
             hyperparameter_path (str, optional):
                 Path to json file containing defined hyperparameters.
                 Defaults to DEFAULT_HYPERPARAMETER.
-            action_space_path (str, optional):
-                Path to yaml file containing action space settings.
-                Defaults to DEFAULT_ACTION_SPACE.
         """
         super().__init__(
             ns=ns,
             robot_name=robot_name,
             hyperparameter_path=hyperparameter_path,
-            action_space_path=action_space_path,
             *args,
             **kwargs
         )

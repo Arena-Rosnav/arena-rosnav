@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import pickle
-from rl_utils.utils.utils import get_robot_default_settings_path, get_trained_models_path
+from rl_utils.utils.utils import get_trained_models_path
 import rospy
 import rospkg
 import sys
@@ -25,7 +25,6 @@ class DeploymentDRLAgent(BaseDRLAgent):
         agent_name: str,
         ns: str = None,
         robot_name: str = None,
-        action_space_path: str = get_robot_default_settings_path(),
         *args,
         **kwargs,
     ) -> None:
@@ -38,8 +37,6 @@ class DeploymentDRLAgent(BaseDRLAgent):
                 Robot specific ROS namespace extension. Defaults to None.
             ns (str, optional):
                 Simulation specific ROS namespace. Defaults to None.
-            action_space_path (str, optional):
-                Path to yaml file containing action space settings.
         """
         self._is_train_mode = rospy.get_param("/train_mode")
         if not self._is_train_mode:
@@ -54,7 +51,6 @@ class DeploymentDRLAgent(BaseDRLAgent):
             ns,
             robot_name,
             hyperparameter_path,
-            action_space_path,
         )
         self.setup_agent()
 

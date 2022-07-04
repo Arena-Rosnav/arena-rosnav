@@ -40,7 +40,6 @@ class ObservationCollector:
         self,
         ns: str,
         num_lidar_beams: int,
-        lidar_range: float,
         external_time_sync: bool = False,
     ):
         """a class to collect and merge observations

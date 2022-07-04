@@ -20,8 +20,6 @@ class RobotSpecificEncoder(BaseSpaceEncoder):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self._action_in_obs = rospy.get_param("actions_in_obs", default=False)
-
     def decode_action(self, action):
         if self._is_action_space_discrete:
             return self._translate_disc_action(action)
@@ -53,21 +51,15 @@ class RobotSpecificEncoder(BaseSpaceEncoder):
         scan = observation["laser_scan"]
         last_action = observation["last_action"]
 
-        return (
-            np.hstack([scan, np.array([rho, theta])])
-            if not self._action_in_obs
-            else np.hstack(
-                [
-                    scan,
-                    np.array([rho, theta]),
-                    last_action,
-                ]
-            )
+        return np.hstack(
+            [
+                scan,
+                np.array([rho, theta]),
+                last_action,
+            ]
         )
 
     def get_observation_space(self):
-        action_in_obs = rospy.get_param("actions_in_obs", default=False)
-
         return stack_spaces(
             spaces.Box(
                 low=0,
@@ -79,22 +71,18 @@ class RobotSpecificEncoder(BaseSpaceEncoder):
             spaces.Box(
                 low=-np.pi, high=np.pi, shape=(1,), dtype=np.float32
             ),
-            *(
-                [
-                    spaces.Box(
-                        low=-2.0,
-                        high=2.0,
-                        shape=(2,),
-                        dtype=np.float32,  # linear vel
-                    ),
-                    spaces.Box(
-                        low=-4.0,
-                        high=4.0,
-                        shape=(1,),
-                        dtype=np.float32,  # angular vel
-                    ),
-                ] if action_in_obs else []
-            )
+            spaces.Box(
+                low=-2.0,
+                high=2.0,
+                shape=(2,),
+                dtype=np.float32,  # linear vel
+            ),
+            spaces.Box(
+                low=-4.0,
+                high=4.0,
+                shape=(1,),
+                dtype=np.float32,  # angular vel
+            ),
         )
 
     def get_action_space(self):
