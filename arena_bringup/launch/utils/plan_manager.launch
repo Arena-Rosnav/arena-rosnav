@@ -10,7 +10,7 @@
     <arg name="timeout_subgoal" />
     <arg name="ns" default="" />
     
-    <node pkg="plan_manager" name="plan_manager" type="plan_manager_node" output="screen">
+    <node pkg="plan_manager" name="plan_manager" type="plan_manager_node">
         <param name="train_mode"            value="$(arg train_mode)"/>
         <param name="look_ahead_distance"   value="$(arg look_ahead_distance)"/>
         <param name="tolerance_approach"    value="$(arg tolerance_approach)"/>

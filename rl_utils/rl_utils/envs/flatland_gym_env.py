@@ -13,7 +13,7 @@ from task_generator.tasks.utils import get_predefined_task_outside
 
 from ..utils.reward import RewardCalculator
 from ..utils.observation_collector import ObservationCollector
-from ..utils.model_space_manager.model_space_manager import ModelSpaceManager
+from rosnav.model_space_manager.model_space_manager import ModelSpaceManager
 
 
 class FlatlandEnv(gym.Env):
