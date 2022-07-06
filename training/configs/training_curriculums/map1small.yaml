@@ -4,35 +4,35 @@
 # (will carry on training on last stage when threshhold reached)
 
 1:
-  static: 6
+  static: 0
   dynamic: 0
 2:
-  static: 8
+  static: 6
   dynamic: 0
 3:
   static: 10
   dynamic: 0
 4:
   static: 12
-  dynamic: 0
+  dynamic: 2
 5:
   static: 14
-  dynamic: 0
+  dynamic: 4
 6:
   static: 18
-  dynamic: 0
+  dynamic: 4
 7:
   static: 20
-  dynamic: 0
+  dynamic: 4
 8:
   static: 24
-  dynamic: 0
+  dynamic: 6
 9:
   static: 30
-  dynamic: 0
+  dynamic: 6
 10:
   static: 34
-  dynamic: 0
+  dynamic: 6
 # 1:
 #   static: 0
 #   dynamic: 0

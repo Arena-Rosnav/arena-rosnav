@@ -13,7 +13,7 @@ from task_generator.tasks.utils import get_predefined_task_outside
 
 from ..utils.reward import RewardCalculator
 from ..utils.observation_collector import ObservationCollector
-from rosnav.model_space_manager.model_space_manager import ModelSpaceManager
+from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
 
 
 class FlatlandEnv(gym.Env):
@@ -70,7 +70,7 @@ class FlatlandEnv(gym.Env):
         self._is_train_mode = rospy.get_param("/train_mode")
         self._is_action_space_discrete = is_action_space_discrete
 
-        self.model_space_encoder = ModelSpaceManager()
+        self.model_space_encoder = RosnavSpaceManager()
 
         # observation collector
         self.observation_collector = ObservationCollector(
