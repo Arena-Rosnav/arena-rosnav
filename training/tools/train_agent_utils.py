@@ -92,6 +92,7 @@ def initialize_hyperparameters(
         hyperparams = load_hyperparameters_json(PATHS=PATHS, from_scratch=True, config_name=config_name)
         hyperparams["robot"] = rospy.get_param("robot_model")
         hyperparams["agent_name"] = PATHS["model"].split("/")[-1]
+        hyperparams["space_encoder"] = rospy.get_param("space_encoder", "RobotSpecificEncoder")
     else:
         hyperparams = load_hyperparameters_json(PATHS=PATHS)
 
@@ -262,9 +263,17 @@ def get_agent_name(args: argparse.Namespace) -> str:
     robot_model = rospy.get_param("robot_model")
 
     if args.custom_mlp:
-        return robot_model + "_MLP_B_" + args.body + "_P_" + args.pi + "_V_" + args.vf + "_" + args.act_fn + "_" + START_TIME
+        return (
+            robot_model 
+            + "_MLP_B_" + args.body 
+            + "_P_" + args.pi 
+            + "_V_" + args.vf 
+            + "_" + args.act_fn 
+            + "_" + rospy.get_param("space_encoder", "RobotSpecificEncoder") 
+            + START_TIME
+        )
     if args.load is None:
-        return robot_model + "_" + args.agent + "_" + START_TIME
+        return robot_model + "_" + args.agent + "_" + rospy.get_param("space_encoder", "RobotSpecificEncoder") + START_TIME
     return args.load
 
 

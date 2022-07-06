@@ -25,7 +25,7 @@ def main():
     # in debug mode, we emulate multiprocessing on only one process
     # in order to be better able to locate bugs
     # if args.debug:
-    rospy.init_node("debug_node", disable_signals=False)
+    # rospy.init_node("debug_node", disable_signals=False)
 
 
     # generate agent name and model specific paths
