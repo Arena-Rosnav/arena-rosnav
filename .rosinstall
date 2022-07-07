@@ -42,6 +42,11 @@
     uri: https://github.com/Arena-Rosnav/waypoint-generators.git
     version: master
 
+- git:
+    local-name: ../forks/task-generator
+    uri: https://github.com/Arena-Rosnav/task-generator
+    version: master
+
 ### PLANNERS
 
 - git:

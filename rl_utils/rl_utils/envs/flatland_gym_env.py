@@ -27,8 +27,6 @@ class FlatlandEnv(gym.Env):
         safe_dist: float = None,
         goal_radius: float = 0.1,
         max_steps_per_episode=100,
-        train_mode: bool = True,
-        debug: bool = False,
         task_mode: str = "staged",
         PATHS: dict = dict(),
         extended_eval: bool = False,
@@ -56,10 +54,13 @@ class FlatlandEnv(gym.Env):
             # given every environment enough time to initialize, if we dont put sleep,
             # the training script may crash.
             import re
-            ns_int = int(re.search(r'\d+', ns)[0])
+
+            ns_int = int(re.search(r"\d+", ns)[0])
             time.sleep(ns_int * 2)
         except Exception:
-            rospy.logwarn(f"Can't not determinate the number of the environment, training script may crash!")
+            rospy.logwarn(
+                f"Can't not determinate the number of the environment, training script may crash!"
+            )
 
         # rospy.init_node("TEST", anonymous=True)
 
@@ -97,17 +98,25 @@ class FlatlandEnv(gym.Env):
 
         # action agent publisher
         if self._is_train_mode:
-            self.agent_action_pub = rospy.Publisher(f"{self.ns_prefix}cmd_vel", Twist, queue_size=1)
+            self.agent_action_pub = rospy.Publisher(
+                f"{self.ns_prefix}cmd_vel", Twist, queue_size=1
+            )
         else:
-            self.agent_action_pub = rospy.Publisher(f"{self.ns_prefix}cmd_vel_pub", Twist, queue_size=1)
+            self.agent_action_pub = rospy.Publisher(
+                f"{self.ns_prefix}cmd_vel_pub", Twist, queue_size=1
+            )
 
         # service clients
         if self._is_train_mode:
             self._service_name_step = f"{self.ns_prefix}step_world"
-            self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
+            self._sim_step_client = rospy.ServiceProxy(
+                self._service_name_step, StepWorld
+            )
 
         # instantiate task manager
-        self.task = get_predefined_task_outside(ns, mode=task_mode, start_stage=kwargs["curr_stage"], paths=PATHS)
+        self.task = get_predefined_task_outside(
+            ns, mode=task_mode, start_stage=kwargs["curr_stage"], paths=PATHS
+        )
 
         self._steps_curr_episode = 0
         self._episode = 0
@@ -136,7 +145,7 @@ class FlatlandEnv(gym.Env):
         action_msg.linear.x = action[0]
         action_msg.linear.y = action[1]
         action_msg.angular.z = action[2]
-        
+
         self.agent_action_pub.publish(action_msg)
 
     def step(self, action: np.ndarray):
@@ -145,8 +154,10 @@ class FlatlandEnv(gym.Env):
                         1   -   collision with obstacle
                         2   -   goal reached
         """
-        obs_dict = self.observation_collector.get_observations(last_action=self._last_action)
-        
+        obs_dict = self.observation_collector.get_observations(
+            last_action=self._last_action
+        )
+
         decoded_action = self.model_space_encoder.decode_action(action)
         self._last_action = decoded_action
 
@@ -221,7 +232,9 @@ class FlatlandEnv(gym.Env):
             self._collisions = 0
 
         obs_dict = self.observation_collector.get_observations()
-        return self.model_space_encoder.encode_observation(obs_dict)  # reward, done, info can't be included
+        return self.model_space_encoder.encode_observation(
+            obs_dict
+        )  # reward, done, info can't be included
 
     def close(self):
         pass
@@ -237,7 +250,9 @@ class FlatlandEnv(gym.Env):
         """
         # distance travelled
         if self._last_robot_pose is not None:
-            self._distance_travelled += FlatlandEnv.get_distance(self._last_robot_pose, obs_dict["robot_pose"])
+            self._distance_travelled += FlatlandEnv.get_distance(
+                self._last_robot_pose, obs_dict["robot_pose"]
+            )
 
         # collision detector
         if "crash" in reward_info:
