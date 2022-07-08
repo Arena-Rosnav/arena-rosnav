@@ -84,7 +84,7 @@ HYPERPARAM_KEYS = {
 }
 
 
-def initialize_hyperparameters(
+def init_hyperparameters(
     PATHS: dict,
     load_target: str,
     config_name: str = "default",

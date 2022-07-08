@@ -1,13 +1,7 @@
 #!/usr/bin/env python
-from typing import Type, Union
-
-import os, sys, rospy, time
-
-from stable_baselines3 import PPO
-from stable_baselines3.common.policies import ActorCriticPolicy, BasePolicy
+import sys, rospy, time
 
 from rosnav.model.agent_factory import AgentFactory
-from rosnav.model.base_agent import BaseAgent
 from tools.argsparser import parse_training_args
 from tools.custom_mlp_utils import *
 from tools.train_agent_utils import *
@@ -34,7 +28,7 @@ def main(args):
     wait_for_nodes(with_ns=ns_for_nodes, n_envs=config["n_envs"], timeout=5)
 
     # initialize hyperparameters (save to/ load from json)
-    params = initialize_hyperparameters(
+    params = init_hyperparameters(
         PATHS=PATHS,
         load_target=config["resume"],
         config_name=config["hyperparameter_file"],
@@ -49,7 +43,7 @@ def main(args):
     model = get_ppo_instance(config, params, train_env, PATHS, AGENT_NAME, AgentFactory)
 
     # set num of timesteps to be generated
-    n_timesteps = 40000000 if config["n_timesteps"] is None else config["n_timesteps"]
+    n_timesteps = config["n_timesteps"] or 40000000
 
     # start training
     start = time.time()
