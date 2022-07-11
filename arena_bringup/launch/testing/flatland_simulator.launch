@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <arg name="show_viz" default="false"/>
-  <arg name="use_rviz" default="true"/>
   <arg name="rviz_file" default="nav_LP"/>
   <arg name="model" default="model"/>
+
+  <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
 
   <remap from="/move_base_simple/goal" to="task_generator/set_goal" />
 
@@ -11,7 +11,7 @@
   <node name="flatland_server" pkg="flatland_server" type="flatland_server">
   </node>
 
-  <!--  ***************** Robot Model *****************  -->
+  <!--  _____________ Robot Model _____________  -->
   <arg name="initial_pose_x" default="0.0"/>
   <arg name="initial_pose_y" default="0.0"/>
   <arg name="initial_pose_a" default="0.0"/>
@@ -22,13 +22,13 @@
     ns: '',
     pose: {x: $(arg initial_pose_x), y: $(arg initial_pose_y), theta: $(arg initial_pose_a)}}&quot;" />
 
-  <!--  ************** flatland viz  ***************  -->
-  <group if="$(arg show_viz)">
-    <node name="flatland_viz" pkg="flatland_viz" type="flatland_viz" required="false" unless="$(arg use_rviz)"/>
+  <!--  _____________ flatland viz  _____________  -->
+  <group if="$(eval arg('visualization') == 'flatland')">
+    <node name="flatland_viz" pkg="flatland_viz" type="flatland_viz" required="false" />
   </group>
 
   <!-- start_rviz -->
-  <group if="$(arg use_rviz)">
-    <node name="flatland_rviz" pkg="rviz" type="rviz" args="-d $(find arena_bringup)/rviz/$(arg rviz_file).rviz"/>
+  <group if="$(eval arg('visualization') == 'rviz')">
+    <node name="flatland_rviz" pkg="rviz" type="rviz" args="-d $(find arena_bringup)/rviz/$(arg rviz_file).rviz" />
   </group>
 </launch>

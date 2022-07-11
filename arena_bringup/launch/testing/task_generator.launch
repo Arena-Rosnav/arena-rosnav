@@ -5,7 +5,6 @@
     <arg name="auto_reset" default="true" />
     <arg name="task_mode" default="scenario"/>
     <arg name="delta" default="1.0"/>
-    <arg name="timeout" default="2.0"/>
 
     <param name="task_mode" value="$(arg task_mode)" />
 
@@ -14,6 +13,5 @@
         <param name="scenario_json_path" value="$(arg scenario_json_path)"/>
         <param name="auto_reset" value="$(arg auto_reset)" />
         <param name="delta" value="$(arg delta)"/>
-        <param name="timeout" value="$(arg timeout)"/>
     </node>
 </launch>

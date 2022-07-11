@@ -13,8 +13,7 @@ from gym import spaces
 from geometry_msgs.msg import Twist
 
 from rl_utils.utils.constants import Constants
-from rosnav.model_space_manager.encoder_factory import BaseSpaceEncoderFactory
-from rosnav.model_space_manager.model_space_manager import ModelSpaceManager
+from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
 
 from .utils.utils import get_default_hyperparams_path
 from .utils.observation_collector import ObservationCollector
@@ -56,7 +55,7 @@ class BaseDRLAgent(ABC):
         self._discrete_actions = rospy.get_param("actions/discrete")
         self._cont_actions = rospy.get_param("actions/continuous")
 
-        self.model_space_encoder = ModelSpaceManager()
+        self.model_space_encoder = RosnavSpaceManager()
 
         self.load_hyperparameters(path=hyperparameter_path)
         self.setup_reward_calculator()
