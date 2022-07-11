@@ -18,10 +18,10 @@
   <arg name="waypoint_generator" default="classic"/>
   <arg name="rviz_file" default="nav"/>
   <arg name="disable_scenario" default="false"/>
-  <arg name="scenario_file" default="test_scenario.json" doc="[scenario2.json, empty_map.json, test_scenario.json (pesim), eval_feb_2022/small_warehouse_obs05.json]"/>
+  <arg name="scenario_file" default="test_scenario.json" />
   <arg name="reset" default="true"/>
   <arg name="enable_pedsim" default="true"/>
-  <arg name="task_mode" default="scenario" doc="[random, manual, staged, scenario]"/>
+  <arg name="task_mode" default="random" doc="[random, manual, staged, scenario]" />
 
   <!-- To make the training more efficient make sure this step_size*laser_update_rate == 1  -->
   <arg name="step_size" default="0.01"/>
