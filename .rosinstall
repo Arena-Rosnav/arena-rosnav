@@ -24,7 +24,7 @@
 
 - git:
     local-name: ../forks/arena-tools
-    uri: https://github.com/ignc-research/arena-tools
+    uri: https://github.com/Arena-Rosnav/arena-tools.git
     version: main
 
 - git:

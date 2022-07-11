@@ -9,7 +9,7 @@ import rospy
 from geometry_msgs.msg import Twist
 from flatland_msgs.srv import StepWorld
 
-from task_generator.tasks.utils import get_predefined_task_outside
+from task_generator.tasks.utils import get_predefined_task
 
 from ..utils.reward import RewardCalculator
 from ..utils.observation_collector import ObservationCollector
@@ -108,7 +108,7 @@ class FlatlandEnv(gym.Env):
             self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
 
         # instantiate task manager
-        self.task = get_predefined_task_outside(ns, mode=task_mode, start_stage=kwargs["curr_stage"], paths=PATHS)
+        self.task = get_predefined_task(ns, mode=task_mode, start_stage=kwargs["curr_stage"], paths=PATHS)
 
         self._steps_curr_episode = 0
         self._episode = 0
@@ -152,7 +152,6 @@ class FlatlandEnv(gym.Env):
         self._last_action = decoded_action
 
         self._pub_action(decoded_action)
-        # print(f"Linear: {action[0]}, Angular: {action[1]}")
         self._steps_curr_episode += 1
 
         # calculate reward
@@ -163,7 +162,6 @@ class FlatlandEnv(gym.Env):
             global_plan=obs_dict["global_plan"],
             robot_pose=obs_dict["robot_pose"],
         )
-        # print(f"cum_reward: {reward}")
         done = reward_info["is_done"]
 
         # extended eval info
@@ -262,7 +260,6 @@ class FlatlandEnv(gym.Env):
 
 
 if __name__ == "__main__":
-
     rospy.init_node("flatland_gym_env", anonymous=True, disable_signals=False)
     print("start")
 
