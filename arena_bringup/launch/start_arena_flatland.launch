@@ -22,6 +22,7 @@
 
   <param name="model" value="$(arg model)" />
 
+  <param name="task_mode" value="$(arg task_mode)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
   <param name="local_planner" value="$(arg local_planner)"/>
@@ -55,8 +56,8 @@
   <!-- use simulator-->
   <include file="$(find arena_bringup)/launch/testing/flatland_simulator.launch">
     <arg name="visualization" default="$(arg visualization)" />
-    <arg name="rviz_file" value="$(arg rviz_file)"/>
-    <arg name="model" value="$(arg model)"/>
+    <arg name="rviz_file" value="$(arg rviz_file)" />
+    <arg name="model" value="$(arg model)" />
   </include>
 
   <!-- map server-->
@@ -66,17 +67,13 @@
 
   <!-- Fake localization-->
   <include file="$(find arena_bringup)/launch/utils/fake_localization.launch">
-    <arg name="global_frame_id" value="$(arg global_frame_id)"/>
-    <arg name="odom_frame_id" value="$(arg odom_frame_id)"/>
+    <arg name="global_frame_id" value="$(arg global_frame_id)" />
+    <arg name="odom_frame_id" value="$(arg odom_frame_id)" />
   </include>
-
-  <!-- Task generator node -->
-  <arg name="timeout" default="3.0"/>
 
   <include file="$(find arena_bringup)/launch/testing/task_generator.launch">
     <arg name="scenario_json_path" value="$(find task-generator)/scenarios/$(arg scenario_file)"/>
     <arg name="auto_reset" value="$(arg auto_reset)"/>
-    <arg name="task_mode" value="$(arg task_mode)"/>
   </include>
 
   <include file="$(find arena_bringup)/launch/testing/sensor_sim.launch" />

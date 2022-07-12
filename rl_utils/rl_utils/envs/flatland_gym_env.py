@@ -108,7 +108,7 @@ class FlatlandEnv(gym.Env):
             self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
 
         # instantiate task manager
-        self.task = get_predefined_task(ns, mode=task_mode, start_stage=kwargs["curr_stage"], paths=PATHS)
+        self.task = get_predefined_task(ns, mode=task_mode, environment=None, start_stage=kwargs["curr_stage"], paths=PATHS)
 
         self._steps_curr_episode = 0
         self._episode = 0

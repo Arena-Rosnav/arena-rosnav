@@ -1,45 +1,54 @@
+### UTILS
+
 - git:
-    local-name: ../forks/flatland
+    local-name: ../utils/flatland
     uri: https://github.com/ignc-research/flatland
     version: dev_multi_lei
 
 - git:
-    local-name: ../forks/stable-baselines3
+    local-name: ../utils/stable-baselines3
     uri: https://github.com/ignc-research/stable-baselines3
     version: master
 
 - git:
-    local-name: ../forks/navigation/msgs/ford
+    local-name: ../utils/navigation/msgs/ford
     uri: https://bitbucket.org/acl-swarm/ford_msgs/src/master/
     version: master
 
 - git:
-    local-name: ../forks/pedsim_ros
+    local-name: ../utils/pedsim_ros
     uri: https://github.com/ignc-research/pedsim_ros
     version: master
 
 - git:
-    local-name: ../forks/jackal
+    local-name: ../utils/jackal
     uri: https://github.com/jackal/jackal.git
 
+### ARENA INFRASTRUCTURE
+
 - git:
-    local-name: ../forks/arena-tools
+    local-name: ../utils/arena-tools
     uri: https://github.com/Arena-Rosnav/arena-tools.git
     version: main
 
 - git:
-    local-name: ../forks/arena-simulation-setup
+    local-name: ../utils/arena-simulation-setup
     uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
     version: master
 
 - git:
-    local-name: ../forks/arena-utils
+    local-name: ../utils/arena-utils
     uri: https://github.com/Arena-Rosnav/arena-utils.git
     version: master
 
 - git:
-    local-name: ../forks/waypoint-generators
+    local-name: ../utils/waypoint-generators
     uri: https://github.com/Arena-Rosnav/waypoint-generators.git
+    version: master
+
+- git:
+    local-name: ../utils/task-generator
+    uri: https://github.com/Arena-Rosnav/task-generator.git
     version: master
 
 ### PLANNERS

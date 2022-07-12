@@ -1,17 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-
     <arg name="scenario_json_path" default="$(find arena-simulation-setup)/scenarios/empty_map.json"/>
     <arg name="auto_reset" default="true" />
-    <arg name="task_mode" default="scenario"/>
-    <arg name="delta" default="1.0"/>
 
-    <param name="task_mode" value="$(arg task_mode)" />
 
     <!--  ************** task generator  ***************  -->
     <node pkg="task-generator" name="task_generator_node" type="task_generator_node.py" output="screen">
         <param name="scenario_json_path" value="$(arg scenario_json_path)"/>
         <param name="auto_reset" value="$(arg auto_reset)" />
-        <param name="delta" value="$(arg delta)"/>
     </node>
 </launch>
