@@ -20,7 +20,8 @@
     yaml_path: '$(find arena-simulation-setup)/robot/$(arg model)/$(arg model).model.yaml',
     name: '$(arg model)',
     ns: '',
-    pose: {x: $(arg initial_pose_x), y: $(arg initial_pose_y), theta: $(arg initial_pose_a)}}&quot;" />
+    pose: {x: $(arg initial_pose_x), y: $(arg initial_pose_y), theta: $(arg initial_pose_a)}}&quot;" 
+  />
 
   <!--  _____________ flatland viz  _____________  -->
   <group if="$(eval arg('visualization') == 'flatland')">

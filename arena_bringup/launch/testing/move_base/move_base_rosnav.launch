@@ -2,7 +2,6 @@
 <launch>
 
   <!-- Arguments -->
-  <arg name="train_mode" default="false"/>
   <arg name="model" default="burger"/>
   <arg name="cmd_vel_topic" default="cmd_vel" />
   <arg name="odom_topic" default="odom" />
@@ -10,36 +9,22 @@
 
   <arg name="agent_name" default="rule_05"/>
 
+  <param name="agent_name" value="$(arg agent_name)" />
+
   <!-- move_base -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/global_costmap_params.yaml" command="load" />
+  
+    <remap from="/cmd_vel" to="/move_base/cmd_vel" />
   </node>
 
-  <!-- AMCL -->
-  <!-- <include file="$(find arena_bringup)/launch/amcl.launch">
-    <arg name="drl" value="true"/>
-  </include> -->
-
   <!-- spacial_horizon -->
-  <!-- <node pkg="arena_spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node" output="screen"> -->
-  <!-- <rosparam file="$(find arena_bringup)/launch/plan_fsm_param.yaml" command="load" /> ns="fsm" -->
-  <!-- </node> -->
+  <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node" output="screen">
+  <!-- <rosparam file="$(find arena_bringup)/launch/plan_fsm_param.yaml" command="load" /> -->
+  </node>
 
-  <!-- scan mapping, because training and real scan calibration may differ
-  <include file="$(find arena_bringup)/launch/map_scan.launch">
-  </include> -->
+  <node name="rosnav_manager" pkg="testing" type="drl_agent_node.py" args="$(arg agent_name)" output="screen"/>
 
-  <!-- observation_packer- to compare calculated distances from robot to goal -->
-  <!-- <node pkg="observations" name="observation_packer" type="observation_packer" output="screen"/> -->
-
-  <group if="$(eval arg('train_mode') == false)">
-    <!-- run_agent -->
-    <!-- <node name="DRL_local_planner" pkg="arena_local_planner_drl" type="drl_agent_real_node.py" args="$(arg agent_name)" output="screen"/> -->
-    <node name="rosnav" pkg="testing" type="drl_agent_node.py" args="$(arg agent_name)" output="screen"/>
-
-    <!-- action_publisher -->
-    <!-- makes sure that drl actions will be published according to sim time in eval mode-->
-    <node name="action_publisher" pkg="testing" type="action_publisher.py"/>
-  </group>
+  <node name="rosnav" pkg="rosnav" type="rosnav_node.py" output="screen" />
 </launch>
