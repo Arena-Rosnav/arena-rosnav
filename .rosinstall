@@ -2,8 +2,8 @@
 
 - git:
     local-name: ../utils/flatland
-    uri: https://github.com/ignc-research/flatland
-    version: dev_multi_lei
+    uri: https://github.com/Arena-Rosnav/flatland.git
+    version: master
 
 - git:
     local-name: ../utils/stable-baselines3
@@ -29,34 +29,34 @@
 - git:
     local-name: ../utils/arena-tools
     uri: https://github.com/Arena-Rosnav/arena-tools.git
-    version: main
+    version: v1.0.0
 
 - git:
     local-name: ../utils/arena-simulation-setup
     uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: master
+    version: v1.0.0
 
 - git:
     local-name: ../utils/arena-utils
     uri: https://github.com/Arena-Rosnav/arena-utils.git
-    version: master
+    version: v1.0.0
 
 - git:
     local-name: ../utils/waypoint-generators
     uri: https://github.com/Arena-Rosnav/waypoint-generators.git
-    version: master
+    version: v1.0.0
 
 - git:
     local-name: ../utils/task-generator
     uri: https://github.com/Arena-Rosnav/task-generator.git
-    version: master
+    version: v1.0.0
 
 ### PLANNERS
 
 - git:
     local-name: ../planners/rosnav
     uri: https://github.com/Arena-Rosnav/rosnav.git
-    version: master
+    version: v1.0.0
 
 - git:
     local-name: ../planners/arena-ros
