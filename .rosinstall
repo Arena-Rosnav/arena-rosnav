@@ -51,11 +51,6 @@
     uri: https://github.com/Arena-Rosnav/task-generator.git
     version: v1.0.0
 
-- git:
-    local-name: ../forks/task_generator
-    uri: https://github.com/Arena-Rosnav/task-generator.git
-    version: master
-
 ### PLANNERS
 
 - git:
