@@ -46,7 +46,7 @@ RUN apt-get -y update \
 
 #   Install Poetry
 RUN pip3 install poetry \
-    && pip3 install --upgrade pip 
+    && pip3 install --upgrade pip
 
 #   Install PyEnv
 WORKDIR /root/
@@ -65,8 +65,6 @@ WORKDIR /root/src/arena-rosnav
 
 RUN echo -e "source /opt/ros/noetic/setup.sh" >> /root/.bashrc
 RUN echo -e "source /root/devel/setup.sh" >> /root/.bashrc
-
-ADD default_rosinstall /root/src/arena-rosnav/.rosinstall
 
 WORKDIR /root/src/arena-rosnav
 RUN rosws update

@@ -2,55 +2,34 @@
 <launch>
 
   <!-- ___________ ARGS ___________ -->
-
-  <arg name="train_mode" default="false"/>
-
-  <arg name="model" default="burger" doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real, dingo]"/>
-  <param name="model" value="$(arg model)" />
-  <arg name="local_planner" default="teb" doc="local-planer type [teb, dwa, mpc, rlca, arena, rosnav]"/>
+  <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]"/>
+  <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]"/>
   
-  <arg name="use_recorder" default="false"/>
-  <arg name="record_only_planner" default="true"/>
-  <arg name="requestID"       default="user1"/>
-
-  <!-- Rosnav agent name -->
   <arg name="agent_name" default="$(arg model)"     doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')"/>
-  <arg name="waypoint_generator" default="classic"/>
-  <arg name="rviz_file" default="nav"/>
-  <arg name="disable_scenario" default="false"/>
-  <arg name="scenario_file" default="test_scenario.json" />
-  <arg name="reset" default="true"/>
-  <arg name="enable_pedsim" default="true"/>
   <arg name="task_mode" default="random" doc="[random, manual, staged, scenario]" />
+  <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
+  
+  <arg name="rviz_file" default="nav"/>
+  
+  <arg name="auto_reset" default="true"/>
 
-  <!-- To make the training more efficient make sure this step_size*laser_update_rate == 1  -->
-  <arg name="step_size" default="0.01"/>
-  <arg name="update_rate" default="500"/>
-  <arg name="show_viz" default="true"/>
-  <arg name="viz_pub_rate" default="30" />
-  <arg name="use_rviz" default="true"/>
+  <arg name="scenario_file" default="test_scenario.json" />
   <arg name="map_file" default="ignc" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]"/>
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_file)/map.yaml" />
 
-  <!-- Pedsim -->
-  <arg name="simulation_factor" default="1"/>
-  <arg name="pedsim_update_rate" default="30.0"/>
-  <arg name="scene_file" default="$(find task-generator)/scenarios/empty.xml"/>
-
   <!-- ___________ PARAMS ___________ -->
-
-  <param name="map_path" value="$(arg map_path)" />
   <param name="use_sim_time" value="true"/>
-  <param name="train_mode" value="$(arg train_mode)" />
+
+  <param name="model" value="$(arg model)" />
+
+  <param name="task_mode" value="$(arg task_mode)" />
+  <param name="map_path" value="$(arg map_path)" />
+  <param name="train_mode" value="false" />
   <param name="local_planner" value="$(arg local_planner)"/>
   <param name="model" value="$(arg model)" />
   <param name="agent_name" value="$(arg agent_name)" unless="$(eval arg('local_planner') != 'rosnav')"/>
-  <param name="update_rate" value="$(arg update_rate)" />
-  <param name="step_size" value="$(arg step_size)" />
-  <param name="show_viz" value="$(arg show_viz)"/>
-  <param name="viz_pub_rate" value="$(arg viz_pub_rate)"/>
-  <param name="use_rviz" value="$(arg use_rviz)"/>
-  <param name="single_env" value="true"/>
+
+  <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
 
   <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
   <param name="robot_yaml_path" value="$(find arena-simulation-setup)/robot/$(arg model)/$(arg model).model.yaml" />
@@ -61,126 +40,54 @@
   <param name="map_layer_path" value="$(find arena-simulation-setup)/maps/$(arg map_file)/map_layer.yaml" />
   <param name="map_file" value="$(arg map_file)" />
 
-  <!-- the velocity of randomly genelized obstacles  -->
-  <arg name="obs_vel" default="0.3" />
-  <param name="obs_vel" value="$(arg obs_vel)" />
-
-
-  <!--  PARAMS DON'T CHANGE THEM  -->
-  <param name="robot_action_rate" value="5"/>
-  <param name="laser_update_rate" value="10"/>
-
-
   <!-- DRL action frequency -->
-  <arg name="action_frequency" default="10"/>
-  <param name="action_frequency" value="$(arg action_frequency)"/>
+  <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
 
   <!-- Map parameters -->
   <arg name="global_frame_id" value="map"/>
   <arg name="odom_frame_id" value="odom"/>
-  <arg name="base_frame_id" value="base_footprint"/>
-  <arg name="odom_ground_truth" default="/odometry/ground_truth"/>
 
   <param name="robot_name" value="$(arg model)" />
 
   <!-- data recorder -->
   <param name="local_planner"  value="$(arg local_planner)"/>
-  <param name="waypoint_generator"  value="$(arg waypoint_generator)"/>
-  <param name="record_only_planner"  value="$(arg record_only_planner)"/>
   <param name="scenario_file"  value="$(arg scenario_file)"/>
-  <param name="requestID"  value="$(arg requestID)"/>
-
-
-  <group if="$(eval arg('use_recorder') == true)">
-    <node pkg="arena-evaluation" name="data_recorder_node" type="data_recorder_node.py" />
-    <param name="local_planner" value="$(arg local_planner)"/>
-    <param name="waypoint_generator" value="$(arg waypoint_generator)"/>
-    <param name="record_only_planner" value="$(arg record_only_planner)"/>
-    <param name="scenario_file" value="$(arg scenario_file)"/>
-  </group>
 
   <!-- use simulator-->
   <include file="$(find arena_bringup)/launch/testing/flatland_simulator.launch">
-    <arg name="show_viz" value="$(arg show_viz)"/>
-    <arg name="use_rviz" value="$(arg use_rviz)"/>
-    <arg name="rviz_file" value="$(arg rviz_file)"/>
-    <arg name="model" value="$(arg model)"/>
+    <arg name="visualization" default="$(arg visualization)" />
+    <arg name="rviz_file" value="$(arg rviz_file)" />
+    <arg name="model" value="$(arg model)" />
   </include>
 
   <!-- map server-->
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)">
     <param name="frame_id" value="$(arg global_frame_id)"/>
-
   </node>
 
-  <!-- use fake localization-->
+  <!-- Fake localization-->
   <include file="$(find arena_bringup)/launch/utils/fake_localization.launch">
-
-    <arg name="global_frame_id" value="$(arg global_frame_id)"/>
-    <arg name="odom_frame_id" value="$(arg odom_frame_id)"/>
+    <arg name="global_frame_id" value="$(arg global_frame_id)" />
+    <arg name="odom_frame_id" value="$(arg odom_frame_id)" />
   </include>
 
-  <!-- start task_generator node -->
-  <arg name="timeout" default="3.0"/>
-  <include file="$(find arena_bringup)/launch/testing/task_generator.launch" unless="$(eval arg('disable_scenario') or arg('train_mode'))">
+  <include file="$(find arena_bringup)/launch/testing/task_generator.launch">
     <arg name="scenario_json_path" value="$(find task-generator)/scenarios/$(arg scenario_file)"/>
-    <arg name="auto_reset" value="$(arg reset)"/>
-    <arg name="timeout" value="$(arg timeout)"/>
-    <arg name="task_mode" value="$(arg task_mode)"/>
+    <arg name="auto_reset" value="$(arg auto_reset)"/>
   </include>
 
-
-  <include file="$(find arena_bringup)/launch/testing/sensor_sim.launch" unless="$(eval arg('train_mode'))">
-  </include>
-
-
+  <include file="$(find arena_bringup)/launch/testing/sensor_sim.launch" />
 
   <!-- move_base plan manager: which provide basic global planner and cost map -->
   <include file="$(find arena_bringup)/launch/testing/move_base/move_base_$(arg local_planner).launch">
     <arg name="model" value="$(arg model)"/>
     <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
-    <arg name="train_mode" value="$(arg train_mode)" if="$(eval arg('local_planner') == 'rosnav')" />
-    <!-- <arg name="speed" value="$(arg speed)"/> -->
   </include>
 
-
-  <include file="$(find arena_bringup)/launch/utils/plan_manager.launch">
-    <!-- only train_mode is false, otherwise subgoal is identical with global goal
-          which is not wanted for training the waypoint generator.
-    -->
-    <arg name="train_mode" value="$(arg train_mode)"/>
-    <arg name="global_frame_id" value="$(arg global_frame_id)"/>
-    <arg name="odom_frame_id" value="$(arg odom_frame_id)"/>
-    <arg name="base_frame_id" value="$(arg base_frame_id)"/>
-    <!-- make use also make the modification in the file start_arena_flatland_waypoint.launch -->
-    <!-- look_ahead_distance + outer ring circle < len_laser_beam -->
-    <arg name="look_ahead_distance" default="2.3"/>
-    <!--meter, double -->
-    <arg name="tolerance_approach" default="0.6"/>
-    <!--meter, double -->
-    <arg name="timeout_goal" default="330."/>
-    <!--sec, double -->
-    <arg name="timeout_subgoal" default="20"/>
-    <!--sec, double -->
-  </include>
-  <include file="$(find arena_bringup)/launch/utils/intermediate_planner.launch">
-
-  </include>
-
-
-
-
-  <!-- makes sure that drl actions will be published according to sim time in eval mode-->
-  <!-- <group if="$(eval arg('train_mode') == false)">
-    <node name="action_publisher" pkg="arena_local_planner_drl" type="action_publisher.py"/>
-  </group> -->
-
-
-
-  <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(arg enable_pedsim)">
-    <param name="simulation_factor" value="$(arg simulation_factor)" type="double"/>
-    <param name="pedsim_update_rate" value="$(arg pedsim_update_rate)" type="double"/>
-    <param name="scene_file" value="$(arg scene_file)" type="string"/>
+  <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
+    <param name="simulation_factor" value="1" type="double"/>
+    <param name="pedsim_update_rate" value="30.0" type="double"/>
+    <param name="scene_file" value="$(find task-generator)/scenarios/empty.xml" type="string"/>
   </node>
 
   <!-- launch map generator if training with random map-->
