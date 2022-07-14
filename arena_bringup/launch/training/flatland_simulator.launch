@@ -6,5 +6,7 @@
   <node name="$(anon flatland_server)" pkg="flatland_server" type="flatland_server" output="screen">
     <!-- remapping for namespace -->
     <remap from="/clock" to="/$(arg ns)/clock"/>
+    <remap from="/step_world" to="/$(arg ns)/step_world" />
+    <!-- <remap from="/move_model" to="/$(arg ns)/move_model" /> -->
   </node>
 </launch>

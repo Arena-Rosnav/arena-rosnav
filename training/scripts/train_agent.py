@@ -47,6 +47,8 @@ def main():
         config_name=args.config,
         n_envs=args.n_envs,
     )
+
+    rospy.set_param("task_mode", params["task_mode"])
     
     rospy.set_param("is_action_space_discrete", params["discrete_action_space"])
 
@@ -130,6 +132,7 @@ def main():
             n_epochs=params["n_epochs"],
             clip_range=params["clip_range"],
             tensorboard_log=PATHS["tb"],
+            device="cuda",
             verbose=1,
         )
     elif args.agent is not None:
@@ -150,6 +153,7 @@ def main():
                 n_epochs=params["n_epochs"],
                 clip_range=params["clip_range"],
                 tensorboard_log=PATHS.get("tb"),
+                device="cuda",
                 verbose=1,
             )
         elif issubclass(agent, ActorCriticPolicy):
@@ -167,6 +171,7 @@ def main():
                 n_epochs=params["n_epochs"],
                 clip_range=params["clip_range"],
                 tensorboard_log=PATHS.get("tb"),
+                device="cuda",
                 verbose=1,
             )
         else:

@@ -49,7 +49,7 @@
 - git:
     local-name: ../utils/task-generator
     uri: https://github.com/Arena-Rosnav/task-generator.git
-    version: v1.0.0
+    version: master
 
 ### PLANNERS
 
