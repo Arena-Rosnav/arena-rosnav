@@ -37,4 +37,9 @@
 
     </node>
 
+     <!-- spacial_horizon -->
+     <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node" output="screen">
+        <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/plan_fsm_param.yaml" command="load" />
+    </node>
+
 </launch>
