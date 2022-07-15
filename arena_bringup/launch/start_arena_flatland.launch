@@ -35,10 +35,11 @@
   <!-- Pedsim -->
   <arg name="simulation_factor" default="1"/>
   <arg name="pedsim_update_rate" default="30.0"/>
-  <arg name="scene_file" default="$(find simulator_setup)/scenarios/empty.xml"/>
+  <arg name="scene_file" default="$(find task-generator)/scenarios/empty.xml"/>
 
   <!-- ___________ PARAMS ___________ -->
 
+  <param name="map_path" value="$(arg map_path)" />
   <param name="use_sim_time" value="true"/>
   <param name="train_mode" value="$(arg train_mode)" />
   <param name="local_planner" value="$(arg local_planner)"/>
@@ -122,7 +123,7 @@
   <!-- start task_generator node -->
   <arg name="timeout" default="3.0"/>
   <include file="$(find arena_bringup)/launch/testing/task_generator.launch" unless="$(eval arg('disable_scenario') or arg('train_mode'))">
-    <arg name="scenarios_json_path" value="$(find simulator_setup)/scenarios/$(arg scenario_file)"/>
+    <arg name="scenario_json_path" value="$(find task-generator)/scenarios/$(arg scenario_file)"/>
     <arg name="auto_reset" value="$(arg reset)"/>
     <arg name="timeout" value="$(arg timeout)"/>
     <arg name="task_mode" value="$(arg task_mode)"/>

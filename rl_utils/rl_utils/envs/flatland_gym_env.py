@@ -13,7 +13,7 @@ from task_generator.tasks.utils import get_predefined_task_outside
 
 from ..utils.reward import RewardCalculator
 from ..utils.observation_collector import ObservationCollector
-from ..utils.model_space_manager.model_space_manager import ModelSpaceManager
+from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
 
 
 class FlatlandEnv(gym.Env):
@@ -62,16 +62,17 @@ class FlatlandEnv(gym.Env):
                 f"Can't not determinate the number of the environment, training script may crash!"
             )
 
-        # rospy.init_node("TEST", anonymous=True)
 
         # process specific namespace in ros system
         self.ns_prefix = "" if (ns == "" or ns is None) else "/" + ns + "/"
+        
+        rospy.init_node("env_" + self.ns_prefix.replace("/", ""), anonymous=True)
 
         self._extended_eval = extended_eval
         self._is_train_mode = rospy.get_param("/train_mode")
         self._is_action_space_discrete = is_action_space_discrete
 
-        self.model_space_encoder = ModelSpaceManager()
+        self.model_space_encoder = RosnavSpaceManager()
 
         # observation collector
         self.observation_collector = ObservationCollector(
@@ -200,9 +201,9 @@ class FlatlandEnv(gym.Env):
             info["time"] = self._steps_curr_episode * self._action_frequency
 
         if done:
-            if sum(self._done_hist) == 10 and self.ns_prefix != "/eval_sim/":
+            if sum(self._done_hist) == 20 and self.ns_prefix != "/eval_sim/":
                 print(
-                    f"[ns: {self.ns_prefix}] Last 10 Episodes: "
+                    f"[ns: {self.ns_prefix}] Last 20 Episodes: "
                     f"{self._done_hist[0]}x - {self._done_reasons[str(0)]}, "
                     f"{self._done_hist[1]}x - {self._done_reasons[str(1)]}, "
                     f"{self._done_hist[2]}x - {self._done_reasons[str(2)]}, "

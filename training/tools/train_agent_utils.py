@@ -106,6 +106,9 @@ def init_hyperparameters(
         )
         hyperparams["robot"] = rospy.get_param("robot_model")
         hyperparams["agent_name"] = PATHS["model"].split("/")[-1]
+        hyperparams["space_encoder"] = rospy.get_param(
+            "space_encoder", "RobotSpecificEncoder"
+        )
     else:
         hyperparams = load_hyperparameters_json(PATHS=PATHS)
 
@@ -310,8 +313,10 @@ def get_agent_name(config: dict) -> str:
     #         + START_TIME
     #     )
     if config["resume"] is None:
-        architecture_name = config["architecture_name"]
-        return f"{robot_model}_{architecture_name}_{START_TIME}"
+        architecture_name, encoder_name = config["architecture_name"], rospy.get_param(
+            "space_encoder", "RobotSpecificEncoder"
+        )
+        return f"{robot_model}_{architecture_name}_{encoder_name}_{START_TIME}"
     return config["resume"]
 
 
@@ -588,10 +593,7 @@ def init_callbacks(
         verbose=1,
     )
 
-    # evaluation settings
-    # n_eval_episodes: number of episodes to evaluate agent on
-    # eval_freq: evaluate the agent every eval_freq train timesteps
-    eval_cb = EvalCallback(
+    return EvalCallback(
         eval_env=eval_env,
         train_env=train_env,
         n_eval_episodes=config["periodic_eval"]["n_eval_episodes"],
@@ -602,8 +604,6 @@ def init_callbacks(
         callback_on_eval_end=trainstage_cb,
         callback_on_new_best=stoptraining_cb,
     )
-
-    return eval_cb
 
 
 def get_ppo_instance(

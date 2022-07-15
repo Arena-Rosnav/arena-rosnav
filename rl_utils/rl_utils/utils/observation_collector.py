@@ -54,9 +54,6 @@ class ObservationCollector:
         else:
             self.ns_prefix = "/" + ns + "/"
 
-        print("PREFIX", self.ns_prefix)
-
-
         self._laser_num_beams = num_lidar_beams
         # for frequency controlling
         self._action_frequency = 1 / rospy.get_param("/robot_action_rate")
@@ -114,8 +111,6 @@ class ObservationCollector:
                 self.callback_robot_state,
                 tcp_nodelay=True,
             )
-
-            print("SUBSCRIBED TO TOPIC")
 
         # self._clock_sub = rospy.Subscriber(
         #     f'{self.ns_prefix}clock', Clock, self.callback_clock, tcp_nodelay=True)

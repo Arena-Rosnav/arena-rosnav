@@ -19,12 +19,3 @@ def get_trained_models_path():
     return os.path.join(
         rospkg.RosPack().get_path("rosnav"), "agents"
     )
-
-
-def stack_spaces(*ss):
-    low = []
-    high = []
-    for space in ss:
-        low.extend(space.low.tolist())
-        high.extend(space.high.tolist())
-    return spaces.Box(np.array(low).flatten(), np.array(high).flatten())

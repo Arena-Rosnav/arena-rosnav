@@ -4,9 +4,6 @@ from typing import Tuple
 import json
 import numpy as np
 import os
-from rl_utils.utils.constants import Constants
-from rl_utils.utils.model_space_manager.encoder_factory import BaseSpaceEncoderFactory
-from rl_utils.utils.model_space_manager.model_space_manager import ModelSpaceManager
 import rospy
 import rospkg
 import yaml
@@ -15,6 +12,9 @@ from gym import spaces
 
 from geometry_msgs.msg import Twist
 
+from rl_utils.utils.constants import Constants
+from rosnav.model_space_manager.encoder_factory import BaseSpaceEncoderFactory
+from rosnav.model_space_manager.model_space_manager import ModelSpaceManager
 
 from .utils.utils import get_default_hyperparams_path
 from .utils.observation_collector import ObservationCollector
@@ -217,11 +217,7 @@ class BaseDRLAgent(ABC):
             action (np.ndarray):
                 Action in [linear velocity, angular velocity]
         """
-        action_msg = (
-            self._get_hol_action_msg(action)
-            if self._holonomic
-            else self._get_nonhol_action_msg(action)
-        )
+        action_msg = self._get_action_msg(action)
         self._action_pub.publish(action_msg)
 
     def _get_disc_action(self, action: int) -> np.ndarray:
@@ -240,6 +236,15 @@ class BaseDRLAgent(ABC):
                 self._discrete_actions[action]["angular"],
             ]
         )
+
+    def _get_action_msg(self, action):
+        action_msg = Twist()
+        
+        action_msg.linear.x = action[0]
+        action_msg.linear.y = action[1]
+        action_msg.angular.z = action[2]
+
+        return action_msg
 
     def _get_hol_action_msg(self, action: np.ndarray):
         assert (
