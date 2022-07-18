@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
     <!-- <arg name="speed" default="0.22"/> -->
-    <arg name="model" default="turtlebo3_burger" />
+    <arg name="model" default="burger" />
     <param name="bool_goal_reached" value="true" />
 
     <!-- move_base -->
