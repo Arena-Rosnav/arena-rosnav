@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <!-- move base -->
+    <arg name="model" default="burger"/>
+    <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+        <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/local_costmap_params.yaml" command="load" />
+        <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/global_costmap_params.yaml" command="load" />
+        <remap from="cmd_vel" to="foo" />
+        <param name="planner_frequency" value="0.0" />
+    </node>
+
+    <!-- SARL_star Planner -->
+    <node pkg="sarl_star_ros" type="sarl_star_node.py" name="sarl_star_node" output="screen" />
+
+    <!-- spacial_horizon -->
+    <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node" output="screen">
+        <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/plan_fsm_param.yaml" command="load" />
+    </node>
+
+</launch>
