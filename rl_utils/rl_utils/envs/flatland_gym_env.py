@@ -6,8 +6,9 @@ from stable_baselines3.common.env_checker import check_env
 
 import numpy as np
 import rospy
+import time
 from geometry_msgs.msg import Twist
-from flatland_msgs.srv import StepWorld
+from flatland_msgs.msg import StepWorld
 
 from task_generator.tasks.utils import get_predefined_task
 
@@ -105,10 +106,11 @@ class FlatlandEnv(gym.Env):
         # service clients
         if self._is_train_mode:
             self._service_name_step = f"{self.ns_prefix}step_world"
-            self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
+            # self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
+            self._step_world_publisher = rospy.Publisher(self._service_name_step, StepWorld, queue_size=10)
 
         # instantiate task manager
-        self.task = get_predefined_task(ns, mode=task_mode, start_stage=kwargs["curr_stage"], paths=PATHS)
+        self.task = get_predefined_task(ns, mode=task_mode, environment=None, start_stage=kwargs["curr_stage"], paths=PATHS)
 
         self._steps_curr_episode = 0
         self._episode = 0
@@ -150,6 +152,9 @@ class FlatlandEnv(gym.Env):
         
         decoded_action = self.model_space_encoder.decode_action(action)
         self._last_action = decoded_action
+
+        if self._is_train_mode:
+            self.call_service_takeSimStep()
 
         self._pub_action(decoded_action)
         self._steps_curr_episode += 1
@@ -199,14 +204,18 @@ class FlatlandEnv(gym.Env):
             self._done_hist[int(info["done_reason"])] += 1
 
         return self.model_space_encoder.encode_observation(obs_dict), reward, done, info
+    
+    def call_service_takeSimStep(self, t=None):
+        request = StepWorld()
+        request.required_time = 0 if t == None else t
+
+        self._step_world_publisher.publish(request)
 
     def reset(self):
         # set task
         # regenerate start position end goal position of the robot and change the obstacles accordingly
         self._episode += 1
         self.agent_action_pub.publish(Twist())
-        if self._is_train_mode:
-            self._sim_step_client()
         self.task.reset()
         self.reward_calculator.reset()
         self._steps_curr_episode = 0

@@ -22,6 +22,7 @@
 
   <param name="model" value="$(arg model)" />
 
+  <param name="task_mode" value="$(arg task_mode)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
   <param name="local_planner" value="$(arg local_planner)"/>
@@ -55,8 +56,8 @@
   <!-- use simulator-->
   <include file="$(find arena_bringup)/launch/testing/flatland_simulator.launch">
     <arg name="visualization" default="$(arg visualization)" />
-    <arg name="rviz_file" value="$(arg rviz_file)"/>
-    <arg name="model" value="$(arg model)"/>
+    <arg name="rviz_file" value="$(arg rviz_file)" />
+    <arg name="model" value="$(arg model)" />
   </include>
 
   <!-- map server-->
@@ -66,17 +67,13 @@
 
   <!-- Fake localization-->
   <include file="$(find arena_bringup)/launch/utils/fake_localization.launch">
-    <arg name="global_frame_id" value="$(arg global_frame_id)"/>
-    <arg name="odom_frame_id" value="$(arg odom_frame_id)"/>
+    <arg name="global_frame_id" value="$(arg global_frame_id)" />
+    <arg name="odom_frame_id" value="$(arg odom_frame_id)" />
   </include>
-
-  <!-- Task generator node -->
-  <arg name="timeout" default="3.0"/>
 
   <include file="$(find arena_bringup)/launch/testing/task_generator.launch">
     <arg name="scenario_json_path" value="$(find task-generator)/scenarios/$(arg scenario_file)"/>
     <arg name="auto_reset" value="$(arg auto_reset)"/>
-    <arg name="task_mode" value="$(arg task_mode)"/>
   </include>
 
   <include file="$(find arena_bringup)/launch/testing/sensor_sim.launch" />
@@ -86,24 +83,6 @@
     <arg name="model" value="$(arg model)"/>
     <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
   </include>
-
-  <include file="$(find arena_bringup)/launch/utils/plan_manager.launch">
-    <arg name="global_frame_id" value="$(arg global_frame_id)"/>
-    <arg name="odom_frame_id" value="$(arg odom_frame_id)"/>
-    <arg name="base_frame_id" value="base_footprint" />
-    <!-- make use also make the modification in the file start_arena_flatland_waypoint.launch -->
-    <!-- look_ahead_distance + outer ring circle < len_laser_beam -->
-    <arg name="look_ahead_distance" default="2.3"/>
-    <!--meter, double -->
-    <arg name="tolerance_approach" default="0.6"/>
-    <!--meter, double -->
-    <arg name="timeout_goal" default="330."/>
-    <!--sec, double -->
-    <arg name="timeout_subgoal" default="20"/>
-    <!--sec, double -->
-  </include>
-
-  <include file="$(find arena_bringup)/launch/utils/intermediate_planner.launch" />
 
   <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
     <param name="simulation_factor" value="1" type="double"/>
