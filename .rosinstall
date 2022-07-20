@@ -82,3 +82,8 @@
     local-name: ../planners/sarl-star
     uri: https://github.com/Arena-Rosnav/sarl-star.git
     version: master
+
+- git:
+    local-name: ../planners/mpc
+    uri: https://github.com/rst-tu-dortmund/mpc_local_planner
+    version: master

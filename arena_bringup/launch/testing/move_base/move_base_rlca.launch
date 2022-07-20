@@ -11,7 +11,6 @@
     <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/global_costmap_params.yaml" command="load" />
-    <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/move_base_params.yaml" command="load" />
     <remap from="cmd_vel" to="foo"/>
     <remap from="odom" to="$(arg odom_topic)"/>
     <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
@@ -19,10 +18,10 @@
     <param name="planner_frequency" value="0.0" />
   </node>
 
-  <node pkg="rl_collision_avoidance" type="rl_collision_avoidance_node_tb3.py" name="rl_collision_avoidance" output="screen"/>
+  <node pkg="rlca-ros" type="rlca_node_tb3.py" name="rl_collision_avoidance" output="screen"/>
 
   <!-- spacial_horizon -->
-  <node pkg="arena_spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node" output="screen">
+  <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node" output="screen">
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/plan_fsm_param.yaml" command="load" />
-  </node>
+     </node>
 </launch>
