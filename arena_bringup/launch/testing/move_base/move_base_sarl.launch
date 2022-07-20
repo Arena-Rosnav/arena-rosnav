@@ -10,7 +10,7 @@
     </node>
 
     <!-- SARL_star Planner -->
-    <node pkg="sarl_star_ros" type="sarl_star_node.py" name="sarl_star_node" output="screen" />
+    <node pkg="sarl_star_ros" type="sarl_tb3_node.py" name="sarl_star_node" output="screen" />
 
     <!-- spacial_horizon -->
     <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node" output="screen">
