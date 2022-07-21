@@ -133,7 +133,7 @@ def main():
             verbose=1,
         )
     elif args.agent is not None:
-        agent: Union[Type[BaseAgent], Type[ActorCriticPolicy]] = AgentFactory.instantiate(args.agent)
+        agent: Union[Type[BaseAgent], Type[ActorCriticPolicy]] = AgentFactory.instantiate(args.agent, path = args.path)
         if isinstance(agent, BaseAgent):
             model = PPO(
                 agent.type.value,
