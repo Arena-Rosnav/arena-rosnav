@@ -23,6 +23,7 @@ def training_args(parser):
     import rosnav.model.custom_policy
     import rosnav.model.custom_sb3_policy
     from rosnav.model.agent_factory import AgentFactory
+    import rosnav.model.custom_policy_from_json
 
     group.add_argument(
         "--agent",
@@ -59,6 +60,11 @@ def training_args(parser):
     )
     parser.add_argument(
         "--tb", action="store_true", help="enables tensorboard logging"
+    )
+    parser.add_argument(
+        "--path",
+        type=str,
+        help="path to the json file containing" "the neural network",
     )
 
 
