@@ -24,6 +24,8 @@
   <param name="robot_yaml_path" value="$(find arena-simulation-setup)/robot/$(arg model)/$(arg model).model.yaml" />
   <param name="tmp_model_path" value="/tmp" />
 
+  <param name="custom_network_path" value="/home/bababerlin/network.json"/>
+
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
 

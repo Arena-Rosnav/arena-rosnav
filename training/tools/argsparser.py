@@ -61,11 +61,6 @@ def training_args(parser):
     parser.add_argument(
         "--tb", action="store_true", help="enables tensorboard logging"
     )
-    parser.add_argument(
-        "--path",
-        type=str,
-        help="path to the json file containing" "the neural network",
-    )
 
 
 def run_agent_args(parser):
