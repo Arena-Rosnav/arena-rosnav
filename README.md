@@ -3,7 +3,12 @@
 Clone repo in any catkin ws or create new catkin ws
 
 ```
-git clone git@github.com:Arena-Rosnav/arena-rosnav.git
+mkdir -p ~/catkin_ws/src
+cd ~/catkin_ws/src
+```
+
+```
+git clone https://github.com/Arena-Rosnav/arena-rosnav.git
 ```
 
 Change into dir
@@ -27,14 +32,15 @@ poetry shell && poetry install
 Install stable baselines
 
 ```
-cd ../forks/stable-baselines3 && pip install -e .
+cd ../utils/stable-baselines3 && pip install -e .
 ```
 
 Build catkin
 
 ```
-cd ../../.. && catkin_make
+cd ../../.. && catkin_make -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_CXX_STANDARD=14
 ```
+
 
 Finished!
 
