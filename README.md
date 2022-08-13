@@ -38,7 +38,7 @@ cd ../utils/stable-baselines3 && pip install -e .
 Build catkin
 
 ```
-cd ../../.. && catkin_make -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_CXX_STANDARD=14
+cd ../../.. && catkin_make
 ```
 
 
