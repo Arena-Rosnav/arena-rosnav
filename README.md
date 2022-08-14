@@ -44,6 +44,24 @@ cd ../../.. && catkin_make
 
 Finished!
 
+## Run Simulator
+
+Open Terminal 1 (Run roslaunch)
+```
+cd ~/catkin_ws
+source devel/setup.bash
+roslaunch ...
+```
+
+Open Terminal 2 (Run Script)
+```
+poetry shell # Firstly load python virtual environment
+cd ~/catkin_ws
+source devel/setup.bash # To load other dependencies
+cd <script directory>
+python ...
+```
+
 #### TODO
 
 Everything
