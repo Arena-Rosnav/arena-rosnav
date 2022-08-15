@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+    <!-- arguments for simulator setting -->
+    <arg name="level_name" default="empty" doc = "level name [empty, random, svg, scenario]"/>
+    <arg name="level_mode" default="--dynamic" doc = "[--dynamic --human, --dynamic, --human,  ]"/>    
+    <arg name="video_mode" default="--enable-video" doc = "video [--disable-video, --enable-video]"/> 
+    <arg name="num_envs" default="1" doc = "number of environment"/>
+    <!-- robot setting -->
+    <arg name="robot_model" default="burger" 
+    doc="model type [burger, jackal, agvota, waffle_pi]"/>
+    <param name="model" value="$(arg robot_model)" />
+
+    <arg name="robot_mode" default="discrete"      doc="mode type [continuous, discrete]"/>
+    <param name="mode" value="$(arg robot_mode)" />
+    
+    <rosparam command="load" 
+    file = "$(find arena2d)/configs/observation_space/$(arg robot_model).model.yaml" />
+
+    <rosparam command="load" 
+    file= "$(find arena2d)/configs/action_space/default_settings_$(arg robot_model).yaml" />
+
+    <!-- staged task -->
+    <!-- load training curriculum for stage mode + set stage mode -->
+    <arg name="stage_mode" default="false" doc = "[true, false]"/> 
+    <param name="stage/stage" value="$(arg stage_mode)" />
+    <group if="$(eval arg('level_name') == 'random')">
+        <group if="$(eval arg('stage_mode') == true)">
+            <rosparam command="load" file = "$(find arena2d)/configs/training_curriculum.yaml" />
+        </group>
+    </group>
+
+    <!-- scenerio task-->
+    <!-- The value needs to be set carefully, 
+    1.) range = [- (width * resolution / 2) , width * resolution / 2]
+    2.) make sure the spawn point without obstacle -->
+    
+    <!-- <group if="$(eval arg ('level_name') == 'scenario')">
+        <param name="scenerio/scenerio" value="true" />    
+        <param name="scenerio/goal_x" value = "-3.0" />
+        <param name="scenerio/goal_y" value = "4.0" />
+        <param name="scenerio/robot_x" value = "2.0" />
+        <param name="scenerio/robot_y" value = "4.0" />        
+    </group> -->
+
+
+    <!-- Run the map server -->
+    <arg name="map_file" default="$(find arena2d)/scenario/map_labor.yaml" 
+    doc = "load rosmap from /scenario" />
+    <node if="$(eval arg('level_name') == 'scenario')"
+    name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+    <!-- load rviz helper, transfer data to rviz -->    
+    <node name="rviz_visualize_helper" 
+          pkg="rl-ros-agents" 
+          type="rviz_visualize_helper.py" 
+          output="screen" />
+
+    <!-- load rviz configuration -->
+    <!-- <node if="$(eval arg('level_name') == 'scenario')"
+    name ="rviz" pkg="rviz" type="rviz" 
+    args="-d $(find rl-ros-agents)/launch/rviz_config_new.rviz" required="true" /> -->
+
+    <!-- launch arena2d server -->
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find arena2d)/ros_logging_settings.conf" />
+
+    <node name="arena_sim" pkg="arena2d" type="arena2d" output="screen" 
+    args="--use_ros_agent $(arg video_mode) --num_envs $(arg num_envs) --run &quot;level $(arg level_name) $(arg level_mode) &quot;"/>
+
+
+</launch>

@@ -35,10 +35,15 @@ Install stable baselines
 cd ../utils/stable-baselines3 && pip install -e .
 ```
 
+Install arena2d requirements
+```
+sudo apt-get install cmake libsdl2-dev libfreetype-dev
+```
+
 Build catkin
 
 ```
-cd ../../.. && catkin_make
+cd ../../.. && catkin_make -DUSE_ROS=ON
 ```
 
 
@@ -50,7 +55,7 @@ Open Terminal 1 (Run roslaunch)
 ```
 cd ~/catkin_ws
 source devel/setup.bash
-roslaunch ...
+roslaunch arena_bringup ...
 ```
 
 Open Terminal 2 (Run Script)

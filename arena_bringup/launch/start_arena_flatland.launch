@@ -17,6 +17,8 @@
   <arg name="map_file" default="ignc" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]"/>
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_file)/map.yaml" />
 
+  <arg name="simulator" default="arena2d" doc="[flatland, arena2d]" />
+  <arg name="num_envs" default="1" />
   <!-- ___________ PARAMS ___________ -->
   <param name="use_sim_time" value="true"/>
 
@@ -54,11 +56,21 @@
   <param name="scenario_file"  value="$(arg scenario_file)"/>
 
   <!-- use simulator-->
-  <include file="$(find arena_bringup)/launch/testing/flatland_simulator.launch">
-    <arg name="visualization" default="$(arg visualization)" />
-    <arg name="rviz_file" value="$(arg rviz_file)" />
-    <arg name="model" value="$(arg model)" />
-  </include>
+
+  <group if="$(eval arg('simulator') == 'flatland')">
+    <include file="$(find arena_bringup)/launch/testing/flatland_simulator.launch">
+      <arg name="visualization" default="$(arg visualization)" />
+      <arg name="rviz_file" value="$(arg rviz_file)" />
+      <arg name="model" value="$(arg model)" />
+    </include>
+  </group>
+
+  <group if="$(eval arg('simulator') == 'arena2d')">
+    <include file="$(find arena_bringup)/launch/training/arena2d_simulator.launch">
+      <arg name="robot_model" value="$(arg model)" />
+      <arg name="num_envs" value="$(arg num_envs)" />
+    </include>
+  </group>
 
   <!-- map server-->
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)">
