@@ -55,7 +55,9 @@ Open Terminal 1 (Run roslaunch)
 ```
 cd ~/catkin_ws
 source devel/setup.bash
-roslaunch arena_bringup ...
+roslaunch arena_bringup start_arena_flatland.launch
+// roslaunch arena_bringup arena2d_simulator.launch 
+// only for arena2d
 ```
 
 Open Terminal 2 (Run Script)
