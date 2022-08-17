@@ -72,3 +72,8 @@ python ...
 #### TODO
 
 Everything
+## Tipps for Training with Arena2d
+
+To run training script for arena2d you need use conda to activate arena2d environment
+
+Please make sure run `conda config --set auto_activate_base false` let base environment don't automatically activated, because it's may erase conflict with poetry
