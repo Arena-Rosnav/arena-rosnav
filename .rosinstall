@@ -24,6 +24,11 @@
     local-name: ../utils/jackal
     uri: https://github.com/jackal/jackal.git
 
+- git:
+    local-name: ../utils/arena2d
+    uri: https://github.com/zenghjian/arena2D.git
+    version: integration
+    
 ### ARENA INFRASTRUCTURE
 
 - git:
@@ -48,8 +53,8 @@
 
 - git:
     local-name: ../utils/task-generator
-    uri: https://github.com/Arena-Rosnav/task-generator.git
-    version: master
+    uri: https://github.com/zenghjian/task-generator.git
+    version: dev
 
 ### PLANNERS
 
