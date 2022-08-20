@@ -8,7 +8,7 @@ cd ~/catkin_ws/src
 ```
 
 ```
-git clone https://github.com/Arena-Rosnav/arena-rosnav.git
+git clone https://github.com/zenghjian/arena-rosnav
 ```
 
 Change into dir
