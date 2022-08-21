@@ -5,7 +5,7 @@
     <arg name="level_name" default="scenario" doc = "level name [empty, random, svg, scenario]"/>
     <arg name="level_mode" default="--dynamic" doc = "[--dynamic --human, --dynamic, --human,  ]"/>    
     <arg name="video_mode" default="--enable-video" doc = "video [--disable-video, --enable-video]"/> 
-    <arg name="num_envs" default="1" doc = "number of environment"/>
+    <arg name="num_envs" default="3" doc = "number of environment"/>
     <!-- robot setting -->
     <arg name="robot_model" default="burger" 
     doc="model type [burger, jackal, agvota, waffle_pi]"/>
@@ -31,10 +31,12 @@
     </group>
 
     <!-- scenerio task-->
+    <!-- this part only used for setting goal and robot pos manually-->
+    
     <!-- The value needs to be set carefully, 
     1.) range = [- (width * resolution / 2) , width * resolution / 2]
     2.) make sure the spawn point without obstacle -->
-    <param name="scenerio/scenerio" value="false" /> 
+    <param name="scenerio/scenerio" value="false" />
     <!-- <group if="$(eval arg ('level_name') == 'scenario')">
         <param name="scenerio/scenerio" value="true" />    
         <param name="scenerio/goal_x" value = "-3.0" />
@@ -45,7 +47,7 @@
 
 
     <!-- Run the map server -->
-    <!-- <arg name="map_file" default="$(find arena2d)/scenario/map_labor.yaml" 
+    <!-- <arg name="map_file" default="$(find arena2d)/scenario/map_ignc.yaml" 
     doc = "load rosmap from /scenario" />
     <node if="$(eval arg('level_name') == 'scenario')"
     name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" /> -->
