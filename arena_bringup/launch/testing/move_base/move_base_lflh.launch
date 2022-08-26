@@ -8,7 +8,8 @@
 
   <!-- move_base -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+    <param name="base_global_planner" type="string" value="navfn/NavfnROS" />
+    <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS"/>
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/global_costmap_params.yaml" command="load" />
     <remap from="cmd_vel" to="foo"/>
@@ -18,10 +19,5 @@
     <param name="planner_frequency" value="0.0" />
   </node>
 
-  <node pkg="rlca-ros" type="rlca_node_tb3.py" name="rl_collision_avoidance" output="screen"/>
-
-  <!-- spacial_horizon -->
-  <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node" output="screen">
-    <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/plan_fsm_param.yaml" command="load" />
-     </node>
+  <node pkg="LfH" name="hallucination" type="run_policy.py" output="screen" required="true"/> 
 </launch>
