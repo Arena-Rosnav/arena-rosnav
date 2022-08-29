@@ -58,7 +58,7 @@ class FlatlandEnv(gym.Env):
             # the training script may crash.
             import re
             ns_int = int(re.search(r'\d+', ns)[0])
-            time.sleep(ns_int * 2)
+            time.sleep((ns_int + 1) * 2)
         except Exception:
             rospy.logwarn(f"Can't not determinate the number of the environment, training script may crash!")
 
@@ -180,7 +180,7 @@ class FlatlandEnv(gym.Env):
             info["done_reason"] = reward_info["done_reason"]
             info["is_success"] = reward_info["is_success"]
 
-        if self._steps_curr_episode > self._max_steps_per_episode:
+        if self._steps_curr_episode >= self._max_steps_per_episode:
             done = True
             info["done_reason"] = 0
             info["is_success"] = 0

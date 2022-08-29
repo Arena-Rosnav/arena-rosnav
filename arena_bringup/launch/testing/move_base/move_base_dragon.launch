@@ -18,10 +18,21 @@
     <param name="planner_frequency" value="0.0" />
   </node>
 
-  <node pkg="rlca-ros" type="rlca_node_tb3.py" name="rl_collision_avoidance" output="screen"/>
+  <node pkg="barn_challenge" type="gap_navigation" name="gap_navigation" output="screen">
+    <param name="goal_x" value="10" />
+    <param name="goal_y" value="10" />
+    <param name="left" value="-100" />
+    <param name="top" value="-100" />
+    <param name="bwidth" value="200" />
+    <param name="bheight" value="200" />
+    <param name="gapThresh" value=".65" />
+    <param name="dist" value="10" />
+    <remap from="/scan" to="/truncate/scan" />
+  </node>
 
-  <!-- spacial_horizon -->
-  <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node" output="screen">
-    <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/plan_fsm_param.yaml" command="load" />
-     </node>
+  <node pkg="barn_challenge" type="reduce_lidar" name="reduce_lidar" output="screen">
+    <param name="cap" value="10" />
+  </node>
+
+  <node pkg="barn_challenge" type="cone_bench.py" name="cone_bench" output="screen" />
 </launch>

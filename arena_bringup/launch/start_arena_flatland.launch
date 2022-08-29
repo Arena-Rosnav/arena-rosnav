@@ -8,7 +8,7 @@
   <arg name="agent_name" default="$(arg model)"     doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')"/>
   <arg name="task_mode" default="random" doc="[random, manual, staged, scenario]" />
   <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
-  
+  <arg name="show_viz" default="true" doc="Enables flatland visualization" />
   <arg name="rviz_file" default="nav"/>
   
   <arg name="auto_reset" default="true"/>
@@ -32,6 +32,7 @@
   <param name="local_planner" value="$(arg local_planner)"/>
   <param name="model" value="$(arg model)" />
   <param name="agent_name" value="$(arg agent_name)" unless="$(eval arg('local_planner') != 'rosnav')"/>
+  <param name="show_viz" value="$(arg show_viz)"/>
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
 
