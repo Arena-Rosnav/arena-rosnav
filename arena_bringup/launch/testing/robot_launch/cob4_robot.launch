@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+	<!-- changing the robot model here will load the robot with different configurations -->
+	<arg name="robot" default="cob4-11"/>
+	<param name="robot_description" command="$(find xacro)/xacro --inorder '$(find simulator_setup)/robot/cob4/urdf/cob4.urdf.xacro'" />
+	
+
+	<node name="odom_pub" pkg="task_generator" type="odom.py">
+		<param name="base_frame" value="base_footprint"/>
+	
+	</node>
+	<node name="velocity_redirect" pkg="task_generator" type="trans.py">
+<param name="cmd_vel_topic" value="/base/twist_controller/command"/>
+	</node>
+	
+	<!-- configering the lasers	 -->
+	<rosparam command="load" ns="/script_server/base" file="$(find simulator_setup)/robot/cob4/base_configurations.yaml"/>
+	<rosparam ns="base_laser_front" command="load" file="$(find simulator_setup)/robot/cob4/robots/$(arg robot)/config/base_laser_front.yaml"/>
+	<rosparam ns="base_laser_right" command="load" file="$(find simulator_setup)/robot/cob4/robots/$(arg robot)/config/base_laser_right.yaml"/>
+	<rosparam ns="base_laser_left" command="load" file="$(find simulator_setup)/robot/cob4/robots/$(arg robot)/config/base_laser_left.yaml"/>
+
+	<rosparam ns="base_laser_front" command="load" file="$(find simulator_setup)/robot/cob4/robots/$(arg robot)/config/base_laser_front.yaml"/>
+	<node ns="base_laser_front" pkg="cob_sick_s300" type="cob_scan_filter" name="scan_filter" respawn="false" output="screen">
+		<remap from="scan_in" to="scan_raw"/>
+		<remap from="scan_out" to="scan"/>
+	</node>
+
+	<rosparam ns="base_laser_right" command="load" file="$(find simulator_setup)/robot/cob4/robots/$(arg robot)/config/base_laser_right.yaml"/>
+	<node ns="base_laser_right" pkg="cob_sick_s300" type="cob_scan_filter" name="scan_filter" respawn="false" output="screen">
+		<remap from="scan_in" to="scan_raw"/>
+		<remap from="scan_out" to="scan"/>
+	</node>
+
+	<rosparam ns="base_laser_left" command="load" file="$(find simulator_setup)/robot/cob4/robots/$(arg robot)/config/base_laser_left.yaml"/>
+	<node ns="base_laser_left" pkg="cob_sick_s300" type="cob_scan_filter" name="scan_filter" respawn="false" output="screen">
+		<remap from="scan_in" to="scan_raw"/>
+		<remap from="scan_out" to="scan"/>
+	</node>
+
+	<include file="$(find simulator_setup)/robot/cob4/scan_unifier.launch">
+		<arg name="robot" value="$(arg robot)"/>
+		<arg name="input_scans" value="['base_laser_front/scan','base_laser_left/scan','base_laser_right/scan']"/>
+		<arg name="output_scan" value="scan"/>
+	</include>
+
+
+	<!-- For frame [base_link]: No transform to fixed frame [map].  TF error: [Could not find a connection between 'map' and 'base_link' because they are not part of the same tree.Tf has two or more unconnected trees -->
+	<!-- <node pkg="tf2_ros" type="static_transform_publisher" name="map_totewstlisher" args="0 0 0 0 0 0 base_link map"/> -->
+
+	<group ns="base">
+		<rosparam command="load" file="$(find simulator_setup)/robot/cob4/robots/cob4/config/cob4_base_controller.yaml"/>
+		<node pkg="controller_manager" type="controller_manager" name="base_controller_spawner" args="spawn joint_state_controller twist_controller odometry_controller" respawn="false" output="screen"/>
+	</group>
+
+
+	<node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" output="screen">
+		<remap from="robot_description" to="/robot_description"/>
+		<remap from="joint_states" to="/joint_states"/>
+		<rosparam command="load" file="$(find simulator_setup)/robot/cob4/robots/$(arg robot)/config/joint_state_publisher.yaml"/>
+	</node>
+
+	<!-- TODO: MAYBE SOLVE WITH https://answers.ros.org/question/104111/how-to-publish-transform-from-odom-to-base_link/ -->
+	<!-- <arg name="global_frame_id" value="base_link"/>
+	<arg name="odom_frame_id" value="map"/>
+	<node pkg="tf2_ros" type="static_transform_publisher" name="test_to_odom_tfpublisher" args="0 0 0 0 0 0 $(arg global_frame_id) $(arg odom_frame_id)">
+	</node> -->
+	<!-- 
+NOTE: The robot has several functionalities which could enhance our repo, but are for performance resons not implemented:
+(all these can be startet, here: https://github.com/ipa320/cob_robots/blob/kinetic_dev/cob_bringup/robots/cob4-4.xml    )
+- stuck_detector : https://github.com/ipa320/cob_robots/blob/kinetic_dev/cob_bringup/components/ros_control_base.launch
+- fake_driver: https://github.com/ipa320/cob_command_tools/blob/8fe6c368d573c26cf62a59afc859a73edee8844b/cob_helper_tools/scripts/fake_driver.py
+- velocity smoother : https://github.com/ipa320/cob_control/tree/c652fcc2ce3f885216631697916735e53b1285af/cob_base_velocity_smoother
+& see here for explenation: https://github.com/ipa320/cob_control/blob/c652fcc2ce3f885216631697916735e53b1285af/cob_base_velocity_smoother/src/cob_base_velocity_smoother.cpp#L21
+- diagnostic_aggregator: https://github.com/ipa320/cob_robots/blob/kinetic_dev/cob_bringup/tools/diagnostics_aggregator.launch
+& http://wiki.ros.org/diagnostic_aggregator
+(with: https://github.com/ipa320/cob_command_tools/blob/8fe6c368d573c26cf62a59afc859a73edee8844b/cob_dashboard/scripts/cob_dashboard_aggregator.py)
+- fake diagnostic: https://github.com/ipa320/cob_command_tools/blob/8fe6c368d573c26cf62a59afc859a73edee8844b/cob_helper_tools/scripts/fake_diagnostics.py
+- base_collision_observer, from : https://github.com/ipa320/cob_robots/blob/kinetic_dev/cob_bringup/robots/cob4-11.xml
+- emergency_stop_monitor, from : https://github.com/ipa320/cob_robots/blob/kinetic_dev/cob_bringup/robots/cob4-11.xml
+
+-->
+</launch>

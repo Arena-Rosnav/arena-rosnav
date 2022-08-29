@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <!-- launch joint state controller -->
+  <include file="$(find youbot_gazebo_control)/launch/joint_state_controller.launch" />
+
+  <!-- launch base controller -->
+  <include file="$(find youbot_gazebo_control)/launch/base_controller.launch" />
+
+  <!-- launch arm controller -->
+  <!-- <include file="$(find youbot_gazebo_control)/launch/arm_controller.launch" /> -->
+  
+  <!-- launch gripper controller -->
+  <!-- <include file="$(find youbot_gazebo_control)/launch/gripper_controller.launch" /> -->
+
+  <node name="odom_pub" pkg="task_generator" type="odom.py">
+		<param name="base_frame" value="base_footprint"/>
+	</node>
+</launch>
