@@ -27,7 +27,7 @@
 - git:
     local-name: ../utils/arena2d
     uri: https://github.com/zenghjian/arena2D.git
-    version: integration
+    version: integrate
     
 ### ARENA INFRASTRUCTURE
 

@@ -1,5 +1,26 @@
 ## Simple Installation
 
+Follow [this](https://arena-rosnav-wiki.readthedocs.io/en/latest/user_guides/installation/) until step.7
+
+Install Conda and Poetry 
+```
+// conda
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh 
+bash Miniconda3-latest-Linux-x86_64.sh
+source ~/.bashrc
+conda config --set auto_activate_base false
+conda create -n rosnav python=3.8
+
+// poetry
+curl -sSL https://install.python-poetry.org | python3 -
+echo 'export PATH="$HOME/.local/bin:$PATH"'>> ~/.bashrc
+source ~/.bashrc
+poetry config virtualenvs.create false
+
+//activate conda 
+conda activate rosnav
+```
+
 Clone repo in any catkin ws or create new catkin ws
 
 ```
@@ -62,18 +83,25 @@ roslaunch arena_bringup start_arena_flatland.launch
 
 Open Terminal 2 (Run Script)
 ```
-poetry shell # Firstly load python virtual environment
 cd ~/catkin_ws
-source devel/setup.bash # To load other dependencies
-cd <script directory>
-python ...
+source devel/setup.bash 
+cd src/arena-rosnav/
+conda activate rosnav
+poetry shell
+cd ../utils/arena2d/rl-ros-agents/
+python scripts/training/train_ppo.py
 ```
 
 #### TODO
 
 Everything
-## Tipps for Training with Arena2d
 
-To run training script for arena2d you need use conda to activate arena2d environment
-
-Please make sure run `conda config --set auto_activate_base false` let base environment don't automatically activated, because it's may erase conflict with poetry
+## Tipps for GPU 30X: m_86 is not compatible with the current PyTorch
+```
+conda rosnav
+poetry shell
+pip uninstall torch
+pip list | grep torch
+conda list | grep torch
+pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+```
