@@ -1,20 +1,18 @@
 #! /usr/bin/env python3
-import time
 import math
-import gym
-from stable_baselines3.common.env_checker import check_env
+import time
 
+import gym
 import numpy as np
 import rospy
-import time
-from geometry_msgs.msg import Twist
 from flatland_msgs.msg import StepWorld
-
+from geometry_msgs.msg import Twist
+from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
+from stable_baselines3.common.env_checker import check_env
 from task_generator.tasks.utils import get_predefined_task
 
-from ..utils.reward import RewardCalculator
 from ..utils.observation_collector import ObservationCollector
-from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
+from ..utils.reward import RewardCalculator
 
 
 class FlatlandEnv(gym.Env):
@@ -28,11 +26,10 @@ class FlatlandEnv(gym.Env):
         safe_dist: float = None,
         goal_radius: float = 0.1,
         max_steps_per_episode=100,
-        train_mode: bool = True,
-        debug: bool = False,
         task_mode: str = "staged",
         PATHS: dict = dict(),
         extended_eval: bool = False,
+        custom_rew_dict: dict = None,
         *args,
         **kwargs,
     ):
@@ -57,16 +54,19 @@ class FlatlandEnv(gym.Env):
             # given every environment enough time to initialize, if we dont put sleep,
             # the training script may crash.
             import re
-            ns_int = int(re.search(r'\d+', ns)[0])
+
+            ns_int = int(re.search(r"\d+", ns)[0])
             time.sleep(ns_int * 2)
         except Exception:
-            rospy.logwarn(f"Can't not determinate the number of the environment, training script may crash!")
-
+            rospy.logwarn(
+                "Can't not determinate the number of the environment, training script may crash!"
+            )
 
         # process specific namespace in ros system
-        self.ns_prefix = "" if (ns == "" or ns is None) else "/" + ns + "/"
-        
-        rospy.init_node("env_" + self.ns_prefix.replace("/", ""), anonymous=True)
+        self.ns_prefix = "" if not ns or ns is None else f"/{ns}/"
+
+        if not rospy.get_param("debug_mode", False):
+            rospy.init_node("env_" + self.ns_prefix.replace("/", ""), anonymous=True)
 
         self._extended_eval = extended_eval
         self._is_train_mode = rospy.get_param("/train_mode")
@@ -95,22 +95,35 @@ class FlatlandEnv(gym.Env):
             goal_radius=goal_radius,
             rule=reward_fnc,
             extended_eval=self._extended_eval,
+            custom_rew_dict=custom_rew_dict,
         )
 
         # action agent publisher
         if self._is_train_mode:
-            self.agent_action_pub = rospy.Publisher(f"{self.ns_prefix}cmd_vel", Twist, queue_size=1)
+            self.agent_action_pub = rospy.Publisher(
+                f"{self.ns_prefix}cmd_vel", Twist, queue_size=1
+            )
         else:
-            self.agent_action_pub = rospy.Publisher(f"{self.ns_prefix}cmd_vel_pub", Twist, queue_size=1)
+            self.agent_action_pub = rospy.Publisher(
+                f"{self.ns_prefix}cmd_vel_pub", Twist, queue_size=1
+            )
 
         # service clients
         if self._is_train_mode:
             self._service_name_step = f"{self.ns_prefix}step_world"
             # self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
-            self._step_world_publisher = rospy.Publisher(self._service_name_step, StepWorld, queue_size=10)
+            self._step_world_publisher = rospy.Publisher(
+                self._service_name_step, StepWorld, queue_size=10
+            )
 
         # instantiate task manager
-        self.task = get_predefined_task(ns, mode=task_mode, environment=None, start_stage=kwargs["curr_stage"], paths=PATHS)
+        self.task = get_predefined_task(
+            ns,
+            mode=task_mode,
+            environment=None,
+            start_stage=kwargs["curr_stage"],
+            paths=PATHS,
+        )
 
         self._steps_curr_episode = 0
         self._episode = 0
@@ -139,7 +152,7 @@ class FlatlandEnv(gym.Env):
         action_msg.linear.x = action[0]
         action_msg.linear.y = action[1]
         action_msg.angular.z = action[2]
-        
+
         self.agent_action_pub.publish(action_msg)
 
     def step(self, action: np.ndarray):
@@ -148,8 +161,10 @@ class FlatlandEnv(gym.Env):
                         1   -   collision with obstacle
                         2   -   goal reached
         """
-        obs_dict = self.observation_collector.get_observations(last_action=self._last_action)
-        
+        obs_dict = self.observation_collector.get_observations(
+            last_action=self._last_action
+        )
+
         decoded_action = self.model_space_encoder.decode_action(action)
         self._last_action = decoded_action
 
@@ -161,8 +176,8 @@ class FlatlandEnv(gym.Env):
 
         # calculate reward
         reward, reward_info = self.reward_calculator.get_reward(
-            obs_dict["laser_scan"],
-            obs_dict["goal_in_robot_frame"],
+            laser_scan=obs_dict["laser_scan"],
+            goal_in_robot_frame=obs_dict["goal_in_robot_frame"],
             action=decoded_action,
             global_plan=obs_dict["global_plan"],
             robot_pose=obs_dict["robot_pose"],
@@ -204,7 +219,7 @@ class FlatlandEnv(gym.Env):
             self._done_hist[int(info["done_reason"])] += 1
 
         return self.model_space_encoder.encode_observation(obs_dict), reward, done, info
-    
+
     def call_service_takeSimStep(self, t=None):
         request = StepWorld()
         request.required_time = 0 if t == None else t
@@ -229,7 +244,9 @@ class FlatlandEnv(gym.Env):
             self._collisions = 0
 
         obs_dict = self.observation_collector.get_observations()
-        return self.model_space_encoder.encode_observation(obs_dict)  # reward, done, info can't be included
+        return self.model_space_encoder.encode_observation(
+            obs_dict
+        )  # reward, done, info can't be included
 
     def close(self):
         pass
@@ -245,7 +262,9 @@ class FlatlandEnv(gym.Env):
         """
         # distance travelled
         if self._last_robot_pose is not None:
-            self._distance_travelled += FlatlandEnv.get_distance(self._last_robot_pose, obs_dict["robot_pose"])
+            self._distance_travelled += FlatlandEnv.get_distance(
+                self._last_robot_pose, obs_dict["robot_pose"]
+            )
 
         # collision detector
         if "crash" in reward_info:
