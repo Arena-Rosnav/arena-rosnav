@@ -1,6 +1,8 @@
 #!/usr/bin/env python
-import sys, rospy, time
+import sys
+import time
 
+import rospy
 from rosnav.model.agent_factory import AgentFactory
 from tools.argsparser import parse_training_args
 from tools.custom_mlp_utils import *
@@ -23,7 +25,7 @@ def main(args):
     print("________ STARTING TRAINING WITH:  %s ________\n" % AGENT_NAME)
 
     # for training with start_arena_flatland.launch
-    ns_for_nodes = "/single_env" not in rospy.get_param_names()
+    ns_for_nodes = not rospy.get_param("single_env", True)
 
     # check if simulations are booted
     wait_for_nodes(with_ns=ns_for_nodes, n_envs=config["n_envs"], timeout=5)
@@ -37,6 +39,7 @@ def main(args):
         debug_mode=config["debug_mode"],
     )
 
+    rospy.set_param("task_mode", params["task_mode"])
     rospy.set_param("is_action_space_discrete", params["discrete_action_space"])
 
     train_env, eval_env = init_envs(config, params, PATHS, ns_for_nodes)

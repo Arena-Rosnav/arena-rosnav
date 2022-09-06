@@ -1,19 +1,18 @@
 #! /usr/bin/env python3
-import time
 import math
-import gym
-from stable_baselines3.common.env_checker import check_env
+import time
 
+import gym
 import numpy as np
 import rospy
+from flatland_msgs.msg import StepWorld
 from geometry_msgs.msg import Twist
-from flatland_msgs.srv import StepWorld
-
-from task_generator.tasks.utils import get_predefined_task_outside
-
-from ..utils.reward import RewardCalculator
-from ..utils.observation_collector import ObservationCollector
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
+from stable_baselines3.common.env_checker import check_env
+from task_generator.tasks.utils import get_predefined_task
+
+from ..utils.observation_collector import ObservationCollector
+from ..utils.reward import RewardCalculator
 
 
 class FlatlandEnv(gym.Env):
@@ -62,10 +61,9 @@ class FlatlandEnv(gym.Env):
                 f"Can't not determinate the number of the environment, training script may crash!"
             )
 
-
         # process specific namespace in ros system
         self.ns_prefix = "" if (ns == "" or ns is None) else "/" + ns + "/"
-        
+
         rospy.init_node("env_" + self.ns_prefix.replace("/", ""), anonymous=True)
 
         self._extended_eval = extended_eval
@@ -110,13 +108,18 @@ class FlatlandEnv(gym.Env):
         # service clients
         if self._is_train_mode:
             self._service_name_step = f"{self.ns_prefix}step_world"
-            self._sim_step_client = rospy.ServiceProxy(
-                self._service_name_step, StepWorld
+            # self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
+            self._step_world_publisher = rospy.Publisher(
+                self._service_name_step, StepWorld, queue_size=10
             )
 
         # instantiate task manager
-        self.task = get_predefined_task_outside(
-            ns, mode=task_mode, start_stage=kwargs["curr_stage"], paths=PATHS
+        self.task = get_predefined_task(
+            ns,
+            mode=task_mode,
+            environment=None,
+            start_stage=kwargs["curr_stage"],
+            paths=PATHS,
         )
 
         self._steps_curr_episode = 0
@@ -162,8 +165,10 @@ class FlatlandEnv(gym.Env):
         decoded_action = self.model_space_encoder.decode_action(action)
         self._last_action = decoded_action
 
+        if self._is_train_mode:
+            self.call_service_takeSimStep()
+
         self._pub_action(decoded_action)
-        # print(f"Linear: {action[0]}, Angular: {action[1]}")
         self._steps_curr_episode += 1
 
         # calculate reward
@@ -174,7 +179,6 @@ class FlatlandEnv(gym.Env):
             global_plan=obs_dict["global_plan"],
             robot_pose=obs_dict["robot_pose"],
         )
-        # print(f"cum_reward: {reward}")
         done = reward_info["is_done"]
 
         # extended eval info
@@ -213,13 +217,17 @@ class FlatlandEnv(gym.Env):
 
         return self.model_space_encoder.encode_observation(obs_dict), reward, done, info
 
+    def call_service_takeSimStep(self, t=None):
+        request = StepWorld()
+        request.required_time = 0 if t == None else t
+
+        self._step_world_publisher.publish(request)
+
     def reset(self):
         # set task
         # regenerate start position end goal position of the robot and change the obstacles accordingly
         self._episode += 1
         self.agent_action_pub.publish(Twist())
-        if self._is_train_mode:
-            self._sim_step_client()
         self.task.reset()
         self.reward_calculator.reset()
         self._steps_curr_episode = 0
@@ -277,7 +285,6 @@ class FlatlandEnv(gym.Env):
 
 
 if __name__ == "__main__":
-
     rospy.init_node("flatland_gym_env", anonymous=True, disable_signals=False)
     print("start")
 

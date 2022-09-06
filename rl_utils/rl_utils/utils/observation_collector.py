@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-import threading
+from threading import Thread
 from typing import Tuple
 
 from numpy.core.numeric import normalize_axis_tuple
@@ -9,7 +9,6 @@ import numpy as np
 from collections import deque
 
 import time  # for debuging
-import threading
 
 # observation msgs
 from sensor_msgs.msg import LaserScan
@@ -20,7 +19,7 @@ from rosgraph_msgs.msg import Clock
 from nav_msgs.msg import Odometry
 
 # services
-from flatland_msgs.srv import StepWorld, StepWorldRequest
+from flatland_msgs.msg import StepWorld
 
 # message filter
 import message_filters
@@ -123,23 +122,7 @@ class ObservationCollector:
             f"{self.ns_prefix}globalPlan", Path, self.callback_global_plan
         )
 
-        # service clients
-        if self._is_train_mode:
-            self._service_name_step = f"{self.ns_prefix}step_world"
-            self._sim_step_client = rospy.ServiceProxy(
-                self._service_name_step, StepWorld
-            )
-
     def get_observations(self, *args, **kwargs):
-        # apply action time horizon
-        if self._is_train_mode:
-            self.call_service_takeSimStep(self._action_frequency)
-        else:
-            try:
-                rospy.wait_for_message(f"{self.ns_prefix}next_cycle", Bool)
-            except Exception:
-                pass
-
         if not self._ext_time_sync:
             # try to retrieve sync'ed obs
             laser_scan, robot_pose = self.get_sync_obs()
@@ -169,6 +152,7 @@ class ObservationCollector:
 
         self._laser_deque.clear()
         self._rs_deque.clear()
+
         return obs_dict
 
     @staticmethod
@@ -213,26 +197,6 @@ class ObservationCollector:
 
         # print(f"Laser_stamp: {laser_stamp}, Robot_stamp: {robot_stamp}")
         return laser_scan, robot_pose
-
-    def call_service_takeSimStep(self, t=None):
-        request = StepWorldRequest() if t is None else StepWorldRequest(t)
-        timeout = 12
-        try:
-            for i in range(timeout):
-                response = self._sim_step_client(request)
-                rospy.logdebug("step service=", response)
-                # print('took step')
-                if response.success:
-                    break
-                if i == timeout - 1:
-                    raise TimeoutError(
-                        f"Timeout while trying to call '{self.ns_prefix}step_world'"
-                    )
-                # print("took step")
-                time.sleep(0.33)
-
-        except rospy.ServiceException as e:
-            rospy.logdebug("step Service call failed: %s" % e)
 
     def callback_odom_scan(self, scan, odom):
         self._scan = self.process_scan_msg(scan)
