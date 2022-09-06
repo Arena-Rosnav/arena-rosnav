@@ -14,18 +14,18 @@
   <arg name="auto_reset" default="true"/>
 
   <arg name="scenario_file" default="test_scenario.json" />
-  <arg name="map_file" default="ignc" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]"/>
+  <arg name="map_file" default="map_empty" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]"/>
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_file)/map.yaml" />
 
   <arg name="simulator" default="arena2d" doc="[flatland, arena2d]" />
-  <arg name="num_envs" default="4" />
+  <arg name="num_envs" default="1" />
   <!-- ___________ PARAMS ___________ -->
   <group if="$(eval arg('simulator') == 'flatland')">
     <param name="use_sim_time" value="true"/>
   </group>
   
   <param name="model" value="$(arg model)" />
-
+  <param name="simulator" value="$(arg simulator)" />
   <param name="task_mode" value="$(arg task_mode)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
