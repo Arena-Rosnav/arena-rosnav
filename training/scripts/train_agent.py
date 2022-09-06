@@ -42,7 +42,13 @@ def main(args):
     rospy.set_param("task_mode", params["task_mode"])
     rospy.set_param("is_action_space_discrete", params["discrete_action_space"])
 
-    train_env, eval_env = init_envs(config, params, PATHS, ns_for_nodes)
+    train_env, eval_env = init_envs(
+        config,
+        params,
+        PATHS,
+        ns_for_nodes,
+        load_rew_fnc(config["reward_function_file"]),
+    )
     eval_cb = init_callbacks(config, params, train_env, eval_env, PATHS)
     model = get_ppo_instance(config, params, train_env, PATHS, AGENT_NAME, AgentFactory)
 

@@ -1,17 +1,18 @@
-from platform import architecture
-from typing import Union, Tuple, Type
-from datetime import datetime as dt
-
 import argparse
-import gym
 import json
-import os, rospy
-from rosnav.model.base_agent import BaseAgent
-import rosnode
-import rospkg
+import os
 import time
 import warnings
+from datetime import datetime as dt
+from platform import architecture
+from typing import Tuple, Type, Union
 
+import gym
+import rosnode
+import rospkg
+import rospy
+from rl_utils.rl_utils.envs.flatland_gym_env import FlatlandEnv
+from rosnav.model.base_agent import BaseAgent
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import (
     EvalCallback,
@@ -20,12 +21,6 @@ from stable_baselines3.common.callbacks import (
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.utils import set_random_seed
-
-
-from rl_utils.rl_utils.envs.flatland_gym_env import (
-    FlatlandEnv,
-)
-
 
 """ 
 Dict containing agent specific hyperparameter keys (for documentation and typing validation purposes)
@@ -390,6 +385,7 @@ def make_envs(
     seed: int = 0,
     PATHS: dict = None,
     train: bool = True,
+    custom_rew_dict: dict = None,
 ):
     """
     Utility function for multiprocessed env
@@ -419,6 +415,7 @@ def make_envs(
                 task_mode=params["task_mode"],
                 curr_stage=params["curr_stage"],
                 PATHS=PATHS,
+                custom_rew_dict=custom_rew_dict,
             )
         else:
             # eval env
@@ -432,6 +429,7 @@ def make_envs(
                     task_mode=params["task_mode"],
                     curr_stage=params["curr_stage"],
                     PATHS=PATHS,
+                    custom_rew_dict=custom_rew_dict,
                 ),
                 PATHS.get("eval"),
                 info_keywords=("done_reason", "is_success"),
@@ -527,8 +525,23 @@ def load_config(config_name: str) -> dict:
     return config
 
 
+def load_rew_fnc(config_name: str) -> dict:
+    if config_name:
+        config_location = os.path.join(
+            rospkg.RosPack().get_path("training"),
+            "configs",
+            "reward_functions",
+            config_name,
+        )
+        with open(config_location, "r", encoding="utf-8") as target:
+            config = yaml.load(target, Loader=yaml.FullLoader)
+    else:
+        config = None
+    return config
+
+
 def init_envs(
-    config: dict, params: dict, paths: dict, ns_for_nodes: bool
+    config: dict, params: dict, paths: dict, ns_for_nodes: bool, custom_rew_dict: dict
 ) -> Tuple[VecEnv, VecEnv]:
     import stable_baselines3.common.vec_env as sb3_env
 
@@ -537,7 +550,13 @@ def init_envs(
     if not config["debug_mode"] and ns_for_nodes:
         train_env = sb3_env.SubprocVecEnv(
             [
-                make_envs(ns_for_nodes, i, params=params, PATHS=paths)
+                make_envs(
+                    ns_for_nodes,
+                    i,
+                    params=params,
+                    PATHS=paths,
+                    custom_rew_dict=custom_rew_dict,
+                )
                 for i in range(config["n_envs"])
             ],
             start_method="fork",
@@ -545,7 +564,13 @@ def init_envs(
     else:
         train_env = sb3_env.DummyVecEnv(
             [
-                make_envs(ns_for_nodes, i, params=params, PATHS=paths)
+                make_envs(
+                    ns_for_nodes,
+                    i,
+                    params=params,
+                    PATHS=paths,
+                    custom_rew_dict=custom_rew_dict,
+                )
                 for i in range(config["n_envs"])
             ]
         )
@@ -561,6 +586,7 @@ def init_envs(
                     params=params,
                     PATHS=paths,
                     train=False,
+                    custom_rew_dict=custom_rew_dict,
                 )
             ]
         )
