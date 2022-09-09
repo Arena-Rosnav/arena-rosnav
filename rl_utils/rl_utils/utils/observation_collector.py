@@ -123,13 +123,13 @@ class ObservationCollector:
         )
 
     def get_observations(self, *args, **kwargs):
-        if not self._ext_time_sync:
-            # try to retrieve sync'ed obs
-            laser_scan, robot_pose = self.get_sync_obs()
-            if laser_scan is not None and robot_pose is not None:
-                # print("Synced successfully")
-                self._scan = laser_scan
-                self._robot_pose = robot_pose
+        # if not self._ext_time_sync:
+        #     # try to retrieve sync'ed obs
+        #     laser_scan, robot_pose = self.get_sync_obs()
+        #     if laser_scan is not None and robot_pose is not None:
+        #         # print("Synced successfully")
+        #         self._scan = laser_scan
+        #         self._robot_pose = robot_pose
             # else:
             #     print("Not synced")
 
@@ -217,15 +217,19 @@ class ObservationCollector:
         return
 
     def callback_scan(self, msg_laserscan):
-        if len(self._laser_deque) == self.max_deque_size:
-            self._laser_deque.popleft()
+        # if len(self._laser_deque) == self.max_deque_size:
+        #     self._laser_deque.popleft()
 
-        self._laser_deque.append(msg_laserscan)
+        # self._laser_deque.append(msg_laserscan)
+
+        self._scan = self.process_scan_msg(msg_laserscan)
 
     def callback_robot_state(self, msg_robotstate):
-        if len(self._rs_deque) == self.max_deque_size:
-            self._rs_deque.popleft()
-        self._rs_deque.append(msg_robotstate)
+        # if len(self._rs_deque) == self.max_deque_size:
+        #     self._rs_deque.popleft()
+        # self._rs_deque.append(msg_robotstate)
+
+        self._robot_pose, self._robot_vel = self.process_robot_state_msg(msg_robotstate)
 
     def callback_observation_received(
         self, msg_LaserScan, msg_RobotStateStamped
@@ -292,7 +296,7 @@ if __name__ == "__main__":
     rospy.init_node("states", anonymous=True)
     print("start")
 
-    state_collector = ObservationCollector("sim1/", 360, 10)
+    state_collector = ObservationCollector("sim_1/", 360, 10)
     i = 0
     r = rospy.Rate(100)
     while i <= 1000:

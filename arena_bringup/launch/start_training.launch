@@ -36,12 +36,10 @@
   <param name="show_viz" value="$(arg show_viz)"/>
   <param name="_dedicated_train_launch" value="true" />
 
-
   <!-- map server-->
-  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)">
-    <!-- In multi-env training /clock not available, since we only want one map_server, it's clock topic is remapped to /clock -->
-    <remap from="/clock" to="/$(arg ns_prefix)1/clock" />
-  </node>
+  <include file="$(find arena_bringup)/launch/utils/map_server.launch">
+    <arg name="map_path" value="$(arg map_path)" />
+  </include>
 
   <group if="$(eval arg('train_mode') == false)">
     <!-- makes sure that action's will be published according to sim time in eval mode-->

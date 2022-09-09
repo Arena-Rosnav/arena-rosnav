@@ -1,0 +1,10 @@
+digraph G {
+"map" -> "burger_0_0_odom"[label=" Broadcaster: /burger_0_0/transform_broadcaster\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"map" -> "odom"[label=" Broadcaster: /map_to_odom_tfpublisher\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"burger_0_0_base_footprint" -> "burger_0_0_laser_link"[label=" Broadcaster: /flatland_server\nAverage rate: 10.204\nBuffer length: 4.9\nMost recent transform: 5906.7\nOldest transform: 5901.8\n"];
+"burger_0_0_odom" -> "burger_0_0_base_footprint"[label=" Broadcaster: /flatland_server\nAverage rate: 10.204\nBuffer length: 4.9\nMost recent transform: 5906.8\nOldest transform: 5901.9\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 5906.900059069"[ shape=plaintext ] ;
+}->"map";
+}

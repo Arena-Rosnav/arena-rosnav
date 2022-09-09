@@ -11,6 +11,9 @@
 
   <param name="agent_name" value="$(arg agent_name)" />
 
+  <!-- DRL action frequency -->
+  <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
+
   <!-- move_base -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/local_costmap_params.yaml" command="load" />

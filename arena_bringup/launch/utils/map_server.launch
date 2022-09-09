@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="map_path" />
+
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)">
+    <!-- In multi-env training /clock not available, since we only want one map_server, it's clock topic is remapped to /clock -->
+    <remap from="/clock" to="/clock_simulation" />
+  </node>
+
+  <node name="distance_server" pkg="map_distance_server" type="map_distance_node.py" output="screen" />
+
+  <node name="map_clock_simulator" pkg="map_clock_simulator" type="node.py" output="screen" />
+
+</launch>
