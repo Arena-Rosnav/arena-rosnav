@@ -1,26 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
     <arg name="model"/>
-
-    <!-- Robot specific parameter -->
-    <!-- <rosparam file="$(find arena_bringup)/launch/sublaunch_testing/robot_params/$(arg model)_params.yaml" /> -->
-
     <param name="robot_description" command="$(find xacro)/xacro $(find arena-simulation-setup)/robot/$(arg model)/urdf/$(arg model).urdf.xacro"/>
 
-
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+        <param name="publish_frequency" type="double" value="50.0" />
+    </node>
 
     <!-- Launching additional nodes needed for some robots -->
-    <include file="$(find arena_bringup)/launch/sublaunch_testing/robot_launch/cob4_robot.launch" if="$(eval arg('model') == 'cob4')"/>
-    <include file="$(find arena_bringup)/launch/sublaunch_testing/robot_launch/youbot_robot.launch" if="$(eval arg('model') == 'youbot')"/>
+    <include file="$(find arena-simulation-setup)/robot/cob4/launch/cob4_robot.launch" if="$(eval arg('model') == 'cob4')"/>
+    <include file="$(find arena-simulation-setup)/robot/youbot/launch/youbot_robot.launch" if="$(eval arg('model') == 'youbot')"/>
     <include file="$(find arena-simulation-setup)/robot/jackal/launch/control.launch" if="$(eval arg('model') == 'jackal')"/>
     <include file="$(find arena-simulation-setup)/robot/ridgeback/control/launch/control.launch" if="$(eval arg('model') == 'ridgeback')"/>
 
     <group if="$(eval arg('model') == 'agvota')">
         <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
-        <node name="emergency_brake" pkg="task_generator" type="emergency_brake_node.py"/>
+        <node name="emergency_brake" pkg="gazebo_utils" type="emergency_brake_node.py"/>
     </group>
 
-    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
-        <param name="publish_frequency" type="double" value="50.0" />
-    </node>
+
 </launch>
