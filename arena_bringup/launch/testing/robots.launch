@@ -5,6 +5,10 @@
     <!-- Robot specific parameter -->
     <!-- <rosparam file="$(find arena_bringup)/launch/sublaunch_testing/robot_params/$(arg model)_params.yaml" /> -->
 
+    <param name="robot_description" command="$(find xacro)/xacro $(find arena-simulation-setup)/robot/$(arg model)/urdf/$(arg model).urdf.xacro"/>
+
+
+
     <!-- Launching additional nodes needed for some robots -->
     <include file="$(find arena_bringup)/launch/sublaunch_testing/robot_launch/cob4_robot.launch" if="$(eval arg('model') == 'cob4')"/>
     <include file="$(find arena_bringup)/launch/sublaunch_testing/robot_launch/youbot_robot.launch" if="$(eval arg('model') == 'youbot')"/>
@@ -16,7 +20,7 @@
         <node name="emergency_brake" pkg="task_generator" type="emergency_brake_node.py"/>
     </group>
 
-    <!-- <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
         <param name="publish_frequency" type="double" value="50.0" />
-    </node> -->
+    </node>
 </launch>

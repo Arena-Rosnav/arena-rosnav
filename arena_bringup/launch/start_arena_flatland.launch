@@ -8,7 +8,7 @@
   <arg name="agent_name" default="$(arg model)"     doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')"/>
   <arg name="task_mode" default="random" doc="[random, manual, staged, scenario]" />
   <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
-  <arg name="show_rviz" default="false" doc="Enables rviz in gazebo" />
+  <arg name="show_rviz" default="true" doc="Enables rviz in gazebo" />
   <arg name="rviz_file" default="nav"/>
   
   <arg name="auto_reset" default="true"/>
