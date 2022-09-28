@@ -2,9 +2,9 @@
 <launch>
 
 
-  <arg name="world" default="small_warehouse" />
   <env name="GAZEBO_MODEL_PATH" value="$(find arena-simulation-setup)/worlds/$(arg world)/models" />
 
+  <arg name="world" default="turtlebot3_house" />
   <arg name="model" default="burger"/>
   <arg name="headless" default="false"/>
   <arg name="gui" default="true"/>
@@ -26,9 +26,7 @@
     <arg name="headless" value="$(arg headless)"/>  <!-- change here to run only the server (gzserver) (to true)-->
   </include>
 
-  <group if="$(eval arg('show_rviz') == 'true')">
-    <node name="gazebo_rviz" pkg="rviz" type="rviz" args="-d $(find arena_bringup)/rviz/$(arg rviz_file).rviz" />
-  </group>
+
   <node name="gazebo_rviz" pkg="rviz" type="rviz" args="-d $(find arena_bringup)/rviz/$(arg rviz_file).rviz" if="$(arg show_rviz)"/>
 
   <include file="$(find arena_bringup)/launch/testing/robots.launch">
