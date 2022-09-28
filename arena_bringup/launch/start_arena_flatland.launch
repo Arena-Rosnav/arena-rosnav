@@ -17,7 +17,7 @@
   <arg name="map_file" default="ignc" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]"/>
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_file)/map.yaml" />
 
-  <arg name="world_file" default="aws_house" />
+  <arg name="world_file" default="$(arg map_file)" />
 
   <!-- ____________ENVIRONMENT___________ -->
   <env name="ENVIRONMENT" value="gazebo" />
