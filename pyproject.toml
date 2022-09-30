@@ -13,6 +13,7 @@ filelock = "^3.7.1"
 scipy = "^1.8.1"
 PyQt5 = "^5.15.7"
 empy = "^3.3.4"
+defusedxml = "^0.7.1"
 
 [tool.poetry.dev-dependencies]
 
