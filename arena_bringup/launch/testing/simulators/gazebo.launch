@@ -2,7 +2,7 @@
 <launch>
 
 
-  <env name="GAZEBO_MODEL_PATH" value="$(find arena-simulation-setup)/worlds/$(arg world)/models" />
+  <!-- <env name="GAZEBO_MODEL_PATH" value="$(find arena-simulation-setup)/worlds/$(arg world)/models" /> -->
 
   <arg name="world" default="turtlebot3_house" />
   <arg name="model" default="burger"/>
@@ -14,6 +14,9 @@
 
   <arg name="visualization" default="" />
 
+  <node name="generate_world" pkg="gazebo_utils" type="generate_world.py">
+    <param name="world" value="$(arg world)"/>
+  </node>
 
   <!-- start World (Scenario) file in Gazebo -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">

@@ -4,6 +4,7 @@
   <!-- ___________ ARGS ___________ -->
   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]"/>
   <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]"/>
+  <arg name="simulator" default="flatland" doc="[flatland, gazebo]"/>
   
   <arg name="agent_name" default="$(arg model)"     doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')"/>
   <arg name="task_mode" default="random" doc="[random, manual, staged, scenario]" />
@@ -106,6 +107,7 @@
     <param name="simulation_factor" value="1" type="double"/>
     <param name="pedsim_update_rate" value="30.0" type="double"/>
     <param name="scene_file" value="$(find task-generator)/scenarios/empty.xml" type="string"/>
+    <param name="env_is_flatland" value="false" type="boolean" if="$(eval arg('simulator') == 'gazebo')"/>
   </node>
 
   <!-- launch map generator if training with random map-->
