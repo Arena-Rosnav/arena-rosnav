@@ -190,6 +190,9 @@ def main():
     n_timesteps = 40000000 if args.n is None else args.n
     # start training
     start = time.time()
+
+    rospy.on_shutdown(model.env.close)
+
     try:
         model.learn(
             total_timesteps=n_timesteps,

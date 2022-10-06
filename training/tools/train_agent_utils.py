@@ -352,7 +352,7 @@ def make_envs(
     """
 
     def _init() -> Union[gym.Env, gym.Wrapper]:
-        train_ns = f"sim{rank + 1}" if with_ns else ""
+        train_ns = f"sim_{rank + 1}" if with_ns else ""
         eval_ns = f"eval_sim" if with_ns else ""
 
         if train:
@@ -409,7 +409,7 @@ def wait_for_nodes(with_ns: bool, n_envs: int, timeout: int = 30, nodes_per_ns: 
 
     for i in range(n_envs):
         for k in range(timeout):
-            ns = "sim" + str(i + 1) if with_ns else ""
+            ns = "sim_" + str(i + 1) if with_ns else ""
             namespaces = rosnode.get_node_names(namespace=ns)
 
             if len(namespaces) >= nodes_per_ns:
