@@ -4,7 +4,7 @@
   <!-- ___________ ARGS ___________ -->
   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]"/>
   <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]"/>
-  <arg name="simulator" default="flatland" doc="[flatland, gazebo]"/>
+  <arg name="environment" default="flatland" doc="[flatland, gazebo]"/>
   
   <arg name="agent_name" default="$(arg model)"     doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')"/>
   <arg name="task_mode" default="random" doc="[random, manual, staged, scenario]" />
@@ -15,19 +15,16 @@
   <arg name="auto_reset" default="true"/>
 
   <arg name="scenario_file" default="test_scenario.json" />
-  <arg name="map_file" default="ignc" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]"/>
+  <arg name="map_file" default="map0" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]"/>
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_file)/map.yaml" />
 
   <arg name="world_file" default="$(arg map_file)" />
-
-  <!-- ____________ENVIRONMENT___________ -->
-  <env name="ENVIRONMENT" value="gazebo" />
 
   <!-- ___________ PARAMS ___________ -->
   <param name="use_sim_time" value="true"/>
 
   <param name="model" value="$(arg model)" />
-
+  <param name="environment" value="$(arg environment)" />
   <param name="task_mode" value="$(arg task_mode)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
@@ -60,19 +57,18 @@
   <param name="scenario_file"  value="$(arg scenario_file)"/>
 
   <!-- use simulator-->
-  <!-- <include file="$(find arena_bringup)/launch/testing/flatland_simulator.launch">
+
+  <!-- Flatland -->
+  <include file="$(find arena_bringup)/launch/testing//simulators/flatland.launch" if="$(eval arg('environment') == 'flatland')">
     <arg name="visualization" default="$(arg visualization)" />
     <arg name="rviz_file" value="$(arg rviz_file)" />
     <arg name="model" value="$(arg model)" />
-  </include> -->
-  <include file="$(find arena_bringup)/launch/testing/simulators/gazebo.launch">
+  </include>
+
+  <!-- Gazebo -->
+  <include file="$(find arena_bringup)/launch/testing/simulators/gazebo.launch" if="$(eval arg('environment') == 'gazebo')">
     <arg name="model" value="$(arg model)" />
     <arg name="rviz_file" value="$(arg rviz_file)" />
-
-    <!-- FOR FLATLAND -->
-    <arg name="visualization" default="$(arg visualization)" />
-
-    <!-- FOR GAZEBO -->
     <arg name="show_rviz" default="$(arg show_rviz)" />
     <arg name="headless" default="false"/>
     <arg name="gui" default="true"/>
@@ -106,9 +102,10 @@
   <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
     <param name="simulation_factor" value="1" type="double"/>
     <param name="pedsim_update_rate" value="30.0" type="double"/>
-    <param name="scene_file" value="$(find task-generator)/scenarios/empty.xml" type="string"/>
-    <param name="env_is_flatland" value="false" type="boolean" if="$(eval arg('simulator') == 'gazebo')"/>
-  </node>
+    <param name="scene_file" value="$(find arena-simulation-setup)/world/$(arg world_file)/scenarios/$(arg world_file).xml" type="string"/>
+    </node>
+
+  <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/>
 
   <!-- launch map generator if training with random map-->
   <group if="$(eval arg('map_file') == 'random_map')">
