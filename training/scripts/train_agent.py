@@ -120,7 +120,7 @@ def main():
         model = PPO(
             "MlpPolicy",
             env,
-            policy_kwargs=dict(net_arch=args.net_arch, activation_fn=get_act_fn(args.act_fn)),
+            # policy_kwargs=dict(net_arch=args.net_arch, activation_fn=get_act_fn(args.act_fn)),
             gamma=params["gamma"],
             n_steps=params["n_steps"],
             ent_coef=params["ent_coef"],

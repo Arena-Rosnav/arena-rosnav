@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+
+
+  <arg name="simulator" default="arena2d" doc="[flatland, arena2d]" />
   <arg name="model" default="burger"      doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real]"/>
 
   <!-- Here are the argument that may be frequently changed -->
   <arg name="ns_prefix" default="sim" />
-  <arg name="num_envs" default="1" />
+  <arg name="num_envs" default="4" />
 
   <param name="single_env" value="false" />
 
@@ -28,7 +31,9 @@
   <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
 
   <!--  PARAMS DON'T CHANGE THEM  -->
-  <param name="use_sim_time" value="true" />
+  <group if="$(eval arg('simulator') == 'flatland')">
+    <param name="use_sim_time" value="true"/>
+  </group>
   <param name="train_mode" value="$(arg train_mode)" />
   <param name="num_envs" value="$(arg num_envs)" />
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_folder_name)/map.yaml" />
@@ -50,13 +55,22 @@
 
   <!-- set the log format -->
   <env name="ROSCONSOLE_FORMAT" value="[${severity} ${time} ${logger}]: ${message}" />
+
+  <group if="$(eval arg('simulator') == 'flatland')">
   <include file="$(find arena_bringup)/launch/training/single_env_training.launch">
     <arg name="ns" value="eval_sim" />
-  </include>
-
+  </include>  
   <include file="$(find arena_bringup)/launch/training/start_envs.launch">
     <arg name="num_envs" value="$(arg num_envs)" />
     <arg name="ns_prefix" value="$(arg ns_prefix)" />
   </include> 
+  </group>
 
+    <group if="$(eval arg('simulator') == 'arena2d')">
+    <include file="$(find arena_bringup)/launch/training/arena2d_simulator.launch">
+      <arg name="robot_model" value="$(arg model)" />
+      <arg name="num_envs" value="$(arg num_envs)" />
+      <arg name="staged_mode" value="true" />
+    </include>
+  </group>
 </launch>

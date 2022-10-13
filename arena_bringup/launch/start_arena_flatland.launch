@@ -14,14 +14,18 @@
   <arg name="auto_reset" default="true"/>
 
   <arg name="scenario_file" default="test_scenario.json" />
-  <arg name="map_file" default="ignc" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]"/>
+  <arg name="map_file" default="map_empty" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]"/>
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_file)/map.yaml" />
 
+  <arg name="simulator" default="arena2d" doc="[flatland, arena2d]" />
+  <arg name="num_envs" default="1" />
   <!-- ___________ PARAMS ___________ -->
-  <param name="use_sim_time" value="true"/>
-
+  <group if="$(eval arg('simulator') == 'flatland')">
+    <param name="use_sim_time" value="true"/>
+  </group>
+  
   <param name="model" value="$(arg model)" />
-
+  <param name="simulator" value="$(arg simulator)" />
   <param name="task_mode" value="$(arg task_mode)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
@@ -55,11 +59,21 @@
   <param name="scenario_file"  value="$(arg scenario_file)"/>
 
   <!-- use simulator-->
-  <include file="$(find arena_bringup)/launch/testing/flatland_simulator.launch">
-    <arg name="visualization" default="$(arg visualization)" />
-    <arg name="rviz_file" value="$(arg rviz_file)" />
-    <arg name="model" value="$(arg model)" />
-  </include>
+
+  <group if="$(eval arg('simulator') == 'flatland')">
+    <include file="$(find arena_bringup)/launch/testing/flatland_simulator.launch">
+      <arg name="visualization" default="$(arg visualization)" />
+      <arg name="rviz_file" value="$(arg rviz_file)" />
+      <arg name="model" value="$(arg model)" />
+    </include>
+  </group>
+
+  <group if="$(eval arg('simulator') == 'arena2d')">
+    <include file="$(find arena_bringup)/launch/training/arena2d_simulator.launch">
+      <arg name="robot_model" value="$(arg model)" />
+      <arg name="num_envs" value="$(arg num_envs)" />
+    </include>
+  </group>
 
   <!-- map server-->
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)">
@@ -77,20 +91,21 @@
     <arg name="auto_reset" value="$(arg auto_reset)"/>
   </include>
 
-  <include file="$(find arena_bringup)/launch/testing/sensor_sim.launch" />
+  <!-- <include file="$(find arena_bringup)/launch/testing/sensor_sim.launch" /> -->
 
   <!-- move_base plan manager: which provide basic global planner and cost map -->
-  <include file="$(find arena_bringup)/launch/testing/move_base/move_base_$(arg local_planner).launch">
-    <arg name="model" value="$(arg model)"/>
-    <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
-  </include>
+  <group if="$(eval arg('simulator') == 'flatland')">
+    <include file="$(find arena_bringup)/launch/testing/move_base/move_base_$(arg local_planner).launch">
+      <arg name="model" value="$(arg model)"/>
+      <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
+    </include>
 
-  <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
-    <param name="simulation_factor" value="1" type="double"/>
-    <param name="pedsim_update_rate" value="30.0" type="double"/>
-    <param name="scene_file" value="$(find task-generator)/scenarios/empty.xml" type="string"/>
-  </node>
-
+    <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
+      <param name="simulation_factor" value="1" type="double"/>
+      <param name="pedsim_update_rate" value="30.0" type="double"/>
+      <param name="scene_file" value="$(find task-generator)/scenarios/empty.xml" type="string"/>
+    </node>
+  </group>
   <!-- launch map generator if training with random map-->
   <group if="$(eval arg('map_file') == 'random_map')">
     <node pkg="arena-simulation-setup" name="map_generator_node" type="map_generator_node.py" />
