@@ -5,6 +5,7 @@ from typing import Tuple
 from numpy.core.numeric import normalize_axis_tuple
 import rospy
 import random
+import os
 import numpy as np
 from collections import deque
 
@@ -48,10 +49,8 @@ class ObservationCollector:
             lidar_range (float): [description]
         """
         self.ns = ns
-        if ns is None or not ns:
-            self.ns_prefix = ""
-        else:
-            self.ns_prefix = "/" + ns + "/"
+
+        self.ns_prefix = lambda topic: os.path.join(self.ns, topic)
 
         self._laser_num_beams = num_lidar_beams
         # for frequency controlling
@@ -83,10 +82,10 @@ class ObservationCollector:
         # need to evaulate each possibility
         if self._ext_time_sync:
             self._scan_sub = message_filters.Subscriber(
-                f"{self.ns_prefix}scan", LaserScan
+                self.ns_prefix("scan"), LaserScan
             )
             self._robot_state_sub = message_filters.Subscriber(
-                f"{self.ns_prefix}odom", Odometry
+                self.ns_prefix("odom"), Odometry
             )
 
             self.ts = message_filters.ApproximateTimeSynchronizer(
@@ -98,14 +97,14 @@ class ObservationCollector:
             self.ts.registerCallback(self.callback_odom_scan)
         else:
             self._scan_sub = rospy.Subscriber(
-                f"{self.ns_prefix}scan",
+                self.ns_prefix("scan"),
                 LaserScan,
                 self.callback_scan,
                 tcp_nodelay=True,
             )
 
             self._robot_state_sub = rospy.Subscriber(
-                f"{self.ns_prefix}odom",
+                self.ns_prefix("odom"),
                 Odometry,
                 self.callback_robot_state,
                 tcp_nodelay=True,
@@ -115,11 +114,11 @@ class ObservationCollector:
         #     f'{self.ns_prefix}clock', Clock, self.callback_clock, tcp_nodelay=True)
 
         self._subgoal_sub = rospy.Subscriber(
-            f"{self.ns_prefix}subgoal", PoseStamped, self.callback_subgoal
+            self.ns_prefix("subgoal"), PoseStamped, self.callback_subgoal
         )
 
         self._globalplan_sub = rospy.Subscriber(
-            f"{self.ns_prefix}globalPlan", Path, self.callback_global_plan
+            self.ns_prefix("global_plan"), Path, self.callback_global_plan
         )
 
     def get_observations(self, *args, **kwargs):

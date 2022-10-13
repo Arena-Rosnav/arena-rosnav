@@ -35,6 +35,7 @@
   <param name="world_path" value="$(find arena-simulation-setup)/maps/$(arg map_folder_name)/map.world.yaml" />
   <param name="show_viz" value="$(arg show_viz)"/>
   <param name="_dedicated_train_launch" value="true" />
+  <param name="model" value="$(arg model)" />
 
   <!-- map server-->
   <include file="$(find arena_bringup)/launch/utils/map_server.launch">

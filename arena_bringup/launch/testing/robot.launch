@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+  <!-- <env name="ROSCONSOLE_CONFIG_FILE" value="$(find arena_bringup)/params/rosconsole.conf"/> -->
 
   <!-- ___________ ARGS ___________ -->
   <arg name="model" default="" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]"/>
@@ -31,6 +32,8 @@
         
         <arg name="cmd_vel_topic" value="$(arg namespace)/cmd_vel" />
         <arg name="odom_topic" value="$(arg namespace)/odom_topic" />
+
+        <arg name="namespace" value="$(arg namespace)" />
     </include>
 
   </group>

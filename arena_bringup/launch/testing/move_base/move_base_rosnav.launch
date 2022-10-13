@@ -9,25 +9,37 @@
 
   <arg name="agent_name" default="rule_05"/>
 
+  <arg name="namespace" />
+
   <param name="agent_name" value="$(arg agent_name)" />
 
   <!-- DRL action frequency -->
   <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
 
-  <!-- move_base -->
-  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-    <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/local_costmap_params.yaml" command="load" />
-    <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/global_costmap_params.yaml" command="load" />
-  
-    <remap from="/cmd_vel" to="/move_base/cmd_vel" />
-  </node>
-
-  <!-- spacial_horizon -->
-  <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node" output="screen">
   <!-- <rosparam file="$(find arena_bringup)/launch/plan_fsm_param.yaml" command="load" /> -->
-  </node>
 
-  <node name="rosnav_manager" pkg="testing" type="drl_agent_node.py" args="$(arg agent_name)" output="screen"/>
+  <node name="rosnav_manager" pkg="testing" type="drl_agent_node.py" args="--namespace $(arg namespace)" output="screen"/>
 
   <node name="rosnav" pkg="rosnav" type="rosnav_node.py" output="screen" />
+
+  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find arena_bringup)/params/rosconsole.conf"/>
+  
+  <!-- spacial_horizon -->
+  <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node">
+    <remap from="$(arg namespace)/goal" to="$(arg namespace)/move_base_simple/goal" />
+    <remap from="/move_base/NavfnROS/make_plan" to="$(arg namespace)/move_base/NavfnROS/make_plan" />
+
+  </node>
+
+  <!-- move_base -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+
+    <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find arena-simulation-setup)/move_base/move_base_params.yaml" command="load" />
+  
+    <remap from="$(arg cmd_vel_topic)" to="/trash" />
+    <remap from="odom" to="$(arg  odom_topic)"/>
+
+  </node>
 </launch>

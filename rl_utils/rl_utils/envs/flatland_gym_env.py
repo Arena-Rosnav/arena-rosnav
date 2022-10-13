@@ -112,7 +112,7 @@ class FlatlandEnv(gym.Env):
             self._step_world_srv = rospy.ServiceProxy(self._service_name_step, Empty)
 
         # instantiate task manager
-        self.task = get_predefined_task(ns, mode=task_mode, environment=None, start_stage=kwargs["curr_stage"], paths=PATHS)
+        self.task = get_predefined_task(self.ns, mode=task_mode, environment=None, start_stage=kwargs["curr_stage"], paths=PATHS)
         
         self._steps_curr_episode = 0
         self._episode = 0
@@ -217,7 +217,10 @@ class FlatlandEnv(gym.Env):
                 self._done_hist = [0] * 3
             self._done_hist[int(info["done_reason"])] += 1
 
-        return self.model_space_encoder.encode_observation(obs_dict), reward, done, info
+        return self.model_space_encoder.encode_observation(
+            obs_dict, 
+            ["laser_scan", "goal_in_robot_frame", "last_action"]
+        ), reward, done, info
     
     def call_service_takeSimStep(self, t=None):
         request = StepWorld()
@@ -247,7 +250,10 @@ class FlatlandEnv(gym.Env):
             self._collisions = 0
 
         obs_dict = self.observation_collector.get_observations()
-        return self.model_space_encoder.encode_observation(obs_dict)  # reward, done, info can't be included
+        return self.model_space_encoder.encode_observation(
+            obs_dict, 
+            ["laser_scan", "goal_in_robot_frame", "last_action"]
+        )  # reward, done, info can't be included
 
     def close(self):
         pass

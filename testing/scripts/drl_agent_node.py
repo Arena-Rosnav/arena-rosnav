@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
+from urllib import parse
 from rl_utils.utils.observation_collector import ObservationCollector
 import rospy
 import sys
+import argparse
 from geometry_msgs.msg import Twist
 
 from rosnav.srv import GetAction, GetActionRequest
 from rosgraph_msgs.msg import Clock
-
 
 from rosnav import *
 sys.modules["rl_agent"] = sys.modules["rosnav"]
@@ -28,16 +29,18 @@ class DeploymentDRLAgent:
         )
 
         self._action_pub = rospy.Publisher(
-            f"{ns}cmd_vel", Twist, queue_size=1
+            f"{ns}/cmd_vel", Twist, queue_size=1
         )
+
+        self.ns = ns
 
         self._action_period_time = self._get_action_frequency_in_nsecs()
         self.last_action = [0, 0, 0]
         self.last_time = 0
 
-        rospy.wait_for_service("/rosnav/get_action")
+        rospy.wait_for_service(f"{ns}/rosnav/get_action")
         self._get_action_srv = rospy.ServiceProxy(
-            "/rosnav/get_action", GetAction
+            f"{ns}/rosnav/get_action", GetAction
         )
 
         rospy.Subscriber("/clock", Clock, callback=self._clock_callback)
@@ -56,7 +59,7 @@ class DeploymentDRLAgent:
         self._get_and_publish_next_action()
 
     def _get_and_publish_next_action(self) -> None:
-        obs = self.observation_collector.get_observations()
+        obs = self.observation_collector.get_observations(ns_prefix=self.ns)
 
         msg = GetActionRequest()
         msg.laser_scan = obs["laser_scan"]
@@ -84,10 +87,20 @@ class DeploymentDRLAgent:
         self._action_pub.publish(action_msg)
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-ns", "--namespace", type=str)
+
+    return parser.parse_known_args()[0]
+
+
 if __name__ == "__main__":
     rospy.init_node(f"DRL_local_planner", anonymous=True)
 
-    agent = DeploymentDRLAgent(ns="")
+    args = parse_args()
+
+    agent = DeploymentDRLAgent(ns=args.namespace)
 
     while not rospy.is_shutdown():
         rospy.spin()
