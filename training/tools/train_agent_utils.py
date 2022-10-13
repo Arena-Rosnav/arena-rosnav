@@ -269,7 +269,6 @@ def get_agent_name(args: argparse.Namespace) -> str:
             + "_P_" + args.pi 
             + "_V_" + args.vf 
             + "_" + args.act_fn 
-            + "_" + rospy.get_param("space_encoder", "RobotSpecificEncoder") 
             + START_TIME
         )
     if args.load is None:
@@ -302,7 +301,7 @@ def get_paths(agent_name: str, args: argparse.Namespace) -> dict:
         ),
 
         "hyperparams": os.path.join(training_dir, "configs", "hyperparameters"),
-        "curriculum": os.path.join(training_dir, "configs", "training_curriculums", "map1small.yaml"),
+        "curriculum": os.path.join(training_dir, "configs", "training_curriculums", "arena2d.yaml"),
     }
     # check for mode
     if args.load is None:

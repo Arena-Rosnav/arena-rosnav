@@ -5,6 +5,7 @@ from typing import Tuple
 from numpy.core.numeric import normalize_axis_tuple
 import rospy
 import random
+import os
 import numpy as np
 from collections import deque
 
@@ -48,10 +49,8 @@ class ObservationCollector:
             lidar_range (float): [description]
         """
         self.ns = ns
-        if ns is None or not ns:
-            self.ns_prefix = ""
-        else:
-            self.ns_prefix = "/" + ns + "/"
+
+        self.ns_prefix = lambda topic: os.path.join(self.ns, topic)
 
         self._laser_num_beams = num_lidar_beams
         # for frequency controlling
@@ -83,10 +82,10 @@ class ObservationCollector:
         # need to evaulate each possibility
         if self._ext_time_sync:
             self._scan_sub = message_filters.Subscriber(
-                f"{self.ns_prefix}scan", LaserScan
+                self.ns_prefix("scan"), LaserScan
             )
             self._robot_state_sub = message_filters.Subscriber(
-                f"{self.ns_prefix}odom", Odometry
+                self.ns_prefix("odom"), Odometry
             )
 
             self.ts = message_filters.ApproximateTimeSynchronizer(
@@ -98,14 +97,14 @@ class ObservationCollector:
             self.ts.registerCallback(self.callback_odom_scan)
         else:
             self._scan_sub = rospy.Subscriber(
-                f"{self.ns_prefix}scan",
+                self.ns_prefix("scan"),
                 LaserScan,
                 self.callback_scan,
                 tcp_nodelay=True,
             )
 
             self._robot_state_sub = rospy.Subscriber(
-                f"{self.ns_prefix}odom",
+                self.ns_prefix("odom"),
                 Odometry,
                 self.callback_robot_state,
                 tcp_nodelay=True,
@@ -115,21 +114,21 @@ class ObservationCollector:
         #     f'{self.ns_prefix}clock', Clock, self.callback_clock, tcp_nodelay=True)
 
         self._subgoal_sub = rospy.Subscriber(
-            f"{self.ns_prefix}subgoal", PoseStamped, self.callback_subgoal
+            self.ns_prefix("subgoal"), PoseStamped, self.callback_subgoal
         )
 
         self._globalplan_sub = rospy.Subscriber(
-            f"{self.ns_prefix}globalPlan", Path, self.callback_global_plan
+            self.ns_prefix("global_plan"), Path, self.callback_global_plan
         )
 
     def get_observations(self, *args, **kwargs):
-        if not self._ext_time_sync:
-            # try to retrieve sync'ed obs
-            laser_scan, robot_pose = self.get_sync_obs()
-            if laser_scan is not None and robot_pose is not None:
-                # print("Synced successfully")
-                self._scan = laser_scan
-                self._robot_pose = robot_pose
+        # if not self._ext_time_sync:
+        #     # try to retrieve sync'ed obs
+        #     laser_scan, robot_pose = self.get_sync_obs()
+        #     if laser_scan is not None and robot_pose is not None:
+        #         # print("Synced successfully")
+        #         self._scan = laser_scan
+        #         self._robot_pose = robot_pose
             # else:
             #     print("Not synced")
 
@@ -217,15 +216,19 @@ class ObservationCollector:
         return
 
     def callback_scan(self, msg_laserscan):
-        if len(self._laser_deque) == self.max_deque_size:
-            self._laser_deque.popleft()
+        # if len(self._laser_deque) == self.max_deque_size:
+        #     self._laser_deque.popleft()
 
-        self._laser_deque.append(msg_laserscan)
+        # self._laser_deque.append(msg_laserscan)
+
+        self._scan = self.process_scan_msg(msg_laserscan)
 
     def callback_robot_state(self, msg_robotstate):
-        if len(self._rs_deque) == self.max_deque_size:
-            self._rs_deque.popleft()
-        self._rs_deque.append(msg_robotstate)
+        # if len(self._rs_deque) == self.max_deque_size:
+        #     self._rs_deque.popleft()
+        # self._rs_deque.append(msg_robotstate)
+
+        self._robot_pose, self._robot_vel = self.process_robot_state_msg(msg_robotstate)
 
     def callback_observation_received(
         self, msg_LaserScan, msg_RobotStateStamped
@@ -292,7 +295,7 @@ if __name__ == "__main__":
     rospy.init_node("states", anonymous=True)
     print("start")
 
-    state_collector = ObservationCollector("sim1/", 360, 10)
+    state_collector = ObservationCollector("sim_1/", 360, 10)
     i = 0
     r = rospy.Rate(100)
     while i <= 1000:

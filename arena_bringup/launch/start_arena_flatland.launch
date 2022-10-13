@@ -1,11 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
 
+  <env name="ARENA_TYPE" value="deployment" />
+
   <!-- ___________ ARGS ___________ -->
+  <!-- You can launch a single robot and his local_planner with arguments -->
   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]"/>
   <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]"/>
-  
   <arg name="agent_name" default="$(arg model)"     doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')"/>
+  <!-- Or you can load a robot setup file to launch multiple robots in the same simulation -->
+  <!-- If the robot_setup_file is specified it is always loaded -->
+  <arg name="robot_setup_file" default="" doc="" />
+
+
+
+  <param name="robot_setup_file" value="$(arg robot_setup_file)" />
+  <param name="model" value="$(arg model)" />
+  <param name="local_planner"  value="$(arg local_planner)"/>
+  <param name="agent_name" value="$(arg agent_name)" unless="$(eval arg('local_planner') != 'rosnav')"/>
+
+
+
   <arg name="task_mode" default="random" doc="[random, manual, staged, scenario]" />
   <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
   <arg name="show_viz" default="true" doc="Enables flatland visualization" />
@@ -25,9 +40,6 @@
   <param name="task_mode" value="$(arg task_mode)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
-  <param name="local_planner" value="$(arg local_planner)"/>
-  <param name="model" value="$(arg model)" />
-  <param name="agent_name" value="$(arg agent_name)" unless="$(eval arg('local_planner') != 'rosnav')"/>
   <param name="show_viz" value="$(arg show_viz)"/>
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
@@ -51,7 +63,6 @@
   <param name="robot_name" value="$(arg model)" />
 
   <!-- data recorder -->
-  <param name="local_planner"  value="$(arg local_planner)"/>
   <param name="scenario_file"  value="$(arg scenario_file)"/>
 
   <!-- use simulator-->
@@ -62,9 +73,9 @@
   </include>
 
   <!-- map server-->
-  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)">
-    <param name="frame_id" value="$(arg global_frame_id)"/>
-  </node>
+  <include file="$(find arena_bringup)/launch/utils/map_server.launch">
+    <arg name="map_path" value="$(arg map_path)" />
+  </include>
 
   <!-- Fake localization-->
   <include file="$(find arena_bringup)/launch/utils/fake_localization.launch">
@@ -77,13 +88,11 @@
     <arg name="auto_reset" value="$(arg auto_reset)"/>
   </include>
 
-  <include file="$(find arena_bringup)/launch/testing/sensor_sim.launch" />
-
   <!-- move_base plan manager: which provide basic global planner and cost map -->
-  <include file="$(find arena_bringup)/launch/testing/move_base/move_base_$(arg local_planner).launch">
+  <!-- <include file="$(find arena_bringup)/launch/testing/move_base/move_base_$(arg local_planner).launch">
     <arg name="model" value="$(arg model)"/>
     <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
-  </include>
+  </include> -->
 
   <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
     <param name="simulation_factor" value="1" type="double"/>
