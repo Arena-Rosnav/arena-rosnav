@@ -1,7 +1,7 @@
 {
   "agent_name": "",
   "robot": "myrobot",
-  "reward_fnc": "rule_04",
+  "reward_fnc": "rule_00",
   "discrete_action_space": false,
   "normalize": false,
   "task_mode": "staged",
@@ -21,3 +21,4 @@
   "n_epochs": 3,
   "clip_range": 0.22
 }
+s

@@ -41,6 +41,10 @@
   <include file="$(find arena_bringup)/launch/utils/map_server.launch">
     <arg name="map_path" value="$(arg map_path)" />
   </include>
+<<<<<<< HEAD
+=======
+
+>>>>>>> dev
 
   <group if="$(eval arg('train_mode') == false)">
     <!-- makes sure that action's will be published according to sim time in eval mode-->

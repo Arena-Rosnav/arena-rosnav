@@ -195,8 +195,14 @@ class FlatlandEnv(gym.Env):
             info["time_safe_dist"] = self._safe_dist_counter * self._action_frequency
             info["time"] = self._steps_curr_episode * self._action_frequency
 
+
         if done:
-            if sum(self._done_hist) == 20 and self.ns_prefix != "/eval_sim/":
+            print(self.ns_prefix, "DONE", info["done_reason"], sum(self._done_hist), min(obs_dict["laser_scan"]))
+    
+            if self._steps_curr_episode <= 1:
+                print(self.ns_prefix, "DONE", info, min(obs_dict["laser_scan"]), obs_dict["goal_in_robot_frame"])
+
+            if sum(self._done_hist) == 20:
                 print(
                     f"[ns: {self.ns_prefix}] Last 20 Episodes: "
                     f"{self._done_hist[0]}x - {self._done_reasons[str(0)]}, "
