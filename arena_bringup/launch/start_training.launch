@@ -18,7 +18,7 @@
   <arg name="map_folder_name" default="map_empty" />
 
   <!-- if it's false flatland server will not publish any debug related infomation and you will not able to visuzalize e.g robot, dynamic obstacles  -->
-  <param name="space_encoder" value="UniformEncoder" />
+  <!-- <param name="space_encoder" value="UniformEncoder" /> -->
 
   <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
   <param name="robot_yaml_path" value="$(find arena-simulation-setup)/robot/$(arg model)/$(arg model).model.yaml" />
@@ -38,10 +38,10 @@
 
 
   <!-- map server-->
-  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)">
-    <!-- In multi-env training /clock not available, since we only want one map_server, it's clock topic is remapped to /clock -->
-    <remap from="/clock" to="/$(arg ns_prefix)1/clock" />
-  </node>
+  <include file="$(find arena_bringup)/launch/utils/map_server.launch">
+    <arg name="map_path" value="$(arg map_path)" />
+  </include>
+
 
   <group if="$(eval arg('train_mode') == false)">
     <!-- makes sure that action's will be published according to sim time in eval mode-->

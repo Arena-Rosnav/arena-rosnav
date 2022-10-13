@@ -68,7 +68,7 @@ def main():
         n_envs=args.n_envs,
         treshhold_type="succ",
         upper_threshold=0.9,
-        lower_threshold=0.7,
+        lower_threshold=0.0,
         task_mode=params["task_mode"],
         verbose=1,
     )
@@ -106,7 +106,7 @@ def main():
         eval_env=eval_env,
         train_env=env,
         n_eval_episodes=100,
-        eval_freq=15000,
+        eval_freq=5000,
         log_path=PATHS["eval"],
         best_model_save_path=PATHS["model"],
         deterministic=True,
@@ -190,6 +190,9 @@ def main():
     n_timesteps = 40000000 if args.n is None else args.n
     # start training
     start = time.time()
+
+    rospy.on_shutdown(model.env.close)
+
     try:
         model.learn(
             total_timesteps=n_timesteps,
