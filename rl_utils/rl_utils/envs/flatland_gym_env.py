@@ -196,18 +196,7 @@ class FlatlandEnv(gym.Env):
             info["time"] = self._steps_curr_episode * self._action_frequency
 
         if done:
-            # print("DONE")
-            # print(self.ns_prefix, "DONE", info)
-            # if self._steps_curr_episode == 1:
-            #     print(
-            #         self.ns_prefix, "\n\tSteps:", 
-            #         self._steps_curr_episode, "\n\tGoal", 
-            #         obs_dict["goal_in_robot_frame"], "\n\tInfo", info,
-            #         f"\n\tRobot Pose: ({obs_dict['robot_pose'].x}, {obs_dict['robot_pose'].y})",
-            #         "\n\tLaser Scan:", min(obs_dict["laser_scan"])
-            #     )
-
-            if sum(self._done_hist) == 20: #  and self.ns_prefix != "/eval_sim/":
+            if sum(self._done_hist) == 20 and self.ns_prefix != "/eval_sim/":
                 print(
                     f"[ns: {self.ns_prefix}] Last 20 Episodes: "
                     f"{self._done_hist[0]}x - {self._done_reasons[str(0)]}, "
@@ -227,7 +216,6 @@ class FlatlandEnv(gym.Env):
         request.required_time = 0 if t == None else t
 
         self._step_world_srv()
-        # self._step_world_publisher.publish(request)
 
     def reset(self):
         # set task
