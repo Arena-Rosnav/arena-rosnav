@@ -25,11 +25,6 @@
       <arg name="timeout_subgoal" default="20" /> <!--sec, double -->
     </include>
 
-    <include file="$(find arena_bringup)/launch/utils/intermediate_planner.launch">
-      <arg name="ns" value="$(arg ns)" />
-    </include>
-
-
     <!-- use simulator and rviz-->
     <include file="$(find arena_bringup)/launch/training/flatland_simulator.launch">
       <arg name="ns" value="$(arg ns)" />

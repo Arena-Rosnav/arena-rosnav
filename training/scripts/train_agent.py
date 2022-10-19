@@ -51,6 +51,7 @@ def main():
     rospy.set_param("task_mode", params["task_mode"])
     
     rospy.set_param("is_action_space_discrete", params["discrete_action_space"])
+    rospy.set_param("goal_radius", params["goal_radius"])
 
     # instantiate train environment
     # when debug run on one process only
@@ -106,7 +107,7 @@ def main():
         eval_env=eval_env,
         train_env=env,
         n_eval_episodes=100,
-        eval_freq=5000,
+        eval_freq=15000,
         log_path=PATHS["eval"],
         best_model_save_path=PATHS["model"],
         deterministic=True,
@@ -186,22 +187,19 @@ def main():
             model = PPO.load(os.path.join(PATHS["model"], "best_model"), env)
         update_hyperparam_model(model, PATHS, params, args.n_envs)
 
+    rospy.on_shutdown(model.env.close)
+
     # set num of timesteps to be generated
     n_timesteps = 40000000 if args.n is None else args.n
     # start training
     start = time.time()
 
-    rospy.on_shutdown(model.env.close)
+    model.learn(
+        total_timesteps=n_timesteps,
+        callback=eval_cb,
+        reset_num_timesteps=True,
+    )
 
-    try:
-        model.learn(
-            total_timesteps=n_timesteps,
-            callback=eval_cb,
-            reset_num_timesteps=True,
-        )
-    except KeyboardInterrupt:
-        print("KeyboardInterrupt..")
-    # finally:
     # update the timesteps the model has trained in total
     # update_total_timesteps_json(n_timesteps, PATHS)
 
@@ -212,4 +210,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
