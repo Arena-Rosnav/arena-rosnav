@@ -14,9 +14,9 @@
 
   <arg name="visualization" default="" />
 
-  <node name="generate_world" pkg="gazebo_utils" type="generate_world.py">
+  <!-- <node name="generate_world" pkg="gazebo_utils" type="generate_world.py">
     <param name="world" value="$(arg world)"/>
-  </node>
+  </node> -->
 
   <!-- start World (Scenario) file in Gazebo -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -32,8 +32,8 @@
 
   <node name="gazebo_rviz" pkg="rviz" type="rviz" args="-d $(find arena_bringup)/rviz/$(arg rviz_file).rviz" if="$(arg show_rviz)"/>
 
-  <include file="$(find arena_bringup)/launch/testing/robots.launch">
+  <!-- <include file="$(find arena_bringup)/launch/testing/robots.launch">
     <arg name="model" value="$(arg model)"/>
-  </include>
+  </include> -->
 
 </launch>

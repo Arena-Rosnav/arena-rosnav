@@ -8,7 +8,7 @@
     </node>
 
     <!-- Launching additional nodes needed for some robots -->
-    <include file="$(find arena-simulation-setup)/robot/cob4/launch/cob4_robot.launch" if="$(eval arg('model') == 'cob4')"/>
+    <!-- <include file="$(find arena-simulation-setup)/robot/cob4/launch/cob4_robot.launch" if="$(eval arg('model') == 'cob4')"/>
     <include file="$(find arena-simulation-setup)/robot/youbot/launch/youbot_robot.launch" if="$(eval arg('model') == 'youbot')"/>
     <include file="$(find arena-simulation-setup)/robot/jackal/launch/control.launch" if="$(eval arg('model') == 'jackal')"/>
     <include file="$(find arena-simulation-setup)/robot/ridgeback/control/launch/control.launch" if="$(eval arg('model') == 'ridgeback')"/>
@@ -18,7 +18,7 @@
     <group if="$(eval arg('model') == 'agvota')">
         <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
         <node name="emergency_brake" pkg="gazebo_utils" type="emergency_brake_node.py"/>
-    </group>
+    </group> -->
 
 
 </launch>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- <env name="ROSCONSOLE_CONFIG_FILE" value="$(find arena_bringup)/params/rosconsole.conf"/> -->
+
+  <!-- ___________ ARGS ___________ -->
+  <arg name="model" default="" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]"/>
+  <arg name="local_planner" default="" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]"/>
+
+  <arg name="agent_name" default="$(arg model)"     doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')"/>
+
+  <arg name="namespace" default="" /> 
+
+  <!-- TODO: Add data recorder -->
+
+  <param name="model" value="$(arg model)" />
+
+  <param name="model" value="$(arg model)" />
+  <param name="agent_name" value="$(arg agent_name)" unless="$(eval arg('local_planner') != 'rosnav')"/>
+
+  <remap from="$(arg namespace)/map" to="/map" />
+
+  <group ns="$(arg namespace)">
+    <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
+    <param name="robot_name" value="$(arg model)" />
+    
+    <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster" args="0 0 0 0 0 0 1 map $(arg namespace)_odom" />
+
+    <!-- Launching additional nodes needed for some robots -->
+    <include file="$(find arena-simulation-setup)/robot/cob4/launch/cob4_robot.launch" if="$(eval arg('model') == 'cob4')"/>
+    <include file="$(find arena-simulation-setup)/robot/youbot/launch/youbot_robot.launch" if="$(eval arg('model') == 'youbot')"/>
+    <include file="$(find arena-simulation-setup)/robot/jackal/launch/control.launch" if="$(eval arg('model') == 'jackal')"/>
+    <include file="$(find arena-simulation-setup)/robot/ridgeback/control/launch/control.launch" if="$(eval arg('model') == 'ridgeback')"/>
+    <include file="$(find arena-simulation-setup)/robot/dingo/launch/control.launch" if="$(eval arg('model') == 'dingo')"/>
+    <include file="$(find arena-simulation-setup)/robot/tiago/launch/control.launch" if="$(eval arg('model') == 'tiago')"/>
+    <group if="$(eval arg('model') == 'agvota')">
+        <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+        <node name="emergency_brake" pkg="gazebo_utils" type="emergency_brake_node.py"/>
+    </group>
+    
+    <!-- move_base plan manager: which provide basic global planner and cost map -->
+    <include file="$(find arena_bringup)/launch/testing/move_base/move_base_$(arg local_planner).launch">
+        <arg name="model" value="$(arg model)"/>
+        <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
+        
+        <arg name="cmd_vel_topic" value="$(arg namespace)/cmd_vel" />
+        <arg name="odom_topic" value="$(arg namespace)/odom_topic" />
+
+        <arg name="namespace" value="$(arg namespace)" />
+    </include>
+
+  </group>
+</launch>

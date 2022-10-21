@@ -9,6 +9,7 @@ import rospy
 import time
 from geometry_msgs.msg import Twist
 from flatland_msgs.msg import StepWorld
+from std_srvs.srv import Empty
 
 from task_generator.tasks.utils import get_predefined_task
 
@@ -61,7 +62,7 @@ class FlatlandEnv(gym.Env):
             time.sleep((ns_int + 1) * 2)
         except Exception:
             rospy.logwarn(f"Can't not determinate the number of the environment, training script may crash!")
-
+            time.sleep(2)
 
         # process specific namespace in ros system
         self.ns_prefix = "" if (ns == "" or ns is None) else "/" + ns + "/"
@@ -108,10 +109,11 @@ class FlatlandEnv(gym.Env):
             self._service_name_step = f"{self.ns_prefix}step_world"
             # self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
             self._step_world_publisher = rospy.Publisher(self._service_name_step, StepWorld, queue_size=10)
+            self._step_world_srv = rospy.ServiceProxy(self._service_name_step, Empty)
 
         # instantiate task manager
-        self.task = get_predefined_task(ns, mode=task_mode, environment=None, start_stage=kwargs["curr_stage"], paths=PATHS)
-
+        self.task = get_predefined_task(self.ns, mode=task_mode, environment=None, start_stage=kwargs["curr_stage"], paths=PATHS)
+        
         self._steps_curr_episode = 0
         self._episode = 0
         self._max_steps_per_episode = max_steps_per_episode
@@ -143,6 +145,7 @@ class FlatlandEnv(gym.Env):
         self.agent_action_pub.publish(action_msg)
 
     def step(self, action: np.ndarray):
+
         """
         done_reasons:   0   -   exceeded max steps
                         1   -   collision with obstacle
@@ -192,8 +195,14 @@ class FlatlandEnv(gym.Env):
             info["time_safe_dist"] = self._safe_dist_counter * self._action_frequency
             info["time"] = self._steps_curr_episode * self._action_frequency
 
+
         if done:
-            if sum(self._done_hist) == 20 and self.ns_prefix != "/eval_sim/":
+            print(self.ns_prefix, "DONE", info["done_reason"], sum(self._done_hist), min(obs_dict["laser_scan"]))
+    
+            if self._steps_curr_episode <= 1:
+                print(self.ns_prefix, "DONE", info, min(obs_dict["laser_scan"]), obs_dict["goal_in_robot_frame"])
+
+            if sum(self._done_hist) == 20:
                 print(
                     f"[ns: {self.ns_prefix}] Last 20 Episodes: "
                     f"{self._done_hist[0]}x - {self._done_reasons[str(0)]}, "
@@ -203,13 +212,16 @@ class FlatlandEnv(gym.Env):
                 self._done_hist = [0] * 3
             self._done_hist[int(info["done_reason"])] += 1
 
-        return self.model_space_encoder.encode_observation(obs_dict), reward, done, info
+        return self.model_space_encoder.encode_observation(
+            obs_dict, 
+            ["laser_scan", "goal_in_robot_frame", "last_action"]
+        ), reward, done, info
     
     def call_service_takeSimStep(self, t=None):
         request = StepWorld()
         request.required_time = 0 if t == None else t
 
-        self._step_world_publisher.publish(request)
+        self._step_world_srv()
 
     def reset(self):
         # set task
@@ -221,6 +233,9 @@ class FlatlandEnv(gym.Env):
         self._steps_curr_episode = 0
         self._last_action = np.array([0, 0, 0])
 
+        if self._is_train_mode:
+            self.call_service_takeSimStep()
+
         # extended eval info
         if self._extended_eval:
             self._last_robot_pose = None
@@ -229,7 +244,10 @@ class FlatlandEnv(gym.Env):
             self._collisions = 0
 
         obs_dict = self.observation_collector.get_observations()
-        return self.model_space_encoder.encode_observation(obs_dict)  # reward, done, info can't be included
+        return self.model_space_encoder.encode_observation(
+            obs_dict, 
+            ["laser_scan", "goal_in_robot_frame", "last_action"]
+        )  # reward, done, info can't be included
 
     def close(self):
         pass

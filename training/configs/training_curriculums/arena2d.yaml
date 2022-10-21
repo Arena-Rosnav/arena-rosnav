@@ -1,0 +1,21 @@
+1:
+  static: 0
+  dynamic: 0
+2:
+  static: 10
+  dynamic: 0
+3:
+  static: 20
+  dynamic: 0
+4:
+  static: 0
+  dynamic: 10
+5:
+  static: 10
+  dynamic: 10
+6:
+  static: 13
+  dynamic: 13
+7:
+  static: 16
+  dynamic: 16
