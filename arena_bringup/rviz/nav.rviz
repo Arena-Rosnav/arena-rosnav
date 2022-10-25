@@ -5,9 +5,18 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /LaserScan1
         - /my_robot1/Namespaces1
         - /TF1/Frames1
-        - /Pose5
+        - /Path1
+        - /Pose2
+        - /Path2
+        - /Path3
+        - /Path4
+        - /Path5
+        - /Path6
+        - /Path7
+        - /Path8
       Splitter Ratio: 0.32637855410575867
     Tree Height: 1147
   - Class: rviz/Selection
@@ -236,7 +245,7 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz/LaserScan
-      Color: 78; 154; 6
+      Color: 204; 0; 0
       Color Transformer: FlatColor
       Decay Time: 0
       Enabled: false
@@ -254,7 +263,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -372,16 +381,14 @@ Visualization Manager:
       Enabled: false
       Marker Topic: /waypoint_markers
       Name: Marker
-      Namespaces:
-        {}
+      Namespaces: {}
       Queue Size: 100
       Value: false
     - Class: rviz/MarkerArray
       Enabled: false
       Marker Topic: /flatland_server/debug/model/myrobot
       Name: my_robot
-      Namespaces:
-        {}
+      Namespaces: {}
       Queue Size: 100
       Value: false
     - Class: rviz/TF
@@ -389,6 +396,10 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        jackal_0_0_base_footprint:
+          Value: true
+        jackal_0_0_odom:
+          Value: true
         map:
           Value: true
         odom:
@@ -425,56 +436,37 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          odom:
-            {}
-          rto_0_0_odom:
-            rto_0_0_base_footprint:
-              rto_0_0_laser_link:
-                {}
-          rto_1_1_odom:
-            rto_1_1_base_footprint:
-              rto_1_1_laser_link:
-                {}
-          rto_2_2_odom:
-            rto_2_2_base_footprint:
-              rto_2_2_laser_link:
-                {}
-          rto_3_3_odom:
-            rto_3_3_base_footprint:
-              rto_3_3_laser_link:
-                {}
+          jackal_0_0_odom:
+            jackal_0_0_base_footprint: {}
+          odom: {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /flatland_server/debug/layer/static_3d
       Name: static_layer_3d
-      Namespaces:
-        "": true
+      Namespaces: {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /flatland_server/debug/layer/static
       Name: static_layer
-      Namespaces:
-        "": true
+      Namespaces: {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /flatland_server/debug/model/walker_model0
       Name: walker
-      Namespaces:
-        {}
+      Namespaces: {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /flatland_server/debug/model/cleaner1
       Name: cleaner
-      Namespaces:
-        {}
+      Namespaces: {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -521,8 +513,7 @@ Visualization Manager:
       Enabled: true
       Marker Topic: /planning_vis/goal
       Name: Goal
-      Namespaces:
-        {}
+      Namespaces: {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -541,165 +532,349 @@ Visualization Manager:
       Topic: /goal
       Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 78; 154; 6
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_01
-      Name: person01
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /jackal_0_0/global_plan
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 255; 25; 0
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_02
-      Name: person02
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic: /jackal_0_0/subgoal
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 206; 92; 0
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_03
-      Name: person03
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /rto_1_1/global_plan
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 255; 25; 0
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_04
-      Name: person04
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic: /rto_1_1/subgoal
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 164; 0; 0
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_05
-      Name: person05
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /rto_2_2/global_plan
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 255; 25; 0
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_06
-      Name: person06
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic: /rto_2_2/subgoal
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_07
-      Name: person07
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /rto_3_3/global_plan
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 255; 25; 0
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_08
-      Name: person08
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic: /rto_3_3/subgoal
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 92; 53; 102
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_09
-      Name: person09
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /jackal_0_6/global_plan
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 173; 127; 168
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_10
-      Name: person10
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /jackal_1_7/global_plan
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 52; 101; 164
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_11
-      Name: person11
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /rto_4_4/global_plan
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 193; 125; 17
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_12
-      Name: person12
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /rto_5_5/global_plan
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 255; 25; 0
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_13
-      Name: person13
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic: /jackal_0_6/subgoal
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 255; 25; 0
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_14
-      Name: person14
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic: /jackal_1_7/subgoal
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 255; 25; 0
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_15
-      Name: person15
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic: /rto_4_4/subgoal
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 255; 25; 0
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_16
-      Name: person16
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic: /rto_5_5/subgoal
+      Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_17
-      Name: person17
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_018
-      Name: person18
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_019
-      Name: person19
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /flatland_server/debug/model/obstacle_dynamic_with_traj_020
-      Name: person20
-      Namespaces:
-        {}
-      Queue Size: 100
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /jackal_0_0/move_base/TebLocalPlannerROS/global_plan
+      Unreliable: false
       Value: true
     - Alpha: 1
       Buffer Length: 1
@@ -887,7 +1062,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -7.860003471374512
+      Angle: -9.425033569335938
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -897,10 +1072,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 34.66022491455078
+      Scale: 45.043907165527344
       Target Frame: <Fixed Frame>
-      X: 15.645620346069336
-      Y: 14.009868621826172
+      X: 10.555678367614746
+      Y: 5.63629150390625
     Saved: ~
 Window Geometry:
   Displays:

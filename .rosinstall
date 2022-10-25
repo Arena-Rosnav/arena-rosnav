@@ -24,6 +24,10 @@
     local-name: ../utils/jackal
     uri: https://github.com/jackal/jackal.git
 
+- git:
+    local-name: ../utils/3rd-party-robot-packages
+    uri: https://github.com/Arena-Rosnav/3rd-party-robot-packages
+
 ### ARENA INFRASTRUCTURE
 
 - git:
