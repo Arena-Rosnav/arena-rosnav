@@ -4,10 +4,12 @@ from rl_utils.utils.observation_collector import ObservationCollector
 import rospy
 import sys
 import argparse
+import numpy as np
 from geometry_msgs.msg import Twist
 
 from rosnav.srv import GetAction, GetActionRequest
 from rosgraph_msgs.msg import Clock
+import os
 
 from rosnav import *
 sys.modules["rl_agent"] = sys.modules["rosnav"]
@@ -27,6 +29,8 @@ class DeploymentDRLAgent:
         self.observation_collector = ObservationCollector(
             ns, rospy.get_param("laser/num_beams"), external_time_sync=False
         )
+
+        self._max_laser_range = rospy.get_param(os.path.join(ns, "laser", "range"))
 
         self._action_pub = rospy.Publisher(
             f"{ns}/cmd_vel", Twist, queue_size=1
@@ -62,15 +66,19 @@ class DeploymentDRLAgent:
         obs = self.observation_collector.get_observations(ns_prefix=self.ns)
 
         msg = GetActionRequest()
-        msg.laser_scan = obs["laser_scan"]
+        msg.laser_scan = np.clip(obs["laser_scan"], 0, self._max_laser_range)
         msg.goal_in_robot_frame = obs["goal_in_robot_frame"]
         msg.last_action = self.last_action
 
-        action = self._get_action_srv(msg).action
+        try:
+            action = self._get_action_srv(msg).action
 
-        self.last_action = action
+            self.last_action = action
 
-        self._publish_action(action)
+            self._publish_action(action)
+        except:
+            print("Error")
+            print(msg)
 
     def _publish_action(self, action):
         """Publishes an action on 'self._action_pub' (ROS topic).

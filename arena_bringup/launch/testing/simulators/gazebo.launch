@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
 
-
   <env name="GAZEBO_MODEL_PATH" value="$(find arena-simulation-setup)/worlds/$(arg world)/models" />
 
   <arg name="world" default="turtlebot3_house" />
@@ -29,11 +28,12 @@
     <arg name="headless" value="$(arg headless)"/>  <!-- change here to run only the server (gzserver) (to true)-->
   </include>
 
-
-  <node name="gazebo_rviz" pkg="rviz" type="rviz" args="-d $(find arena_bringup)/rviz/$(arg rviz_file).rviz" if="$(arg show_rviz)"/>
-
-  <!-- <include file="$(find arena_bringup)/launch/testing/robots.launch">
-    <arg name="model" value="$(arg model)"/>
-  </include> -->
+  <node 
+    name="gazebo_rviz" 
+    pkg="rviz" 
+    type="rviz" 
+    args="-d $(find arena_bringup)/rviz/$(arg rviz_file).rviz" 
+    if="$(arg show_rviz)"
+  />
 
 </launch>
