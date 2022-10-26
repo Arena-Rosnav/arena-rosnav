@@ -28,12 +28,8 @@
     <arg name="headless" value="$(arg headless)"/>  <!-- change here to run only the server (gzserver) (to true)-->
   </include>
 
-  <node 
-    name="gazebo_rviz" 
-    pkg="rviz" 
-    type="rviz" 
-    args="-d $(find arena_bringup)/rviz/$(arg rviz_file).rviz" 
-    if="$(arg show_rviz)"
-  />
+  <include file="$(find arena_bringup)/launch/utils/rviz.launch">
+    <arg name="show_rviz" value="$(arg show_rviz)" />
+  </include>
 
 </launch>

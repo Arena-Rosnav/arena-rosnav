@@ -26,7 +26,7 @@
   </group>
 
   <!-- start_rviz -->
-  <group if="$(eval arg('visualization') == 'rviz')">
-    <node name="flatland_rviz" pkg="rviz" type="rviz" args="-d $(find arena_bringup)/rviz/$(arg rviz_file).rviz" />
-  </group>
+  <include file="$(find arena_bringup)/launch/utils/rviz.launch">
+    <arg name="show_rviz" value="$(eval arg('visualization') == 'rviz')" />
+  </include>
 </launch>
