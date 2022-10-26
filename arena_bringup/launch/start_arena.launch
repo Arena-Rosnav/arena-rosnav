@@ -116,4 +116,8 @@
   <!-- <group if="$(eval arg('map_file') == 'random_map')">
     <node pkg="arena-simulation-setup" name="map_generator_node" type="map_generator_node.py" />
   </group> -->
+
+  <node type="create_config_file.py" pkg="rviz_utils" name="rviz_config_file_creator" />
+  
+  <node type="visualize_robot_model.py" pkg="rviz_utils" name="visualize_robot_model" output="screen" />
 </launch>
