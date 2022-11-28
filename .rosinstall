@@ -47,11 +47,6 @@
     version: v1.0.0
 
 - git:
-    local-name: ../utils/waypoint-generators
-    uri: https://github.com/Arena-Rosnav/waypoint-generators.git
-    version: v1.0.0
-
-- git:
     local-name: ../utils/task-generator
     uri: https://github.com/zenghjian/task-generator.git
     version: dev
