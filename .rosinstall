@@ -45,6 +45,11 @@
     uri: https://github.com/Arena-Rosnav/task-generator.git
     version: v1.1.0
 
+- git:
+    localname: ../arena-evaluation
+    uri: https://github.com/Arena-Rosnav/arena-evaluation.git
+    version: master
+
 ### PLANNERS
 
 - git:

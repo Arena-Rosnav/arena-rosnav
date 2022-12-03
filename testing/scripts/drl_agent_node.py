@@ -78,7 +78,7 @@ class DeploymentDRLAgent:
             self._publish_action(action)
         except:
             print("Error")
-            print(msg)
+            # print(msg)
 
     def _publish_action(self, action):
         """Publishes an action on 'self._action_pub' (ROS topic).
