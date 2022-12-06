@@ -145,14 +145,13 @@ class FlatlandEnv(gym.Env):
         self.agent_action_pub.publish(action_msg)
 
     def step(self, action: np.ndarray):
-
         """
         done_reasons:   0   -   exceeded max steps
                         1   -   collision with obstacle
                         2   -   goal reached
         """
         obs_dict = self.observation_collector.get_observations(last_action=self._last_action)
-        
+
         decoded_action = self.model_space_encoder.decode_action(action)
         self._last_action = decoded_action
 
@@ -195,9 +194,8 @@ class FlatlandEnv(gym.Env):
             info["time_safe_dist"] = self._safe_dist_counter * self._action_frequency
             info["time"] = self._steps_curr_episode * self._action_frequency
 
-
         if done:
-            print(self.ns_prefix, "DONE", info["done_reason"], sum(self._done_hist), min(obs_dict["laser_scan"]))
+            # print(self.ns_prefix, "DONE", info["done_reason"], sum(self._done_hist), min(obs_dict["laser_scan"]))
     
             if self._steps_curr_episode <= 1:
                 print(self.ns_prefix, "DONE", info, min(obs_dict["laser_scan"]), obs_dict["goal_in_robot_frame"])
@@ -221,9 +219,15 @@ class FlatlandEnv(gym.Env):
         request = StepWorld()
         request.required_time = 0 if t == None else t
 
-        self._step_world_srv()
+        # self._step_world_srv()
+
+
+        self._step_world_publisher.publish(request)
 
     def reset(self):
+
+        print("RESET", self._steps_curr_episode)
+
         # set task
         # regenerate start position end goal position of the robot and change the obstacles accordingly
         self._episode += 1

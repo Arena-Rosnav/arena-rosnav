@@ -3,6 +3,8 @@
   <arg name="ns"/>
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster" args="0 0 0 0 0 0 1 map $(arg ns)_odom" />
   
   <!-- launch flatland server -->
   <node name="$(anon flatland_server)" pkg="flatland_server" type="flatland_server" output="screen">
