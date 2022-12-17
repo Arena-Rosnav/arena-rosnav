@@ -2,8 +2,8 @@
 
 - git:
     local-name: ../utils/flatland
-    uri: https://github.com/Arena-Rosnav/flatland.git
-    version: master
+    uri: https://github.com/Jacenty00/flatland.git
+    version: frame_prefix
 
 - git:
     local-name: ../utils/stable-baselines3
@@ -17,7 +17,7 @@
 
 - git:
     local-name: ../utils/pedsim_ros
-    uri: https://github.com/ignc-research/pedsim_ros
+    uri: https://github.com/Arena-Rosnav/pedsim_ros
     version: master
 
 - git:
@@ -28,22 +28,26 @@
     local-name: ../utils/3rd-party-robot-packages
     uri: https://github.com/Arena-Rosnav/3rd-party-robot-packages
 
+- git:
+    local-name: ../utils/laser_manipulation_node
+    uri: https://github.com/Jacenty00/lidar_manipulation_node.git
+
 ### ARENA INFRASTRUCTURE
 
 - git:
     local-name: ../utils/arena-simulation-setup
-    uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: v1.1.0
+    uri: https://github.com/Jacenty00/arena-simulation-setup.git
+    version: fixing_tf
 
 - git:
     local-name: ../utils/arena-utils
-    uri: https://github.com/Arena-Rosnav/arena-utils.git
-    version: v1.1.0
+    uri: https://github.com/Jacenty00/arena-utils.git
+    version: fixess
 
 - git:
     local-name: ../utils/task-generator
-    uri: https://github.com/Arena-Rosnav/task-generator.git
-    version: v1.1.0
+    uri: https://github.com/Jacenty00/task-generator.git
+    version: pedsim_gazebo
 
 ### PLANNERS
 
