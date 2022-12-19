@@ -33,7 +33,8 @@
             <remap from="/joint_states" to="$(arg namespace)/joint_states"/>
         </node>
     </group>
-  
+  <node type="laser_manipulation_node" pkg="laser_manipulation" name="laser_manipulation" output="screen"></node>
+    
 
     <!-- move_base plan manager: which provide basic global planner and cost map -->
     <include file="$(find arena_bringup)/launch/testing/move_base/move_base_$(arg local_planner).launch">
