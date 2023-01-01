@@ -12,6 +12,7 @@
 	</node>
 
 	<!-- Node to publish static scan (only based on robot position and map) -->
+	<node pkg="tf2_ros" type="static_transform_publisher" name="map_image_broadcaster" args="0 0 0 0 0 0  map map_image" />
 	<node name="light_scan_sim" pkg="light_scan_sim" type="light_scan_sim_node" output="screen">
 		<param name="laser/topic" value="/static_scan" />
 		<param name="laser/hz" value="20" />
