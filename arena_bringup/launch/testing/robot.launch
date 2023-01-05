@@ -28,7 +28,12 @@
     <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
     <param name="robot_name" value="$(arg model)" />
     
-    <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster" args="0 0 0 0 0 0 1 map $(arg namespace)_odom" />
+    <node 
+      pkg="tf2_ros" 
+      type="static_transform_publisher" 
+      name="transform_broadcaster" 
+      args="0 0 0 0 0 0 1 map $(arg namespace)_odom" 
+    />
 
     <include 
       file="$(find arena-simulation-setup)/robot/$(arg model)/launch/control.launch" 

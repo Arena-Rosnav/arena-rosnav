@@ -61,7 +61,7 @@ class FlatlandEnv(gym.Env):
             ns_int = int(re.search(r'\d+', ns)[0])
             time.sleep((ns_int + 1) * 2)
         except Exception:
-            rospy.logwarn(f"Can't not determinate the number of the environment, training script may crash!")
+            rospy.logwarn(f"Cannot determinate the number of the environment, training script may crash!")
             time.sleep(2)
 
         # process specific namespace in ros system
@@ -134,6 +134,9 @@ class FlatlandEnv(gym.Env):
         }
         self._done_hist = 3 * [0]
 
+        self.mean_reward = 0
+        self.mean_time = [0, 0]
+
     def _pub_action(self, action: np.ndarray) -> Twist:
         assert len(action) == 3
 
@@ -145,6 +148,8 @@ class FlatlandEnv(gym.Env):
         self.agent_action_pub.publish(action_msg)
 
     def step(self, action: np.ndarray):
+        # start_time = time.time()
+
         """
         done_reasons:   0   -   exceeded max steps
                         1   -   collision with obstacle
@@ -194,7 +199,11 @@ class FlatlandEnv(gym.Env):
             info["time_safe_dist"] = self._safe_dist_counter * self._action_frequency
             info["time"] = self._steps_curr_episode * self._action_frequency
 
+        self.mean_reward += reward
+
         if done:
+            print("MEAN REWARD: ", self.mean_reward / self._steps_curr_episode)
+
             # print(self.ns_prefix, "DONE", info["done_reason"], sum(self._done_hist), min(obs_dict["laser_scan"]))
     
             if self._steps_curr_episode <= 1:
@@ -209,6 +218,12 @@ class FlatlandEnv(gym.Env):
                 )
                 self._done_hist = [0] * 3
             self._done_hist[int(info["done_reason"])] += 1
+
+        # step_time = time.time() - start_time
+        # self.mean_time[0] += step_time
+        # self.mean_time[1] += 1
+
+        # print("MEAN TIME: ", self.mean_time[0] / self.mean_time[1] * 1_000)
 
         return self.model_space_encoder.encode_observation(
             obs_dict, 
@@ -225,6 +240,7 @@ class FlatlandEnv(gym.Env):
         self._step_world_publisher.publish(request)
 
     def reset(self):
+        self.mean_reward = 0
 
         print("RESET", self._steps_curr_episode)
 

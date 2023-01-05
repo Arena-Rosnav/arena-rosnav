@@ -54,6 +54,7 @@ class RewardCalculator:
         reset variables related to the episode
         """
         self.last_goal_dist = None
+        self.last_goal_angle = None
         self.last_dist_to_path = None
         self.last_action = None
         self.kdtree = None
@@ -79,7 +80,7 @@ class RewardCalculator:
 
     def _cal_reward_rule_00(self, laser_scan: np.ndarray, goal_in_robot_frame: Tuple[float, float], *args, **kwargs):
         self._reward_goal_reached(goal_in_robot_frame)
-        self._reward_safe_dist(laser_scan, punishment=0.25)
+        # self._reward_safe_dist(laser_scan, punishment=0.25)
         self._reward_collision(laser_scan)
         self._reward_goal_approached(goal_in_robot_frame, reward_factor=0.3, penalty_factor=0.4)
 
@@ -185,7 +186,7 @@ class RewardCalculator:
         :param reward_factor (float, optional): positive factor for approaching goal. defaults to 0.3
         :param penalty_factor (float, optional): negative factor for withdrawing from goal. defaults to 0.5
         """
-        if self.last_goal_dist is not None:
+        if self.last_goal_dist is not None and self.last_goal_angle is not None:
             # goal_in_robot_frame : [rho, theta]
 
             # higher negative weight when moving away from goal
@@ -196,8 +197,14 @@ class RewardCalculator:
                 w = penalty_factor
             reward = w * (self.last_goal_dist - goal_in_robot_frame[0])
 
+            factor = self.last_goal_angle - goal_in_robot_frame[1]
+
+            reward += penalty_factor * factor if factor < 0 else reward_factor * factor
+
             # print("reward_goal_approached:  {}".format(reward))
             self.curr_reward += reward
+
+        self.last_goal_angle = goal_in_robot_frame[1]
         self.last_goal_dist = goal_in_robot_frame[0]
 
     def _reward_collision(self, laser_scan: np.ndarray, punishment: float = 10):
