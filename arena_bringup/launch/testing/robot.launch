@@ -11,6 +11,7 @@
   <arg name="namespace" default="" /> 
 
   <!-- TODO: Add data recorder -->
+  <arg name="record_data" default="false" />
 
   <param name="model" value="$(arg model)" />
 
@@ -20,6 +21,10 @@
   <remap from="$(arg namespace)/map" to="/map" />
 
   <group ns="$(arg namespace)">
+    <param name="local_planner" value="$(arg local_planner)" />
+    <param name="agent_name" value="$(arg agent_name)" unless="$(eval arg('local_planner') != 'rosnav')"/>
+    <param name="model" value="$(arg model)" />
+
     <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
     <param name="robot_name" value="$(arg model)" />
     
@@ -46,5 +51,6 @@
         <arg name="namespace" value="$(arg namespace)" />
     </include>
 
-    </group>
+    <node pkg="arena-evaluation" type="data_recorder_node.py" name="data_recorder_node" if="$(eval arg('record_data'))" />
+  </group>
 </launch>

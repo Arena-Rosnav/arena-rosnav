@@ -5,17 +5,19 @@
 
   <!-- ___________ ARGS ___________ -->
   <!-- You can launch a single robot and his local_planner with arguments -->
-  <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]"/>
-  <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]"/>
-  <arg name="environment" default="flatland" doc="[flatland, gazebo]"/>
+  <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]" />
+  <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]" />
+  <arg name="environment" default="flatland" doc="[flatland, gazebo]" />
   
   <env name="ENVIRONMENT" value="$(arg environment)" />
 
-  <arg name="agent_name" default="$(arg model)"     doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')"/>
+  <arg name="agent_name" default="$(arg model)"     doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')" />
   <!-- Or you can load a robot setup file to launch multiple robots in the same simulation -->
   <!-- If the robot_setup_file is specified it is always loaded -->
   <arg name="robot_setup_file" default="" doc="" />
 
+  <arg name="record_data" default="false" />
+  <param name="record_data" value="$(arg record_data)" />
 
   <param name="robot_setup_file" value="$(arg robot_setup_file)" />
   <param name="model" value="$(arg model)" />
@@ -31,7 +33,7 @@
   <arg name="auto_reset" default="true"/>
 
   <arg name="scenario_file" default="test_scenario.json" />
-  <arg name="map_file" default="map_empty" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]"/>
+  <arg name="map_file" default="map_empty" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]" />
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_file)/map.yaml" />
 
   <arg name="world_file" default="$(arg map_file)" />
@@ -61,8 +63,8 @@
   <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
 
   <!-- Map parameters -->
-  <arg name="global_frame_id" value="map"/>
-  <arg name="odom_frame_id" value="odom"/>
+  <arg name="global_frame_id" value="map" />
+  <arg name="odom_frame_id" value="odom" />
 
   <param name="robot_name" value="$(arg model)" />
 
@@ -83,8 +85,8 @@
     <arg name="model" value="$(arg model)" />
     <arg name="rviz_file" value="$(arg rviz_file)" />
     <arg name="show_rviz" default="$(arg show_rviz)" />
-    <arg name="headless" default="false"/>
-    <arg name="gui" default="true"/>
+    <arg name="headless" default="false" />
+    <arg name="gui" default="true" />
     <arg name="world" default="$(arg world_file)" />
   </include>
 
@@ -100,8 +102,8 @@
   </include>
 
   <include file="$(find arena_bringup)/launch/testing/task_generator.launch">
-    <arg name="scenario_json_path" value="$(find task-generator)/scenarios/$(arg scenario_file)"/>
-    <arg name="auto_reset" value="$(arg auto_reset)"/>
+    <arg name="scenario_json_path" value="$(find task-generator)/scenarios/$(arg scenario_file)" />
+    <arg name="auto_reset" value="$(arg auto_reset)" />
   </include>
 
   <!-- <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
