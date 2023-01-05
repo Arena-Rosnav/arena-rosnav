@@ -28,14 +28,17 @@
     <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
     <param name="robot_name" value="$(arg model)" />
     
-    <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster" args="0 0 0 0 0 0 1 map $(arg namespace)_odom" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster" args="0 0 0 0 0 0 1 map $(arg namespace)/odom" />
 
-    <include 
-      file="$(find arena-simulation-setup)/robot/$(arg model)/launch/control.launch" 
-      if="$(eval env('ENVIRONMENT') == 'gazebo')"
-    >
-      <arg name="robot_namespace" value="$(arg namespace)" />
-    </include>
+    <group if="$(eval env('ENVIRONMENT') == 'gazebo')">
+        <include file="$(find arena-simulation-setup)/robot/$(arg model)/launch/control.launch">
+            <arg name="robot_namespace" value="$(arg namespace)" />
+        </include>
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="rob_st_pub" >
+            <remap from="/joint_states" to="$(arg namespace)/joint_states"/>
+        </node>
+    </group>
+  
 
     <!-- move_base plan manager: which provide basic global planner and cost map -->
     <include file="$(find arena_bringup)/launch/testing/move_base/move_base_$(arg local_planner).launch">
@@ -43,7 +46,7 @@
         <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
         
         <arg name="cmd_vel_topic" value="$(arg namespace)/cmd_vel" />
-        <arg name="odom_topic" value="$(arg namespace)/odom_topic" />
+        <arg name="odom_topic" value="$(arg namespace)/odom" />
 
         <arg name="namespace" value="$(arg namespace)" />
     </include>
