@@ -8,6 +8,8 @@
   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]" />
   <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]" />
   <arg name="environment" default="flatland" doc="[flatland, gazebo]" />
+
+  <arg name="complexity" default="1" doc="1 = Map known, Position known; 2 = Map known, Position unknown (AMCL); 3 = Map unknown, Position unknown (SLAM)" />
   
   <env name="ENVIRONMENT" value="$(arg environment)" />
 
@@ -24,6 +26,8 @@
   <param name="local_planner"  value="$(arg local_planner)"/>
   <param name="agent_name" value="$(arg agent_name)" unless="$(eval arg('local_planner') != 'rosnav')"/>
 
+  <param name="complexity" value="$(arg complexity)" />
+  
 
   <arg name="task_mode" default="random" doc="[random, staged, scenario]" />
   <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
