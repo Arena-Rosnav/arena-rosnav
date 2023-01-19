@@ -20,12 +20,17 @@
 
   <node name="rosnav_manager" pkg="testing" type="drl_agent_node.py" args="--namespace $(arg namespace)" output="screen"/>
 
-  <node name="rosnav" pkg="rosnav" type="rosnav_node.py" output="screen" />
+  <node 
+    name="rosnav" 
+    pkg="rosnav" 
+    type="rosnav_node.py" 
+    output="screen" 
+  />
 
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find arena_bringup)/params/rosconsole.conf"/>
   
   <!-- spacial_horizon -->
-  <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node" output="screen">
+  <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node">
     <remap from="$(arg namespace)/goal" to="$(arg namespace)/move_base_simple/goal" />
     <remap from="/move_base/NavfnROS/make_plan" to="$(arg namespace)/move_base/NavfnROS/make_plan" />
 

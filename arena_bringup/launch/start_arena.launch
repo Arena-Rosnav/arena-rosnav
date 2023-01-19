@@ -54,7 +54,11 @@
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
 
-  <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
+  <!-- TEST IF YOU NEED THIS -->
+  <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" if="$(eval arg('robot_setup_file') == '')" /> 
+  
+  
+  
   <!-- <param name="robot_yaml_path" value="$(find arena-simulation-setup)/robot/$(arg model)/$(arg model).model.yaml" /> -->
   <!-- <param name="tmp_model_path" value="/tmp" /> -->
 

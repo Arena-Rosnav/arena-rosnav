@@ -16,8 +16,6 @@
   <arg name="record_data" default="false" />
 
   <param name="model" value="$(arg model)" />
-
-  <param name="model" value="$(arg model)" />
   <param name="agent_name" value="$(arg agent_name)" unless="$(eval arg('local_planner') != 'rosnav')"/>
 
   <remap from="$(arg namespace)/map" to="/map" />
@@ -37,7 +35,6 @@
 
     <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
     <param name="robot_name" value="$(arg model)" />
-
 
     <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster" args="0 0 0 0 0 0 1 map $(arg namespace)/odom" />
 
