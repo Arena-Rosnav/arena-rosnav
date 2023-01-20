@@ -62,7 +62,7 @@ class InitiateNewTrainStage(BaseCallback):
             ), "succ thresholds have to be between [1.0, 0.0]"
 
         self.verbose = verbose
-        self.activated = bool(task_mode == "staged")
+        self.activated = task_mode == "staged"
 
         if self.activated:
             rospy.set_param("/last_stage_reached", False)

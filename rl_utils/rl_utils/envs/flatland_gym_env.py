@@ -68,7 +68,7 @@ class FlatlandEnv(gym.Env):
             time.sleep(2)
 
         # process specific namespace in ros system
-        self.ns_prefix = "" if (ns == "" or ns is None) else "/" + ns + "/"
+        self.ns_prefix = "" if not ns or ns is None else f"/{ns}/"
 
         if not rospy.get_param("/debug_mode"):
             rospy.init_node("env_" + self.ns_prefix.replace("/", ""), anonymous=True)
