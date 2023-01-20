@@ -107,6 +107,9 @@ def initialize_hyperparameters(
         )
         hyperparams["robot"] = rospy.get_param("robot_model")
         hyperparams["agent_name"] = PATHS["model"].split("/")[-1]
+        hyperparams["space_encoder"] = rospy.get_param(
+            "space_encoder", "RobotSpecificEncoder"
+        )
     else:
         hyperparams = load_hyperparameters_json(PATHS=PATHS)
 
@@ -305,8 +308,10 @@ def get_agent_name(config: dict) -> str:
     #         + START_TIME
     #     )
     if config["resume"] is None:
-        architecture_name = config["architecture_name"]
-        return f"{robot_model}_{architecture_name}_{START_TIME}"
+        architecture_name, encoder_name = config["architecture_name"], rospy.get_param(
+            "space_encoder", "RobotSpecificEncoder"
+        )
+        return f"{robot_model}_{architecture_name}_{encoder_name}_{START_TIME}"
     return config["resume"]
 
 

@@ -45,7 +45,7 @@ def main():
     model = get_ppo_instance(config, params, train_env, PATHS, AGENT_NAME, AgentFactory)
 
     # set num of timesteps to be generated
-    n_timesteps = 40000000 if config["n_timesteps"] is None else config["n_timesteps"]
+    n_timesteps = config["n_timesteps"] or 40000000
 
     # start training
     start = time.time()
