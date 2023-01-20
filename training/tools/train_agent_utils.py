@@ -50,7 +50,8 @@ Dict containing agent specific hyperparameter keys (for documentation and typing
 """
 
 HYPERPARAM_KEYS = {
-    key: None for key in [
+    key: None
+    for key in [
         "agent_name",
         "robot",
         "reward_fnc",
@@ -72,6 +73,7 @@ HYPERPARAM_KEYS = {
         "m_batch_size",
         "n_epochs",
         "clip_range",
+        "space_encoder",
     ]
 }
 
@@ -89,10 +91,14 @@ def initialize_hyperparameters(
     """
     # when building new agent
     if load_target is None:
-        hyperparams = load_hyperparameters_json(PATHS=PATHS, from_scratch=True, config_name=config_name)
+        hyperparams = load_hyperparameters_json(
+            PATHS=PATHS, from_scratch=True, config_name=config_name
+        )
         hyperparams["robot"] = rospy.get_param("robot_model")
         hyperparams["agent_name"] = PATHS["model"].split("/")[-1]
-        hyperparams["space_encoder"] = rospy.get_param("space_encoder", "RobotSpecificEncoder")
+        hyperparams["space_encoder"] = rospy.get_param(
+            "space_encoder", "RobotSpecificEncoder"
+        )
     else:
         hyperparams = load_hyperparameters_json(PATHS=PATHS)
 
@@ -105,7 +111,7 @@ def initialize_hyperparameters(
     hyperparams["n_steps"] = int(hyperparams["batch_size"] / n_envs)
     write_hyperparameters_json(hyperparams, PATHS)
     print_hyperparameters(hyperparams)
-    
+
     return hyperparams
 
 
@@ -122,7 +128,9 @@ def write_hyperparameters_json(hyperparams: dict, PATHS: dict) -> None:
         json.dump(hyperparams, target, ensure_ascii=False, indent=4)
 
 
-def load_hyperparameters_json(PATHS: dict, from_scratch: bool = False, config_name: str = "default") -> dict:
+def load_hyperparameters_json(
+    PATHS: dict, from_scratch: bool = False, config_name: str = "default"
+) -> dict:
     """
     Load hyperparameters from model directory when loading - when training from scratch
     load from ../configs/hyperparameters
@@ -143,9 +151,13 @@ def load_hyperparameters_json(PATHS: dict, from_scratch: bool = False, config_na
         return hyperparams
     else:
         if from_scratch:
-            raise FileNotFoundError("Found no '%s.json' in %s" % (config_name, PATHS.get("hyperparams")))
+            raise FileNotFoundError(
+                "Found no '%s.json' in %s" % (config_name, PATHS.get("hyperparams"))
+            )
         else:
-            raise FileNotFoundError("Found no 'hyperparameters.json' in %s" % PATHS.get("model"))
+            raise FileNotFoundError(
+                "Found no 'hyperparameters.json' in %s" % PATHS.get("model")
+            )
 
 
 def update_total_timesteps_json(timesteps: int, PATHS: dict) -> None:
@@ -162,7 +174,9 @@ def update_total_timesteps_json(timesteps: int, PATHS: dict) -> None:
         curr_timesteps = int(hyperparams["n_timesteps"]) + timesteps
         hyperparams["n_timesteps"] = curr_timesteps
     except Exception:
-        raise Warning("Parameter 'total_timesteps' not found or not of type Integer in 'hyperparameter.json'!")
+        raise Warning(
+            "Parameter 'total_timesteps' not found or not of type Integer in 'hyperparameter.json'!"
+        )
     else:
         with open(doc_location, "w", encoding="utf-8") as target:
             json.dump(hyperparams, target, ensure_ascii=False, indent=4)
@@ -181,11 +195,11 @@ def check_hyperparam_format(loaded_hyperparams: dict, PATHS: dict) -> None:
         missing_keys = set(HYPERPARAM_KEYS.keys()).difference(
             set(loaded_hyperparams.keys())
         )
-        
+
         redundant_keys = set(loaded_hyperparams.keys()).difference(
             set(HYPERPARAM_KEYS.keys())
         )
-        
+
         raise AssertionError(
             f"unmatching keys, following keys missing: {missing_keys} \n"
             f"following keys unused: {redundant_keys}"
@@ -196,8 +210,9 @@ def check_hyperparam_format(loaded_hyperparams: dict, PATHS: dict) -> None:
         raise TypeError("Parameter 'task_mode' has unknown value")
 
 
-
-def update_hyperparam_model(model: PPO, PATHS: dict, params: dict, n_envs: int = 1) -> None:
+def update_hyperparam_model(
+    model: PPO, PATHS: dict, params: dict, n_envs: int = 1
+) -> None:
     """
     Updates parameter of loaded PPO agent when it was manually changed in the configs yaml.
 
@@ -237,13 +252,17 @@ def update_hyperparam_model(model: PPO, PATHS: dict, params: dict, n_envs: int =
 
 
 def check_batch_size(n_envs: int, batch_size: int, mn_batch_size: int) -> None:
-    assert batch_size > mn_batch_size, f"Mini batch size {mn_batch_size} is bigger than batch size {batch_size}"
+    assert (
+        batch_size > mn_batch_size
+    ), f"Mini batch size {mn_batch_size} is bigger than batch size {batch_size}"
 
     assert (
         batch_size % mn_batch_size == 0
     ), f"Batch size {batch_size} isn't divisible by mini batch size {mn_batch_size}"
 
-    assert batch_size % n_envs == 0, f"Batch size {batch_size} isn't divisible by n_envs {n_envs}"
+    assert (
+        batch_size % n_envs == 0
+    ), f"Batch size {batch_size} isn't divisible by n_envs {n_envs}"
 
     assert (
         batch_size % mn_batch_size == 0
@@ -264,15 +283,26 @@ def get_agent_name(args: argparse.Namespace) -> str:
 
     if args.custom_mlp:
         return (
-            robot_model 
-            + "_MLP_B_" + args.body 
-            + "_P_" + args.pi 
-            + "_V_" + args.vf 
-            + "_" + args.act_fn 
+            robot_model
+            + "_MLP_B_"
+            + args.body
+            + "_P_"
+            + args.pi
+            + "_V_"
+            + args.vf
+            + "_"
+            + args.act_fn
             + START_TIME
         )
     if args.load is None:
-        return robot_model + "_" + args.agent + "_" + rospy.get_param("space_encoder", "RobotSpecificEncoder") + START_TIME
+        return (
+            robot_model
+            + "_"
+            + args.agent
+            + "_"
+            + rospy.get_param("space_encoder", "RobotSpecificEncoder")
+            + START_TIME
+        )
     return args.load
 
 
@@ -288,29 +318,33 @@ def get_paths(agent_name: str, args: argparse.Namespace) -> dict:
     simulation_setup = rospkg.RosPack().get_path("arena-simulation-setup")
 
     PATHS = {
-        "model": os.path.join(rospkg.RosPack().get_path("rosnav"), "agents", agent_name, robot_model),
-
+        "model": os.path.join(
+            rospkg.RosPack().get_path("rosnav"), "agents", agent_name, robot_model
+        ),
         "tb": os.path.join(training_dir, "training_logs", "tensorboard", agent_name),
-        "eval": os.path.join(training_dir, "training_logs", "train_eval_log", agent_name),
-
+        "eval": os.path.join(
+            training_dir, "training_logs", "train_eval_log", agent_name
+        ),
         "robot_setting": os.path.join(
             simulation_setup,
             "robot",
             robot_model,
             f"{robot_model}.model.yaml",
         ),
-
         "hyperparams": os.path.join(training_dir, "configs", "hyperparameters"),
-        "curriculum": os.path.join(training_dir, "configs", "training_curriculums", "arena2d.yaml"),
+        "curriculum": os.path.join(
+            training_dir, "configs", "training_curriculums", "arena2d.yaml"
+        ),
     }
     # check for mode
     if args.load is None:
         os.makedirs(PATHS["model"])
-    elif not os.path.isfile(os.path.join(PATHS["model"], agent_name + ".zip")) and not os.path.isfile(
-        os.path.join(PATHS["model"], "best_model.zip")
-    ):
+    elif not os.path.isfile(
+        os.path.join(PATHS["model"], agent_name + ".zip")
+    ) and not os.path.isfile(os.path.join(PATHS["model"], "best_model.zip")):
         raise FileNotFoundError(
-            "Couldn't find model named %s.zip' or 'best_model.zip' in '%s'" % (agent_name, PATHS["model"])
+            "Couldn't find model named %s.zip' or 'best_model.zip' in '%s'"
+            % (agent_name, PATHS["model"])
         )
     # evaluation log enabled
     if args.eval_log:
@@ -385,14 +419,16 @@ def make_envs(
                 PATHS.get("eval"),
                 info_keywords=("done_reason", "is_success"),
             )
-        env.seed(seed + rank)
+        # env.seed(seed + rank)
         return env
 
     set_random_seed(seed)
     return _init
 
 
-def wait_for_nodes(with_ns: bool, n_envs: int, timeout: int = 30, nodes_per_ns: int = 3) -> None:
+def wait_for_nodes(
+    with_ns: bool, n_envs: int, timeout: int = 30, nodes_per_ns: int = 3
+) -> None:
     """
     Checks for timeout seconds if all nodes to corresponding namespace are online.
 
@@ -402,9 +438,13 @@ def wait_for_nodes(with_ns: bool, n_envs: int, timeout: int = 30, nodes_per_ns: 
     :param nodes_per_ns: (int) usual number of nodes per ns
     """
     if with_ns:
-        assert with_ns and n_envs >= 1, f"Illegal number of environments parsed: {n_envs}"
+        assert (
+            with_ns and n_envs >= 1
+        ), f"Illegal number of environments parsed: {n_envs}"
     else:
-        assert not with_ns and n_envs == 1, f"Simulation setup isn't compatible with the given number of envs"
+        assert (
+            not with_ns and n_envs == 1
+        ), f"Simulation setup isn't compatible with the given number of envs"
 
     for i in range(n_envs):
         for k in range(timeout):
@@ -414,9 +454,13 @@ def wait_for_nodes(with_ns: bool, n_envs: int, timeout: int = 30, nodes_per_ns: 
             if len(namespaces) >= nodes_per_ns:
                 break
 
-            warnings.warn(f"Check if all simulation parts of namespace '{ns}' are running properly")
+            warnings.warn(
+                f"Check if all simulation parts of namespace '{ns}' are running properly"
+            )
             warnings.warn(f"Trying to connect again..")
-            assert k < timeout - 1, f"Timeout while trying to connect to nodes of '{ns}'"
+            assert (
+                k < timeout - 1
+            ), f"Timeout while trying to connect to nodes of '{ns}'"
 
             time.sleep(1)
 
