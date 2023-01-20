@@ -24,9 +24,9 @@ def main():
 
     # in debug mode, we emulate multiprocessing on only one process
     # in order to be better able to locate bugs
-    # if args.debug:
-    # rospy.init_node("debug_node", disable_signals=False)
-
+    rospy.set_param("/debug_mode", args.debug)
+    if args.debug:
+        rospy.init_node("debug_node", disable_signals=False)
 
     # generate agent name and model specific paths
     AGENT_NAME = get_agent_name(args)
@@ -49,7 +49,7 @@ def main():
     )
 
     rospy.set_param("task_mode", params["task_mode"])
-    
+
     rospy.set_param("is_action_space_discrete", params["discrete_action_space"])
     rospy.set_param("goal_radius", params["goal_radius"])
 
@@ -57,11 +57,19 @@ def main():
     # when debug run on one process only
     if not args.debug and ns_for_nodes:
         env = SubprocVecEnv(
-            [make_envs(args, ns_for_nodes, i, params=params, PATHS=PATHS) for i in range(args.n_envs)],
+            [
+                make_envs(args, ns_for_nodes, i, params=params, PATHS=PATHS)
+                for i in range(args.n_envs)
+            ],
             start_method="fork",
         )
     else:
-        env = DummyVecEnv([make_envs(args, ns_for_nodes, i, params=params, PATHS=PATHS) for i in range(args.n_envs)])
+        env = DummyVecEnv(
+            [
+                make_envs(args, ns_for_nodes, i, params=params, PATHS=PATHS)
+                for i in range(args.n_envs)
+            ]
+        )
 
     # threshold settings for training curriculum
     # type can be either 'succ' or 'rew'
@@ -106,8 +114,8 @@ def main():
     eval_cb = EvalCallback(
         eval_env=eval_env,
         train_env=env,
-        n_eval_episodes=100,
-        eval_freq=100000,
+        n_eval_episodes=50,
+        eval_freq=20000,
         log_path=PATHS["eval"],
         best_model_save_path=PATHS["model"],
         deterministic=True,
@@ -121,7 +129,9 @@ def main():
         model = PPO(
             "MlpPolicy",
             env,
-            policy_kwargs=dict(net_arch=args.net_arch, activation_fn=get_act_fn(args.act_fn)),
+            policy_kwargs=dict(
+                net_arch=args.net_arch, activation_fn=get_act_fn(args.act_fn)
+            ),
             gamma=params["gamma"],
             n_steps=params["n_steps"],
             ent_coef=params["ent_coef"],
@@ -137,7 +147,9 @@ def main():
             verbose=1,
         )
     elif args.agent is not None:
-        agent: Union[Type[BaseAgent], Type[ActorCriticPolicy]] = AgentFactory.instantiate(args.agent)
+        agent: Union[
+            Type[BaseAgent], Type[ActorCriticPolicy]
+        ] = AgentFactory.instantiate(args.agent)
         if isinstance(agent, BaseAgent):
             model = PPO(
                 agent.type.value,
@@ -177,7 +189,8 @@ def main():
             )
         else:
             raise TypeError(
-                f"Registered agent class {args.agent} is neither of type" "'BaseAgent' or 'ActorCriticPolicy'!"
+                f"Registered agent class {args.agent} is neither of type"
+                "'BaseAgent' or 'ActorCriticPolicy'!"
             )
     else:
         # load flag
