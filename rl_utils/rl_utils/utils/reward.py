@@ -1,9 +1,9 @@
+from typing import Any, Callable, Dict, List, Tuple
+
 import numpy as np
 import scipy.spatial
-
-from numpy.lib.utils import safe_eval
 from geometry_msgs.msg import Pose2D
-from typing import Tuple
+from numpy.lib.utils import safe_eval
 
 
 class RewardCalculator:
@@ -13,7 +13,8 @@ class RewardCalculator:
         robot_radius: float,
         safe_dist: float,
         goal_radius: float,
-        rule: str = "rule_00",
+        rule: str = None,
+        custom_rew_dict: Dict[str, float] = None,
         extended_eval: bool = False,
     ):
         """
@@ -35,6 +36,8 @@ class RewardCalculator:
         self.last_action = None
         self._curr_dist_to_path = None
         self.safe_dist = safe_dist
+
+        self.custom_rew_dict = custom_rew_dict
         self._extended_eval = extended_eval
 
         self.kdtree = None
@@ -47,7 +50,10 @@ class RewardCalculator:
             "rule_04": RewardCalculator._cal_reward_rule_04,
             "rule_05": RewardCalculator._cal_reward_rule_05,
         }
-        self.cal_func = self._cal_funcs[rule]
+
+        self.cal_func = (
+            self._build_reward_func() if self.custom_rew_dict else self._cal_funcs[rule]
+        )
 
     def reset(self):
         """
@@ -71,7 +77,7 @@ class RewardCalculator:
         laser_scan: np.ndarray,
         goal_in_robot_frame: Tuple[float, float],
         *args,
-        **kwargs
+        **kwargs,
     ):
         """
         Returns reward and info to the gym environment.
@@ -80,15 +86,72 @@ class RewardCalculator:
         :param goal_in_robot_frame (Tuple[float,float]): position (rho, theta) of the goal in robot frame (Polar coordinate)
         """
         self._reset()
-        self.cal_func(self, laser_scan, goal_in_robot_frame, *args, **kwargs)
+        self.cal_func(
+            self,
+            laser_scan=laser_scan,
+            goal_in_robot_frame=goal_in_robot_frame,
+            *args,
+            **kwargs,
+        )
         return self.curr_reward, self.info
+
+    def _build_reward_func(self) -> Callable:
+        rew_list = []
+        for rew_factor, args in self.custom_rew_dict.items():
+            if not args:
+                args = {}
+            rew_list.append((eval(f"self._reward_{rew_factor}", {"self": self}), args))
+
+        def rew_func(
+            self,
+            laser_scan,
+            goal_in_robot_frame,
+            **kwargs,
+        ):
+            self._curr_action = kwargs["action"]
+            self._set_current_dist_to_globalplan(
+                kwargs["global_plan"], kwargs["robot_pose"]
+            )
+            for rew in rew_list:
+                # rew func containing distance_global_plan, abrupt_direction_change
+                # or reverse_drive
+                # in their names, are only applied when there is no obs in the robots'
+                # safety dist
+                if (
+                    "distance_global_plan" in rew[0].__name__
+                    or "abrupt_direction_change" in rew[0].__name__
+                    or "reverse_drive" in rew[0].__name__
+                    or "reward_abrupt_vel_change" in rew[0].__name__
+                ):
+                    if laser_scan.min() > self.safe_dist + 0.35:
+                        if not "reward_abrupt_vel_change" in rew[0].__name__:
+                            rew[0](
+                                laser_scan=laser_scan,
+                                goal_in_robot_frame=goal_in_robot_frame,
+                                **kwargs,
+                                **rew[1],
+                            )
+                        else:
+                            self._apply_abrupt_vel_change(rew[1])
+                    else:
+                        self.last_dist_to_path = None
+                else:
+                    rew[0](
+                        laser_scan=laser_scan,
+                        goal_in_robot_frame=goal_in_robot_frame,
+                        **kwargs,
+                        **rew[1],
+                    )
+            self.last_action = self._curr_action
+
+        return rew_func
 
     def _cal_reward_rule_00(
         self,
         laser_scan: np.ndarray,
         goal_in_robot_frame: Tuple[float, float],
         *args,
-        **kwargs
+        **kwargs,
     ):
         self._reward_goal_reached(goal_in_robot_frame)
         self._reward_safe_dist(laser_scan, punishment=0.25)
@@ -102,7 +165,7 @@ class RewardCalculator:
         laser_scan: np.ndarray,
         goal_in_robot_frame: Tuple[float, float],
         *args,
-        **kwargs
+        **kwargs,
     ):
         self._reward_distance_traveled(kwargs["action"], consumption_factor=0.0075)
         self._reward_goal_reached(goal_in_robot_frame, reward=15)
@@ -117,7 +180,7 @@ class RewardCalculator:
         laser_scan: np.ndarray,
         goal_in_robot_frame: Tuple[float, float],
         *args,
-        **kwargs
+        **kwargs,
     ):
         self._set_current_dist_to_globalplan(
             kwargs["global_plan"], kwargs["robot_pose"]
@@ -136,7 +199,7 @@ class RewardCalculator:
         laser_scan: np.ndarray,
         goal_in_robot_frame: Tuple[float, float],
         *args,
-        **kwargs
+        **kwargs,
     ):
         self._set_current_dist_to_globalplan(
             kwargs["global_plan"], kwargs["robot_pose"]
@@ -161,7 +224,7 @@ class RewardCalculator:
         laser_scan: np.ndarray,
         goal_in_robot_frame: Tuple[float, float],
         *args,
-        **kwargs
+        **kwargs,
     ):
         self._set_current_dist_to_globalplan(
             kwargs["global_plan"], kwargs["robot_pose"]
@@ -182,14 +245,13 @@ class RewardCalculator:
         self._reward_goal_approached(
             goal_in_robot_frame, reward_factor=0.3, penalty_factor=0.4
         )
-        self._reward_not_moving(kwargs["action"])
 
     def _cal_reward_rule_05(
         self,
         laser_scan: np.ndarray,
         goal_in_robot_frame: Tuple[float, float],
         *args,
-        **kwargs
+        **kwargs,
     ):
         self._curr_action = kwargs["action"]
         self._set_current_dist_to_globalplan(
@@ -201,10 +263,10 @@ class RewardCalculator:
                 reward_factor=0.2,
                 penalty_factor=0.3,
             )
-            self._reward_abrupt_vel_change(vel_idx=0, factor=0.7)
-            self._reward_abrupt_vel_change(vel_idx=-1, factor=0.3)
+            self._reward_abrupt_vel_change(vel_idx=0, factor=1.0)
+            self._reward_abrupt_vel_change(vel_idx=-1, factor=0.5)
             if self.holonomic:
-                self._reward_abrupt_vel_change(vel_idx=1, factor=0.3)
+                self._reward_abrupt_vel_change(vel_idx=1, factor=0.5)
             self._reward_reverse_drive(self._curr_action, 0.0001)
         else:
             self.last_dist_to_path = None
@@ -212,7 +274,7 @@ class RewardCalculator:
         self._reward_safe_dist(laser_scan, punishment=0.25)
         self._reward_collision(laser_scan, punishment=10)
         self._reward_goal_approached(
-            goal_in_robot_frame, reward_factor=0.5, penalty_factor=0.6
+            goal_in_robot_frame, reward_factor=0.4, penalty_factor=0.6
         )
         self.last_action = self._curr_action
 
@@ -225,7 +287,11 @@ class RewardCalculator:
             )
 
     def _reward_goal_reached(
-        self, goal_in_robot_frame=Tuple[float, float], reward: float = 15
+        self,
+        goal_in_robot_frame: Tuple[float, float],
+        reward: float = 15,
+        *args,
+        **kwargs,
     ):
         """
         Reward for reaching the goal.
@@ -234,7 +300,7 @@ class RewardCalculator:
         :param reward (float, optional): reward amount for reaching. defaults to 15
         """
         if goal_in_robot_frame[0] < self.goal_radius:
-            self.curr_reward = reward
+            self.curr_reward += reward
             self.info["is_done"] = True
             self.info["done_reason"] = 2
             self.info["is_success"] = 1
@@ -246,6 +312,8 @@ class RewardCalculator:
         goal_in_robot_frame=Tuple[float, float],
         reward_factor: float = 0.3,
         penalty_factor: float = 0.5,
+        *args,
+        **kwargs,
     ):
         """
         Reward for approaching the goal.
@@ -269,7 +337,9 @@ class RewardCalculator:
             self.curr_reward += reward
         self.last_goal_dist = goal_in_robot_frame[0]
 
-    def _reward_collision(self, laser_scan: np.ndarray, punishment: float = 10):
+    def _reward_collision(
+        self, laser_scan: np.ndarray, punishment: float = 10, *args, **kwargs
+    ):
         """
         Reward for colliding with an obstacle.
 
@@ -286,7 +356,9 @@ class RewardCalculator:
             else:
                 self.info["crash"] = True
 
-    def _reward_safe_dist(self, laser_scan: np.ndarray, punishment: float = 0.15):
+    def _reward_safe_dist(
+        self, laser_scan: np.ndarray, punishment: float = 0.15, *args, **kwargs
+    ):
         """
         Reward for undercutting safe distance.
 
@@ -299,7 +371,9 @@ class RewardCalculator:
             if self._extended_eval:
                 self.info["safe_dist"] = True
 
-    def _reward_not_moving(self, action: np.ndarray = None, punishment: float = 0.01):
+    def _reward_not_moving(
+        self, action: np.ndarray = None, punishment: float = 0.01, *args, **kwargs
+    ):
         """
         Reward for not moving. Only applies half of the punishment amount
         when angular velocity is larger than zero.
@@ -307,14 +381,16 @@ class RewardCalculator:
         :param action (np.ndarray (,2)): [0] - linear velocity, [1] - angular velocity
         :param punishment (float, optional): punishment for not moving. defaults to 0.01
         """
-        if action is not None and abs(action[0]) <= 0.05:
-            self.curr_reward -= punishment
+        if action is not None and action[0] == 0.0:
+            self.curr_reward -= punishment if action[1] == 0.0 else punishment / 2
 
     def _reward_distance_traveled(
         self,
         action: np.array = None,
         punishment: float = 0.01,
         consumption_factor: float = 0.005,
+        *args,
+        **kwargs,
     ):
         """
         Reward for driving a certain distance. Supposed to represent "fuel consumption".
@@ -332,9 +408,7 @@ class RewardCalculator:
         self.curr_reward -= reward
 
     def _reward_distance_global_plan(
-        self,
-        reward_factor: float = 0.1,
-        penalty_factor: float = 0.15,
+        self, reward_factor: float = 0.1, penalty_factor: float = 0.15, *args, **kwargs
     ):
         """
         Reward for approaching/veering away the global plan. (Weighted difference between
@@ -361,6 +435,9 @@ class RewardCalculator:
         self,
         action: np.array = None,
         dist_to_path: float = 0.5,
+        reward_factor: float = 0.1,
+        *args,
+        **kwargs,
     ):
         """
         Reward for travelling on the global plan.
@@ -375,9 +452,11 @@ class RewardCalculator:
             and action is not None
             and self._curr_dist_to_path <= dist_to_path
         ):
-            self.curr_reward += 0.1 * action[0]
+            self.curr_reward += reward_factor * action[0]
 
-    def get_min_dist2global_kdtree(self, global_plan: np.array, robot_pose: Pose2D):
+    def get_min_dist2global_kdtree(
+        self, global_plan: np.array, robot_pose: Pose2D, *args, **kwargs
+    ):
         """
         Calculates minimal distance to global plan using kd tree search.
 
@@ -390,7 +469,9 @@ class RewardCalculator:
         dist, index = self.kdtree.query([robot_pose.x, robot_pose.y])
         return dist, index
 
-    def _reward_abrupt_direction_change(self, action: np.ndarray = None):
+    def _reward_abrupt_direction_change(
+        self, action: np.ndarray = None, *args, **kwargs
+    ):
         """
         Applies a penalty when an abrupt change of direction occured.
 
@@ -404,7 +485,9 @@ class RewardCalculator:
             self.curr_reward -= (vel_diff**4) / 50
         self.last_action = action
 
-    def _reward_reverse_drive(self, action: np.array = None, penalty: float = 0.01):
+    def _reward_reverse_drive(
+        self, action: np.array = None, penalty: float = 0.01, *args, **kwargs
+    ):
         """
         Applies a penalty when an abrupt change of direction occured.
 
@@ -413,7 +496,9 @@ class RewardCalculator:
         if action is not None and action[0] < 0:
             self.curr_reward -= penalty
 
-    def _reward_abrupt_vel_change(self, vel_idx: int, factor: float = 1):
+    def _reward_abrupt_vel_change(
+        self, vel_idx: int, factor: float = 1, *args, **kwargs
+    ):
         """
         Applies a penalty when an abrupt change of direction occured.
 
@@ -425,3 +510,10 @@ class RewardCalculator:
 
             vel_diff = abs(curr_vel - last_vel)
             self.curr_reward -= ((vel_diff**4) / 100) * factor
+
+    def _apply_abrupt_vel_change(self, rew_factor_dict: dict):
+        for _, kwargs in rew_factor_dict.items():
+            if kwargs["vel_idx"] != 1 or self.holonomic:
+                self._reward_abrupt_vel_change(
+                    vel_idx=kwargs["vel_idx"], factor=kwargs["factor"]
+                )

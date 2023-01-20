@@ -102,16 +102,25 @@ def initialize_hyperparameters(
     """
     # when building new agent
     if load_target is None:
+        # load hyperparameters from default config file
         hyperparams = load_hyperparameters_json(
             PATHS=PATHS, from_scratch=True, config_name=config_name
         )
+        # set dynamic parameters
         hyperparams["robot"] = rospy.get_param("robot_model")
         hyperparams["agent_name"] = PATHS["model"].split("/")[-1]
         hyperparams["space_encoder"] = rospy.get_param(
             "space_encoder", "RobotSpecificEncoder"
         )
+        hyperparams["custom_rew_file"] = rospy.get_param("custom_rew_file", None)
     else:
         hyperparams = load_hyperparameters_json(PATHS=PATHS)
+        hyperparams["custom_rew_file"] = (
+            rospy.get_param("custom_rew_file")
+            if rospy.has_param("custom_rew_file")
+            and hyperparams["custom_rew_file"] != rospy.get_param("custom_rew_file")
+            else None
+        )
 
     import rosnav.model.custom_policy
     import rosnav.model.custom_sb3_policy
@@ -385,6 +394,7 @@ def make_envs(
     seed: int = 0,
     PATHS: dict = None,
     train: bool = True,
+    custom_rew_dict: dict = None,
 ):
     """
     Utility function for multiprocessed env
@@ -401,7 +411,7 @@ def make_envs(
 
     def _init() -> Union[gym.Env, gym.Wrapper]:
         train_ns = f"sim_{rank + 1}" if with_ns else ""
-        eval_ns = f"eval_sim" if with_ns else ""
+        eval_ns = "eval_sim" if with_ns else ""
 
         if train:
             # train env
@@ -414,6 +424,7 @@ def make_envs(
                 task_mode=params["task_mode"],
                 curr_stage=params["curr_stage"],
                 PATHS=PATHS,
+                custom_rew_dict=custom_rew_dict,
             )
         else:
             # eval env
@@ -427,6 +438,7 @@ def make_envs(
                     task_mode=params["task_mode"],
                     curr_stage=params["curr_stage"],
                     PATHS=PATHS,
+                    custom_rew_dict=custom_rew_dict,
                 ),
                 PATHS.get("eval"),
                 info_keywords=("done_reason", "is_success"),
@@ -522,17 +534,43 @@ def load_config(config_name: str) -> dict:
     return config
 
 
+def load_rew_fnc(config_name: str) -> dict:
+    if config_name:
+        config_location = os.path.join(
+            rospkg.RosPack().get_path("training"),
+            "configs",
+            "reward_functions",
+            config_name,
+        )
+        with open(config_location, "r", encoding="utf-8") as target:
+            config = yaml.load(target, Loader=yaml.FullLoader)
+    else:
+        config = None
+    return config
+
+
 def init_envs(
-    config: dict, params: dict, paths: dict, ns_for_nodes: bool
+    config: dict,
+    params: dict,
+    paths: dict,
+    ns_for_nodes: bool,
 ) -> Tuple[VecEnv, VecEnv]:
     import stable_baselines3.common.vec_env as sb3_env
+
+    custom_rew_dict = load_rew_fnc(rospy.get_param("custom_rew_file"))
 
     # instantiate train environment
     # when debug run on one process only
     if not config["debug_mode"] and ns_for_nodes:
         train_env = sb3_env.SubprocVecEnv(
             [
-                make_envs(ns_for_nodes, i, params=params, PATHS=paths)
+                make_envs(
+                    ns_for_nodes,
+                    i,
+                    params=params,
+                    PATHS=paths,
+                    custom_rew_dict=custom_rew_dict,
+                )
                 for i in range(config["n_envs"])
             ],
             start_method="fork",
@@ -540,7 +578,13 @@ def init_envs(
     else:
         train_env = sb3_env.DummyVecEnv(
             [
-                make_envs(ns_for_nodes, i, params=params, PATHS=paths)
+                make_envs(
+                    ns_for_nodes,
+                    i,
+                    params=params,
+                    PATHS=paths,
+                    custom_rew_dict=custom_rew_dict,
+                )
                 for i in range(config["n_envs"])
             ]
         )
@@ -556,6 +600,7 @@ def init_envs(
                     params=params,
                     PATHS=paths,
                     train=False,
+                    custom_rew_dict=custom_rew_dict,
                 )
             ]
         )
@@ -674,3 +719,8 @@ def populate_ros_params(params):
     rospy.set_param("task_mode", params["task_mode"])
     rospy.set_param("is_action_space_discrete", params["discrete_action_space"])
     rospy.set_param("goal_radius", params["goal_radius"])
+
+
+def populate_ros_configs(config):
+    rospy.set_param("debug_mode", config["debug_mode"])
+    rospy.set_param("custom_rew_file", config["reward_function_file"])

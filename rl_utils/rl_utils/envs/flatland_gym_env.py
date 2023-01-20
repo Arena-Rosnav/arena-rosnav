@@ -29,11 +29,10 @@ class FlatlandEnv(gym.Env):
         safe_dist: float = None,
         goal_radius: float = 0.1,
         max_steps_per_episode=100,
-        train_mode: bool = True,
-        debug: bool = False,
         task_mode: str = "staged",
         PATHS: dict = dict(),
         extended_eval: bool = False,
+        custom_rew_dict: dict = None,
         *args,
         **kwargs,
     ):
@@ -63,7 +62,7 @@ class FlatlandEnv(gym.Env):
             time.sleep((ns_int + 1) * 2)
         except Exception:
             rospy.logwarn(
-                f"Can't not determinate the number of the environment, training script may crash!"
+                "Can't not determinate the number of the environment, training script may crash!"
             )
             time.sleep(2)
 
@@ -99,6 +98,7 @@ class FlatlandEnv(gym.Env):
             safe_dist=safe_dist,
             goal_radius=goal_radius,
             rule=reward_fnc,
+            custom_rew_dict=custom_rew_dict,
             extended_eval=self._extended_eval,
         )
 
@@ -181,8 +181,8 @@ class FlatlandEnv(gym.Env):
 
         # calculate reward
         reward, reward_info = self.reward_calculator.get_reward(
-            obs_dict["laser_scan"],
-            obs_dict["goal_in_robot_frame"],
+            laser_scan=obs_dict["laser_scan"],
+            goal_in_robot_frame=obs_dict["goal_in_robot_frame"],
             action=decoded_action,
             global_plan=obs_dict["global_plan"],
             robot_pose=obs_dict["robot_pose"],

@@ -52,3 +52,4 @@ hyperparameter_file: "default.json"
 architecture_name: "AGENT_24"
 # path to latest checkpoint; if provided the training will be resumed from that checkpoint
 resume: null
+reward_function_file: "rule_05.yaml"

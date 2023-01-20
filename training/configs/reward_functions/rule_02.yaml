@@ -1,0 +1,19 @@
+goal_reached:
+  reward: 15
+
+safe_dist:
+  punishment: 0.25
+
+collision:
+  punishment: 10
+
+goal_approached:
+  reward_factor: 0.3
+  penalty_factor: 0.4
+
+distance_traveled:
+  consumption_factor: 0.0075
+
+following_global_plan:
+  reward_factor: 0.2
+  penalty_factor: 0.3

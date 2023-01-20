@@ -10,7 +10,8 @@ from tools.train_agent_utils import *
 def main():
     args, _ = parse_training_args()
     config = load_config(args.config)
-    rospy.set_param("debug_mode", config["debug_mode"])
+
+    populate_ros_configs(config)
 
     # in debug mode, we emulate multiprocessing on only one process
     # in order to be better able to locate bugs
