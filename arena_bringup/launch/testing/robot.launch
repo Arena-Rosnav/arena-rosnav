@@ -32,7 +32,7 @@
 
     <include 
       file="$(find arena-simulation-setup)/robot/$(arg model)/launch/control.launch" 
-      if="$(eval env('ENVIRONMENT') == 'gazebo')"
+      if="$(eval env('SIMULATOR') == 'gazebo')"
     >
       <arg name="robot_namespace" value="$(arg namespace)" />
     </include>
@@ -43,7 +43,7 @@
         <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
         
         <arg name="cmd_vel_topic" value="$(arg namespace)/cmd_vel" />
-        <arg name="odom_topic" value="$(arg namespace)/odom_topic" />
+        <arg name="odom_topic" value="$(arg namespace)/odom" />
 
         <arg name="namespace" value="$(arg namespace)" />
     </include>
