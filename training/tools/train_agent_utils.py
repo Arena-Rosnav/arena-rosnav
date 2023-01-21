@@ -81,6 +81,7 @@ HYPERPARAM_KEYS = {
         "n_epochs",
         "clip_range",
         "space_encoder",
+        "custom_rew_file",
     ]
 }
 
@@ -102,25 +103,9 @@ def initialize_hyperparameters(
     """
     # when building new agent
     if load_target is None:
-        # load hyperparameters from default config file
-        hyperparams = load_hyperparameters_json(
-            PATHS=PATHS, from_scratch=True, config_name=config_name
-        )
-        # set dynamic parameters
-        hyperparams["robot"] = rospy.get_param("robot_model")
-        hyperparams["agent_name"] = PATHS["model"].split("/")[-1]
-        hyperparams["space_encoder"] = rospy.get_param(
-            "space_encoder", "RobotSpecificEncoder"
-        )
-        hyperparams["custom_rew_file"] = rospy.get_param("custom_rew_file", None)
+        hyperparams = init_params_new_agent(PATHS, config_name)
     else:
-        hyperparams = load_hyperparameters_json(PATHS=PATHS)
-        hyperparams["custom_rew_file"] = (
-            rospy.get_param("custom_rew_file")
-            if rospy.has_param("custom_rew_file")
-            and hyperparams["custom_rew_file"] != rospy.get_param("custom_rew_file")
-            else None
-        )
+        hyperparams = init_params_loaded_agent(PATHS)
 
     import rosnav.model.custom_policy
     import rosnav.model.custom_sb3_policy
@@ -134,6 +119,27 @@ def initialize_hyperparameters(
     print_hyperparameters(hyperparams)
 
     return hyperparams
+
+
+def init_params_new_agent(PATHS, config_name) -> dict:
+    # load hyperparameters from default config file
+    hyperparams = load_hyperparameters_json(
+        PATHS=PATHS, from_scratch=True, config_name=config_name
+    )
+    # set dynamic parameters
+    hyperparams["robot"] = rospy.get_param("robot_model")
+    hyperparams["agent_name"] = PATHS["model"].split("/")[-1]
+    hyperparams["space_encoder"] = rospy.get_param(
+        "space_encoder", "RobotSpecificEncoder"
+    )
+    hyperparams["custom_rew_file"] = rospy.get_param("custom_rew_file", None)
+    if not hyperparams["custom_rew_file"]:
+        hyperparams["reward_fnc"] = None
+    return hyperparams
+
+
+def init_params_loaded_agent(PATHS) -> dict:
+    return load_hyperparameters_json(PATHS=PATHS)
 
 
 def write_hyperparameters_json(hyperparams: dict, PATHS: dict) -> None:
@@ -173,11 +179,11 @@ def load_hyperparameters_json(
     else:
         if from_scratch:
             raise FileNotFoundError(
-                "Found no '%s' in %s" % (config_name, PATHS.get("hyperparams"))
+                f"""Found no '{config_name}' in {PATHS.get("hyperparams")}"""
             )
         else:
             raise FileNotFoundError(
-                "Found no 'hyperparameters.json' in %s" % PATHS.get("model")
+                f"""Found no 'hyperparameters.json' in {PATHS.get("model")}"""
             )
 
 
@@ -207,7 +213,7 @@ def print_hyperparameters(hyperparams: dict) -> None:
     print("\n--------------------------------")
     print("         HYPERPARAMETERS         \n")
     for param, param_val in hyperparams.items():
-        print("{:30s}{:<10s}".format((param + ":"), str(param_val)))
+        print("{:30s}{:<10s}".format(f"{param}:", str(param_val)))
     print("--------------------------------\n\n")
 
 
@@ -679,6 +685,9 @@ def get_ppo_instance(
                 n_epochs=params["n_epochs"],
                 clip_range=params["clip_range"],
                 tensorboard_log=PATHS.get("tb"),
+                use_wandb=False
+                if config["debug_mode"]
+                else config["monitoring"]["use_wandb"],
                 verbose=1,
             )
         elif issubclass(agent, ActorCriticPolicy):
@@ -696,6 +705,9 @@ def get_ppo_instance(
                 n_epochs=params["n_epochs"],
                 clip_range=params["clip_range"],
                 tensorboard_log=PATHS["tb"],
+                use_wandb=False
+                if config["debug_mode"]
+                else config["monitoring"]["use_wandb"],
                 verbose=1,
             )
         else:

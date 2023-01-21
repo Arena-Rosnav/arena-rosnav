@@ -1,26 +1,36 @@
+### General
 # in debug_mode no agent directories will be created and no models will be saved
-debug_mode: true
+# further no wandb logging and fake (simulated) multiprocessing for simpler debugging 
+debug_mode: false
 # number of parallel environments
-n_envs: 2
+n_envs: 1
 # gpu yes or no
 no_gpu: false
 
+### Training Monitoring
+monitoring:
+  # weights and biases logging
+  use_wandb: true
+  # save evaluation stats during training in log file
+  eval_log: false
+  # use tensorboard
+  tb: false
 
-### Global configuration that applies to all robots
+### General Training
 # navigation task mode, chose from "random" or "staged"
 task_mode: "staged"
 # number of simulation timesteps
 n_timesteps: 40000000
-max_num_moves_per_eps: 1000
+max_num_moves_per_eps: 250
 
 ### Periodic Eval
 periodic_eval:
   # max number of steps per episode
-  max_num_moves_per_eps: 1000
+  max_num_moves_per_eps: 350
   # number of evaluation episodes
   n_eval_episodes: 100
   # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-  eval_freq: 20000
+  eval_freq: 15000
 
 ### Training Curriculum
 # threshold metric to be considered during evaluation
@@ -38,18 +48,11 @@ stop_training:
   threshold_type: "succ"
   threshold: 0.9
 
-### Training Monitoring
-monitoring:
-  # save evaluation stats during training in log file
-  eval_log: false
-  # use tensorboard
-  tb: false
-
 ### Agent Specs: Training Hyperparameter and Network Architecture
 # name of hyperparameter file located in the training/configs/hyperparameters directory
 hyperparameter_file: "default.json"
 # name of architecture defined in the Policy factory
-architecture_name: "AGENT_24"
+architecture_name: "AGENT_25"
 # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-resume: null
-reward_function_file: "rule_05.yaml"
+resume: "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+reward_function_file: null # "rcppo.yaml"

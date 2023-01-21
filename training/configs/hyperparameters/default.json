@@ -8,7 +8,7 @@
   "train_max_steps_per_episode": 200,
   "eval_max_steps_per_episode": 250,
   "goal_radius": 0.3,
-  "curr_stage": 1,
+  "curr_stage": 3,
   "batch_size": 24000,
   "gamma": 0.99,
   "n_steps": 1200,
@@ -20,5 +20,6 @@
   "m_batch_size": 16,
   "n_epochs": 3,
   "clip_range": 0.22,
-  "space_encoder": null
+  "space_encoder": null,
+  "custom_rew_file": "rule_00"
 }

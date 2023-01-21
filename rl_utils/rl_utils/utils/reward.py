@@ -124,7 +124,7 @@ class RewardCalculator:
                     or "reward_abrupt_vel_change" in rew[0].__name__
                 ):
                     if laser_scan.min() > self.safe_dist + 0.35:
-                        if not "reward_abrupt_vel_change" in rew[0].__name__:
+                        if "reward_abrupt_vel_change" not in rew[0].__name__:
                             rew[0](
                                 laser_scan=laser_scan,
                                 goal_in_robot_frame=goal_in_robot_frame,
