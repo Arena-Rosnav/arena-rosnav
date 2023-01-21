@@ -278,6 +278,36 @@ def update_hyperparam_model(
         model.tensorboard_log = PATHS["tb"]
 
 
+def init_wandb(model: PPO):
+    import wandb
+
+    logger_config = {
+        "learning_rate": model.learning_rate,
+        "n_steps": model.n_steps,
+        "batch_size": model.batch_size,
+        "n_epochs": model.n_epochs,
+        "gamma": model.gamma,
+        "gae_lambda": model.gae_lambda,
+        "ent_coef": model.ent_coef,
+        "vf_coef": model.vf_coef,
+        "max_grad_norm": model.max_grad_norm,
+        "use_sde": model.use_sde,
+        "sde_sample_freq": model.sde_sample_freq,
+        "clip_range": model.clip_range,
+        "clip_range_vf": model.clip_range_vf,
+        "target_kl": model.target_kl,
+    }
+
+    wandb.init(
+        project="Arena-RL",
+        entity=None,
+        sync_tensorboard=True,
+        monitor_gym=True,
+        save_code=True,
+        config=logger_config,
+    )
+
+
 def check_batch_size(n_envs: int, batch_size: int, mn_batch_size: int) -> None:
     assert (
         batch_size > mn_batch_size
@@ -722,6 +752,92 @@ def get_ppo_instance(
             model = PPO.load(os.path.join(PATHS["model"], agent_name), train_env)
         elif os.path.isfile(os.path.join(PATHS["model"], "best_model.zip")):
             model = PPO.load(os.path.join(PATHS["model"], "best_model"), train_env)
+        update_hyperparam_model(model, PATHS, params, config["n_envs"])
+        if config["monitoring"]["use_wandb"]:
+            init_wandb(model)
+    return model
+
+
+def get_rcppo_instance(
+    config: dict,
+    params: dict,
+    train_env: VecEnv,
+    PATHS: dict,
+    agent_name: str,
+    AgentFactory,
+) -> PPO:
+    import safe_rl_stable_baselines3 as safe_rl_sb3
+
+    rcppo_kwargs = {
+        "constraint_alpha": 0.5,
+        "lr_constraint_lambda_decay_threshold": None,
+        "constant_constraint_lambda": 1e-5,
+        "lr_constraint_lambda": 5e-7,
+    }
+
+    if config["architecture_name"] and not config["resume"]:
+        agent: Union[
+            Type[BaseAgent], Type[ActorCriticPolicy]
+        ] = AgentFactory.instantiate(config["architecture_name"])
+        if isinstance(agent, BaseAgent):
+            model = safe_rl_sb3.RCPPO(
+                agent.type.value,
+                train_env,
+                policy_kwargs=agent.get_kwargs(),
+                gamma=params["gamma"],
+                n_steps=params["n_steps"],
+                ent_coef=params["ent_coef"],
+                learning_rate=params["learning_rate"],
+                vf_coef=params["vf_coef"],
+                max_grad_norm=params["max_grad_norm"],
+                gae_lambda=params["gae_lambda"],
+                batch_size=params["m_batch_size"],
+                n_epochs=params["n_epochs"],
+                clip_range=params["clip_range"],
+                tensorboard_log=PATHS.get("tb"),
+                use_wandb=False
+                if config["debug_mode"]
+                else config["monitoring"]["use_wandb"],
+                verbose=1,
+                **rcppo_kwargs,
+            )
+        elif issubclass(agent, ActorCriticPolicy):
+            model = safe_rl_sb3.RCPPO(
+                agent,
+                train_env,
+                gamma=params["gamma"],
+                n_steps=params["n_steps"],
+                ent_coef=params["ent_coef"],
+                learning_rate=params["learning_rate"],
+                vf_coef=params["vf_coef"],
+                max_grad_norm=params["max_grad_norm"],
+                gae_lambda=params["gae_lambda"],
+                batch_size=params["m_batch_size"],
+                n_epochs=params["n_epochs"],
+                clip_range=params["clip_range"],
+                tensorboard_log=PATHS["tb"],
+                use_wandb=False
+                if config["debug_mode"]
+                else config["monitoring"]["use_wandb"],
+                verbose=1,
+                **rcppo_kwargs,
+            )
+        else:
+            arch_name = config["architecture_name"]
+            raise TypeError(
+                f"Registered agent class {arch_name} is neither of type"
+                "'BaseAgent' or 'ActorCriticPolicy'!"
+            )
+    else:
+        # load flag
+        if os.path.isfile(os.path.join(PATHS["model"], f"{agent_name}.zip")):
+            model = safe_rl_sb3.RCPPO.load(
+                os.path.join(PATHS["model"], agent_name), train_env
+            )
+        elif os.path.isfile(os.path.join(PATHS["model"], "best_model.zip")):
+            model = safe_rl_sb3.RCPPO.load(
+                os.path.join(PATHS["model"], "best_model"), train_env
+            )
         update_hyperparam_model(model, PATHS, params, config["n_envs"])
 
     return model
