@@ -10,15 +10,23 @@
 
   <arg name="namespace" default="" /> 
 
+  <arg name="complexity" default="1" />
+
   <!-- TODO: Add data recorder -->
   <arg name="record_data" default="false" />
-
-  <param name="model" value="$(arg model)" />
 
   <param name="model" value="$(arg model)" />
   <param name="agent_name" value="$(arg agent_name)" unless="$(eval arg('local_planner') != 'rosnav')"/>
 
   <remap from="$(arg namespace)/map" to="/map" />
+
+  <group if="$(eval arg('complexity') > 1)">
+    <include file="$(find arena_bringup)/launch/testing/amcl.launch">
+      <arg name="namespace" value="$(arg namespace)" />
+    </include>
+  </group>
+
+  <remap from="/$(arg namespace)/odom" to="/$(arg namespace)/odom_amcl" if="$(eval arg('complexity') > 1)" />
 
   <group ns="$(arg namespace)">
     <param name="local_planner" value="$(arg local_planner)" />
@@ -27,15 +35,18 @@
 
     <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
     <param name="robot_name" value="$(arg model)" />
-    
-    <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster" args="0 0 0 0 0 0 1 map $(arg namespace)_odom" />
 
-    <include 
-      file="$(find arena-simulation-setup)/robot/$(arg model)/launch/control.launch" 
-      if="$(eval env('SIMULATOR') == 'gazebo')"
-    >
-      <arg name="robot_namespace" value="$(arg namespace)" />
-    </include>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster" args="0 0 0 0 0 0 1 map $(arg namespace)/odom" />
+
+    <group if="$(eval env('SIMULATOR') == 'gazebo')">
+        <include file="$(find arena-simulation-setup)/robot/$(arg model)/launch/control.launch">
+            <arg name="robot_namespace" value="$(arg namespace)" />
+        </include>
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="rob_st_pub" >
+            <remap from="/joint_states" to="$(arg namespace)/joint_states"/>
+        </node>
+    </group>
+
 
     <!-- move_base plan manager: which provide basic global planner and cost map -->
     <include file="$(find arena_bringup)/launch/testing/move_base/move_base_$(arg local_planner).launch">
@@ -43,10 +54,13 @@
         <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
         
         <arg name="cmd_vel_topic" value="$(arg namespace)/cmd_vel" />
-        <arg name="odom_topic" value="$(arg namespace)/odom" />
+        <arg name="odom_topic" value="$(arg namespace)/odom_amcl" if="$(eval arg('complexity') > 1)" />
+        <arg name="odom_topic" value="$(arg namespace)/odom" if="$(eval arg('complexity') == 1)" />
 
         <arg name="namespace" value="$(arg namespace)" />
+
     </include>
+
 
     <node pkg="arena-evaluation" type="data_recorder_node.py" name="data_recorder_node" if="$(eval arg('record_data'))" />
   </group>

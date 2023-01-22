@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- Arguments -->
+  <arg name="model" default="burger"/>
+  <arg name="cmd_vel_topic" default="/cmd_vel" />
+  <arg name="odom_topic" default="odom" />
+  <arg name="speed" default="0.22"/>
+  <arg name="namespace" />
+
+  <!-- move_base -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <param name="ns" value="$(arg namespace)" />
+    <param name="base_global_planner" value="global_planner/GlobalPlanner" />
+    <param name="base_local_planner" value="hateb_local_planner/HATebLocalPlannerROS" />
+    <param name="GlobalPlanner/allow_unknown" value="true" />
+    
+    <!-- Load usual move base params -->
+    <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/hateb_local_planner_params.yaml" command="load"  ns="HATebLocalPlannerROS"/>
+    <rosparam file="$(find arena-simulation-setup)/move_base/move_base_params.yaml" command="load" />
+
+    <!-- Load specific hateb costmap params -->
+    <rosparam file="$(find cohan_layers)/cfg/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find cohan_layers)/cfg/global_costmap_params.yaml" command="load" />
+    
+    <!-- planner params -->
+    <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+    <remap from="odom" to="$(arg  odom_topic)"/>
+    <remap from="/move_base/HATebLocalPlannerROS/agents_states" to="$(arg namespace)/move_base/HATebLocalPlannerROS/agents_states" />
+    <remap from="/move_base/GlobalPlanner/make_plan" to="$(arg namespace)/move_base/GlobalPlanner/make_plan"/>
+    <param name="base_local_planner" value="hateb_local_planner/HATebLocalPlannerROS" />
+    <param name="GlobalPlanner/allow_unknown" value="true" />
+  </node>
+
+    <!-- Stage agents to /tracked_agents -->
+    <node name="agents" pkg="cohan_layers" type="agents_bridge.py" output="screen"/>
+
+    <!-- agent pose prediction, for the local-planning -->
+    <node pkg="agent_path_prediction" type="agent_path_prediction" name="agent_path_predict" output="screen" >
+      <remap from="map" to="/map"/>
+      <remap from="$(arg namespace)/agent_path_predict/tracked_agents" to="/tracked_agents"/>
+      <remap from="$(arg namespace)/agent_path_predict/external_agent_trajs" to="/move_base_node/HATebLocalPlannerROS/agent_local_trajs"/>
+
+      <param name="velobs_mul" value="1.0"/>
+      <param name="velscale_mul" value="2.0"/>
+    </node>
+
+    <node pkg="agent_path_prediction" type="predict_goal.py" name="agent_goal_predict" output="screen">
+    </node>
+
+    <!-- Filter the agents from laser scan -->
+    <include file="$(find cohan_layers)/launch/agent_filter.launch">
+      <arg name="namespace" value="$(arg namespace)"/>
+    </include>
+
+</launch>

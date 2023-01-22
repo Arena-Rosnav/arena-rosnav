@@ -5,6 +5,7 @@
   <arg name="cmd_vel_topic" default="/cmd_vel" />
   <arg name="odom_topic" default="odom" />
   <arg name="move_forward_only" default="false"/>
+  <arg name="namespace" default="" />
 
   <!-- move_base -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
@@ -23,5 +24,7 @@
   <!-- spacial_horizon -->
   <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node" output="screen">
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/plan_fsm_param.yaml" command="load" />
-     </node>
+    <remap from="$(arg namespace)/goal" to="$(arg namespace)/move_base_simple/goal" />
+    <remap from="/move_base/NavfnROS/make_plan" to="$(arg namespace)/move_base/NavfnROS/make_plan" />
+  </node>
 </launch>
