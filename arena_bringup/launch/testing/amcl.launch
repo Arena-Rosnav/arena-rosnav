@@ -1,0 +1,20 @@
+<launch>
+
+    <arg name="namespace" />
+
+    <group ns="$(arg namespace)">
+
+        <remap from="/burger_0_0/static_map" to="/static_map" />
+
+        <node name="amcl" type="amcl" pkg="amcl" args="scan:=/burger_0_0/scan">
+            <param name="base_frame_id" value="/burger_0_0/base_footprint" />
+            <param name="update_min_d" value="0.01" />
+            <!-- <param name="odom_frame_id" value="/burger_0_0/estimated_odom" /> -->
+
+        </node>
+
+        <node name="pose_to_odom" type="pose_to_odom.py" pkg="amcl_utils" output="screen" />
+        
+    </group>
+
+</launch>
