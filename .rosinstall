@@ -3,7 +3,7 @@
 - git:
     local-name: ../utils/flatland
     uri: https://github.com/Arena-Rosnav/flatland.git
-    version: master
+    version: v2.0.0
 
 - git:
     local-name: ../utils/stable-baselines3
@@ -33,17 +33,17 @@
 - git:
     local-name: ../utils/arena-simulation-setup
     uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: v1.1.0
+    version: v2.0.0
 
 - git:
     local-name: ../utils/arena-utils
     uri: https://github.com/Arena-Rosnav/arena-utils.git
-    version: v1.1.0
+    version: v2.0.0
 
 - git:
     local-name: ../utils/task-generator
     uri: https://github.com/Arena-Rosnav/task-generator.git
-    version: v1.1.0
+    version: v2.0.0
 
 - git:
     localname: ../arena-evaluation
@@ -55,7 +55,7 @@
 - git:
     local-name: ../planners/rosnav
     uri: https://github.com/Arena-Rosnav/rosnav.git
-    version: v1.1.0
+    version: v1.1.1
 
 - git:
     local-name: ../planners/arena-ros
