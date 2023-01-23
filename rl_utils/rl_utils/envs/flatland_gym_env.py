@@ -116,10 +116,8 @@ class FlatlandEnv(gym.Env):
         if self._is_train_mode:
             self._service_name_step = f"{self.ns_prefix}step_world"
             # self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
-            self._step_world_publisher = rospy.Publisher(
-                self._service_name_step, StepWorld, queue_size=10
-            )
-            self._step_world_srv = rospy.ServiceProxy(self._service_name_step, Empty)
+            self._step_world_publisher = rospy.Publisher(self._service_name_step, StepWorld, queue_size=10)
+            self._step_world_srv = rospy.ServiceProxy(self._service_name_step, Empty, persistent=True)
 
         # instantiate task manager
         self.task = get_predefined_task(
@@ -136,17 +134,22 @@ class FlatlandEnv(gym.Env):
         self._last_action = np.array([0, 0, 0])  # linear x, linear y, angular z
 
         # for extended eval
-        self._action_frequency = 1 / rospy.get_param("/robot_action_rate")
+        self._action_frequency = 1 / rospy.get_param("/robot_action_rate", 10)
         self._last_robot_pose = None
         self._distance_travelled = 0
         self._safe_dist_counter = 0
         self._collisions = 0
         self._in_crash = False
 
+        self.last_mean_reward = 0
+        self.mean_reward = [0, 0]
+
+        self.step_time = [0, 0]
+
         self._done_reasons = {
-            "0": "Exc. Max Steps",
+            "0": "Timeout",
             "1": "Crash",
-            "2": "Goal Reached",
+            "2": "Success",
         }
         self._done_hist = 3 * [0]
 
@@ -166,11 +169,18 @@ class FlatlandEnv(gym.Env):
                         1   -   collision with obstacle
                         2   -   goal reached
         """
+
+        start_time = time.time()
+
         decoded_action = self.model_space_encoder.decode_action(action)
+        self._pub_action(decoded_action)
+
         self._pub_action(decoded_action)
 
         if self._is_train_mode:
             self.call_service_takeSimStep()
+        
+        obs_dict = self.observation_collector.get_observations(last_action=self._last_action)
 
         self._steps_curr_episode += 1
 
@@ -212,37 +222,43 @@ class FlatlandEnv(gym.Env):
             info["time_safe_dist"] = self._safe_dist_counter * self._action_frequency
             info["time"] = self._steps_curr_episode * self._action_frequency
 
+        self.step_time[1] += 1
+        self.mean_reward[1] += 1
+        self.mean_reward[0] += reward
+
         if done:
             # print(self.ns_prefix, "DONE", info["done_reason"], sum(self._done_hist), min(obs_dict["laser_scan"]))
 
-            if self._steps_curr_episode <= 1:
-                print(
-                    self.ns_prefix,
-                    "DONE",
-                    info,
-                    min(obs_dict["laser_scan"]),
-                    obs_dict["goal_in_robot_frame"],
-                )
+            # print(f"[{self.ns_prefix}]:\t\t", self.step_time[0] / self.step_time[1])
 
-            if sum(self._done_hist) == 20:
+            # if self._steps_curr_episode <= 1:
+            #     print(self.ns_prefix, "DONE", info, min(obs_dict["laser_scan"]), obs_dict["goal_in_robot_frame"])
+
+            if sum(self._done_hist) >= 5:
+                mean_reward = self.mean_reward[0] / self.mean_reward[1]
+                diff = round(mean_reward - self.last_mean_reward, 5)
+
                 print(
-                    f"[ns: {self.ns_prefix}] Last 20 Episodes: "
-                    f"{self._done_hist[0]}x - {self._done_reasons[str(0)]}, "
-                    f"{self._done_hist[1]}x - {self._done_reasons[str(1)]}, "
-                    f"{self._done_hist[2]}x - {self._done_reasons[str(2)]}, "
+                    f"[{self.ns_prefix}] Last 5 Episodes:\t"
+                    f"{self._done_reasons[str(0)]}: {self._done_hist[0]}\t"
+                    f"{self._done_reasons[str(1)]}: {self._done_hist[1]}\t"
+                    f"{self._done_reasons[str(2)]}: {self._done_hist[2]}\t"
+                    f"Mean step time: {round(self.step_time[0] / self.step_time[1] * 100, 2)}\t"
+                    f"Mean reward: {round(mean_reward, 5)} ({'+' if diff >= 0 else ''}{diff})"
                 )
                 self._done_hist = [0] * 3
+                self.step_time = [0, 0]
+                self.last_mean_reward = mean_reward
+                self.mean_reward = [0, 0]
             self._done_hist[int(info["done_reason"])] += 1
 
-        return (
-            self.model_space_encoder.encode_observation(
-                obs_dict, ["laser_scan", "goal_in_robot_frame", "last_action"]
-            ),
-            reward,
-            done,
-            info,
-        )
+        self.step_time[0] += time.time() - start_time
 
+        return self.model_space_encoder.encode_observation(
+            obs_dict, 
+            ["laser_scan", "goal_in_robot_frame", "last_action"]
+        ), reward, done, info
+    
     def call_service_takeSimStep(self, t=None):
         request = StepWorld()
         request.required_time = 0 if t == None else t
@@ -252,9 +268,7 @@ class FlatlandEnv(gym.Env):
         # self._step_world_publisher.publish(request)
 
     def reset(self):
-
-        # print("RESET", self._steps_curr_episode)
-
+    
         # set task
         # regenerate start position end goal position of the robot and change the obstacles accordingly
         self._episode += 1
