@@ -77,6 +77,9 @@ class ObservationCollector:
         self._laser_deque = deque()
         self._rs_deque = deque()
 
+        self.received_scan = False
+        self.received_odom = False
+
         # subscriptions
         # ApproximateTimeSynchronizer appears to be slow for training, but with real robot, own sync method doesn't accept almost any messages as synced
         # need to evaulate each possibility
@@ -121,6 +124,13 @@ class ObservationCollector:
             self.ns_prefix("global_plan"), Path, self.callback_global_plan
         )
 
+    def wait_for_scan_and_odom(self):
+        while not self.received_odom or not self.received_scan:
+            pass
+
+        self.received_odom = False
+        self.received_scan = False
+
     def get_observations(self, *args, **kwargs):
         # if not self._ext_time_sync:
         #     # try to retrieve sync'ed obs
@@ -131,6 +141,9 @@ class ObservationCollector:
         #         self._robot_pose = robot_pose
             # else:
             #     print("Not synced")
+
+        if kwargs.get("wait_for_messages"):
+            self.wait_for_scan_and_odom()
 
         if len(self._scan.ranges) > 0:
             scan = self._scan.ranges.astype(np.float32)
@@ -221,12 +234,16 @@ class ObservationCollector:
 
         # self._laser_deque.append(msg_laserscan)
 
+        self.received_scan = True
+
         self._scan = self.process_scan_msg(msg_laserscan)
 
     def callback_robot_state(self, msg_robotstate):
         # if len(self._rs_deque) == self.max_deque_size:
         #     self._rs_deque.popleft()
         # self._rs_deque.append(msg_robotstate)
+
+        self.received_odom = True
 
         self._robot_pose, self._robot_vel = self.process_robot_state_msg(msg_robotstate)
 

@@ -20,7 +20,12 @@
 
   <node name="rosnav_manager" pkg="testing" type="drl_agent_node.py" args="--namespace $(arg namespace)" output="screen"/>
 
-  <node name="rosnav" pkg="rosnav" type="rosnav_node.py" output="screen" />
+  <node 
+    name="rosnav" 
+    pkg="rosnav" 
+    type="rosnav_node.py" 
+    output="screen" 
+  />
 
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find arena_bringup)/params/rosconsole.conf"/>
   

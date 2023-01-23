@@ -3,12 +3,15 @@
   <arg name="rviz_file" default="nav_LP"/>
   <arg name="model" default="model"/>
 
+  <rosparam command="load" file="$(find arena_bringup)/params/flatland_deploy.yaml" />
+
   <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
 
   <remap from="/move_base_simple/goal" to="task_generator/set_goal" />
 
   <!-- launch flatland server -->
   <node name="flatland_server" pkg="flatland_server" type="flatland_server">
+
   </node>
 
   <!--  _____________ Robot Model _____________  -->
