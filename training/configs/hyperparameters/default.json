@@ -1,12 +1,12 @@
 {
   "agent_name": "",
   "robot": "myrobot",
-  "reward_fnc": "rule_00",
+  "reward_fnc": "rule_04",
   "discrete_action_space": false,
   "normalize": false,
   "task_mode": "staged",
   "train_max_steps_per_episode": 200,
-  "eval_max_steps_per_episode": 400,
+  "eval_max_steps_per_episode": 250,
   "goal_radius": 0.3,
   "curr_stage": 1,
   "batch_size": 9600,
@@ -19,5 +19,7 @@
   "gae_lambda": 0.95,
   "m_batch_size": 20,
   "n_epochs": 3,
-  "clip_range": 0.22
+  "clip_range": 0.22,
+  "space_encoder": null,
+  "custom_rew_file": "rule_00"
 }
