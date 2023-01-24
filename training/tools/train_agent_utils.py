@@ -598,18 +598,19 @@ def get_ppo_instance(
             Type[BaseAgent], Type[ActorCriticPolicy]
         ] = AgentFactory.instantiate(config["rl_agent"]["architecture_name"])
 
+        ppo_config = config["rl_agent"]["ppo"]
         ppo_kwargs = {
             "env": train_env,
-            "gamma": config["rl_agent"]["ppo"]["gamma"],
-            "n_steps": config["rl_agent"]["ppo"]["n_steps"],
-            "ent_coef": config["rl_agent"]["ppo"]["ent_coef"],
-            "learning_rate": config["rl_agent"]["ppo"]["learning_rate"],
-            "vf_coef": config["rl_agent"]["ppo"]["vf_coef"],
-            "max_grad_norm": config["rl_agent"]["ppo"]["max_grad_norm"],
-            "gae_lambda": config["rl_agent"]["ppo"]["gae_lambda"],
-            "batch_size": config["rl_agent"]["ppo"]["m_batch_size"],
-            "n_epochs": config["rl_agent"]["ppo"]["n_epochs"],
-            "clip_range": config["rl_agent"]["ppo"]["clip_range"],
+            "gamma": ppo_config["gamma"],
+            "n_steps": ppo_config["n_steps"],
+            "ent_coef": ppo_config["ent_coef"],
+            "learning_rate": ppo_config["learning_rate"],
+            "vf_coef": ppo_config["vf_coef"],
+            "max_grad_norm": ppo_config["max_grad_norm"],
+            "gae_lambda": ppo_config["gae_lambda"],
+            "batch_size": ppo_config["m_batch_size"],
+            "n_epochs": ppo_config["n_epochs"],
+            "clip_range": ppo_config["clip_range"],
             "tensorboard_log": PATHS["tb"],
             "use_wandb": False
             if config["debug_mode"]
