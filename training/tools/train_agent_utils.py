@@ -112,6 +112,9 @@ def initialize_hyperparameters(
     config["rl_agent"]["ppo"]["n_steps"] = int(
         config["rl_agent"]["ppo"]["batch_size"] / n_envs
     )
+    config["rl_agent"]["space_encoder"] = rospy.get_param(
+        "space_encoder", "RobotSpecificEncoder"
+    )
 
     if not debug_mode:
         write_hyperparameters_yaml(config, PATHS)
@@ -339,9 +342,9 @@ def get_agent_name(config: dict) -> str:
     if config["rl_agent"]["resume"] is None:
         START_TIME = dt.now().strftime("%Y_%m_%d__%H_%M")
         robot_model = rospy.get_param("robot_model")
-        architecture_name, encoder_name = config["architecture_name"], rospy.get_param(
-            "space_encoder", "RobotSpecificEncoder"
-        )
+        architecture_name, encoder_name = config["rl_agent"][
+            "architecture_name"
+        ], rospy.get_param("space_encoder", "RobotSpecificEncoder")
         agent_name = f"{robot_model}_{architecture_name}_{encoder_name}_{START_TIME}"
         config["agent_name"] = agent_name
         return agent_name
@@ -676,46 +679,36 @@ def get_ppo_instance(
         agent: Union[
             Type[BaseAgent], Type[ActorCriticPolicy]
         ] = AgentFactory.instantiate(config["rl_agent"]["architecture_name"])
+
+        ppo_kwargs = {
+            "env": train_env,
+            "gamma": config["rl_agent"]["ppo"]["gamma"],
+            "n_steps": config["rl_agent"]["ppo"]["n_steps"],
+            "ent_coef": config["rl_agent"]["ppo"]["ent_coef"],
+            "learning_rate": config["rl_agent"]["ppo"]["learning_rate"],
+            "vf_coef": config["rl_agent"]["ppo"]["vf_coef"],
+            "max_grad_norm": config["rl_agent"]["ppo"]["max_grad_norm"],
+            "gae_lambda": config["rl_agent"]["ppo"]["gae_lambda"],
+            "batch_size": config["rl_agent"]["ppo"]["m_batch_size"],
+            "n_epochs": config["rl_agent"]["ppo"]["n_epochs"],
+            "clip_range": config["rl_agent"]["ppo"]["clip_range"],
+            "tensorboard_log": PATHS["tb"],
+            "use_wandb": False
+            if config["debug_mode"]
+            else config["monitoring"]["use_wandb"],
+            "verbose": 1,
+        }
+
         if isinstance(agent, BaseAgent):
-            model = PPO(
-                agent.type.value,
-                train_env,
-                policy_kwargs=agent.get_kwargs(),
-                gamma=config["rl_agent"]["ppo"]["gamma"],
-                n_steps=config["rl_agent"]["ppo"]["n_steps"],
-                ent_coef=config["rl_agent"]["ppo"]["ent_coef"],
-                learning_rate=config["rl_agent"]["ppo"]["learning_rate"],
-                vf_coef=config["rl_agent"]["ppo"]["vf_coef"],
-                max_grad_norm=config["rl_agent"]["ppo"]["max_grad_norm"],
-                gae_lambda=config["rl_agent"]["ppo"]["gae_lambda"],
-                batch_size=config["rl_agent"]["ppo"]["m_batch_size"],
-                n_epochs=config["rl_agent"]["ppo"]["n_epochs"],
-                clip_range=config["rl_agent"]["ppo"]["clip_range"],
-                tensorboard_log=PATHS["tb"],
-                use_wandb=False
-                if config["debug_mode"]
-                else config["monitoring"]["use_wandb"],
-                verbose=1,
-            )
+            ppo_kwargs["policy"] = agent.type.value
+            ppo_kwargs["policy_kwargs"] = agent.get_kwargs()
+
+            model = PPO(**ppo_kwargs)
         elif issubclass(agent, ActorCriticPolicy):
+            ppo_kwargs["policy"] = agent
+
             model = PPO(
-                agent,
-                train_env,
-                gamma=config["rl_agent"]["ppo"]["gamma"],
-                n_steps=config["rl_agent"]["ppo"]["n_steps"],
-                ent_coef=config["rl_agent"]["ppo"]["ent_coef"],
-                learning_rate=config["rl_agent"]["ppo"]["learning_rate"],
-                vf_coef=config["rl_agent"]["ppo"]["vf_coef"],
-                max_grad_norm=config["rl_agent"]["ppo"]["max_grad_norm"],
-                gae_lambda=config["rl_agent"]["ppo"]["gae_lambda"],
-                batch_size=config["rl_agent"]["ppo"]["m_batch_size"],
-                n_epochs=config["rl_agent"]["ppo"]["n_epochs"],
-                clip_range=config["rl_agent"]["ppo"]["clip_range"],
-                tensorboard_log=PATHS["tb"],
-                use_wandb=False
-                if config["debug_mode"]
-                else config["monitoring"]["use_wandb"],
-                verbose=1,
+                **ppo_kwargs,
             )
         else:
             arch_name = config["rl_agent"]["architecture_name"]

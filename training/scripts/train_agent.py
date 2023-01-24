@@ -44,14 +44,11 @@ def main():
     eval_cb = init_callbacks(config, train_env, eval_env, PATHS)
     model = get_ppo_instance(config, train_env, PATHS, AgentFactory)
 
-    # set num of timesteps to be generated
-    n_timesteps = config["n_timesteps"] or 40000000
-
     # start training
     start = time.time()
     try:
         model.learn(
-            total_timesteps=n_timesteps,
+            total_timesteps=config["n_timesteps"] or 40000000,
             callback=eval_cb,
             reset_num_timesteps=True,
         )
