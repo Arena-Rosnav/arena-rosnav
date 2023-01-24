@@ -32,7 +32,6 @@ class FlatlandEnv(gym.Env):
         task_mode: str = "staged",
         PATHS: dict = dict(),
         extended_eval: bool = False,
-        custom_rew_dict: dict = None,
         *args,
         **kwargs,
     ):
@@ -98,7 +97,6 @@ class FlatlandEnv(gym.Env):
             safe_dist=safe_dist,
             goal_radius=goal_radius,
             rule=reward_fnc,
-            custom_rew_dict=custom_rew_dict,
             extended_eval=self._extended_eval,
         )
 
@@ -116,8 +114,12 @@ class FlatlandEnv(gym.Env):
         if self._is_train_mode:
             self._service_name_step = f"{self.ns_prefix}step_world"
             # self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
-            self._step_world_publisher = rospy.Publisher(self._service_name_step, StepWorld, queue_size=10)
-            self._step_world_srv = rospy.ServiceProxy(self._service_name_step, Empty, persistent=True)
+            self._step_world_publisher = rospy.Publisher(
+                self._service_name_step, StepWorld, queue_size=10
+            )
+            self._step_world_srv = rospy.ServiceProxy(
+                self._service_name_step, Empty, persistent=True
+            )
 
         # instantiate task manager
         self.task = get_predefined_task(
@@ -179,8 +181,10 @@ class FlatlandEnv(gym.Env):
 
         if self._is_train_mode:
             self.call_service_takeSimStep()
-        
-        obs_dict = self.observation_collector.get_observations(last_action=self._last_action)
+
+        obs_dict = self.observation_collector.get_observations(
+            last_action=self._last_action
+        )
 
         self._steps_curr_episode += 1
 
@@ -254,11 +258,15 @@ class FlatlandEnv(gym.Env):
 
         self.step_time[0] += time.time() - start_time
 
-        return self.model_space_encoder.encode_observation(
-            obs_dict, 
-            ["laser_scan", "goal_in_robot_frame", "last_action"]
-        ), reward, done, info
-    
+        return (
+            self.model_space_encoder.encode_observation(
+                obs_dict, ["laser_scan", "goal_in_robot_frame", "last_action"]
+            ),
+            reward,
+            done,
+            info,
+        )
+
     def call_service_takeSimStep(self, t=None):
         request = StepWorld()
         request.required_time = 0 if t == None else t
@@ -268,7 +276,7 @@ class FlatlandEnv(gym.Env):
         # self._step_world_publisher.publish(request)
 
     def reset(self):
-    
+
         # set task
         # regenerate start position end goal position of the robot and change the obstacles accordingly
         self._episode += 1

@@ -1,7 +1,7 @@
 ### General
 # in debug_mode no agent directories will be created and no models will be saved
-# further no wandb logging and fake (simulated) multiprocessing for simpler debugging 
-debug_mode: false
+# further no wandb logging and fake (simulated) multiprocessing for traceback
+debug_mode: true
 # number of parallel environments
 n_envs: 1
 # gpu yes or no
@@ -55,4 +55,3 @@ hyperparameter_file: "default.json"
 architecture_name: "AGENT_25"
 # path to latest checkpoint; if provided the training will be resumed from that checkpoint
 resume: "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
-reward_function_file: null # "rcppo.yaml"

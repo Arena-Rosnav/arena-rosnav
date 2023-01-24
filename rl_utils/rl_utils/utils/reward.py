@@ -14,7 +14,6 @@ class RewardCalculator:
         safe_dist: float,
         goal_radius: float,
         rule: str = None,
-        custom_rew_dict: Dict[str, float] = None,
         extended_eval: bool = False,
     ):
         """
@@ -37,11 +36,15 @@ class RewardCalculator:
         self._curr_dist_to_path = None
         self.safe_dist = safe_dist
 
-        self.custom_rew_dict = custom_rew_dict
+        # load custom reward function from yaml
+        import tools.train_agent_utils as train_agent_utils
+
+        self.custom_rew_dict = train_agent_utils.load_rew_fnc(rule)
         self._extended_eval = extended_eval
 
         self.kdtree = None
 
+        # Legacy code
         self._cal_funcs = {
             "rule_00": RewardCalculator._cal_reward_rule_00,
             "rule_01": RewardCalculator._cal_reward_rule_01,
@@ -51,9 +54,7 @@ class RewardCalculator:
             "rule_05": RewardCalculator._cal_reward_rule_05,
         }
 
-        self.cal_func = (
-            self._build_reward_func() if self.custom_rew_dict else self._cal_funcs[rule]
-        )
+        self.cal_func = self._build_reward_func()
 
     def reset(self):
         """

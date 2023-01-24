@@ -81,7 +81,6 @@ HYPERPARAM_KEYS = {
         "n_epochs",
         "clip_range",
         "space_encoder",
-        "custom_rew_file",
     ]
 }
 
@@ -132,9 +131,6 @@ def init_params_new_agent(PATHS, config_name) -> dict:
     hyperparams["space_encoder"] = rospy.get_param(
         "space_encoder", "RobotSpecificEncoder"
     )
-    hyperparams["custom_rew_file"] = rospy.get_param("custom_rew_file", None)
-    if not hyperparams["custom_rew_file"]:
-        hyperparams["reward_fnc"] = None
     return hyperparams
 
 
@@ -430,7 +426,6 @@ def make_envs(
     seed: int = 0,
     PATHS: dict = None,
     train: bool = True,
-    custom_rew_dict: dict = None,
 ):
     """
     Utility function for multiprocessed env
@@ -460,7 +455,6 @@ def make_envs(
                 task_mode=params["task_mode"],
                 curr_stage=params["curr_stage"],
                 PATHS=PATHS,
-                custom_rew_dict=custom_rew_dict,
             )
         else:
             # eval env
@@ -474,7 +468,6 @@ def make_envs(
                     task_mode=params["task_mode"],
                     curr_stage=params["curr_stage"],
                     PATHS=PATHS,
-                    custom_rew_dict=custom_rew_dict,
                 ),
                 PATHS.get("eval"),
                 info_keywords=("done_reason", "is_success"),
@@ -517,7 +510,7 @@ def wait_for_nodes(
             warnings.warn(
                 f"Check if all simulation parts of namespace '{ns}' are running properly"
             )
-            warnings.warn(f"Trying to connect again..")
+            warnings.warn("Trying to connect again..")
             assert (
                 k < timeout - 1
             ), f"Timeout while trying to connect to nodes of '{ns}'"
@@ -571,17 +564,14 @@ def load_config(config_name: str) -> dict:
 
 
 def load_rew_fnc(config_name: str) -> dict:
-    if config_name:
-        config_location = os.path.join(
-            rospkg.RosPack().get_path("training"),
-            "configs",
-            "reward_functions",
-            config_name,
-        )
-        with open(config_location, "r", encoding="utf-8") as target:
-            config = yaml.load(target, Loader=yaml.FullLoader)
-    else:
-        config = None
+    config_location = os.path.join(
+        rospkg.RosPack().get_path("training"),
+        "configs",
+        "reward_functions",
+        config_name + ".yaml",
+    )
+    with open(config_location, "r", encoding="utf-8") as target:
+        config = yaml.load(target, Loader=yaml.FullLoader)
     return config
 
 
@@ -593,8 +583,6 @@ def init_envs(
 ) -> Tuple[VecEnv, VecEnv]:
     import stable_baselines3.common.vec_env as sb3_env
 
-    custom_rew_dict = load_rew_fnc(rospy.get_param("custom_rew_file"))
-
     # instantiate train environment
     # when debug run on one process only
     if not config["debug_mode"] and ns_for_nodes:
@@ -605,7 +593,6 @@ def init_envs(
                     i,
                     params=params,
                     PATHS=paths,
-                    custom_rew_dict=custom_rew_dict,
                 )
                 for i in range(config["n_envs"])
             ],
@@ -619,7 +606,6 @@ def init_envs(
                     i,
                     params=params,
                     PATHS=paths,
-                    custom_rew_dict=custom_rew_dict,
                 )
                 for i in range(config["n_envs"])
             ]
@@ -636,7 +622,6 @@ def init_envs(
                     params=params,
                     PATHS=paths,
                     train=False,
-                    custom_rew_dict=custom_rew_dict,
                 )
             ]
         )
@@ -851,4 +836,3 @@ def populate_ros_params(params):
 
 def populate_ros_configs(config):
     rospy.set_param("debug_mode", config["debug_mode"])
-    rospy.set_param("custom_rew_file", config["reward_function_file"])

@@ -20,6 +20,5 @@
   "m_batch_size": 20,
   "n_epochs": 3,
   "clip_range": 0.22,
-  "space_encoder": null,
-  "custom_rew_file": "rule_00"
+  "space_encoder": null
 }
