@@ -65,7 +65,7 @@ def initialize_config(
     return config
 
 
-def write_config_yaml(hyperparams: dict, PATHS: dict) -> None:
+def write_config_yaml(config: dict, PATHS: dict) -> None:
     """
     Write training_config.yaml to agent directory
 
@@ -73,7 +73,7 @@ def write_config_yaml(hyperparams: dict, PATHS: dict) -> None:
     :param PATHS: dictionary containing model specific paths
     """
     with open(PATHS["config"], "w") as outfile:
-        yaml.dump(hyperparams, outfile, default_flow_style=False)
+        yaml.dump(config, outfile, default_flow_style=False)
 
 
 def write_hyperparameters_json(hyperparams: dict, PATHS: dict) -> None:
