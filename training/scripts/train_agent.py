@@ -19,10 +19,10 @@ def main():
         rospy.init_node("debug_node", disable_signals=False)
 
     # generate agent name and model specific paths
-    AGENT_NAME = get_agent_name(config)
-    PATHS = get_paths(AGENT_NAME, config)
+    get_agent_name(config)
+    PATHS = get_paths(config)
 
-    print("________ STARTING TRAINING WITH:  %s ________\n" % AGENT_NAME)
+    print("________ STARTING TRAINING WITH:  %s ________\n" % config["agent_name"])
 
     # for training with start_arena_flatland.launch
     ns_for_nodes = rospy.get_param("/ns_for_nodes", True)
@@ -31,19 +31,18 @@ def main():
     wait_for_nodes(with_ns=ns_for_nodes, n_envs=config["n_envs"], timeout=5)
 
     # initialize hyperparameters (save to/ load from json)
-    params = initialize_hyperparameters(
+    config = initialize_hyperparameters(
         PATHS=PATHS,
-        load_target=config["resume"],
-        config_name=config["hyperparameter_file"],
+        config=config,
         n_envs=config["n_envs"],
         debug_mode=config["debug_mode"],
     )
 
-    populate_ros_params(params)
+    populate_ros_params(config)
 
-    train_env, eval_env = init_envs(config, params, PATHS, ns_for_nodes)
-    eval_cb = init_callbacks(config, params, train_env, eval_env, PATHS)
-    model = get_ppo_instance(config, params, train_env, PATHS, AGENT_NAME, AgentFactory)
+    train_env, eval_env = init_envs(config, PATHS, ns_for_nodes)
+    eval_cb = init_callbacks(config, train_env, eval_env, PATHS)
+    model = get_ppo_instance(config, train_env, PATHS, AgentFactory)
 
     # set num of timesteps to be generated
     n_timesteps = config["n_timesteps"] or 40000000

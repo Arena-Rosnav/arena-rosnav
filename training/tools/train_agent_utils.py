@@ -87,8 +87,7 @@ HYPERPARAM_KEYS = {
 
 def initialize_hyperparameters(
     PATHS: dict,
-    load_target: str,
-    config_name: str = "default",
+    config: dict,
     n_envs: int = 1,
     debug_mode: bool = False,
 ) -> dict:
@@ -100,42 +99,36 @@ def initialize_hyperparameters(
     :param config_name: name of the hyperparameter file in /configs/hyperparameters
     :param n_envs: number of envs
     """
-    # when building new agent
-    if load_target is None:
-        hyperparams = init_params_new_agent(PATHS, config_name)
-    else:
-        hyperparams = init_params_loaded_agent(PATHS)
-
     import rosnav.model.custom_policy
     import rosnav.model.custom_sb3_policy
 
     # dynamically adapt n_steps according to batch size and n envs
     # then update .json
-    check_batch_size(n_envs, hyperparams["batch_size"], hyperparams["m_batch_size"])
-    hyperparams["n_steps"] = int(hyperparams["batch_size"] / n_envs)
+    check_batch_size(
+        n_envs,
+        config["rl_agent"]["ppo"]["batch_size"],
+        config["rl_agent"]["ppo"]["m_batch_size"],
+    )
+    config["rl_agent"]["ppo"]["n_steps"] = int(
+        config["rl_agent"]["ppo"]["batch_size"] / n_envs
+    )
+
     if not debug_mode:
-        write_hyperparameters_json(hyperparams, PATHS)
-    print_hyperparameters(hyperparams)
+        write_hyperparameters_yaml(config, PATHS)
+    print_hyperparameters(config["rl_agent"]["ppo"])
 
-    return hyperparams
-
-
-def init_params_new_agent(PATHS, config_name) -> dict:
-    # load hyperparameters from default config file
-    hyperparams = load_hyperparameters_json(
-        PATHS=PATHS, from_scratch=True, config_name=config_name
-    )
-    # set dynamic parameters
-    hyperparams["robot"] = rospy.get_param("robot_model")
-    hyperparams["agent_name"] = PATHS["model"].split("/")[-1]
-    hyperparams["space_encoder"] = rospy.get_param(
-        "space_encoder", "RobotSpecificEncoder"
-    )
-    return hyperparams
+    return config
 
 
-def init_params_loaded_agent(PATHS) -> dict:
-    return load_hyperparameters_json(PATHS=PATHS)
+def write_hyperparameters_yaml(hyperparams: dict, PATHS: dict) -> None:
+    """
+    Write training_config.yaml to agent directory
+
+    :param hyperparams: dict containing model specific hyperparameters
+    :param PATHS: dictionary containing model specific paths
+    """
+    with open(PATHS["hyperparams"], "w") as outfile:
+        yaml.dump(hyperparams, outfile, default_flow_style=False)
 
 
 def write_hyperparameters_json(hyperparams: dict, PATHS: dict) -> None:
@@ -233,9 +226,7 @@ def check_hyperparam_format(loaded_hyperparams: dict, PATHS: dict) -> None:
         raise TypeError("Parameter 'task_mode' has unknown value")
 
 
-def update_hyperparam_model(
-    model: PPO, PATHS: dict, params: dict, n_envs: int = 1
-) -> None:
+def update_hyperparam_model(model: PPO, PATHS: dict, params: dict) -> None:
     """
     Updates parameter of loaded PPO agent when it was manually changed in the configs yaml.
 
@@ -244,32 +235,32 @@ def update_hyperparam_model(
     :param params: dictionary containing loaded hyperparams
     :param n_envs: number of parallel environments
     """
-    if model.batch_size != params["batch_size"]:
-        model.batch_size = params["batch_size"]
-    if model.gamma != params["gamma"]:
-        model.gamma = params["gamma"]
-    if model.n_steps != params["n_steps"]:
-        model.n_steps = params["n_steps"]
-    if model.ent_coef != params["ent_coef"]:
-        model.ent_coef = params["ent_coef"]
-    if model.learning_rate != params["learning_rate"]:
-        model.learning_rate = params["learning_rate"]
-    if model.vf_coef != params["vf_coef"]:
-        model.vf_coef = params["vf_coef"]
-    if model.max_grad_norm != params["max_grad_norm"]:
-        model.max_grad_norm = params["max_grad_norm"]
-    if model.gae_lambda != params["gae_lambda"]:
-        model.gae_lambda = params["gae_lambda"]
-    if model.n_epochs != params["n_epochs"]:
-        model.n_epochs = params["n_epochs"]
+    if model.batch_size != params["rl_agent"]["ppo"]["batch_size"]:
+        model.batch_size = params["rl_agent"]["ppo"]["batch_size"]
+    if model.gamma != params["rl_agent"]["ppo"]["gamma"]:
+        model.gamma = params["rl_agent"]["ppo"]["gamma"]
+    if model.n_steps != params["rl_agent"]["ppo"]["n_steps"]:
+        model.n_steps = params["rl_agent"]["ppo"]["n_steps"]
+    if model.ent_coef != params["rl_agent"]["ppo"]["ent_coef"]:
+        model.ent_coef = params["rl_agent"]["ppo"]["ent_coef"]
+    if model.learning_rate != params["rl_agent"]["ppo"]["learning_rate"]:
+        model.learning_rate = params["rl_agent"]["ppo"]["learning_rate"]
+    if model.vf_coef != params["rl_agent"]["ppo"]["vf_coef"]:
+        model.vf_coef = params["rl_agent"]["ppo"]["vf_coef"]
+    if model.max_grad_norm != params["rl_agent"]["ppo"]["max_grad_norm"]:
+        model.max_grad_norm = params["rl_agent"]["ppo"]["max_grad_norm"]
+    if model.gae_lambda != params["rl_agent"]["ppo"]["gae_lambda"]:
+        model.gae_lambda = params["rl_agent"]["ppo"]["gae_lambda"]
+    if model.n_epochs != params["rl_agent"]["ppo"]["n_epochs"]:
+        model.n_epochs = params["rl_agent"]["ppo"]["n_epochs"]
     """
     if model.clip_range != params['clip_range']:
         model.clip_range = params['clip_range']
     """
-    if model.n_envs != n_envs:
+    if model.n_envs != params["n_envs"]:
         model.update_n_envs()
-    if model.rollout_buffer.buffer_size != params["n_steps"]:
-        model.rollout_buffer.buffer_size = params["n_steps"]
+    if model.rollout_buffer.buffer_size != params["rl_agent"]["ppo"]["n_steps"]:
+        model.rollout_buffer.buffer_size = params["rl_agent"]["ppo"]["n_steps"]
     if model.tensorboard_log != PATHS["tb"]:
         model.tensorboard_log = PATHS["tb"]
 
@@ -331,9 +322,6 @@ def get_agent_name(config: dict) -> str:
 
     :param config (dict): Dict containing the program arguments
     """
-    START_TIME = dt.now().strftime("%Y_%m_%d__%H_%M")
-    robot_model = rospy.get_param("robot_model")
-
     # if args.custom_mlp:
     #     return (
     #         robot_model
@@ -348,24 +336,28 @@ def get_agent_name(config: dict) -> str:
     #         + "_"
     #         + START_TIME
     #     )
-    if config["resume"] is None:
+    if config["rl_agent"]["resume"] is None:
+        START_TIME = dt.now().strftime("%Y_%m_%d__%H_%M")
+        robot_model = rospy.get_param("robot_model")
         architecture_name, encoder_name = config["architecture_name"], rospy.get_param(
             "space_encoder", "RobotSpecificEncoder"
         )
-        return f"{robot_model}_{architecture_name}_{encoder_name}_{START_TIME}"
-    return config["resume"]
+        agent_name = f"{robot_model}_{architecture_name}_{encoder_name}_{START_TIME}"
+        config["agent_name"] = agent_name
+        return agent_name
+    return config["agent_name"]
 
 
-def get_paths(agent_name: str, config: dict) -> dict:
+def get_paths(config: dict) -> dict:
     """
     Function to generate agent specific paths
 
-    :param agent_name: Precise agent name (as generated by get_agent_name())
     :param config (dict): Dictionary containing the training configuration
     """
     training_dir = rospkg.RosPack().get_path("training")
     robot_model = rospy.get_param("robot_model")
     simulation_setup = rospkg.RosPack().get_path("arena-simulation-setup")
+    agent_name = config["agent_name"]
 
     PATHS = {
         "model": os.path.join(
@@ -382,17 +374,20 @@ def get_paths(agent_name: str, config: dict) -> dict:
             f"{robot_model}.model.yaml",
         ),
         "hyperparams": os.path.join(
-            training_dir, "configs", "hyperparameters", config["hyperparameter_file"]
+            rospkg.RosPack().get_path("rosnav"),
+            "agents",
+            agent_name,
+            "training_config.yaml",
         ),
         "curriculum": os.path.join(
             training_dir,
             "configs",
             "training_curriculums",
-            config["training_curriculum"]["training_curriculum_file"],
+            config["callbacks"]["training_curriculum"]["training_curriculum_file"],
         ),
     }
     # check for mode
-    if config["resume"] is None and not config["debug_mode"]:
+    if config["rl_agent"]["resume"] is None and not config["debug_mode"]:
         os.makedirs(PATHS["model"])
     elif (
         not os.path.isfile(os.path.join(PATHS["model"], f"{agent_name}.zip"))
@@ -422,7 +417,7 @@ def get_paths(agent_name: str, config: dict) -> dict:
 def make_envs(
     with_ns: bool,
     rank: int,
-    params: dict,
+    config: dict,
     seed: int = 0,
     PATHS: dict = None,
     train: bool = True,
@@ -432,7 +427,7 @@ def make_envs(
 
     :param with_ns: (bool) if the system was initialized with namespaces
     :param rank: (int) index of the subprocess
-    :param params: (dict) hyperparameters of agent to be trained
+    :param config: (dict) hyperparameters of agent to be trained
     :param seed: (int) the inital seed for RNG
     :param PATHS: (dict) script relevant paths
     :param train: (bool) to differentiate between train and eval env
@@ -448,12 +443,12 @@ def make_envs(
             # train env
             env = FlatlandEnv(
                 train_ns,
-                params["reward_fnc"],
-                params["discrete_action_space"],
-                goal_radius=params["goal_radius"],
-                max_steps_per_episode=params["train_max_steps_per_episode"],
-                task_mode=params["task_mode"],
-                curr_stage=params["curr_stage"],
+                config["rl_agent"]["reward_fnc"],
+                config["rl_agent"]["discrete_action_space"],
+                goal_radius=config["goal_radius"],
+                max_steps_per_episode=config["max_num_moves_per_eps"],
+                task_mode=config["task_mode"],
+                curr_stage=config["callbacks"]["training_curriculum"]["curr_stage"],
                 PATHS=PATHS,
             )
         else:
@@ -461,15 +456,15 @@ def make_envs(
             env = Monitor(
                 FlatlandEnv(
                     eval_ns,
-                    params["reward_fnc"],
-                    params["discrete_action_space"],
-                    goal_radius=params["goal_radius"],
-                    max_steps_per_episode=params["eval_max_steps_per_episode"],
-                    task_mode=params["task_mode"],
-                    curr_stage=params["curr_stage"],
+                    config["rl_agent"]["reward_fnc"],
+                    config["rl_agent"]["discrete_action_space"],
+                    oal_radius=config["goal_radius"],
+                    max_steps_per_episode=config["max_num_moves_per_eps"],
+                    task_mode=config["task_mode"],
+                    curr_stage=config["callbacks"]["training_curriculum"]["curr_stage"],
                     PATHS=PATHS,
                 ),
-                PATHS.get("eval"),
+                PATHS["eval"],
                 info_keywords=("done_reason", "is_success"),
             )
         # env.seed(seed + rank)
@@ -522,8 +517,8 @@ from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 
 
-def load_vec_normalize(params: dict, PATHS: dict, env: VecEnv, eval_env: VecEnv):
-    if params["normalize"]:
+def load_vec_normalize(config: dict, PATHS: dict, env: VecEnv, eval_env: VecEnv):
+    if config["rl_agent"]["normalize"]:
         load_path = os.path.join(PATHS["model"], "vec_normalize.pkl")
         if os.path.isfile(load_path):
             env = VecNormalize.load(load_path=load_path, venv=env)
@@ -577,7 +572,6 @@ def load_rew_fnc(config_name: str) -> dict:
 
 def init_envs(
     config: dict,
-    params: dict,
     paths: dict,
     ns_for_nodes: bool,
 ) -> Tuple[VecEnv, VecEnv]:
@@ -591,7 +585,7 @@ def init_envs(
                 make_envs(
                     ns_for_nodes,
                     i,
-                    params=params,
+                    config=config,
                     PATHS=paths,
                 )
                 for i in range(config["n_envs"])
@@ -604,7 +598,7 @@ def init_envs(
                 make_envs(
                     ns_for_nodes,
                     i,
-                    params=params,
+                    config=config,
                     PATHS=paths,
                 )
                 for i in range(config["n_envs"])
@@ -619,7 +613,7 @@ def init_envs(
                 make_envs(
                     ns_for_nodes,
                     0,
-                    params=params,
+                    config=config,
                     PATHS=paths,
                     train=False,
                 )
@@ -628,11 +622,11 @@ def init_envs(
     else:
         eval_env = train_env
 
-    return load_vec_normalize(params, paths, train_env, eval_env)
+    return load_vec_normalize(config, paths, train_env, eval_env)
 
 
 def init_callbacks(
-    config: dict, params: dict, train_env: VecEnv, eval_env: VecEnv, paths
+    config: dict, train_env: VecEnv, eval_env: VecEnv, paths
 ) -> EvalCallback:
     import tools.staged_train_callback as arena_cb
 
@@ -640,17 +634,17 @@ def init_callbacks(
     # type can be either 'succ' or 'rew'
     trainstage_cb = arena_cb.InitiateNewTrainStage(
         n_envs=config["n_envs"],
-        treshhold_type=config["training_curriculum"]["threshold_type"],
-        upper_threshold=config["training_curriculum"]["upper_threshold"],
-        lower_threshold=config["training_curriculum"]["lower_threshold"],
-        task_mode=params["task_mode"],
+        treshhold_type=config["callbacks"]["training_curriculum"]["threshold_type"],
+        upper_threshold=config["callbacks"]["training_curriculum"]["upper_threshold"],
+        lower_threshold=config["callbacks"]["training_curriculum"]["lower_threshold"],
+        task_mode=config["task_mode"],
         verbose=1,
     )
 
     # stop training on reward threshold callback
     stoptraining_cb = StopTrainingOnRewardThreshold(
-        treshhold_type=config["stop_training"]["threshold_type"],
-        threshold=config["stop_training"]["threshold"],
+        treshhold_type=config["callbacks"]["stop_training"]["threshold_type"],
+        threshold=config["callbacks"]["stop_training"]["threshold"],
         verbose=1,
     )
 
@@ -660,8 +654,8 @@ def init_callbacks(
     eval_cb = EvalCallback(
         eval_env=eval_env,
         train_env=train_env,
-        n_eval_episodes=config["periodic_eval"]["n_eval_episodes"],
-        eval_freq=config["periodic_eval"]["eval_freq"],
+        n_eval_episodes=config["callbacks"]["periodic_eval"]["n_eval_episodes"],
+        eval_freq=config["callbacks"]["periodic_eval"]["eval_freq"],
         log_path=paths["eval"],
         best_model_save_path=None if config["debug_mode"] else paths["model"],
         deterministic=True,
@@ -674,32 +668,30 @@ def init_callbacks(
 
 def get_ppo_instance(
     config: dict,
-    params: dict,
     train_env: VecEnv,
     PATHS: dict,
-    agent_name: str,
     AgentFactory,
 ) -> PPO:
-    if config["architecture_name"] and not config["resume"]:
+    if config["rl_agent"]["architecture_name"] and not config["rl_agent"]["resume"]:
         agent: Union[
             Type[BaseAgent], Type[ActorCriticPolicy]
-        ] = AgentFactory.instantiate(config["architecture_name"])
+        ] = AgentFactory.instantiate(config["rl_agent"]["architecture_name"])
         if isinstance(agent, BaseAgent):
             model = PPO(
                 agent.type.value,
                 train_env,
                 policy_kwargs=agent.get_kwargs(),
-                gamma=params["gamma"],
-                n_steps=params["n_steps"],
-                ent_coef=params["ent_coef"],
-                learning_rate=params["learning_rate"],
-                vf_coef=params["vf_coef"],
-                max_grad_norm=params["max_grad_norm"],
-                gae_lambda=params["gae_lambda"],
-                batch_size=params["m_batch_size"],
-                n_epochs=params["n_epochs"],
-                clip_range=params["clip_range"],
-                tensorboard_log=PATHS.get("tb"),
+                gamma=config["rl_agent"]["ppo"]["gamma"],
+                n_steps=config["rl_agent"]["ppo"]["n_steps"],
+                ent_coef=config["rl_agent"]["ppo"]["ent_coef"],
+                learning_rate=config["rl_agent"]["ppo"]["learning_rate"],
+                vf_coef=config["rl_agent"]["ppo"]["vf_coef"],
+                max_grad_norm=config["rl_agent"]["ppo"]["max_grad_norm"],
+                gae_lambda=config["rl_agent"]["ppo"]["gae_lambda"],
+                batch_size=config["rl_agent"]["ppo"]["m_batch_size"],
+                n_epochs=config["rl_agent"]["ppo"]["n_epochs"],
+                clip_range=config["rl_agent"]["ppo"]["clip_range"],
+                tensorboard_log=PATHS["tb"],
                 use_wandb=False
                 if config["debug_mode"]
                 else config["monitoring"]["use_wandb"],
@@ -709,16 +701,16 @@ def get_ppo_instance(
             model = PPO(
                 agent,
                 train_env,
-                gamma=params["gamma"],
-                n_steps=params["n_steps"],
-                ent_coef=params["ent_coef"],
-                learning_rate=params["learning_rate"],
-                vf_coef=params["vf_coef"],
-                max_grad_norm=params["max_grad_norm"],
-                gae_lambda=params["gae_lambda"],
-                batch_size=params["m_batch_size"],
-                n_epochs=params["n_epochs"],
-                clip_range=params["clip_range"],
+                gamma=config["rl_agent"]["ppo"]["gamma"],
+                n_steps=config["rl_agent"]["ppo"]["n_steps"],
+                ent_coef=config["rl_agent"]["ppo"]["ent_coef"],
+                learning_rate=config["rl_agent"]["ppo"]["learning_rate"],
+                vf_coef=config["rl_agent"]["ppo"]["vf_coef"],
+                max_grad_norm=config["rl_agent"]["ppo"]["max_grad_norm"],
+                gae_lambda=config["rl_agent"]["ppo"]["gae_lambda"],
+                batch_size=config["rl_agent"]["ppo"]["m_batch_size"],
+                n_epochs=config["rl_agent"]["ppo"]["n_epochs"],
+                clip_range=config["rl_agent"]["ppo"]["clip_range"],
                 tensorboard_log=PATHS["tb"],
                 use_wandb=False
                 if config["debug_mode"]
@@ -726,19 +718,26 @@ def get_ppo_instance(
                 verbose=1,
             )
         else:
-            arch_name = config["architecture_name"]
+            arch_name = config["rl_agent"]["architecture_name"]
             raise TypeError(
                 f"Registered agent class {arch_name} is neither of type"
                 "'BaseAgent' or 'ActorCriticPolicy'!"
             )
     else:
+        agent_name = config["agent_name"]
         # load flag
         if os.path.isfile(os.path.join(PATHS["model"], f"{agent_name}.zip")):
             model = PPO.load(os.path.join(PATHS["model"], agent_name), train_env)
         elif os.path.isfile(os.path.join(PATHS["model"], "best_model.zip")):
             model = PPO.load(os.path.join(PATHS["model"], "best_model"), train_env)
-        update_hyperparam_model(model, PATHS, params, config["n_envs"])
-        if config["monitoring"]["use_wandb"]:
+        else:
+            raise FileNotFoundError(
+                f"Could not find model file for agent {agent_name}!"
+                "You might need to change the 'agent_name' in the config file "
+                "according to the name of the parent directory of the desired model."
+            )
+        update_hyperparam_model(model, PATHS, config)
+        if not config["debug_mode"] and config["monitoring"]["use_wandb"]:
             init_wandb(model)
     return model
 
@@ -830,7 +829,9 @@ def get_rcppo_instance(
 
 def populate_ros_params(params):
     rospy.set_param("task_mode", params["task_mode"])
-    rospy.set_param("is_action_space_discrete", params["discrete_action_space"])
+    rospy.set_param(
+        "is_action_space_discrete", params["rl_agent"]["discrete_action_space"]
+    )
     rospy.set_param("goal_radius", params["goal_radius"])
 
 
