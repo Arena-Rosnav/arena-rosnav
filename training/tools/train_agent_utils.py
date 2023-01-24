@@ -162,33 +162,23 @@ def update_hyperparam_model(model: PPO, PATHS: dict, params: dict) -> None:
     :param n_envs: number of parallel environments
     """
     ppo_params = params["rl_agent"]["ppo"]
-    if model.batch_size != ppo_params["batch_size"]:
-        model.batch_size = ppo_params["batch_size"]
-    if model.gamma != ppo_params["gamma"]:
-        model.gamma = ppo_params["gamma"]
-    if model.n_steps != ppo_params["n_steps"]:
-        model.n_steps = ppo_params["n_steps"]
-    if model.ent_coef != ppo_params["ent_coef"]:
-        model.ent_coef = ppo_params["ent_coef"]
-    if model.learning_rate != ppo_params["learning_rate"]:
-        model.learning_rate = ppo_params["learning_rate"]
-    if model.vf_coef != ppo_params["vf_coef"]:
-        model.vf_coef = ppo_params["vf_coef"]
-    if model.max_grad_norm != ppo_params["max_grad_norm"]:
-        model.max_grad_norm = ppo_params["max_grad_norm"]
-    if model.gae_lambda != ppo_params["gae_lambda"]:
-        model.gae_lambda = ppo_params["gae_lambda"]
-    if model.n_epochs != ppo_params["n_epochs"]:
-        model.n_epochs = ppo_params["n_epochs"]
+
+    model.batch_size = ppo_params["batch_size"]
+    model.gamma = ppo_params["gamma"]
+    model.n_steps = ppo_params["n_steps"]
+    model.ent_coef = ppo_params["ent_coef"]
+    model.learning_rate = ppo_params["learning_rate"]
+    model.vf_coef = ppo_params["vf_coef"]
+    model.max_grad_norm = ppo_params["max_grad_norm"]
+    model.gae_lambda = ppo_params["gae_lambda"]
+    model.n_epochs = ppo_params["n_epochs"]
     """
     if model.clip_range != params['clip_range']:
         model.clip_range = params['clip_range']
     """
     if model.n_envs != params["n_envs"]:
         model.update_n_envs()
-    if model.rollout_buffer.buffer_size != ppo_params["n_steps"]:
         model.rollout_buffer.buffer_size = ppo_params["n_steps"]
-    if model.tensorboard_log != PATHS["tb"]:
         model.tensorboard_log = PATHS["tb"]
 
 
@@ -365,6 +355,7 @@ def make_envs(
         train_ns = f"sim_{rank + 1}" if with_ns else ""
         eval_ns = "eval_sim" if with_ns else ""
 
+        curriculum_config = config["callbacks"]["training_curriculum"]
         if train:
             # train env
             env = FlatlandEnv(
@@ -374,7 +365,7 @@ def make_envs(
                 goal_radius=config["goal_radius"],
                 max_steps_per_episode=config["max_num_moves_per_eps"],
                 task_mode=config["task_mode"],
-                curr_stage=config["callbacks"]["training_curriculum"]["curr_stage"],
+                curr_stage=curriculum_config["curr_stage"],
                 PATHS=PATHS,
             )
         else:
@@ -384,10 +375,10 @@ def make_envs(
                     eval_ns,
                     config["rl_agent"]["reward_fnc"],
                     config["rl_agent"]["discrete_action_space"],
-                    oal_radius=config["goal_radius"],
+                    goal_radius=config["goal_radius"],
                     max_steps_per_episode=config["max_num_moves_per_eps"],
                     task_mode=config["task_mode"],
-                    curr_stage=config["callbacks"]["training_curriculum"]["curr_stage"],
+                    curr_stage=curriculum_config["curr_stage"],
                     PATHS=PATHS,
                 ),
                 PATHS["eval"],
@@ -558,19 +549,23 @@ def init_callbacks(
 
     # threshold settings for training curriculum
     # type can be either 'succ' or 'rew'
+    curriculum_cfg = config["callbacks"]["training_curriculum"]
+    stop_train_cfg = config["callbacks"]["stop_training"]
+    periodic_eval_cfg = config["callbacks"]["periodic_eval"]
+
     trainstage_cb = arena_cb.InitiateNewTrainStage(
         n_envs=config["n_envs"],
-        treshhold_type=config["callbacks"]["training_curriculum"]["threshold_type"],
-        upper_threshold=config["callbacks"]["training_curriculum"]["upper_threshold"],
-        lower_threshold=config["callbacks"]["training_curriculum"]["lower_threshold"],
+        treshhold_type=curriculum_cfg["threshold_type"],
+        upper_threshold=curriculum_cfg["upper_threshold"],
+        lower_threshold=curriculum_cfg["lower_threshold"],
         task_mode=config["task_mode"],
         verbose=1,
     )
 
     # stop training on reward threshold callback
     stoptraining_cb = StopTrainingOnRewardThreshold(
-        treshhold_type=config["callbacks"]["stop_training"]["threshold_type"],
-        threshold=config["callbacks"]["stop_training"]["threshold"],
+        treshhold_type=stop_train_cfg["threshold_type"],
+        threshold=stop_train_cfg["threshold"],
         verbose=1,
     )
 
@@ -580,8 +575,8 @@ def init_callbacks(
     eval_cb = EvalCallback(
         eval_env=eval_env,
         train_env=train_env,
-        n_eval_episodes=config["callbacks"]["periodic_eval"]["n_eval_episodes"],
-        eval_freq=config["callbacks"]["periodic_eval"]["eval_freq"],
+        n_eval_episodes=periodic_eval_cfg["n_eval_episodes"],
+        eval_freq=periodic_eval_cfg["eval_freq"],
         log_path=paths["eval"],
         best_model_save_path=None if config["debug_mode"] else paths["model"],
         deterministic=True,
