@@ -707,9 +707,7 @@ def get_ppo_instance(
         elif issubclass(agent, ActorCriticPolicy):
             ppo_kwargs["policy"] = agent
 
-            model = PPO(
-                **ppo_kwargs,
-            )
+            model = PPO(**ppo_kwargs)
         else:
             arch_name = config["rl_agent"]["architecture_name"]
             raise TypeError(
