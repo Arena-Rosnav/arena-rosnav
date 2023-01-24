@@ -89,58 +89,37 @@ def write_hyperparameters_json(hyperparams: dict, PATHS: dict) -> None:
         json.dump(hyperparams, target, ensure_ascii=False, indent=4)
 
 
-def load_hyperparameters_json(
-    PATHS: dict, from_scratch: bool = False, config_name: str = "default"
-) -> dict:
-    """
-    Load hyperparameters from model directory when loading - when training from scratch
-    load from ../configs/hyperparameters
+# LEGACY CODE
+# def load_hyperparameters_json(
+#     PATHS: dict, from_scratch: bool = False, config_name: str = "default"
+# ) -> dict:
+#     """
+#     Load hyperparameters from model directory when loading - when training from scratch
+#     load from ../configs/hyperparameters
 
-    :param PATHS: dictionary containing model specific paths
-    :param from_scatch: if training from scratch
-    :param config_name: file name of json file when training from scratch
-    """
-    if from_scratch:
-        doc_location = os.path.join(PATHS["hyperparams"])
-    else:
-        doc_location = os.path.join(PATHS.get("model"), "hyperparameters.json")
+#     :param PATHS: dictionary containing model specific paths
+#     :param from_scatch: if training from scratch
+#     :param config_name: file name of json file when training from scratch
+#     """
+#     if from_scratch:
+#         doc_location = os.path.join(PATHS["hyperparams"])
+#     else:
+#         doc_location = os.path.join(PATHS.get("model"), "hyperparameters.json")
 
-    if os.path.isfile(doc_location):
-        with open(doc_location, "r") as file:
-            hyperparams = json.load(file)
-        check_hyperparam_format(loaded_hyperparams=hyperparams, PATHS=PATHS)
-        return hyperparams
-    else:
-        if from_scratch:
-            raise FileNotFoundError(
-                f"""Found no '{config_name}' in {PATHS.get("hyperparams")}"""
-            )
-        else:
-            raise FileNotFoundError(
-                f"""Found no 'hyperparameters.json' in {PATHS.get("model")}"""
-            )
-
-
-def update_total_timesteps_json(timesteps: int, PATHS: dict) -> None:
-    """
-    Update total number of timesteps in json file
-
-    :param hyperparams_obj(object, agent_hyperparams): object containing containing model specific hyperparameters
-    :param PATHS: dictionary containing model specific paths
-    """
-    doc_location = os.path.join(PATHS.get("model"), "hyperparameters.json")
-    hyperparams = load_hyperparameters_json(PATHS=PATHS)
-
-    try:
-        curr_timesteps = int(hyperparams["n_timesteps"]) + timesteps
-        hyperparams["n_timesteps"] = curr_timesteps
-    except Exception:
-        raise Warning(
-            "Parameter 'total_timesteps' not found or not of type Integer in 'hyperparameter.json'!"
-        )
-    else:
-        with open(doc_location, "w", encoding="utf-8") as target:
-            json.dump(hyperparams, target, ensure_ascii=False, indent=4)
+#     if os.path.isfile(doc_location):
+#         with open(doc_location, "r") as file:
+#             hyperparams = json.load(file)
+#         check_hyperparam_format(loaded_hyperparams=hyperparams, PATHS=PATHS)
+#         return hyperparams
+#     else:
+#         if from_scratch:
+#             raise FileNotFoundError(
+#                 f"""Found no '{config_name}' in {PATHS.get("hyperparams")}"""
+#             )
+#         else:
+#             raise FileNotFoundError(
+#                 f"""Found no 'hyperparameters.json' in {PATHS.get("model")}"""
+#             )
 
 
 def print_hyperparameters(hyperparams: dict) -> None:
@@ -182,32 +161,33 @@ def update_hyperparam_model(model: PPO, PATHS: dict, params: dict) -> None:
     :param params: dictionary containing loaded hyperparams
     :param n_envs: number of parallel environments
     """
-    if model.batch_size != params["rl_agent"]["ppo"]["batch_size"]:
-        model.batch_size = params["rl_agent"]["ppo"]["batch_size"]
-    if model.gamma != params["rl_agent"]["ppo"]["gamma"]:
-        model.gamma = params["rl_agent"]["ppo"]["gamma"]
-    if model.n_steps != params["rl_agent"]["ppo"]["n_steps"]:
-        model.n_steps = params["rl_agent"]["ppo"]["n_steps"]
-    if model.ent_coef != params["rl_agent"]["ppo"]["ent_coef"]:
-        model.ent_coef = params["rl_agent"]["ppo"]["ent_coef"]
-    if model.learning_rate != params["rl_agent"]["ppo"]["learning_rate"]:
-        model.learning_rate = params["rl_agent"]["ppo"]["learning_rate"]
-    if model.vf_coef != params["rl_agent"]["ppo"]["vf_coef"]:
-        model.vf_coef = params["rl_agent"]["ppo"]["vf_coef"]
-    if model.max_grad_norm != params["rl_agent"]["ppo"]["max_grad_norm"]:
-        model.max_grad_norm = params["rl_agent"]["ppo"]["max_grad_norm"]
-    if model.gae_lambda != params["rl_agent"]["ppo"]["gae_lambda"]:
-        model.gae_lambda = params["rl_agent"]["ppo"]["gae_lambda"]
-    if model.n_epochs != params["rl_agent"]["ppo"]["n_epochs"]:
-        model.n_epochs = params["rl_agent"]["ppo"]["n_epochs"]
+    ppo_params = params["rl_agent"]["ppo"]
+    if model.batch_size != ppo_params["batch_size"]:
+        model.batch_size = ppo_params["batch_size"]
+    if model.gamma != ppo_params["gamma"]:
+        model.gamma = ppo_params["gamma"]
+    if model.n_steps != ppo_params["n_steps"]:
+        model.n_steps = ppo_params["n_steps"]
+    if model.ent_coef != ppo_params["ent_coef"]:
+        model.ent_coef = ppo_params["ent_coef"]
+    if model.learning_rate != ppo_params["learning_rate"]:
+        model.learning_rate = ppo_params["learning_rate"]
+    if model.vf_coef != ppo_params["vf_coef"]:
+        model.vf_coef = ppo_params["vf_coef"]
+    if model.max_grad_norm != ppo_params["max_grad_norm"]:
+        model.max_grad_norm = ppo_params["max_grad_norm"]
+    if model.gae_lambda != ppo_params["gae_lambda"]:
+        model.gae_lambda = ppo_params["gae_lambda"]
+    if model.n_epochs != ppo_params["n_epochs"]:
+        model.n_epochs = ppo_params["n_epochs"]
     """
     if model.clip_range != params['clip_range']:
         model.clip_range = params['clip_range']
     """
     if model.n_envs != params["n_envs"]:
         model.update_n_envs()
-    if model.rollout_buffer.buffer_size != params["rl_agent"]["ppo"]["n_steps"]:
-        model.rollout_buffer.buffer_size = params["rl_agent"]["ppo"]["n_steps"]
+    if model.rollout_buffer.buffer_size != ppo_params["n_steps"]:
+        model.rollout_buffer.buffer_size = ppo_params["n_steps"]
     if model.tensorboard_log != PATHS["tb"]:
         model.tensorboard_log = PATHS["tb"]
 
