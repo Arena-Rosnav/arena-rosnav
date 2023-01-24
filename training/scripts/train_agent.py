@@ -19,7 +19,7 @@ def main():
         rospy.init_node("debug_node", disable_signals=False)
 
     # generate agent name and model specific paths
-    get_agent_name(config)
+    generate_agent_name(config)
     PATHS = get_paths(config)
 
     print("________ STARTING TRAINING WITH:  %s ________\n" % config["agent_name"])
@@ -31,7 +31,7 @@ def main():
     wait_for_nodes(with_ns=ns_for_nodes, n_envs=config["n_envs"], timeout=5)
 
     # initialize hyperparameters (save to/ load from json)
-    config = initialize_hyperparameters(
+    config = initialize_config(
         PATHS=PATHS,
         config=config,
         n_envs=config["n_envs"],

@@ -58,8 +58,8 @@ rl_agent:
   # name of architecture defined in the Policy factory
   architecture_name: "AGENT_25"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
-  reward_fnc: "rule_04"
+  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  reward_fnc: "rule_05"
   discrete_action_space: false
   normalize: false
   ppo:
