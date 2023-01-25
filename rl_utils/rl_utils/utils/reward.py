@@ -3,7 +3,6 @@ from typing import Any, Callable, Dict, List, Tuple
 import numpy as np
 import scipy.spatial
 from geometry_msgs.msg import Pose2D
-from numpy.lib.utils import safe_eval
 
 
 class RewardCalculator:
@@ -37,9 +36,9 @@ class RewardCalculator:
         self.safe_dist = safe_dist
 
         # load custom reward function from yaml
-        import tools.train_agent_utils as train_agent_utils
+        import tools.general as general_utils
 
-        self.custom_rew_dict = train_agent_utils.load_rew_fnc(rule)
+        self.custom_rew_dict = general_utils.load_rew_fnc(rule)
         self._extended_eval = extended_eval
 
         self.kdtree = None

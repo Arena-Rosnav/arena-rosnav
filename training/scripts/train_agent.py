@@ -3,8 +3,9 @@ import sys, rospy, time
 
 from rosnav.model.agent_factory import AgentFactory
 from tools.argsparser import parse_training_args
-from tools.custom_mlp_utils import *
-from tools.train_agent_utils import *
+from tools.general import *
+from tools.model_utils import init_callbacks, get_ppo_instance
+from tools.env_utils import init_envs
 
 
 def main():
@@ -54,9 +55,6 @@ def main():
         )
     except KeyboardInterrupt:
         print("KeyboardInterrupt..")
-    # finally:
-    # update the timesteps the model has trained in total
-    # update_total_timesteps_json(n_timesteps, PATHS)
 
     rospy.on_shutdown(model.env.close())
     print(f"Time passed: {time.time()-start}s. \n Training script will be terminated..")
