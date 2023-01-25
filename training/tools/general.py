@@ -152,7 +152,7 @@ def get_paths(config: dict) -> dict:
     else:
         PATHS["eval"] = None
     # tensorboard log enabled
-    if config["monitoring"]["tb"] and not config["debug_mode"]:
+    if config["monitoring"]["use_wandb"] and not config["debug_mode"]:
         if not os.path.exists(PATHS["tb"]):
             os.makedirs(PATHS["tb"])
     else:

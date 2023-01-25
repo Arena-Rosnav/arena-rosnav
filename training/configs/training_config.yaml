@@ -1,7 +1,7 @@
 ### General
 # in debug_mode no agent directories will be created and no models will be saved
 # further no wandb logging and fake (simulated) multiprocessing for traceback
-debug_mode: true
+debug_mode: false
 # number of parallel environments
 n_envs: 1
 # gpu yes or no
@@ -13,8 +13,6 @@ monitoring:
   use_wandb: true
   # save evaluation stats during training in log file
   eval_log: false
-  # use tensorboard
-  tb: false
 
 ### General Training
 # navigation task mode, chose from "random" or "staged"
