@@ -2,7 +2,6 @@
 # in debug_mode no agent directories will be created and no models will be saved
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: true
-robot: "jackal"
 # number of parallel environments
 n_envs: 1
 # gpu yes or no

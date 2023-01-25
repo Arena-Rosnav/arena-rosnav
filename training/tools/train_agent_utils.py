@@ -44,6 +44,7 @@ def initialize_config(
     import rosnav.model.custom_policy
     import rosnav.model.custom_sb3_policy
 
+    config["robot"] = rospy.get_param("model")
     # dynamically adapt n_steps according to batch size and n envs
     # then update .json
     check_batch_size(
@@ -87,39 +88,6 @@ def write_hyperparameters_json(hyperparams: dict, PATHS: dict) -> None:
 
     with open(doc_location, "w", encoding="utf-8") as target:
         json.dump(hyperparams, target, ensure_ascii=False, indent=4)
-
-
-# LEGACY CODE
-# def load_hyperparameters_json(
-#     PATHS: dict, from_scratch: bool = False, config_name: str = "default"
-# ) -> dict:
-#     """
-#     Load hyperparameters from model directory when loading - when training from scratch
-#     load from ../configs/hyperparameters
-
-#     :param PATHS: dictionary containing model specific paths
-#     :param from_scatch: if training from scratch
-#     :param config_name: file name of json file when training from scratch
-#     """
-#     if from_scratch:
-#         doc_location = os.path.join(PATHS["hyperparams"])
-#     else:
-#         doc_location = os.path.join(PATHS.get("model"), "hyperparameters.json")
-
-#     if os.path.isfile(doc_location):
-#         with open(doc_location, "r") as file:
-#             hyperparams = json.load(file)
-#         check_hyperparam_format(loaded_hyperparams=hyperparams, PATHS=PATHS)
-#         return hyperparams
-#     else:
-#         if from_scratch:
-#             raise FileNotFoundError(
-#                 f"""Found no '{config_name}' in {PATHS.get("hyperparams")}"""
-#             )
-#         else:
-#             raise FileNotFoundError(
-#                 f"""Found no 'hyperparameters.json' in {PATHS.get("model")}"""
-#             )
 
 
 def print_hyperparameters(hyperparams: dict) -> None:
@@ -593,62 +561,80 @@ def get_ppo_instance(
     PATHS: dict,
     AgentFactory,
 ) -> PPO:
-    if config["rl_agent"]["architecture_name"] and not config["rl_agent"]["resume"]:
-        agent: Union[
-            Type[BaseAgent], Type[ActorCriticPolicy]
-        ] = AgentFactory.instantiate(config["rl_agent"]["architecture_name"])
+    return (
+        instantiate_new_model(config, train_env, PATHS, AgentFactory)
+        if config["rl_agent"]["architecture_name"] and not config["rl_agent"]["resume"]
+        else load_model(config, PATHS)
+    )
 
-        ppo_config = config["rl_agent"]["ppo"]
-        ppo_kwargs = {
-            "env": train_env,
-            "gamma": ppo_config["gamma"],
-            "n_steps": ppo_config["n_steps"],
-            "ent_coef": ppo_config["ent_coef"],
-            "learning_rate": ppo_config["learning_rate"],
-            "vf_coef": ppo_config["vf_coef"],
-            "max_grad_norm": ppo_config["max_grad_norm"],
-            "gae_lambda": ppo_config["gae_lambda"],
-            "batch_size": ppo_config["m_batch_size"],
-            "n_epochs": ppo_config["n_epochs"],
-            "clip_range": ppo_config["clip_range"],
-            "tensorboard_log": PATHS["tb"],
-            "use_wandb": False
-            if config["debug_mode"]
-            else config["monitoring"]["use_wandb"],
-            "verbose": 1,
-        }
 
-        if isinstance(agent, BaseAgent):
-            ppo_kwargs["policy"] = agent.type.value
-            ppo_kwargs["policy_kwargs"] = agent.get_kwargs()
+def instantiate_new_model(
+    config: dict, train_env: VecEnv, PATHS: dict, AgentFactory
+) -> PPO:
+    agent: Union[Type[BaseAgent], Type[ActorCriticPolicy]] = AgentFactory.instantiate(
+        config["rl_agent"]["architecture_name"]
+    )
 
-            model = PPO(**ppo_kwargs)
-        elif issubclass(agent, ActorCriticPolicy):
-            ppo_kwargs["policy"] = agent
+    ppo_config = config["rl_agent"]["ppo"]
+    ppo_kwargs = {
+        "env": train_env,
+        "gamma": ppo_config["gamma"],
+        "n_steps": ppo_config["n_steps"],
+        "ent_coef": ppo_config["ent_coef"],
+        "learning_rate": ppo_config["learning_rate"],
+        "vf_coef": ppo_config["vf_coef"],
+        "max_grad_norm": ppo_config["max_grad_norm"],
+        "gae_lambda": ppo_config["gae_lambda"],
+        "batch_size": ppo_config["m_batch_size"],
+        "n_epochs": ppo_config["n_epochs"],
+        "clip_range": ppo_config["clip_range"],
+        "tensorboard_log": PATHS["tb"],
+        "use_wandb": False
+        if config["debug_mode"]
+        else config["monitoring"]["use_wandb"],
+        "verbose": 1,
+    }
 
-            model = PPO(**ppo_kwargs)
-        else:
-            arch_name = config["rl_agent"]["architecture_name"]
-            raise TypeError(
-                f"Registered agent class {arch_name} is neither of type"
-                "'BaseAgent' or 'ActorCriticPolicy'!"
-            )
+    if isinstance(agent, BaseAgent):
+        ppo_kwargs["policy"] = agent.type.value
+        ppo_kwargs["policy_kwargs"] = agent.get_kwargs()
+
+        model = PPO(**ppo_kwargs)
+    elif issubclass(agent, ActorCriticPolicy):
+        ppo_kwargs["policy"] = agent
+
+        model = PPO(**ppo_kwargs)
     else:
-        agent_name = config["agent_name"]
-        # load flag
-        if os.path.isfile(os.path.join(PATHS["model"], f"{agent_name}.zip")):
-            model = PPO.load(os.path.join(PATHS["model"], agent_name), train_env)
-        elif os.path.isfile(os.path.join(PATHS["model"], "best_model.zip")):
-            model = PPO.load(os.path.join(PATHS["model"], "best_model"), train_env)
-        else:
-            raise FileNotFoundError(
-                f"Could not find model file for agent {agent_name}!"
-                "You might need to change the 'agent_name' in the config file "
-                "according to the name of the parent directory of the desired model."
-            )
-        update_hyperparam_model(model, PATHS, config)
-        if not config["debug_mode"] and config["monitoring"]["use_wandb"]:
-            init_wandb(model)
+        arch_name = config["rl_agent"]["architecture_name"]
+        raise TypeError(
+            f"Registered agent class {arch_name} is neither of type"
+            "'BaseAgent' or 'ActorCriticPolicy'!"
+        )
+
+    return model
+
+
+def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
+    agent_name = config["agent_name"]
+
+    possible_agent_names = [f"{agent_name}", "best_model", "model"]
+
+    for name in possible_agent_names:
+        if os.path.isfile(os.path.join(PATHS["model"], f"{name}.zip")):
+            model = PPO.load(os.path.join(PATHS["model"], name), train_env)
+            break
+
+    if not model:
+        raise FileNotFoundError(
+            f"Could not find model file for agent {agent_name}!"
+            "You might need to change the 'agent_name' in the config file "
+            "according to the name of the parent directory of the desired model."
+        )
+
+    update_hyperparam_model(model, PATHS, config)
+
+    if not config["debug_mode"] and config["monitoring"]["use_wandb"]:
+        init_wandb(model)
     return model
 
 
