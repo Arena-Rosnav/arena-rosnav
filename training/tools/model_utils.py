@@ -54,23 +54,41 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
     :param params: dictionary containing loaded hyperparams
     :param n_envs: number of parallel environments
     """
+
+    def update(model, key, new_val):
+        if getattr(model, key) != new_val:
+            print(
+                "{:40}{:<10s}".format(
+                    f"Updating '{key}':",
+                    f"{str(getattr(model, key))}->{str(new_val)}",
+                )
+            )
+            setattr(model, key, new_val)
+
     ppo_params = config["rl_agent"]["ppo"]
 
-    model.batch_size = ppo_params["batch_size"]
-    model.gamma = ppo_params["gamma"]
-    model.n_steps = ppo_params["n_steps"]
-    model.ent_coef = ppo_params["ent_coef"]
-    model.learning_rate = ppo_params["learning_rate"]
-    model.vf_coef = ppo_params["vf_coef"]
-    model.max_grad_norm = ppo_params["max_grad_norm"]
-    model.gae_lambda = ppo_params["gae_lambda"]
-    model.n_epochs = ppo_params["n_epochs"]
+    update(model, "batch_size", ppo_params["m_batch_size"])
+    update(model, "gamma", ppo_params["gamma"])
+    update(model, "n_steps", ppo_params["n_steps"])
+    update(model, "ent_coef", ppo_params["ent_coef"])
+    update(model, "learning_rate", ppo_params["learning_rate"])
+    update(model, "vf_coef", ppo_params["vf_coef"])
+    update(model, "max_grad_norm", ppo_params["max_grad_norm"])
+    update(model, "gae_lambda", ppo_params["gae_lambda"])
+    update(model, "n_epochs", ppo_params["n_epochs"])
     """
     if model.clip_range != params['clip_range']:
         model.clip_range = params['clip_range']
     """
     if model.n_envs != config["n_envs"]:
+        print(
+            "{:40}{:<10s}".format(
+                "Updating 'n_envs':",
+                f"{str(model.n_envs)}->" + str(config["n_envs"]),
+            )
+        )
         model.update_n_envs()
+        model.n_envs = config["n_envs"]
         model.rollout_buffer.buffer_size = ppo_params["n_steps"]
     if not model.tensorboard_log and (
         not config["debug_mode"] and config["monitoring"]["use_wandb"]
@@ -91,7 +109,7 @@ def get_ppo_instance(
     model = (
         instantiate_new_model(config, train_env, PATHS, AgentFactory)
         if new_model
-        else load_model(config, PATHS)
+        else load_model(config, train_env, PATHS)
     )
 
     wandb_logging: bool = not config["debug_mode"] and config["monitoring"]["use_wandb"]
