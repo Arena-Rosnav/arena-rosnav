@@ -4,6 +4,8 @@ import numpy as np
 import scipy.spatial
 from geometry_msgs.msg import Pose2D
 
+from tools.general import load_rew_fnc
+
 
 class RewardCalculator:
     def __init__(
@@ -36,9 +38,7 @@ class RewardCalculator:
         self.safe_dist = safe_dist
 
         # load custom reward function from yaml
-        import tools.general as general_utils
-
-        self.custom_rew_dict = general_utils.load_rew_fnc(rule)
+        self.custom_rew_dict = load_rew_fnc(rule)
         self._extended_eval = extended_eval
 
         self.kdtree = None

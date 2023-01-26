@@ -32,11 +32,10 @@ def initialize_config(
     debug_mode: bool = False,
 ) -> dict:
     """
-    Write hyperparameters to json file in case agent is new otherwise load existing hyperparameters
+    Initialize config file for training and save it to agent directory
 
     :param PATHS: dictionary containing model specific paths
-    :param load_target: unique agent name (when calling --load)
-    :param config_name: name of the hyperparameter file in /configs/hyperparameters
+    :param config: dictionary containing training configurations
     :param n_envs: number of envs
     """
     import rosnav.model.custom_policy
@@ -73,19 +72,6 @@ def write_config_yaml(config: dict, PATHS: dict) -> None:
     """
     with open(PATHS["config"], "w") as outfile:
         yaml.dump(config, outfile, default_flow_style=False)
-
-
-def write_hyperparameters_json(hyperparams: dict, PATHS: dict) -> None:
-    """
-    Write hyperparameters.json to agent directory
-
-    :param hyperparams: dict containing model specific hyperparameters
-    :param PATHS: dictionary containing model specific paths
-    """
-    doc_location = os.path.join(PATHS.get("model"), "hyperparameters.json")
-
-    with open(doc_location, "w", encoding="utf-8") as target:
-        json.dump(hyperparams, target, ensure_ascii=False, indent=4)
 
 
 def print_hyperparameters(hyperparams: dict) -> None:
