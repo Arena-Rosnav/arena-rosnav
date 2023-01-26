@@ -1,9 +1,7 @@
+import os
 from typing import Union, Type
 
-import os
-from rosnav.model.base_agent import BaseAgent
-
-
+import wandb
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import (
     EvalCallback,
@@ -11,6 +9,22 @@ from stable_baselines3.common.callbacks import (
 )
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
+from stable_baselines3.common.utils import configure_logger
+
+from rosnav.model.base_agent import BaseAgent
+from tools.staged_train_callback import InitiateNewTrainStage
+
+
+def setup_wandb(config: dict, agent: PPO) -> None:
+    wandb.init(
+        project="Arena-RL",
+        entity=None,
+        sync_tensorboard=True,
+        monitor_gym=True,
+        save_code=True,
+        config=config,
+    )
+    wandb.watch(agent.policy)
 
 
 def check_batch_size(n_envs: int, batch_size: int, mn_batch_size: int) -> None:
@@ -31,7 +45,7 @@ def check_batch_size(n_envs: int, batch_size: int, mn_batch_size: int) -> None:
     ), f"Batch size {batch_size} isn't divisible by mini batch size {mn_batch_size}"
 
 
-def update_hyperparam_model(model: PPO, PATHS: dict, params: dict) -> None:
+def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
     """
     Updates parameter of loaded PPO agent when it was manually changed in the configs yaml.
 
@@ -40,7 +54,7 @@ def update_hyperparam_model(model: PPO, PATHS: dict, params: dict) -> None:
     :param params: dictionary containing loaded hyperparams
     :param n_envs: number of parallel environments
     """
-    ppo_params = params["rl_agent"]["ppo"]
+    ppo_params = config["rl_agent"]["ppo"]
 
     model.batch_size = ppo_params["batch_size"]
     model.gamma = ppo_params["gamma"]
@@ -55,10 +69,14 @@ def update_hyperparam_model(model: PPO, PATHS: dict, params: dict) -> None:
     if model.clip_range != params['clip_range']:
         model.clip_range = params['clip_range']
     """
-    if model.n_envs != params["n_envs"]:
+    if model.n_envs != config["n_envs"]:
         model.update_n_envs()
         model.rollout_buffer.buffer_size = ppo_params["n_steps"]
+    if not model.tensorboard_log and (
+        not config["debug_mode"] and config["monitoring"]["use_wandb"]
+    ):
         model.tensorboard_log = PATHS["tb"]
+        configure_logger(1, PATHS["tb"], "run", False)
 
 
 def get_ppo_instance(
@@ -67,11 +85,19 @@ def get_ppo_instance(
     PATHS: dict,
     AgentFactory,
 ) -> PPO:
-    return (
+    new_model: bool = (
+        config["rl_agent"]["architecture_name"] and not config["rl_agent"]["resume"]
+    )
+    model = (
         instantiate_new_model(config, train_env, PATHS, AgentFactory)
-        if config["rl_agent"]["architecture_name"] and not config["rl_agent"]["resume"]
+        if new_model
         else load_model(config, PATHS)
     )
+
+    wandb_logging: bool = not config["debug_mode"] and config["monitoring"]["use_wandb"]
+    if wandb_logging and not new_model:
+        setup_wandb(config, model)
+    return model
 
 
 def instantiate_new_model(
@@ -112,12 +138,12 @@ def instantiate_new_model(
             f"Registered agent class {arch_name} is neither of type"
             "'BaseAgent' or 'ActorCriticPolicy'!"
         )
+
     return PPO(**ppo_kwargs)
 
 
 def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
     agent_name = config["agent_name"]
-
     possible_agent_names = [f"{agent_name}", "best_model", "model"]
 
     for name in possible_agent_names:
@@ -133,18 +159,12 @@ def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
         )
 
     update_hyperparam_model(model, PATHS, config)
-
-    if not config["debug_mode"] and config["monitoring"]["use_wandb"]:
-        from .general import init_wandb
-
-        init_wandb(model)
     return model
 
 
 def init_callbacks(
     config: dict, train_env: VecEnv, eval_env: VecEnv, paths
 ) -> EvalCallback:
-    import tools.staged_train_callback as arena_cb
 
     # threshold settings for training curriculum
     # type can be either 'succ' or 'rew'
@@ -152,7 +172,7 @@ def init_callbacks(
     stop_train_cfg = config["callbacks"]["stop_training"]
     periodic_eval_cfg = config["callbacks"]["periodic_eval"]
 
-    trainstage_cb = arena_cb.InitiateNewTrainStage(
+    trainstage_cb = InitiateNewTrainStage(
         n_envs=config["n_envs"],
         treshhold_type=curriculum_cfg["threshold_type"],
         upper_threshold=curriculum_cfg["upper_threshold"],

@@ -1,4 +1,3 @@
-import json
 import os, rospy
 import rosnode
 import rospkg
@@ -209,36 +208,6 @@ def load_rew_fnc(config_name: str) -> dict:
     with open(config_location, "r", encoding="utf-8") as target:
         config = yaml.load(target, Loader=yaml.FullLoader)
     return config
-
-
-def init_wandb(model: PPO):
-    import wandb
-
-    logger_config = {
-        "learning_rate": model.learning_rate,
-        "n_steps": model.n_steps,
-        "batch_size": model.batch_size,
-        "n_epochs": model.n_epochs,
-        "gamma": model.gamma,
-        "gae_lambda": model.gae_lambda,
-        "ent_coef": model.ent_coef,
-        "vf_coef": model.vf_coef,
-        "max_grad_norm": model.max_grad_norm,
-        "use_sde": model.use_sde,
-        "sde_sample_freq": model.sde_sample_freq,
-        "clip_range": model.clip_range,
-        "clip_range_vf": model.clip_range_vf,
-        "target_kl": model.target_kl,
-    }
-
-    wandb.init(
-        project="Arena-RL",
-        entity=None,
-        sync_tensorboard=True,
-        monitor_gym=True,
-        save_code=True,
-        config=logger_config,
-    )
 
 
 def generate_agent_name(config: dict) -> str:
