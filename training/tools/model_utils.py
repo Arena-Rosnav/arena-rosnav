@@ -65,11 +65,11 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
             )
             setattr(model, key, new_val)
 
-    ppo_params = config["rl_agent"]["ppo"]
     print("\n--------------------------------")
     print("UPDATING MODEL HYPERPARAMETER...")
     print("(no change -> no print below")
 
+    ppo_params = config["rl_agent"]["ppo"]
     update(model, "batch_size", ppo_params["m_batch_size"])
     update(model, "gamma", ppo_params["gamma"])
     update(model, "n_steps", ppo_params["n_steps"])
