@@ -104,20 +104,15 @@ def instantiate_new_model(
     if isinstance(agent, BaseAgent):
         ppo_kwargs["policy"] = agent.type.value
         ppo_kwargs["policy_kwargs"] = agent.get_kwargs()
-
-        model = PPO(**ppo_kwargs)
     elif issubclass(agent, ActorCriticPolicy):
         ppo_kwargs["policy"] = agent
-
-        model = PPO(**ppo_kwargs)
     else:
         arch_name = config["rl_agent"]["architecture_name"]
         raise TypeError(
             f"Registered agent class {arch_name} is neither of type"
             "'BaseAgent' or 'ActorCriticPolicy'!"
         )
-
-    return model
+    return PPO(**ppo_kwargs)
 
 
 def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
