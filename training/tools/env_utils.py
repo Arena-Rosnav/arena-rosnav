@@ -5,7 +5,7 @@ import os
 
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import set_random_seed
-from stable_baselines3.common.vec_env import VecNormalize
+from stable_baselines3.common.vec_env import VecNormalize, SubprocVecEnv, DummyVecEnv
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 
 from rl_utils.envs.flatland_gym_env import (
@@ -104,12 +104,10 @@ def init_envs(
     paths: dict,
     ns_for_nodes: bool,
 ) -> Tuple[VecEnv, VecEnv]:
-    import stable_baselines3.common.vec_env as sb3_env
-
     # instantiate train environment
     # when debug run on one process only
     if not config["debug_mode"] and ns_for_nodes:
-        train_env = sb3_env.SubprocVecEnv(
+        train_env = SubprocVecEnv(
             [
                 make_envs(
                     ns_for_nodes,
@@ -122,7 +120,7 @@ def init_envs(
             start_method="fork",
         )
     else:
-        train_env = sb3_env.DummyVecEnv(
+        train_env = DummyVecEnv(
             [
                 make_envs(
                     ns_for_nodes,
@@ -137,7 +135,7 @@ def init_envs(
     # instantiate eval environment
     # take task_manager from first sim (currently evaluation only provided for single process)
     if ns_for_nodes:
-        eval_env = sb3_env.DummyVecEnv(
+        eval_env = DummyVecEnv(
             [
                 make_envs(
                     ns_for_nodes,
