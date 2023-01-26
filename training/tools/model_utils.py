@@ -66,6 +66,9 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
             setattr(model, key, new_val)
 
     ppo_params = config["rl_agent"]["ppo"]
+    print("\n--------------------------------")
+    print("UPDATING MODEL HYPERPARAMETER...")
+    print("(no change -> no print below")
 
     update(model, "batch_size", ppo_params["m_batch_size"])
     update(model, "gamma", ppo_params["gamma"])
@@ -95,6 +98,8 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
     ):
         model.tensorboard_log = PATHS["tb"]
         configure_logger(1, PATHS["tb"], "run", False)
+
+    print("--------------------------------\n")
 
 
 def get_ppo_instance(
