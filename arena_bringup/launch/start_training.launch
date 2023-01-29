@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+  <!-- FOR WEBAPP  -->
+  <arg name="is_webapp_docker" default="false" /> 
+  <arg name="task_id" default="" />
+  <param name="task_id" value="$(arg task_id)" />
+
+  <node name="finished_task_publisher" type="finish_task_publisher" pkg="arena-utils" if="$(eval arg('is_webapp_docker') == true)" />
+  <!-- -->
+
+
   <arg name="model" default="burger"      doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real]"/>
 
   <!-- Here are the argument that may be frequently changed -->
