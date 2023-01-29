@@ -3,6 +3,16 @@
 
   <env name="ARENA_TYPE" value="deployment" />
 
+
+  <!-- FOR WEBAPP  -->
+  <arg name="is_webapp_docker" default="false" /> 
+  <arg name="task_id" default="" />
+  <param name="task_id" value="$(arg task_id)" />
+
+  <node name="finished_task_publisher" type="finish_task_publisher" pkg="arena-utils" if="$(eval arg('is_webapp_docker') == true)" />
+  <!-- -->
+
+
   <!-- ___________ ARGS ___________ -->
   <!-- You can launch a single robot and his local_planner with arguments -->
   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]" />
@@ -86,6 +96,7 @@
     <arg name="visualization" default="$(arg visualization)" />
     <arg name="rviz_file" value="$(arg rviz_file)" />
     <arg name="model" value="$(arg model)" />
+    <arg name="show_rviz" value="$(arg show_rviz)" />
   </include>
 
   <!-- Gazebo -->

@@ -3,6 +3,8 @@ from typing import Type, Union
 
 import os, sys, rospy, time
 
+from std_msgs.msg import Empty
+
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
 from stable_baselines3.common.callbacks import (
@@ -206,6 +208,13 @@ def main():
     model.env.close()
     print(f"Time passed: {time.time()-start}s")
     print("Training script will be terminated")
+
+    publisher = rospy.Publisher("training_finished", Empty, queue_size=10)
+
+    for _ in range(10):
+        publisher.publish(Empty())
+        rospy.sleep(0.1)
+
     sys.exit()
 
 
