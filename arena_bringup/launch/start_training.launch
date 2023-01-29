@@ -3,11 +3,17 @@
   <!-- FOR WEBAPP  -->
   <arg name="is_webapp_docker" default="false" /> 
   <arg name="task_id" default="" />
+  <arg name="app_token" default="" />
+  <arg name="app_token_key" default="" />
+  <arg name="task_finished_url" default="" />
+
   <param name="task_id" value="$(arg task_id)" />
+  <param name="app_token" value="$(arg app_token)" />
+  <param name="app_token_key" value="$(arg app_token_key)" />
+  <param name="task_finished_url" value="$(arg task_finished_url)" />
 
-  <node name="finished_task_publisher" type="finish_task_publisher" pkg="arena-utils" if="$(eval arg('is_webapp_docker') == true)" />
+  <node name="task_progress_publisher" type="task_progress_publisher.py" pkg="arena-utils" if="$(eval arg('is_webapp_docker') == true)" />
   <!-- -->
-
 
   <arg name="model" default="burger"      doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real]"/>
 

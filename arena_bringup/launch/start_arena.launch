@@ -7,10 +7,20 @@
   <!-- FOR WEBAPP  -->
   <arg name="is_webapp_docker" default="false" /> 
   <arg name="task_id" default="" />
-  <param name="task_id" value="$(arg task_id)" />
+  <arg name="app_token" default="" />
+  <arg name="app_token_key" default="" />
+  <arg name="task_finished_url" default="" />
 
-  <node name="finished_task_publisher" type="finish_task_publisher" pkg="arena-utils" if="$(eval arg('is_webapp_docker') == true)" />
+  <param name="task_id" value="$(arg task_id)" />
+  <param name="app_token" value="$(arg app_token)" />
+  <param name="app_token_key" value="$(arg app_token_key)" />
+  <param name="task_finished_url" value="$(arg task_finished_url)" />
+
+  <node name="task_progress_publisher" type="task_progress_publisher.py" pkg="task_progress_publisher" if="$(eval arg('is_webapp_docker') == true)" />
   <!-- -->
+
+  <arg name="desired_resets" default="2" />
+  <param name="desired_resets" value="$(arg desired_resets)" />
 
 
   <!-- ___________ ARGS ___________ -->
