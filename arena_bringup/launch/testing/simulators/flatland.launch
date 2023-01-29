@@ -2,6 +2,7 @@
 <launch>
   <arg name="rviz_file" default="nav_LP"/>
   <arg name="model" default="model"/>
+  <arg name="show_rviz" default="true" />
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland_deploy.yaml" />
 
@@ -30,6 +31,6 @@
 
   <!-- start_rviz -->
   <include file="$(find arena_bringup)/launch/utils/rviz.launch">
-    <arg name="show_rviz" value="$(eval arg('visualization') == 'rviz')" />
+    <arg name="show_rviz" value="$(eval arg('visualization') == 'rviz' and arg('show_rviz') == true)" />
   </include>
 </launch>
