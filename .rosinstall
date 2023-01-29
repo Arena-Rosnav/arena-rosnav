@@ -7,7 +7,7 @@
 
 - git:
     local-name: ../utils/stable-baselines3
-    uri: https://github.com/ignc-research/stable-baselines3
+    uri: https://github.com/Arena-Rosnav/stable-baselines3.git
     version: master
 
 - git:

@@ -42,7 +42,11 @@ RUN apt-get -y update \
     ros-noetic-turtlebot3-navigation \
     python-tk \
     python3-tk \
-    tk-dev
+    tk-dev \
+    ros-noetic-lms1xx \
+    ros-noetic-velodyne-description \ 
+    ros-noetic-hector-gazebo \
+    ros-noetic-ira-laser-tools
 
 #   Install Poetry
 RUN pip3 install poetry \
@@ -62,6 +66,8 @@ RUN mkdir -p /root/src/
 WORKDIR /root/src/
 RUN git clone https://github.com/Arena-Rosnav/arena-rosnav.git
 WORKDIR /root/src/arena-rosnav
+RUN git checkout -l
+RUN git checkout v0.1.1
 
 RUN echo -e "source /opt/ros/noetic/setup.sh" >> /root/.bashrc
 RUN echo -e "source /root/devel/setup.sh" >> /root/.bashrc
@@ -73,3 +79,5 @@ WORKDIR /root/
 RUN source /root/.bashrc \
     && source /opt/ros/noetic/setup.sh \
     && catkin_make
+
+# roslaunch arena_bringup start_arena.launch visualization:=none >> output.txt
