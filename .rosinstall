@@ -43,7 +43,7 @@
 - git:
     local-name: ../utils/task-generator
     uri: https://github.com/Arena-Rosnav/task-generator.git
-    version: v2.1.0
+    version: v2.1.1
 
 - git:
     local-name: ../arena-evaluation
