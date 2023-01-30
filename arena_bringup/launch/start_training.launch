@@ -17,7 +17,7 @@
   <param name="task_finished_endpoint" value="$(arg task_finished_endpoint)" />
   <param name="new_best_model_endpoint" value="$(arg new_best_model_endpoint)" />
 
-  <node name="task_progress_publisher" type="task_progress_publisher.py" pkg="arena-utils" if="$(eval arg('is_webapp_docker') == true)" />
+  <node name="task_progress_publisher" type="task_progress_publisher.py" pkg="task_progress_publisher" if="$(eval arg('is_webapp_docker') == true)" />
   <!-- -->
 
   <arg name="model" default="burger"      doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real]"/>
