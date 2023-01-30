@@ -38,7 +38,7 @@
 - git:
     local-name: ../utils/arena-utils
     uri: https://github.com/Arena-Rosnav/arena-utils.git
-    version: v2.1.0
+    version: v2.2.0
 
 - git:
     local-name: ../utils/task-generator
@@ -55,7 +55,7 @@
 - git:
     local-name: ../planners/rosnav
     uri: https://github.com/Arena-Rosnav/rosnav.git
-    version: v1.1.1
+    version: v1.1.2
 
 - git:
     local-name: ../planners/arena-ros

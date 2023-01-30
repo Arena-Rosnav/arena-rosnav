@@ -9,14 +9,19 @@
   <arg name="task_id" default="" />
   <arg name="app_token" default="" />
   <arg name="app_token_key" default="" />
-  <arg name="task_finished_url" default="" />
+  <arg name="base_url" default="" />
+  <arg name="task_finished_endpoint" default="" />
+  <arg name="new_best_model_endpoint" default="" />
 
+  <param name="is_webapp_docker" value="$(arg is_webapp_docker)" />
   <param name="task_id" value="$(arg task_id)" />
   <param name="app_token" value="$(arg app_token)" />
   <param name="app_token_key" value="$(arg app_token_key)" />
-  <param name="task_finished_url" value="$(arg task_finished_url)" />
+  <param name="base_url" value="$(arg base_url)" />
+  <param name="task_finished_endpoint" value="$(arg task_finished_endpoint)" />
+  <param name="new_best_model_endpoint" value="$(arg new_best_model_endpoint)" />
 
-  <node name="task_progress_publisher" type="task_progress_publisher.py" pkg="task_progress_publisher" if="$(eval arg('is_webapp_docker') == true)" />
+  <node name="task_progress_publisher" type="task_progress_publisher.py" pkg="arena-utils" if="$(eval arg('is_webapp_docker') == true)" />
   <!-- -->
 
   <arg name="desired_resets" default="2" />

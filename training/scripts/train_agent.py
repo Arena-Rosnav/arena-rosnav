@@ -9,9 +9,14 @@ from tools.general import *
 from tools.model_utils import init_callbacks, get_ppo_instance
 from tools.env_utils import init_envs
 
+def on_shutdown(model):
+    model.env.close()
+    sys.exit()
+
 
 def main():
     args, _ = parse_training_args()
+
     config = load_config(args.config)
 
     populate_ros_configs(config)
@@ -47,7 +52,11 @@ def main():
     eval_cb = init_callbacks(config, train_env, eval_env, PATHS)
     model = get_ppo_instance(config, train_env, PATHS, AgentFactory)
 
-    rospy.on_shutdown(model.env.close())
+    rospy.on_shutdown(lambda: on_shutdown(model))
+
+    ## Save model once
+    if not config["debug_mode"]: 
+        model.save(os.path.join(PATHS["model"], "best_model"))
     
     # start training
     start = time.time()
