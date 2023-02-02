@@ -136,7 +136,7 @@
   </include>
 
   <include file="$(find arena_bringup)/launch/testing/task_generator.launch">
-    <arg name="scenario_json_path" value="$(find task-generator)/scenarios/$(arg scenario_file)" />
+    <arg name="scenario_json_path" value="$(find task_generator)/scenarios/$(arg scenario_file)" />
     <arg name="auto_reset" value="$(arg auto_reset)" />
   </include>
 
