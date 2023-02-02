@@ -39,7 +39,7 @@
 
 - git:
     local-name: ../planners/rosnav
-    uri: https://github.com/Arena-Rosnav/rosnav.git
+    uri: https://github.com/Arena-Rosnav/rosnav-rl.git
     version: v1.1.2
 
 - git:
