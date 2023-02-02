@@ -1,0 +1,19 @@
+{
+  "obstacles": {
+    "dynamic": ["<PEDSIM AGENT DESCRIPTION>"],
+    "static": [
+      {
+        "pos": ["X", "Y"],
+        "yaml_path": "<PATH TO YAML DECLARATION FILE>"
+      }
+    ]
+  },
+  "robots": [
+    {
+      "start": ["X", "Y"],
+      "goal": ["X", "Y"]
+    }
+  ],
+  "map": "<NAME OF THE MAP>",
+  "resets": "<AMOUNT OF RESETS>"
+}

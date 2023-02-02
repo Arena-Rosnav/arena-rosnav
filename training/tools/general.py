@@ -220,7 +220,7 @@ def generate_agent_name(config: dict) -> str:
     :param config (dict): Dict containing the program arguments
     """
     if config["rl_agent"]["resume"] is None:
-        START_TIME = dt.now().strftime("%Y_%m_%d__%H_%M")
+        START_TIME = dt.now().strftime("%Y_%m_%d__%H_%M_%S")
         robot_model = rospy.get_param("robot_model")
         architecture_name, encoder_name = config["rl_agent"][
             "architecture_name"

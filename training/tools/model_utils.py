@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Union, Type
 
 import wandb
@@ -144,9 +145,7 @@ def instantiate_new_model(
         "n_epochs": ppo_config["n_epochs"],
         "clip_range": ppo_config["clip_range"],
         "tensorboard_log": PATHS["tb"],
-        "use_wandb": False
-        if config["debug_mode"]
-        else config["monitoring"]["use_wandb"],
+        # "use_wandb": False if config["debug_mode"] else config["monitoring"]["use_wandb"],
         "verbose": 1,
     }
 

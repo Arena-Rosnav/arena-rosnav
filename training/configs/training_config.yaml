@@ -10,7 +10,7 @@ no_gpu: false
 ### Training Monitoring
 monitoring:
   # weights and biases logging
-  use_wandb: true
+  use_wandb: false
   # save evaluation stats during training in log file
   eval_log: false
 
@@ -71,4 +71,3 @@ rl_agent:
     m_batch_size: 20
     n_epochs: 3
     clip_range: 0.22
-

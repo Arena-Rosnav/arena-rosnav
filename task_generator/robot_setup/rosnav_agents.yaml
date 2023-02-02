@@ -1,0 +1,19 @@
+robots:
+  # - model: ridgeback
+  #   planner: teb
+  #   amount: 1
+  # - model: ridgeback
+  #   planner: rosnav
+  #   amount: 1
+  #   agent: ridgeback
+  # - model: rto_lab
+  #   planner: teb
+  #   amount: 1
+  - model: jackal
+    planner: rosnav
+    amount: 3
+    agent: new_jackal
+  # - model: jackal
+  #   planner: rosnav
+  #   amount: 1
+  #   agent: new_jackal

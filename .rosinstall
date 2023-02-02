@@ -35,27 +35,12 @@
     uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
     version: v2.0.0
 
-- git:
-    local-name: ../utils/arena-utils
-    uri: https://github.com/Arena-Rosnav/arena-utils.git
-    version: v2.0.0
-
-- git:
-    local-name: ../utils/task-generator
-    uri: https://github.com/Arena-Rosnav/task-generator.git
-    version: v2.1.1
-
-- git:
-    local-name: ../arena-evaluation
-    uri: https://github.com/Arena-Rosnav/arena-evaluation.git
-    version: master
-
 ### PLANNERS
 
 - git:
     local-name: ../planners/rosnav
     uri: https://github.com/Arena-Rosnav/rosnav.git
-    version: v1.1.1
+    version: v1.1.2
 
 - git:
     local-name: ../planners/arena-ros
