@@ -1,3 +1,0 @@
-max_episodes: 15 # terminates simulation upon reaching xth episode
-max_time: 1200 # terminates simulation after x seconds
-record_frequency: 400 # time interval in which data is stored in ms
