@@ -62,6 +62,6 @@
     </include>
 
 
-    <node pkg="arena-evaluation" type="data_recorder_node.py" name="data_recorder_node" if="$(eval arg('record_data'))" />
+    <node pkg="evaluation" type="data_recorder_node.py" name="data_recorder_node" if="$(eval arg('record_data'))" />
   </group>
 </launch>
