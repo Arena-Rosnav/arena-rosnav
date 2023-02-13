@@ -1,0 +1,28 @@
+{
+  "map": "small_warehouse",
+  "resets": 10,
+  "robots": [
+    {
+      "start": [-5.1, 5.9, 0],
+      "goal": [0.600000000000001, -7.4, 0]
+    }
+  ],
+  "obstacles": {
+    "dynamic": [
+      {
+        "type": "pedestrian",
+        "waypoints": [
+          [-5.3, 0.2, 0],
+          [1, -1.1, 0]
+        ]
+      },
+      {
+        "type": "pedestrian",
+        "waypoints": [
+          [-4.6, -3.9, 0],
+          [0.9, -4.1, 0]
+        ]
+      }
+    ]
+  }
+}

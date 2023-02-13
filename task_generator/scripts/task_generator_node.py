@@ -13,9 +13,9 @@ from task_generator.utils import Utils
 from task_generator.constants import Constants, TaskMode
 
 from task_generator.tasks.utils import get_predefined_task
-from task_generator.environments.environment_factory import EnvironmentFactory
-from task_generator.environments.gazebo_environment import GazeboEnvironment
-from task_generator.environments.flatland_environment import FlatlandRandomModel
+from task_generator.simulators.simulator_factory import SimulatorFactory
+from task_generator.simulators.gazebo_simulator import GazeboSimulator
+from task_generator.simulators.flatland_simulator import FlatlandRandomModel
 
 
 class TaskGenerator:
@@ -37,7 +37,7 @@ class TaskGenerator:
         rospy.Service("reset_task", Empty, self.reset_task_srv_callback)
 
         ## Vars
-        self.env_wrapper = EnvironmentFactory.instantiate(Utils.get_environment())("")
+        self.env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())("")
 
         rospy.loginfo(f"Launching task mode: {self.task_mode}")
 

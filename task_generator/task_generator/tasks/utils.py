@@ -5,9 +5,9 @@ import yaml
 import os
 from task_generator.constants import Constants
 
-from task_generator.environments.environment_factory import EnvironmentFactory
-from task_generator.environments.gazebo_environment import GazeboEnvironment
-from task_generator.environments.flatland_environment import FlatlandRandomModel
+from task_generator.simulators.simulator_factory import SimulatorFactory
+from task_generator.simulators.gazebo_simulator import GazeboSimulator
+from task_generator.simulators.flatland_simulator import FlatlandRandomModel
 from task_generator.manager.map_manager import MapManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
@@ -20,12 +20,12 @@ from task_generator.utils import Utils
 from map_distance_server.srv import GetDistanceMap
 
 
-def get_predefined_task(namespace, mode, environment=None, **kwargs):
+def get_predefined_task(namespace, mode, simulator=None, **kwargs):
     """
     Gets the task based on the passed mode
     """
-    if environment == None:
-        environment = EnvironmentFactory.instantiate(Utils.get_environment())(namespace)
+    if simulator == None:
+        simulator = SimulatorFactory.instantiate(Utils.get_simulator())(namespace)
 
     rospy.wait_for_service("/distance_map")
 
@@ -35,11 +35,11 @@ def get_predefined_task(namespace, mode, environment=None, **kwargs):
 
     map_manager = MapManager(map_response)
 
-    environment.map_manager = map_manager
+    simulator.map_manager = map_manager
 
-    obstacle_manager = ObstacleManager(namespace, map_manager, environment)
+    obstacle_manager = ObstacleManager(namespace, map_manager, simulator)
 
-    robot_managers = create_robot_managers(namespace, map_manager, environment)
+    robot_managers = create_robot_managers(namespace, map_manager, simulator)
 
     # For every robot
     # - Create a unique namespace name
@@ -57,7 +57,7 @@ def get_predefined_task(namespace, mode, environment=None, **kwargs):
 
     return task
 
-def create_robot_managers(namespace, map_manager, environment):
+def create_robot_managers(namespace, map_manager, simulator):
     # Read robot setup file
     robot_setup_file = rospy.get_param('/robot_setup_file', "")
 
@@ -71,7 +71,7 @@ def create_robot_managers(namespace, map_manager, environment):
         robots = read_robot_setup_file(robot_setup_file)
 
     if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-        return [RobotManager(namespace, map_manager, environment, robots[0])]
+        return [RobotManager(namespace, map_manager, simulator, robots[0])]
 
     robot_managers = []
 
@@ -82,7 +82,7 @@ def create_robot_managers(namespace, map_manager, environment):
             name = f"{robot['model']}_{r}_{len(robot_managers)}"  
 
             robot_managers.append(
-                RobotManager(namespace + "/" + name, map_manager, environment, robot)
+                RobotManager(namespace + "/" + name, map_manager, simulator, robot)
             )
 
     return robot_managers

@@ -7,19 +7,22 @@ from gazebo_msgs.srv import SetModelState, SpawnModel, SpawnModelRequest
 from geometry_msgs.msg import Pose, PoseStamped, Quaternion
 from pedsim_srvs.srv import SpawnPeds
 from std_msgs.msg import Empty
+from pedsim_srvs.srv import SpawnPeds, SpawnPed
+from pedsim_msgs.msg import Ped
+from geometry_msgs.msg import Point
 from std_srvs.srv import Empty, SetBool, Trigger
-from task_generator.environments.environment_factory import EnvironmentFactory
+from task_generator.simulators.simulator_factory import SimulatorFactory
 from tf.transformations import quaternion_from_euler
 
 from ..constants import Constants
-from .base_environment import BaseEnvironment
-from .environment_factory import EnvironmentFactory
+from .base_simulator import BaseSimulator
+from .simulator_factory import SimulatorFactory
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
 
-@EnvironmentFactory.register("gazebo")
-class GazeboEnvironment(BaseEnvironment):
+@SimulatorFactory.register("gazebo")
+class GazeboSimulator(BaseSimulator):
     def __init__(self, namespace):
         super().__init__(namespace)
 
@@ -29,7 +32,7 @@ class GazeboEnvironment(BaseEnvironment):
 
         rospy.wait_for_service("/gazebo/spawn_urdf_model")
         rospy.wait_for_service("/gazebo/set_model_state")
-        # rospy.wait_for_service("/pedsim_simulator/spawn_peds", timeout=T)
+        rospy.wait_for_service("/pedsim_simulator/spawn_peds", timeout=T)
         # rospy.wait_for_service("/pedsim_simulator/reset_all_peds", timeout=T)
         # rospy.wait_for_service("/pedsim_simulator/remove_all_peds", timeout=T)
 
@@ -66,9 +69,17 @@ class GazeboEnvironment(BaseEnvironment):
         # self._remove_peds_srv(True)
         pass
 
-    def spawn_pedsim_agents(self, agents):
-        peds = [agent.getPedMsg() for agent in agents]
-        # self._spawn_peds_srv(peds)
+    def spawn_pedsim_agents(self, dynamic_obstacles):
+        if len(dynamic_obstacles) <= 0:
+            return
+        
+        peds = [GazeboSimulator.create_ped_msg(p, i) for i, p in enumerate(dynamic_obstacles)]
+
+        spawn_ped_msg = SpawnPeds()
+
+        spawn_ped_msg.peds = peds
+
+        self._spawn_peds_srv(peds)
 
     def reset_pedsim_agents(self):
         # self._reset_peds_srv()
@@ -112,6 +123,7 @@ class GazeboEnvironment(BaseEnvironment):
         pose = Pose()
         pose.position.x = pos[0]
         pose.position.y = pos[1]
+        pose.position.z = 0.1
         pose.orientation = Quaternion(
             *quaternion_from_euler(0.0, 0.0, pos[2], axes="sxyz")
         )
@@ -125,7 +137,7 @@ class GazeboEnvironment(BaseEnvironment):
 
         robot_namespace = self._ns_prefix(namespace_appendix)
         
-        robot_description = GazeboEnvironment.get_robot_description(
+        robot_description = GazeboSimulator.get_robot_description(
             robot_name, robot_namespace
         )
         rospy.set_param(os.path.join(robot_namespace, "robot_description"), robot_description)
@@ -138,48 +150,63 @@ class GazeboEnvironment(BaseEnvironment):
 
         self._spawn_model_srv(request)
 
-    ## HELPER FUNCTIONS
-    def _create_simple_ped(self, ids, s_pos, w_pos):
-        # creates pedsim-agents
-        peds = []
-        for id, spos, wpos in zip(ids, s_pos, w_pos):
-            peds.append(
-                {
-                    "name": "Pedestrian",
-                    "id": id,
-                    "pos": [*spos],
-                    "type": "adult",
-                    "yaml_file": "person_two_legged.model.yaml",
-                    "number_of_peds": 1,
-                    "vmax": 0.3,
-                    "start_up_mode": "default",
-                    "wait_time": 0.0,
-                    "trigger_zone_radius": 0.0,
-                    "chatting_probability": 0.01,
-                    "tell_story_probability": 0,
-                    "group_talking_probability": 0.01,
-                    "talking_and_walking_probability": 0.01,
-                    "requesting_service_probability": 0.01,
-                    "requesting_guide_probability": 0.01,
-                    "requesting_follower_probability": 0.01,
-                    "max_talking_distance": 5,
-                    "max_servicing_radius": 5,
-                    "talking_base_time": 10,
-                    "tell_story_base_time": 0,
-                    "group_talking_base_time": 10,
-                    "talking_and_walking_base_time": 6,
-                    "receiving_service_base_time": 20,
-                    "requesting_service_base_time": 30,
-                    "force_factor_desired": 1,
-                    "force_factor_obstacle": 1,
-                    "force_factor_social": 5,
-                    "force_factor_robot": 1,
-                    "waypoints": [[*spos], [*wpos]],
-                    "waypoint_mode": 0,
-                }
-            )
-        return peds
+    @staticmethod
+    def create_ped_msg(ped, id):
+        msg = Ped()
 
+        msg.id = id
+
+        pos = Point()
+        pos.x = ped["waypoints"][0][0]
+        pos.y = ped["waypoints"][0][1]
+        msg.pos = pos
+
+        msg.type = "adult"
+        msg.yaml_file = os.path.join(
+            rospkg.RosPack().get_path("arena-simulation-setup"),
+            "dynamic_obstacles",
+            "person_two_legged.model.yaml"
+        )
+        msg.number_of_peds = 1
+        msg.vmax = 0.3
+        msg.start_up_mode = "default"
+        msg.wait_time = 0.0
+        msg.trigger_zone_radius = 0.0
+        msg.chatting_probability = 0.00
+        msg.tell_story_probability = 0
+        msg.group_talking_probability = 0.00
+        msg.talking_and_walking_probability = 0.00
+        msg.requesting_service_probability = 0.00
+        msg.requesting_guide_probability = 0.00
+        msg.requesting_follower_probability = 0.00
+        msg.max_talking_distance = 5
+        msg.max_servicing_radius = 5
+        msg.talking_base_time = 10
+        msg.tell_story_base_time = 0
+        msg.group_talking_base_time = 10
+        msg.talking_and_walking_base_time = 6
+        msg.receiving_service_base_time = 20
+        msg.requesting_service_base_time = 30
+        msg.force_factor_desired = 1
+        msg.force_factor_obstacle = 1
+        msg.force_factor_social = 5
+        msg.force_factor_robot = 1
+
+        waypoints = []
+
+        for w in ped["waypoints"]:
+            new_waypoint = Point()
+
+            new_waypoint.x = w[0]
+            new_waypoint.y = w[1]
+
+            waypoints.append(new_waypoint)
+
+        msg.waypoints = waypoints
+
+        msg.waypoint_mode = 0
+
+        return msg
     @staticmethod
     def get_robot_description(robot_name, namespace):
         arena_sim_path = rospkg.RosPack().get_path("arena-simulation-setup")

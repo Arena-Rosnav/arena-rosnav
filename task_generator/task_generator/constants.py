@@ -15,7 +15,7 @@ class Constants:
     class RobotManager:
         SPAWN_ROBOT_SAFE_DIST = 0.4
 
-    class Environment:
+    class Simulator:
         FLATLAND = "flatland"
         GAZEBO = "gazebo"
 
