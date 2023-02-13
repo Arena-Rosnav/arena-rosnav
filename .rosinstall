@@ -3,11 +3,11 @@
 - git:
     local-name: ../utils/flatland
     uri: https://github.com/Arena-Rosnav/flatland.git
-    version: master
+    version: v2.0.0
 
 - git:
     local-name: ../utils/stable-baselines3
-    uri: https://github.com/ignc-research/stable-baselines3
+    uri: https://github.com/Arena-Rosnav/stable-baselines3.git
     version: master
 
 - git:
@@ -17,7 +17,7 @@
 
 - git:
     local-name: ../utils/pedsim_ros
-    uri: https://github.com/ignc-research/pedsim_ros
+    uri: https://github.com/Arena-Rosnav/pedsim_ros.git
     version: master
 
 - git:
@@ -33,20 +33,10 @@
 - git:
     local-name: ../utils/arena-simulation-setup
     uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: v1.1.0
+    version: v2.0.0
 
 - git:
-    local-name: ../utils/arena-utils
-    uri: https://github.com/Arena-Rosnav/arena-utils.git
-    version: v1.1.0
-
-- git:
-    local-name: ../utils/task-generator
-    uri: https://github.com/Arena-Rosnav/task-generator.git
-    version: v1.1.0
-
-- git:
-    localname: ../arena-evaluation
+    local-name: ../arena-evaluation
     uri: https://github.com/Arena-Rosnav/arena-evaluation.git
     version: master
 
@@ -54,8 +44,8 @@
 
 - git:
     local-name: ../planners/rosnav
-    uri: https://github.com/Arena-Rosnav/rosnav.git
-    version: v1.1.0
+    uri: https://github.com/Arena-Rosnav/rosnav-rl.git
+    version: v1.1.2
 
 - git:
     local-name: ../planners/arena-ros

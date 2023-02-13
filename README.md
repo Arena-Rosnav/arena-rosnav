@@ -27,7 +27,7 @@ poetry shell && poetry install
 Install stable baselines
 
 ```
-cd ../forks/stable-baselines3 && pip install -e .
+cd ../utils/stable-baselines3 && pip install -e .
 ```
 
 Build catkin

@@ -5,6 +5,17 @@ import numpy as np
 from tools.custom_mlp_utils import get_net_arch
 
 
+def new_training_args(parser):
+    """program arguments training script"""
+    parser.add_argument(
+        "--config",
+        type=str,
+        metavar="[config name]",
+        default="training_config.yaml",
+        help="name of the config file",
+    )
+
+
 def training_args(parser):
     """program arguments training script"""
     parser.add_argument(
@@ -57,9 +68,7 @@ def training_args(parser):
         action="store_true",
         help="enables storage of evaluation data",
     )
-    parser.add_argument(
-        "--tb", action="store_true", help="enables tensorboard logging"
-    )
+    parser.add_argument("--tb", action="store_true", help="enables tensorboard logging")
 
 
 def run_agent_args(parser):
@@ -148,11 +157,7 @@ def process_training_args(parsed_args):
     if parsed_args.custom_mlp:
         setattr(parsed_args, "net_arch", get_net_arch(parsed_args))
     else:
-        if (
-            parsed_args.body != ""
-            or parsed_args.pi != ""
-            or parsed_args.vf != ""
-        ):
+        if parsed_args.body != "" or parsed_args.pi != "" or parsed_args.vf != "":
             print("[custom mlp] arguments will be ignored..")
         delattr(parsed_args, "body")
         delattr(parsed_args, "pi")
@@ -167,12 +172,10 @@ def process_run_agent_args(parsed_args):
 
 def parse_training_args(args=None, ignore_unknown=True):
     """parser for training script"""
-    arg_populate_funcs = [training_args, custom_mlp_args]
-    arg_check_funcs = [process_training_args]
+    arg_populate_funcs = [new_training_args]
+    arg_check_funcs = []
 
-    return parse_various_args(
-        args, arg_populate_funcs, arg_check_funcs, ignore_unknown
-    )
+    return parse_various_args(args, arg_populate_funcs, arg_check_funcs, ignore_unknown)
 
 
 def parse_run_agent_args(args=None, ignore_unknown=False):
@@ -180,14 +183,10 @@ def parse_run_agent_args(args=None, ignore_unknown=False):
     arg_populate_funcs = [run_agent_args]
     arg_check_funcs = [process_run_agent_args]
 
-    return parse_various_args(
-        args, arg_populate_funcs, arg_check_funcs, ignore_unknown
-    )
+    return parse_various_args(args, arg_populate_funcs, arg_check_funcs, ignore_unknown)
 
 
-def parse_various_args(
-    args, arg_populate_funcs, arg_check_funcs, ignore_unknown
-):
+def parse_various_args(args, arg_populate_funcs, arg_check_funcs, ignore_unknown):
     """generic arg parsing function"""
     parser = argparse.ArgumentParser()
 

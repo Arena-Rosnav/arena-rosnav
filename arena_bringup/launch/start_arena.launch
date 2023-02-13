@@ -3,6 +3,31 @@
 
   <env name="ARENA_TYPE" value="deployment" />
 
+
+  <!-- FOR WEBAPP  -->
+  <arg name="is_webapp_docker" default="false" /> 
+  <arg name="task_id" default="" />
+  <arg name="app_token" default="" />
+  <arg name="app_token_key" default="" />
+  <arg name="base_url" default="" />
+  <arg name="task_finished_endpoint" default="" />
+  <arg name="new_best_model_endpoint" default="" />
+
+  <param name="is_webapp_docker" value="$(arg is_webapp_docker)" />
+  <param name="task_id" value="$(arg task_id)" />
+  <param name="app_token" value="$(arg app_token)" />
+  <param name="app_token_key" value="$(arg app_token_key)" />
+  <param name="base_url" value="$(arg base_url)" />
+  <param name="task_finished_endpoint" value="$(arg task_finished_endpoint)" />
+  <param name="new_best_model_endpoint" value="$(arg new_best_model_endpoint)" />
+
+  <node name="task_progress_publisher" type="task_progress_publisher.py" pkg="task_progress_publisher" if="$(eval arg('is_webapp_docker') == true)" />
+  <!-- -->
+
+  <arg name="desired_resets" default="2" />
+  <param name="desired_resets" value="$(arg desired_resets)" />
+
+
   <!-- ___________ ARGS ___________ -->
   <!-- You can launch a single robot and his local_planner with arguments -->
   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]" />
@@ -86,6 +111,7 @@
     <arg name="visualization" default="$(arg visualization)" />
     <arg name="rviz_file" value="$(arg rviz_file)" />
     <arg name="model" value="$(arg model)" />
+    <arg name="show_rviz" value="$(arg show_rviz)" />
   </include>
 
   <!-- Gazebo -->
@@ -117,17 +143,17 @@
   </include>
 
   <include file="$(find arena_bringup)/launch/testing/task_generator.launch">
-    <arg name="scenario_json_path" value="$(find task-generator)/scenarios/$(arg scenario_file)" />
+    <arg name="scenario_json_path" value="$(find task_generator)/scenarios/$(arg scenario_file)" />
     <arg name="auto_reset" value="$(arg auto_reset)" />
   </include>
 
-  <!-- <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
+  <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
     <param name="simulation_factor" value="1" type="double"/>
     <param name="pedsim_update_rate" value="30.0" type="double"/>
     <param name="scene_file" value="$(find arena-simulation-setup)/world/$(arg world_file)/scenarios/$(arg world_file).xml" type="string"/>
   </node>
 
-  <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/> -->
+  <!-- <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/> -->
 
   <!-- launch map generator if training with random map-->
   <!-- <group if="$(eval arg('map_file') == 'random_map')">
