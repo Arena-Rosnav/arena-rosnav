@@ -28,7 +28,7 @@ class GazeboSimulator(BaseSimulator):
 
         self._goal_pub = rospy.Publisher(self._ns_prefix("/goal"), PoseStamped, queue_size=1, latch=True)
 
-        self._robot_name = rospy.get_param("robot_model")
+        self._robot_name = rospy.get_param("robot_model", "")
 
         rospy.wait_for_service("/gazebo/spawn_urdf_model")
         rospy.wait_for_service("/gazebo/set_model_state")
