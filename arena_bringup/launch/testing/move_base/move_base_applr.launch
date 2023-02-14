@@ -63,7 +63,7 @@
 
     <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
     <remap from="odom" to="$(arg odom_topic)"/>
-    <param name="controller_frequency" value="5.0" />
+    <param name="controller_frequency" value="20.0" />
     <param name="controller_patience" value="15.0" />
     <param name="planner_frequency" value="5.0" />
     <param name="max_planning_retries" value="5.0" />
