@@ -10,6 +10,7 @@ from std_msgs.msg import Empty
 from std_srvs.srv import Empty, SetBool, Trigger
 from task_generator.environments.environment_factory import EnvironmentFactory
 from tf.transformations import quaternion_from_euler
+from task_generator.manager.pedsim_manager import PedsimManager
 
 from ..constants import Constants
 from .base_environment import BaseEnvironment
@@ -29,9 +30,9 @@ class GazeboEnvironment(BaseEnvironment):
 
         rospy.wait_for_service("/gazebo/spawn_urdf_model")
         rospy.wait_for_service("/gazebo/set_model_state")
-        # rospy.wait_for_service("/pedsim_simulator/spawn_peds", timeout=T)
-        # rospy.wait_for_service("/pedsim_simulator/reset_all_peds", timeout=T)
-        # rospy.wait_for_service("/pedsim_simulator/remove_all_peds", timeout=T)
+        rospy.wait_for_service("/pedsim_simulator/spawn_peds", timeout=T)
+        rospy.wait_for_service("/pedsim_simulator/reset_all_peds", timeout=T)
+        rospy.wait_for_service("/pedsim_simulator/remove_all_peds", timeout=T)
 
         self._spawn_model_srv = rospy.ServiceProxy(
             self._ns_prefix("gazebo", "spawn_urdf_model"), SpawnModel
@@ -63,31 +64,30 @@ class GazeboEnvironment(BaseEnvironment):
         pass
 
     def remove_all_obstacles(self):
-        # self._remove_peds_srv(True)
+        self._remove_peds_srv(True)
         pass
 
     def spawn_pedsim_agents(self, agents):
-        peds = [agent.getPedMsg() for agent in agents]
-        # self._spawn_peds_srv(peds)
+        peds = [PedsimManager.create_pedsim_msg(agent) for agent in agents]
+        self._spawn_peds_srv(peds)
+        pass
+
 
     def reset_pedsim_agents(self):
-        # self._reset_peds_srv()
+        self._reset_peds_srv()
         pass
 
     def spawn_obstacle(self, position, yaml_path=""):
         pass
 
     def spawn_random_dynamic_obstacle(self, **args):
-        # s_pos = args["position"]
-        # w_pos = self.map_manager.get_random_pos_on_map(
-        #     safe_dist=1, forbidden_zones=[s_pos]
-        # )
-        # ped = self._create_simple_ped([1], [s_pos], [w_pos])
-        # agents = [PedsimAgent.fromDict(a) for a in ped]
-        # self.spawn_pedsim_agents(agents)
-
+        s_pos = args["position"]
+        w_pos = self.map_manager.get_random_pos_on_map(
+            safe_dist=1, forbidden_zones=[s_pos]
+        )
+        ped = self._create_simple_ped([1], [s_pos], [w_pos])
+        self.spawn_pedsim_agents(ped)
         pass
-
     def spawn_random_static_obstacle(self, **args):
         pass
 
