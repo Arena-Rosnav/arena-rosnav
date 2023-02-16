@@ -1,13 +1,8 @@
 #! /usr/bin/env python3
 
-import math
 import rospy
-import time
-from nav_msgs.msg import Odometry
-from std_msgs.msg import Int16, Bool
+from std_msgs.msg import Int16, Empty as EmptyMsg
 from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
-from geometry_msgs.msg import PoseStamped
-
 
 from task_generator.utils import Utils
 from task_generator.constants import Constants, TaskMode
@@ -31,7 +26,7 @@ class TaskGenerator:
 
         ## Publishers
         self.pub_scenario_reset = rospy.Publisher("scenario_reset", Int16, queue_size=1)
-        self.pub_scenario_finished = rospy.Publisher('scenario_finished', Bool, queue_size=10)
+        self.pub_scenario_finished = rospy.Publisher('scenario_finished', EmptyMsg, queue_size=10)
         
         ## Services
         rospy.Service("reset_task", Empty, self.reset_task_srv_callback)
@@ -56,6 +51,7 @@ class TaskGenerator:
         rospy.sleep(2)
 
         try:
+            rospy.set_param("task_generator_setup_finished", True)
             self.srv_setup_finished = rospy.ServiceProxy("task_generator_setup_finished", Empty)
             self.srv_setup_finished(EmptyRequest())
         except:
@@ -111,7 +107,7 @@ class TaskGenerator:
             while self.pub_scenario_finished.get_num_connections() <= 0:
                 pass
 
-            self.pub_scenario_finished.publish(Empty())
+            self.pub_scenario_finished.publish(EmptyMsg())
 
         rospy.signal_shutdown("Finished all episodes of the current scenario")
 

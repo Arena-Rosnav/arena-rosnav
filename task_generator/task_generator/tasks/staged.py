@@ -31,6 +31,7 @@ class StagedRandomTask(RandomTask):
         start_stage: int = 1,
         paths=None,
         namespace: str = "",
+        **kwargs
     ):
         super().__init__(obstacles_manager, robot_manager, map_manager)
 

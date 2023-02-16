@@ -146,7 +146,7 @@
     <param name="scene_file" value="$(find arena-simulation-setup)/world/$(arg world_file)/scenarios/$(arg world_file).xml" type="string"/>
   </node>
 
-  <!-- <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/> -->
+  <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/>
 
   <!-- launch map generator if training with random map-->
   <!-- <group if="$(eval arg('map_file') == 'random_map')">

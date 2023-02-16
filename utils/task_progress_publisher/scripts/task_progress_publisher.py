@@ -2,7 +2,7 @@ import rospy
 import os
 import requests
 
-from std_msgs.msg import Empty, Bool
+from std_msgs.msg import Empty
 
 
 class TaskProgressPublisher:
@@ -15,7 +15,7 @@ class TaskProgressPublisher:
         self.task_finished_endpoint = rospy.get_param("task_finished_endpoint")
         self.new_best_model_endpoint = rospy.get_param("new_best_model_endpoint")
 
-        rospy.Subscriber("/scenario_finished", Bool, self.finished_task_callback)
+        rospy.Subscriber("/scenario_finished", Empty, self.finished_task_callback)
         rospy.Subscriber("/training_finished", Empty, self.finished_task_callback)
 
         rospy.Subscriber("/training/newBestModel", Empty, self.new_best_model_callback)

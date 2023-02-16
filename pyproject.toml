@@ -16,6 +16,7 @@ empy = "^3.3.4"
 defusedxml = "^0.7.1"
 lxml = "^4.9.1"
 wandb = "^0.13.9"
+seaborn = "^0.12.2"
 
 [tool.poetry.dev-dependencies]
 

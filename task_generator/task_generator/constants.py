@@ -63,6 +63,7 @@ class FlatlandRandomModel:
     ANGLUAR_VEL_MAX = 0.2
 
 class Pedsim:
+    VMAX = 0.3
     START_UP_MODE = "default"
     WAIT_TIME = 0.0
     TRIGGER_ZONE_RADIUS = 0.0
