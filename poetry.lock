@@ -348,6 +348,14 @@ python-dateutil = ">=2.7"
 setuptools_scm = ">=7"
 
 [[package]]
+name = "netifaces"
+version = "0.11.0"
+description = "Portable network interface information."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "numpy"
 version = "1.22.4"
 description = "NumPy is the fundamental package for array computing with Python."
@@ -918,7 +926,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-co
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8,<3.11"
-content-hash = "911e40b833f6a8932d5696f194654aa87bdc02d6bedd73960f4efb2dbc1445f0"
+content-hash = "8425e8a1c20cd7246b17eaff0acc0c1f650dfb7a0071774d0100d49786c6e8e4"
 
 [metadata.files]
 appdirs = []
@@ -966,6 +974,7 @@ importlib-resources = []
 kiwisolver = []
 lxml = []
 matplotlib = []
+netifaces = []
 numpy = [
     {version = ">=1.20.3", markers = "python_version < \"3.10\""},
     {version = ">=1.21.0", markers = "python_version >= \"3.10\""},
