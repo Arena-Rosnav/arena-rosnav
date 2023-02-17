@@ -12,7 +12,10 @@ robots:
   - model: jackal
     planner: rosnav
     amount: 3
-    agent: new_jackal
+    agent: jackal
+  - model: rto
+    planner: teb
+    amount: 3
   # - model: jackal
   #   planner: rosnav
   #   amount: 1

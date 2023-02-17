@@ -2,6 +2,7 @@ from re import S
 import rospy
 import rospkg
 import os
+import sys
 import json
 
 from task_generator.constants import TaskMode
@@ -78,6 +79,7 @@ class ScenarioTask(BaseTask):
             rospy.logerr(f"Static Map Path {static_map}")
 
             rospy.signal_shutdown("Map path of scenario and static map are not the same.")
+            sys.exit()
 
     def _reset_robots(self):
         for index, robot in enumerate(self.scenario_file["robots"]):

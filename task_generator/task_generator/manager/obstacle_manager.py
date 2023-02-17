@@ -2,21 +2,26 @@ from task_generator.constants import Constants
 
 
 class ObstacleManager:
-    def __init__(self, namespace, map_manager, environment):
+    def __init__(self, namespace, map_manager, simulator):
         self.map_manager = map_manager
         self.namespace = namespace
-        self.environment = environment
+        self.simulator = simulator
 
     def start_scenario(self, scenario):
-        self.environment.spawn_pedsim_agents(scenario["obstacles"]["dynamic"])
+        self.simulator.spawn_pedsim_agents(scenario["obstacles"]["dynamic"])
 
     def reset_scenario(self, scenario):
-        self.environment.reset_pedsim_agents()
+        self.simulator.reset_pedsim_agents()
 
-        self.environment.remove_all_obstacles()
+        self.simulator.remove_all_obstacles()
+
+        print(scenario.get("obstacles").get("static"))
+
+        if not scenario.get("obstacles") or not scenario.get("obstacles").get("static"):
+            return
 
         for obstacle in scenario["obstacles"]["static"]:
-            self.environment.spawn_obstacle(
+            self.simulator.spawn_obstacle(
                 [*obstacle["pos"], 0],
                 yaml_path=obstacle["yaml_path"],
             )
@@ -27,7 +32,7 @@ class ObstacleManager:
             static_obstacles=Constants.ObstacleManager.STATIC_OBSTACLES,
             forbidden_zones=[]
         ):
-        self.environment.remove_all_obstacles()
+        self.simulator.remove_all_obstacles()
 
         for _ in range(dynamic_obstacles):
             position = self.map_manager.get_random_pos_on_map(
@@ -35,7 +40,7 @@ class ObstacleManager:
                 forbidden_zones=forbidden_zones
             )
 
-            self.environment.spawn_random_dynamic_obstacle(position=position)
+            self.simulator.spawn_random_dynamic_obstacle(position=position)
         
         for _ in range(static_obstacles):
             position = self.map_manager.get_random_pos_on_map(
@@ -43,4 +48,4 @@ class ObstacleManager:
                 forbidden_zones=forbidden_zones
             )
 
-            self.environment.spawn_random_static_obstacle(position=position)
+            self.simulator.spawn_random_static_obstacle(position=position)

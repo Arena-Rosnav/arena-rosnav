@@ -74,11 +74,15 @@ def main():
 
     model.env.close()
 
-    publisher = rospy.Publisher("training_finished", Empty, queue_size=10)
+    # Send Task finished to Backend
+    if rospy.get_param("/is_webapp_docker", False):
+        publisher = rospy.Publisher("training_finished", Empty, queue_size=10)
+        
+        while publisher.get_num_connections() <= 0:
+            pass
 
-    for _ in range(10):
         publisher.publish(Empty())
-        rospy.sleep(0.1)
+
 
     sys.exit()
 

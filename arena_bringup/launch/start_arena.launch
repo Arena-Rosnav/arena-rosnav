@@ -32,11 +32,11 @@
   <!-- You can launch a single robot and his local_planner with arguments -->
   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]" />
   <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]" />
-  <arg name="environment" default="flatland" doc="[flatland, gazebo]" />
+  <arg name="simulator" default="flatland" doc="[flatland, gazebo]" />
 
   <arg name="complexity" default="1" doc="1 = Map known, Position known; 2 = Map known, Position unknown (AMCL); 3 = Map unknown, Position unknown (SLAM)" />
   
-  <env name="ENVIRONMENT" value="$(arg environment)" />
+  <env name="SIMULATOR" value="$(arg simulator)" />
 
   <arg name="agent_name" default="$(arg model)"     doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')" />
   <!-- Or you can load a robot setup file to launch multiple robots in the same simulation -->
@@ -71,7 +71,7 @@
   <param name="use_sim_time" value="true"/>
 
   <param name="model" value="$(arg model)" />
-  <param name="environment" value="$(arg environment)" />
+  <param name="simulator" value="$(arg simulator)" />
   <param name="task_mode" value="$(arg task_mode)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
@@ -107,7 +107,7 @@
   <!-- use simulator-->
 
   <!-- Flatland -->
-  <include file="$(find arena_bringup)/launch/testing//simulators/flatland.launch" if="$(eval arg('environment') == 'flatland')">
+  <include file="$(find arena_bringup)/launch/testing//simulators/flatland.launch" if="$(eval arg('simulator') == 'flatland')">
     <arg name="visualization" default="$(arg visualization)" />
     <arg name="rviz_file" value="$(arg rviz_file)" />
     <arg name="model" value="$(arg model)" />
@@ -115,7 +115,7 @@
   </include>
 
   <!-- Gazebo -->
-  <include file="$(find arena_bringup)/launch/testing/simulators/gazebo.launch" if="$(eval arg('environment') == 'gazebo')">
+  <include file="$(find arena_bringup)/launch/testing/simulators/gazebo.launch" if="$(eval arg('simulator') == 'gazebo')">
     <arg name="model" value="$(arg model)" />
     <arg name="rviz_file" value="$(arg rviz_file)" />
     <arg name="show_rviz" default="$(arg show_rviz)" />
@@ -140,13 +140,13 @@
     <arg name="auto_reset" value="$(arg auto_reset)" />
   </include>
 
-  <!-- <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
+  <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
     <param name="simulation_factor" value="1" type="double"/>
     <param name="pedsim_update_rate" value="30.0" type="double"/>
     <param name="scene_file" value="$(find arena-simulation-setup)/world/$(arg world_file)/scenarios/$(arg world_file).xml" type="string"/>
   </node>
 
-  <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/> -->
+  <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/>
 
   <!-- launch map generator if training with random map-->
   <!-- <group if="$(eval arg('map_file') == 'random_map')">

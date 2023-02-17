@@ -125,7 +125,6 @@ class FlatlandEnv(gym.Env):
         self.task = get_predefined_task(
             self.ns,
             mode=task_mode,
-            environment=None,
             start_stage=kwargs["curr_stage"],
             paths=PATHS,
         )
