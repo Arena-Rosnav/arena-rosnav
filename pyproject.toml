@@ -6,7 +6,7 @@ authors = ["ReykCS <reyk-carstens@web.de>"]
 
 [tool.poetry.dependencies]
 python = "^3.8,<3.11"
-torch = "^1.11.0"
+torch = "^1.13.1"
 rospkg = "^1.4.0"
 PyYAML = "^6.0"
 filelock = "^3.7.1"
