@@ -34,6 +34,7 @@ def training_args(parser):
     import rosnav.model.custom_policy
     import rosnav.model.custom_sb3_policy
     from rosnav.model.agent_factory import AgentFactory
+    import rosnav.model.custom_policy_from_json
 
     group.add_argument(
         "--agent",
