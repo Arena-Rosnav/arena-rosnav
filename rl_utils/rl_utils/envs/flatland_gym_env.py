@@ -2,6 +2,7 @@
 import time
 import math
 import gym
+import os
 from stable_baselines3.common.env_checker import check_env
 
 import numpy as np
@@ -66,10 +67,10 @@ class FlatlandEnv(gym.Env):
             time.sleep(2)
 
         # process specific namespace in ros system
-        self.ns_prefix = "" if not ns or ns is None else f"/{ns}/"
+        self.ns_prefix = lambda x: os.path.join(self.ns, x)
 
         if not rospy.get_param("/debug_mode"):
-            rospy.init_node("env_" + self.ns_prefix.replace("/", ""), anonymous=True)
+            rospy.init_node("env_" + self.ns, anonymous=True)
 
         self._extended_eval = extended_eval
         self._is_train_mode = rospy.get_param("/train_mode")
@@ -103,16 +104,16 @@ class FlatlandEnv(gym.Env):
         # action agent publisher
         if self._is_train_mode:
             self.agent_action_pub = rospy.Publisher(
-                f"{self.ns_prefix}cmd_vel", Twist, queue_size=1
+                self.ns_prefix("cmd_vel"), Twist, queue_size=1
             )
         else:
             self.agent_action_pub = rospy.Publisher(
-                f"{self.ns_prefix}cmd_vel_pub", Twist, queue_size=1
+                self.ns_prefix("cmd_vel_pub"), Twist, queue_size=1
             )
 
         # service clients
         if self._is_train_mode:
-            self._service_name_step = f"{self.ns_prefix}step_world"
+            self._service_name_step = self.ns_prefix("step_world")
             # self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
             self._step_world_publisher = rospy.Publisher(
                 self._service_name_step, StepWorld, queue_size=10
@@ -242,7 +243,7 @@ class FlatlandEnv(gym.Env):
                 diff = round(mean_reward - self.last_mean_reward, 5)
 
                 print(
-                    f"[{self.ns_prefix}] Last 5 Episodes:\t"
+                    f"[{self.ns}] Last 5 Episodes:\t"
                     f"{self._done_reasons[str(0)]}: {self._done_hist[0]}\t"
                     f"{self._done_reasons[str(1)]}: {self._done_hist[1]}\t"
                     f"{self._done_reasons[str(2)]}: {self._done_hist[2]}\t"

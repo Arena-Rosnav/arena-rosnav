@@ -23,7 +23,6 @@ class RobotManager:
 
     def __init__(self, namespace, map_manager, simulator, robot_setup):
         self.namespace = namespace
-        self.namespace_prefix = "" if namespace == "" else "/" + namespace + "/"
         self.ns_prefix = lambda *topic: os.path.join(self.namespace, *topic)
 
         self.map_manager = map_manager

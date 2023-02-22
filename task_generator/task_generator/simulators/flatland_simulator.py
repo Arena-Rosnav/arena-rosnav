@@ -183,7 +183,7 @@ class FlatlandSimulator(BaseSimulator):
         self._spawn_model(
             yaml.dump(file_content), 
             name, 
-            os.path.join(self._namespace, namespace_appendix), 
+            os.path.join(self._namespace, namespace_appendix) if len(namespace_appendix) > 0 else self._namespace, 
             [0, 0, 0],
             srv=self._spawn_model_from_string_srv
         )
