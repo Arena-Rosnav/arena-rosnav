@@ -7,6 +7,7 @@ from task_generator.constants import Constants
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
+from task_generator.simulators.unity_simulator import UnitySimulator
 from task_generator.simulators.flatland_simulator import FlatlandRandomModel
 from task_generator.manager.map_manager import MapManager
 from task_generator.manager.obstacle_manager import ObstacleManager

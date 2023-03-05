@@ -1,0 +1,36 @@
+<launch>
+    <arg name="world" />
+
+    <arg name="tcp_ip" default="0.0.0.0"/>
+    <arg name="tcp_port" default="10000"/>
+
+    <arg 
+        name="world_file_path" 
+        default="$(find arena-simulation-setup)/worlds/$(arg world)/worlds/$(arg world).world" 
+    />
+
+    <param name="world_file_path" value="$(arg world_file_path)" />
+
+    <!-- <param name="robot_description" command="xacro $(find arena-simulation-setup)/robot/jackal/urdf/jackal.urdf.xacro" /> -->
+
+    <include file="$(find ros_tcp_endpoint)/launch/endpoint.launch">
+        <arg name="tcp_ip" value="$(arg tcp_ip)" />
+        <arg name="tcp_port" value="$(arg tcp_port)" />
+    </include>
+
+    <param 
+        name="world_urdf" 
+        command="rosrun pysdf world2urdf.py $(arg world_file_path) $(arg world)" 
+    />
+
+    <node 
+        pkg="unity_utils" 
+        name="load_world_service" 
+        type="load_world_service.py" 
+        output="screen"
+    />
+
+    <include file="$(find arena_bringup)/launch/utils/rviz.launch">
+        <arg name="show_rviz" value="true" />
+    </include>
+</launch>

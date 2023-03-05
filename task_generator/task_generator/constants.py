@@ -38,6 +38,7 @@ class TaskMode:
     class Scenario:
         RESETS_DEFAULT = 5
 
+
 class FlatlandRandomModel:
     BODY = {
         "name": "base_link",
@@ -61,6 +62,7 @@ class FlatlandRandomModel:
     }
     LINEAR_VEL = 0.2
     ANGLUAR_VEL_MAX = 0.2
+
 
 class Pedsim:
     VMAX = 0.3
@@ -87,3 +89,7 @@ class Pedsim:
     FORCE_FACTOR_SOCIAL = 5.0
     FORCE_FACTOR_ROBOT = 0.0
     WAYPOINT_MODE = 0
+
+
+class UnitySimulatorConstants:
+    UNITY_ROS_NAVIGATION = "UNITY_ROS_NAVIGATION"
