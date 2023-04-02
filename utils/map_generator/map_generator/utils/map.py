@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import matplotlib.pyplot as plt
+import rospy
 import yaml
 
 from PIL import Image
@@ -59,6 +60,9 @@ def create_yaml_files(map_name, dir_path):
     empty_yaml = EMPTY_MAP_YAML
     map_yaml = DYNAMIC_MAP_YAML
 
+    empty_yaml["resolution"] = rospy.get_param("map_resolution")
+    map_yaml["resolution"] = rospy.get_param("map_resolution")
+
     with open(f"{dir_path}/{map_name}/map.yaml", "w") as outfile:
         yaml.dump(map_yaml, outfile, sort_keys=False, default_flow_style=None)
     with open(f"{dir_path}/{map_name}/empty.yaml", "w") as outfile:
@@ -88,6 +92,4 @@ def create_empty_map(height, width, map_name, dir_path):
     map[slice(1, height - 1), slice(1, width - 1)] = 0
     img = Image.fromarray(((map - 1) ** 2 * 255).astype("uint8"))  # monochromatic image
     imgrgb = img.convert("RGB")
-    imgrgb.save(
-        dir_path + "/{0}/{1}.png".format(map_name, "empty_map")
-    )  # save map in map directory
+    imgrgb.save(f"{dir_path}/{map_name}/map.png")

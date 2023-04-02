@@ -1,13 +1,13 @@
 generator: barn
 
 map_properties:
-  width: 50
-  height: 50
+  width: 80
+  height: 75
   resolution: 0.25
 
 generator_configs:
   barn:
-    fill_pct: 0.25 # initial fill percentage
+    fill_pct: 0.2 # initial fill percentage
     smooth_iter: 5 # smoothing iterations
     seed: null # for reproducing maps
 

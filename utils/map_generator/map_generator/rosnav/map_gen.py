@@ -11,6 +11,7 @@ class MAP_TYPE(Enum):
     outdoor = "outdoor"
 
 
+@MapGeneratorFactory.register("rosnav")
 class RosnavMapGenerator(BaseMapGenerator):
     def __init__(
         self,

@@ -7,6 +7,7 @@ from map_generator.barn.obstacle_map import ObstacleMap
 from map_generator.barn.robot_map import RobotMap
 
 
+@MapGeneratorFactory.register("barn")
 class BarnMapGenerator(BaseMapGenerator):
     def __init__(
         self,

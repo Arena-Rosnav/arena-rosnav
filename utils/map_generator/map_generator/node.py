@@ -9,11 +9,16 @@ from nav_msgs.msg import OccupancyGrid
 from std_msgs.msg import String
 
 import map_generator
-from map_generator.constants import MAP_FOLDER_NAME
-from map_generator.factory import MapGeneratorFactory
 from map_generator.base_map_gen import BaseMapGenerator
+from map_generator.constants import MAP_FOLDER_NAME, ROSNAV_MAP_FOLDER
+from map_generator.factory import MapGeneratorFactory
 from map_generator.utils.map import make_image
-from map_generator.utils.general import load_config, get_config_path, get_rosnav_configs
+from map_generator.utils.general import (
+    load_robot_config,
+    load_map_generator_config,
+    get_rosnav_configs,
+    delete_distance_map,
+)
 
 
 class MapGeneratorNode:
@@ -27,10 +32,10 @@ class MapGeneratorNode:
         self.map_generator = map_generator
         self.train_mode = rospy.get_param("train_mode", False)
 
-        self.map_path = rospkg.RosPack().get_path("arena-simulation-setup") + "/maps"
-
         # initialize occupancy grid
         self.occupancy_grid = OccupancyGrid()
+
+        delete_distance_map()
 
         rospy.Subscriber("map", OccupancyGrid, self._get_occupancy_grid)
         rospy.Subscriber("request_new_map", String, self.callback_new_map)
@@ -41,7 +46,7 @@ class MapGeneratorNode:
 
     def callback_new_map(self, msg: String):
         grid_map = self.map_generator.generate_grid_map()
-        MapGeneratorNode.save_map(grid_map, self.map_path, MAP_FOLDER_NAME)
+        MapGeneratorNode.save_map(grid_map, ROSNAV_MAP_FOLDER, MAP_FOLDER_NAME)
 
         self.occupancy_grid.data = MapGeneratorNode.preprocess_map_data(grid_map)
 
@@ -68,12 +73,7 @@ class MapGeneratorNode:
 def main():
     rospy.init_node("map_generator")
 
-    # map_gen = MapGeneratorFactory.instantiate(
-    #     "barn", 75, 75, fill_pct=0.2, smooth_iter=5
-    # )
-
-    cfg_path = get_config_path()
-    cfg = load_config(cfg_path)
+    cfg = load_map_generator_config()
 
     map_properties = cfg["map_properties"]
     gen_configs = (
@@ -82,10 +82,15 @@ def main():
         else get_rosnav_configs(cfg)
     )
 
+    robot_infl_rad = load_robot_config(rospy.get_param("model"))["robot_radius"]
+    rospy.set_param("map_resolution", map_properties["resolution"])
+
     map_gen = MapGeneratorFactory.instantiate(
         name=cfg["generator"],
         width=map_properties["width"],
         height=map_properties["height"],
+        map_resolution=rospy.get_param("map_resolution"),
+        robot_infl_radius=robot_infl_rad,
         **gen_configs,
     )
 
