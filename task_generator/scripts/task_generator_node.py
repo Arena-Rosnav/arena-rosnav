@@ -26,8 +26,10 @@ class TaskGenerator:
 
         ## Publishers
         self.pub_scenario_reset = rospy.Publisher("scenario_reset", Int16, queue_size=1)
-        self.pub_scenario_finished = rospy.Publisher('scenario_finished', EmptyMsg, queue_size=10)
-        
+        self.pub_scenario_finished = rospy.Publisher(
+            "scenario_finished", EmptyMsg, queue_size=10
+        )
+
         ## Services
         rospy.Service("reset_task", Empty, self.reset_task_srv_callback)
 
@@ -38,12 +40,15 @@ class TaskGenerator:
 
         self.start_time = rospy.get_time()
         self.task = get_predefined_task("", self.task_mode, self.env_wrapper)
+        rospy.loginfo(f"Launching task mode: {self.task}")
         self.task.set_robot_names_param()
 
         self.number_of_resets = 0
         self.desired_resets = rospy.get_param("desired_resets", 2)
 
-        self.srv_start_model_visualization = rospy.ServiceProxy("start_model_visualization", Empty)
+        self.srv_start_model_visualization = rospy.ServiceProxy(
+            "start_model_visualization", Empty
+        )
         self.srv_start_model_visualization(EmptyRequest())
 
         self.reset_task()
@@ -52,7 +57,9 @@ class TaskGenerator:
 
         try:
             rospy.set_param("task_generator_setup_finished", True)
-            self.srv_setup_finished = rospy.ServiceProxy("task_generator_setup_finished", Empty)
+            self.srv_setup_finished = rospy.ServiceProxy(
+                "task_generator_setup_finished", Empty
+            )
             self.srv_setup_finished(EmptyRequest())
         except:
             pass
@@ -94,9 +101,9 @@ class TaskGenerator:
         return EmptyResponse()
 
     def _send_end_message_on_end(self, is_end):
-        if (
-            (not is_end and self.task_mode == TaskMode.SCENARIO) 
-            or (self.task_mode != TaskMode.SCENARIO and self.number_of_resets < self.desired_resets)
+        if (not is_end and self.task_mode == TaskMode.SCENARIO) or (
+            self.task_mode != TaskMode.SCENARIO
+            and self.number_of_resets < self.desired_resets
         ):
             return
 

@@ -1,7 +1,7 @@
 class Constants:
     GOAL_REACHED_TOLERANCE = 1.0
-    TIMEOUT = 3.0 * 60 ## 3 min
-    WAIT_FOR_SERVICE_TIMEOUT = 60 # 5 secs
+    TIMEOUT = 3.0 * 60  ## 3 min
+    WAIT_FOR_SERVICE_TIMEOUT = 60  # 5 secs
     MAX_RESET_FAIL_TIMES = 3
 
     class ObstacleManager:
@@ -11,7 +11,7 @@ class Constants:
         OBSTACLE_MAX_RADIUS = 0.6
 
         OBSTACLE_MAX_RADIUS = 0.6
-    
+
     class RobotManager:
         SPAWN_ROBOT_SAFE_DIST = 0.4
 
@@ -23,11 +23,16 @@ class Constants:
         TRAINING = "training"
         DEPLOYMENT = "deployment"
 
+    class MapGenerator:
+        MAP_FOLDER_NAME = "dynamic_map"
+        EPS_PER_MAP = 3
+
 
 class TaskMode:
     RANDOM = "random"
     STAGED = "staged"
     SCENARIO = "scenario"
+    DYNAMIC_MAP_RANDOM = "dynamic_map_random"
 
     class Random:
         MIN_DYNAMIC_OBS = 0
@@ -38,29 +43,31 @@ class TaskMode:
     class Scenario:
         RESETS_DEFAULT = 5
 
+
 class FlatlandRandomModel:
     BODY = {
         "name": "base_link",
         "pose": [0, 0, 0],
         "color": [1, 0.2, 0.1, 1.0],
-        "footprints": []
+        "footprints": [],
     }
     FOOTPRINT = {
         "density": 1,
         "restitution": 1,
         "layers": ["all"],
         "collision": "true",
-        "sensor": "false"
+        "sensor": "false",
     }
     MIN_RADIUS = 0.2
     MAX_RADIUS = 0.6
     RANDOM_MOVE_PLUGIN = {
         "type": "RandomMove",
         "name": "RandomMove_Plugin",
-        "body": "base_link"
+        "body": "base_link",
     }
     LINEAR_VEL = 0.2
     ANGLUAR_VEL_MAX = 0.2
+
 
 class Pedsim:
     VMAX = 0.3
