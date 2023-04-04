@@ -2,7 +2,7 @@ from pathlib import Path
 
 MAP_FOLDER_NAME = "dynamic_map"
 EMPTY_MAP_YAML = {
-    "image": "empty_map.png",
+    "image": "map.png",
     "resolution": 0.25,
     "origin": [0.0, 0.0, 0.0],  # [-x,-y,0.0]
     "negate": 0,

@@ -21,7 +21,7 @@ class BarnMapGenerator(BaseMapGenerator):
         *args,
         **kwargs
     ):
-        super().__init__(height, width)
+        super().__init__(height, width - 2)  # - 2 for side walls which are added later
         self.smooth_iter = smooth_iter
         self.fill_pct = fill_pct
         self.seed = seed
@@ -45,7 +45,10 @@ class BarnMapGenerator(BaseMapGenerator):
         ):
             return self.generate_grid_map()
 
-        return np.array(obstacle_map)
+        # add side walls as the map was initially open on both sides for barn
+        np_obs_map = np.array(obstacle_map)
+        ones_col = np.ones((np_obs_map.shape[0], 1))
+        return np.concatenate((ones_col, np_obs_map, ones_col), axis=1)
 
     @staticmethod
     def check_for_paths(
@@ -61,7 +64,7 @@ class BarnMapGenerator(BaseMapGenerator):
 
 def test():
     map_gen = BarnMapGenerator(
-        height=50, width=50, robot_infl_radius=0.3, map_resolution=0.25
+        height=70, width=50, robot_infl_radius=0.3, map_resolution=0.25
     )
     grid_map = map_gen.generate_grid_map()
     None

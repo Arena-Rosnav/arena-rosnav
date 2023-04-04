@@ -4,7 +4,6 @@ import subprocess
 import numpy as np
 
 import rospy
-import rospkg
 from nav_msgs.msg import OccupancyGrid
 from std_msgs.msg import String
 
@@ -37,9 +36,9 @@ class MapGeneratorNode:
 
         delete_distance_map()
 
-        rospy.Subscriber("map", OccupancyGrid, self._get_occupancy_grid)
-        rospy.Subscriber("request_new_map", String, self.callback_new_map)
-        self.map_pub = rospy.Publisher("map", OccupancyGrid, queue_size=1)
+        rospy.Subscriber("/map", OccupancyGrid, self._get_occupancy_grid)
+        rospy.Subscriber("/request_new_map", String, self.callback_new_map)
+        self.map_pub = rospy.Publisher("/map", OccupancyGrid, queue_size=1)
 
     def _get_occupancy_grid(self, occgrid_msg: OccupancyGrid):
         self.occupancy_grid = occgrid_msg
@@ -78,7 +77,7 @@ def main():
     map_properties = cfg["map_properties"]
     gen_configs = (
         cfg["generator_configs"]["barn"]
-        if cfg["generator"] == "barn"
+        if cfg["generator"].lower() == "barn"
         else get_rosnav_configs(cfg)
     )
 
@@ -86,7 +85,7 @@ def main():
     rospy.set_param("map_resolution", map_properties["resolution"])
 
     map_gen = MapGeneratorFactory.instantiate(
-        name=cfg["generator"],
+        name=cfg["generator"].lower(),
         width=map_properties["width"],
         height=map_properties["height"],
         map_resolution=rospy.get_param("map_resolution"),
