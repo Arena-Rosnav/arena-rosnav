@@ -25,7 +25,6 @@ class Constants:
 
     class MapGenerator:
         MAP_FOLDER_NAME = "dynamic_map"
-        EPS_PER_MAP = 3
 
 
 class TaskMode:

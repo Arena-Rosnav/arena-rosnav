@@ -62,7 +62,7 @@ class MapGeneratorNode:
         # flip from [height, width] to [width, height]
         grid_map = np.flip(grid_map, axis=0)
         # map currently [0,1] 2D np array needs to be flattened for publishing OccupancyGrid.data
-        return (grid_map * 100).flatten()
+        return (grid_map * 100).flatten().astype(np.int8)
 
     @staticmethod
     def save_map(grid_map: np.ndarray, map_path: str, map_name: str):
@@ -73,22 +73,21 @@ def main():
     rospy.init_node("map_generator")
 
     cfg = load_map_generator_config()
+    generator = rospy.get_param("generator", cfg["generator"])
+    map_properties = rospy.get_param("map_properties", cfg["map_properties"])
+    gen_cfg = rospy.get_param("generator_configs", cfg["generator_configs"])
 
-    map_properties = cfg["map_properties"]
     gen_configs = (
-        cfg["generator_configs"]["barn"]
-        if cfg["generator"].lower() == "barn"
-        else get_rosnav_configs(cfg)
+        gen_cfg["barn"] if generator.lower() == "barn" else get_rosnav_configs(gen_cfg)
     )
 
     robot_infl_rad = load_robot_config(rospy.get_param("model"))["robot_radius"]
-    rospy.set_param("map_resolution", map_properties["resolution"])
 
     map_gen = MapGeneratorFactory.instantiate(
-        name=cfg["generator"].lower(),
+        name=generator.lower(),
         width=map_properties["width"],
         height=map_properties["height"],
-        map_resolution=rospy.get_param("map_resolution"),
+        map_resolution=map_properties["resolution"],
         robot_infl_radius=robot_infl_rad,
         **gen_configs,
     )

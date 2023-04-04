@@ -45,7 +45,7 @@ class DynamicMapRandomTask(RandomTask):
         self.map_request_pub = rospy.Publisher("/request_new_map", String, queue_size=1)
         self.get_dist_map_service = rospy.ServiceProxy("/distance_map", GetDistanceMap)
 
-        self.eps_per_map = Constants.MapGenerator.EPS_PER_MAP
+        self.eps_per_map = rospy.get_param("episode_per_map", 1)
         self.curr_map_eps_count = 0
 
     def update_map(self):

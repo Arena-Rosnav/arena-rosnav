@@ -60,8 +60,9 @@ def create_yaml_files(map_name, dir_path):
     empty_yaml = EMPTY_MAP_YAML
     map_yaml = DYNAMIC_MAP_YAML
 
-    empty_yaml["resolution"] = rospy.get_param("map_resolution")
-    map_yaml["resolution"] = rospy.get_param("map_resolution")
+    map_properties = rospy.get_param("map_properties")
+    empty_yaml["resolution"] = map_properties["resolution"]
+    map_yaml["resolution"] = map_properties["resolution"]
 
     with open(f"{dir_path}/{map_name}/map.yaml", "w") as outfile:
         yaml.dump(map_yaml, outfile, sort_keys=False, default_flow_style=None)

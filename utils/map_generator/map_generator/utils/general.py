@@ -36,7 +36,7 @@ def load_config(cfg_location: str) -> dict:
 
 
 def get_rosnav_configs(cfg: dict) -> dict:
-    rosnav_cfg = cfg["generator_configs"]["rosnav"]
+    rosnav_cfg = cfg["rosnav"]
     return (
         rosnav_cfg["indoor"]
         if rosnav_cfg["map_type"] == "indoor"
