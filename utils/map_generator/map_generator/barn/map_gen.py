@@ -1,4 +1,5 @@
 import numpy as np
+import rospy
 
 from map_generator.base_map_gen import BaseMapGenerator
 from map_generator.factory import MapGeneratorFactory
@@ -21,15 +22,43 @@ class BarnMapGenerator(BaseMapGenerator):
         *args,
         **kwargs
     ):
-        super().__init__(height, width - 2)  # - 2 for side walls which are added later
+        super().__init__(
+            height, width - 2, map_resolution
+        )  # - 2 for side walls which are added later
         self.smooth_iter = smooth_iter
         self.fill_pct = fill_pct
         self.seed = seed
 
+        self.map_resolution = map_resolution
+        self.robot_infl_radius = robot_infl_radius
+
         self.infl_radius_cells = calc_infl_rad_cells(robot_infl_radius, map_resolution)
         self.robot_radius_extra_cells = self.infl_radius_cells - 1
 
+    def update_params(
+        self, height: int, width: int, fill_pct: float, smooth_iter: int, map_res: float
+    ):
+        if map_res != self.map_resolution:
+            # calculate inflation radius in cells when map resolution changes
+            self.infl_radius_cells = calc_infl_rad_cells(
+                self.robot_infl_radius, map_res
+            )
+            self.robot_radius_extra_cells = self.infl_radius_cells - 1
+        super().update_params(height, width - 2, map_res)
+        self.fill_pct, self.smooth_iter = fill_pct, smooth_iter
+
+    def retrieve_params(self):
+        height, width, map_res = super().retrieve_params()
+        fill_pct = rospy.get_param("/generator_configs/barn/fill_pct", self.fill_pct)
+        smooth_iter = rospy.get_param(
+            "/generator_configs/barn/smooth_iter", self.smooth_iter
+        )
+
+        return height, width, fill_pct, smooth_iter, map_res
+
     def generate_grid_map(self) -> np.ndarray:
+        super().generate_grid_map()
+
         # sourcery skip: assign-if-exp, reintroduce-else, swap-if-expression
         obstacle_map_obj = ObstacleMap(
             rows=self.height,
