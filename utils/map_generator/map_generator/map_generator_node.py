@@ -40,6 +40,8 @@ class MapGeneratorNode:
         rospy.Subscriber("/request_new_map", String, self.callback_new_map)
         self.map_pub = rospy.Publisher("/map", OccupancyGrid, queue_size=1)
 
+        self.robot_namespaces = MapGeneratorNode.get_all_robot_topics()
+
     def _get_occupancy_grid(self, occgrid_msg: OccupancyGrid):
         self.occupancy_grid = occgrid_msg
 
@@ -52,8 +54,9 @@ class MapGeneratorNode:
         self.map_pub.publish(self.occupancy_grid)
 
         if not self.train_mode:
-            bashCommand = "rosservice call /move_base/clear_costmaps"
-            subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+            for robot_ns in self.robot_namespaces:
+                bashCommand = f"rosservice call /{robot_ns}/move_base/clear_costmaps"
+                subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 
         rospy.loginfo("New random map published and costmap cleared.")
 
@@ -67,6 +70,13 @@ class MapGeneratorNode:
     @staticmethod
     def save_map(grid_map: np.ndarray, map_path: str, map_name: str):
         make_image(map=grid_map, map_name=map_name, dir_path=map_path)
+
+    @staticmethod
+    def get_all_robot_topics():
+        robot_model = rospy.get_param("model")
+        all_topics = rospy.get_published_topics()
+
+        return [topic for topic, _ in all_topics if robot_model in topic.split("/")[0]]
 
 
 def main():
