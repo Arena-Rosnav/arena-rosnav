@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Iterable, Union
 
 import numpy as np
 import rospy
@@ -16,7 +17,7 @@ class BaseMapGenerator(ABC):
 
     @abstractmethod
     def generate_grid_map(self) -> np.ndarray:
-        """Generates an occupancy grid map.
+        """Updates parameters and generates a grid map.
 
         Raises:
             NotImplementedError: Must be implemented by child class.
@@ -28,7 +29,7 @@ class BaseMapGenerator(ABC):
         self.update_params(*self.retrieve_params())
 
     @abstractmethod
-    def retrieve_params(self):
+    def retrieve_params(self) -> Iterable[Union[int, float, str]]:
         """Retrieve parameters from ROS parameter server."""
         height = rospy.get_param("/map_properties/height", self.height)
         width = rospy.get_param("/map_properties/width", self.width)

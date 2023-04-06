@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 import rospy
 from enum import Enum
@@ -62,7 +64,7 @@ class RosnavMapGenerator(BaseMapGenerator):
             obstacle_extra_radius,
         )
 
-    def retrieve_params(self):
+    def retrieve_params(self) -> Tuple[int, int, float, MAP_TYPE, int, int, int, int]:
         height, width, map_res = super().retrieve_params()
         map_type = rospy.get_param("/generator_configs/rosnav/map_type", self.map_type)
 

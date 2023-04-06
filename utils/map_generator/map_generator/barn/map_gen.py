@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 import rospy
 
@@ -47,7 +49,7 @@ class BarnMapGenerator(BaseMapGenerator):
         super().update_params(height, width - 2, map_res)
         self.fill_pct, self.smooth_iter = fill_pct, smooth_iter
 
-    def retrieve_params(self):
+    def retrieve_params(self) -> Tuple[int, int, float, int, float]:
         height, width, map_res = super().retrieve_params()
         fill_pct = rospy.get_param("/generator_configs/barn/fill_pct", self.fill_pct)
         smooth_iter = rospy.get_param(
