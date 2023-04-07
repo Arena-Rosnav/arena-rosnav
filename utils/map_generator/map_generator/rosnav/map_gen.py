@@ -46,14 +46,13 @@ class RosnavMapGenerator(BaseMapGenerator):
         height: int,
         width: int,
         map_res: float,
-        map_type: MAP_TYPE,
+        map_type: str,
         iterations: int,
         corridor_radius: int,
         obstacle_num: int,
         obstacle_extra_radius: int,
     ):
         super().update_params(height, width, map_res)
-        assert map_type in MAP_TYPE, f"Invalid map type - {map_type}"
         self.map_type = map_type
 
         # indoor params
@@ -67,6 +66,8 @@ class RosnavMapGenerator(BaseMapGenerator):
     def retrieve_params(self) -> Tuple[int, int, float, MAP_TYPE, int, int, int, int]:
         height, width, map_res = super().retrieve_params()
         map_type = rospy.get_param("/generator_configs/rosnav/map_type", self.map_type)
+        if type(map_type) == str:
+            map_type = MAP_TYPE(map_type.lower())
 
         # indoor params
         corridor_radius = rospy.get_param(

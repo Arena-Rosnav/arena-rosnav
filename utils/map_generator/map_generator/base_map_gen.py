@@ -17,7 +17,7 @@ class BaseMapGenerator(ABC):
 
     @abstractmethod
     def generate_grid_map(self) -> np.ndarray:
-        """Updates parameters and generates a grid map.
+        """Updates parameters (retrieved from ROS) and generates a grid map.
 
         Raises:
             NotImplementedError: Must be implemented by child class.
