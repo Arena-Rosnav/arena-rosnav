@@ -1,4 +1,3 @@
-import random
 import rospy
 
 from nav_msgs.srv import GetMap
@@ -53,9 +52,12 @@ class DynamicMapRandomTask(RandomTask):
             "/dynamic_map/task_reset", String, self._cb_task_reset
         )
 
-        self.eps_per_map = rospy.get_param("episode_per_map", 1)
-
         # iterate resets over 1 / num_envs
+        # e.g. eps_per_map = 2
+        # if num_envs = 2, then 1 / 2 = 0.5
+        # in sum we need 4 resets to get to the next map -> 4 * 0.5 = 2
+        # eps_per_map = sum_resets * 1 / num_envs
+        self.eps_per_map = rospy.get_param("episode_per_map", 1)
         denominator = rospy.get_param("num_envs", 1)
         self.iterator = 1 / denominator
 
@@ -70,13 +72,16 @@ class DynamicMapRandomTask(RandomTask):
         goal=None,
         static_obstacles=None,
         dynamic_obstacles=None,
+        reset_after_new_map=False,
     ):
-        if rospy.get_param("/dynamic_map/curr_eps") > self.eps_per_map:
+        if rospy.get_param("/dynamic_map/curr_eps") >= self.eps_per_map:
             self.request_new_map()
             return
 
-        new_count = rospy.get_param("/dynamic_map/curr_eps") + self.iterator
-        rospy.set_param("/dynamic_map/curr_eps", new_count)
+        if not reset_after_new_map:
+            new_count = rospy.get_param("/dynamic_map/curr_eps") + self.iterator
+            rospy.set_param("/dynamic_map/curr_eps", new_count)
+
         return super().reset(
             start=start,
             goal=goal,
@@ -103,4 +108,4 @@ class DynamicMapRandomTask(RandomTask):
     def _cb_task_reset(self, msg):
         # update map manager
         self.update_map()
-        self.reset()
+        self.reset(reset_after_new_map=True)

@@ -1,16 +1,16 @@
-generator: rosnav
-episode_per_map: 1
+generator: barn
+episode_per_map: 2
 
 map_properties:
-  width: 80
+  width: 75
   height: 75
-  resolution: 0.25
+  resolution: 0.25 # should stay fixed
 
 generator_configs:
   barn:
     fill_pct: 0.15 # initial fill percentage
-    smooth_iter: 4 # smoothing iterations
-    seed: 0 # for reproducing maps
+    smooth_iter: 3 # smoothing iterations
+    # seed: 0 # for reproducing maps
 
   rosnav:
     map_type: indoor # chose between 'indoor' and 'outdoor'

@@ -9,6 +9,7 @@ from tools.general import *
 from tools.model_utils import init_callbacks, get_ppo_instance
 from tools.env_utils import init_envs
 
+
 def on_shutdown(model):
     model.env.close()
     sys.exit()
@@ -55,9 +56,9 @@ def main():
     rospy.on_shutdown(lambda: on_shutdown(model))
 
     ## Save model once
-    if not config["debug_mode"]: 
+    if not config["debug_mode"]:
         model.save(os.path.join(PATHS["model"], "best_model"))
-    
+
     # start training
     start = time.time()
     try:
@@ -69,7 +70,6 @@ def main():
     except KeyboardInterrupt:
         print("KeyboardInterrupt..")
 
-
     print(f"Time passed: {time.time()-start}s. \n Training script will be terminated..")
 
     model.env.close()
@@ -77,12 +77,11 @@ def main():
     # Send Task finished to Backend
     if rospy.get_param("/is_webapp_docker", False):
         publisher = rospy.Publisher("training_finished", Empty, queue_size=10)
-        
+
         while publisher.get_num_connections() <= 0:
             pass
 
         publisher.publish(Empty())
-
 
     sys.exit()
 
