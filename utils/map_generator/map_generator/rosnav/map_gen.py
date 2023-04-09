@@ -106,7 +106,7 @@ class RosnavMapGenerator(BaseMapGenerator):
                 corridor_radius=self.corridor_radius,
                 iterations=self.iterations,
             )
-            if self.map_type == MAP_TYPE.indoor
+            if self.map_type in [MAP_TYPE.indoor, "indoor"]
             else create_outdoor_map(
                 height=self.height,
                 width=self.width,

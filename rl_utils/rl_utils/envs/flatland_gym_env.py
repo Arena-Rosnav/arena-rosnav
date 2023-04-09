@@ -276,12 +276,15 @@ class FlatlandEnv(gym.Env):
         # self._step_world_publisher.publish(request)
 
     def reset(self):
-
         # set task
         # regenerate start position end goal position of the robot and change the obstacles accordingly
         self._episode += 1
         self.agent_action_pub.publish(Twist())
-        self.task.reset()
+        first_map = self._episode <= 1 if self.ns == "sim_1" else False
+        self.task.reset(
+            first_map=first_map,
+            reset_after_new_map=self._steps_curr_episode == 0,
+        )
         self.reward_calculator.reset()
         self._steps_curr_episode = 0
         self._last_action = np.array([0, 0, 0])

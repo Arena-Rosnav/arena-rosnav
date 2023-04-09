@@ -13,6 +13,13 @@ from ..manager.map_manager import MapManager
 from ..manager.robot_manager import RobotManager
 
 
+"""
+TODO:
+    - Check map properties when changed (e.g. map size)
+    - Write node, when map size is changed at the start -> delete map generate new one
+"""
+
+
 @TaskFactory.register(TaskMode.DYNAMIC_MAP_RANDOM)
 class DynamicMapRandomTask(RandomTask):
     """
@@ -73,12 +80,14 @@ class DynamicMapRandomTask(RandomTask):
         static_obstacles=None,
         dynamic_obstacles=None,
         reset_after_new_map=False,
+        first_map=False,
     ):
-        if rospy.get_param("/dynamic_map/curr_eps") >= self.eps_per_map:
-            self.request_new_map()
+        if rospy.get_param("/dynamic_map/curr_eps") >= self.eps_per_map or first_map:
+            self.request_new_map(first_map=first_map)
             return
 
         if not reset_after_new_map:
+            # only update eps count when resetting the scene
             new_count = rospy.get_param("/dynamic_map/curr_eps") + self.iterator
             rospy.set_param("/dynamic_map/curr_eps", new_count)
 
@@ -89,10 +98,11 @@ class DynamicMapRandomTask(RandomTask):
             dynamic_obstacles=dynamic_obstacles,
         )
 
-    def request_new_map(self):
+    def request_new_map(self, first_map: bool = False):
         # set current eps immediately to 0 so that only one task
         # requests a new map
-        rospy.set_param("/dynamic_map/curr_eps", 0)
+        if not first_map:
+            rospy.set_param("/dynamic_map/curr_eps", 0)
 
         self.map_request_pub.publish("")
 
@@ -106,6 +116,7 @@ class DynamicMapRandomTask(RandomTask):
         rospy.loginfo("===================")
 
     def _cb_task_reset(self, msg):
+        # task reset for all taskmanagers when one resets
         # update map manager
         self.update_map()
         self.reset(reset_after_new_map=True)

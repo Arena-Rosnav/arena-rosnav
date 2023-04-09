@@ -22,6 +22,8 @@ class RandomTask(BaseTask):
         goal=None,
         static_obstacles=None,
         dynamic_obstacles=None,
+        *args,
+        **kwargs
     ):
         return super().reset(
             lambda: self._reset_robot_and_obstacles(

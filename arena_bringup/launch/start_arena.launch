@@ -127,6 +127,7 @@
 
   <!-- map server-->
   <include file="$(find arena_bringup)/launch/utils/map_server.launch">
+    <arg name="map_file" value="$(arg map_file)" />
     <arg name="map_path" value="$(arg map_path)" />
   </include>
 
@@ -148,11 +149,6 @@
   </node>
 
   <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/>
-
-  <!-- launch map generator if training with random map-->
-  <group if="$(eval arg('map_file') == 'dynamic_map')">
-    <node pkg="map_generator" name="map_generator_node" type="map_generator_node.py" />
-  </group>
 
   <include file="$(find arena_bringup)/launch/testing/sensor_sim.launch">
 

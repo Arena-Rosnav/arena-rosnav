@@ -31,7 +31,7 @@ class StagedRandomTask(RandomTask):
         start_stage: int = 1,
         paths=None,
         namespace: str = "",
-        **kwargs
+        **kwargs,
     ):
         super().__init__(obstacles_manager, robot_manager, map_manager)
 
@@ -124,7 +124,7 @@ class StagedRandomTask(RandomTask):
 
         self._config_lock.release()
 
-    def reset(self):
+    def reset(self, *args, **kwargs):
         super().reset(
             static_obstacles=self._stages[self._curr_stage]["static"],
             dynamic_obstacles=self._stages[self._curr_stage]["dynamic"],

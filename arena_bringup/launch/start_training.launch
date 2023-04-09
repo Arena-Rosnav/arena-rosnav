@@ -57,13 +57,15 @@
   <param name="num_envs" value="$(arg num_envs)" />
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_folder_name)/map.yaml" />
   <param name="world_path" value="$(find arena-simulation-setup)/maps/$(arg map_folder_name)/map.world.yaml" />
+  <param name="map_path" value="$(arg map_path)" />
   <param name="show_viz" value="$(arg show_viz)"/>
   <param name="_dedicated_train_launch" value="true" />
   <param name="model" value="$(arg model)" />
 
   <!-- map server-->
   <include file="$(find arena_bringup)/launch/utils/map_server.launch">
-    <arg name="map_path" value="$(arg map_path)" />
+    <arg name="map_file" value="$(arg map_folder_name)"/>
+    <arg name="map_path" value="$(arg map_path)"/>
   </include>
 
   <group if="$(eval arg('train_mode') == false)">
@@ -81,10 +83,5 @@
     <arg name="num_envs" value="$(arg num_envs)" />
     <arg name="ns_prefix" value="$(arg ns_prefix)" />
   </include> 
-
-  <!-- launch map generator if training with random map-->
-  <group if="$(eval arg('map_folder_name') == 'dynamic_map')">
-    <node pkg="map_generator" name="map_generator_node" type="map_generator_node.py" />
-  </group>
 
 </launch>

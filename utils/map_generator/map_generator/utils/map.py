@@ -27,7 +27,7 @@ def make_image(map: np.ndarray, map_name: str, dir_path: str):
 
     create_yaml_files(map_name, dir_path)  # create corresponding yaml files
     # create empty map with same size as map
-    create_empty_map(map.shape[0], map.shape[1], map_name, dir_path)
+    # create_empty_map(map.shape[0], map.shape[1], map_name, dir_path)
     # make_image_for_human(map,map_name) # create human friendly map png
 
 
@@ -56,11 +56,11 @@ def make_image_for_human(
     plt.savefig(f"{map_name}/{map_name}_human.png", bbox_inches="tight")
 
 
-def create_yaml_files(map_name, dir_path):
+def create_yaml_files(map_name: str, dir_path: str):
     empty_yaml = EMPTY_MAP_YAML
     map_yaml = DYNAMIC_MAP_YAML
 
-    map_res = rospy.get_param("/map_properties/resolution")
+    map_res = rospy.get_param("/map_properties/resolution", 0.25)
     empty_yaml["resolution"] = map_res
     map_yaml["resolution"] = map_res
 
@@ -88,9 +88,11 @@ def create_yaml_files(map_name, dir_path):
         )  # 2nd part must be with default_flow_style=None
 
 
-def create_empty_map(height, width, map_name, dir_path):
-    map = np.tile(1, [height, width])
-    map[slice(1, height - 1), slice(1, width - 1)] = 0
-    img = Image.fromarray(((map - 1) ** 2 * 255).astype("uint8"))  # monochromatic image
+def create_empty_map(height: int, width: int, map_name: str, dir_path: str):
+    _map = np.tile(1, [height, width])
+    _map[slice(1, height - 1), slice(1, width - 1)] = 0
+    img = Image.fromarray(
+        ((_map - 1) ** 2 * 255).astype("uint8")
+    )  # monochromatic image
     imgrgb = img.convert("RGB")
-    imgrgb.save(f"{dir_path}/{map_name}/map.png")
+    imgrgb.save(f"{dir_path}/{map_name}/{map_name}.png")
