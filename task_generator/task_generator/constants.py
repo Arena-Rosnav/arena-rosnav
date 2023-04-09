@@ -24,6 +24,7 @@ class Constants:
         DEPLOYMENT = "deployment"
 
     class MapGenerator:
+        NODE_NAME = "map_generator"
         MAP_FOLDER_NAME = "dynamic_map"
 
 
@@ -31,7 +32,7 @@ class TaskMode:
     RANDOM = "random"
     STAGED = "staged"
     SCENARIO = "scenario"
-    DYNAMIC_MAP_RANDOM = "dynamic_map_random"
+    DM_RANDOM = "dm_random"
 
     class Random:
         MIN_DYNAMIC_OBS = 0

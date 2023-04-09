@@ -20,7 +20,7 @@ TODO:
 """
 
 
-@TaskFactory.register(TaskMode.DYNAMIC_MAP_RANDOM)
+@TaskFactory.register(TaskMode.DM_RANDOM)
 class DynamicMapRandomTask(RandomTask):
     """
     The random task spawns static and dynamic
