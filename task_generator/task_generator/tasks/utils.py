@@ -17,7 +17,8 @@ from task_generator.tasks.task_factory import TaskFactory
 from task_generator.tasks.random import RandomTask
 from task_generator.tasks.scenario import ScenarioTask
 from task_generator.tasks.staged import StagedRandomTask
-from task_generator.tasks.dynamic_map import DynamicMapRandomTask
+from task_generator.tasks.dm_random import DynamicMapRandomTask
+from task_generator.tasks.dm_staged import DynamicMapStagedRandomTask
 from task_generator.utils import Utils
 
 

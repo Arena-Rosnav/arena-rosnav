@@ -1,0 +1,66 @@
+# Training Curriculum 
+# this yaml serves as container of the learning curriculum for the agent
+# by determining the number of static/dynamic obstacles per stage
+# (will carry on training on last stage when threshhold reached)
+
+1:
+  map_generator:
+    barn:
+      fill_pct: 0.0
+      smooth_iter: 1
+    rosnav:
+      map_type: indoor
+      indoor:
+        corridor_radius: 5
+        iterations: 100
+      outdoor:
+        obstacle_num: 5
+        obstacle_extra_radius: 1
+  static: 0
+  dynamic: 0
+2:
+  map_generator:
+    barn:
+      fill_pct: 0.05
+      smooth_iter: 5
+    rosnav:
+      map_type: indoor
+      indoor:
+        corridor_radius: 5
+        iterations: 70
+      outdoor:
+        obstacle_num: 5
+        obstacle_extra_radius: 1
+  static: 0
+  dynamic: 0
+3:
+  map_generator:
+    barn:
+      fill_pct: 0.1
+      smooth_iter: 7
+    rosnav:
+      map_type: indoor
+      indoor:
+        corridor_radius: 5
+        iterations: 50
+      outdoor:
+        obstacle_num: 5
+        obstacle_extra_radius: 1
+  static: 0
+  dynamic: 0
+4:
+  map_generator:
+    barn:
+        fill_pct: 0.15
+        smooth_iter: 8
+    rosnav:
+        map_type: indoor
+        indoor:
+          corridor_radius: 5
+          iterations: 30
+        outdoor:
+          obstacle_num: 5
+          obstacle_extra_radius: 1
+  static: 0
+  dynamic: 0
+

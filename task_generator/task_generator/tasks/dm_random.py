@@ -65,7 +65,11 @@ class DynamicMapRandomTask(RandomTask):
         # in sum we need 4 resets to get to the next map -> 4 * 0.5 = 2
         # eps_per_map = sum_resets * 1 / num_envs
         self.eps_per_map = rospy.get_param("episode_per_map", 1)
-        denominator = rospy.get_param("num_envs", 1)
+        denominator = (
+            rospy.get_param("num_envs", 1)
+            if self.robot_managers[0].namespace != "eval_sim"
+            else 1
+        )
         self.iterator = 1 / denominator
 
         rospy.set_param("/dynamic_map/curr_eps", 0)
