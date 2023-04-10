@@ -68,7 +68,7 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
 
     print("\n--------------------------------")
     print("UPDATING MODEL HYPERPARAMETER...")
-    print("(no change -> no print below")
+    print("(no change -> no print below)")
 
     ppo_params = config["rl_agent"]["ppo"]
     update(model, "batch_size", ppo_params["m_batch_size"])
@@ -98,7 +98,11 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
         not config["debug_mode"] and config["monitoring"]["use_wandb"]
     ):
         model.tensorboard_log = PATHS["tb"]
-        configure_logger(1, PATHS["tb"], "run", False)
+        logger = configure_logger(1, PATHS["tb"], "run", False)
+        model._logger = logger
+    if config["debug_mode"]:
+        model.tensorboard_log = None
+        model._logger = None
 
     print("--------------------------------\n")
 
@@ -164,6 +168,10 @@ def instantiate_new_model(
     return PPO(**ppo_kwargs)
 
 
+sys.modules["rl_agent"] = sys.modules["rosnav"]
+sys.modules["rl_utils.rl_utils.utils"] = sys.modules["rosnav.utils"]
+
+
 def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
     agent_name = config["agent_name"]
     possible_agent_names = [f"{agent_name}", "best_model", "model"]
@@ -187,7 +195,6 @@ def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
 def init_callbacks(
     config: dict, train_env: VecEnv, eval_env: VecEnv, paths
 ) -> EvalCallback:
-
     # threshold settings for training curriculum
     # type can be either 'succ' or 'rew'
     curriculum_cfg = config["callbacks"]["training_curriculum"]
