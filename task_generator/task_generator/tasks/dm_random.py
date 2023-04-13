@@ -13,13 +13,6 @@ from ..manager.map_manager import MapManager
 from ..manager.robot_manager import RobotManager
 
 
-"""
-TODO:
-    - Check map properties when changed (e.g. map size)
-    - Write node, when map size is changed at the start -> delete map generate new one
-"""
-
-
 @TaskFactory.register(TaskMode.DM_RANDOM)
 class DynamicMapRandomTask(RandomTask):
     """
