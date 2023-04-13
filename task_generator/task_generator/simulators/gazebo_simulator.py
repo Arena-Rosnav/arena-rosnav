@@ -27,7 +27,9 @@ class GazeboSimulator(BaseSimulator):
     def __init__(self, namespace):
         super().__init__(namespace)
 
-        self._goal_pub = rospy.Publisher(self._ns_prefix("/goal"), PoseStamped, queue_size=1, latch=True)
+        self._goal_pub = rospy.Publisher(
+            self._ns_prefix("/goal"), PoseStamped, queue_size=1, latch=True
+        )
 
         self._robot_name = rospy.get_param("robot_model", "")
 
@@ -70,8 +72,11 @@ class GazeboSimulator(BaseSimulator):
     def spawn_pedsim_agents(self, dynamic_obstacles):
         if len(dynamic_obstacles) <= 0:
             return
-        
-        peds = [GazeboSimulator.create_ped_msg(p, i) for i, p in enumerate(dynamic_obstacles)]
+
+        peds = [
+            GazeboSimulator.create_ped_msg(p, i)
+            for i, p in enumerate(dynamic_obstacles)
+        ]
 
         spawn_ped_msg = SpawnPeds()
 
@@ -82,7 +87,7 @@ class GazeboSimulator(BaseSimulator):
     def reset_pedsim_agents(self):
         self._reset_peds_srv()
 
-    def spawn_obstacle(self, position, yaml_path=""):
+    def spawn_obstacle(self, position, yaml_path="", *args, **kwargs):
         pass
 
     def spawn_random_dynamic_obstacle(self, **args):
@@ -127,13 +132,15 @@ class GazeboSimulator(BaseSimulator):
         request = SpawnModelRequest()
 
         robot_namespace = self._ns_prefix(namespace_appendix)
-        
+
         robot_description = GazeboSimulator.get_robot_description(
             robot_name, robot_namespace
         )
-        rospy.set_param(os.path.join(robot_namespace, "robot_description"), robot_description)
+        rospy.set_param(
+            os.path.join(robot_namespace, "robot_description"), robot_description
+        )
         rospy.set_param(os.path.join(robot_namespace, "tf_prefix"), robot_namespace)
-        
+
         request.model_name = name
         request.model_xml = robot_description
         request.robot_namespace = robot_namespace
@@ -156,7 +163,7 @@ class GazeboSimulator(BaseSimulator):
         msg.yaml_file = os.path.join(
             rospkg.RosPack().get_path("arena-simulation-setup"),
             "dynamic_obstacles",
-            "person_two_legged.model.yaml"
+            "person_two_legged.model.yaml",
         )
         msg.number_of_peds = 1
         msg.vmax = 0.3
@@ -256,11 +263,19 @@ class GazeboSimulator(BaseSimulator):
     @staticmethod
     def get_robot_description(robot_name, namespace):
         arena_sim_path = rospkg.RosPack().get_path("arena-simulation-setup")
-        
-        return subprocess.check_output([
-            "rosrun", 
-            "xacro",
-            "xacro",
-            os.path.join(arena_sim_path, "robot", robot_name, "urdf", f"{robot_name}.urdf.xacro"),
-            f"robot_namespace:={namespace}"
-        ]).decode("utf-8")
+
+        return subprocess.check_output(
+            [
+                "rosrun",
+                "xacro",
+                "xacro",
+                os.path.join(
+                    arena_sim_path,
+                    "robot",
+                    robot_name,
+                    "urdf",
+                    f"{robot_name}.urdf.xacro",
+                ),
+                f"robot_namespace:={namespace}",
+            ]
+        ).decode("utf-8")

@@ -1,6 +1,7 @@
 from abc import abstractmethod
+from typing import List, Tuple
+
 import rospy
-from geometry_msgs.msg import PoseStamped, Pose2D
 import numpy as np
 import os
 import yaml
@@ -9,12 +10,13 @@ import rospkg
 import random
 from flatland_msgs.srv import (
     DeleteModelRequest,
-    MoveModelRequest, 
-    MoveModel, 
-    SpawnModel, 
+    MoveModelRequest,
+    MoveModel,
+    SpawnModel,
     DeleteModel,
-    SpawnModelRequest
+    SpawnModelRequest,
 )
+from geometry_msgs.msg import PoseStamped, Pose2D
 from flatland_msgs.msg import MoveModelMsg
 from pedsim_srvs.srv import SpawnPeds, SpawnPed
 from pedsim_msgs.msg import Ped
@@ -34,24 +36,24 @@ T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 @SimulatorFactory.register("flatland")
 class FlatlandSimulator(BaseSimulator):
     """
-        This is the flatland encoder for connecting
-        flatland with the arena-benchmark task
-        generator. The class implements all methods
-        defined in `BaseSimulator`.
+    This is the flatland encoder for connecting
+    flatland with the arena-benchmark task
+    generator. The class implements all methods
+    defined in `BaseSimulator`.
 
-        For flatland to work properly, a dedicated .yaml
-        file has to be created for each used model. This
-        is, because the spawn model request only contains
-        the path to this file instead of the file content
-        directly. For each reset a new set of obstacles 
-        is created and saved in files. The path to these
-        files is defined in the `tmp_model_path` param
-        and defaults to `/tmp`.
+    For flatland to work properly, a dedicated .yaml
+    file has to be created for each used model. This
+    is, because the spawn model request only contains
+    the path to this file instead of the file content
+    directly. For each reset a new set of obstacles
+    is created and saved in files. The path to these
+    files is defined in the `tmp_model_path` param
+    and defaults to `/tmp`.
     """
 
     PLUGIN_PROPS_TO_EXTEND = {
         "DiffDrive": ["odom_pub", "twist_sub"],
-        "Laser": ["topic"] 
+        "Laser": ["topic"],
     }
 
     def __init__(self, namespace):
@@ -94,7 +96,26 @@ class FlatlandSimulator(BaseSimulator):
             f"{self._ns_prefix}pedsim_simulator/reset_all_peds", Trigger
         )
 
-        self._obstacles_amount = 0
+        self.dynamic_obs_names = []
+        self.static_obs_names = []
+
+    @property
+    def obstacles_amount(self):
+        return self.dynamic_obs_amount + self.static_obs_names
+
+    @property
+    def dynamic_obs_amount(self):
+        return len(self.dynamic_obs_names)
+
+    @property
+    def static_obs_amount(self):
+        return len(self.static_obs_names)
+
+    def add_obs_to_list(self, obs_name: str, is_dynamic: bool):
+        if is_dynamic:
+            self.dynamic_obs_names.append(obs_name)
+        else:
+            self.static_obs_names.append(obs_name)
 
     def before_reset_task(self):
         pass
@@ -103,24 +124,36 @@ class FlatlandSimulator(BaseSimulator):
         pass
 
     def remove_all_obstacles(self):
-        for obs in range(self._obstacles_amount):
-            obs_name = FlatlandSimulator.create_obs_name(obs)
+        for obs_name in self.dynamic_obs_names:
+            try:
+                self._delete_model(obs_name)
+            except rospy.ServiceException as e:
+                rospy.INFO(e)
+            else:
+                self.dynamic_obs_names.remove(obs_name)
 
-            self._delete_model(obs_name)
+        for obs_name in self.static_obs_names:
+            try:
+                self._delete_model(obs_name)
+            except rospy.ServiceException as e:
+                rospy.INFO(e)
+            else:
+                self.static_obs_names.remove(obs_name)
 
-        self._obstacles_amount = 0
-
-    def _delete_model(self, name):
+    def _delete_model(self, name: str):
         delete_model_request = DeleteModelRequest()
         delete_model_request.name = name
 
         self._delete_model_srv(delete_model_request)
 
-    def spawn_pedsim_agents(self, dynamic_obstacles):
+    def spawn_pedsim_agents(self, dynamic_obstacles: List):
         if len(dynamic_obstacles) <= 0:
             return
-        
-        peds = [FlatlandSimulator.create_ped_msg(p, i) for i, p in enumerate(dynamic_obstacles)]
+
+        peds = [
+            FlatlandSimulator.create_ped_msg(p, i)
+            for i, p in enumerate(dynamic_obstacles)
+        ]
 
         spawn_ped_msg = SpawnPeds()
 
@@ -131,64 +164,76 @@ class FlatlandSimulator(BaseSimulator):
     def reset_pedsim_agents(self):
         self._reset_peds_srv()
 
-    def spawn_obstacle(self, position, yaml_path=""):
-        name = FlatlandSimulator.create_obs_name(self._obstacles_amount)
+    def spawn_obstacle(
+        self, is_dynamic: bool, position: Tuple[int, int, int], yaml_path=""
+    ):
+        obs_count = self.dynamic_obs_amount if is_dynamic else self.static_obs_amount
+        name = FlatlandSimulator.create_obs_name(obs_count, is_dynamic)
 
-        self._spawn_model(yaml_path, name, self._namespace, position)
+        try:
+            self._spawn_model(yaml_path, name, self._namespace, position)
+        except rospy.ServiceException as e:
+            rospy.logerr(f"Failed to spawn model {name} with exception: {e}")
+        else:
+            self.add_obs_to_list(name, is_dynamic)
 
-        self._obstacles_amount += 1
-        
     def spawn_random_dynamic_obstacle(self, **args):
         self._spawn_random_obstacle(**args, is_dynamic=True)
 
     def spawn_random_static_obstacle(self, **args):
         self._spawn_random_obstacle(**args, is_dynamic=False)
 
-    def _spawn_random_obstacle(
-            self, is_dynamic=False, position=[0, 0, 0], **args
-        ):
+    def _spawn_random_obstacle(self, is_dynamic=False, position=None, **args):
+        if position is None:
+            position = [0, 0, 0]
+
         model = self._generate_random_obstacle(is_dynamic=is_dynamic, **args)
+        obs_count = self.dynamic_obs_amount if is_dynamic else self.static_obs_amount
+        name = FlatlandSimulator.create_obs_name(obs_count, is_dynamic)
 
-        obstacle_name = FlatlandSimulator.create_obs_name(
-            self._obstacles_amount
-        )
-
-        self._spawn_model(
-            yaml.dump(model), 
-            obstacle_name, 
-            self._namespace, 
-            position, 
-            srv=self._spawn_model_from_string_srv
-        )
-
-        self._obstacles_amount += 1 
+        try:
+            self._spawn_model(
+                yaml.dump(model),
+                name,
+                self._namespace,
+                position,
+                srv=self._spawn_model_from_string_srv,
+            )
+        except rospy.ServiceException as e:
+            rospy.logerr(f"Failed to spawn model {name} with exception: {e}")
+        else:
+            self.add_obs_to_list(name, is_dynamic)
 
     def spawn_robot(self, name, robot_name, namespace_appendix=None, complexity=1):
         base_model_path = os.path.join(
-            rospkg.RosPack().get_path("arena-simulation-setup"),
+            "/home/tuananhroman/catkin_arena/src/utils/arena-simulation-setup",
+            # rospkg.RosPack.get_path("arena-simulation-setup"),
             "robot",
-            robot_name
+            robot_name,
         )
 
-        yaml_path = os.path.join(
-            base_model_path,
-            robot_name + ".model.yaml"
-        )
+        yaml_path = os.path.join(base_model_path, robot_name + ".model.yaml")
 
-        file_content = self._update_plugin_topics(
-            self._read_yaml(yaml_path), 
-            name
-        )
+        file_content = self._update_plugin_topics(self._read_yaml(yaml_path), name)
 
         self._spawn_model(
-            yaml.dump(file_content), 
-            name, 
-            os.path.join(self._namespace, namespace_appendix) if len(namespace_appendix) > 0 else self._namespace, 
+            yaml.dump(file_content),
+            name,
+            os.path.join(self._namespace, namespace_appendix)
+            if len(namespace_appendix) > 0
+            else self._namespace,
             [0, 0, 0],
-            srv=self._spawn_model_from_string_srv
+            srv=self._spawn_model_from_string_srv,
         )
 
-    def _spawn_model(self, yaml_path, name, namespace, position, srv=None):
+    def _spawn_model(
+        self,
+        yaml_path: str,
+        name: str,
+        namespace: str,
+        position: Tuple[int, int, int],
+        srv=rospy.ServiceProxy,
+    ):
         request = SpawnModelRequest()
         request.yaml_path = yaml_path
         request.name = name
@@ -197,7 +242,7 @@ class FlatlandSimulator(BaseSimulator):
         request.pose.y = position[1]
         request.pose.theta = position[2]
 
-        if srv == None:
+        if srv is None:
             srv = self._spawn_model_srv
 
         srv(request)
@@ -209,79 +254,78 @@ class FlatlandSimulator(BaseSimulator):
         pose.theta = pos[2]
 
         move_model_request = MoveModelRequest()
-        move_model_request.name = name if name else self._robot_name
+        move_model_request.name = name or self._robot_name
         move_model_request.pose = pose
 
         self._move_model_srv(move_model_request)
 
     ## HELPER FUNCTIONS TO CREATE MODEL.YAML
     def _generate_random_obstacle(
-            self, 
-            is_dynamic=False, 
-            min_radius=FlatlandRandomModel.MIN_RADIUS, 
-            max_radius=FlatlandRandomModel.MAX_RADIUS,
-            linear_vel=FlatlandRandomModel.LINEAR_VEL,
-            angular_vel_max=FlatlandRandomModel.ANGLUAR_VEL_MAX
-        ):
+        self,
+        is_dynamic=False,
+        min_radius=FlatlandRandomModel.MIN_RADIUS,
+        max_radius=FlatlandRandomModel.MAX_RADIUS,
+        linear_vel=FlatlandRandomModel.LINEAR_VEL,
+        angular_vel_max=FlatlandRandomModel.ANGLUAR_VEL_MAX,
+    ):
         """
-            Creates a dict in the flatland model schema.
+        Creates a dict in the flatland model schema.
 
-            Since a lot of the variables are untouched
-            the majority of the dict is filled up with
-            constants defined in the `Constants` file.
+        Since a lot of the variables are untouched
+        the majority of the dict is filled up with
+        constants defined in the `Constants` file.
         """
         body = {
             **FlatlandRandomModel.BODY,
-            "type": "dynamic" if is_dynamic else "static"
+            "type": "dynamic" if is_dynamic else "static",
         }
 
         footprint = {
             **FlatlandRandomModel.FOOTPRINT,
-            **self._generate_random_footprint_type(min_radius, max_radius)
+            **self._generate_random_footprint_type(min_radius, max_radius),
         }
 
         body["footprints"] = [footprint]
 
-        model = {'bodies': [body], "plugins": []}
+        model = {"bodies": [body], "plugins": []}
 
         if is_dynamic:
-            model['plugins'].append({
-                **FlatlandRandomModel.RANDOM_MOVE_PLUGIN,
-                'linear_velocity': random.uniform(0, linear_vel),
-                'angular_velocity_max': angular_vel_max
-            })
+            model["plugins"].append(
+                {
+                    **FlatlandRandomModel.RANDOM_MOVE_PLUGIN,
+                    "linear_velocity": random.uniform(0, linear_vel),
+                    "angular_velocity_max": angular_vel_max,
+                }
+            )
 
         return model
 
     def _generate_random_footprint_type(self, min_radius, max_radius):
         """
-            An object in flatland can either be a circle with a 
-            specific radius or a polygon shape.
+        An object in flatland can either be a circle with a
+        specific radius or a polygon shape.
 
-            This function will choose a shape randomly and
-            creates a shape from this. 
+        This function will choose a shape randomly and
+        creates a shape from this.
 
-            For the circle the radius is chosen randomly and
-            lies in a specific range defined in the `constants` file
+        For the circle the radius is chosen randomly and
+        lies in a specific range defined in the `constants` file
 
-            For the polygon, the amount of vertexes is determined
-            at first. Then the vertexes are distributed around the center
-            and for each vertex a distance to the center is calculated.
-            At the end, the vertexes form the polygon. The distance
-            to the center is chosen randomly and lies in the range
-            defined in `constants`. 
+        For the polygon, the amount of vertexes is determined
+        at first. Then the vertexes are distributed around the center
+        and for each vertex a distance to the center is calculated.
+        At the end, the vertexes form the polygon. The distance
+        to the center is chosen randomly and lies in the range
+        defined in `constants`.
         """
         type = random.choice(["circle", "polygon"])
 
         if type == "circle":
             radius = random.uniform(min_radius, max_radius)
 
-            return {
-                "type": type,
-                "radius": radius
-            }
+            return {"type": type, "radius": radius}
 
-        points_amount = random.randint(3, 8) # Defined in flatland definition
+        points_amount = random.randint(3, 8)  # Defined in flatland definition
         angle_interval = 2 * np.pi / points_amount
 
         points = []
@@ -292,15 +336,11 @@ class FlatlandSimulator(BaseSimulator):
 
             real_angle = angle_interval * p + angle
 
-            points.append([
-                math.cos(real_angle) * radius, 
-                math.sin(real_angle) * radius
-            ])
+            points.append(
+                [math.cos(real_angle) * radius, math.sin(real_angle) * radius]
+            )
 
-        return {
-            "type": type,
-            "points": list(points)
-        }
+        return {"type": type, "points": list(points)}
 
     def _create_obstacle_yaml(self, model, obs_name):
         os.makedirs(self._tmp_model_path, exist_ok=True)
@@ -309,7 +349,7 @@ class FlatlandSimulator(BaseSimulator):
 
         model_file_name = self._tmp_model_path + "/" + tmp_model_file_name
 
-        with open(model_file_name, 'w') as fd:
+        with open(model_file_name, "w") as fd:
             yaml.dump(model, fd)
 
         return model_file_name
@@ -322,7 +362,9 @@ class FlatlandSimulator(BaseSimulator):
 
         for plugin in plugins:
             if FlatlandSimulator.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"]):
-                prop_names = FlatlandSimulator.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"])
+                prop_names = FlatlandSimulator.PLUGIN_PROPS_TO_EXTEND.get(
+                    plugin["type"]
+                )
 
                 for name in prop_names:
                     plugin[name] = os.path.join(namespace, plugin[name])
@@ -334,8 +376,9 @@ class FlatlandSimulator(BaseSimulator):
             return yaml.safe_load(file)
 
     @staticmethod
-    def create_obs_name(number):
-        return "obs_" + str(number)
+    def create_obs_name(number: int, dynamic: bool = False):
+        prefix = "dynamic_" if dynamic else "static_"
+        return f"{prefix}obs_{number}"
 
     @staticmethod
     def check_yaml_path(path):
@@ -356,7 +399,7 @@ class FlatlandSimulator(BaseSimulator):
         msg.yaml_file = os.path.join(
             rospkg.RosPack().get_path("arena-simulation-setup"),
             "dynamic_obstacles",
-            "person_two_legged.model.yaml"
+            "person_two_legged.model.yaml",
         )
         msg.number_of_peds = 1
         msg.vmax = 0.3

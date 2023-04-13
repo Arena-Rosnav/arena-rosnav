@@ -30,7 +30,7 @@ class BaseSimulator:
     def spawn_random_dynamic_obstacle(self, **args):
         """
         Spawn a single random dynamic obstacle.
-        
+
         Args:
             position: [int, int, int] denoting the x, y and angle.
             min_radius: minimal radius of the obstacle
@@ -43,7 +43,7 @@ class BaseSimulator:
     def spawn_random_static_obstacles(self, **args):
         """
         Spawn a single random static obstacle.
-        
+
         Args:
             position: [int, int, int] denoting the x, y and angle.
             min_radius: minimal radius of the obstacle
@@ -53,32 +53,30 @@ class BaseSimulator:
 
     def publish_goal(self, goal):
         """
-        Publishes the goal. 
+        Publishes the goal.
         """
         raise NotImplementedError()
 
     def move_robot(self, pos, name=None):
         """
-        Move the robot to the given position. 
+        Move the robot to the given position.
         """
         raise NotImplementedError()
 
     def spawn_robot(self, complexity=1):
         """
         Spawn a robot in the simulator.
-        A position is not specified because the robot is moved at the 
+        A position is not specified because the robot is moved at the
         desired position anyway.
         """
         raise NotImplementedError()
 
     def spawn_pedsim_agents(self, agents):
-        """
-        
-        """
+        """ """
         raise NotImplementedError()
 
     def reset_pedsim_agents(self):
         raise NotImplementedError()
 
-    def spawn_obstacle(self, position, yaml_path=""):
+    def spawn_obstacle(self, position, yaml_path="", *args, **kwargs):
         raise NotImplementedError()

@@ -40,7 +40,9 @@ def get_predefined_task(
 
     simulator.map_manager = map_manager
 
-    obstacle_manager = ObstacleManager(namespace, map_manager, simulator)
+    obstacle_manager = ObstacleManager(
+        namespace, map_manager, simulator, rospy.get_param("/reset_remove_all", True)
+    )
     robot_managers = create_robot_managers(namespace, map_manager, simulator)
 
     # For every robot
