@@ -32,20 +32,25 @@ class ObstacleManager:
             static_obstacles=Constants.ObstacleManager.STATIC_OBSTACLES,
             forbidden_zones=[]
         ):
+        if forbidden_zones is None:
+            forbidden_zones = []
+
         self.simulator.remove_all_obstacles()
+
+        obstacles = []
 
         for _ in range(dynamic_obstacles):
             position = self.map_manager.get_random_pos_on_map(
-                safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS, 
-                forbidden_zones=forbidden_zones
+                safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
+                forbidden_zones=forbidden_zones,
             )
+            obstacles.append(self.simulator.create_dynamic_obstacle(position=position))
 
-            self.simulator.spawn_random_dynamic_obstacle(position=position)
-        
         for _ in range(static_obstacles):
             position = self.map_manager.get_random_pos_on_map(
-                safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS, 
-                forbidden_zones=forbidden_zones
+                safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
+                forbidden_zones=forbidden_zones,
             )
+            obstacles.append(self.simulator.create_static_obstacle(position=position))
 
-            self.simulator.spawn_random_static_obstacle(position=position)
+        self.simulator.spawn_obstacles(obstacles)
