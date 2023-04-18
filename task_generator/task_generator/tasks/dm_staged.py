@@ -43,9 +43,7 @@ class DynamicMapStagedRandomTask(DynamicMapRandomTask):
         self._debug_mode = rospy.get_param("debug_mode", False)
 
         self._check_start_stage(start_stage)
-
         rospy.set_param("/curr_stage", self._curr_stage)
-
         self._init_debug_mode(paths)
 
         self._sub_next = rospy.Subscriber(
@@ -183,5 +181,9 @@ class DynamicMapStagedRandomTask(DynamicMapRandomTask):
         stage_cfg = self._stages[stage]
         generator = rospy.get_param("generator")
 
+        log = f"({self.namespace}) Stage {self._curr_stage}: Setting [Map Generator: {generator}] parameters to... "
         for key, value in stage_cfg["map_generator"][generator].items():
+            log += f"\t{key}={value}, "
             rospy.set_param(f"/generator_configs/{generator}/{key}", value)
+
+        rospy.loginfo(log)

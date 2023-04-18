@@ -44,6 +44,6 @@ Class | on topic | Class
 
 ## NEW TASK MODES
 
-### DM_RANDOM
+### DYNAMIC MAP RANDOM MODE - "dm_random"
 
-### DM_STAGED
+### DYNAMIC MAP STAGED MODE - "dm_staged"
