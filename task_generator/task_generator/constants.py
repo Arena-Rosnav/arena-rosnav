@@ -5,8 +5,8 @@ class Constants:
     MAX_RESET_FAIL_TIMES = 3
 
     class ObstacleManager:
-        DYNAMIC_OBSTACLES = 0
-        STATIC_OBSTACLES = 0
+        DYNAMIC_OBSTACLES = 15
+        STATIC_OBSTACLES = 15
 
         OBSTACLE_MAX_RADIUS = 0.6
 
@@ -30,10 +30,10 @@ class TaskMode:
     SCENARIO = "scenario"
 
     class Random:
-        MIN_DYNAMIC_OBS = 0
-        MAX_DYNAMIC_OBS = 0
-        MIN_STATIC_OBS = 0
-        MAX_STATIC_OBS = 0
+        MIN_DYNAMIC_OBS = 15
+        MAX_DYNAMIC_OBS = 15
+        MIN_STATIC_OBS = 15
+        MAX_STATIC_OBS = 15
 
     class Scenario:
         RESETS_DEFAULT = 5

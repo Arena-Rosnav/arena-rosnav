@@ -24,7 +24,7 @@
   <node name="task_progress_publisher" type="task_progress_publisher.py" pkg="task_progress_publisher" if="$(eval arg('is_webapp_docker') == true)" />
   <!-- -->
 
-  <arg name="desired_resets" default="2" />
+  <arg name="desired_resets" default="10" />
   <param name="desired_resets" value="$(arg desired_resets)" />
 
 
