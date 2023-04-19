@@ -16,25 +16,28 @@ from flatland_msgs.srv import (
     SpawnModelRequest
 )
 from flatland_msgs.msg import MoveModelMsg
-from pedsim_srvs.srv import SpawnPeds
+from pedsim_srvs.srv import SpawnPeds, SpawnPed
+from pedsim_msgs.msg import Ped
 from task_generator.manager.pedsim_manager import PedsimManager
 from task_generator.utils import Utils
+from geometry_msgs.msg import Point
+from std_srvs.srv import Trigger
 
 from ..constants import Constants, FlatlandRandomModel
-from .base_environment import BaseEnvironment
-from .environment_factory import EnvironmentFactory
+from .base_simulator import BaseSimulator
+from .simulator_factory import SimulatorFactory
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
 
-@EnvironmentFactory.register("flatland")
-class FlatlandEnvironment(BaseEnvironment):
+@SimulatorFactory.register("flatland")
+class FlatlandSimulator(BaseSimulator):
     """
         This is the flatland encoder for connecting
         flatland with the arena-benchmark task
         generator. The class implements all methods
-        defined in `BaseEnvironment`.
+        defined in `BaseSimulator`.
 
         For flatland to work properly, a dedicated .yaml
         file has to be created for each used model. This
@@ -84,12 +87,12 @@ class FlatlandEnvironment(BaseEnvironment):
             f"{self._ns_prefix}delete_model", DeleteModel
         )
 
-        # self._spawn_peds_srv = rospy.ServiceProxy(
-        #     f"{self._ns_prefix}pedsim_simulator/spawn_peds", SpawnPeds
-        # )
-        # self._reset_peds_srv = rospy.ServiceProxy(
-        #     f"{self._ns_prefix}pedsim_simulator/reset_all_peds", Trigger
-        # )
+        self._spawn_peds_srv = rospy.ServiceProxy(
+            f"{self._ns_prefix}pedsim_simulator/spawn_peds", SpawnPeds
+        )
+        self._reset_peds_srv = rospy.ServiceProxy(
+            f"{self._ns_prefix}pedsim_simulator/reset_all_peds", Trigger
+        )
 
         self._obstacles_amount = 0
 
@@ -101,7 +104,7 @@ class FlatlandEnvironment(BaseEnvironment):
 
     def remove_all_obstacles(self):
         for obs in range(self._obstacles_amount):
-            obs_name = FlatlandEnvironment.create_obs_name(obs)
+            obs_name = FlatlandSimulator.create_obs_name(obs)
 
             self._delete_model(obs_name)
 
@@ -114,23 +117,22 @@ class FlatlandEnvironment(BaseEnvironment):
         self._delete_model_srv(delete_model_request)
 
     def spawn_pedsim_agents(self, dynamic_obstacles):
-        # if len(dynamic_obstacles) <= 0:
-        #     return
+        if len(dynamic_obstacles) <= 0:
+            return
+        
+        peds = [FlatlandSimulator.create_ped_msg(p, i) for i, p in enumerate(dynamic_obstacles)]
 
-        # peds = [
-        #     PedsimManager.create_pedsim_msg(agent) 
-        #     for agent in dynamic_obstacles
-        # ]
+        spawn_ped_msg = SpawnPeds()
 
-        # self._spawn_peds_srv(peds)
-        pass
+        spawn_ped_msg.peds = peds
+
+        self._spawn_peds_srv(peds)
 
     def reset_pedsim_agents(self):
-        # self._reset_peds_srv()
-        pass
+        self._reset_peds_srv()
 
     def spawn_obstacle(self, position, yaml_path=""):
-        name = FlatlandEnvironment.create_obs_name(self._obstacles_amount)
+        name = FlatlandSimulator.create_obs_name(self._obstacles_amount)
 
         self._spawn_model(yaml_path, name, self._namespace, position)
 
@@ -147,7 +149,7 @@ class FlatlandEnvironment(BaseEnvironment):
         ):
         model = self._generate_random_obstacle(is_dynamic=is_dynamic, **args)
 
-        obstacle_name = FlatlandEnvironment.create_obs_name(
+        obstacle_name = FlatlandSimulator.create_obs_name(
             self._obstacles_amount
         )
 
@@ -181,7 +183,7 @@ class FlatlandEnvironment(BaseEnvironment):
         self._spawn_model(
             yaml.dump(file_content), 
             name, 
-            os.path.join(self._namespace, namespace_appendix), 
+            os.path.join(self._namespace, namespace_appendix) if len(namespace_appendix) > 0 else self._namespace, 
             [0, 0, 0],
             srv=self._spawn_model_from_string_srv
         )
@@ -319,8 +321,8 @@ class FlatlandEnvironment(BaseEnvironment):
         plugins = file_content["plugins"]
 
         for plugin in plugins:
-            if FlatlandEnvironment.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"]):
-                prop_names = FlatlandEnvironment.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"])
+            if FlatlandSimulator.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"]):
+                prop_names = FlatlandSimulator.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"])
 
                 for name in prop_names:
                     plugin[name] = os.path.join(namespace, plugin[name])
@@ -338,3 +340,61 @@ class FlatlandEnvironment(BaseEnvironment):
     @staticmethod
     def check_yaml_path(path):
         return os.path.isfile(path)
+
+    @staticmethod
+    def create_ped_msg(ped, id):
+        msg = Ped()
+
+        msg.id = id
+
+        pos = Point()
+        pos.x = ped["waypoints"][0][0]
+        pos.y = ped["waypoints"][0][1]
+        msg.pos = pos
+
+        msg.type = "adult"
+        msg.yaml_file = os.path.join(
+            rospkg.RosPack().get_path("arena-simulation-setup"),
+            "dynamic_obstacles",
+            "person_two_legged.model.yaml"
+        )
+        msg.number_of_peds = 1
+        msg.vmax = 0.3
+        msg.start_up_mode = "default"
+        msg.wait_time = 0.0
+        msg.trigger_zone_radius = 0.0
+        msg.chatting_probability = 0.00
+        msg.tell_story_probability = 0
+        msg.group_talking_probability = 0.00
+        msg.talking_and_walking_probability = 0.00
+        msg.requesting_service_probability = 0.00
+        msg.requesting_guide_probability = 0.00
+        msg.requesting_follower_probability = 0.00
+        msg.max_talking_distance = 5
+        msg.max_servicing_radius = 5
+        msg.talking_base_time = 10
+        msg.tell_story_base_time = 0
+        msg.group_talking_base_time = 10
+        msg.talking_and_walking_base_time = 6
+        msg.receiving_service_base_time = 20
+        msg.requesting_service_base_time = 30
+        msg.force_factor_desired = 1
+        msg.force_factor_obstacle = 1
+        msg.force_factor_social = 5
+        msg.force_factor_robot = 1
+
+        waypoints = []
+
+        for w in ped["waypoints"]:
+            new_waypoint = Point()
+
+            new_waypoint.x = w[0]
+            new_waypoint.y = w[1]
+
+            waypoints.append(new_waypoint)
+
+        msg.waypoints = waypoints
+
+        msg.waypoint_mode = 0
+
+        return msg

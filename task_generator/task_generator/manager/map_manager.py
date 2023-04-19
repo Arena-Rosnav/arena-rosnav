@@ -22,7 +22,7 @@ class MapManager:
         )
         self.origin = map.info.origin.position
 
-    def get_random_pos_on_map(self, safe_dist, forbidden_zones=None):
+    def get_random_pos_on_map(self, safe_dist, forbidden_zones=[]):
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both

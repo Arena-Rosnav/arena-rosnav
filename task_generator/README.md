@@ -39,10 +39,10 @@ robot are defined.
 The scenario declaration file can be created with [arena-tools](https://github.com/Arena-Rosnav/arena-tools) and has to follow
 the specified file schema.
 
-## Environment Factory
+## Simulator Factory
 
-To be able to use the task generator module in all our environments without changes, a unified interface between environment and task generator is needed. The interface contains a lot of functions to spawn, publish or move robots or obstacles, and a lot more.
+To be able to use the task generator module in all our Simulators without changes, a unified interface between Simulator and task generator is needed. The interface contains a lot of functions to spawn, publish or move robots or obstacles, and a lot more.
 
-At the moment we provide environment interfaces for **Flatland** and **Gazebo**. In order to add a new environment, in which the task generator should be used, a new environment interface has to be created in `/taks_generator/environments/` and has to be registrated in the environment factory.
+At the moment we provide simulator interfaces for **Flatland** and **Gazebo**. In order to add a new simulator, in which the task generator should be used, a new simulator interface has to be created in `/taks_generator/simulators/` and has to be registrated in the simulator factory.
 
-Your newly created environment interface should derive the **BaseEnvironment** located [here](TODO) and implement all functions. A detailed description of the functions is contained in the **BaseEnvironment** itself.
+Your newly created simulator interface should derive the **BaseSimulator** located [here](TODO) and implement all functions. A detailed description of the functions is contained in the **BaseSimulator** itself.

@@ -69,6 +69,9 @@ COPY . /root/src/arena-rosnav
 RUN echo -e "source /opt/ros/noetic/setup.sh" >> /root/.bashrc
 RUN echo -e "source /root/devel/setup.sh" >> /root/.bashrc
 
+RUN pip install scipy PyQt5 empy defusedxml 
+RUN pip install wandb
+
 WORKDIR /root/src/arena-rosnav
 RUN rosws update
 
@@ -77,4 +80,7 @@ RUN source /root/.bashrc \
     && source /opt/ros/noetic/setup.sh \
     && catkin_make
 
-# roslaunch arena_bringup start_arena.launch visualization:=none >> output.txt
+WORKDIR /root/src/utils/stable-baselines3
+RUN pip install -e .
+
+WORKDIR /root/

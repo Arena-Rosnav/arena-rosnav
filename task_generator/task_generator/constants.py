@@ -1,7 +1,7 @@
 class Constants:
     GOAL_REACHED_TOLERANCE = 1.0
     TIMEOUT = 3.0 * 60 ## 3 min
-    WAIT_FOR_SERVICE_TIMEOUT = 5 # 5 secs
+    WAIT_FOR_SERVICE_TIMEOUT = 60 # 5 secs
     MAX_RESET_FAIL_TIMES = 3
 
     class ObstacleManager:
@@ -15,7 +15,7 @@ class Constants:
     class RobotManager:
         SPAWN_ROBOT_SAFE_DIST = 0.4
 
-    class Environment:
+    class Simulator:
         FLATLAND = "flatland"
         GAZEBO = "gazebo"
 
@@ -30,10 +30,10 @@ class TaskMode:
     SCENARIO = "scenario"
 
     class Random:
-        MIN_DYNAMIC_OBS = 10
-        MAX_DYNAMIC_OBS = 15
-        MIN_STATIC_OBS = 10
-        MAX_STATIC_OBS = 20
+        MIN_DYNAMIC_OBS = 0
+        MAX_DYNAMIC_OBS = 0
+        MIN_STATIC_OBS = 0
+        MAX_STATIC_OBS = 0
 
     class Scenario:
         RESETS_DEFAULT = 5
@@ -63,6 +63,7 @@ class FlatlandRandomModel:
     ANGLUAR_VEL_MAX = 0.2
 
 class Pedsim:
+    VMAX = 0.3
     START_UP_MODE = "default"
     WAIT_TIME = 0.0
     TRIGGER_ZONE_RADIUS = 0.0

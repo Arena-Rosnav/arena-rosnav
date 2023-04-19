@@ -38,7 +38,7 @@
 
     <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster" args="0 0 0 0 0 0 1 map $(arg namespace)/odom" />
 
-    <group if="$(eval env('ENVIRONMENT') == 'gazebo')">
+    <group if="$(eval env('SIMULATOR') == 'gazebo')">
         <include file="$(find arena-simulation-setup)/robot/$(arg model)/launch/control.launch">
             <arg name="robot_namespace" value="$(arg namespace)" />
         </include>

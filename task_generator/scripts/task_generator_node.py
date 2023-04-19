@@ -1,21 +1,16 @@
 #! /usr/bin/env python3
 
-import math
 import rospy
-import time
-from nav_msgs.msg import Odometry
-from std_msgs.msg import Int16, Bool
+from std_msgs.msg import Int16, Empty as EmptyMsg
 from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
-from geometry_msgs.msg import PoseStamped
-
 
 from task_generator.utils import Utils
 from task_generator.constants import Constants, TaskMode
 
 from task_generator.tasks.utils import get_predefined_task
-from task_generator.environments.environment_factory import EnvironmentFactory
-from task_generator.environments.gazebo_environment import GazeboEnvironment
-from task_generator.environments.flatland_environment import FlatlandRandomModel
+from task_generator.simulators.simulator_factory import SimulatorFactory
+from task_generator.simulators.gazebo_simulator import GazeboSimulator
+from task_generator.simulators.flatland_simulator import FlatlandRandomModel
 
 
 class TaskGenerator:
@@ -31,13 +26,13 @@ class TaskGenerator:
 
         ## Publishers
         self.pub_scenario_reset = rospy.Publisher("scenario_reset", Int16, queue_size=1)
-        self.pub_scenario_finished = rospy.Publisher('scenario_finished', Bool, queue_size=10)
+        self.pub_scenario_finished = rospy.Publisher('scenario_finished', EmptyMsg, queue_size=10)
         
         ## Services
         rospy.Service("reset_task", Empty, self.reset_task_srv_callback)
 
         ## Vars
-        self.env_wrapper = EnvironmentFactory.instantiate(Utils.get_environment())("")
+        self.env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())("")
 
         rospy.loginfo(f"Launching task mode: {self.task_mode}")
 
@@ -56,6 +51,7 @@ class TaskGenerator:
         rospy.sleep(2)
 
         try:
+            rospy.set_param("task_generator_setup_finished", True)
             self.srv_setup_finished = rospy.ServiceProxy("task_generator_setup_finished", Empty)
             self.srv_setup_finished(EmptyRequest())
         except:
@@ -106,11 +102,12 @@ class TaskGenerator:
 
         rospy.loginfo("Shutting down. All tasks completed")
 
-        # Send this message 10 times to make sure it is received
-        for _ in range(10):
-            self.pub_scenario_finished.publish(Bool(True))
+        # Send Task finished to Backend
+        if rospy.get_param("/is_webapp_docker", False):
+            while self.pub_scenario_finished.get_num_connections() <= 0:
+                pass
 
-            rospy.sleep(0.1)
+            self.pub_scenario_finished.publish(EmptyMsg())
 
         rospy.signal_shutdown("Finished all episodes of the current scenario")
 
