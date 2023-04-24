@@ -181,9 +181,9 @@ class DynamicMapStagedRandomTask(DynamicMapRandomTask):
         stage_cfg = self._stages[stage]
         generator = rospy.get_param("generator")
 
-        log = f"({self.namespace}) Stage {self._curr_stage}: Setting [Map Generator: {generator}] parameters to... "
+        log = f"({self.namespace}) Stage {self._curr_stage}: Setting [Map Generator: {generator}] parameters"
         for key, value in stage_cfg["map_generator"][generator].items():
-            log += f"\t{key}={value}, "
+            log += f"\t{key}={value}"
             rospy.set_param(f"/generator_configs/{generator}/{key}", value)
 
         rospy.loginfo(log)

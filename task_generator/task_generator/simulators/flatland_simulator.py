@@ -125,26 +125,30 @@ class FlatlandSimulator(BaseSimulator):
 
     def remove_all_obstacles(self):
         for obs_name in self.dynamic_obs_names:
-            try:
-                self._delete_model(obs_name)
-            except rospy.ServiceException as e:
-                rospy.INFO(e)
-            else:
-                self.dynamic_obs_names.remove(obs_name)
+            self.try_delete_model(obs_name, True)
 
         for obs_name in self.static_obs_names:
-            try:
-                self._delete_model(obs_name)
-            except rospy.ServiceException as e:
-                rospy.INFO(e)
-            else:
-                self.static_obs_names.remove(obs_name)
+            self.try_delete_model(obs_name, False)
 
-    def _delete_model(self, name: str):
+    def try_delete_model(self, model_name: str, is_dynamic: bool, tries: int = 3):
+        if tries <= 0:
+            return
+
+        success = self._delete_model(model_name)
+        if not success:
+            self.try_delete_model(model_name, is_dynamic, tries - 1)
+
+        if is_dynamic:
+            self.dynamic_obs_names.remove(model_name)
+        else:
+            self.static_obs_names.remove(model_name)
+
+    def _delete_model(self, name: str) -> bool:
         delete_model_request = DeleteModelRequest()
         delete_model_request.name = name
 
-        self._delete_model_srv(delete_model_request)
+        resp = self._delete_model_srv(delete_model_request)
+        return resp.success
 
     def spawn_pedsim_agents(self, dynamic_obstacles: List):
         if len(dynamic_obstacles) <= 0:
@@ -168,7 +172,7 @@ class FlatlandSimulator(BaseSimulator):
         self, is_dynamic: bool, position: Tuple[int, int, int], yaml_path=""
     ):
         obs_count = self.dynamic_obs_amount if is_dynamic else self.static_obs_amount
-        name = FlatlandSimulator.create_obs_name(obs_count, is_dynamic)
+        name = self.create_obs_name(obs_count, is_dynamic)
 
         try:
             self._spawn_model(yaml_path, name, self._namespace, position)
@@ -189,7 +193,7 @@ class FlatlandSimulator(BaseSimulator):
 
         model = self._generate_random_obstacle(is_dynamic=is_dynamic, **args)
         obs_count = self.dynamic_obs_amount if is_dynamic else self.static_obs_amount
-        name = FlatlandSimulator.create_obs_name(obs_count, is_dynamic)
+        name = self.create_obs_name(obs_count, is_dynamic)
 
         try:
             self._spawn_model(
@@ -375,10 +379,16 @@ class FlatlandSimulator(BaseSimulator):
         with open(yaml_path, "r") as file:
             return yaml.safe_load(file)
 
-    @staticmethod
-    def create_obs_name(number: int, dynamic: bool = False):
+    def create_obs_name(self, number: int, dynamic: bool = False):
         prefix = "dynamic_" if dynamic else "static_"
-        return f"{prefix}obs_{number}"
+        name = f"{prefix}obs_{number}"
+
+        if name in self.dynamic_obs_names:
+            return self.create_obs_name(number + 1, dynamic)
+        if name in self.static_obs_names:
+            return self.create_obs_name(number + 1, dynamic)
+
+        return name
 
     @staticmethod
     def check_yaml_path(path):
