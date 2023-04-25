@@ -24,7 +24,7 @@
   <node name="task_progress_publisher" type="task_progress_publisher.py" pkg="task_progress_publisher" if="$(eval arg('is_webapp_docker') == true)" />
   <!-- -->
 
-  <arg name="desired_resets" default="2" />
+  <arg name="desired_resets" default="10" />
   <param name="desired_resets" value="$(arg desired_resets)" />
 
 
@@ -60,6 +60,9 @@
   <arg name="rviz_file" default="nav"/>
   
   <arg name="auto_reset" default="true"/>
+
+  <arg name="reset_remove_all" default="true" />
+  <param name="reset_remove_all" value="$(arg reset_remove_all)" />
 
   <arg name="scenario_file" default="test_scenario.json" />
   <arg name="map_file" default="map_empty" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]" />

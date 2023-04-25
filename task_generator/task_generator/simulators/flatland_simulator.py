@@ -9,16 +9,19 @@ import math
 import rospkg
 import random
 from flatland_msgs.srv import (
-    DeleteModelRequest,
     MoveModelRequest,
     MoveModel,
     SpawnModel,
+    SpawnModels,
     DeleteModel,
+    DeleteModels,
+    DeleteModelsRequest,
     SpawnModelRequest,
+    SpawnModelsRequest,
 )
-from geometry_msgs.msg import PoseStamped, Pose2D
-from flatland_msgs.msg import MoveModelMsg
-from pedsim_srvs.srv import SpawnPeds, SpawnPed
+from geometry_msgs.msg import Pose2D
+from flatland_msgs.msg import MoveModelMsg, Model
+from pedsim_srvs.srv import SpawnPeds
 from pedsim_msgs.msg import Ped
 from task_generator.manager.pedsim_manager import PedsimManager
 from task_generator.utils import Utils
@@ -85,8 +88,14 @@ class FlatlandSimulator(BaseSimulator):
         self._spawn_model_from_string_srv = rospy.ServiceProxy(
             f"{self._ns_prefix}spawn_model_from_string", SpawnModel
         )
+        self._spawn_models_from_string_srv = rospy.ServiceProxy(
+            f"{self._ns_prefix}spawn_models_from_string", SpawnModels
+        )
         self._delete_model_srv = rospy.ServiceProxy(
             f"{self._ns_prefix}delete_model", DeleteModel
+        )
+        self._delete_models_srv = rospy.ServiceProxy(
+            f"{self._ns_prefix}delete_models", DeleteModels
         )
 
         self._spawn_peds_srv = rospy.ServiceProxy(
@@ -96,26 +105,16 @@ class FlatlandSimulator(BaseSimulator):
             f"{self._ns_prefix}pedsim_simulator/reset_all_peds", Trigger
         )
 
-        self.dynamic_obs_names = []
-        self.static_obs_names = []
+        self.obs_names = []
+        self.dynamic_obs_amount = 0
+        self.static_obs_amount = 0
 
     @property
     def obstacles_amount(self):
-        return self.dynamic_obs_amount + self.static_obs_names
+        return len(self.obs_names)
 
-    @property
-    def dynamic_obs_amount(self):
-        return len(self.dynamic_obs_names)
-
-    @property
-    def static_obs_amount(self):
-        return len(self.static_obs_names)
-
-    def add_obs_to_list(self, obs_name: str, is_dynamic: bool):
-        if is_dynamic:
-            self.dynamic_obs_names.append(obs_name)
-        else:
-            self.static_obs_names.append(obs_name)
+    def add_obs_to_list(self, obs_name: str):
+        self.obs_names.append(obs_name)
 
     def before_reset_task(self):
         pass
@@ -123,32 +122,16 @@ class FlatlandSimulator(BaseSimulator):
     def after_reset_task(self):
         pass
 
+    # PEDSIM
+
     def remove_all_obstacles(self):
-        for obs_name in self.dynamic_obs_names:
-            self.try_delete_model(obs_name, True)
+        self.static_obs_amount, self.dynamic_obs_amount = 0, 0
+        request = DeleteModelsRequest()
+        request.name = self.obs_names
 
-        for obs_name in self.static_obs_names:
-            self.try_delete_model(obs_name, False)
+        self._delete_models_srv(request)
 
-    def try_delete_model(self, model_name: str, is_dynamic: bool, tries: int = 3):
-        if tries <= 0:
-            return
-
-        success = self._delete_model(model_name)
-        if not success:
-            self.try_delete_model(model_name, is_dynamic, tries - 1)
-
-        if is_dynamic:
-            self.dynamic_obs_names.remove(model_name)
-        else:
-            self.static_obs_names.remove(model_name)
-
-    def _delete_model(self, name: str) -> bool:
-        delete_model_request = DeleteModelRequest()
-        delete_model_request.name = name
-
-        resp = self._delete_model_srv(delete_model_request)
-        return resp.success
+        self.obs_names = []
 
     def spawn_pedsim_agents(self, dynamic_obstacles: List):
         if len(dynamic_obstacles) <= 0:
@@ -168,45 +151,60 @@ class FlatlandSimulator(BaseSimulator):
     def reset_pedsim_agents(self):
         self._reset_peds_srv()
 
-    def spawn_obstacle(
-        self, is_dynamic: bool, position: Tuple[int, int, int], yaml_path=""
-    ):
-        obs_count = self.dynamic_obs_amount if is_dynamic else self.static_obs_amount
-        name = self.create_obs_name(obs_count, is_dynamic)
+    # CREATE OBSTACLES
+
+    def create_dynamic_obstacle(self, **args):
+        self.dynamic_obs_amount += 1
+        return self._create_obstacle(**args, is_dynamic=True)
+
+    def create_static_obstacle(self, **args):
+        self.static_obs_amount += 1
+        return self._create_obstacle(**args, is_dynamic=False)
+
+    def _create_obstacle(self, is_dynamic=False, position=None, **args):
+        if position is None:
+            position = [0, 0, 0]
+
+        model = self._generate_random_obstacle(is_dynamic=is_dynamic, **args)
+        name = FlatlandSimulator.create_obs_name(self.obstacles_amount)
+
+        self.add_obs_to_list(name)
+
+        return yaml.dump(model), name, position
+
+    # SPAWN OBSTACLES
+
+    def spawn_obstacle(self, position: Tuple[int, int, int], yaml_path=""):
+        name = FlatlandSimulator.create_obs_name(self.obstacles_amount)
 
         try:
             self._spawn_model(yaml_path, name, self._namespace, position)
         except rospy.ServiceException as e:
             rospy.logerr(f"Failed to spawn model {name} with exception: {e}")
-        else:
-            self.add_obs_to_list(name, is_dynamic)
 
-    def spawn_random_dynamic_obstacle(self, **args):
-        self._spawn_random_obstacle(**args, is_dynamic=True)
+        self.add_obs_to_list(name)
 
-    def spawn_random_static_obstacle(self, **args):
-        self._spawn_random_obstacle(**args, is_dynamic=False)
+    def spawn_obstacles(self, obstacles):
+        request = SpawnModelsRequest()
 
-    def _spawn_random_obstacle(self, is_dynamic=False, position=None, **args):
-        if position is None:
-            position = [0, 0, 0]
+        models = []
 
-        model = self._generate_random_obstacle(is_dynamic=is_dynamic, **args)
-        obs_count = self.dynamic_obs_amount if is_dynamic else self.static_obs_amount
-        name = self.create_obs_name(obs_count, is_dynamic)
+        for obstacle in obstacles:
+            m = Model()
+            m.yaml_path = obstacle[0]
+            m.name = obstacle[1]
+            m.ns = self._namespace
+            m.pose.x = obstacle[2][0]
+            m.pose.y = obstacle[2][1]
+            m.pose.theta = obstacle[2][2]
 
-        try:
-            self._spawn_model(
-                yaml.dump(model),
-                name,
-                self._namespace,
-                position,
-                srv=self._spawn_model_from_string_srv,
-            )
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Failed to spawn model {name} with exception: {e}")
-        else:
-            self.add_obs_to_list(name, is_dynamic)
+            models.append(m)
+
+        request.models = models
+
+        self._spawn_models_from_string_srv(request)
+
+    # ROBOT
 
     def spawn_robot(self, name, robot_name, namespace_appendix=None, complexity=1):
         base_model_path = os.path.join(
@@ -230,6 +228,20 @@ class FlatlandSimulator(BaseSimulator):
             srv=self._spawn_model_from_string_srv,
         )
 
+    def move_robot(self, pos, name=None):
+        pose = Pose2D()
+        pose.x = pos[0]
+        pose.y = pos[1]
+        pose.theta = pos[2]
+
+        move_model_request = MoveModelRequest()
+        move_model_request.name = name or self._robot_name
+        move_model_request.pose = pose
+
+        self._move_model_srv(move_model_request)
+
+    # UTILS
+
     def _spawn_model(
         self,
         yaml_path: str,
@@ -251,19 +263,6 @@ class FlatlandSimulator(BaseSimulator):
 
         srv(request)
 
-    def move_robot(self, pos, name=None):
-        pose = Pose2D()
-        pose.x = pos[0]
-        pose.y = pos[1]
-        pose.theta = pos[2]
-
-        move_model_request = MoveModelRequest()
-        move_model_request.name = name or self._robot_name
-        move_model_request.pose = pose
-
-        self._move_model_srv(move_model_request)
-
-    ## HELPER FUNCTIONS TO CREATE MODEL.YAML
     def _generate_random_obstacle(
         self,
         is_dynamic=False,
@@ -379,16 +378,9 @@ class FlatlandSimulator(BaseSimulator):
         with open(yaml_path, "r") as file:
             return yaml.safe_load(file)
 
-    def create_obs_name(self, number: int, dynamic: bool = False):
-        prefix = "dynamic_" if dynamic else "static_"
-        name = f"{prefix}obs_{number}"
-
-        if name in self.dynamic_obs_names:
-            return self.create_obs_name(number + 1, dynamic)
-        if name in self.static_obs_names:
-            return self.create_obs_name(number + 1, dynamic)
-
-        return name
+    @staticmethod
+    def create_obs_name(number: int):
+        return f"obs_{number}"
 
     @staticmethod
     def check_yaml_path(path):
