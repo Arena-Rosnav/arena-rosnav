@@ -1,21 +1,20 @@
 import os
+
 import rospy
 import yaml
 from filelock import FileLock
-
-from nav_msgs.srv import GetMap
-from nav_msgs.msg import OccupancyGrid
 from map_distance_server.srv import GetDistanceMap
-from std_msgs.msg import Bool
-from std_msgs.msg import String
-
+from nav_msgs.msg import OccupancyGrid
+from nav_msgs.srv import GetMap
+from std_msgs.msg import Bool, String
 from task_generator.constants import Constants, TaskMode
 from task_generator.tasks.task_factory import TaskFactory
-from .staged import StagedRandomTask
-from .dm_random import DynamicMapRandomTask
-from ..manager.obstacle_manager import ObstacleManager
+
 from ..manager.map_manager import MapManager
+from ..manager.obstacle_manager import ObstacleManager
 from ..manager.robot_manager import RobotManager
+from .dynamic_map_random import DynamicMapRandomTask
+from .staged import StagedRandomTask
 
 
 @TaskFactory.register(TaskMode.DM_STAGED)

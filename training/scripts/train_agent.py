@@ -1,13 +1,14 @@
 #!/usr/bin/env python
-import sys, rospy, time
+import sys
+import time
 
-from std_msgs.msg import Empty
-
+import rospy
 from rosnav.model.agent_factory import AgentFactory
+from std_msgs.msg import Empty
 from tools.argsparser import parse_training_args
-from tools.general import *
-from tools.model_utils import init_callbacks, get_ppo_instance
 from tools.env_utils import init_envs
+from tools.general import *
+from tools.model_utils import get_ppo_instance, init_callbacks
 
 
 def on_shutdown(model):

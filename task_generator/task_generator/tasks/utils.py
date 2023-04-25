@@ -1,24 +1,24 @@
-import traceback
-import rospy
-import rospkg
-import yaml
 import os
+import traceback
 
+import rospkg
+import rospy
+import yaml
 from map_distance_server.srv import GetDistanceMap
 from task_generator.constants import Constants
-from task_generator.simulators.base_simulator import BaseSimulator
-from task_generator.simulators.simulator_factory import SimulatorFactory
-from task_generator.simulators.gazebo_simulator import GazeboSimulator
-from task_generator.simulators.flatland_simulator import FlatlandRandomModel
 from task_generator.manager.map_manager import MapManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
-from task_generator.tasks.task_factory import TaskFactory
+from task_generator.simulators.base_simulator import BaseSimulator
+from task_generator.simulators.flatland_simulator import FlatlandRandomModel
+from task_generator.simulators.gazebo_simulator import GazeboSimulator
+from task_generator.simulators.simulator_factory import SimulatorFactory
+from task_generator.tasks.dynamic_map_random import DynamicMapRandomTask
+from task_generator.tasks.dynamic_map_staged import DynamicMapStagedRandomTask
 from task_generator.tasks.random import RandomTask
 from task_generator.tasks.scenario import ScenarioTask
 from task_generator.tasks.staged import StagedRandomTask
-from task_generator.tasks.dm_random import DynamicMapRandomTask
-from task_generator.tasks.dm_staged import DynamicMapStagedRandomTask
+from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils import Utils
 
 

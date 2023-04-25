@@ -1,16 +1,16 @@
-import traceback
-import rospy
-import roslaunch
-import rospkg
-import os
-import yaml
-import time
 import math
+import os
+import time
+import traceback
 
-from nav_msgs.msg import Odometry
+import roslaunch
+import rosnode
+import rospkg
+import rospy
+import yaml
 from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Odometry
 from std_srvs.srv import Empty
-
 from task_generator.constants import Constants
 from task_generator.utils import Utils
 
@@ -24,6 +24,10 @@ class RobotManager:
     def __init__(self, namespace, map_manager, simulator, robot_setup):
         self.namespace = namespace
         self.ns_prefix = lambda *topic: os.path.join(self.namespace, *topic)
+
+        self._with_move_base = any(
+            list(map(lambda x: "move_base" in x, rosnode.get_node_names()))
+        )
 
         self.map_manager = map_manager
         self.simulator = simulator
@@ -51,7 +55,7 @@ class RobotManager:
 
         self.move_base_goal_pub = rospy.Publisher(
             self.ns_prefix("move_base_simple", "goal")
-            if "sim" not in self.namespace
+            if self._with_move_base
             else self.ns_prefix("goal"),
             PoseStamped,
             queue_size=10,
@@ -91,6 +95,7 @@ class RobotManager:
         """
         if forbidden_zones is None:
             forbidden_zones = []
+
         self.start_pos, self.goal_pos = self.generate_new_start_and_goal(
             forbidden_zones, start_pos, goal_pos
         )
