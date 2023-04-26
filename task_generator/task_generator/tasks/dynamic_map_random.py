@@ -13,7 +13,7 @@ from ..manager.map_manager import MapManager
 from ..manager.robot_manager import RobotManager
 
 
-@TaskFactory.register(TaskMode.DM_RANDOM)
+@TaskFactory.register(TaskMode.DYNAMIC_MAP_RANDOM)
 class DynamicMapRandomTask(RandomTask):
     """
     The random task spawns static and dynamic

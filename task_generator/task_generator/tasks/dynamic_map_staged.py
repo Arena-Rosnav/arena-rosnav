@@ -17,7 +17,7 @@ from .dynamic_map_random import DynamicMapRandomTask
 from .staged import StagedRandomTask
 
 
-@TaskFactory.register(TaskMode.DM_STAGED)
+@TaskFactory.register(TaskMode.DYNAMIC_MAP_STAGED)
 class DynamicMapStagedRandomTask(DynamicMapRandomTask):
     def __init__(
         self,

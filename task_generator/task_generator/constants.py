@@ -32,8 +32,8 @@ class TaskMode:
     RANDOM = "random"
     STAGED = "staged"
     SCENARIO = "scenario"
-    DM_RANDOM = "dm_random"
-    DM_STAGED = "dm_staged"
+    DYNAMIC_MAP_RANDOM = "dynamic_map_random"
+    DYNAMIC_MAP_STAGED = "dynamic_map_staged"
 
     class Random:
         MIN_DYNAMIC_OBS = 15
