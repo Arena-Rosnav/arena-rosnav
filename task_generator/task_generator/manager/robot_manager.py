@@ -25,10 +25,6 @@ class RobotManager:
         self.namespace = namespace
         self.ns_prefix = lambda *topic: os.path.join(self.namespace, *topic)
 
-        self._with_move_base = any(
-            list(map(lambda x: "move_base" in x, rosnode.get_node_names()))
-        )
-
         self.map_manager = map_manager
         self.simulator = simulator
 
@@ -55,7 +51,7 @@ class RobotManager:
 
         self.move_base_goal_pub = rospy.Publisher(
             self.ns_prefix("move_base_simple", "goal")
-            if self._with_move_base
+            if rospy.get_param("rosnav_move_base", False)
             else self.ns_prefix("goal"),
             PoseStamped,
             queue_size=10,
