@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import rospkg
+
 MAP_FOLDER_NAME = "dynamic_map"
 EMPTY_MAP_YAML = {
     "image": "map.png",
@@ -18,9 +20,5 @@ DYNAMIC_MAP_YAML = {
     "occupied_thresh": 0.65,
     "free_thresh": 0.196,
 }
-ROSNAV_MAP_FOLDER = (
-    Path(f"{__file__}").parent.parent.parent.parent.parent
-    / "utils"
-    / "arena-simulation-setup"
-    / "maps"
-)
+
+ROSNAV_MAP_FOLDER = Path(rospkg.RosPack().get_path("arena-simulation-setup")) / "maps"
