@@ -6,7 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
-  map_generator
+  map_distance_server
 )
 
 catkin_python_setup()
