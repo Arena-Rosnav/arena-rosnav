@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-import rospy
-import rospkg
 import os
-from PIL import Image
-from nav_msgs.msg import OccupancyGrid
-from nav_msgs.srv import GetMap
-from map_distance_server.srv import GetDistanceMap, GetDistanceMapResponse
-from std_msgs.msg import String
+from pathlib import Path
 
 import numpy as np
+import rospkg
+import rospy
+from map_distance_server.srv import GetDistanceMap, GetDistanceMapResponse
+from nav_msgs.msg import OccupancyGrid
+from nav_msgs.srv import GetMap
+from PIL import Image
+from std_msgs.msg import String
 
 
 def print_map(map):
@@ -18,11 +19,10 @@ def print_map(map):
 
 class MapDistanceServer:
     def __init__(self):
-        map_file = rospy.get_param("map_file")
         self._distance_map_path = os.path.join(
-            "/home/tuananhroman/catkin_arena/src/utils/arena-simulation-setup",
+            Path(rospkg.RosPack().get_path("arena-simulation-setup")),
             "maps",
-            map_file,
+            rospy.get_param("map_file"),
             "distance_map.png",
         )
 
