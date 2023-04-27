@@ -66,8 +66,8 @@ def create_yaml_files(map_name: str, dir_path: str):
 
     with open(f"{dir_path}/{map_name}/map.yaml", "w") as outfile:
         yaml.dump(map_yaml, outfile, sort_keys=False, default_flow_style=None)
-    with open(f"{dir_path}/{map_name}/empty.yaml", "w") as outfile:
-        yaml.dump(empty_yaml, outfile, sort_keys=False, default_flow_style=None)
+    # with open(f"{dir_path}/{map_name}/empty.yaml", "w") as outfile:
+    #     yaml.dump(empty_yaml, outfile, sort_keys=False, default_flow_style=None)
 
     world_yaml_properties = {
         "properties": {"velocity_iterations": 10, "position_iterations": 10}
