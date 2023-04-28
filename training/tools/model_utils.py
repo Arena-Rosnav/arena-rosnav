@@ -123,7 +123,7 @@ def get_ppo_instance(
     )
 
     wandb_logging: bool = not config["debug_mode"] and config["monitoring"]["use_wandb"]
-    if wandb_logging and not new_model:
+    if wandb_logging:
         setup_wandb(config, model)
     return model
 
