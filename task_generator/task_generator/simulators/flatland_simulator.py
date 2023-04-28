@@ -208,13 +208,13 @@ class FlatlandSimulator(BaseSimulator):
 
     def spawn_robot(self, name, robot_name, namespace_appendix=None, complexity=1):
         base_model_path = os.path.join(
-            "/home/tuananhroman/catkin_arena/src/utils/arena-simulation-setup",
-            # rospkg.RosPack.get_path("arena-simulation-setup"),
+            # "/home/tuananhroman/catkin_arena/src/utils/arena-simulation-setup",
+            rospkg.RosPack().get_path("arena-simulation-setup"),
             "robot",
             robot_name,
         )
 
-        yaml_path = os.path.join(base_model_path, robot_name + ".model.yaml")
+        yaml_path = os.path.join(base_model_path, f"{robot_name}.model.yaml")
 
         file_content = self._update_plugin_topics(self._read_yaml(yaml_path), name)
 

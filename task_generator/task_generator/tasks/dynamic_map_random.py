@@ -79,9 +79,15 @@ class DynamicMapRandomTask(RandomTask):
         reset_after_new_map=False,
         first_map=False,
     ):
-        if rospy.get_param("/dynamic_map/curr_eps") >= self.eps_per_map or first_map:
-            self.request_new_map(first_map=first_map)
-            return
+        try:
+            if (
+                rospy.get_param("/dynamic_map/curr_eps", 0) >= self.eps_per_map
+                or first_map
+            ):
+                self.request_new_map(first_map=first_map)
+                return
+        except Exception:
+            pass
 
         if not reset_after_new_map:
             # only update eps count when resetting the scene
