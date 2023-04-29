@@ -17,6 +17,7 @@ from tools.staged_train_callback import InitiateNewTrainStage
 
 
 def setup_wandb(config: dict, agent: PPO) -> None:
+    wandb.login(key="58b5a2040f5cc9d5c3a7d6102877515716298192")
     wandb.init(
         project="Arena-RL",
         entity=None,

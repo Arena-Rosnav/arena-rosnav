@@ -93,7 +93,8 @@ class DynamicMapStagedRandomTask(DynamicMapRandomTask):
         return stage
 
     def _init_stage(self, stage: int) -> int:
-        self.populate_stage_info(stage)
+        self.populate_map_info(stage)
+        self._populate_goal_radius(stage)
         static_obstacles = self._stages[stage]["static"]
         dynamic_obstacles = self._stages[stage]["dynamic"]
 
@@ -176,7 +177,7 @@ class DynamicMapStagedRandomTask(DynamicMapRandomTask):
             % len(self._stages)
         )
 
-    def populate_stage_info(self, stage: int):
+    def populate_map_info(self, stage: int):
         stage_cfg = self._stages[stage]
         generator = rospy.get_param("generator")
 
@@ -186,3 +187,11 @@ class DynamicMapStagedRandomTask(DynamicMapRandomTask):
             rospy.set_param(f"/generator_configs/{generator}/{key}", value)
 
         rospy.loginfo(log)
+
+    def _populate_goal_radius(self, stage: int):
+        try:
+            goal_radius = self._stages[stage]["goal_radius"]
+        except KeyError:
+            goal_radius = rospy.get_param("/goal_radius", 0.3)
+
+        rospy.set_param("/goal_radius", goal_radius)
