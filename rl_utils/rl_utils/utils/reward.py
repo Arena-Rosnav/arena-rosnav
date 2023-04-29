@@ -5,7 +5,7 @@ import rospy
 import scipy.spatial
 from geometry_msgs.msg import Pose2D
 from tools.general import load_rew_fnc
-from task_generator.task_generator.constants import TaskMode
+from task_generator.constants import TaskMode
 
 
 class RewardCalculator:
