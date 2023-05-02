@@ -86,15 +86,15 @@ def load_vec_normalize(config: dict, PATHS: dict, env: VecEnv, eval_env: VecEnv)
                 env,
                 training=True,
                 norm_obs=True,
-                norm_reward=False,
-                clip_reward=15,
+                norm_reward=True,
+                clip_reward=17.5,
             )
             eval_env = VecNormalize(
                 eval_env,
-                training=True,
+                training=False,
                 norm_obs=True,
                 norm_reward=False,
-                clip_reward=15,
+                clip_reward=17.5,
             )
     return env, eval_env
 

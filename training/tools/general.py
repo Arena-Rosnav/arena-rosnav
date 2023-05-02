@@ -228,3 +228,6 @@ def generate_agent_name(config: dict) -> str:
         agent_name = f"{robot_model}_{architecture_name}_{encoder_name}_{START_TIME}"
         config["agent_name"] = agent_name
         return agent_name
+    else:
+        config["agent_name"] = config["rl_agent"]["resume"]
+        return config["rl_agent"]["resume"]

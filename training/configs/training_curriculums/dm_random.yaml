@@ -4,7 +4,7 @@
 # (will carry on training on last stage when threshhold reached)
 
 1:
-  goal_radius: 2.0
+  goal_radius: 2
   map_generator:
     barn:
       fill_pct: 0.0
@@ -20,7 +20,7 @@
   static: 0
   dynamic: 0
 2:
-  goal_radius: 1.0
+  goal_radius: 1
   map_generator:
     barn:
       fill_pct: 0.0

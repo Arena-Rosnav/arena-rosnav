@@ -4,6 +4,7 @@ import time
 
 import rospy
 from rosnav.model.agent_factory import AgentFactory
+from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from std_msgs.msg import Empty
 from tools.argsparser import parse_training_args
 from tools.env_utils import init_envs
@@ -59,6 +60,8 @@ def main():
     ## Save model once
     if not config["debug_mode"]:
         model.save(os.path.join(PATHS["model"], "best_model"))
+        if isinstance(train_env, VecNormalize):
+            train_env.save(os.path.join(PATHS["model"], "vec_normalize.pkl"))
 
     # start training
     start = time.time()
