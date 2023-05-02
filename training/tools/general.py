@@ -87,14 +87,16 @@ def get_paths(config: dict) -> dict:
 
     :param config (dict): Dictionary containing the training configuration
     """
-    training_dir = rospkg.RosPack().get_path("training")
+    training_dir = "/home/tuananhroman/catkin_arena/src/arena-rosnav/training"
     robot_model = rospy.get_param("robot_model")
-    simulation_setup = rospkg.RosPack().get_path("arena-simulation-setup")
+    simulation_setup = (
+        "/home/tuananhroman/catkin_arena/src/utils/arena-simulation-setup"
+    )
     agent_name = config["agent_name"]
 
     PATHS = {
         "model": os.path.join(
-            rospkg.RosPack().get_path("rosnav"), "agents", agent_name
+            "/home/tuananhroman/catkin_arena/src/planners/rosnav/agents", agent_name
         ),
         "tb": os.path.join(training_dir, "training_logs", "tensorboard", agent_name),
         "eval": os.path.join(
@@ -107,8 +109,7 @@ def get_paths(config: dict) -> dict:
             f"{robot_model}.model.yaml",
         ),
         "config": os.path.join(
-            rospkg.RosPack().get_path("rosnav"),
-            "agents",
+            "/home/tuananhroman/catkin_arena/src/planners/rosnav/agents",
             agent_name,
             "training_config.yaml",
         ),
@@ -190,7 +191,7 @@ def load_config(config_name: str) -> dict:
     Load config parameters from config file
     """
     config_location = os.path.join(
-        rospkg.RosPack().get_path("training"), "configs", config_name
+        "/home/tuananhroman/catkin_arena/src/arena-rosnav/training/configs", config_name
     )
     with open(config_location, "r", encoding="utf-8") as target:
         config = yaml.load(target, Loader=yaml.FullLoader)
@@ -200,8 +201,7 @@ def load_config(config_name: str) -> dict:
 
 def load_rew_fnc(config_name: str) -> dict:
     config_location = os.path.join(
-        rospkg.RosPack().get_path("training"),
-        "configs",
+        "/home/tuananhroman/catkin_arena/src/arena-rosnav/training/configs",
         "reward_functions",
         f"{config_name}.yaml",
     )
