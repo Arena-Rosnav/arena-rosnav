@@ -64,7 +64,10 @@ class RosnavMapGenerator(BaseMapGenerator):
         )
 
     def retrieve_params(self) -> Tuple[int, int, float, MAP_TYPE, int, int, int, int]:
-        height, width, map_res = super().retrieve_params()
+        height = rospy.get_param("/map_properties/height", self.height)
+        width = rospy.get_param("/map_properties/width", self.width)
+        map_res = rospy.get_param("/map_properties/resolution", self.map_resolution)
+        # height, width, map_res = super().retrieve_params()
         map_type = rospy.get_param("/generator_configs/rosnav/map_type", self.map_type)
         if type(map_type) == str:
             map_type = MAP_TYPE(map_type.lower())

@@ -50,7 +50,9 @@ class BarnMapGenerator(BaseMapGenerator):
         self.fill_pct, self.smooth_iter = fill_pct, smooth_iter
 
     def retrieve_params(self) -> Tuple[int, int, float, int, float]:
-        height, width, map_res = super().retrieve_params()
+        height = rospy.get_param("/map_properties/height", self.height)
+        width = rospy.get_param("/map_properties/width", self.width)
+        map_res = rospy.get_param("/map_properties/resolution", self.map_resolution)
         fill_pct = rospy.get_param("/generator_configs/barn/fill_pct", self.fill_pct)
         smooth_iter = rospy.get_param(
             "/generator_configs/barn/smooth_iter", self.smooth_iter
