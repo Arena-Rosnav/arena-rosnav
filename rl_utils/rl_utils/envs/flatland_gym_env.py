@@ -33,6 +33,7 @@ class FlatlandEnv(gym.Env):
         task_mode: str = "staged",
         PATHS: dict = dict(),
         extended_eval: bool = False,
+        requires_task_manager: bool = True,
         *args,
         **kwargs,
     ):
@@ -69,7 +70,7 @@ class FlatlandEnv(gym.Env):
         # process specific namespace in ros system
         self.ns_prefix = lambda x: os.path.join(self.ns, x)
 
-        if not rospy.get_param("/debug_mode"):
+        if not rospy.get_param("/debug_mode", True):
             rospy.init_node("env_" + self.ns, anonymous=True)
 
         self._extended_eval = extended_eval
@@ -123,12 +124,14 @@ class FlatlandEnv(gym.Env):
             )
 
         # instantiate task manager
-        self.task = get_predefined_task(
-            self.ns,
-            mode=task_mode,
-            start_stage=kwargs["curr_stage"],
-            paths=PATHS,
-        )
+        self._requires_task_manager = requires_task_manager
+        if requires_task_manager:
+            self.task = get_predefined_task(
+                self.ns,
+                mode=task_mode,
+                start_stage=kwargs["curr_stage"],
+                paths=PATHS,
+            )
 
         self._steps_curr_episode = 0
         self._episode = 0
@@ -281,10 +284,11 @@ class FlatlandEnv(gym.Env):
         self._episode += 1
         self.agent_action_pub.publish(Twist())
         first_map = self._episode <= 1 if self.ns == "sim_1" else False
-        self.task.reset(
-            first_map=first_map,
-            reset_after_new_map=self._steps_curr_episode == 0,
-        )
+        if self._requires_task_manager:
+            self.task.reset(
+                first_map=first_map,
+                reset_after_new_map=self._steps_curr_episode == 0,
+            )
         self.reward_calculator.reset()
         self._steps_curr_episode = 0
         self._last_action = np.array([0, 0, 0])
