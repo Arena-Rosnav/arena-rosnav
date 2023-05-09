@@ -5,7 +5,12 @@ import os
 
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import set_random_seed
-from stable_baselines3.common.vec_env import VecNormalize, SubprocVecEnv, DummyVecEnv
+from stable_baselines3.common.vec_env import (
+    VecNormalize,
+    SubprocVecEnv,
+    DummyVecEnv,
+    VecFrameStack,
+)
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 
 from rl_utils.envs.flatland_gym_env import (
@@ -99,6 +104,14 @@ def load_vec_normalize(config: dict, PATHS: dict, env: VecEnv, eval_env: VecEnv)
     return env, eval_env
 
 
+def load_vec_framestack(config: dict, env: VecEnv, eval_env: VecEnv):
+    fs_cfg = config["rl_agent"]["frame_stacking"]
+    if fs_cfg["enabled"]:
+        env = VecFrameStack(env, n_stack=fs_cfg["stack_size"])
+        eval_env = VecFrameStack(eval_env, n_stack=fs_cfg["stack_size"])
+    return env, eval_env
+
+
 def init_envs(
     config: dict,
     paths: dict,
@@ -149,4 +162,5 @@ def init_envs(
     else:
         eval_env = train_env
 
-    return load_vec_normalize(config, paths, train_env, eval_env)
+    train_env, eval_env = load_vec_normalize(config, paths, train_env, eval_env)
+    return load_vec_framestack(config, train_env, eval_env)
