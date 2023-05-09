@@ -19,6 +19,8 @@ wandb = "^0.13.9"
 seaborn = "^0.12.2"
 netifaces = "^0.11.0"
 tensorboard = "^2.12.2"
+stable-baselines3 = {path = "../utils/stable-baselines3", develop = true}
+sb3-contrib = "^1.8.0"
 
 [tool.poetry.dev-dependencies]
 

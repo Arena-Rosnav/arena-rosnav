@@ -22,6 +22,8 @@ from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
 class FlatlandEnv(gym.Env):
     """Custom Environment that follows gym interface"""
 
+    render_mode = None
+
     def __init__(
         self,
         ns: str,
