@@ -55,7 +55,7 @@
   map_generator:
     barn:
       fill_pct: 0.05
-      smooth_iter: 5
+      smooth_iter: 10
     rosnav:
       map_type: indoor
       indoor:
@@ -70,7 +70,7 @@
   map_generator:
     barn:
       fill_pct: 0.1
-      smooth_iter: 7
+      smooth_iter: 20
     rosnav:
       map_type: indoor
       indoor:
@@ -85,7 +85,7 @@
   map_generator:
     barn:
         fill_pct: 0.15
-        smooth_iter: 7
+        smooth_iter: 30
     rosnav:
         map_type: indoor
         indoor:
@@ -100,7 +100,7 @@
   map_generator:
     barn:
         fill_pct: 0.2
-        smooth_iter: 7
+        smooth_iter: 40
     rosnav:
         map_type: indoor
         indoor:
