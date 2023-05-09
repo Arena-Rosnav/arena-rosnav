@@ -157,14 +157,15 @@ class DynamicMapStagedRandomTask(DynamicMapRandomTask):
             return
 
         self._config_lock.acquire()
+        try:
+            with open(self._config_file_path, "r", encoding="utf-8") as target:
+                config = yaml.load(target, Loader=yaml.FullLoader)
+                config["callbacks"]["training_curriculum"]["curr_stage"] = stage
 
-        with open(self._config_file_path, "r", encoding="utf-8") as target:
-            config = yaml.load(target, Loader=yaml.FullLoader)
-            config["callbacks"]["training_curriculum"]["curr_stage"] = stage
-
-        with open(self._config_file_path, "w", encoding="utf-8") as target:
-            yaml.dump(config, target, ensure_ascii=False, indent=4)
-
+            with open(self._config_file_path, "w", encoding="utf-8") as target:
+                yaml.dump(config, target, ensure_ascii=False, indent=4)
+        except Exception as e:
+            pass
         self._config_lock.release()
 
     def _check_start_stage(self, start_stage):
