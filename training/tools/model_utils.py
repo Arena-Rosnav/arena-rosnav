@@ -3,6 +3,7 @@ import sys
 from typing import Union, Type
 
 import wandb
+from sb3_contrib import RecurrentPPO
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import (
     EvalCallback,
@@ -166,7 +167,8 @@ def instantiate_new_model(
             "'BaseAgent' or 'ActorCriticPolicy'!"
         )
 
-    return PPO(**ppo_kwargs)
+    is_lstm = "LSTM" in agent.type.name
+    return RecurrentPPO(**ppo_kwargs) if is_lstm else PPO(**ppo_kwargs)
 
 
 sys.modules["rl_agent"] = sys.modules["rosnav"]
