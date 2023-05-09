@@ -61,7 +61,7 @@ rl_agent:
     stack_size: 12
   reward_fnc: "rule_06"
   discrete_action_space: false
-  normalize: true
+  normalize: false
   ppo:
     batch_size: 24000
     gamma: 0.99
