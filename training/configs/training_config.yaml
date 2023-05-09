@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 12
+n_envs: 16
 # gpu yes or no
 no_gpu: false
 
@@ -19,7 +19,7 @@ monitoring:
 task_mode: "dynamic_map_staged"
 # number of simulation timesteps
 n_timesteps: 20000000
-max_num_moves_per_eps: 500
+max_num_moves_per_eps: 200
 
 goal_radius: 0.5
 
@@ -27,9 +27,9 @@ callbacks:
   ### Periodic Eval
   periodic_eval:
     # max number of steps per episode
-    max_num_moves_per_eps: 800
+    max_num_moves_per_eps: 300
     # number of evaluation episodes
-    n_eval_episodes: 50
+    n_eval_episodes: 100
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
     eval_freq: 15000
 
@@ -53,14 +53,17 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "AGENT_25"
+  architecture_name: "AGENT_23"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: jackal_AGENT_25_RobotSpecificEncoder_2023_04_30__19_01_09 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  frame_stacking:
+    enabled: true
+    stack_size: 12
   reward_fnc: "rule_06"
   discrete_action_space: false
   normalize: true
   ppo:
-    batch_size: 21000
+    batch_size: 24000
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
