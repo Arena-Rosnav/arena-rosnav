@@ -182,14 +182,8 @@ class FlatlandEnv(gym.Env):
         decoded_action = self.model_space_encoder.decode_action(action)
         self._pub_action(decoded_action)
 
-        self._pub_action(decoded_action)
-
         if self._is_train_mode:
             self.call_service_takeSimStep()
-
-        obs_dict = self.observation_collector.get_observations(
-            last_action=self._last_action
-        )
 
         self._steps_curr_episode += 1
 
