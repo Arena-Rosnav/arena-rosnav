@@ -41,6 +41,8 @@ def main():
     # check if simulations are booted
     wait_for_nodes(with_ns=ns_for_nodes, n_envs=config["n_envs"], timeout=5)
 
+    set_space_encoder(config)
+
     # initialize hyperparameters (save to/ load from json)
     config = initialize_config(
         PATHS=PATHS,

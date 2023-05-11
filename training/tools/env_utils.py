@@ -107,8 +107,10 @@ def load_vec_normalize(config: dict, PATHS: dict, env: VecEnv, eval_env: VecEnv)
 def load_vec_framestack(config: dict, env: VecEnv, eval_env: VecEnv):
     fs_cfg = config["rl_agent"]["frame_stacking"]
     if fs_cfg["enabled"]:
-        env = VecFrameStack(env, n_stack=fs_cfg["stack_size"])
-        eval_env = VecFrameStack(eval_env, n_stack=fs_cfg["stack_size"])
+        env = VecFrameStack(env, n_stack=fs_cfg["stack_size"], channels_order="first")
+        eval_env = VecFrameStack(
+            eval_env, n_stack=fs_cfg["stack_size"], channels_order="first"
+        )
     return env, eval_env
 
 

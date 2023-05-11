@@ -18,10 +18,25 @@ def populate_ros_params(params):
         "is_action_space_discrete", params["rl_agent"]["discrete_action_space"]
     )
     rospy.set_param("goal_radius", params["goal_radius"])
+    rospy.set_param(
+        "space_encoder",
+        "StackedEncoder"
+        if params["rl_agent"]["frame_stacking"]["enabled"]
+        else "DefaultEncoder",
+    )
 
 
 def populate_ros_configs(config):
     rospy.set_param("debug_mode", config["debug_mode"])
+
+
+def set_space_encoder(config):
+    rospy.set_param(
+        "space_encoder",
+        "StackedEncoder"
+        if config["rl_agent"]["frame_stacking"]["enabled"]
+        else "DefaultEncoder",
+    )
 
 
 def initialize_config(
