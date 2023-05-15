@@ -1,5 +1,5 @@
 generator: barn
-episode_per_map: 15
+episode_per_map: 10
 
 map_properties:
   width: 100
@@ -8,8 +8,8 @@ map_properties:
 
 generator_configs:
   barn:
-    fill_pct: 0.15 # initial fill percentage
-    smooth_iter: 7 # smoothing iterations
+    fill_pct: 0.20 # initial fill percentage
+    smooth_iter: 50 # smoothing iterations
     # seed: 0 # for reproducing maps
 
   rosnav:

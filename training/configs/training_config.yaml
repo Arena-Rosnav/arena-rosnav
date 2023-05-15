@@ -23,6 +23,7 @@ max_num_moves_per_eps: 200
 
 goal_radius: 0.5
 
+
 callbacks:
   ### Periodic Eval
   periodic_eval:
@@ -31,7 +32,7 @@ callbacks:
     # number of evaluation episodes
     n_eval_episodes: 100
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 15000
+    eval_freq: 17500
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
@@ -53,13 +54,13 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "AGENT_23"
+  architecture_name: "AGENT_29"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   frame_stacking:
     enabled: true
-    stack_size: 12
-  reward_fnc: "rule_06"
+    stack_size: 8
+  reward_fnc: "rule_07"
   discrete_action_space: false
   normalize: false
   ppo:
