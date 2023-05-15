@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 16
+n_envs: 12
 # gpu yes or no
 no_gpu: false
 
@@ -31,7 +31,7 @@ callbacks:
     # number of evaluation episodes
     n_eval_episodes: 100
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 15000
+    eval_freq: 20000
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
@@ -53,13 +53,13 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "AGENT_23"
+  architecture_name: "AGENT_30"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   frame_stacking:
-    enabled: true
+    enabled: false
     stack_size: 12
-  reward_fnc: "rule_06"
+  reward_fnc: "rule_07"
   discrete_action_space: false
   normalize: false
   ppo:

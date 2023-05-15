@@ -4,7 +4,7 @@
 # (will carry on training on last stage when threshhold reached)
 
 1:
-  goal_radius: 0.5
+  goal_radius: 1.0
   map_generator:
     barn:
       fill_pct: 0.0
@@ -20,7 +20,23 @@
   static: 0
   dynamic: 0
 2:
-  goal_radius: 0.3
+  goal_radius: 0.5
+  map_generator:
+    barn:
+      fill_pct: 0.0
+      smooth_iter: 1
+    rosnav:
+      map_type: indoor
+      indoor:
+        corridor_radius: 5
+        iterations: 100
+      outdoor:
+        obstacle_num: 5
+        obstacle_extra_radius: 1
+  static: 0
+  dynamic: 0
+3:
+  goal_radius: 0.33
   map_generator:
     barn:
       fill_pct: 0.05
@@ -35,7 +51,7 @@
         obstacle_extra_radius: 1
   static: 0
   dynamic: 0
-3:
+4:
   map_generator:
     barn:
       fill_pct: 0.1
@@ -50,7 +66,7 @@
         obstacle_extra_radius: 1
   static: 0
   dynamic: 0
-4:
+5:
   map_generator:
     barn:
         fill_pct: 0.15
@@ -65,7 +81,7 @@
           obstacle_extra_radius: 1
   static: 0
   dynamic: 0
-5:
+6:
   map_generator:
     barn:
         fill_pct: 0.2
@@ -80,7 +96,7 @@
           obstacle_extra_radius: 1
   static: 0
   dynamic: 0
-5:
+7:
   map_generator:
     barn:
         fill_pct: 0.23
