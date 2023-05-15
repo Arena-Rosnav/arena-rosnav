@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 16
+n_envs: 12
 # gpu yes or no
 no_gpu: false
 
