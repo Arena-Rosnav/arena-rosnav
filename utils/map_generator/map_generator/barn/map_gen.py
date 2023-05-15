@@ -76,6 +76,7 @@ class BarnMapGenerator(BaseMapGenerator):
         if not BarnMapGenerator.check_for_paths(
             obstacle_map, self.robot_radius_extra_cells, self.infl_radius_cells
         ):
+            rospy.loginfo("[Barn] No path found, regenerating map!")
             return self.generate_grid_map()
 
         # add side walls as the map was initially open on both sides for barn
