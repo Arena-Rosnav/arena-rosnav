@@ -54,7 +54,7 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "AGENT_37"
+  architecture_name: "AGENT_38"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   frame_stacking:
