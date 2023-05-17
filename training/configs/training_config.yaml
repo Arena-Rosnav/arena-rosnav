@@ -60,7 +60,7 @@ rl_agent:
   frame_stacking:
     enabled: true
     stack_size: 8
-  reward_fnc: "rule_08"
+  reward_fnc: "rule_09"
   discrete_action_space: false
   normalize: false
   ppo:
