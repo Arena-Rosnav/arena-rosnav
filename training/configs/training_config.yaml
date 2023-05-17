@@ -59,12 +59,12 @@ rl_agent:
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   frame_stacking:
     enabled: true
-    stack_size: 8
+    stack_size: 12
   reward_fnc: "rule_09"
   discrete_action_space: false
   normalize: false
   ppo:
-    batch_size: 24000
+    batch_size: 20000
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
