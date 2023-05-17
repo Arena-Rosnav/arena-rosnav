@@ -64,7 +64,7 @@ rl_agent:
   discrete_action_space: false
   normalize: false
   ppo:
-    batch_size: 20000
+    batch_size: 18000
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
