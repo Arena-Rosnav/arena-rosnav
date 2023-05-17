@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 16
+n_envs: 12
 # gpu yes or no
 no_gpu: false
 
@@ -59,7 +59,7 @@ rl_agent:
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   frame_stacking:
     enabled: true
-    stack_size: 16
+    stack_size: 12
   reward_fnc: "rule_09"
   discrete_action_space: false
   normalize: false
