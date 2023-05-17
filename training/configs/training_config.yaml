@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 12
+n_envs: 16
 # gpu yes or no
 no_gpu: false
 
@@ -43,7 +43,7 @@ callbacks:
     curr_stage: 1
     threshold_type: "succ"
     upper_threshold: 0.9
-    lower_threshold: 0.6
+    lower_threshold: 0.5
 
   ### Stop Training on Threshold
   # stops training when last stage reached and threshold satisfied
@@ -54,12 +54,12 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "AGENT_38"
+  architecture_name: "AGENT_41"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   frame_stacking:
     enabled: true
-    stack_size: 6
+    stack_size: 8
   reward_fnc: "rule_08"
   discrete_action_space: false
   normalize: false
