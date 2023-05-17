@@ -12,6 +12,13 @@ from tools.general import *
 from tools.model_utils import get_ppo_instance, init_callbacks
 
 
+"""
+1. Deploy LSTM and FrameStacking Agents
+2. Barn Maps testing
+3. Metrics for LSTM and FrameStacking Agents
+"""
+
+
 def on_shutdown(model):
     model.env.close()
     sys.exit()
