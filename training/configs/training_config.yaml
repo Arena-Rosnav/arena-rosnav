@@ -40,7 +40,7 @@ callbacks:
   training_curriculum:
     # file for the robot's learning curriculum
     training_curriculum_file: "dm_random.yaml"
-    curr_stage: 1
+    curr_stage: 5
     threshold_type: "succ"
     upper_threshold: 0.9
     lower_threshold: 0.5
@@ -54,13 +54,13 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "AGENT_48"
+  architecture_name: "AGENT_50"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  resume: jackal_AGENT_48_StackedEncoder_2023_05_17__22_54_16 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   frame_stacking:
     enabled: true
     stack_size: 16
-  reward_fnc: "rule_09"
+  reward_fnc: "rule_10"
   discrete_action_space: false
   normalize: false
   ppo:
