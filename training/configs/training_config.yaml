@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 16
+n_envs: 12
 # gpu yes or no
 no_gpu: false
 
@@ -30,9 +30,9 @@ callbacks:
     # max number of steps per episode
     max_num_moves_per_eps: 300
     # number of evaluation episodes
-    n_eval_episodes: 100
+    n_eval_episodes: 50
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 20000
+    eval_freq: 17500
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
