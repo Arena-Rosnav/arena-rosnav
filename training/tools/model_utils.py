@@ -106,6 +106,10 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
         model.tensorboard_log = None
         model._logger = None
 
+    if isinstance(model, PPO):
+        # TODO: SETUP ROLLOUT BUFFER ON RECURRENT PPO
+        model._setup_rollout_buffer()
+
     print("--------------------------------\n")
 
 
