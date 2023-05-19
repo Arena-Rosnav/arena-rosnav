@@ -21,7 +21,7 @@ distance_global_plan:
 abrupt_vel_change:
   "0":
     vel_idx: 0
-    factor: 0.25
+    factor: 0.5
 
   "-1":
     vel_idx: -1
