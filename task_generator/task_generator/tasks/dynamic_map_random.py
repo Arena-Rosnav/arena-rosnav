@@ -113,6 +113,7 @@ class DynamicMapRandomTask(RandomTask):
         rospy.wait_for_message("/signal_new_distance_map", String)
 
         self.task_reset_pub.publish("")
+        self.update_map()
 
         rospy.loginfo("===================")
         rospy.loginfo("+++ Got new map +++")

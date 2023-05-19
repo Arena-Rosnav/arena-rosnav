@@ -1,8 +1,11 @@
 import numpy as np
 import random
 import math
+import time
 
 from map_distance_server.srv import GetDistanceMap
+from ..constants import Constants
+
 
 class MapManager:
     """
@@ -17,12 +20,11 @@ class MapManager:
     def update_map(self, map: GetDistanceMap):
         self.map = map
         self.map_with_distances = np.reshape(
-            self.map.data, 
-            (self.map.info.height, self.map.info.width)
+            self.map.data, (self.map.info.height, self.map.info.width)
         )
         self.origin = map.info.origin.position
 
-    def get_random_pos_on_map(self, safe_dist, forbidden_zones=[]):
+    def get_random_pos_on_map(self, safe_dist, forbidden_zones=[], rec_depth: int = 0):
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both
@@ -51,24 +53,29 @@ class MapManager:
         forbidden_zones_in_cells = list(
             map(
                 lambda point: [math.ceil(p / self.map.info.resolution) for p in point],
-                forbidden_zones
+                forbidden_zones,
             )
         )
 
         # Now get index of all cells were dist is > safe_dist_in_cells
-        possible_cells = list(np.array(np.where(self.map_with_distances > safe_dist_in_cells)).transpose())
+        possible_cells = list(
+            np.array(np.where(self.map_with_distances > safe_dist_in_cells)).transpose()
+        )
 
         assert len(possible_cells) > 0, "No cells available"
 
-        # The position should not lie in the forbidden zones and keep the safe 
+        # The position should not lie in the forbidden zones and keep the safe
         # dist to these zones as well. We could remove all cells here but since
         # we only need one position and the amount of cells can get very high
-        # we just pick positions at random and check if the distance to all 
+        # we just pick positions at random and check if the distance to all
         # forbidden zones is high enough
 
         while len(possible_cells) >= 0:
             if len(possible_cells) == 0:
-                raise Exception("can't find any non-occupied spaces")
+                if rec_depth > Constants.MAX_RESET_FAIL_TIMES:
+                    raise Exception("can't find any non-occupied spaces")
+                time.sleep(1)
+                self.get_random_pos_on_map(safe_dist, forbidden_zones, rec_depth + 1)
 
             # Select a random cell
             x, y = possible_cells.pop(random.randint(0, len(possible_cells) - 1))
@@ -80,9 +87,9 @@ class MapManager:
         theta = random.uniform(-math.pi, math.pi)
 
         return (
-            round(y * self.map.info.resolution + self.origin.y, 3), 
+            round(y * self.map.info.resolution + self.origin.y, 3),
             round(x * self.map.info.resolution + self.origin.x, 3),
-            theta
+            theta,
         )
 
     def _is_pos_valid(self, x, y, safe_dist, forbidden_zones):
@@ -90,13 +97,11 @@ class MapManager:
             return True
 
         for p in forbidden_zones:
-                f_x, f_y, radius = p
+            f_x, f_y, radius = p
 
-                dist = math.floor(math.sqrt(
-                    (x - f_x) ** 2 + (y - f_y) ** 2
-                ))
+            dist = math.floor(math.sqrt((x - f_x) ** 2 + (y - f_y) ** 2))
 
-                if dist > safe_dist + radius:
-                    return True
+            if dist > safe_dist + radius:
+                return True
 
         return False
