@@ -56,15 +56,15 @@ rl_agent:
   # name of architecture defined in the Policy factory
   architecture_name: "AGENT_50"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: jackal_AGENT_48_StackedEncoder_2023_05_17__22_54_16 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  resume: jackal_AGENT_31_StackedEncoder_2023_05_15__18_02_04 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   frame_stacking:
     enabled: true
-    stack_size: 16
+    stack_size: 8
   reward_fnc: "rule_11"
   discrete_action_space: false
   normalize: false
   ppo:
-    batch_size: 16000
+    batch_size: 15200
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
