@@ -17,7 +17,7 @@ from std_msgs.msg import Int16
 sys.modules["rl_agent"] = sys.modules["rosnav"]
 
 
-ACTION_FREQUENCY = 10  # in Hz
+ACTION_FREQUENCY = 4  # in Hz
 
 
 class DeploymentDRLAgent:
