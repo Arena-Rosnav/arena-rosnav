@@ -24,6 +24,7 @@ def populate_ros_params(params):
         if params["rl_agent"]["frame_stacking"]["enabled"]
         else "DefaultEncoder",
     )
+    rospy.set_param("full_range_laser", params["rl_agent"]["full_range_laser"])
 
 
 def populate_ros_configs(config):

@@ -16,6 +16,8 @@ from tools.model_utils import get_ppo_instance, init_callbacks
 1. Deploy LSTM and FrameStacking Agents
 2. Barn Maps testing
 3. Metrics for LSTM and FrameStacking Agents
+4. Collision detection form behind
+5. More Maps on Barn like Specs (smaller res, smaller maps)
 """
 
 

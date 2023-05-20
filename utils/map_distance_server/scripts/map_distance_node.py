@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from math import isclose
 from pathlib import Path
 
 import numpy as np
@@ -10,6 +11,10 @@ from nav_msgs.msg import OccupancyGrid
 from nav_msgs.srv import GetMap
 from PIL import Image
 from std_msgs.msg import String
+
+
+def nearlyequal(a, b, sigfig=5):
+    return round(abs(a - b), sigfig) == 0
 
 
 def print_map(map):
@@ -236,7 +241,7 @@ class DynamicMapDistanceServer(MapDistanceServer):
                 f"{width} x {height} != {required_map_size}"
             )
 
-        if map_properties["resolution"] != self.map.info.resolution:
+        if not nearlyequal(map_properties["resolution"], self.map.info.resolution, 5):
             raise ValueError(
                 "Map data and map properties do not match. "
                 "New map must have the same resolution as the origin map. \n"

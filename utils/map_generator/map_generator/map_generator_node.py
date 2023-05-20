@@ -98,7 +98,7 @@ def main():
         width=map_properties["width"],
         height=map_properties["height"],
         map_resolution=map_properties["resolution"],
-        robot_infl_radius=robot_infl_rad * 1.5,
+        robot_infl_radius=robot_infl_rad * 1.75,
         **gen_configs,
     )
 

@@ -128,7 +128,7 @@ class GazeboSimulator(BaseSimulator):
 
         self._move_model_srv(model_state_request)
 
-    def spawn_robot(self, name, robot_name, namespace_appendix=""):
+    def spawn_robot(self, name, robot_name, namespace_appendix="", *args, **kwargs):
         request = SpawnModelRequest()
 
         robot_namespace = self._ns_prefix(namespace_appendix)

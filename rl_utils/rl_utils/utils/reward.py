@@ -350,7 +350,11 @@ class RewardCalculator:
         :param laser_scan (np.ndarray): laser scan data
         :param punishment (float, optional): punishment for collision. defaults to 10
         """
-        if laser_scan.min() <= self.robot_radius:
+        coll_in_blind_spots = False
+        if "full_laser_scan" in kwargs:
+            coll_in_blind_spots = kwargs["full_laser_scan"].min() <= self.robot_radius
+
+        if laser_scan.min() <= self.robot_radius or coll_in_blind_spots:
             self.curr_reward -= punishment
 
             if not self._extended_eval:

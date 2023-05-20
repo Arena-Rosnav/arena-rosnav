@@ -74,6 +74,7 @@ class FlatlandSimulator(BaseSimulator):
         self._step_size = rospy.get_param("step_size", "")
         # self._robot_yaml_path = rospy.get_param("robot_yaml_path")
         self._tmp_model_path = rospy.get_param("tmp_model_path", "/tmp")
+        self._additional_full_range_laser = rospy.get_param("full_range_laser", False)
 
         rospy.wait_for_service(f"{self._ns_prefix}move_model", timeout=T)
         rospy.wait_for_service(f"{self._ns_prefix}spawn_model", timeout=T)
@@ -206,7 +207,15 @@ class FlatlandSimulator(BaseSimulator):
 
     # ROBOT
 
-    def spawn_robot(self, name, robot_name, namespace_appendix=None, complexity=1):
+    def spawn_robot(
+        self,
+        name,
+        robot_name,
+        namespace_appendix=None,
+        complexity=1,
+        *args,
+        **kwargs,
+    ):
         base_model_path = os.path.join(
             # "/home/tuananhroman/catkin_arena/src/utils/arena-simulation-setup",
             rospkg.RosPack().get_path("arena-simulation-setup"),
@@ -216,7 +225,9 @@ class FlatlandSimulator(BaseSimulator):
 
         yaml_path = os.path.join(base_model_path, f"{robot_name}.model.yaml")
 
-        file_content = self._update_plugin_topics(self._read_yaml(yaml_path), name)
+        file_content = self._update_plugin_topics(
+            self._read_yaml(yaml_path), name, self._additional_full_range_laser
+        )
 
         self._spawn_model(
             yaml.dump(file_content),
@@ -357,11 +368,13 @@ class FlatlandSimulator(BaseSimulator):
 
         return model_file_name
 
-    def _update_plugin_topics(self, file_content, namespace):
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            return file_content
-
+    def _update_plugin_topics(self, file_content, namespace, full_range_laser=False):
         plugins = file_content["plugins"]
+
+        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+            if full_range_laser:
+                plugins.append(Constants.PLUGIN_FULL_RANGE_LASER)
+            return file_content
 
         for plugin in plugins:
             if FlatlandSimulator.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"]):

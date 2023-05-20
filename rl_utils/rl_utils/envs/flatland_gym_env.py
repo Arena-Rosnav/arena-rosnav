@@ -195,6 +195,7 @@ class FlatlandEnv(gym.Env):
         # calculate reward
         reward, reward_info = self.reward_calculator.get_reward(
             laser_scan=obs_dict["laser_scan"],
+            full_laser_scan=obs_dict["full_laser_scan"],
             goal_in_robot_frame=obs_dict["goal_in_robot_frame"],
             action=decoded_action,
             global_plan=obs_dict["global_plan"],
