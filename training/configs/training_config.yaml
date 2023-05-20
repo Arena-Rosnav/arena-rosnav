@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 12
+n_envs: 16
 # gpu yes or no
 no_gpu: false
 
@@ -40,7 +40,7 @@ callbacks:
   training_curriculum:
     # file for the robot's learning curriculum
     training_curriculum_file: "barn.yaml"
-    curr_stage: 1
+    curr_stage: 6
     threshold_type: "succ"
     upper_threshold: 0.9
     lower_threshold: 0.5
@@ -56,15 +56,15 @@ rl_agent:
   # name of architecture defined in the Policy factory
   architecture_name: "AGENT_50"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: jackal_AGENT_37_RobotSpecificEncoder_2023_05_17__00_32_05 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  resume: jackal_AGENT_31_StackedEncoder_2023_05_15__18_02_04 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   frame_stacking:
     enabled: true
-    stack_size: 12
+    stack_size: 8
   reward_fnc: "rule_11"
   discrete_action_space: false
   normalize: false
   ppo:
-    batch_size: 16800
+    batch_size: 15200
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
