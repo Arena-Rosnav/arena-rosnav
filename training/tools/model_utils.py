@@ -96,9 +96,7 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
         model.update_n_envs()
         model.n_envs = config["n_envs"]
         model.rollout_buffer.buffer_size = ppo_params["n_steps"]
-    if not model.tensorboard_log and (
-        not config["debug_mode"] and config["monitoring"]["use_wandb"]
-    ):
+    if not config["debug_mode"] and config["monitoring"]["use_wandb"]:
         model.tensorboard_log = PATHS["tb"]
         logger = configure_logger(1, PATHS["tb"], "run", False)
         model._logger = logger
