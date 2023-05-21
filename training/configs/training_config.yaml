@@ -54,18 +54,18 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "AGENT_50"
+  architecture_name: "AGENT_54"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   full_range_laser: true  # additional laser covering 360° covering blind spots -> additional collision check
   frame_stacking:
     enabled: true
-    stack_size: 12
+    stack_size: 16
   reward_fnc: "rule_11"
   discrete_action_space: false
   normalize: false
   ppo:
-    batch_size: 15200
+    batch_size: 15840
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
