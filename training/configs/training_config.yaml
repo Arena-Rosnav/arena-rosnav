@@ -30,7 +30,7 @@ callbacks:
     # max number of steps per episode
     max_num_moves_per_eps: 250
     # number of evaluation episodes
-    n_eval_episodes: 50
+    n_eval_episodes: 70
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
     eval_freq: 15000
 
@@ -61,7 +61,7 @@ rl_agent:
   frame_stacking:
     enabled: true
     stack_size: 16
-  reward_fnc: "rule_11"
+  reward_fnc: "rule_05"
   discrete_action_space: false
   normalize: false
   ppo:
