@@ -179,7 +179,12 @@ class ObservationCollector:
         }
 
         if self._full_range_laser:
-            obs_dict["full_laser_scan"] = self._full_scan.ranges.astype(np.float32)
+            if len(self._full_scan.ranges) > 0:
+                obs_dict["full_laser_scan"] = self._full_scan.ranges.astype(np.float32)
+            else:
+                obs_dict["full_laser_scan"] = np.zeros(
+                    self._laser_num_beams, dtype=float
+                )
 
         self._laser_deque.clear()
         self._rs_deque.clear()
