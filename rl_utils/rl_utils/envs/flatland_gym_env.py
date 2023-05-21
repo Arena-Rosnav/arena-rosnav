@@ -246,7 +246,7 @@ class FlatlandEnv(gym.Env):
                     f"{self._done_reasons[str(2)]}: {self._done_hist[2]}\t"
                     f"Mean step time: {round(self.step_time[0] / self.step_time[1] * 100, 2)}\t"
                     f"Mean reward: {round(mean_reward, 5)} ({'+' if diff >= 0 else ''}{diff})\t"
-                    f"Mean steps: {self.total_step_count/10})\t"
+                    f"Mean steps: {self.total_step_count/10}\t"
                 )
                 self._done_hist = [0] * 3
                 self.step_time = [0, 0]
