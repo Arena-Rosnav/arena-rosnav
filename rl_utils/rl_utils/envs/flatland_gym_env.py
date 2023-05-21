@@ -93,7 +93,7 @@ class FlatlandEnv(gym.Env):
 
         # reward calculator
         if safe_dist is None:
-            safe_dist = self.model_space_encoder._radius + 0.1
+            safe_dist = self.model_space_encoder._radius + 0.25
 
         self.reward_calculator = RewardCalculator(
             holonomic=self.model_space_encoder._is_holonomic,
