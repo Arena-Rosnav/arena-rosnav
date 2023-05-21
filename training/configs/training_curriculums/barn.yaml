@@ -52,6 +52,21 @@
 4:
   map_generator:
     barn:
+      fill_pct: 0.1
+      smooth_iter: 6
+    rosnav:
+      map_type: indoor
+      indoor:
+        corridor_radius: 5
+        iterations: 70
+      outdoor:
+        obstacle_num: 5
+        obstacle_extra_radius: 1
+  static: 0
+  dynamic: 0
+5:
+  map_generator:
+    barn:
       fill_pct: 0.15
       smooth_iter: 2
     rosnav:
@@ -64,7 +79,7 @@
         obstacle_extra_radius: 1
   static: 0
   dynamic: 0
-5:
+6:
   map_generator:
     barn:
         fill_pct: 0.15
@@ -79,26 +94,11 @@
           obstacle_extra_radius: 1
   static: 0
   dynamic: 0
-6:
-  map_generator:
-    barn:
-        fill_pct: 0.2
-        smooth_iter: 2
-    rosnav:
-        map_type: indoor
-        indoor:
-          corridor_radius: 5
-          iterations: 30
-        outdoor:
-          obstacle_num: 5
-          obstacle_extra_radius: 1
-  static: 0
-  dynamic: 0
 7:
   map_generator:
     barn:
-        fill_pct: 0.2
-        smooth_iter: 4
+        fill_pct: 0.15
+        smooth_iter: 6
     rosnav:
         map_type: indoor
         indoor:
@@ -112,7 +112,7 @@
 8:
   map_generator:
     barn:
-        fill_pct: 0.25
+        fill_pct: 0.2
         smooth_iter: 2
     rosnav:
         map_type: indoor
@@ -127,7 +127,7 @@
 9:
   map_generator:
     barn:
-        fill_pct: 0.25
+        fill_pct: 0.2
         smooth_iter: 4
     rosnav:
         map_type: indoor
@@ -142,8 +142,8 @@
 10:
   map_generator:
     barn:
-        fill_pct: 0.3
-        smooth_iter: 2
+        fill_pct: 0.2
+        smooth_iter: 6
     rosnav:
         map_type: indoor
         indoor:
@@ -155,6 +155,51 @@
   static: 0
   dynamic: 0
 11:
+  map_generator:
+    barn:
+        fill_pct: 0.25
+        smooth_iter: 2
+    rosnav:
+        map_type: indoor
+        indoor:
+          corridor_radius: 5
+          iterations: 30
+        outdoor:
+          obstacle_num: 5
+          obstacle_extra_radius: 1
+  static: 0
+  dynamic: 0
+12:
+  map_generator:
+    barn:
+        fill_pct: 0.25
+        smooth_iter: 4
+    rosnav:
+        map_type: indoor
+        indoor:
+          corridor_radius: 5
+          iterations: 30
+        outdoor:
+          obstacle_num: 5
+          obstacle_extra_radius: 1
+  static: 0
+  dynamic: 0
+13:
+  map_generator:
+    barn:
+        fill_pct: 0.25
+        smooth_iter: 6
+    rosnav:
+        map_type: indoor
+        indoor:
+          corridor_radius: 5
+          iterations: 30
+        outdoor:
+          obstacle_num: 5
+          obstacle_extra_radius: 1
+  static: 0
+  dynamic: 0
+14:
   map_generator:
     barn:
         fill_pct: 0.3

@@ -373,7 +373,11 @@ class RewardCalculator:
         :param laser_scan (np.ndarray): laser scan data
         :param punishment (float, optional): punishment for undercutting. defaults to 0.15
         """
-        if laser_scan.min() < self.safe_dist:
+        violation_in_blind_spot = False
+        if "full_laser_scan" in kwargs:
+            violation_in_blind_spot = kwargs["full_laser_scan"].min() <= self.safe_dist
+
+        if laser_scan.min() < self.safe_dist or violation_in_blind_spot:
             self.curr_reward -= punishment
 
             if self._extended_eval:

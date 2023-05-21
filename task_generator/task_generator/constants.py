@@ -35,7 +35,7 @@ class Constants:
         "body": "base_link",
         "broadcast_tf": "true",
         "origin": [0, 0, 0],
-        "range": 30.0,
+        "range": 2.0,
         "angle": {"min": -3.14, "max": 3.14, "increment": 0.01745},
         "noise_std_dev": 0.0,
         "update_rate": 10,

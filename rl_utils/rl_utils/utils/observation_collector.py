@@ -58,6 +58,7 @@ class ObservationCollector:
 
         self._clock = Clock()
         self._scan = LaserScan()
+        self._full_scan = LaserScan()
         self._robot_pose = Pose2D()
         self._robot_vel = Twist()
         self._subgoal = Pose2D()

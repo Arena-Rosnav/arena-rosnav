@@ -40,7 +40,7 @@ callbacks:
   training_curriculum:
     # file for the robot's learning curriculum
     training_curriculum_file: "barn.yaml"
-    curr_stage: 3
+    curr_stage: 1
     threshold_type: "succ"
     upper_threshold: 0.9
     lower_threshold: 0.5
@@ -56,10 +56,11 @@ rl_agent:
   # name of architecture defined in the Policy factory
   architecture_name: "AGENT_50"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: jackal_AGENT_31_StackedEncoder_2023_05_15__18_02_04 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  full_range_laser: true  # additional laser covering 360° covering blind spots -> additional collision check
   frame_stacking:
     enabled: true
-    stack_size: 8
+    stack_size: 12
   reward_fnc: "rule_11"
   discrete_action_space: false
   normalize: false
@@ -72,6 +73,6 @@ rl_agent:
     vf_coef: 0.22
     max_grad_norm: 0.5
     gae_lambda: 0.95
-    m_batch_size: 20
+    m_batch_size: 60
     n_epochs: 3
     clip_range: 0.22
