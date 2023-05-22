@@ -8,6 +8,7 @@ from map_generator.factory import MapGeneratorFactory
 from map_generator.utils.general import calc_infl_rad_cells
 from map_generator.barn.obstacle_map import ObstacleMap
 from map_generator.barn.robot_map import RobotMap
+from map_generator.constants import BARN_MAX_RECURSION_DEPTH
 
 
 @MapGeneratorFactory.register("barn")
@@ -58,7 +59,11 @@ class BarnMapGenerator(BaseMapGenerator):
 
         return height, width, fill_pct, smooth_iter, map_res
 
-    def generate_grid_map(self) -> np.ndarray:
+    def generate_grid_map(self, call_depth: int = 0) -> np.ndarray:
+        if call_depth > BARN_MAX_RECURSION_DEPTH:
+            raise RecursionError(
+                "[Barn] Recursion depth exceeded, please check your parameters!"
+            )
         super().generate_grid_map()
 
         # sourcery skip: assign-if-exp, reintroduce-else, swap-if-expression
@@ -76,12 +81,12 @@ class BarnMapGenerator(BaseMapGenerator):
                 obstacle_map, self.robot_radius_extra_cells, self.infl_radius_cells
             ):
                 rospy.loginfo("[Barn] No path found, regenerating map!")
-                return self.generate_grid_map()
+                return self.generate_grid_map(call_depth + 1)
         except IndexError:
             rospy.loginfo(
                 "[Barn] Index out of bound during 'check_for_paths', regenerating map!"
             )
-            return self.generate_grid_map()
+            return self.generate_grid_map(call_depth + 1)
 
         # add side walls as the map was initially open on both sides for barn
         np_obs_map = np.array(obstacle_map)
