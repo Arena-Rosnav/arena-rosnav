@@ -2,7 +2,7 @@ class Constants:
     GOAL_REACHED_TOLERANCE = 1.0
     TIMEOUT = 3.0 * 60  ## 3 min
     WAIT_FOR_SERVICE_TIMEOUT = 60  # 5 secs
-    MAX_RESET_FAIL_TIMES = 5
+    MAX_RESET_FAIL_TIMES = 10
 
     class ObstacleManager:
         DYNAMIC_OBSTACLES = 0

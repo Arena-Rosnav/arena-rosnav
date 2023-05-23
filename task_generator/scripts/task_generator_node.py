@@ -50,7 +50,7 @@ class TaskGenerator:
         )
         self.srv_start_model_visualization(EmptyRequest())
 
-        self.reset_task()
+        # self.reset_task()
 
         rospy.sleep(2)
 

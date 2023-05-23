@@ -23,4 +23,4 @@ DYNAMIC_MAP_YAML = {
 
 ROSNAV_MAP_FOLDER = Path(rospkg.RosPack().get_path("arena-simulation-setup")) / "maps"
 
-BARN_MAX_RECURSION_DEPTH = 25
+BARN_MAX_RECURSION_DEPTH = 50

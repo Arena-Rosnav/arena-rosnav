@@ -31,7 +31,7 @@ class RobotManager:
         self.start_pos = [0, 0]
         self.goal_pos = [0, 0]
 
-        self.goal_radius = rospy.get_param("goal_radius", 0.7) + 1
+        self.goal_radius = rospy.get_param("goal_radius", 0.7)
         self.is_goal_reached = False
 
         self.robot_setup = robot_setup
