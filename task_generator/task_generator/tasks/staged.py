@@ -89,7 +89,7 @@ class StagedRandomTask(RandomTask):
         rospy.set_param("/curr_stage", stage)
         rospy.set_param("/last_state_reached", stage == len(self._stages))
 
-        self._update_stage_in_config(stage)
+        # self._update_stage_in_config(stage)
 
         return stage
 
