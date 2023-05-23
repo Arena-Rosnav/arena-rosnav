@@ -1,3 +1,4 @@
+import contextlib
 import os, rospy
 import rosnode
 import rospkg
@@ -18,13 +19,46 @@ def populate_ros_params(params):
         "is_action_space_discrete", params["rl_agent"]["discrete_action_space"]
     )
     rospy.set_param("goal_radius", params["goal_radius"])
+
+    # populate laser params
+    with contextlib.suppress(KeyError):
+        rospy.set_param(
+            "laser/reduce_num_beams",
+            params["rl_agent"]["laser"]["reduce_num_beams"]["enabled"],
+        )
+    with contextlib.suppress(KeyError):
+        rospy.set_param(
+            "laser/full_range_laser", params["rl_agent"]["laser"]["full_range_laser"]
+        )
+    with contextlib.suppress(KeyError):
+        rospy.set_param(
+            "laser/reduced_num_laser_beams",
+            params["rl_agent"]["laser"]["reduce_num_beams"]["num_beams"],
+        )
+
+    enable_frame_stacking, enable_reduced_laser = False, False
+    with contextlib.suppress(KeyError):
+        enable_frame_stacking = params["rl_agent"]["frame_stacking"]["enabled"]
+    with contextlib.suppress(KeyError):
+        enable_reduced_laser = params["rl_agent"]["laser"]["reduce_num_beams"][
+            "enabled"
+        ]
+
     rospy.set_param(
         "space_encoder",
-        "StackedEncoder"
-        if params["rl_agent"]["frame_stacking"]["enabled"]
-        else "DefaultEncoder",
+        determine_space_encoder(enable_frame_stacking, enable_reduced_laser),
     )
-    rospy.set_param("full_range_laser", params["rl_agent"]["full_range_laser"])
+
+
+def determine_space_encoder(frame_stacking: bool, reduced_laser: bool):
+    if frame_stacking and not reduced_laser:
+        return "StackedEncoder"
+    elif not frame_stacking and reduced_laser:
+        return "ReducedLaserEncoder"
+    elif frame_stacking and reduced_laser:
+        return "StackedReducedLaserEncoder"
+    else:
+        return "DefaultEncoder"
 
 
 def populate_ros_configs(config):

@@ -68,7 +68,7 @@ class ObservationCollector:
         self._is_train_mode = rospy.get_param("/train_mode")
 
         # additional full range laser to cover blind spots
-        self._full_range_laser = rospy.get_param("/full_range_laser", False)
+        self._full_range_laser = rospy.get_param("laser/full_range_laser", False)
 
         # synchronization parameters
         self._ext_time_sync = external_time_sync
@@ -182,6 +182,7 @@ class ObservationCollector:
             if len(self._full_scan.ranges) > 0:
                 obs_dict["full_laser_scan"] = self._full_scan.ranges.astype(np.float32)
             else:
+                obs_dict["scan"] = np.zeros(self._laser_num_beams, dtype=float)
                 obs_dict["full_laser_scan"] = np.zeros(
                     self._laser_num_beams, dtype=float
                 )

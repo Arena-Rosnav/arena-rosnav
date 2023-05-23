@@ -1,9 +1,9 @@
 ### General
 # in debug_mode no agent directories will be created and no models will be saved
 # further no wandb logging and fake (simulated) multiprocessing for traceback
-debug_mode: false
+debug_mode: true
 # number of parallel environments
-n_envs: 16
+n_envs: 1
 # gpu yes or no
 no_gpu: false
 
@@ -32,7 +32,7 @@ callbacks:
     # number of evaluation episodes
     n_eval_episodes: 70
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 15000
+    eval_freq: 1000
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
@@ -40,7 +40,7 @@ callbacks:
   training_curriculum:
     # file for the robot's learning curriculum
     training_curriculum_file: "barn.yaml"
-    curr_stage: 1
+    curr_stage: 6
     threshold_type: "succ"
     upper_threshold: 0.9
     lower_threshold: 0.5
@@ -57,7 +57,11 @@ rl_agent:
   architecture_name: "AGENT_54"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
-  full_range_laser: true  # additional laser covering 360° covering blind spots -> additional collision check
+  laser:
+    full_range_laser: true  # additional laser covering 360° covering blind spots -> additional collision check
+    reduce_num_beams:
+      enabled: true
+      num_beams: 160
   frame_stacking:
     enabled: true
     stack_size: 16

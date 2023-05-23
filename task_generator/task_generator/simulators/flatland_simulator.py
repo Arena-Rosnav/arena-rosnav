@@ -74,7 +74,9 @@ class FlatlandSimulator(BaseSimulator):
         self._step_size = rospy.get_param("step_size", "")
         # self._robot_yaml_path = rospy.get_param("robot_yaml_path")
         self._tmp_model_path = rospy.get_param("tmp_model_path", "/tmp")
-        self._additional_full_range_laser = rospy.get_param("full_range_laser", False)
+        self._additional_full_range_laser = rospy.get_param(
+            "laser/full_range_laser", False
+        )
 
         rospy.wait_for_service(f"{self._ns_prefix}move_model", timeout=T)
         rospy.wait_for_service(f"{self._ns_prefix}spawn_model", timeout=T)

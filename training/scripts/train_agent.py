@@ -13,11 +13,20 @@ from tools.model_utils import get_ppo_instance, init_callbacks
 
 
 """
-1. Deploy LSTM and FrameStacking Agents
+1. X Deploy LSTM and FrameStacking Agents
 2. Barn Maps testing
 3. Metrics for LSTM and FrameStacking Agents
-4. Collision detection form behind
+4. X Collision detection form behind
 5. More Maps on Barn like Specs (smaller res, smaller maps)
+6. Reward Shaping
+7. LSTM testing
+8. X Reduce observation space
+9. Discrete Action Space
+10. Update Observation Space on loading RPPO
+"""
+"""
+TODO:
+- test full map
 """
 
 
