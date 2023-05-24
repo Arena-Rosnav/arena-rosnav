@@ -49,7 +49,7 @@ def make_envs(
             env = FlatlandEnv(
                 train_ns,
                 config["rl_agent"]["reward_fnc"],
-                config["rl_agent"]["discrete_action_space"],
+                config["rl_agent"]["action_space"]["discrete"],
                 goal_radius=config["goal_radius"],
                 max_steps_per_episode=config["max_num_moves_per_eps"],
                 task_mode=config["task_mode"],
@@ -62,7 +62,7 @@ def make_envs(
                 FlatlandEnv(
                     eval_ns,
                     config["rl_agent"]["reward_fnc"],
-                    config["rl_agent"]["discrete_action_space"],
+                    config["rl_agent"]["action_space"]["discrete"],
                     goal_radius=config["goal_radius"],
                     max_steps_per_episode=config["max_num_moves_per_eps"],
                     task_mode=config["task_mode"],

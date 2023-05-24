@@ -10,7 +10,7 @@ from tools.argsparser import parse_training_args
 from tools.env_utils import init_envs
 from tools.general import *
 from tools.model_utils import get_ppo_instance, init_callbacks
-
+from tools.ros_param_distributor import *
 
 """
 1. X Deploy LSTM and FrameStacking Agents
@@ -26,7 +26,9 @@ from tools.model_utils import get_ppo_instance, init_callbacks
 """
 """
 TODO:
-- test full map
+- X deploy reduced laser encoder
+- X test full map
+- X finish: Discrete Action Space
 """
 
 
@@ -58,8 +60,6 @@ def main():
 
     # check if simulations are booted
     wait_for_nodes(with_ns=ns_for_nodes, n_envs=config["n_envs"], timeout=5)
-
-    set_space_encoder(config)
 
     # initialize hyperparameters (save to/ load from json)
     config = initialize_config(
