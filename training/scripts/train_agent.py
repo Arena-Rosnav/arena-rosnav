@@ -17,18 +17,19 @@ from tools.ros_param_distributor import *
 2. Barn Maps testing
 3. Metrics for LSTM and FrameStacking Agents
 4. X Collision detection form behind
-5. More Maps on Barn like Specs (smaller res, smaller maps)
+5. X More Maps on Barn like Specs (smaller res, smaller maps)
 6. Reward Shaping
 7. LSTM testing
 8. X Reduce observation space
-9. Discrete Action Space
-10. Update Observation Space on loading RPPO
+9. X Discrete Action Space
+10. ---> Update Observation Space on loading RPPO
+11. ---> Log training episode metrics
 """
 """
 TODO:
 - X deploy reduced laser encoder
 - X test full map
-- X finish: Discrete Action Space
+- finish: Discrete Action Space (also deployment)
 """
 
 
