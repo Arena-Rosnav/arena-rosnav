@@ -22,14 +22,18 @@ from tools.ros_param_distributor import *
 7. LSTM testing
 8. X Reduce observation space
 9. X Discrete Action Space
-10. ---> Update Observation Space on loading RPPO
+10. X Update Observation Space on loading RPPO
 11. ---> Log training episode metrics
+12. See approaches of other teams
+13. ---> Check if Env are paused when Map Generator is running a new map
 """
 """
 TODO:
 - X deploy reduced laser encoder
 - X test full map
-- finish: Discrete Action Space (also deployment)
+- X finish: Discrete Action Space (also deployment)
+- Check saving VecNorm on StackedObs
+6. Reward Shaping
 """
 
 

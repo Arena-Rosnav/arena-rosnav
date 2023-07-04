@@ -20,6 +20,9 @@
   <param name="base_url" value="$(arg base_url)" />
   <param name="task_finished_endpoint" value="$(arg task_finished_endpoint)" />
   <param name="new_best_model_endpoint" value="$(arg new_best_model_endpoint)" />
+  <!-- debug mode training -->
+  <param name="debug_mode" value="true" />
+
 
   <node name="task_progress_publisher" type="task_progress_publisher.py" pkg="task_progress_publisher" if="$(eval arg('is_webapp_docker') == true)" />
   <!-- -->
