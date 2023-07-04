@@ -21,7 +21,7 @@ task_mode: "dynamic_map_staged"
 n_timesteps: 20000000
 max_num_moves_per_eps: 150
 
-goal_radius: 0.5
+goal_radius: 0.2
 
 
 callbacks:
@@ -30,9 +30,9 @@ callbacks:
     # max number of steps per episode
     max_num_moves_per_eps: 250
     # number of evaluation episodes
-    n_eval_episodes: 70
+    n_eval_episodes: 50
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 1000
+    eval_freq: 20000
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
@@ -40,10 +40,10 @@ callbacks:
   training_curriculum:
     # file for the robot's learning curriculum
     training_curriculum_file: "barn.yaml"
-    curr_stage: 10
+    curr_stage: 3
     threshold_type: "succ"
-    upper_threshold: 0.9
-    lower_threshold: 0.5
+    upper_threshold: 0.95
+    lower_threshold: 0.65
 
   ### Stop Training on Threshold
   # stops training when last stage reached and threshold satisfied
@@ -60,16 +60,16 @@ rl_agent:
 
   frame_stacking:
     enabled: true
-    stack_size: 16
+    stack_size: 8
 
   normalize: false
   laser:
     full_range_laser: true  # additional laser covering 360° covering blind spots -> additional collision check
     reduce_num_beams:
       enabled: true
-      num_beams: 160
+      num_beams: 200
 
-  reward_fnc: "rule_11"
+  reward_fnc: "rule_13"
 
   action_space:
     discrete: true
@@ -77,16 +77,11 @@ rl_agent:
       enabled: true
       # number of buckets for each action dimension
       # (only non-holonomic robots with 2D action space supported)
-      # e.g. given linear range [-1, 1], angular [-0.5, 0.5]
-      # with buckets_linear_vel = 4 and buckets_angular_vel = 3
-      # np.linspace of linear range: [-1, -0.33, 0.33, 1]
-      # np.linspace of angular range: [-0.5, 0, 0.5]
-      # resulting in 4*3 = 12 discrete actions + 1 for no action
-      buckets_linear_vel: 10
-      buckets_angular_vel: 13
+      buckets_linear_vel: 8
+      buckets_angular_vel: 11
 
   ppo:
-    batch_size: 15840
+    batch_size: 19200
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
@@ -94,6 +89,6 @@ rl_agent:
     vf_coef: 0.22
     max_grad_norm: 0.5
     gae_lambda: 0.95
-    m_batch_size: 60
+    m_batch_size: 40
     n_epochs: 3
     clip_range: 0.22
