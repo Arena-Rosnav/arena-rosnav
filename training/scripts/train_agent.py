@@ -29,6 +29,8 @@ TODO:
 - X deploy reduced laser encoder
 - X test full map
 - X finish: Discrete Action Space
+- Merge with Master
+- Test "jackal_AGENT_23_RobotSpecificEncoder_2023_06_06__11_27_33"
 """
 
 
