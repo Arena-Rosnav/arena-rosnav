@@ -107,7 +107,14 @@ class RobotManager:
         self.publish_goal(self.goal_pos)
 
         if move_robot:
-            self.move_robot_to_start()
+            try:
+                self.move_robot_to_start()
+            except:
+                self.reset(
+                    forbidden_zones=forbidden_zones,
+                    start_pos=start_pos,
+                    goal_pos=goal_pos,
+                )
 
         self.set_is_goal_reached(self.start_pos, self.goal_pos)
 

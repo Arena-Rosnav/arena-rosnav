@@ -497,6 +497,13 @@ class RewardCalculator:
             self.curr_reward -= (vel_diff**4) / 50
         self.last_action = action
 
+    def _reward_abrupt_forward_change(
+        self, action: np.ndarray = None, penalty: float = 0.0, *args, **kwargs
+    ):
+        if self.last_action is not None:
+            if 0 > (action[0] * self.last_action[0]):
+                self.curr_reward -= penalty
+
     def _reward_reverse_drive(
         self, action: np.array = None, penalty: float = 0.01, *args, **kwargs
     ):
