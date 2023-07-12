@@ -54,7 +54,7 @@ class ScenarioTask(BaseTask):
         return False
 
     def reset_scenario(self):
-        self.obstacles_manager.reset_scenario(self.scenario_file)
+        # self.obstacles_manager.reset_scenario(self.scenario_file)
 
         self._reset_robots()
 
