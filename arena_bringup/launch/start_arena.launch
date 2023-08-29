@@ -140,11 +140,14 @@
     <arg name="auto_reset" value="$(arg auto_reset)" />
   </include>
 
-  <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
+  <!-- <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
     <param name="simulation_factor" value="1" type="double"/>
     <param name="pedsim_update_rate" value="30.0" type="double"/>
     <param name="scene_file" value="$(find arena-simulation-setup)/world/$(arg world_file)/scenarios/$(arg world_file).xml" type="string"/>
-  </node>
+  </node> -->
+
+  <!-- Launch pedsim agent spawner  -->
+  <!-- <node name="pedsim_agent" pkg="pedsim_gazebo_plugin" type="spawn_pedsim_agents.py"></node> -->
 
   <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/>
 
