@@ -86,13 +86,18 @@ class GazeboSimulator(BaseSimulator):
   def spawn_obstacle(self, position, yaml_path=""):
     pass
 
-  def spawn_obstacles(self, position):
+  def spawn_obstacles(self, obstacles):
+
+    pass
+
+  def spawn_pedsim_obstacles(self, obstacles):
     pass
 
   # Test
   def create_dynamic_obstacle(self, position, **args):
     # self.spawn_random_dynamic_obstacle_pedsim(position=position)
-    self.spawn_random_dynamic_obstacle(position=position)
+    # self.spawn_random_dynamic_obstacle(position=position)
+    pass
 
   def spawn_random_dynamic_obstacle_pedsim(self, id, position):
     # actor_id = str(id)
