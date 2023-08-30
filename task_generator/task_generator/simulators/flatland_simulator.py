@@ -19,11 +19,16 @@ from flatland_msgs.srv import (
     SpawnModelRequest,
     SpawnModelsRequest
 )
-from geometry_msgs.msg import Pose2D
+from geometry_msgs.msg import Pose2D, Pose
 from flatland_msgs.msg import MoveModelMsg, Model
 
 from pedsim_srvs.srv import SpawnPeds
 from pedsim_msgs.msg import Ped
+from pedsim_srvs.srv import SpawnInteractiveObstacles,SpawnInteractiveObstaclesRequest
+from pedsim_srvs.srv import SpawnObstacle,SpawnObstacleRequest
+from pedsim_msgs.msg import InteractiveObstacle
+
+
 
 from task_generator.manager.pedsim_manager import PedsimManager
 from task_generator.utils import Utils
@@ -84,6 +89,7 @@ class FlatlandSimulator(BaseSimulator):
         rospy.wait_for_service(f"{self._ns_prefix}spawn_model", timeout=T)
         rospy.wait_for_service(f"{self._ns_prefix}delete_model", timeout=T)
         rospy.wait_for_service(f"{self._ns_prefix}pedsim_simulator/respawn_peds" , timeout=20)
+        rospy.wait_for_service(f"{self._ns_prefix}pedsim_simulator/respawn_interactive_obstacles" , timeout=20)
 
         self._move_model_srv = rospy.ServiceProxy(
             f"{self._ns_prefix}move_model", MoveModel, persistent=True
@@ -112,6 +118,9 @@ class FlatlandSimulator(BaseSimulator):
         self._reset_peds_srv = rospy.ServiceProxy(
             f"{self._ns_prefix}pedsim_simulator/reset_all_peds", Trigger
         )
+
+        self.__respawn_interactive_obstacles_srv = rospy.ServiceProxy(
+        f"{self._ns_prefix}pedsim_simulator/respawn_interactive_obstacles" ,SpawnInteractiveObstacles, persistent=True)
 
         self.obs_names = []
 
@@ -224,6 +233,98 @@ class FlatlandSimulator(BaseSimulator):
 
     # PEDSIM INTEGRATION 
 
+
+   
+    
+    def create_pedsim_static_obstacle(self, i, map_manager, forbidden_zones):
+        # print("305 safe")
+        self.map_manager = map_manager
+        ped_array =np.array([],dtype=object).reshape(0,3) # Not used
+        # self.human_id+=1
+        safe_distance = 3.5
+
+        [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
+        # print(obstacles[i])
+        # if random.uniform(0.0, 1.0) < 0.8:
+        ped=np.array([i+1, [x, y, 0.0]],dtype=object)
+        # print("323 safe")
+        
+        return ped
+
+        # self.create_ped_msg(ped_array, id)
+
+    def create_pedsim_dynamic_obstacle(self,i, map_manager, forbidden_zones):
+        # print("305 safe")
+        self.map_manager = map_manager
+        ped_array =np.array([],dtype=object).reshape(0,3) # Not used
+        # self.human_id+=1
+        safe_distance = 3.5
+
+        [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
+        # print(obstacles[i])
+        # if random.uniform(0.0, 1.0) < 0.8:
+        waypoints = np.array( [x, y, 1]).reshape(1, 3) # the first waypoint
+        safe_distance = 0.1 # the other waypoints don't need to avoid robot
+        # print("316 safe")
+        for j in range(10): # noote was 1000
+            dist = 0
+            while dist < 8:
+                [x2, y2, theta2] = self.map_manager.get_random_pos_on_map( safe_distance, forbidden_zones)
+                dist = np.linalg.norm([waypoints[-1,0] - x2,waypoints[-1,1] - y2])
+            waypoints = np.vstack([waypoints, [x2, y2, 1]])
+        ped=np.array([i+1, [x, y, 0.0], waypoints],dtype=object)
+        # print("323 safe")
+        
+        return ped
+    
+    def spawn_pedsim_static_obstacles(self, obstacles):
+        print("225spawning pedsim dynamic obstacles")
+        # print(peds.shape)
+
+        srv = SpawnInteractiveObstacles()
+        srv.InteractiveObstacles = []
+        i = 0
+        self.agent_topic_str=''   
+        while i < len(obstacles) : 
+            msg = InteractiveObstacle()
+            obstacle = obstacles[i]
+            # msg.id = obstacle[0]
+
+            msg.pose = Pose()
+            msg.pose.position.x = obstacle[1][0]
+            msg.pose.position.y = obstacle[1][1]
+            msg.pose.position.z = obstacle[1][2]
+
+            self.agent_topic_str+=f',{self._ns_prefix}pedsim_static_obstacle_{obstacle[0]}/0' 
+            msg.type = "shelf"
+            # msg.name = "test"
+            msg.interaction_radius = 0.0
+            msg.yaml_path = os.path.join(
+                rospkg.RosPack().get_path("arena-simulation-setup"),
+                "obstacles", "long_shelf.model.yaml"
+            )
+            srv.InteractiveObstacles.append(msg)
+            i = i+1
+
+        max_num_try = 2
+        i_curr_try = 0
+        print("trying to call service with static obstacles: ")    
+
+        while i_curr_try < max_num_try:
+        # try to call service
+            response=self.__respawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
+
+            if not response.success:  # if service not succeeds, do something and redo service
+                rospy.logwarn(
+                    f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+                # rospy.logwarn(response.message)
+                i_curr_try += 1
+            else:
+                break
+        # self.__peds = peds
+        rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
+        return
+
     def spawn_pedsim_dynamic_obstacles(self, peds):
         print("225spawning pedsim dynamic obstacles")
         # print(peds.shape)
@@ -309,38 +410,6 @@ class FlatlandSimulator(BaseSimulator):
         self.__peds = peds
         rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
         return
-
-
-    def create_pedsim_dynamic_obstacle(self,i, map_manager, forbidden_zones):
-        # print("305 safe")
-        self.map_manager = map_manager
-        ped_array =np.array([],dtype=object).reshape(0,3) # Not used
-        # self.human_id+=1
-        safe_distance = 3.5
-
-        [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
-        # print(obstacles[i])
-        # if random.uniform(0.0, 1.0) < 0.8:
-        waypoints = np.array( [x, y, 1]).reshape(1, 3) # the first waypoint
-        safe_distance = 0.1 # the other waypoints don't need to avoid robot
-        # print("316 safe")
-        for j in range(10): # noote was 1000
-            dist = 0
-            while dist < 8:
-                [x2, y2, theta2] = self.map_manager.get_random_pos_on_map( safe_distance, forbidden_zones)
-                dist = np.linalg.norm([waypoints[-1,0] - x2,waypoints[-1,1] - y2])
-            waypoints = np.vstack([waypoints, [x2, y2, 1]])
-        ped=np.array([i+1, [x, y, 0.0], waypoints],dtype=object)
-        # print("323 safe")
-        
-        return ped
-
-    def create_pedsim_static_obstacle(self, obstacles, map_manager, forbidden_zones):
-        # TODO
-        pass
-
-        # self.create_ped_msg(ped_array, id)
-
     # ROBOT
 
     def spawn_robot(self, name, robot_name, namespace_appendix=None, complexity=1):
