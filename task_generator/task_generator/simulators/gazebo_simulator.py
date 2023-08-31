@@ -220,7 +220,7 @@ class GazeboSimulator(BaseSimulator):
   #     return
 
   def spawn_pedsim_dynamic_obstacles(self, peds):
-      print("225spawning pedsim dynamic obstacles")
+      # print("225spawning pedsim dynamic obstacles")
       # print(peds.shape)
 
       srv = SpawnPeds()
@@ -230,8 +230,8 @@ class GazeboSimulator(BaseSimulator):
       while i < len(peds) : 
           msg = Ped()
           ped = peds[i]
-          print("printing a ped 238")
-          print(len(ped))
+          # print("printing a ped 238")
+          # print(len(ped))
           # print(ped)
           msg.id = ped[0]
 
@@ -274,7 +274,7 @@ class GazeboSimulator(BaseSimulator):
           msg.waypoint_mode = 0 # or 1 check later
 
           msg.waypoints = []
-          print("275spawning pedsim dynamic obstacles")
+          # print("275spawning pedsim dynamic obstacles")
 
           for pos in ped[2]:
               p = Point()
@@ -284,12 +284,12 @@ class GazeboSimulator(BaseSimulator):
               msg.waypoints.append(p)
           srv.peds.append(msg)
           i = i+1
-          print("285spawning pedsim dynamic obstacles")
+          # print("285spawning pedsim dynamic obstacles")
 
       max_num_try = 2
       i_curr_try = 0
-      print("trying to call service with peds: ")    
-      print(peds)    
+      # print("trying to call service with peds: ")    
+      # print(peds)    
       while i_curr_try < max_num_try:
       # try to call service
           response=self.__respawn_peds_srv.call(srv.peds)

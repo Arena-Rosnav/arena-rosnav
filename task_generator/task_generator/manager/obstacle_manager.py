@@ -9,7 +9,11 @@ class ObstacleManager:
         self.simulator = simulator
 
     def start_scenario(self, scenario):
-        self.simulator.spawn_pedsim_agents(scenario["obstacles"]["dynamic"])
+        if rospy.get_param("pedsim"):
+            self.simulator.spawn_pedsim_dynamic_obstacles(scenario["obstacles"]["dynamic"])
+            print("eeeeeeeeeeeeeeeee")
+        else:
+            self.simulator.spawn_pedsim_agents(scenario["obstacles"]["dynamic"])
 
     def reset_scenario(self, scenario):
         self.simulator.reset_pedsim_agents()
@@ -41,7 +45,7 @@ class ObstacleManager:
         dynamic_obstacles_array = np.array([],dtype=object).reshape(0,3)
         static_obstacles_array = np.array([],dtype=object).reshape(0,2)
         obstacles = []
-        print('om,safe44')
+        # print('om,safe44')
         for i in range(dynamic_obstacles):
             position = self.map_manager.get_random_pos_on_map(
                 safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
