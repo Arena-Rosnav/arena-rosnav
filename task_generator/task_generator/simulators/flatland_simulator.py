@@ -237,6 +237,17 @@ class FlatlandSimulator(BaseSimulator):
    
     
     def create_pedsim_static_obstacle(self, i, map_manager, forbidden_zones):
+        # TODO adjust if necessary
+        self.map_manager = map_manager
+        ped_array =np.array([],dtype=object).reshape(0,3) # Not used
+        safe_distance = 3.5
+
+        [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
+        ped=np.array([i+1, [x, y, 0.0]],dtype=object)
+        
+        return ped
+
+    def create_pedsim_interactive_obstacle(self, i, map_manager, forbidden_zones):
         # print("305 safe")
         self.map_manager = map_manager
         ped_array =np.array([],dtype=object).reshape(0,3) # Not used
@@ -278,6 +289,12 @@ class FlatlandSimulator(BaseSimulator):
         return ped
     
     def spawn_pedsim_static_obstacles(self, obstacles):
+        # TODO adjust if necessary
+        print("225spawning pedsim dynamic obstacles")
+        pass
+        
+
+    def spawn_pedsim_interactive_obstacles(self, obstacles):
         print("225spawning pedsim dynamic obstacles")
         # print(peds.shape)
 
