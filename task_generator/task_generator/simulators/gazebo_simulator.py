@@ -4,6 +4,7 @@ import rospkg
 import random
 import subprocess
 import numpy as np
+import math
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState, SpawnModel, SpawnModelRequest
 from geometry_msgs.msg import Pose, PoseStamped, Quaternion
@@ -18,12 +19,14 @@ from tf.transformations import quaternion_from_euler
 from pedsim_srvs.srv import SpawnInteractiveObstacles,SpawnInteractiveObstaclesRequest
 from pedsim_srvs.srv import SpawnObstacle,SpawnObstacleRequest
 from pedsim_msgs.msg import InteractiveObstacle
-from pedsim_msgs.msg  import AgentStates, Waypoints
+from pedsim_msgs.msg  import AgentStates, Waypoints, LineObstacle
 from rospkg import RosPack
 
 from ..constants import Constants, Pedsim
 from .base_simulator import BaseSimulator
 from .simulator_factory import SimulatorFactory
+from task_generator.utils import Utils
+from nav_msgs.srv import GetMap
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
@@ -44,6 +47,7 @@ class GazeboSimulator(BaseSimulator):
     rospy.wait_for_service("/pedsim_simulator/remove_all_peds", timeout=T)
     rospy.wait_for_service("pedsim_simulator/respawn_peds" , timeout=T)
     rospy.wait_for_service("pedsim_simulator/respawn_interactive_obstacles" , timeout=T)
+    rospy.wait_for_service("pedsim_simulator/add_obstacle", timeout=20)
 
     self._spawn_model_srv = rospy.ServiceProxy(
         self._ns_prefix("gazebo", "spawn_urdf_model"), SpawnModel
@@ -70,6 +74,9 @@ class GazeboSimulator(BaseSimulator):
     self._spawn_peds_srv = rospy.ServiceProxy(
         "pedsim_simulator/spawn_peds", SpawnPeds)
 
+    self.__add_obstacle_srv = rospy.ServiceProxy(
+        "pedsim_simulator/add_obstacle" ,SpawnObstacle, persistent=True)
+
     self.unpause = rospy.ServiceProxy("/gazebo/unpause_physics", Empty)
     self.pause = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
 
@@ -83,7 +90,12 @@ class GazeboSimulator(BaseSimulator):
       rospack1 = RosPack()
       pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
       default_actor_model_file = pkg_path + "/models/actor_model.sdf"
+      # default_actor_model_file = pkg_path + "/models/forklift_robot-master/model.sdf"
+      # default_actor_model_file = pkg_path + "/models/test_static_obstacle.sdf"
+      # default_actor_model_file = pkg_path + "/models/baxter.urdf"
+      # default_actor_model_file = pkg_path + "/models/forklift1.sdf"
       # default_actor_model_file = pkg_path + "/models/actor1.sdf"
+      # default_actor_model_file = pkg_path + "/models/prius.sdf"
 
       actor_model_file = rospy.get_param('~actor_model_file', default_actor_model_file)
       file_xml = open(actor_model_file)
@@ -142,9 +154,23 @@ class GazeboSimulator(BaseSimulator):
             print("safe137********************************************")
             self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
             rospy.set_param("respawn_dynamic", False)
-      #     print("safe11500")
-      # print("safe11800")
-      # rospy.signal_shutdown("all agents have been spawned !")
+      # else:
+      #   for actor in actors.agent_states:
+      #       model_state_request = ModelState()
+      #       model_state_request.model_name = str(actor.id)
+      #       actor_pose = actor.pose
+      #       model_state_request.pose = Pose(Point(x= actor_pose.position.x,
+      #                             y= actor_pose.position.y,
+      #                             z= actor_pose.position.z),
+      #                       Quaternion(actor_pose.orientation.x,
+      #                                   actor_pose.orientation.y,
+      #                                   actor_pose.orientation.z,
+      #                                   actor_pose.orientation.w) )
+            
+      #       model_state_request.reference_frame = "world"
+
+      #       self._move_model_srv(model_state_request)
+
       
 
   def before_reset_task(self):
@@ -158,7 +184,57 @@ class GazeboSimulator(BaseSimulator):
 
   def create_pedsim_static_obstacle(self, i, map_manager, forbidden_zones):
       # TODO adjust if necessary
-      # print("305 safe")
+
+      # num_obstacles = 1
+      # model_yaml_file_path = os.path.join("../utils/arena-simulation-setup/obstacles", "random.model.yaml")
+      # start_pos = []
+      # vertices = np.array([[0, 0], [0, 0], [0, 0], [0, 0]])
+      # type_obstacle = "static"
+
+      # max_num_try = 2
+      # i_curr_try = 0
+      # while i_curr_try < max_num_try:
+      #     spawn_request = SpawnModelRequest()
+      #     spawn_request.yaml_path = model_yaml_file_path
+      #     spawn_request.name = f'{name_prefix}_{instance_idx:02d}'
+      #     # x, y, theta = get_random_pos_on_map(self._free_space_indices, self.map,)
+      #     # set the postion of the obstacle out of the map to hidden them
+      #     if len(start_pos) == 0:
+      #         x = self.map.info.origin.position.x - 3 * \
+      #             self.map.info.resolution * self.map.info.height
+      #         y = self.map.info.origin.position.y - 3 * \
+      #             self.map.info.resolution * self.map.info.width
+      #         theta = theta = random.uniform(-math.pi, math.pi)
+      #     else:
+      #         assert len(start_pos) == 3
+      #         x = start_pos[0]
+      #         y = start_pos[1]
+      #         theta = start_pos[2]
+      #     spawn_request.pose.x = x
+      #     spawn_request.pose.y = y
+      #     spawn_request.pose.theta = theta
+      #     # try to call service
+      #     response = self._srv_spawn_model.call(spawn_request)
+      #     if not response.success:  # if service not succeeds, do something and redo service
+      #         rospy.logwarn(
+      #             f"({self.ns}) spawn object {spawn_request.name} failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+      #         rospy.logwarn(response.message)
+      #         i_curr_try += 1
+      #     else:
+      #         self.obstacle_name_list.append(spawn_request.name)
+      #         #tell the info of polygon obstacles to pedsim
+      #         add_pedsim_srv=SpawnObstacleRequest()
+      #         size=vertices.shape[0]
+      #         for i in range(size):
+      #             lineObstacle=LineObstacle()
+      #             lineObstacle.start.x,lineObstacle.start.y=vertices[i,0],vertices[i,1]
+      #             lineObstacle.end.x,lineObstacle.end.y=vertices[(i+1)%size,0],vertices[(i+1)%size,1]
+      #             add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
+      #         self.__add_obstacle_srv.call(add_pedsim_srv)
+      #         break
+      # if i_curr_try == max_num_try:
+      #     raise rospy.ServiceException(f"({self.ns}) failed to register obstacles")
+
       self.map_manager = map_manager
       # self.human_id+=1
       safe_distance = 3.5
@@ -168,8 +244,8 @@ class GazeboSimulator(BaseSimulator):
       # if random.uniform(0.0, 1.0) < 0.8:
       ped=np.array([i+1, [x, y, 0.0]],dtype=object)
       # print("323 safe")
-      
-      return ped
+
+      return ped 
 
   def create_pedsim_interactive_obstacle(self, i, map_manager, forbidden_zones):
       # print("305 safe")
@@ -211,54 +287,20 @@ class GazeboSimulator(BaseSimulator):
   
   def spawn_pedsim_static_obstacles(self, obstacles):
       # TODO adjust if necessary
-      print("225spawning pedsim static obstacles")
-      # print(peds.shape)
+      map_service = rospy.ServiceProxy("/static_map", GetMap)
+      self.map = map_service().map
+      self._free_space_indices = Utils.update_freespace_indices_maze(self.map)
+      border_vertex=Utils.generate_map_inner_border(self._free_space_indices,self.map)
 
-      srv = SpawnInteractiveObstacles()
-      srv.InteractiveObstacles = []
-      i = 0
-      self.agent_topic_str=''   
-      while i < len(obstacles) : 
-          msg = InteractiveObstacle()
-          obstacle = obstacles[i]
-          # msg.id = obstacle[0]
-
-          msg.pose = Pose()
-          msg.pose.position.x = obstacle[1][0]
-          msg.pose.position.y = obstacle[1][1]
-          msg.pose.position.z = obstacle[1][2]
-
-          self.agent_topic_str+=f',{self._ns_prefix}pedsim_static_obstacle_{obstacle[0]}/0' 
-          msg.type = "shelf"
-          # msg.name = "test"
-          msg.interaction_radius = 0.0
-          msg.yaml_path = os.path.join(
-              rospkg.RosPack().get_path("arena-simulation-setup"),
-              "obstacles", "long_shelf.model.yaml"
-          )
-          srv.InteractiveObstacles.append(msg)
-          i = i+1
-
-      max_num_try = 2
-      i_curr_try = 0
-      print("trying to call service with static obstacles: ")    
-
-      while i_curr_try < max_num_try:
-      # try to call service
-          print("209")
-          response=self.__respawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
-
-          if not response.success:  # if service not succeeds, do something and redo service
-              rospy.logwarn(
-                  f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
-              # rospy.logwarn(response.message)
-              i_curr_try += 1
-              print("217")
-          else:
-              break
-      # self.__peds = peds
-      print("221")
-      rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
+      self.map_border_vertices=border_vertex
+      add_pedsim_srv=SpawnObstacleRequest()
+      size=border_vertex.shape[0]
+      for i in range(size):
+          lineObstacle=LineObstacle()
+          lineObstacle.start.x,lineObstacle.start.y=border_vertex[i,0],border_vertex[i,1]
+          lineObstacle.end.x,lineObstacle.end.y=border_vertex[(i+1)%size,0],border_vertex[(i+1)%size,1]
+          add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
+      self.__add_obstacle_srv.call(add_pedsim_srv)
       return
 
   def spawn_pedsim_interactive_obstacles(self, obstacles):
