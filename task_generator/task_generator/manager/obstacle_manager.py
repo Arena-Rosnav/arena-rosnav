@@ -51,7 +51,7 @@ class ObstacleManager:
         obstacles = []
 
         # Create dynamic obstacles # TODO dynamic
-        for i in range(20):
+        for i in range(5):
             position = self.map_manager.get_random_pos_on_map(
                 safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
                 forbidden_zones=forbidden_zones,
