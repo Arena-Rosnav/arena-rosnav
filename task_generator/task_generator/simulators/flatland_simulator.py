@@ -19,27 +19,23 @@ from flatland_msgs.srv import (
     SpawnModelRequest,
     SpawnModelsRequest
 )
-from geometry_msgs.msg import Pose2D, Pose
 from flatland_msgs.msg import MoveModelMsg, Model
 from nav_msgs.srv import GetMap
+
 from pedsim_srvs.srv import SpawnPeds
 from pedsim_msgs.msg import Ped
 from pedsim_srvs.srv import SpawnInteractiveObstacles,SpawnInteractiveObstaclesRequest
 from pedsim_srvs.srv import SpawnObstacle,SpawnObstacleRequest
 from pedsim_msgs.msg import InteractiveObstacle, LineObstacle
 
-
-
 from task_generator.manager.pedsim_manager import PedsimManager
 from task_generator.utils import Utils
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, Pose2D, Pose
 from std_srvs.srv import Trigger
 
 from ..constants import Constants, FlatlandRandomModel, Pedsim
 from .base_simulator import BaseSimulator
 from .simulator_factory import SimulatorFactory
-
-
 
 
 
@@ -235,9 +231,6 @@ class FlatlandSimulator(BaseSimulator):
 
 
     # PEDSIM INTEGRATION 
-
-
-   
     
     def create_pedsim_static_obstacle(self, i, map_manager, forbidden_zones):
         num_obstacles = 1
@@ -293,7 +286,6 @@ class FlatlandSimulator(BaseSimulator):
         return 
 
     def create_pedsim_interactive_obstacle(self, i, map_manager, forbidden_zones):
-        # print("305 safe")
         self.map_manager = map_manager
         ped_array =np.array([],dtype=object).reshape(0,3) # Not used
         # self.human_id+=1
@@ -303,21 +295,15 @@ class FlatlandSimulator(BaseSimulator):
         # print(obstacles[i])
         # if random.uniform(0.0, 1.0) < 0.8:
         ped=np.array([i+1, [x, y, 0.0]],dtype=object)
-        # print("323 safe")
-        
         return ped
 
-        # self.create_ped_msg(ped_array, id)
-
     def create_pedsim_dynamic_obstacle(self,i, map_manager, forbidden_zones):
-        # print("305 safe")
         self.map_manager = map_manager
         ped_array =np.array([],dtype=object).reshape(0,3) # Not used
         # self.human_id+=1
         safe_distance = 3.5
 
         [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
-        # print(obstacles[i])
         # if random.uniform(0.0, 1.0) < 0.8:
         waypoints = np.array( [x, y, 1]).reshape(1, 3) # the first waypoint
         safe_distance = 0.1 # the other waypoints don't need to avoid robot
@@ -329,35 +315,15 @@ class FlatlandSimulator(BaseSimulator):
                 dist = np.linalg.norm([waypoints[-1,0] - x2,waypoints[-1,1] - y2])
             waypoints = np.vstack([waypoints, [x2, y2, 1]])
         ped=np.array([i+1, [x, y, 0.0], waypoints],dtype=object)
-        # print("323 safe")
-        
         return ped
     
     def spawn_pedsim_static_obstacles(self, obstacles):
         # TODO adjust if necessary
         # _add_map_border_in_pedsim
-        map_service = rospy.ServiceProxy("/static_map", GetMap)
-        self.map = map_service().map
-        self._free_space_indices = Utils.update_freespace_indices_maze(self.map)
-        border_vertex=Utils.generate_map_inner_border(self._free_space_indices,self.map)
-
-        self.map_border_vertices=border_vertex
-        add_pedsim_srv=SpawnObstacleRequest()
-        size=border_vertex.shape[0]
-        for i in range(size):
-            lineObstacle=LineObstacle()
-            lineObstacle.start.x,lineObstacle.start.y=border_vertex[i,0],border_vertex[i,1]
-            lineObstacle.end.x,lineObstacle.end.y=border_vertex[(i+1)%size,0],border_vertex[(i+1)%size,1]
-            add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
-        self.__add_obstacle_srv.call(add_pedsim_srv)
-
-        
-
-        return
+        pass
 
     def spawn_pedsim_interactive_obstacles(self, obstacles):
         print("225spawning pedsim dynamic obstacles")
-        # print(peds.shape)
 
         srv = SpawnInteractiveObstacles()
         srv.InteractiveObstacles = []
@@ -375,7 +341,6 @@ class FlatlandSimulator(BaseSimulator):
 
             self.agent_topic_str+=f',{self._ns_prefix}pedsim_static_obstacle_{obstacle[0]}/0' 
             msg.type = "shelf"
-            # msg.name = "test"
             msg.interaction_radius = 0.0
             msg.yaml_path = os.path.join(
                 rospkg.RosPack().get_path("arena-simulation-setup"),
@@ -405,7 +370,6 @@ class FlatlandSimulator(BaseSimulator):
 
     def spawn_pedsim_dynamic_obstacles(self, peds):
         print("225spawning pedsim dynamic obstacles")
-        # print(peds.shape)
 
         srv = SpawnPeds()
         srv.peds = []
@@ -458,7 +422,6 @@ class FlatlandSimulator(BaseSimulator):
             msg.waypoint_mode = 0 # or 1 check later
 
             msg.waypoints = []
-            print("275spawning pedsim dynamic obstacles")
 
             for pos in ped[2]:
                 p = Point()
@@ -468,7 +431,6 @@ class FlatlandSimulator(BaseSimulator):
                 msg.waypoints.append(p)
             srv.peds.append(msg)
             i = i+1
-            print("285spawning pedsim dynamic obstacles")
 
         max_num_try = 2
         i_curr_try = 0
@@ -488,6 +450,24 @@ class FlatlandSimulator(BaseSimulator):
         self.__peds = peds
         rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
         return
+
+    def spawn_pedsim_map_borders(self):
+        map_service = rospy.ServiceProxy("/static_map", GetMap)
+        self.map = map_service().map
+        self._free_space_indices = Utils.update_freespace_indices_maze(self.map)
+        border_vertex=Utils.generate_map_inner_border(self._free_space_indices,self.map)
+
+        self.map_border_vertices=border_vertex
+        add_pedsim_srv=SpawnObstacleRequest()
+        size=border_vertex.shape[0]
+        for i in range(size):
+            lineObstacle=LineObstacle()
+            lineObstacle.start.x,lineObstacle.start.y=border_vertex[i,0],border_vertex[i,1]
+            lineObstacle.end.x,lineObstacle.end.y=border_vertex[(i+1)%size,0],border_vertex[(i+1)%size,1]
+            add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
+        self.__add_obstacle_srv.call(add_pedsim_srv)
+        return
+
     # ROBOT
 
     def spawn_robot(self, name, robot_name, namespace_appendix=None, complexity=1):

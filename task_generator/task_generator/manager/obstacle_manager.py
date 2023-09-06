@@ -10,8 +10,10 @@ class ObstacleManager:
 
     def start_scenario(self, scenario):
         if rospy.get_param("pedsim"):
-            self.simulator.spawn_pedsim_dynamic_obstacles(scenario["obstacles"]["dynamic"])
-            print("eeeeeeeeeeeeeeeee")
+            print(scenario["obstacles"]["dynamic"])
+            self.simulator.spawn_pedsim_dynamic_scenario_obstacles(scenario["obstacles"]["dynamic"])
+            # self.simulator.spawn_pedsim_static_obstacles(scenario["obstacles"]["static"])
+            # self.simulator.spawn_pedsim_interactive_scenario_obstacles(scenario["obstacles"]["interactive"])
         else:
             self.simulator.spawn_pedsim_agents(scenario["obstacles"]["dynamic"])
 
@@ -62,7 +64,7 @@ class ObstacleManager:
                 obstacles.append(self.simulator.create_dynamic_obstacle(position=position))
 
         # Create interactive obstacles
-        for i in range(1):
+        for i in range(15):
             position = self.map_manager.get_random_pos_on_map(
                 safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
                 forbidden_zones=forbidden_zones,
@@ -74,7 +76,7 @@ class ObstacleManager:
                 obstacles.append(self.simulator.create_interactive_obstacle(position=position))
 
         # Create static obstacles
-        for i in range(0):
+        for i in range(1):
             position = self.map_manager.get_random_pos_on_map(
                 safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
                 forbidden_zones=forbidden_zones,
@@ -82,16 +84,14 @@ class ObstacleManager:
             if rospy.get_param("pedsim"):
                 x = self.simulator.create_pedsim_static_obstacle(i,self.map_manager, forbidden_zones)
                 static_obstacles_array = np.vstack((static_obstacles_array, x))
-                # print("printing static_obstacles_array")
-                # print(len(static_obstacles_array))
             else: 
                 obstacles.append(self.simulator.create_static_obstacle(position=position))
 
-
         # Spawn obstacles
         if rospy.get_param("pedsim"):
-            self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array)
+            # self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array)
             # self.simulator.spawn_pedsim_interactive_obstacles(interactive_obstacles_array)
             self.simulator.spawn_pedsim_dynamic_obstacles(dynamic_obstacles_array)
+            self.simulator.spawn_pedsim_map_borders()
         else: 
             self.simulator.spawn_obstacles(obstacles)

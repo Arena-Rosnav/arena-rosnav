@@ -3,7 +3,7 @@
 - git:
     local-name: ../utils/flatland
     uri: https://github.com/Arena-Rosnav/flatland.git
-    version: v2.0.0
+    version: master
 
 - git:
     local-name: ../utils/stable-baselines3
