@@ -79,6 +79,15 @@ class GazeboSimulator(BaseSimulator):
 
         self._spawn_peds_srv(spawn_ped_msg)
 
+    def create_dynamic_obstacle(self, **args):
+        pass
+
+    def create_static_obstacle(self, **args):
+        pass
+
+    def spawn_obstacles(self, obstacles):
+        pass
+
     def reset_pedsim_agents(self):
         self._reset_peds_srv()
 
