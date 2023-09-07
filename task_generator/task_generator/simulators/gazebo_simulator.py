@@ -94,7 +94,7 @@ class GazeboSimulator(BaseSimulator):
       # default_actor_model_file = pkg_path + "/models/actor2.sdf"
       # default_actor_model_file = pkg_path + "/models/forklift_robot-master/model.sdf"
       # default_actor_model_file = pkg_path + "/models/test_static_obstacle.sdf"
-      # default_actor_model_file = pkg_path + "/models/forklift1.sdf"
+      # default_actor_model_file = pkg_path + "/models/forklift3.sdf"
       # default_actor_model_file = pkg_path + "/models/child.sdf"
       # default_actor_model_file = pkg_path + "/models/prius.sdf"
 
@@ -134,7 +134,7 @@ class GazeboSimulator(BaseSimulator):
               rospy.set_param("respawn_static", False)
 
   def dynamic_actor_poses_callback(self, actors):
-      # print("Running callback")
+      # print(actors)
       if rospy.get_param("respawn_dynamic"):
         for actor in actors.agent_states:
             actor_id = str(actor.id)
@@ -148,30 +148,29 @@ class GazeboSimulator(BaseSimulator):
                                         actor_pose.orientation.y,
                                         actor_pose.orientation.z,
                                         actor_pose.orientation.w) )
-            new_xml_string= self.xml_string.replace("0 0 0.75",str(actor_pose.position.x)+" "+str(actor_pose.position.y) +" 0.75")
-            new_xml_string= new_xml_string.replace("actor2",actor_id)
+            # new_xml_string= self.xml_string.replace("0 0 0.75",str(actor_pose.position.x)+" "+str(actor_pose.position.y) +" 0.75")
+            # new_xml_string= new_xml_string.replace("actor1",actor_id)
             # print(new_xml_string)
-            self.spawn_model(actor_id, new_xml_string, "", model_pose, "world")
-            # self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
+            self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
             rospy.set_param("respawn_dynamic", False)
-      # else:
-        # for actor in actors.agent_states:
-        #     print("moving", actor.id)
-        #     model_state_request = ModelState()
-        #     model_state_request.model_name = str(actor.id)
-        #     actor_pose = actor.pose
-        #     model_state_request.pose = Pose(Point(x= actor_pose.position.x,
-        #                           y= actor_pose.position.y,
-        #                           z= actor_pose.position.z),
-        #                     Quaternion(actor_pose.orientation.x,
-        #                                 actor_pose.orientation.y,
-        #                                 actor_pose.orientation.z,
-        #                                 actor_pose.orientation.w) )
+      else:
+        for actor in actors.agent_states:
+            # print("moving", str(actor.id))
+            model_state_request = ModelState()
+            model_state_request.model_name = str(actor.id)
+            actor_pose = actor.pose
+            model_state_request.pose = Pose(Point(x= actor_pose.position.x,
+                                  y= actor_pose.position.y,
+                                  z= actor_pose.position.z),
+                            Quaternion(actor_pose.orientation.x,
+                                        actor_pose.orientation.y,
+                                        actor_pose.orientation.z,
+                                        actor_pose.orientation.w) )
             
-        #     model_state_request.reference_frame = "world"
+            model_state_request.reference_frame = "world"
 
-        #     self._move_model_srv(model_state_request)
-
+            self._move_model_srv(model_state_request)
+            
   def before_reset_task(self):
     self.pause()
 
@@ -248,7 +247,7 @@ class GazeboSimulator(BaseSimulator):
   def create_pedsim_interactive_obstacle(self, i, map_manager, forbidden_zones):
       self.map_manager = map_manager
       # self.human_id+=1
-      safe_distance = 3.5
+      safe_distance = 0.5
 
       [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
       # print(obstacles[i])
@@ -260,7 +259,7 @@ class GazeboSimulator(BaseSimulator):
       self.map_manager = map_manager
       ped_array =np.array([],dtype=object).reshape(0,3) # Not used
       # self.human_id+=1
-      safe_distance = 3.5
+      safe_distance = 0.5
 
       [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
       # print(obstacles[i])
@@ -461,78 +460,52 @@ class GazeboSimulator(BaseSimulator):
         msg = Ped()
         msg.id = i 
 
-        if ped["random"] == True:
-          dynamic_obstacles_array = np.array([],dtype=object).reshape(0,3)
-          dynamic_obstacles_array = np.vstack((dynamic_obstacles_array, self.create_pedsim_dynamic_obstacle(i,self.map_manager, [])))
-          ped = dynamic_obstacles_array[0]
+        msg.pos = Point()
+        msg.pos.x = ped["pos"][0]
+        msg.pos.y = ped["pos"][1]
+        msg.pos.z = 0
 
-          msg.pos = Point()
-          msg.pos.x = ped[1][0]
-          msg.pos.y = ped[1][1]
-          msg.pos.z = ped[1][2]
-
-          msg.waypoints = []
-          for pos in ped[2]:
-              p = Point()
-              p.x = pos[0]
-              p.y = pos[1]
-              p.z = pos[2]
-              msg.waypoints.append(p)
-
-          msg.yaml_file = os.path.join(
-              rospkg.RosPack().get_path("arena-simulation-setup"),
-              "dynamic_obstacles",
-              "person_two_legged.model.yaml"
-          )
-
-        else:
-          msg.pos = Point()
-          msg.pos.x = ped["pos"][0]
-          msg.pos.y = ped["pos"][1]
-          msg.pos.z = 0
-
-          msg.waypoints = []
-          for pos in ped["waypoints"]:
-              p = Point()
-              p.x = pos[0]
-              p.y = pos[1]
-              p.z = 0
-              msg.waypoints.append(p)
-          msg.yaml_file = os.path.join(
-              rospkg.RosPack().get_path("arena-simulation-setup"),
-              "dynamic_obstacles",
-              ped["yaml_path"]
+        msg.waypoints = []
+        for pos in ped["waypoints"]:
+            p = Point()
+            p.x = pos[0]
+            p.y = pos[1]
+            p.z = 0
+            msg.waypoints.append(p)
+        msg.yaml_file = os.path.join(
+            rospkg.RosPack().get_path("arena-simulation-setup"),
+            "dynamic_obstacles",
+            "person_two_legged.model.yaml"
           )
 
         self.agent_topic_str+=f',pedsim_agent_{i}/0' 
         msg.type = "adult"
         msg.number_of_peds = 1
         # msg.vmax = 0.3
-        msg.vmax = 0.1
-        msg.start_up_mode = "default"
-        msg.wait_time = 0.0
-        msg.trigger_zone_radius = 0.0
-        msg.chatting_probability = 0.00
-        msg.tell_story_probability = 0
-        msg.group_talking_probability = 0.00
-        msg.talking_and_walking_probability = 0.00
-        msg.requesting_service_probability = 0.00
-        msg.requesting_guide_probability = 0.00
-        msg.requesting_follower_probability = 0.00
-        msg.max_talking_distance = 5
-        msg.max_servicing_radius = 5
-        msg.talking_base_time = 10
-        msg.tell_story_base_time = 0
-        msg.group_talking_base_time = 10
-        msg.talking_and_walking_base_time = 6
-        msg.receiving_service_base_time = 20
-        msg.requesting_service_base_time = 30
-        msg.force_factor_desired = 1
-        msg.force_factor_obstacle = 1
-        msg.force_factor_social = 5
-        msg.force_factor_robot = 1
-        msg.waypoint_mode = 0 # or 1 check later
-
+        msg.vmax = ped["vmax"]
+        msg.start_up_mode = ped["start_up_mode"]
+        msg.wait_time = ped["wait_time"]
+        msg.trigger_zone_radius = ped["trigger_zone_radius"]
+        msg.chatting_probability = ped["chatting_probability"]
+        msg.tell_story_probability = ped["tell_story_probability"]
+        msg.group_talking_probability = ped["group_talking_probability"]
+        msg.talking_and_walking_probability = ped["talking_and_walking_probability"]
+        msg.requesting_service_probability = ped["requesting_service_probability"]
+        msg.requesting_guide_probability = ped["requesting_guide_probability"]
+        msg.requesting_follower_probability = ped["requesting_follower_probability"]
+        msg.max_talking_distance = ped["max_talking_distance"]
+        msg.max_servicing_radius = ped["max_servicing_radius"]
+        msg.talking_base_time = ped["talking_base_time"]
+        msg.tell_story_base_time = ped["tell_story_base_time"]
+        msg.group_talking_base_time = ped["group_talking_base_time"]
+        msg.talking_and_walking_base_time = ped["talking_and_walking_base_time"]
+        msg.receiving_service_base_time = ped["receiving_service_base_time"]
+        msg.requesting_service_base_time = ped["requesting_service_base_time"]
+        msg.force_factor_desired = ped["force_factor_desired"]
+        msg.force_factor_obstacle = ped["force_factor_obstacle"]
+        msg.force_factor_social = ped["force_factor_social"]
+        msg.force_factor_robot = ped["force_factor_robot"]
+        msg.waypoint_mode = ped["waypoint_mode"] # or 1 check later
 
         srv.peds.append(msg)
         i = i+1
