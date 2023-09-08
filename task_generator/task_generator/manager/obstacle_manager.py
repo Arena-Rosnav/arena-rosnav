@@ -13,7 +13,8 @@ class ObstacleManager:
             print(scenario["obstacles"]["dynamic"])
             self.simulator.spawn_pedsim_dynamic_scenario_obstacles(scenario["obstacles"]["dynamic"])
             # self.simulator.spawn_pedsim_static_obstacles(scenario["obstacles"]["static"])
-            # self.simulator.spawn_pedsim_map_borders()
+            print("spawning map borders")
+            self.simulator.spawn_pedsim_map_borders()
             # self.simulator.spawn_pedsim_interactive_scenario_obstacles(scenario["obstacles"]["interactive"])
         else:
             self.simulator.spawn_pedsim_agents(scenario["obstacles"]["dynamic"])
@@ -52,7 +53,7 @@ class ObstacleManager:
         obstacles = []
 
         # Create dynamic obstacles # TODO dynamic
-        for i in range(20):
+        for i in range(0):
             position = self.map_manager.get_random_pos_on_map(
                 safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
                 forbidden_zones=forbidden_zones,
@@ -77,7 +78,7 @@ class ObstacleManager:
                 obstacles.append(self.simulator.create_interactive_obstacle(position=position))
 
         # Create static obstacles
-        for i in range(0):
+        for i in range(1):
             position = self.map_manager.get_random_pos_on_map(
                 safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
                 forbidden_zones=forbidden_zones,
@@ -91,9 +92,9 @@ class ObstacleManager:
         # Spawn obstacles
         # TODO better solution instead of param
         if rospy.get_param("pedsim"):
-            # self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array)
+            self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array)
             # self.simulator.spawn_pedsim_interactive_obstacles(interactive_obstacles_array)
-            self.simulator.spawn_pedsim_dynamic_obstacles(dynamic_obstacles_array)
+            # self.simulator.spawn_pedsim_dynamic_obstacles(dynamic_obstacles_array)
             self.simulator.spawn_pedsim_map_borders()
         else: 
             self.simulator.spawn_obstacles(obstacles)
