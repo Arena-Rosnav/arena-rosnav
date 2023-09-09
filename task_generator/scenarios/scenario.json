@@ -1,6 +1,6 @@
 {
-  "robots": [{ "start": [6.0, 78.0, 0], "goal": [128.5, 7.5, 0] }],
+  "robots": [{ "start": [8.75, 8.0, 0], "goal": [20.0, 11.0, 0] }],
   "obstacles": { "dynamic": [], "static": [] },
-  "map": "map",
-  "resets": 10
+  "map": "map_empty",
+  "resets": 2
 }

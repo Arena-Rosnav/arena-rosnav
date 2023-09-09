@@ -1,0 +1,82 @@
+{
+  "robots": [{ "start": [1.0, 1.0, 0], "goal": [29.0, 23.0, 0] }],
+  "obstacles": { 
+    "dynamic": [
+      {
+        "random": false,
+        "pos": [7.0, 7.0],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[7.0, 7.0], [7.0, 9.0], [9.0, 9.0], [9.0, 7.0]]
+      },
+      {
+        "random": false,
+        "pos": [10.0, 10.0],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[10.0, 10.0], [10.0, 12.0], [12.0, 12.0], [12.0, 10.0]]
+      },
+      {
+        "random": false,
+        "pos": [13.0, 13.0],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[13.0, 13.0], [13.0, 15.0], [15.0, 15.0], [15.0, 13.0]]
+      },
+      {
+        "random": false,
+        "pos": [16.0, 16.0],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[16.0, 16.0], [16.0, 18.0], [18.0, 18.0], [18.0, 16.0]]
+      },
+      {
+        "random": true
+      },
+      {
+        "random": true
+      },
+      {
+        "random": true
+      },
+      {
+        "random": true
+      },
+      {
+        "random": true
+      },
+      {
+        "random": true
+      },
+      {
+        "random": true
+      },
+      {
+        "random": true
+      },
+      {
+        "random": true
+      },
+      {
+        "random": true
+      },
+      {
+        "random": true
+      },
+      {
+        "random": true
+      },
+      {
+        "random": true
+      },
+      {
+        "random": true
+      }
+    ], 
+    "interactive": [
+    {
+      "pos": [28.0, 22.0],
+      "yaml_path": "long_shelf.model.yaml"
+    }
+    ], 
+    "static": [] 
+},
+  "map": "map10",
+  "resets": 2
+}

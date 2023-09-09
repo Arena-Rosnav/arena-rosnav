@@ -43,12 +43,15 @@ namespace gazebo
     // call back function when receive rosmsg
     void OnRosMsg(const pedsim_msgs::AgentStatesConstPtr msg)
     {
+      // ROS_ERROR(msg);
       double distanceTraveled;
       bool actorFound = false;
+      ROS_WARN("49");
       for (uint actor = 0; actor < msg->agent_states.size(); actor++)
       {
         if (this->actor->GetName() == "person_" + std::to_string(msg->agent_states[actor].id))
         {
+          ROS_WARN("53");
           actorFound = true;
           ignition::math::Pose3d pose = this->actor->WorldPose();
           ignition::math::Pose3d gzb_pose;
@@ -63,6 +66,7 @@ namespace gazebo
           gzb_pose.Rot() = ignition::math::Quaterniond(1.5707, 0.0, yaw.Radian() + 1.5707);
           try
           {
+            ROS_WARN("69");
             distanceTraveled = (gzb_pose.Pos() -
                                 pose.Pos())
                                    .Length();
@@ -79,6 +83,7 @@ namespace gazebo
       if (!actorFound)
       // Actor not found in pedsim simulation -> place him far away in Gazebo so it doesn't intervene
       {
+        ROS_WARN("Actor not found in pedsim simulation -> place him far away in Gazebo so it doesn't intervene");
         ignition::math::Pose3d pose = this->actor->WorldPose();
         pose.Pos().Z() = -20.0;
         this->actor->SetWorldPose(pose, true, false);

@@ -1,0 +1,30 @@
+{
+  "robots": [{ "start": [25.0, 25.0, 0], "goal": [25.0, 45.0, 0] }],
+  "obstacles": { 
+    "dynamic": [
+      {
+        "random": false,
+        "pos": [25.0, 43.0],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[25.0, 40.0], [25.0, 37.0], [25.0, 34.0], [25.0, 30.0]]
+      },
+      {
+        "random": false,
+        "pos": [27.0, 43.0],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[25.0, 40.0], [25.0, 37.0], [25.0, 34.0], [25.0, 30.0]]
+      },
+      {
+        "random": false,
+        "pos": [23.0, 43.0],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[25.0, 40.0], [25.0, 37.0], [25.0, 34.0], [25.0, 30.0]]
+      }
+    ], 
+    "interactive": [
+    ], 
+    "static": [] 
+},
+  "map": "map_empty",
+  "resets": 2
+}
