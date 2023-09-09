@@ -17,7 +17,7 @@
 
 - git:
     local-name: ../utils/pedsim_ros
-    uri: https://github.com/Arena-Rosnav/pedsim_ros.git
+    uri: https://github.com/basselfa/pedsim_ros.git
     version: master
 
 - git:
