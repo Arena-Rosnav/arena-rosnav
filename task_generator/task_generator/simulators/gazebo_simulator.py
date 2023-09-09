@@ -82,20 +82,17 @@ class GazeboSimulator(BaseSimulator):
     self.map_manager = None
 
 
-    # From "spawn_pedsim_agents.py" - TODO Clean later
     if rospy.get_param("pedsim"):
-      # rospy.init_node("spawn_pedsim_agents")
       self._peds = []
 
       rospack1 = RosPack()
       pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
-      # default_actor_model_file = pkg_path + "/models/actor_model.sdf"
-      default_actor_model_file = pkg_path + "/models/table.sdf"
+      default_actor_model_file = pkg_path + "/models/actor_model.sdf"
+      # default_actor_model_file = pkg_path + "/models/table.sdf"
       # default_actor_model_file = pkg_path + "/models/actor2.sdf"
       # default_actor_model_file = pkg_path + "/models/forklift_robot-master/model.sdf"
       # default_actor_model_file = pkg_path + "/models/test_static_obstacle.sdf"
       # default_actor_model_file = pkg_path + "/models/forklift3.sdf"
-      # default_actor_model_file = pkg_path + "/models/child.sdf"
       # default_actor_model_file = pkg_path + "/models/prius.sdf"
 
       actor_model_file = rospy.get_param('~actor_model_file', default_actor_model_file)
@@ -111,9 +108,6 @@ class GazeboSimulator(BaseSimulator):
       rospy.set_param("respawn_static", True)
       rospy.Subscriber("/pedsim_simulator/simulated_waypoints", Waypoints, self.interactive_actor_poses_callback)
       rospy.Subscriber("/pedsim_simulator/simulated_agents", AgentStates, self.dynamic_actor_poses_callback)
-
-      # while (rospy.is_shutdown()) == False:
-      #   rospy.spin()
 
   def interactive_actor_poses_callback(self, actors):
         if rospy.get_param("respawn_static"):
@@ -134,7 +128,6 @@ class GazeboSimulator(BaseSimulator):
               rospy.set_param("respawn_static", False)
 
   def dynamic_actor_poses_callback(self, actors):
-      # print(actors)
       if rospy.get_param("respawn_dynamic"):
         for actor in actors.agent_states:
             actor_id = str(actor.id)
@@ -180,39 +173,25 @@ class GazeboSimulator(BaseSimulator):
     # PEDSIM INTEGRATION
 
   def create_pedsim_static_obstacle(self, i, map_manager, forbidden_zones):
-      # TODO adjust if necessary
       self.map_manager = map_manager
-      # self.human_id+=1
       safe_distance = 0.5
-
       [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
-      # print(obstacles[i])
-      # if random.uniform(0.0, 1.0) < 0.8:
       ped=np.array([i+1, [x, y, 0.0]],dtype=object)
-      # print("323 safe")
-
       return ped 
 
   def create_pedsim_interactive_obstacle(self, i, map_manager, forbidden_zones):
       self.map_manager = map_manager
-      # self.human_id+=1
       safe_distance = 0.5
-
       [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
       # print(obstacles[i])
-      # if random.uniform(0.0, 1.0) < 0.8:
       ped=np.array([i+1, [x, y, 0.0]],dtype=object)
       return ped
 
   def create_pedsim_dynamic_obstacle(self,i, map_manager, forbidden_zones):
       self.map_manager = map_manager
       ped_array =np.array([],dtype=object).reshape(0,3) # Not used
-      # self.human_id+=1
       safe_distance = 0.5
-
       [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
-      # print(obstacles[i])
-      # if random.uniform(0.0, 1.0) < 0.8:
       waypoints = np.array( [x, y, 1]).reshape(1, 3) # the first waypoint
       safe_distance = 0.1 # the other waypoints don't need to avoid robot
       for j in range(10): # noote was 1000
@@ -225,7 +204,7 @@ class GazeboSimulator(BaseSimulator):
       return ped
 
   def spawn_pedsim_static_obstacles(self, obstacles):
-      # TODO adjust if necessary
+      # WORK IN PROGRESS
       num_obstacles = 1
       model_yaml_file_path = os.path.join("../utils/arena-simulation-setup/obstacles", "shelf.yaml")
       start_pos = obstacles[0][1]
@@ -297,7 +276,6 @@ class GazeboSimulator(BaseSimulator):
 
           self.agent_topic_str+=f',{self._ns_prefix}pedsim_static_obstacle_{obstacle[0]}/0' 
           msg.type = "shelf"
-          # msg.name = "test"
           msg.interaction_radius = 0.0
           msg.yaml_path = os.path.join(
               rospkg.RosPack().get_path("arena-simulation-setup"),
@@ -326,104 +304,108 @@ class GazeboSimulator(BaseSimulator):
       return
 
   def spawn_pedsim_dynamic_obstacles(self, peds):
-      # srv = SpawnPeds()
-      # srv.peds = []
-      # i = 0
-      self.agent_topic_str=''  
-      for ped in peds: 
-          id, pose, waypoints = ped
-          x, y, theta = pose
+      srv = SpawnPeds()
+      srv.peds = []
+      i = 0
+      self.agent_topic_str=''   
+      while i < len(peds) : 
+          msg = Ped()
+          ped = peds[i]
+          msg.id = ped[0]
 
-          rospy.loginfo("Spawning model: actor_id = %s", id)
+          msg.pos = Point()
+          msg.pos.x = ped[1][0]
+          msg.pos.y = ped[1][1]
+          msg.pos.z = ped[1][2]
 
-          model_pose = Pose(Point(x=x,
-                                y=y,
-                                z=0), Quaternion())
-          new_xml_string= self.xml_string.replace("0 0 0.75", str(x) + " " + str(y) +" 0.75")
-          new_xml_string= new_xml_string.replace("actor2", str(id))
-          new_xml_string= new_xml_string.replace(
-             "__waypoints__", 
-             "".join(
-                [
-                   f"<waypoint>{x} {y} {theta}</waypoint>" for x, y, theta in waypoints
-                  ]
-                )
-              )
+          self.agent_topic_str+=f',pedsim_agent_{ped[0]}/0' 
+          msg.type = "adult"
+          msg.yaml_file = os.path.join(
+              rospkg.RosPack().get_path("arena-simulation-setup"),
+              "dynamic_obstacles",
+              "person_two_legged.model.yaml"
+          )
+          msg.number_of_peds = 1
+          msg.vmax = 0.3
+          msg.start_up_mode = "default"
+          msg.wait_time = 0.0
+          msg.trigger_zone_radius = 0.0
+          msg.chatting_probability = 0.00
+          msg.tell_story_probability = 0
+          msg.group_talking_probability = 0.00
+          msg.talking_and_walking_probability = 0.00
+          msg.requesting_service_probability = 0.00
+          msg.requesting_guide_probability = 0.00
+          msg.requesting_follower_probability = 0.00
+          msg.max_talking_distance = 5
+          msg.max_servicing_radius = 5
+          msg.talking_base_time = 10
+          msg.tell_story_base_time = 0
+          msg.group_talking_base_time = 10
+          msg.talking_and_walking_base_time = 6
+          msg.receiving_service_base_time = 20
+          msg.requesting_service_base_time = 30
+          msg.force_factor_desired = 1
+          msg.force_factor_obstacle = 1
+          msg.force_factor_social = 5
+          msg.force_factor_robot = 1
+          msg.waypoint_mode = 0 # or 1 check later
 
-          # print(new_xml_string)
-          self.spawn_model(str(id), new_xml_string, "", model_pose, "world")
-          # self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
-          rospy.set_param("respawn_dynamic", False)
+          msg.waypoints = []
 
-      #     msg = Ped()
-      #     ped = peds[i]
-      #     msg.id = ped[0]
+          for pos in ped[2]:
+              p = Point()
+              p.x = pos[0]
+              p.y = pos[1]
+              p.z = pos[2]
+              msg.waypoints.append(p)
+          srv.peds.append(msg)
+          i = i+1
 
-      #     msg.pos = Point()
-      #     msg.pos.x = ped[1][0]
-      #     msg.pos.y = ped[1][1]
-      #     msg.pos.z = ped[1][2]
+      max_num_try = 2
+      i_curr_try = 0
+      while i_curr_try < max_num_try:
+      # try to call service
+          response=self.__respawn_peds_srv.call(srv.peds)
 
-      #     self.agent_topic_str+=f',pedsim_agent_{ped[0]}/0' 
-      #     msg.type = "adult"
-      #     msg.yaml_file = os.path.join(
-      #         rospkg.RosPack().get_path("arena-simulation-setup"),
-      #         "dynamic_obstacles",
-      #         "person_two_legged.model.yaml"
-      #     )
-      #     msg.number_of_peds = 1
-      #     msg.vmax = 0.3
-      #     msg.start_up_mode = "default"
-      #     msg.wait_time = 0.0
-      #     msg.trigger_zone_radius = 0.0
-      #     msg.chatting_probability = 0.00
-      #     msg.tell_story_probability = 0
-      #     msg.group_talking_probability = 0.00
-      #     msg.talking_and_walking_probability = 0.00
-      #     msg.requesting_service_probability = 0.00
-      #     msg.requesting_guide_probability = 0.00
-      #     msg.requesting_follower_probability = 0.00
-      #     msg.max_talking_distance = 5
-      #     msg.max_servicing_radius = 5
-      #     msg.talking_base_time = 10
-      #     msg.tell_story_base_time = 0
-      #     msg.group_talking_base_time = 10
-      #     msg.talking_and_walking_base_time = 6
-      #     msg.receiving_service_base_time = 20
-      #     msg.requesting_service_base_time = 30
-      #     msg.force_factor_desired = 1
-      #     msg.force_factor_obstacle = 1
-      #     msg.force_factor_social = 5
-      #     msg.force_factor_robot = 1
-      #     msg.waypoint_mode = 0 # or 1 check later
-
-      #     msg.waypoints = []
-
-      #     for pos in ped[2]:
-      #         p = Point()
-      #         p.x = pos[0]
-      #         p.y = pos[1]
-      #         p.z = pos[2]
-      #         msg.waypoints.append(p)
-      #     srv.peds.append(msg)
-      #     i = i+1
-
-      # max_num_try = 2
-      # i_curr_try = 0
-      # print("trying to call service with peds: ")    
-      # while i_curr_try < max_num_try:
-      # # try to call service
-      #     response=self.__respawn_peds_srv.call(srv.peds)
-
-      #     if not response.success:  # if service not succeeds, do something and redo service
-      #         rospy.logwarn(
-      #             f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
-      #         # rospy.logwarn(response.message)
-      #         i_curr_try += 1
-      #     else:
-      #         break
-      self._peds = peds
+          if not response.success:  # if service not succeeds, do something and redo service
+              rospy.logwarn(
+                  f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+              i_curr_try += 1
+          else:
+              break
+      self.__peds = peds
       rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
+
+      # USE THE FOLLOWING CODE TO SPAWN ACTORS WITHOUT PEDSIM
+
+      # self.agent_topic_str=''  
+      # for ped in peds: 
+      #     id, pose, waypoints = ped
+      #     x, y, theta = pose
+
+      #     rospy.loginfo("Spawning model: actor_id = %s", id)
+
+      #     model_pose = Pose(Point(x=x,
+      #                           y=y,
+      #                           z=0), Quaternion())
+      #     new_xml_string= self.xml_string.replace("0 0 0.75", str(x) + " " + str(y) +" 0.75")
+      #     new_xml_string= new_xml_string.replace("actor2", str(id))
+      #     new_xml_string= new_xml_string.replace(
+      #        "__waypoints__", 
+      #        "".join(
+      #           [
+      #              f"<waypoint>{x} {y} {theta}</waypoint>" for x, y, theta in waypoints
+      #             ]
+      #           )
+      #         )
+
+      #     self.spawn_model(str(id), new_xml_string, "", model_pose, "world")
+      #     # self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
+      #     rospy.set_param("respawn_dynamic", False)
+
+      # self._peds = peds
+      # rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
       return
       
   def spawn_pedsim_map_borders(self):
@@ -451,8 +433,6 @@ class GazeboSimulator(BaseSimulator):
       self.agent_topic_str=''   
       while i < len(peds) : 
         ped = peds[i]
-        # print("ped[i] ", i, " :")
-        # print(ped)
         msg = Ped()
         msg.id = i 
 
@@ -508,7 +488,6 @@ class GazeboSimulator(BaseSimulator):
 
       max_num_try = 2
       i_curr_try = 0
-      # print("trying to call service with peds: ")    
       while i_curr_try < max_num_try:
       # try to call service
           response=self.__respawn_peds_srv.call(srv.peds)
@@ -541,7 +520,6 @@ class GazeboSimulator(BaseSimulator):
 
           self.agent_topic_str+=f',{self._ns_prefix}pedsim_static_obstacle_{i}/0' 
           msg.type = "shelf"
-          # msg.name = "test"
           msg.interaction_radius = 0.0
           msg.yaml_path = os.path.join(
               rospkg.RosPack().get_path("arena-simulation-setup"),
@@ -572,7 +550,7 @@ class GazeboSimulator(BaseSimulator):
   def remove_all_obstacles(self):
     # self._remove_peds_srv(True)
     # Anhand ID gazebo obstacles löschen
-    print("REMOVE ALL OBSTACLES")
+    print("REMOVE ALL OBSTACLES (currently not working)")
 
     for ped in self._peds:
       #  print("remove obstacle", ped)
@@ -593,7 +571,6 @@ class GazeboSimulator(BaseSimulator):
 
   def create_dynamic_obstacle(self, position, **args):
     pass
-
 
   def publish_goal(self, goal):
     goal_msg = PoseStamped()
