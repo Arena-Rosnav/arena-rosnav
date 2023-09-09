@@ -15,7 +15,10 @@ class Utils:
         Returns:
             vertex_coordinate_x_y(np.ndarray with shape 4 x 2):
         """
+        # print("map", map_)
+        # print("map", map_)
         n_freespace_cells = len(free_space_indices[0])
+        # print("free space", free_space_indices)
         border_vertex=np.array([]).reshape(0, 2)
         border_vertices=np.array([]).reshape(0, 2)
         for idx in [0, n_freespace_cells-4]:

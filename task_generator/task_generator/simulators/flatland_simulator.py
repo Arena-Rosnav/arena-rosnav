@@ -468,6 +468,86 @@ class FlatlandSimulator(BaseSimulator):
         self.__add_obstacle_srv.call(add_pedsim_srv)
         return
 
+    # SCENARIO INTEGRATION
+    def spawn_pedsim_dynamic_scenario_obstacles(self, peds):
+        srv = SpawnPeds()
+        srv.peds = []
+        i = 0
+        self.agent_topic_str=''   
+        while i < len(peds) : 
+            ped = peds[i]
+            print("ped[i] ", i, " :")
+            print(ped)
+            msg = Ped()
+            msg.id = i 
+
+            msg.pos = Point()
+            msg.pos.x = ped["pos"][0]
+            msg.pos.y = ped["pos"][1]
+            msg.pos.z = 0
+
+            msg.waypoints = []
+            for pos in ped["waypoints"]:
+                p = Point()
+                p.x = pos[0]
+                p.y = pos[1]
+                p.z = 0
+                msg.waypoints.append(p)
+            msg.yaml_file = os.path.join(
+                rospkg.RosPack().get_path("arena-simulation-setup"),
+                "dynamic_obstacles",
+                "person_two_legged.model.yaml"
+            )
+
+            self.agent_topic_str+=f',pedsim_agent_{i}/0' 
+            msg.type = "adult"
+            msg.number_of_peds = 1
+            # msg.vmax = 0.3
+            msg.vmax = ped["vmax"]
+            msg.start_up_mode = ped["start_up_mode"]
+            msg.wait_time = ped["wait_time"]
+            msg.trigger_zone_radius = ped["trigger_zone_radius"]
+            msg.chatting_probability = ped["chatting_probability"]
+            msg.tell_story_probability = ped["tell_story_probability"]
+            msg.group_talking_probability = ped["group_talking_probability"]
+            msg.talking_and_walking_probability = ped["talking_and_walking_probability"]
+            msg.requesting_service_probability = ped["requesting_service_probability"]
+            msg.requesting_guide_probability = ped["requesting_guide_probability"]
+            msg.requesting_follower_probability = ped["requesting_follower_probability"]
+            msg.max_talking_distance = ped["max_talking_distance"]
+            msg.max_servicing_radius = ped["max_servicing_radius"]
+            msg.talking_base_time = ped["talking_base_time"]
+            msg.tell_story_base_time = ped["tell_story_base_time"]
+            msg.group_talking_base_time = ped["group_talking_base_time"]
+            msg.talking_and_walking_base_time = ped["talking_and_walking_base_time"]
+            msg.receiving_service_base_time = ped["receiving_service_base_time"]
+            msg.requesting_service_base_time = ped["requesting_service_base_time"]
+            msg.force_factor_desired = ped["force_factor_desired"]
+            msg.force_factor_obstacle = ped["force_factor_obstacle"]
+            msg.force_factor_social = ped["force_factor_social"]
+            msg.force_factor_robot = ped["force_factor_robot"]
+            msg.waypoint_mode = ped["waypoint_mode"] # or 1 check later
+
+            srv.peds.append(msg)
+            i = i+1
+
+        max_num_try = 2
+        i_curr_try = 0
+        # print("trying to call service with peds: ")    
+        while i_curr_try < max_num_try:
+        # try to call service
+            response=self.__respawn_peds_srv.call(srv.peds)
+
+            if not response.success:  # if service not succeeds, do something and redo service
+                rospy.logwarn(
+                    f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+                # rospy.logwarn(response.message)
+                i_curr_try += 1
+            else:
+                break
+        self._peds = peds
+        rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
+        return
     # ROBOT
 
     def spawn_robot(self, name, robot_name, namespace_appendix=None, complexity=1):
