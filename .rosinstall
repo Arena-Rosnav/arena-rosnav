@@ -6,6 +6,11 @@
     version: master
 
 - git:
+    local-name: ../utils/arena-tools
+    uri: https://github.com/basselfa/arena-tools.git
+    version: master
+
+- git:
     local-name: ../utils/stable-baselines3
     uri: https://github.com/Arena-Rosnav/stable-baselines3.git
     version: master

@@ -63,7 +63,8 @@ class ObstacleManager:
                 dynamic_obstacles_array = np.vstack((dynamic_obstacles_array, x))
 
             else: 
-                obstacles.append(self.simulator.create_dynamic_obstacle(position=position))
+                pass
+                # obstacles.append(self.simulator.create_dynamic_obstacle(position=position))
 
         # Create interactive obstacles  
         for i in range(5):
@@ -75,7 +76,8 @@ class ObstacleManager:
                 x = self.simulator.create_pedsim_interactive_obstacle(i,self.map_manager, forbidden_zones)
                 interactive_obstacles_array = np.vstack((interactive_obstacles_array, x))
             else: 
-                obstacles.append(self.simulator.create_interactive_obstacle(position=position))
+                pass
+                # obstacles.append(self.simulator.create_interactive_obstacle(position=position))
 
         # Create static obstacles
         for i in range(1):
@@ -87,7 +89,8 @@ class ObstacleManager:
                 x = self.simulator.create_pedsim_static_obstacle(i,self.map_manager, forbidden_zones)
                 static_obstacles_array = np.vstack((static_obstacles_array, x))
             else: 
-                obstacles.append(self.simulator.create_static_obstacle(position=position))
+                pass
+                # obstacles.append(self.simulator.create_static_obstacle(position=position))
 
         # Spawn obstacles
         # TODO better solution instead of param

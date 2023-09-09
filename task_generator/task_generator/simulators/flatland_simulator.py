@@ -84,9 +84,10 @@ class FlatlandSimulator(BaseSimulator):
         rospy.wait_for_service(f"{self._ns_prefix}move_model", timeout=T)
         rospy.wait_for_service(f"{self._ns_prefix}spawn_model", timeout=T)
         rospy.wait_for_service(f"{self._ns_prefix}delete_model", timeout=T)
-        rospy.wait_for_service(f"{self._ns_prefix}pedsim_simulator/respawn_peds" , timeout=20)
-        rospy.wait_for_service(f"{self._ns_prefix}pedsim_simulator/respawn_interactive_obstacles" , timeout=20)
-        rospy.wait_for_service(f'{self._ns_prefix}pedsim_simulator/add_obstacle', timeout=20)
+        if rospy.get_param("pedsim"):
+            rospy.wait_for_service(f"{self._ns_prefix}pedsim_simulator/respawn_peds" , timeout=20)
+            rospy.wait_for_service(f"{self._ns_prefix}pedsim_simulator/respawn_interactive_obstacles" , timeout=20)
+            rospy.wait_for_service(f'{self._ns_prefix}pedsim_simulator/add_obstacle', timeout=20)
 
         self._move_model_srv = rospy.ServiceProxy(
             f"{self._ns_prefix}move_model", MoveModel, persistent=True
@@ -233,57 +234,66 @@ class FlatlandSimulator(BaseSimulator):
     # PEDSIM INTEGRATION 
     
     def create_pedsim_static_obstacle(self, i, map_manager, forbidden_zones):
-        num_obstacles = 1
-        model_yaml_file_path = os.path.join("../utils/arena-simulation-setup/obstacles", "random.model.yaml")
-        start_pos = []
-        vertices = np.array([[0, 0], [0, 0], [0, 0], [0, 0]])
-        type_obstacle = "static"
+        # num_obstacles = 1
+        # model_yaml_file_path = os.path.join("../utils/arena-simulation-setup/obstacles", "random.model.yaml")
+        # start_pos = []
+        # vertices = np.array([[0, 0], [0, 0], [0, 0], [0, 0]])
+        # type_obstacle = "static"
 
-        max_num_try = 2
-        i_curr_try = 0
-        while i_curr_try < max_num_try:
-            spawn_request = SpawnModelRequest()
-            spawn_request.yaml_path = model_yaml_file_path
-            spawn_request.name = f'{name_prefix}_{instance_idx:02d}'
-            # x, y, theta = get_random_pos_on_map(self._free_space_indices, self.map,)
-            # set the postion of the obstacle out of the map to hidden them
-            if len(start_pos) == 0:
-                x = self.map.info.origin.position.x - 3 * \
-                    self.map.info.resolution * self.map.info.height
-                y = self.map.info.origin.position.y - 3 * \
-                    self.map.info.resolution * self.map.info.width
-                theta = theta = random.uniform(-math.pi, math.pi)
-            else:
-                assert len(start_pos) == 3
-                x = start_pos[0]
-                y = start_pos[1]
-                theta = start_pos[2]
-            spawn_request.pose.x = x
-            spawn_request.pose.y = y
-            spawn_request.pose.theta = theta
-            # try to call service
-            response = self._srv_spawn_model.call(spawn_request)
-            if not response.success:  # if service not succeeds, do something and redo service
-                rospy.logwarn(
-                    f"({self.ns}) spawn object {spawn_request.name} failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
-                rospy.logwarn(response.message)
-                i_curr_try += 1
-            else:
-                self.obstacle_name_list.append(spawn_request.name)
-                #tell the info of polygon obstacles to pedsim
-                add_pedsim_srv=SpawnObstacleRequest()
-                size=vertices.shape[0]
-                for i in range(size):
-                    lineObstacle=LineObstacle()
-                    lineObstacle.start.x,lineObstacle.start.y=vertices[i,0],vertices[i,1]
-                    lineObstacle.end.x,lineObstacle.end.y=vertices[(i+1)%size,0],vertices[(i+1)%size,1]
-                    add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
-                self.__add_obstacle_srv.call(add_pedsim_srv)
-                break
-        if i_curr_try == max_num_try:
-            raise rospy.ServiceException(f"({self.ns}) failed to register obstacles")
+        # max_num_try = 2
+        # i_curr_try = 0
+        # while i_curr_try < max_num_try:
+        #     spawn_request = SpawnModelRequest()
+        #     spawn_request.yaml_path = model_yaml_file_path
+        #     spawn_request.name = f'{name_prefix}_{instance_idx:02d}'
+        #     # x, y, theta = get_random_pos_on_map(self._free_space_indices, self.map,)
+        #     # set the postion of the obstacle out of the map to hidden them
+        #     if len(start_pos) == 0:
+        #         x = self.map.info.origin.position.x - 3 * \
+        #             self.map.info.resolution * self.map.info.height
+        #         y = self.map.info.origin.position.y - 3 * \
+        #             self.map.info.resolution * self.map.info.width
+        #         theta = theta = random.uniform(-math.pi, math.pi)
+        #     else:
+        #         assert len(start_pos) == 3
+        #         x = start_pos[0]
+        #         y = start_pos[1]
+        #         theta = start_pos[2]
+        #     spawn_request.pose.x = x
+        #     spawn_request.pose.y = y
+        #     spawn_request.pose.theta = theta
+        #     # try to call service
+        #     response = self._srv_spawn_model.call(spawn_request)
+        #     if not response.success:  # if service not succeeds, do something and redo service
+        #         rospy.logwarn(
+        #             f"({self.ns}) spawn object {spawn_request.name} failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+        #         rospy.logwarn(response.message)
+        #         i_curr_try += 1
+        #     else:
+        #         self.obstacle_name_list.append(spawn_request.name)
+        #         #tell the info of polygon obstacles to pedsim
+        #         add_pedsim_srv=SpawnObstacleRequest()
+        #         size=vertices.shape[0]
+        #         for i in range(size):
+        #             lineObstacle=LineObstacle()
+        #             lineObstacle.start.x,lineObstacle.start.y=vertices[i,0],vertices[i,1]
+        #             lineObstacle.end.x,lineObstacle.end.y=vertices[(i+1)%size,0],vertices[(i+1)%size,1]
+        #             add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
+        #         self.__add_obstacle_srv.call(add_pedsim_srv)
+        #         break
+        # if i_curr_try == max_num_try:
+        #     raise rospy.ServiceException(f"({self.ns}) failed to register obstacles")
+        self.map_manager = map_manager
+        ped_array =np.array([],dtype=object).reshape(0,3) # Not used
+        # self.human_id+=1
+        safe_distance = 3.5
+
+        [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
+        # print(obstacles[i])
+        # if random.uniform(0.0, 1.0) < 0.8:
+        ped=np.array([i+1, [x, y, 0.0]],dtype=object)
         
-        return 
+        return ped
 
     def create_pedsim_interactive_obstacle(self, i, map_manager, forbidden_zones):
         self.map_manager = map_manager
@@ -548,6 +558,7 @@ class FlatlandSimulator(BaseSimulator):
         self._peds = peds
         rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
         return
+
     # ROBOT
 
     def spawn_robot(self, name, robot_name, namespace_appendix=None, complexity=1):
