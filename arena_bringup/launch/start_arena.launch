@@ -33,14 +33,10 @@
   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]" />
   <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]" />
   <arg name="simulator" default="flatland" doc="[flatland, gazebo]" />
-  <env name="SIMULATOR" value="$(arg simulator)" />
-
-  <arg name="pedsim" default="false" doc="[true, false]" />
-  <env name="PEDSIM" value="$(arg pedsim)" />
-  <param name="pedsim" value="$(arg pedsim)" />
 
   <arg name="complexity" default="1" doc="1 = Map known, Position known; 2 = Map known, Position unknown (AMCL); 3 = Map unknown, Position unknown (SLAM)" />
   
+  <env name="SIMULATOR" value="$(arg simulator)" />
 
   <arg name="agent_name" default="$(arg model)"     doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')" />
   <!-- Or you can load a robot setup file to launch multiple robots in the same simulation -->
@@ -144,14 +140,11 @@
     <arg name="auto_reset" value="$(arg auto_reset)" />
   </include>
 
-  <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(arg pedsim)">
+  <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
     <param name="simulation_factor" value="1" type="double"/>
     <param name="pedsim_update_rate" value="30.0" type="double"/>
     <param name="scene_file" value="$(find arena-simulation-setup)/world/$(arg world_file)/scenarios/$(arg world_file).xml" type="string"/>
   </node>
-
-  <!-- Launch pedsim agent spawner  -->
-  <!-- <node name="pedsim_agent" pkg="pedsim_gazebo_plugin" type="spawn_pedsim_agents.py"></node> -->
 
   <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/>
 

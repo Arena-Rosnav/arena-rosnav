@@ -102,6 +102,6 @@
   ],
   "robot_position": [-1.27, -1.34],
   "robot_goal": [22.35, 16.46],
-  "map_path": "map_empty/map.yaml",
+  "map_path": "map4/map.yaml",
   "format": "arena-tools"
 }

@@ -72,11 +72,6 @@ class ScenarioTask(BaseTask):
             self.scenario_file["map"],
             "map.yaml"
         )
-        # scenario_map_path = os.path.join(
-        #     rospkg.RosPack().get_path("arena-simulation-setup"), 
-        #     "maps", 
-        #     self.scenario_file["map_path"]
-        # )
 
         if not static_map == scenario_map_path:
             rospy.logerr("Map path of scenario and static map are not the same. Shutting down.")
@@ -101,7 +96,6 @@ class ScenarioTask(BaseTask):
         super()._set_up_robot_managers()
 
     def _check_robot_manager_length(self):
-
         scenario_robots_length = len(self.scenario_file["robots"])
         setup_robot_length = len(self.robot_managers)
 
@@ -113,5 +107,3 @@ class ScenarioTask(BaseTask):
         if scenario_robots_length > setup_robot_length:
             self.scenario_file["robots"] = self.scenario_file["robots"][:setup_robot_length]
             rospy.logwarn("Scenario file contains more robots than setup.")
-        
-        return
