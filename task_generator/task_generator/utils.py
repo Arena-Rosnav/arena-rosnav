@@ -8,3 +8,5 @@ class Utils:
     
     def get_arena_type():
         return os.getenv("ARENA_TYPE", "training").lower()
+        
+    
