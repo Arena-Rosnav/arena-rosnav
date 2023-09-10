@@ -116,7 +116,7 @@ class ObstacleManager:
 
         # Spawn obstacles
         # TODO better solution instead of param
-        if rospy.get_param("pedsim"):
+        if rospy.get_param("pedsim", False):
             # self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array)
             # self.simulator.spawn_pedsim_interactive_obstacles(interactive_obstacles_array)
             self.simulator.spawn_pedsim_dynamic_obstacles(dynamic_obstacles_array)
