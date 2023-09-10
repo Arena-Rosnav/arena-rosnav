@@ -7,7 +7,7 @@
 
 - git:
     local-name: ../utils/stable-baselines3
-    uri: https://github.com/tuananhroman/stable-baselines3.git
+    uri: https://github.com/Arena-Rosnav/stable-baselines3.git
     version: master
 
 - git:
@@ -44,7 +44,7 @@
 
 - git:
     local-name: ../planners/rosnav
-    uri: https://github.com/tuananhroman/rosnav-rl.git
+    uri: https://github.com/Arena-Rosnav/rosnav-rl.git
     version: master
 
 - git:
