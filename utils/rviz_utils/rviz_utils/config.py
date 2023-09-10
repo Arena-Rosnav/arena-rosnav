@@ -1,6 +1,6 @@
 class Config:
     MAP = {
-        "Alpha": 0.3,
+        "Alpha": 0.6,
         "Class": "rviz/Map",
         "Color Scheme": "map",
         "Draw Behind": "true",

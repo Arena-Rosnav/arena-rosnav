@@ -1,78 +1,78 @@
 ### UTILS
 
 - git:
-    local-name: ../utils/flatland
-    uri: https://github.com/tuananhroman/flatland.git
-    version: master
+  local-name: ../utils/flatland
+  uri: https://github.com/Arena-Rosnav/flatland.git
+  version: master
 
 - git:
-    local-name: ../utils/stable-baselines3
-    uri: https://github.com/tuananhroman/stable-baselines3.git
-    version: master
+  local-name: ../utils/stable-baselines3
+  uri: https://github.com/tuananhroman/stable-baselines3.git
+  version: master
 
 - git:
-    local-name: ../utils/navigation/msgs/ford
-    uri: https://bitbucket.org/acl-swarm/ford_msgs/src/master/
-    version: master
+  local-name: ../utils/navigation/msgs/ford
+  uri: https://bitbucket.org/acl-swarm/ford_msgs/src/master/
+  version: master
 
 - git:
-    local-name: ../utils/pedsim_ros
-    uri: https://github.com/Arena-Rosnav/pedsim_ros.git
-    version: master
+  local-name: ../utils/pedsim_ros
+  uri: https://github.com/basselfa/pedsim_ros.git
+  version: master
 
 - git:
-    local-name: ../utils/jackal
-    uri: https://github.com/jackal/jackal.git
+  local-name: ../utils/jackal
+  uri: https://github.com/jackal/jackal.git
 
 - git:
-    local-name: ../utils/3rd-party-robot-packages
-    uri: https://github.com/Arena-Rosnav/3rd-party-robot-packages
+  local-name: ../utils/3rd-party-robot-packages
+  uri: https://github.com/Arena-Rosnav/3rd-party-robot-packages
 
 ### ARENA INFRASTRUCTURE
 
 - git:
-    local-name: ../utils/arena-simulation-setup
-    uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: dynamic_map
+  local-name: ../utils/arena-simulation-setup
+  uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
+  version: dynamic_map
 
 - git:
-    local-name: ../arena-evaluation
-    uri: https://github.com/Arena-Rosnav/arena-evaluation.git
-    version: master
+  local-name: ../arena-evaluation
+  uri: https://github.com/Arena-Rosnav/arena-evaluation.git
+  version: master
 
 ### PLANNERS
 
 - git:
-    local-name: ../planners/rosnav
-    uri: https://github.com/tuananhroman/rosnav-rl.git
-    version: master
+  local-name: ../planners/rosnav
+  uri: https://github.com/tuananhroman/rosnav-rl.git
+  version: master
 
 - git:
-    local-name: ../planners/arena-ros
-    uri: https://github.com/Arena-Rosnav/arena-ros.git
-    version: master
+  local-name: ../planners/arena-ros
+  uri: https://github.com/Arena-Rosnav/arena-ros.git
+  version: master
 
 - git:
-    local-name: ../planners/cadrl-ros
-    uri: https://github.com/Arena-Rosnav/cadrl-ros.git
-    version: master
+  local-name: ../planners/cadrl-ros
+  uri: https://github.com/Arena-Rosnav/cadrl-ros.git
+  version: master
 
 - git:
-    local-name: ../planners/crowdnav-ros
-    uri: https://github.com/Arena-Rosnav/crowdnav-ros.git
-    version: master
+  local-name: ../planners/crowdnav-ros
+  uri: https://github.com/Arena-Rosnav/crowdnav-ros.git
+  version: master
 
 - git:
-    local-name: ../planners/rlca-ros
-    uri: https://github.com/Arena-Rosnav/rlca-ros.git
-    version: master
+  local-name: ../planners/rlca-ros
+  uri: https://github.com/Arena-Rosnav/rlca-ros.git
+  version: master
 
 - git:
-    local-name: ../planners/sarl-star
-    uri: https://github.com/Arena-Rosnav/sarl-star.git
-    version: master
+  local-name: ../planners/sarl-star
+  uri: https://github.com/Arena-Rosnav/sarl-star.git
+  version: master
 
 - git:
-    local-name: ../planners/mpc
-    uri: https://github.com/rst-tu-dortmund/mpc_local_planner
-    version: master
+  local-name: ../planners/mpc
+  uri: https://github.com/rst-tu-dortmund/mpc_local_planner
+  version: master

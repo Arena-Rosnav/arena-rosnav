@@ -46,7 +46,7 @@ class ScenarioTask(BaseTask):
         return False
 
     def reset_scenario(self):
-        self.obstacles_manager.reset_scenario(self.scenario_file)
+        # self.obstacles_manager.reset_scenario(self.scenario_file)
 
         self._reset_robots()
 
@@ -64,6 +64,11 @@ class ScenarioTask(BaseTask):
             self.scenario_file["map"],
             "map.yaml",
         )
+        # scenario_map_path = os.path.join(
+        #     rospkg.RosPack().get_path("arena-simulation-setup"),
+        #     "maps",
+        #     self.scenario_file["map_path"]
+        # )
 
         if not static_map == scenario_map_path:
             rospy.logerr(
@@ -105,3 +110,5 @@ class ScenarioTask(BaseTask):
                 :setup_robot_length
             ]
             rospy.logwarn("Scenario file contains more robots than setup.")
+
+        return

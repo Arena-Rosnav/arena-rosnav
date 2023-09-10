@@ -80,7 +80,7 @@ RUN source /root/.bashrc \
     && source /opt/ros/noetic/setup.sh \
     && catkin_make
 
-WORKDIR /root/src/utils/stable-baselines3
-RUN pip install -e .
+# WORKDIR /root/src/utils/stable-baselines3
+# RUN pip install -e .
 
 WORKDIR /root/

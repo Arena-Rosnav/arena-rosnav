@@ -4,7 +4,7 @@
   <arg name="model" default="burger"/>
   <arg name="cmd_vel_topic" default="/cmd_vel" />
   <arg name="odom_topic" default="odom" />
-  <arg name="speed" default="0.22"/>
+  <arg name="speed" default="2"/>
   <arg name="namespace" />
 
   <!-- move_base -->

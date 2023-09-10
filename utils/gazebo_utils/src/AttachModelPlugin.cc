@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 
 #include <map>
 #include <vector>
 #include <ignition/math/Pose3.hh>
+#include <ros/ros.h>
 
 #include <gazebo/common/Events.hh>
 #include <gazebo/physics/Link.hh>
@@ -25,24 +26,28 @@
 #include <gazebo/physics/World.hh>
 #include "AttachModelPlugin.hh"
 
-
 namespace servicesim
 {
   /// \brief Private data class for the AttachModelPlugin class
   class AttachModelPluginPrivate
   {
     /// \brief Event connections
-    public: std::vector<gazebo::event::ConnectionPtr> connections;
+  public:
+    std::vector<gazebo::event::ConnectionPtr> connections;
 
     /// \brief Pointer to this model
-    public: gazebo::physics::ModelPtr model;
+  public:
+    gazebo::physics::ModelPtr model;
 
     /// \brief Pointer to the world
-    public: gazebo::physics::WorldPtr world;
+  public:
+    gazebo::physics::WorldPtr world;
 
     /// \brief List of link and model pointers and the model pose offset
-    public: std::map<gazebo::physics::LinkPtr,
-        std::map<gazebo::physics::ModelPtr, ignition::math::Pose3d>> linkModels;
+  public:
+    std::map<gazebo::physics::LinkPtr,
+             std::map<gazebo::physics::ModelPtr, ignition::math::Pose3d>>
+        linkModels;
   };
 }
 
@@ -95,12 +100,14 @@ void AttachModelPlugin::Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr _
             // TODO: what if model hasn't been loaded yet
             if (!model)
             {
+              ROS_WARN("98 AttachModelPlugin.cc No Model found");
               gzerr << "Model: '" << modelName << "' not found, make sure it is loaded before '"
                     << _model->GetName() << "'." << std::endl;
             }
             else
             {
               // pose is optional
+              ROS_WARN("105 AttachModelPlugin.cc No pose found?");
               ignition::math::Pose3d pose;
               if (modelElem->HasElement("pose"))
                 pose = modelElem->Get<ignition::math::Pose3d>("pose");
@@ -121,7 +128,7 @@ void AttachModelPlugin::Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr _
 
   this->dataPtr->connections.push_back(
       gazebo::event::Events::ConnectWorldUpdateEnd(
-      std::bind(&AttachModelPlugin::OnUpdate, this)));
+          std::bind(&AttachModelPlugin::OnUpdate, this)));
 }
 
 /////////////////////////////////////////////////
@@ -140,4 +147,3 @@ void AttachModelPlugin::OnUpdate()
     }
   }
 }
- 
