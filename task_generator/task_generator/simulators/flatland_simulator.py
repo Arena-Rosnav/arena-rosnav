@@ -75,7 +75,7 @@ class FlatlandSimulator(BaseSimulator):
 
         self._robot_name = rospy.get_param("robot_model", "")
         self._robot_radius = rospy.get_param("robot_radius", "")
-        self._is_training_mode = rospy.get_param("train_mode", "")
+        self._is_training_mode = rospy.get_param("train_mode", False)
         self._step_size = rospy.get_param("step_size", "")
         # self._robot_yaml_path = rospy.get_param("robot_yaml_path")
         self._tmp_model_path = rospy.get_param("tmp_model_path", "/tmp")
@@ -86,16 +86,42 @@ class FlatlandSimulator(BaseSimulator):
         rospy.wait_for_service(f"{self._ns_prefix}move_model", timeout=T)
         rospy.wait_for_service(f"{self._ns_prefix}spawn_model", timeout=T)
         rospy.wait_for_service(f"{self._ns_prefix}delete_model", timeout=T)
-        rospy.wait_for_service(
-            f"{self._ns_prefix}pedsim_simulator/respawn_peds", timeout=20
-        )
-        rospy.wait_for_service(
-            f"{self._ns_prefix}pedsim_simulator/respawn_interactive_obstacles",
-            timeout=20,
-        )
-        rospy.wait_for_service(
-            f"{self._ns_prefix}pedsim_simulator/add_obstacle", timeout=20
-        )
+
+        if not self._is_training_mode:
+            rospy.wait_for_service(
+                f"{self._ns_prefix}pedsim_simulator/respawn_peds", timeout=20
+            )
+            rospy.wait_for_service(
+                f"{self._ns_prefix}pedsim_simulator/respawn_interactive_obstacles",
+                timeout=20,
+            )
+            rospy.wait_for_service(
+                f"{self._ns_prefix}pedsim_simulator/add_obstacle", timeout=20
+            )
+
+            self.__respawn_peds_srv = rospy.ServiceProxy(
+                f"{self._ns_prefix}pedsim_simulator/respawn_peds",
+                SpawnPeds,
+                persistent=True,
+            )
+
+            self._spawn_peds_srv = rospy.ServiceProxy(
+                f"{self._ns_prefix}pedsim_simulator/spawn_peds", SpawnPeds
+            )
+            self._reset_peds_srv = rospy.ServiceProxy(
+                f"{self._ns_prefix}pedsim_simulator/reset_all_peds", Trigger
+            )
+            self.__add_obstacle_srv = rospy.ServiceProxy(
+                f"{self._ns_prefix}pedsim_simulator/add_obstacle",
+                SpawnObstacle,
+                persistent=True,
+            )
+
+            self.__respawn_interactive_obstacles_srv = rospy.ServiceProxy(
+                f"{self._ns_prefix}pedsim_simulator/respawn_interactive_obstacles",
+                SpawnInteractiveObstacles,
+                persistent=True,
+            )
 
         self._move_model_srv = rospy.ServiceProxy(
             f"{self._ns_prefix}move_model", MoveModel, persistent=True
@@ -114,29 +140,6 @@ class FlatlandSimulator(BaseSimulator):
         )
         self._delete_models_srv = rospy.ServiceProxy(
             f"{self._ns_prefix}delete_models", DeleteModels
-        )
-        self.__respawn_peds_srv = rospy.ServiceProxy(
-            f"{self._ns_prefix}pedsim_simulator/respawn_peds",
-            SpawnPeds,
-            persistent=True,
-        )
-
-        self._spawn_peds_srv = rospy.ServiceProxy(
-            f"{self._ns_prefix}pedsim_simulator/spawn_peds", SpawnPeds
-        )
-        self._reset_peds_srv = rospy.ServiceProxy(
-            f"{self._ns_prefix}pedsim_simulator/reset_all_peds", Trigger
-        )
-        self.__add_obstacle_srv = rospy.ServiceProxy(
-            f"{self._ns_prefix}pedsim_simulator/add_obstacle",
-            SpawnObstacle,
-            persistent=True,
-        )
-
-        self.__respawn_interactive_obstacles_srv = rospy.ServiceProxy(
-            f"{self._ns_prefix}pedsim_simulator/respawn_interactive_obstacles",
-            SpawnInteractiveObstacles,
-            persistent=True,
         )
 
         self.obs_names = []
