@@ -7,6 +7,7 @@ class Constants:
     class ObstacleManager:
         DYNAMIC_OBSTACLES = 0
         STATIC_OBSTACLES = 0
+        INTERACTIVE_OBSTACLES = 0
 
         OBSTACLE_MAX_RADIUS = 0.6
 
