@@ -428,6 +428,9 @@ class GazeboSimulator(BaseSimulator):
   def spawn_pedsim_map_obstacles(self):
     # map_service = rospy.ServiceProxy("/static_map", GetMap)
     # self.map = map_service().map
+    # print(self.map)
+    map = rospy.get_param("map_file")
+    # print(map)
     # self._free_space_indices = Utils.update_freespace_indices_maze(self.map)
     # border_vertex=Utils.generate_map_inner_border(self._free_space_indices,self.map)
 
@@ -435,21 +438,23 @@ class GazeboSimulator(BaseSimulator):
     map_path = os.path.join(
         rospkg.RosPack().get_path("arena-simulation-setup"), 
         "worlds", 
-        "map23",
+        map,
         "ped_scenarios",
-        "map23.xml"
+        f"{map}.xml"
     )
+    # print(map_path)
     tree = ET.parse(map_path)
     root = tree.getroot()
 
+    add_pedsim_srv=SpawnObstacleRequest()
     for child in root:
-      print(child.attrib)
+      # print(child.attrib)
       lineObstacle=LineObstacle()
       lineObstacle.start.x,lineObstacle.start.y=float(child.attrib['x1']),float(child.attrib['y1'])
       lineObstacle.end.x,lineObstacle.end.y=float(child.attrib['x2']),float(child.attrib['y2'])
-      add_pedsim_srv=SpawnObstacleRequest()
       add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
-      self.__add_obstacle_srv.call(add_pedsim_srv)
+
+    self.__add_obstacle_srv.call(add_pedsim_srv)
 
 
 
