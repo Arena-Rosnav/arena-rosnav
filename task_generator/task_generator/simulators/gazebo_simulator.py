@@ -27,6 +27,8 @@ from .simulator_factory import SimulatorFactory
 from task_generator.utils import Utils
 from nav_msgs.srv import GetMap
 
+import xml.etree.ElementTree as ET
+
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
 
@@ -147,23 +149,21 @@ class GazeboSimulator(BaseSimulator):
             # print(new_xml_string)
             self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
             rospy.set_param("respawn_dynamic", False)
-      # else:
-        # for actor in actors.agent_states:
-        #     # print("moving", str(actor.id))
-        #     model_state_request = ModelState()
-        #     model_state_request.model_name = str(actor.id)
-        #     actor_pose = actor.pose
-        #     model_state_request.pose = Pose(Point(x= actor_pose.position.x,
-        #                           y= actor_pose.position.y,
-        #                           z= actor_pose.position.z),
-        #                     Quaternion(actor_pose.orientation.x,
-        #                                 actor_pose.orientation.y,
-        #                                 actor_pose.orientation.z,
-        #                                 actor_pose.orientation.w) )
-            
-        #     model_state_request.reference_frame = "world"
-
-        #     self._move_model_srv(model_state_request)
+    #   else:
+    #     for actor in actors.agent_states:
+    #         # print("moving", str(actor.id))
+    #         model_state_request = ModelState()
+    #         model_state_request.model_name = str(actor.id)
+    #         actor_pose = actor.pose
+    #         model_state_request.pose = Pose(Point(x= actor_pose.position.x,
+    #                               y= actor_pose.position.y,
+    #                               z= actor_pose.position.z),
+    #                         Quaternion(actor_pose.orientation.x,
+    #                                     actor_pose.orientation.y,
+    #                                     actor_pose.orientation.z,
+    #                                     actor_pose.orientation.w) )
+    #         model_state_request.reference_frame = "world"
+    #         self._move_model_srv(model_state_request)
             
   def before_reset_task(self):
     self.pause()
@@ -410,7 +410,6 @@ class GazeboSimulator(BaseSimulator):
       return
       
   def spawn_pedsim_map_borders(self):
-    # TODO adjust if necessary
     map_service = rospy.ServiceProxy("/static_map", GetMap)
     self.map = map_service().map
     self._free_space_indices = Utils.update_freespace_indices_maze(self.map)
@@ -425,6 +424,34 @@ class GazeboSimulator(BaseSimulator):
         lineObstacle.end.x,lineObstacle.end.y=border_vertex[(i+1)%size,0],border_vertex[(i+1)%size,1]
         add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
     self.__add_obstacle_srv.call(add_pedsim_srv)
+
+  def spawn_pedsim_map_obstacles(self):
+    # map_service = rospy.ServiceProxy("/static_map", GetMap)
+    # self.map = map_service().map
+    # self._free_space_indices = Utils.update_freespace_indices_maze(self.map)
+    # border_vertex=Utils.generate_map_inner_border(self._free_space_indices,self.map)
+
+    print("READING XML")
+    map_path = os.path.join(
+        rospkg.RosPack().get_path("arena-simulation-setup"), 
+        "worlds", 
+        "map23",
+        "ped_scenarios",
+        "map23.xml"
+    )
+    tree = ET.parse(map_path)
+    root = tree.getroot()
+
+    for child in root:
+      print(child.attrib)
+      lineObstacle=LineObstacle()
+      lineObstacle.start.x,lineObstacle.start.y=float(child.attrib['x1']),float(child.attrib['y1'])
+      lineObstacle.end.x,lineObstacle.end.y=float(child.attrib['x2']),float(child.attrib['y2'])
+      add_pedsim_srv=SpawnObstacleRequest()
+      add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
+      self.__add_obstacle_srv.call(add_pedsim_srv)
+
+
 
   # SCENARIO INTEGRATION
   def spawn_pedsim_dynamic_scenario_obstacles(self, peds):
