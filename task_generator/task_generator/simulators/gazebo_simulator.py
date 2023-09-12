@@ -132,41 +132,41 @@ class GazeboSimulator(BaseSimulator):
   #                                       1) )
   #           self.spawn_model(actor_name, static_xml_string, "", model_pose, "world")
   #       rospy.set_param("respawn_static", False)
-  def spawn_obstacles(self, obs):
-    pass
 
   def interactive_actor_poses_callback(self, actors):
-    for actor in actors.waypoints:
-      if rospy.get_param("respawn_interactive") and "interactive" in actor.name:
-        actor_name = str(actor.name)
-        rospy.loginfo("Spawning interactive: actor_id = %s", actor_name)
+    if rospy.get_param("respawn_interactive"):
+      for actor in actors.waypoints:
+        if "interactive" in actor.name:
+          actor_name = str(actor.name)
+          rospy.loginfo("Spawning interactive: actor_id = %s", actor_name)
 
-        model_pose =  Pose(Point(x= actor.position.x,
-                              y= actor.position.y,
-                              z= actor.position.z)
-                              ,
-                        Quaternion(0,
-                                    0,
-                                    0,
-                                    1) )
-        self.spawn_model(actor_name, self.xml_string, "", model_pose, "world")
-        rospy.set_param("respawn_interactive", False)
+          model_pose =  Pose(Point(x= actor.position.x,
+                                y= actor.position.y,
+                                z= actor.position.z)
+                                ,
+                          Quaternion(0,
+                                      0,
+                                      0,
+                                      1) )
+          self.spawn_model(actor_name, self.xml_string, "", model_pose, "world")
+          rospy.set_param("respawn_interactive", False)
           
-    for actor in actors.waypoints:
-      if rospy.get_param("respawn_static") and "static" in actor.name:
-        actor_name = str(actor.name)
-        rospy.loginfo("Spawning static: actor_id = %s", actor_name)
+    if rospy.get_param("respawn_static"):
+      for actor in actors.waypoints:
+        if "static" in actor.name:
+          actor_name = str(actor.name)
+          rospy.loginfo("Spawning static: actor_id = %s", actor_name)
 
-        model_pose =  Pose(Point(x= actor.position.x,
-                              y= actor.position.y,
-                              z= actor.position.z)
-                              ,
-                        Quaternion(0,
-                                    0,
-                                    0,
-                                    1) )
-        self.spawn_model(actor_name, self.xml_string, "", model_pose, "world")
-        rospy.set_param("respawn_static", False)
+          model_pose =  Pose(Point(x= actor.position.x,
+                                y= actor.position.y,
+                                z= actor.position.z)
+                                ,
+                          Quaternion(0,
+                                      0,
+                                      0,
+                                      1) )
+          self.spawn_model(actor_name, self.xml_string, "", model_pose, "world")
+          rospy.set_param("respawn_static", False)
           
 
   def dynamic_actor_poses_callback(self, actors):
@@ -512,14 +512,7 @@ class GazeboSimulator(BaseSimulator):
     self.__add_obstacle_srv.call(add_pedsim_srv)
 
   def spawn_pedsim_map_obstacles(self):
-    # map_service = rospy.ServiceProxy("/static_map", GetMap)
-    # self.map = map_service().map
-    # print(self.map)
     map = rospy.get_param("map_file")
-    # print(map)
-    # self._free_space_indices = Utils.update_freespace_indices_maze(self.map)
-    # border_vertex=Utils.generate_map_inner_border(self._free_space_indices,self.map)
-
     print("READING XML")
     map_path = os.path.join(
         rospkg.RosPack().get_path("arena-simulation-setup"), 
@@ -528,13 +521,11 @@ class GazeboSimulator(BaseSimulator):
         "ped_scenarios",
         f"{map}.xml"
     )
-    # print(map_path)
     tree = ET.parse(map_path)
     root = tree.getroot()
 
     add_pedsim_srv=SpawnObstacleRequest()
     for child in root:
-      # print(child.attrib)
       lineObstacle=LineObstacle()
       lineObstacle.start.x,lineObstacle.start.y=float(child.attrib['x1']),float(child.attrib['y1'])
       lineObstacle.end.x,lineObstacle.end.y=float(child.attrib['x2']),float(child.attrib['y2'])
@@ -741,3 +732,6 @@ class GazeboSimulator(BaseSimulator):
         os.path.join(arena_sim_path, "robot", robot_name, "urdf", f"{robot_name}.urdf.xacro"),
         f"robot_namespace:={namespace}"
     ]).decode("utf-8")
+
+  def spawn_obstacles(self, obs):
+    pass
