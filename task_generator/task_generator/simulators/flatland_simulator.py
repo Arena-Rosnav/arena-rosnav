@@ -36,6 +36,7 @@ from std_srvs.srv import Trigger
 from ..constants import Constants, FlatlandRandomModel, Pedsim
 from .base_simulator import BaseSimulator
 from .simulator_factory import SimulatorFactory
+import xml.etree.ElementTree as ET
 
 
 
@@ -286,7 +287,7 @@ class FlatlandSimulator(BaseSimulator):
         self.map_manager = map_manager
         ped_array =np.array([],dtype=object).reshape(0,3) # Not used
         # self.human_id+=1
-        safe_distance = 3.5
+        safe_distance = 0.5
 
         [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
         # print(obstacles[i])
@@ -299,7 +300,7 @@ class FlatlandSimulator(BaseSimulator):
         self.map_manager = map_manager
         ped_array =np.array([],dtype=object).reshape(0,3) # Not used
         # self.human_id+=1
-        safe_distance = 3.5
+        safe_distance = 0.5
 
         [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
         # print(obstacles[i])
@@ -311,7 +312,7 @@ class FlatlandSimulator(BaseSimulator):
         self.map_manager = map_manager
         ped_array =np.array([],dtype=object).reshape(0,3) # Not used
         # self.human_id+=1
-        safe_distance = 3.5
+        safe_distance = 0.5
 
         [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
         # if random.uniform(0.0, 1.0) < 0.8:
@@ -477,6 +478,37 @@ class FlatlandSimulator(BaseSimulator):
             add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
         self.__add_obstacle_srv.call(add_pedsim_srv)
         return
+
+    def spawn_pedsim_map_obstacles(self):
+        # map_service = rospy.ServiceProxy("/static_map", GetMap)
+        # self.map = map_service().map
+        # print(self.map)
+        map = rospy.get_param("map_file")
+        # print(map)
+        # self._free_space_indices = Utils.update_freespace_indices_maze(self.map)
+        # border_vertex=Utils.generate_map_inner_border(self._free_space_indices,self.map)
+
+        print("READING XML")
+        map_path = os.path.join(
+            rospkg.RosPack().get_path("arena-simulation-setup"), 
+            "worlds", 
+            map,
+            "ped_scenarios",
+            f"{map}.xml"
+        )
+        # print(map_path)
+        tree = ET.parse(map_path)
+        root = tree.getroot()
+
+        add_pedsim_srv=SpawnObstacleRequest()
+        for child in root:
+        # print(child.attrib)
+            lineObstacle=LineObstacle()
+            lineObstacle.start.x,lineObstacle.start.y=float(child.attrib['x1']),float(child.attrib['y1'])
+            lineObstacle.end.x,lineObstacle.end.y=float(child.attrib['x2']),float(child.attrib['y2'])
+            add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
+
+        self.__add_obstacle_srv.call(add_pedsim_srv)
 
     # SCENARIO INTEGRATION
     def spawn_pedsim_dynamic_scenario_obstacles(self, peds):
