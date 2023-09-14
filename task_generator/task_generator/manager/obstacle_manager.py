@@ -98,7 +98,7 @@ class ObstacleManager:
         if rospy.get_param("pedsim"):
             # self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array)
             self.simulator.spawn_pedsim_interactive_obstacles(interactive_obstacles_array)
-            # self.simulator.spawn_pedsim_dynamic_obstacles(dynamic_obstacles_array)
+            self.simulator.spawn_pedsim_dynamic_obstacles(dynamic_obstacles_array)
             # self.simulator.spawn_pedsim_map_borders()
             self.simulator.spawn_pedsim_map_obstacles()
         else: 

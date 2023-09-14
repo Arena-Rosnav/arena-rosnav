@@ -88,7 +88,7 @@ class GazeboSimulator(BaseSimulator):
 
 
     if rospy.get_param("pedsim"):
-      self._peds = []
+      self.spawned_obstacles = []
 
       rospack1 = RosPack()
       pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
@@ -164,6 +164,7 @@ class GazeboSimulator(BaseSimulator):
                                 ,
                           Quaternion(rot_quat[0], rot_quat[1], rot_quat[2], rot_quat[3]) )
           self.spawn_model(actor_name, x, "", model_pose, "world")
+          self.spawned_obstacles.append(actor_name)
           rospy.set_param("respawn_interactive", False)
           
     if rospy.get_param("respawn_static"):
@@ -182,6 +183,7 @@ class GazeboSimulator(BaseSimulator):
                                       0,
                                       0) )
           self.spawn_model(actor_name, self.xml_string, "", model_pose, "world")
+          self.spawned_obstacles.append(actor_name)
           rospy.set_param("respawn_static", False)
           
 
@@ -203,6 +205,7 @@ class GazeboSimulator(BaseSimulator):
             # new_xml_string= new_xml_string.replace("actor1",actor_id)
             # print(new_xml_string)
             self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
+            # self.spawned_obstacles.append(actor_id)
             rospy.set_param("respawn_dynamic", False)
     #   else:
     #     for actor in actors.agent_states:
@@ -306,7 +309,7 @@ class GazeboSimulator(BaseSimulator):
           else:
               break
       # self._peds = peds
-      # self._peds.append(srv.InteractiveObstacles)
+      # self.spawned_obstacles.append(srv.InteractiveObstacles)
       rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
       return
     # # WORK IN PROGRESS
@@ -405,6 +408,7 @@ class GazeboSimulator(BaseSimulator):
               break
       # self._peds = peds
       # self._peds.append(srv.InteractiveObstacles)
+      # self.spawned_obstacles.append(srv.InteractiveObstacles)
       rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
       return
 
@@ -481,6 +485,7 @@ class GazeboSimulator(BaseSimulator):
               break
       # self.__peds = peds
       # self._peds.append(srv.peds)
+      # self.spawned_obstacles.append(srv.peds)
       rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
 
       # USE THE FOLLOWING CODE TO SPAWN ACTORS WITHOUT PEDSIM
@@ -679,16 +684,19 @@ class GazeboSimulator(BaseSimulator):
   def remove_all_obstacles(self):
     if rospy.get_param("pedsim"):
       self._remove_peds_srv(True)
-      # rospy.set_param("respawn_dynamic", True)
-      # rospy.set_param("respawn_static", True)
-      # rospy.set_param("respawn_interactive", True)
     # # Anhand ID gazebo obstacles löschen
     # print("REMOVE ALL OBSTACLES (currently not working)")
+    # print("spawned obstacles: ", self.spawned_obstacles)
 
-    # for ped in self._peds:
-      #  print("remove obstacle", ped)
-      # model_name = ped[0]
-      # self.remove_model_srv(str(model_name))
+    for ped in self.spawned_obstacles:
+      print("remove obstacle", ped)
+      self.remove_model_srv(str(ped))
+
+    # rospy.set_param("respawn_dynamic", True)
+    rospy.set_param("respawn_static", True)
+    rospy.set_param("respawn_interactive", True)
+
+    self.spawned_obstacles = []
 
   # ROBOT
 
