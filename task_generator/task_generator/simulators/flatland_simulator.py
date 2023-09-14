@@ -334,8 +334,6 @@ class FlatlandSimulator(BaseSimulator):
         pass
 
     def spawn_pedsim_interactive_obstacles(self, obstacles):
-        print("225spawning pedsim dynamic obstacles")
-
         srv = SpawnInteractiveObstacles()
         srv.InteractiveObstacles = []
         i = 0
@@ -579,6 +577,50 @@ class FlatlandSimulator(BaseSimulator):
             else:
                 break
         self._peds = peds
+        rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
+        return
+
+    def spawn_pedsim_interactive_scenario_obstacles(self, obstacles):
+        srv = SpawnInteractiveObstacles()
+        srv.InteractiveObstacles = []
+        i = 0
+        self.agent_topic_str=''   
+        while i < len(obstacles) : 
+            msg = InteractiveObstacle()
+            obstacle = obstacles[i]
+            # msg.id = obstacle[0]
+
+            msg.pose = Pose()
+            msg.pose.position.x = obstacle["pos"][0]
+            msg.pose.position.y = obstacle["pos"][1]
+            msg.pose.position.z = 0
+
+            self.agent_topic_str+=f',{self._ns_prefix}pedsim_static_obstacle_{i}/0' 
+            msg.type = "shelf"
+            msg.interaction_radius = 0.0
+            msg.yaml_path = os.path.join(
+                rospkg.RosPack().get_path("arena-simulation-setup"),
+                "obstacles", "shelf.yaml"
+            )
+            srv.InteractiveObstacles.append(msg)
+            i = i+1
+
+        max_num_try = 2
+        i_curr_try = 0
+        print("trying to call service with static obstacles: ")    
+
+        while i_curr_try < max_num_try:
+        # try to call service
+            response=self.__respawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
+
+            if not response.success:  # if service not succeeds, do something and redo service
+                rospy.logwarn(
+                    f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+                # rospy.logwarn(response.message)
+                i_curr_try += 1
+            else:
+                break
+        # self._peds.append(peds)
         rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
         return
 

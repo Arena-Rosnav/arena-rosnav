@@ -12,11 +12,11 @@ class ObstacleManager:
         if rospy.get_param("pedsim"):
             self.simulator.remove_all_obstacles()
             print("spawning map borders")
-            self.simulator.spawn_pedsim_map_borders()
-            # self.simulator.spawn_pedsim_map_obstacles()
+            # self.simulator.spawn_pedsim_map_borders()
+            self.simulator.spawn_pedsim_map_obstacles()
             self.simulator.spawn_pedsim_dynamic_scenario_obstacles(scenario["obstacles"]["dynamic"])
             # self.simulator.spawn_pedsim_static_obstacles(scenario["obstacles"]["static"])
-            # self.simulator.spawn_pedsim_interactive_scenario_obstacles(scenario["obstacles"]["interactive"])
+            self.simulator.spawn_pedsim_interactive_scenario_obstacles(scenario["obstacles"]["interactive"])
         else:
             self.simulator.spawn_pedsim_agents(scenario["obstacles"]["dynamic"])
 

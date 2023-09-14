@@ -134,39 +134,41 @@ class GazeboSimulator(BaseSimulator):
   #                                       1) )
   #           self.spawn_model(actor_name, static_xml_string, "", model_pose, "world")
   #       rospy.set_param("respawn_static", False)
-
   def interactive_actor_poses_callback(self, actors):
     if rospy.get_param("respawn_interactive"):
-      for actor in actors.waypoints:
-        if "interactive" in actor.name:
-          
-          actor_name = str(actor.name)
-          orientation = float( re.findall(r'\(.*?\)', str(actor.name))[0].replace("(","").replace(")",""))
-          # print(orientation)
-          
-          # Convert to quaternions and print
-          rot = Rotation.from_euler('xyz', [0, 0, orientation], degrees=False)
-          rot_quat = rot.as_quat()
-          # print(rot_quat)
+        for actor in actors.waypoints:
+          if "interactive" in actor.name:
+            
+            actor_name = str(actor.name)
+            orientation = float( re.findall(r'\(.*?\)', str(actor.name))[0].replace("(","").replace(")","").replace(",","."))
+            direction_x = float( actor.name[actor.name.index("{")+1: actor.name.index("}")].replace(",","."))
+            direction_y = float( actor.name[actor.name.index("[")+1: actor.name.index("]")].replace(",","."))
+            print("direction_x",direction_x)
+          #   print("direction_y",direction_y)
 
-          rospy.loginfo("Spawning interactive: actor_id = %s", actor_name)
-        #   x = open(rospy.get_param('~actor_model_file', RosPack().get_path('pedsim_gazebo_plugin') + "/models/table.sdf")).read
-          rospack1 = RosPack()
-          pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
-          z = pkg_path + "/models/table.sdf"
-          # z = pkg_path + "/models/actor_model.sdf"
-          file_xml = open(z)
-          x = file_xml.read()
+            # Convert to quaternions and print
+            rot = Rotation.from_euler('xyz', [0, 0, orientation], degrees=False)
+            rot_quat = rot.as_quat()
+            # print(rot_quat)
 
-          model_pose =  Pose(Point(x= actor.position.x,
-                                y= actor.position.y,
-                                z= actor.position.z)
-                                ,
-                          Quaternion(rot_quat[0], rot_quat[1], rot_quat[2], rot_quat[3]) )
-          self.spawn_model(actor_name, x, "", model_pose, "world")
-          self.spawned_obstacles.append(actor_name)
-          rospy.set_param("respawn_interactive", False)
-          
+            rospy.loginfo("Spawning interactive: actor_id = %s", actor_name)
+          #   x = open(rospy.get_param('~actor_model_file', RosPack().get_path('pedsim_gazebo_plugin') + "/models/table.sdf")).read
+            rospack1 = RosPack()
+            pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
+            z = pkg_path + "/models/table.sdf"
+            # z = pkg_path + "/models/actor_model.sdf"
+            file_xml = open(z)
+            x = file_xml.read()
+
+            model_pose =  Pose(Point(x= actor.position.x-direction_x,
+                                  y= actor.position.y-direction_y,
+                                  z= actor.position.z)
+                                  ,
+                            Quaternion(rot_quat[0], rot_quat[1], rot_quat[2], rot_quat[3]) )
+            self.spawn_model(actor_name, x, "", model_pose, "world")
+            self.spawned_obstacles.append(actor_name)
+            rospy.set_param("respawn_interactive", False)
+            
     if rospy.get_param("respawn_static"):
       for actor in actors.waypoints:
         if "static" in actor.name:
@@ -657,7 +659,7 @@ class GazeboSimulator(BaseSimulator):
           msg.interaction_radius = 0.0
           msg.yaml_path = os.path.join(
               rospkg.RosPack().get_path("arena-simulation-setup"),
-              "obstacles", obstacle["yaml_path"]
+              "obstacles", "shelf.yaml"
           )
           srv.InteractiveObstacles.append(msg)
           i = i+1
@@ -682,8 +684,8 @@ class GazeboSimulator(BaseSimulator):
       return
 
   def remove_all_obstacles(self):
-    if rospy.get_param("pedsim"):
-      self._remove_peds_srv(True)
+    # if rospy.get_param("pedsim"):
+    #   self._remove_peds_srv(True)
     # # Anhand ID gazebo obstacles löschen
     # print("REMOVE ALL OBSTACLES (currently not working)")
     # print("spawned obstacles: ", self.spawned_obstacles)
