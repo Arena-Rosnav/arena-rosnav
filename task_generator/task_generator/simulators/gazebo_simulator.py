@@ -271,6 +271,7 @@ class GazeboSimulator(BaseSimulator):
       safe_distance = 0.5
       [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
       # print(obstacles[i])
+      
       ped=np.array([i+1, [x, y, 0.0]],dtype=object)
       return ped
 
@@ -582,14 +583,19 @@ class GazeboSimulator(BaseSimulator):
     tree = ET.parse(map_path)
     root = tree.getroot()
 
+    forbidden_zones = []
+
     add_pedsim_srv=SpawnObstacleRequest()
     for child in root:
       lineObstacle=LineObstacle()
       lineObstacle.start.x,lineObstacle.start.y=float(child.attrib['x1']),float(child.attrib['y1'])
       lineObstacle.end.x,lineObstacle.end.y=float(child.attrib['x2']),float(child.attrib['y2'])
       add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
+      forbidden_zones.append([lineObstacle.start.x, lineObstacle.start.y, 1])
+      forbidden_zones.append([lineObstacle.end.x, lineObstacle.end.y, 1])
 
     self.__add_obstacle_srv.call(add_pedsim_srv)
+    return forbidden_zones
 
 
 
