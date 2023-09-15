@@ -94,8 +94,8 @@ class GazeboSimulator(BaseSimulator):
     self.map_manager = None
 
 
+    self.spawned_obstacles = []
     if rospy.get_param("pedsim"):
-      self.spawned_obstacles = []
 
       rospack1 = RosPack()
       pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
