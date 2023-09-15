@@ -46,6 +46,7 @@ def get_predefined_task(namespace, mode, simulator=None, **kwargs):
     # - Create a robot manager
     # - Launch the robot.launch file
 
+    print("utils calls task factory")
     task = TaskFactory.instantiate(
         mode,
         obstacle_manager,

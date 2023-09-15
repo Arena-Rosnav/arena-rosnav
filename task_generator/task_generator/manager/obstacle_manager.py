@@ -7,6 +7,7 @@ class ObstacleManager:
         self.map_manager = map_manager
         self.namespace = namespace
         self.simulator = simulator
+        self.first_reset = True
 
     def start_scenario(self, scenario):
         if rospy.get_param("pedsim"):
@@ -43,10 +44,15 @@ class ObstacleManager:
             interactive_obstacles=Constants.ObstacleManager.INTERACTIVE_OBSTACLES,
             forbidden_zones=[]
         ):
+        print("resetting random obstacles")
         if forbidden_zones is None:
             forbidden_zones = []
 
-        self.simulator.remove_all_obstacles()
+
+        if self.first_reset:
+            self.first_reset = False
+        else:  
+            self.simulator.remove_all_obstacles()
 
         dynamic_obstacles_array = np.array([],dtype=object).reshape(0,3)
         static_obstacles_array = np.array([],dtype=object).reshape(0,2)
@@ -54,7 +60,7 @@ class ObstacleManager:
         obstacles = []
 
         # Create dynamic obstacles 
-        for i in range(10):
+        for i in range(5):
             position = self.map_manager.get_random_pos_on_map(
                 safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
                 forbidden_zones=forbidden_zones,
@@ -68,7 +74,7 @@ class ObstacleManager:
                 # obstacles.append(self.simulator.create_dynamic_obstacle(position=position))
 
         # Create interactive obstacles  
-        for i in range(10):
+        for i in range(5):
             position = self.map_manager.get_random_pos_on_map(
                 safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
                 forbidden_zones=forbidden_zones,
@@ -81,7 +87,7 @@ class ObstacleManager:
                 # obstacles.append(self.simulator.create_interactive_obstacle(position=position))
 
         # Create static obstacles
-        for i in range(1):
+        for i in range(5):
             position = self.map_manager.get_random_pos_on_map(
                 safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
                 forbidden_zones=forbidden_zones,
@@ -96,7 +102,7 @@ class ObstacleManager:
         # Spawn obstacles
         # TODO better solution instead of param
         if rospy.get_param("pedsim"):
-            # self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array)
+            self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array)
             self.simulator.spawn_pedsim_interactive_obstacles(interactive_obstacles_array)
             self.simulator.spawn_pedsim_dynamic_obstacles(dynamic_obstacles_array)
             # self.simulator.spawn_pedsim_map_borders()

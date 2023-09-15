@@ -46,6 +46,7 @@ class TaskGenerator:
         self.srv_start_model_visualization = rospy.ServiceProxy("start_model_visualization", Empty)
         self.srv_start_model_visualization(EmptyRequest())
 
+        print("reset 1")
         self.reset_task()
 
         rospy.sleep(2)
@@ -59,13 +60,15 @@ class TaskGenerator:
 
         self.number_of_resets = 0
 
-        self.reset_task()
+        print("reset 2")
+        # self.reset_task()
 
         ## Timers
         rospy.Timer(rospy.Duration(0.5), self.check_task_status)
 
     def check_task_status(self, _):
         if self.task.is_done():
+            print("check_task_status is resetting task")
             self.reset_task()
 
     def reset_task(self):
@@ -73,6 +76,7 @@ class TaskGenerator:
 
         self.env_wrapper.before_reset_task()
 
+        print("task_generator_node.py is resetting task")
         is_end = self.task.reset()
 
         self.pub_scenario_reset.publish(self.number_of_resets)
