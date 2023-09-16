@@ -233,6 +233,8 @@ class GazeboSimulator(BaseSimulator):
             # new_xml_string= self.xml_string.replace("0 0 0.75",str(actor_pose.position.x)+" "+str(actor_pose.position.y) +" 0.75")
             # new_xml_string= new_xml_string.replace("actor1",actor_id)
             # print(new_xml_string)
+            print("spawning gazebo dynamic obstacles")
+            # print(self.spawned_obstacles)
             self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
             # self.spawned_obstacles.append(actor_id)
             rospy.set_param("respawn_dynamic", False)
@@ -447,6 +449,7 @@ class GazeboSimulator(BaseSimulator):
       return
 
   def spawn_pedsim_dynamic_obstacles(self, peds):
+      print("spawning pedsim dynamic obstacles")
       srv = SpawnPeds()
       srv.peds = []
       i = 0
@@ -521,7 +524,7 @@ class GazeboSimulator(BaseSimulator):
       # self._peds.append(srv.peds)
       # self.spawned_obstacles.append(srv.peds)
       rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
-      rospy.set_param("respawn_dynamic", True)
+      # rospy.set_param("respawn_dynamic", True)
 
       # USE THE FOLLOWING CODE TO SPAWN ACTORS WITHOUT PEDSIM
 
