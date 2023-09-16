@@ -335,7 +335,7 @@ class GazeboSimulator(BaseSimulator):
 
           if not response.success:  # if service not succeeds, do something and redo service
               rospy.logwarn(
-                  f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+                  f"spawn static obstacle failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
               # rospy.logwarn(response.message)
               i_curr_try += 1
           else:
@@ -436,7 +436,7 @@ class GazeboSimulator(BaseSimulator):
 
           if not response.success:  # if service not succeeds, do something and redo service
               rospy.logwarn(
-                  f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+                  f"spawn interactive obstacle failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
               # rospy.logwarn(response.message)
               i_curr_try += 1
           else:

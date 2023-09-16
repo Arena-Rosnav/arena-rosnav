@@ -18,7 +18,7 @@
         "interactive": [
             {
                 "name": "1",
-                "model_path": "/home/jan/code/arena-rosnav_workspace/src/utils/arena-simulation-setup/obstacles/long_shelf.model.yaml",
+                "model_path": "/home/jan/code/arena-rosnav_workspace/src/utils/arena-simulation-setup/obstacles/shelf.yaml",
                 "pos": [
                     10.04,
                     11.2
@@ -27,14 +27,15 @@
             },
             {
                 "name": "2",
-                "model_path": "/home/jan/code/arena-rosnav_workspace/src/utils/arena-simulation-setup/obstacles/long_shelf.model.yaml",
+                "model_path": "/home/jan/code/arena-rosnav_workspace/src/utils/arena-simulation-setup/obstacles/shelf.yaml",
                 "pos": [
                     21.25,
                     11.36
                 ],
                 "angle": 0.0
             }
-        ]
+        ],
+        "static":[]
     },
     "resets": 0,
     "map": "map_empty",

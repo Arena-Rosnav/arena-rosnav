@@ -528,6 +528,7 @@ class FlatlandSimulator(BaseSimulator):
             f"{map}.xml"
         )
         tree = ET.parse(map_path)
+        forbidden_zones = []
         root = tree.getroot()
 
         add_pedsim_srv=SpawnObstacleRequest()
@@ -536,8 +537,12 @@ class FlatlandSimulator(BaseSimulator):
             lineObstacle.start.x,lineObstacle.start.y=float(child.attrib['x1']),float(child.attrib['y1'])
             lineObstacle.end.x,lineObstacle.end.y=float(child.attrib['x2']),float(child.attrib['y2'])
             add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
+            forbidden_zones.append([lineObstacle.start.x, lineObstacle.start.y, 1])
+            forbidden_zones.append([lineObstacle.end.x, lineObstacle.end.y, 1])
 
         self.__add_obstacle_srv.call(add_pedsim_srv)
+        return forbidden_zones
+
 
     # SCENARIO INTEGRATION
     def spawn_pedsim_dynamic_scenario_obstacles(self, peds):

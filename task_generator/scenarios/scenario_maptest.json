@@ -145,7 +145,8 @@
                 "waypoint_mode": 0
             }
         ],
-        "static": []
+        "static": [],
+        "interactive": []
     },
     "resets": 0,
     "map": "map10",
