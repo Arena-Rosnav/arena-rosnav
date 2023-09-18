@@ -99,7 +99,8 @@ class GazeboSimulator(BaseSimulator):
 
             rospack1 = RosPack()
             pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
-            default_actor_model_file = pkg_path + "/models/actor_model.sdf"
+            # default_actor_model_file = pkg_path + "/models/actor_model.sdf"
+            default_actor_model_file = pkg_path + "/models/human2.sdf"
             # default_actor_model_file = pkg_path + "/models/table.sdf"
             # default_actor_model_file = pkg_path + "/models/actor2.sdf"
             # default_actor_model_file = pkg_path + "/models/test_static_obstacle.sdf"

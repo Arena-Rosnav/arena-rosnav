@@ -59,7 +59,7 @@ class ObstacleManager:
         # print(forbidden_zones)
 
         # Create static obstacles
-        for i in range(5):
+        for i in range(0):
             # position = self.map_manager.get_random_pos_on_map(
             #     safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
             #     forbidden_zones=forbidden_zones,
@@ -77,7 +77,7 @@ class ObstacleManager:
             self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array)
 
         # Create interactive obstacles  
-        for i in range(5):
+        for i in range(0):
             # position = self.map_manager.get_random_pos_on_map(
             #     safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
             #     forbidden_zones=forbidden_zones,
