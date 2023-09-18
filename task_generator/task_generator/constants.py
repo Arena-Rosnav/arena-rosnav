@@ -27,6 +27,7 @@ class TaskMode:
     RANDOM = "random"
     STAGED = "staged"
     SCENARIO = "scenario"
+    RANDOM_SCENARIO = "random_scenario"
 
     class Random:
         MIN_DYNAMIC_OBS = 15

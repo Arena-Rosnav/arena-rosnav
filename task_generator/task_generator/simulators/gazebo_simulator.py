@@ -99,8 +99,8 @@ class GazeboSimulator(BaseSimulator):
 
             rospack1 = RosPack()
             pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
-            # default_actor_model_file = pkg_path + "/models/actor_model.sdf"
-            default_actor_model_file = pkg_path + "/models/human2.sdf"
+            default_actor_model_file = pkg_path + "/models/actor_model.sdf"
+            # default_actor_model_file = pkg_path + "/models/human3.sdf"
             # default_actor_model_file = pkg_path + "/models/table.sdf"
             # default_actor_model_file = pkg_path + "/models/actor2.sdf"
             # default_actor_model_file = pkg_path + "/models/test_static_obstacle.sdf"
@@ -130,7 +130,9 @@ class GazeboSimulator(BaseSimulator):
                     orientation = float( re.findall(r'\(.*?\)', str(actor.name))[0].replace("(","").replace(")","").replace(",","."))
                     direction_x = float( actor.name[actor.name.index("{")+1: actor.name.index("}")].replace(",","."))
                     direction_y = float( actor.name[actor.name.index("[")+1: actor.name.index("]")].replace(",","."))
-
+                    ob_type =            actor.name[actor.name.index("&")+1: actor.name.index("!")]
+                    print("ob_type")
+                    print(ob_type)
                     # Convert to quaternions and print
                     rot = Rotation.from_euler('xyz', [0, 0, orientation], degrees=False)
                     rot_quat = rot.as_quat()
@@ -139,7 +141,8 @@ class GazeboSimulator(BaseSimulator):
 
                     rospack1 = RosPack()
                     pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
-                    z = pkg_path + "/models/table.sdf"
+                    
+                    z = pkg_path + "/models/"+ob_type+".sdf"
                     file_xml = open(z)
                     x = file_xml.read()
 
@@ -161,7 +164,10 @@ class GazeboSimulator(BaseSimulator):
                     orientation = float( re.findall(r'\(.*?\)', str(actor.name))[0].replace("(","").replace(")","").replace(",","."))
                     direction_x = float( actor.name[actor.name.index("{")+1: actor.name.index("}")].replace(",","."))
                     direction_y = float( actor.name[actor.name.index("[")+1: actor.name.index("]")].replace(",","."))
-
+                    ob_type = actor.name[actor.name.index("&")+1: actor.name.index("!")]
+                    print("ob_type")
+                    print(ob_type)
+                    
                     rot = Rotation.from_euler('xyz', [0, 0, orientation], degrees=False)
                     rot_quat = rot.as_quat()
                     
@@ -169,7 +175,7 @@ class GazeboSimulator(BaseSimulator):
 
                     rospack1 = RosPack()
                     pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
-                    z = pkg_path + "/models/bookshelf.sdf"
+                    z = pkg_path +  "/models/"+ob_type+".sdf"
                     file_xml = open(z)
                     x = file_xml.read()
 
@@ -203,6 +209,13 @@ class GazeboSimulator(BaseSimulator):
                 # new_xml_string= self.xml_string.replace("0 0 0.75",str(actor_pose.position.x)+" "+str(actor_pose.position.y) +" 0.75")
                 # new_xml_string= new_xml_string.replace("actor1",actor_id)
                 # print(new_xml_string)
+                if actor.type == "adult":
+                    rospack1 = RosPack()
+                    pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
+                    z = pkg_path +  "/models/" + actor.type + ".sdf"
+                    file_xml = open(z)
+                    x = file_xml.read()
+
                 print("spawning gazebo dynamic obstacles")
                 self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
                 rospy.set_param("respawn_dynamic", False)
@@ -260,7 +273,7 @@ class GazeboSimulator(BaseSimulator):
         ped=np.array([i+1, [x, y, 0.0], waypoints],dtype=object)
         return ped
 
-    def spawn_pedsim_static_obstacles(self, obstacles):
+    def spawn_pedsim_static_obstacles(self, obstacles, type="shelf", yaml="shelf.yaml"):
         srv = SpawnInteractiveObstacles()
         srv.InteractiveObstacles = []
         i = 0
@@ -274,11 +287,11 @@ class GazeboSimulator(BaseSimulator):
             msg.pose.position.z = obstacle[1][2]
 
             self.agent_topic_str+=f',{self._ns_prefix}pedsim_static_obstacle_{obstacle[0]}/0' 
-            msg.type = "shelf"
+            msg.type = type
             msg.interaction_radius = 0.0
             msg.yaml_path = os.path.join(
                 rospkg.RosPack().get_path("arena-simulation-setup"),
-                "obstacles", "shelf.yaml"
+                "obstacles", yaml
             )
             srv.InteractiveObstacles.append(msg)
             i = i+1
@@ -357,7 +370,7 @@ class GazeboSimulator(BaseSimulator):
     #     raise rospy.ServiceException(f"({self.ns}) failed to register obstacles")
     # return
 
-    def spawn_pedsim_interactive_obstacles(self, obstacles):
+    def spawn_pedsim_interactive_obstacles(self, obstacles, type="shelf", yaml="shelf.yaml"):
         srv = SpawnInteractiveObstacles()
         srv.InteractiveObstacles = []
         i = 0
@@ -372,11 +385,11 @@ class GazeboSimulator(BaseSimulator):
             msg.pose.position.z = obstacle[1][2]
 
             self.agent_topic_str+=f',{self._ns_prefix}pedsim_interactive_obstacle_{obstacle[0]}/0' 
-            msg.type = "shelf"
+            msg.type = type
             msg.interaction_radius = 1.0
             msg.yaml_path = os.path.join(
                 rospkg.RosPack().get_path("arena-simulation-setup"),
-                "obstacles", "shelf.yaml"
+                "obstacles", yaml
             )
             srv.InteractiveObstacles.append(msg)
             i = i+1
@@ -401,7 +414,7 @@ class GazeboSimulator(BaseSimulator):
             rospy.set_param("respawn_interactive", True)
             return
 
-    def spawn_pedsim_dynamic_obstacles(self, peds):
+    def spawn_pedsim_dynamic_obstacles(self, peds, type="adult", yaml="person_wo_legged_model.yaml"):
         print("spawning pedsim dynamic obstacles")
         srv = SpawnPeds()
         srv.peds = []
@@ -418,11 +431,11 @@ class GazeboSimulator(BaseSimulator):
             msg.pos.z = ped[1][2]
 
             self.agent_topic_str+=f',pedsim_agent_{ped[0]}/0' 
-            msg.type = "adult"
+            msg.type = type
             msg.yaml_file = os.path.join(
                 rospkg.RosPack().get_path("arena-simulation-setup"),
                 "dynamic_obstacles",
-                "person_two_legged.model.yaml"
+                yaml
             )
             msg.number_of_peds = 1
             msg.vmax = 0.3

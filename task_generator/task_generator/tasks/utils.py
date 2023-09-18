@@ -15,6 +15,7 @@ from task_generator.tasks.task_factory import TaskFactory
 from task_generator.tasks.random import RandomTask
 from task_generator.tasks.scenario import ScenarioTask
 from task_generator.tasks.staged import StagedRandomTask
+from task_generator.tasks.random_scenario import RandomScenarioTask
 from task_generator.utils import Utils
 
 from map_distance_server.srv import GetDistanceMap
