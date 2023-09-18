@@ -62,14 +62,13 @@ class ObstacleManager:
 
         # Create static obstacles
         for i in range(5):
-            position = self.map_manager.get_random_pos_on_map(
-                safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
-                forbidden_zones=forbidden_zones,
-            )
+            # position = self.map_manager.get_random_pos_on_map(
+            #     safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
+            #     forbidden_zones=forbidden_zones,
+            # )
             if rospy.get_param("pedsim"):
                 x = self.simulator.create_pedsim_static_obstacle(i,self.map_manager, forbidden_zones)
-                # print(x)
-                forbidden_zones.append([x[1][0], x[1][1], 1])
+                forbidden_zones.append([x[1][0], x[1][1], 40])
                 # print(forbidden_zones)
                 static_obstacles_array = np.vstack((static_obstacles_array, x))
             else: 
@@ -81,14 +80,13 @@ class ObstacleManager:
 
         # Create interactive obstacles  
         for i in range(5):
-            position = self.map_manager.get_random_pos_on_map(
-                safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
-                forbidden_zones=forbidden_zones,
-            )
+            # position = self.map_manager.get_random_pos_on_map(
+            #     safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
+            #     forbidden_zones=forbidden_zones,
+            # )
             if rospy.get_param("pedsim"):
                 x = self.simulator.create_pedsim_interactive_obstacle(i,self.map_manager, forbidden_zones)
-                # print(x)
-                forbidden_zones.append([x[1][0], x[1][1], 1])
+                forbidden_zones.append([x[1][0], x[1][1], 40])
                 # print(forbidden_zones)
                 interactive_obstacles_array = np.vstack((interactive_obstacles_array, x))
             else: 
@@ -100,10 +98,10 @@ class ObstacleManager:
 
         # Create dynamic obstacles 
         for i in range(5):
-            position = self.map_manager.get_random_pos_on_map(
-                safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
-                forbidden_zones=forbidden_zones,
-            )
+            # position = self.map_manager.get_random_pos_on_map(
+            #     safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
+            #     forbidden_zones=forbidden_zones,
+            # )
             if rospy.get_param("pedsim"):
                 x = self.simulator.create_pedsim_dynamic_obstacle(i,self.map_manager, forbidden_zones)
                 dynamic_obstacles_array = np.vstack((dynamic_obstacles_array, x))

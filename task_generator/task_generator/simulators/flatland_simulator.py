@@ -318,7 +318,6 @@ class FlatlandSimulator(BaseSimulator):
         # if random.uniform(0.0, 1.0) < 0.8:
         waypoints = np.array( [x, y, 1]).reshape(1, 3) # the first waypoint
         safe_distance = 0.1 # the other waypoints don't need to avoid robot
-        # print("316 safe")
         for j in range(10): # noote was 1000
             dist = 0
             while dist < 8:
