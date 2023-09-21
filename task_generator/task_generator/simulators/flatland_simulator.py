@@ -313,7 +313,7 @@ class FlatlandSimulator(BaseSimulator):
         ped=np.array([i+1, [x, y, 0.0], waypoints],dtype=object)
         return ped
     
-    def spawn_pedsim_static_obstacles(self, obstacles):
+    def spawn_pedsim_static_obstacles(self, obstacles, type="shelf", yaml="shelf.yaml"):
         srv = SpawnInteractiveObstacles()
         srv.InteractiveObstacles = []
         i = 0
@@ -328,11 +328,11 @@ class FlatlandSimulator(BaseSimulator):
             msg.pose.position.z = obstacle[1][2]
 
             self.agent_topic_str+=f',{self._ns_prefix}pedsim_static_obstacle_{obstacle[0]}/0' 
-            msg.type = "shelf"
+            msg.type = type
             msg.interaction_radius = 0.0
             msg.yaml_path = os.path.join(
                 rospkg.RosPack().get_path("arena-simulation-setup"),
-                "obstacles", "shelf.yaml"
+                "obstacles", yaml
             )
             srv.InteractiveObstacles.append(msg)
             i = i+1
@@ -355,7 +355,7 @@ class FlatlandSimulator(BaseSimulator):
         rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
         pass
 
-    def spawn_pedsim_interactive_obstacles(self, obstacles):
+    def spawn_pedsim_interactive_obstacles(self, obstacles, type="shelf", yaml="shelf.yaml"):
         srv = SpawnInteractiveObstacles()
         srv.InteractiveObstacles = []
         i = 0
@@ -370,11 +370,11 @@ class FlatlandSimulator(BaseSimulator):
             msg.pose.position.z = obstacle[1][2]
 
             self.agent_topic_str+=f',{self._ns_prefix}pedsim_interactive_obstacle_{obstacle[0]}/0' 
-            msg.type = "shelf"
+            msg.type = type
             msg.interaction_radius = 1.0
             msg.yaml_path = os.path.join(
                 rospkg.RosPack().get_path("arena-simulation-setup"),
-                "obstacles", "shelf.yaml"
+                "obstacles", yaml
             )
             srv.InteractiveObstacles.append(msg)
             i = i+1
@@ -397,7 +397,7 @@ class FlatlandSimulator(BaseSimulator):
         rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
         return
 
-    def spawn_pedsim_dynamic_obstacles(self, peds):
+    def spawn_pedsim_dynamic_obstacles(self, peds, type="adult", yaml="person_two_legged.model.yaml"):
 
         srv = SpawnPeds()
         srv.peds = []
@@ -417,11 +417,11 @@ class FlatlandSimulator(BaseSimulator):
             msg.pos.z = ped[1][2]
 
             self.agent_topic_str+=f',{self._ns_prefix}pedsim_agent_{ped[0]}/0' 
-            msg.type = "adult"
+            msg.type = type
             msg.yaml_file = os.path.join(
                 rospkg.RosPack().get_path("arena-simulation-setup"),
                 "dynamic_obstacles",
-                "person_two_legged.model.yaml"
+                yaml
             )
             msg.number_of_peds = 1
             msg.vmax = 0.3

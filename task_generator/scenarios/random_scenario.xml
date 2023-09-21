@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<random_scenario>
+  <obstacle name="table">
+    <num>3</num>
+    <name>table</name>
+    <yaml>shelf.yaml</yaml>
+  </obstacle>
+  <obstacle name="shelf">
+    <num>4</num>
+    <name>shelf</name>
+    <yaml>shelf.yaml</yaml>
+  </obstacle>
+  <obstacle name="adult">
+    <num>5</num>
+    <name>adult</name>
+    <yaml>person_two_legged.model.yaml</yaml>
+  </obstacle>
+  <obstacle name="elder">
+    <num>2</num>
+    <name>elder</name>
+    <yaml>person_two_legged.model.yaml</yaml>
+  </obstacle>
+  <obstacle name="child">
+    <num>1</num>
+    <name>child</name>
+    <yaml>person_single_circle.model.yaml</yaml>
+  </obstacle>
+</random_scenario>

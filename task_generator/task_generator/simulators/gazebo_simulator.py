@@ -176,6 +176,7 @@ class GazeboSimulator(BaseSimulator):
                     rospack1 = RosPack()
                     pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
                     z = pkg_path +  "/models/"+ob_type+".sdf"
+                    # z = pkg_path +  "/models/table.sdf"
                     file_xml = open(z)
                     x = file_xml.read()
 
@@ -414,7 +415,7 @@ class GazeboSimulator(BaseSimulator):
             rospy.set_param("respawn_interactive", True)
             return
 
-    def spawn_pedsim_dynamic_obstacles(self, peds, type="adult", yaml="person_wo_legged_model.yaml"):
+    def spawn_pedsim_dynamic_obstacles(self, peds, type="adult", yaml="person_two_legged.model.yaml"):
         print("spawning pedsim dynamic obstacles")
         srv = SpawnPeds()
         srv.peds = []

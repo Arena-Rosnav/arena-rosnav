@@ -2,6 +2,9 @@ from task_generator.constants import Constants
 import rospy
 import numpy as np
 import random
+import os
+import xml.etree.ElementTree as ET
+import rospkg
 
 class ObstacleManager:
     def __init__(self, namespace, map_manager, simulator):
@@ -62,8 +65,8 @@ class ObstacleManager:
         # print(forbidden_zones)
 
         # Create static obstacles
-        # for i in range(random.randrange(1,10)):
-        for i in range(5):
+        for i in range(random.randrange(1,10)):
+        # for i in range(5):
             # position = self.map_manager.get_random_pos_on_map(
             #     safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
             #     forbidden_zones=forbidden_zones,
@@ -82,8 +85,8 @@ class ObstacleManager:
             self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array)
 
         # Create interactive obstacles  
-        # for i in range(random.randrange(1,10)):
-        for i in range(5):
+        for i in range(random.randrange(1,10)):
+        # for i in range(5):
             # position = self.map_manager.get_random_pos_on_map(
             #     safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
             #     forbidden_zones=forbidden_zones,
@@ -137,13 +140,27 @@ class ObstacleManager:
         else:  
             self.simulator.remove_all_obstacles()
         
-        num_tables = [5,"shelf","shelf.yaml"]
-        # num_chairs = [1,,""]
-        num_shelves = [1,"shelf","shelf.yaml"]
-        num_adults = [1,"adult","person_two_legged.model.yaml"]
-        num_elder = [1,"elder","person_two_legged.model.yaml"]
-        num_child = [1,"child","person_single_circle.model.yaml"]
-        # num_service_robot = [1,,""]
+        print("READING XML")
+        map_path = os.path.join(
+            rospkg.RosPack().get_path("task_generator"), 
+            "scenarios", 
+            "random_scenario.xml"
+        )
+        tree = ET.parse(map_path)
+        root = tree.getroot()
+        num_tables = [int(root[0][0].text),root[0][1].text,root[0][2].text]
+        num_shelves = [int(root[1][0].text),root[1][1].text,root[1][2].text]
+        num_adults = [int(root[2][0].text),root[2][1].text,root[2][2].text]
+        num_elder = [int(root[3][0].text),root[3][1].text,root[3][2].text]
+        num_child = [int(root[4][0].text),root[4][1].text,root[4][2].text]
+
+        # num_tables = [1,"shelf","shelf.yaml"]
+        # # num_chairs = [1,,""]
+        # num_shelves = [1,"shelf","shelf.yaml"]
+        # num_adults = [5,"adult","person_two_legged.model.yaml"]
+        # num_elder = [1,"elder","person_two_legged.model.yaml"]
+        # num_child = [1,"child","person_single_circle.model.yaml"]
+        # # num_service_robot = [1,,""]
         dynamic_obstacles_array = np.array([],dtype=object).reshape(0,3)
 
         obstacles = []
