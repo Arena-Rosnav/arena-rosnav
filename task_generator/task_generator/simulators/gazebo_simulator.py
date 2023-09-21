@@ -67,6 +67,15 @@ class GazeboSimulator(BaseSimulator):
     def remove_all_obstacles(self):
         self._remove_peds_srv(True)
 
+    def create_dynamic_obstacle(self, **args):
+        pass
+
+    def create_static_obstacle(self, **args):
+        pass
+
+    def spawn_obstacles(self, obstacles):
+        pass
+
     def spawn_pedsim_agents(self, dynamic_obstacles):
         if len(dynamic_obstacles) <= 0:
             return
@@ -124,6 +133,7 @@ class GazeboSimulator(BaseSimulator):
         self._move_model_srv(model_state_request)
 
     def spawn_robot(self, name, robot_name, namespace_appendix=""):
+        print("SPAWN", name, robot_name, namespace_appendix)
         request = SpawnModelRequest()
 
         robot_namespace = self._ns_prefix(namespace_appendix)

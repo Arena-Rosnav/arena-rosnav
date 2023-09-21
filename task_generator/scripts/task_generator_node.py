@@ -46,6 +46,8 @@ class TaskGenerator:
         self.srv_start_model_visualization = rospy.ServiceProxy("start_model_visualization", Empty)
         self.srv_start_model_visualization(EmptyRequest())
 
+        rospy.sleep(5)
+
         self.reset_task()
 
         rospy.sleep(2)
