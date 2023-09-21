@@ -46,22 +46,21 @@
             <remap from="/joint_states" to="$(arg namespace)/joint_states"/>
         </node>
     </group>
-  
-
-    <!-- move_base plan manager: which provide basic global planner and cost map -->
-    <include file="$(find arena_bringup)/launch/testing/move_base/move_base_$(arg local_planner).launch">
-        <arg name="model" value="$(arg model)"/>
-        <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
-        
-        <arg name="cmd_vel_topic" value="$(arg namespace)/cmd_vel" />
-        <arg name="odom_topic" value="$(arg namespace)/odom_amcl" if="$(eval arg('complexity') > 1)" />
-        <arg name="odom_topic" value="$(arg namespace)/odom" if="$(eval arg('complexity') == 1)" />
-
-        <arg name="namespace" value="$(arg namespace)" />
-
-    </include>
-
 
     <node pkg="arena-evaluation" type="data_recorder_node.py" name="data_recorder_node" if="$(eval arg('record_data'))" />
   </group>
+
+    <!-- move_base plan manager: which provide basic global planner and cost map -->
+  <include file="$(find arena_bringup)/launch/testing/move_base/move_base_$(arg local_planner).launch">
+      <arg name="model" value="$(arg model)"/>
+      <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
+      
+      <arg name="cmd_vel_topic" value="$(arg namespace)/cmd_vel" />
+      <arg name="odom_topic" value="$(arg namespace)/odom_amcl" if="$(eval arg('complexity') > 1)" />
+      <arg name="odom_topic" value="$(arg namespace)/odom" if="$(eval arg('complexity') == 1)" />
+
+      <arg name="namespace" value="$(arg namespace)" />
+
+  </include>
+
 </launch>

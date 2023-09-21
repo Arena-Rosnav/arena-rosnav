@@ -35,11 +35,11 @@ if __name__ == "__main__":
     base_frame = rospy.get_param("robot_base_frame", "base_link")
     
     if namespace != "":
-        odom_frame = namespace.replace("/", "") + "/odom"
-        base_frame = namespace.replace("/", "") + f"/{base_frame}"
+        odom_frame = namespace + "/odom"
+        base_frame = namespace + f"/{base_frame}"
 
     rate = rospy.Rate(50)  # ROS Rate at 50Hz
-    pub = rospy.Publisher(os.path.join(namespace, "odom"), Odometry, queue_size=10)
+    pub = rospy.Publisher("odom", Odometry, queue_size=10)
 
     rospy.wait_for_service("/gazebo/get_model_state")
     caller = rospy.ServiceProxy("/gazebo/get_model_state", GetModelState)

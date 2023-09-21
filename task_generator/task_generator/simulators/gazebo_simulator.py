@@ -123,7 +123,7 @@ class GazeboSimulator(BaseSimulator):
         pose = Pose()
         pose.position.x = pos[0]
         pose.position.y = pos[1]
-        pose.position.z = 0.1
+        pose.position.z = 0.3
         pose.orientation = Quaternion(
             *quaternion_from_euler(0.0, 0.0, pos[2], axes="sxyz")
         )

@@ -45,11 +45,11 @@ class RobotManager:
 
         self.simulator.spawn_robot(self.namespace, self.robot_setup["model"], self._robot_name())
 
-        self.move_base_goal_pub = rospy.Publisher(self.ns_prefix(self.namespace, "move_base_simple", "goal"), PoseStamped, queue_size=10)
+        self.move_base_goal_pub = rospy.Publisher(self.ns_prefix("move_base_simple", "goal"), PoseStamped, queue_size=10)
         self.pub_goal_timer = rospy.Timer(rospy.Duration(0.25), self.publish_goal_periodically)
 
         rospy.Subscriber(
-            os.path.join(self.namespace, "odom"), 
+            self.ns_prefix("odom"), 
             Odometry, 
             self.robot_pos_callback
         )
@@ -171,7 +171,7 @@ class RobotManager:
             ["arena_bringup", "robot.launch"]
         )
 
-        print("START WITH MODEL", robot_setup["model"])
+        print("START WITH MODEL", self.namespace, robot_setup["model"])
 
         args = [
             f"model:={robot_setup['model']}",
