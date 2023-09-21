@@ -328,7 +328,7 @@ class FlatlandSimulator(BaseSimulator):
             msg.pose.position.z = obstacle[1][2]
 
             self.agent_topic_str+=f',{self._ns_prefix}pedsim_static_obstacle_{obstacle[0]}/0' 
-            msg.type = type
+            msg.type = "shelf"
             msg.interaction_radius = 0.0
             msg.yaml_path = os.path.join(
                 rospkg.RosPack().get_path("arena-simulation-setup"),
@@ -370,7 +370,7 @@ class FlatlandSimulator(BaseSimulator):
             msg.pose.position.z = obstacle[1][2]
 
             self.agent_topic_str+=f',{self._ns_prefix}pedsim_interactive_obstacle_{obstacle[0]}/0' 
-            msg.type = type
+            msg.type = "shelf"
             msg.interaction_radius = 1.0
             msg.yaml_path = os.path.join(
                 rospkg.RosPack().get_path("arena-simulation-setup"),
@@ -398,7 +398,6 @@ class FlatlandSimulator(BaseSimulator):
         return
 
     def spawn_pedsim_dynamic_obstacles(self, peds, type="adult", yaml="person_two_legged.model.yaml"):
-
         srv = SpawnPeds()
         srv.peds = []
         i = 0
@@ -406,9 +405,6 @@ class FlatlandSimulator(BaseSimulator):
         while i < len(peds) : 
             msg = Ped()
             ped = peds[i]
-            print("printing a ped 238")
-            print(len(ped))
-            print(ped)
             msg.id = ped[0]
 
             msg.pos = Point()
@@ -462,8 +458,6 @@ class FlatlandSimulator(BaseSimulator):
 
         max_num_try = 2
         i_curr_try = 0
-        print("trying to call service with peds: ")    
-        print(peds)    
         while i_curr_try < max_num_try:
         # try to call service
             response=self.__respawn_peds_srv.call(srv.peds)

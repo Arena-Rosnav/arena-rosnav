@@ -39,6 +39,11 @@
   <env name="PEDSIM" value="$(arg pedsim)" />
   <param name="pedsim" value="$(arg pedsim)" />
 
+
+
+ 
+
+
   <arg name="complexity" default="1" doc="1 = Map known, Position known; 2 = Map known, Position unknown (AMCL); 3 = Map unknown, Position unknown (SLAM)" />
   
 
@@ -143,17 +148,20 @@
     <arg name="scenario_json_path" value="$(find task_generator)/scenarios/$(arg scenario_file)" />
     <arg name="auto_reset" value="$(arg auto_reset)" />
   </include>
-
-  <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(arg pedsim)">
-    <param name="simulation_factor" value="1" type="double"/>
-    <param name="pedsim_update_rate" value="30.0" type="double"/>
-    <param name="scene_file" value="$(find arena-simulation-setup)/world/$(arg world_file)/scenarios/$(arg world_file).xml" type="string"/>
-  </node>
-
+  
   <!-- Launch pedsim agent spawner  -->
-  <!-- <node name="pedsim_agent" pkg="pedsim_gazebo_plugin" type="spawn_pedsim_agents.py"></node> -->
+  <group if="$(eval arg('pedsim'))">
+    <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(arg pedsim)">
+      <param name="simulation_factor" value="1" type="double"/>
+      <param name="pedsim_update_rate" value="30.0" type="double"/>
+      <param name="scene_file" value="$(find arena-simulation-setup)/world/$(arg world_file)/scenarios/$(arg world_file).xml" type="string"/>
+    </node>
+  </group>
 
-  <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/>
+  <!-- <node name="pedsim_agent" pkg="pedsim_gazebo_plugin" type="spawn_pedsim_agents.py"></node> -->
+  <group if="$(eval arg('pedsim'))">
+    <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/>
+  </group>
 
   <!-- launch map generator if training with random map-->
   <!-- <group if="$(eval arg('map_file') == 'random_map')">

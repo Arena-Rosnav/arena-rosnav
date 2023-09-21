@@ -56,7 +56,6 @@ class RandomScenarioTask(BaseTask):
             TaskMode.Random.MAX_STATIC_OBS
         ) if static_obstacles == None else static_obstacles
 
-        print("random.py is resetting obstacles")
         self.obstacles_manager.reset_random_scenario(
             dynamic_obstacles=dynamic_obstacles,
             static_obstacles=static_obstacles,

@@ -46,7 +46,7 @@ class TaskGenerator:
         self.srv_start_model_visualization = rospy.ServiceProxy("start_model_visualization", Empty)
         self.srv_start_model_visualization(EmptyRequest())
 
-        print("reset 1")
+        # print("reset 1")
         self.reset_task()
 
         rospy.sleep(2)
@@ -60,7 +60,7 @@ class TaskGenerator:
 
         self.number_of_resets = 0
 
-        print("reset 2")
+        # print("reset 2")
         # self.reset_task()
 
         ## Timers
