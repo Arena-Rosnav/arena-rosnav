@@ -89,8 +89,8 @@ class GazeboSimulator(BaseSimulator):
       self._peds = []
 
       rospack1 = RosPack()
-      pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
-      default_actor_model_file = pkg_path + "/models/actor_model.sdf"
+      pkg_path = rospack1.get_path('arena-simulation-setup')
+      default_actor_model_file = pkg_path + "/pedsim/actor_model.sdf"
       # default_actor_model_file = pkg_path + "/models/actor2.sdf"
       # default_actor_model_file = pkg_path + "/models/forklift_robot-master/model.sdf"
       # default_actor_model_file = pkg_path + "/models/test_static_obstacle.sdf"
@@ -109,8 +109,8 @@ class GazeboSimulator(BaseSimulator):
       print("service: spawn_sdf_model is available ....")
       rospy.set_param("respawn_dynamic", True)
       rospy.set_param("respawn_static", True)
-      rospy.Subscriber("/pedsim_simulator/simulated_waypoints", Waypoints, self.interactive_actor_poses_callback)
-      rospy.Subscriber("/pedsim_simulator/simulated_agents", AgentStates, self.dynamic_actor_poses_callback)
+      # rospy.Subscriber("/pedsim_simulator/simulated_waypoints", Waypoints, self.interactive_actor_poses_callback)
+      # rospy.Subscriber("/pedsim_simulator/simulated_agents", AgentStates, self.dynamic_actor_poses_callback)
 
       # while (rospy.is_shutdown()) == False:
       #   rospy.spin()
@@ -130,7 +130,7 @@ class GazeboSimulator(BaseSimulator):
                                           0,
                                           0,
                                           1) )
-              self.spawn_model(actor_name, self.xml_string, "", model_pose, "world")
+              # self.spawn_model(actor_name, self.xml_string, "", model_pose, "world")
               rospy.set_param("respawn_static", False)
 
   def dynamic_actor_poses_callback(self, actors):
@@ -151,7 +151,7 @@ class GazeboSimulator(BaseSimulator):
             new_xml_string= self.xml_string.replace("0 0 0.75",str(actor_pose.position.x)+" "+str(actor_pose.position.y) +" 0.75")
             new_xml_string= new_xml_string.replace("actor2",actor_id)
             # print(new_xml_string)
-            self.spawn_model(actor_id, new_xml_string, "", model_pose, "world")
+            # self.spawn_model(actor_id, new_xml_string, "", model_pose, "world")
             # self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
             rospy.set_param("respawn_dynamic", False)
       # else:
@@ -356,9 +356,10 @@ class GazeboSimulator(BaseSimulator):
               )
 
           # print(new_xml_string)
+          # 
           self.spawn_model(str(id), new_xml_string, "", model_pose, "world")
           # self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
-          rospy.set_param("respawn_dynamic", False)
+          # rospy.set_param("respawn_dynamic", False)
 
       #     msg = Ped()
       #     ped = peds[i]

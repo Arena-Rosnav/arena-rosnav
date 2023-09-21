@@ -27,7 +27,7 @@ class TaskGenerator:
         ## Publishers
         self.pub_scenario_reset = rospy.Publisher("scenario_reset", Int16, queue_size=1)
         self.pub_scenario_finished = rospy.Publisher('scenario_finished', EmptyMsg, queue_size=10)
-        
+
         ## Services
         rospy.Service("reset_task", Empty, self.reset_task_srv_callback)
 
