@@ -8,6 +8,10 @@ from task_generator.tasks.task_factory import TaskFactory
 from .base_task import BaseTask
 
 
+dynamic_obstacles_random = random.randint(TaskMode.Random.MIN_DYNAMIC_OBS,TaskMode.Random.MAX_DYNAMIC_OBS)
+static_obstacles_random = random.randint(TaskMode.Random.MIN_STATIC_OBS,TaskMode.Random.MAX_STATIC_OBS)
+interactive_obstacles_random = random.randint(TaskMode.Random.MIN_INTERACTIVE_OBS,TaskMode.Random.MAX_INTERACTIVE_OBS)
+
 @TaskFactory.register(TaskMode.RANDOM)
 class RandomTask(BaseTask):
     """
@@ -47,19 +51,10 @@ class RandomTask(BaseTask):
                     ]
                 )
 
-        dynamic_obstacles = random.randint(
-            TaskMode.Random.MIN_DYNAMIC_OBS,
-            TaskMode.Random.MAX_DYNAMIC_OBS
-        ) if dynamic_obstacles == None else dynamic_obstacles
-        static_obstacles = random.randint(
-            TaskMode.Random.MIN_STATIC_OBS,
-            TaskMode.Random.MAX_STATIC_OBS
-        ) if static_obstacles == None else static_obstacles
-
-        print("random.py is resetting obstacles")
         self.obstacles_manager.reset_random(
-            dynamic_obstacles=dynamic_obstacles,
-            static_obstacles=static_obstacles,
+            dynamic_obstacles=dynamic_obstacles_random,
+            static_obstacles=static_obstacles_random,
+            interactive_obstacles=interactive_obstacles_random,
             forbidden_zones=robot_positions
         )
 

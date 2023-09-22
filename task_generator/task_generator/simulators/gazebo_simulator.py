@@ -131,8 +131,6 @@ class GazeboSimulator(BaseSimulator):
                     direction_x = float( actor.name[actor.name.index("{")+1: actor.name.index("}")].replace(",","."))
                     direction_y = float( actor.name[actor.name.index("[")+1: actor.name.index("]")].replace(",","."))
                     ob_type =            actor.name[actor.name.index("&")+1: actor.name.index("!")]
-                    print("ob_type")
-                    print(ob_type)
                     # Convert to quaternions and print
                     rot = Rotation.from_euler('xyz', [0, 0, orientation], degrees=False)
                     rot_quat = rot.as_quat()
@@ -165,8 +163,6 @@ class GazeboSimulator(BaseSimulator):
                     direction_x = float( actor.name[actor.name.index("{")+1: actor.name.index("}")].replace(",","."))
                     direction_y = float( actor.name[actor.name.index("[")+1: actor.name.index("]")].replace(",","."))
                     ob_type = actor.name[actor.name.index("&")+1: actor.name.index("!")]
-                    print("ob_type")
-                    print(ob_type)
                     
                     rot = Rotation.from_euler('xyz', [0, 0, orientation], degrees=False)
                     rot_quat = rot.as_quat()
@@ -175,8 +171,8 @@ class GazeboSimulator(BaseSimulator):
 
                     rospack1 = RosPack()
                     pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
-                    z = pkg_path +  "/models/"+ob_type+".sdf"
-                    # z = pkg_path +  "/models/table.sdf"
+                    # z = pkg_path +  "/models/"+ob_type+".sdf"
+                    z = pkg_path +  "/models/table.sdf"
                     file_xml = open(z)
                     x = file_xml.read()
 
@@ -217,7 +213,8 @@ class GazeboSimulator(BaseSimulator):
                     file_xml = open(z)
                     x = file_xml.read()
 
-                print("spawning gazebo dynamic obstacles")
+                # self.spawned_obstacles.append(actor_id)
+                # print("spawning gazebo dynamic obstacles")
                 self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
                 rospy.set_param("respawn_dynamic", False)
         #   else:
@@ -299,10 +296,11 @@ class GazeboSimulator(BaseSimulator):
 
         max_num_try = 2
         i_curr_try = 0
-        print("trying to call service with interactive obstacles: ")    
+        # print("trying to call service with interactive obstacles: ")    
 
         while i_curr_try < max_num_try:
         # try to call service
+            # response=self.__respawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
             response=self.__respawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
 
             if not response.success:  # if service not succeeds, do something and redo service
@@ -397,7 +395,7 @@ class GazeboSimulator(BaseSimulator):
 
         max_num_try = 2
         i_curr_try = 0
-        print("trying to call service with interactive obstacles: ")    
+        # print("trying to call service with interactive obstacles: ")    
 
         while i_curr_try < max_num_try:
         # try to call service
@@ -416,7 +414,7 @@ class GazeboSimulator(BaseSimulator):
             return
 
     def spawn_pedsim_dynamic_obstacles(self, peds, type="adult", yaml="person_two_legged.model.yaml"):
-        print("spawning pedsim dynamic obstacles")
+        # print("spawning pedsim dynamic obstacles")
         srv = SpawnPeds()
         srv.peds = []
         i = 0
@@ -539,7 +537,7 @@ class GazeboSimulator(BaseSimulator):
 
     def spawn_pedsim_map_obstacles(self):
         map = rospy.get_param("map_file")
-        print("READING XML")
+        # print("READING XML")
         map_path = os.path.join(
             rospkg.RosPack().get_path("arena-simulation-setup"), 
             "worlds", 
@@ -668,11 +666,11 @@ class GazeboSimulator(BaseSimulator):
 
         max_num_try = 2
         i_curr_try = 0
-        print("trying to call service with static obstacles: ")    
+        # print("trying to call service with static obstacles: ")    
 
         while i_curr_try < max_num_try:
         # try to call service
-            response=self.__respawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
+            response=self.spawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
 
             if not response.success:  # if service not succeeds, do something and redo service
                 rospy.logwarn(
@@ -687,13 +685,13 @@ class GazeboSimulator(BaseSimulator):
 
     def remove_all_obstacles(self):
         # # Anhand ID gazebo obstacles löschen
-        if rospy.get_param("pedsim"):
-        #   self._remove_peds_srv(True)
-            self.__remove_all_interactive_obstacles_srv.call()
-
         for ped in self.spawned_obstacles:
-            print("remove obstacle", ped)
+            # print("remove obstacle", ped)
             self.remove_model_srv(str(ped))
+
+        if rospy.get_param("pedsim"):
+            # self._remove_peds_srv(True)
+            self.__remove_all_interactive_obstacles_srv.call()
 
         self.spawned_obstacles = []
         return

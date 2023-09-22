@@ -339,7 +339,7 @@ class FlatlandSimulator(BaseSimulator):
 
         max_num_try = 2
         i_curr_try = 0
-        print("trying to call service with static obstacles: ")    
+        # print("trying to call service with static obstacles: ")    
 
         while i_curr_try < max_num_try:
         # try to call service
@@ -381,7 +381,7 @@ class FlatlandSimulator(BaseSimulator):
 
         max_num_try = 2
         i_curr_try = 0
-        print("trying to call service with interactive obstacles: ")    
+        # print("trying to call service with interactive obstacles: ")    
 
         while i_curr_try < max_num_try:
         # try to call service
@@ -492,7 +492,7 @@ class FlatlandSimulator(BaseSimulator):
 
     def spawn_pedsim_map_obstacles(self):
         map = rospy.get_param("map_file")
-        print("READING XML")
+        # print("READING XML")
         map_path = os.path.join(
             rospkg.RosPack().get_path("arena-simulation-setup"), 
             "worlds", 
@@ -524,8 +524,6 @@ class FlatlandSimulator(BaseSimulator):
         self.agent_topic_str=''   
         while i < len(peds) : 
             ped = peds[i]
-            print("ped[i] ", i, " :")
-            print(ped)
             msg = Ped()
             msg.id = i 
 
@@ -623,7 +621,7 @@ class FlatlandSimulator(BaseSimulator):
 
         max_num_try = 2
         i_curr_try = 0
-        print("trying to call service with static obstacles: ")    
+        # print("trying to call service with static obstacles: ")    
 
         while i_curr_try < max_num_try:
         # try to call service

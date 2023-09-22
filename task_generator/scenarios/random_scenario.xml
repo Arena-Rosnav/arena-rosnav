@@ -1,17 +1,17 @@
 <?xml version="1.0" ?>
 <random_scenario>
   <obstacle name="table">
-    <num>3</num>
+    <num>4</num>
     <name>table</name>
     <yaml>shelf.yaml</yaml>
   </obstacle>
   <obstacle name="shelf">
-    <num>1</num>
+    <num>2</num>
     <name>shelf</name>
     <yaml>shelf.yaml</yaml>
   </obstacle>
   <obstacle name="adult">
-    <num>1</num>
+    <num>4</num>
     <name>adult</name>
     <yaml>person_two_legged.model.yaml</yaml>
   </obstacle>

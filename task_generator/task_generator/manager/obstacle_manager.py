@@ -1,10 +1,10 @@
 from task_generator.constants import Constants
 import rospy
 import numpy as np
-import random
 import os
 import xml.etree.ElementTree as ET
 import rospkg
+
 
 class ObstacleManager:
     def __init__(self, namespace, map_manager, simulator):
@@ -60,7 +60,7 @@ class ObstacleManager:
             forbidden_zones = forbidden_zones + self.simulator.spawn_pedsim_map_obstacles()
 
         # Create static obstacles
-        for i in range(random.randrange(1,10)):
+        for i in range(static_obstacles):
             if rospy.get_param("pedsim"):
                 x = self.simulator.create_pedsim_static_obstacle(i,self.map_manager, forbidden_zones)
                 forbidden_zones.append([x[1][0], x[1][1], 40])
@@ -77,7 +77,7 @@ class ObstacleManager:
             self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array)
 
         # Create interactive obstacles  
-        for i in range(random.randrange(1,10)):
+        for i in range(interactive_obstacles):
             if rospy.get_param("pedsim"):
                 x = self.simulator.create_pedsim_interactive_obstacle(i,self.map_manager, forbidden_zones)
                 forbidden_zones.append([x[1][0], x[1][1], 40])
@@ -94,7 +94,7 @@ class ObstacleManager:
             self.simulator.spawn_pedsim_interactive_obstacles(interactive_obstacles_array)
 
         # Create dynamic obstacles 
-        for i in range(random.randrange(1,10)):
+        for i in range(dynamic_obstacles):
             if rospy.get_param("pedsim"):
                 x = self.simulator.create_pedsim_dynamic_obstacle(i,self.map_manager, forbidden_zones)
                 dynamic_obstacles_array = np.vstack((dynamic_obstacles_array, x))
@@ -128,7 +128,7 @@ class ObstacleManager:
         else:  
             self.simulator.remove_all_obstacles()
         
-        print("READING XML")
+        # print("READING XML")
         map_path = os.path.join(
             rospkg.RosPack().get_path("task_generator"), 
             "scenarios", 
@@ -162,8 +162,8 @@ class ObstacleManager:
                 else: 
                     pass
 
-            # if static_obstacles_array.size > 0:
-            #     self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array, ob_type[1], ob_type[2])
+            if static_obstacles_array.size > 0:
+                self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array, ob_type[1], ob_type[2])
 
         # Create interactive obstacles  
         for ob_type in [num_shelves]:
@@ -182,8 +182,8 @@ class ObstacleManager:
                     # obstacles.append(self.simulator.create_interactive_obstacle(position=position))
 
             if interactive_obstacles_array.size > 0:
-                # self.simulator.spawn_pedsim_interactive_obstacles(interactive_obstacles_array, ob_type[1], ob_type[2])
-                self.simulator.spawn_pedsim_interactive_obstacles(np.concatenate((interactive_obstacles_array,static_obstacles_array)), ob_type[1], ob_type[2])
+                self.simulator.spawn_pedsim_interactive_obstacles(interactive_obstacles_array, ob_type[1], ob_type[2])
+                # self.simulator.spawn_pedsim_interactive_obstacles(np.concatenate((interactive_obstacles_array,static_obstacles_array)), ob_type[1], ob_type[2])
 
         # Create dynamic obstacles 
         for ob_type in [num_adults,num_elder,num_child]:

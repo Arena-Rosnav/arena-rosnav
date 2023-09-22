@@ -68,7 +68,6 @@ class TaskGenerator:
 
     def check_task_status(self, _):
         if self.task.is_done():
-            print("check_task_status is resetting task")
             self.reset_task()
 
     def reset_task(self):
@@ -76,7 +75,6 @@ class TaskGenerator:
 
         self.env_wrapper.before_reset_task()
 
-        print("task_generator_node.py is resetting task")
         is_end = self.task.reset()
 
         self.pub_scenario_reset.publish(self.number_of_resets)
