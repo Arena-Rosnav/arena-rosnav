@@ -34,14 +34,11 @@ from task_generator.manager.pedsim_manager import PedsimManager
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
-
 @SimulatorFactory.register("gazebo")
 class GazeboSimulator(BaseSimulator):
     def __init__(self, namespace):
         super().__init__(namespace)
-
         self._goal_pub = rospy.Publisher(self._ns_prefix("/goal"), PoseStamped, queue_size=1, latch=True)
-
         self._robot_name = rospy.get_param("robot_model", "")
 
         rospy.wait_for_service("/gazebo/spawn_urdf_model")
@@ -62,10 +59,6 @@ class GazeboSimulator(BaseSimulator):
         rospack1 = RosPack()
         pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
         default_actor_model_file = pkg_path + "/models/actor_model.sdf"
-        # default_actor_model_file = pkg_path + "/models/human3.sdf"
-        # default_actor_model_file = pkg_path + "/models/table.sdf"
-        # default_actor_model_file = pkg_path + "/models/actor2.sdf"
-        # default_actor_model_file = pkg_path + "/models/test_static_obstacle.sdf"
         # default_actor_model_file = pkg_path + "/models/prius.sdf"
 
         actor_model_file = rospy.get_param('~actor_model_file', default_actor_model_file)
@@ -83,7 +76,6 @@ class GazeboSimulator(BaseSimulator):
             rospy.set_param("respawn_interactive", True)
             rospy.Subscriber("/pedsim_simulator/simulated_waypoints", Waypoints, self.interactive_actor_poses_callback)
             rospy.Subscriber("/pedsim_simulator/simulated_agents", AgentStates, self.dynamic_actor_poses_callback)
-            # rospy.Subscriber("/pedsim_simulator/simulated_walls", LineObstacles, self.static_actor_poses_callback)
 
     def interactive_actor_poses_callback(self, actors):
         if rospy.get_param("respawn_interactive"):
@@ -94,7 +86,6 @@ class GazeboSimulator(BaseSimulator):
                     direction_x = float( actor.name[actor.name.index("{")+1: actor.name.index("}")].replace(",","."))
                     direction_y = float( actor.name[actor.name.index("[")+1: actor.name.index("]")].replace(",","."))
                     ob_type =            actor.name[actor.name.index("&")+1: actor.name.index("!")]
-                    # Convert to quaternions and print
                     rot = Rotation.from_euler('xyz', [0, 0, orientation], degrees=False)
                     rot_quat = rot.as_quat()
 

@@ -370,60 +370,60 @@ class FlatlandSimulator(BaseSimulator):
     def check_yaml_path(path):
         return os.path.isfile(path)
 
-    @staticmethod
-    def create_ped_msg(ped, id):
-        msg = Ped()
+    # @staticmethod
+    # def create_ped_msg(ped, id):
+    #     msg = Ped()
 
-        msg.id = id
+    #     msg.id = id
 
-        pos = Point()
-        pos.x = ped["waypoints"][0][0]
-        pos.y = ped["waypoints"][0][1]
-        msg.pos = pos
+    #     pos = Point()
+    #     pos.x = ped["waypoints"][0][0]
+    #     pos.y = ped["waypoints"][0][1]
+    #     msg.pos = pos
 
-        msg.type = "adult"
-        msg.yaml_file = os.path.join(
-            rospkg.RosPack().get_path("arena-simulation-setup"),
-            "dynamic_obstacles",
-            "person_two_legged.model.yaml",
-        )
-        msg.number_of_peds = 1
-        msg.vmax = 0.3
-        msg.start_up_mode = "default"
-        msg.wait_time = 0.0
-        msg.trigger_zone_radius = 0.0
-        msg.chatting_probability = 0.00
-        msg.tell_story_probability = 0
-        msg.group_talking_probability = 0.00
-        msg.talking_and_walking_probability = 0.00
-        msg.requesting_service_probability = 0.00
-        msg.requesting_guide_probability = 0.00
-        msg.requesting_follower_probability = 0.00
-        msg.max_talking_distance = 5
-        msg.max_servicing_radius = 5
-        msg.talking_base_time = 10
-        msg.tell_story_base_time = 0
-        msg.group_talking_base_time = 10
-        msg.talking_and_walking_base_time = 6
-        msg.receiving_service_base_time = 20
-        msg.requesting_service_base_time = 30
-        msg.force_factor_desired = 1
-        msg.force_factor_obstacle = 1
-        msg.force_factor_social = 5
-        msg.force_factor_robot = 1
+    #     msg.type = "adult"
+    #     msg.yaml_file = os.path.join(
+    #         rospkg.RosPack().get_path("arena-simulation-setup"),
+    #         "dynamic_obstacles",
+    #         "person_two_legged.model.yaml",
+    #     )
+    #     msg.number_of_peds = 1
+    #     msg.vmax = 0.3
+    #     msg.start_up_mode = "default"
+    #     msg.wait_time = 0.0
+    #     msg.trigger_zone_radius = 0.0
+    #     msg.chatting_probability = 0.00
+    #     msg.tell_story_probability = 0
+    #     msg.group_talking_probability = 0.00
+    #     msg.talking_and_walking_probability = 0.00
+    #     msg.requesting_service_probability = 0.00
+    #     msg.requesting_guide_probability = 0.00
+    #     msg.requesting_follower_probability = 0.00
+    #     msg.max_talking_distance = 5
+    #     msg.max_servicing_radius = 5
+    #     msg.talking_base_time = 10
+    #     msg.tell_story_base_time = 0
+    #     msg.group_talking_base_time = 10
+    #     msg.talking_and_walking_base_time = 6
+    #     msg.receiving_service_base_time = 20
+    #     msg.requesting_service_base_time = 30
+    #     msg.force_factor_desired = 1
+    #     msg.force_factor_obstacle = 1
+    #     msg.force_factor_social = 5
+    #     msg.force_factor_robot = 1
 
-        waypoints = []
+    #     waypoints = []
 
-        for w in ped["waypoints"]:
-            new_waypoint = Point()
+    #     for w in ped["waypoints"]:
+    #         new_waypoint = Point()
 
-            new_waypoint.x = w[0]
-            new_waypoint.y = w[1]
+    #         new_waypoint.x = w[0]
+    #         new_waypoint.y = w[1]
 
-            waypoints.append(new_waypoint)
+    #         waypoints.append(new_waypoint)
 
-        msg.waypoints = waypoints
+    #     msg.waypoints = waypoints
 
-        msg.waypoint_mode = 0
+    #     msg.waypoint_mode = 0
 
-        return msg
+    #     return msg
