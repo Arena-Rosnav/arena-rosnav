@@ -35,6 +35,7 @@ class ObstacleManager:
             interactive_obstacles=Constants.ObstacleManager.INTERACTIVE_OBSTACLES,
             forbidden_zones=[]
         ):
+
         if forbidden_zones is None:
             forbidden_zones = []
 

@@ -50,7 +50,7 @@ class PedsimManager():
             rospy.wait_for_service("pedsim_simulator/respawn_peds" , timeout=T)
             rospy.wait_for_service("pedsim_simulator/respawn_interactive_obstacles" , timeout=T)
             rospy.wait_for_service("pedsim_simulator/remove_all_interactive_obstacles" , timeout=T)
-            rospy.wait_for_service("pedsim_simulator/add_obstacle", timeout=20)
+            rospy.wait_for_service("pedsim_simulator/add_obstacle", timeout=T)
         
         self._spawn_peds_srv = rospy.ServiceProxy(
             "/pedsim_simulator/spawn_peds", SpawnPeds
@@ -207,7 +207,7 @@ class PedsimManager():
             srv.peds.append(msg)
             i = i+1
 
-        max_num_try = 2
+        max_num_try = 1
         i_curr_try = 0
         while i_curr_try < max_num_try:
         # try to call service
@@ -254,7 +254,6 @@ class PedsimManager():
 
     def spawn_pedsim_map_obstacles(self):
         map = rospy.get_param("map_file")
-        # print("READING XML")
         map_path = os.path.join(
             rospkg.RosPack().get_path("arena-simulation-setup"), 
             "worlds", 
@@ -310,7 +309,6 @@ class PedsimManager():
             self.agent_topic_str+=f',pedsim_agent_{i}/0' 
             msg.type = "adult"
             msg.number_of_peds = 1
-            # msg.vmax = 0.3
             msg.vmax = ped["vmax"]
             msg.start_up_mode = ped["start_up_mode"]
             msg.wait_time = ped["wait_time"]
