@@ -103,8 +103,6 @@ class PedsimManager():
         return ped
 
     def spawn_pedsim_obstacles(self, obstacles, type="shelf", yaml="shelf.yaml", interaction_radius=0.0):
-        print("spawn pedsim obstacles")
-        print(obstacles)
         srv = SpawnInteractiveObstacles()
         srv.InteractiveObstacles = []
         i = 0
@@ -131,26 +129,20 @@ class PedsimManager():
             srv.InteractiveObstacles.append(msg)
             i = i+1
 
-        max_num_try = 2
+        max_num_try = 1
         i_curr_try = 0
-        # print("trying to call service with interactive obstacles: ")    
+        print("trying to call service with interactive obstacles: ")    
 
         while i_curr_try < max_num_try:
         # try to call service
-            # response=self.__respawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
-            # if interaction_radius == 0.0:
-            #     response=self.__respawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
-            # else:
             response=self.spawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
 
             if not response.success:  # if service not succeeds, do something and redo service
                 rospy.logwarn(
                     f"spawn static obstacle failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
-                # rospy.logwarn(response.message)
                 i_curr_try += 1
             else:
                 break
-        # self._peds = peds
         rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
         rospy.set_param("respawn_static", True)
         rospy.set_param("respawn_interactive", True)
@@ -347,7 +339,7 @@ class PedsimManager():
             srv.peds.append(msg)
             i = i+1
 
-        max_num_try = 2
+        max_num_try = 1
         i_curr_try = 0
         while i_curr_try < max_num_try:
         # try to call service
