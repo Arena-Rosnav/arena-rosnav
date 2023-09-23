@@ -138,8 +138,8 @@ class PedsimManager():
             response=self.spawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
 
             if not response.success:  # if service not succeeds, do something and redo service
-                rospy.logwarn(
-                    f"spawn static obstacle failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+                # rospy.logwarn(
+                #     f"spawn static obstacle failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
                 i_curr_try += 1
             else:
                 break
@@ -156,7 +156,7 @@ class PedsimManager():
         while i < len(peds) : 
             msg = Ped()
             ped = peds[i]
-            msg.id = ped[0]
+            msg.id = ped[0]+20
 
             msg.pos = Point()
             msg.pos.x = ped[1][0]
@@ -214,12 +214,13 @@ class PedsimManager():
             response=self.__respawn_peds_srv.call(srv.peds)
 
             if not response.success:  # if service not succeeds, do something and redo service
-                rospy.logwarn(
-                    f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+                # rospy.logwarn(
+                #     f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
                 i_curr_try += 1
             else:
                 break
         rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
+        rospy.set_param("respawn_dynamic", True)
 
         # USE THE FOLLOWING CODE TO SPAWN ACTORS WITHOUT PEDSIM
 
@@ -344,14 +345,15 @@ class PedsimManager():
             response=self.__respawn_peds_srv.call(srv.peds)
 
             if not response.success:  # if service not succeeds, do something and redo service
-                rospy.logwarn(
-                    f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+                # rospy.logwarn(
+                #     f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
                 # rospy.logwarn(response.message)
                 i_curr_try += 1
             else:
                 break
         self._peds = peds
         rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
+        rospy.set_param("respawn_dynamic", True)
         return
 
     def spawn_pedsim_scenario_obstacles(self, obstacles, interaction_radius=0.0):
@@ -379,18 +381,17 @@ class PedsimManager():
             srv.InteractiveObstacles.append(msg)
             i = i+1
 
-        max_num_try = 2
+        max_num_try = 1
         i_curr_try = 0
-        # print("trying to call service with static obstacles: ")    
+        print("trying to call service with static obstacles: ")    
 
         while i_curr_try < max_num_try:
         # try to call service
             response=self.spawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
 
             if not response.success:  # if service not succeeds, do something and redo service
-                rospy.logwarn(
-                    f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
-                # rospy.logwarn(response.message)
+                # rospy.logwarn(
+                #     f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
                 i_curr_try += 1
             else:
                 break

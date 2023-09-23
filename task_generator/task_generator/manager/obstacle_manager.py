@@ -5,6 +5,7 @@ import os
 import xml.etree.ElementTree as ET
 import rospkg
 from task_generator.manager.pedsim_manager import PedsimManager
+import time
 
 
 class ObstacleManager:
@@ -15,7 +16,9 @@ class ObstacleManager:
         self.first_reset = True
         self.pedsimManager = PedsimManager(namespace)
 
+    # TASK MODE SCENARIO 
     def start_scenario(self, scenario):
+        print("spawning scenario obstacles")
         if rospy.get_param("pedsim"):
             self.pedsimManager.spawn_pedsim_map_obstacles()
             self.pedsimManager.spawn_pedsim_dynamic_scenario_obstacles(scenario["obstacles"]["dynamic"])
@@ -24,10 +27,15 @@ class ObstacleManager:
 
     def reset_scenario(self, scenario):
         if rospy.get_param("pedsim"):
-            self.simulator.reset_pedsim_agents()
             self.pedsimManager.remove_interactive_obstacles_pedsim()
         self.simulator.remove_all_obstacles()
 
+        if rospy.get_param("pedsim"):
+            self.pedsimManager.spawn_pedsim_dynamic_scenario_obstacles(scenario["obstacles"]["dynamic"])
+            self.pedsimManager.spawn_pedsim_scenario_obstacles(scenario["obstacles"]["static"], interaction_radius=0.0)
+            self.pedsimManager.spawn_pedsim_scenario_obstacles(scenario["obstacles"]["interactive"], interaction_radius=1.0)
+
+    # TASK MODE RANDOM
     def reset_random(
             self, 
             dynamic_obstacles=Constants.ObstacleManager.DYNAMIC_OBSTACLES,
@@ -88,6 +96,7 @@ class ObstacleManager:
         if dynamic_obstacles_array.size > 0:
             self.pedsimManager.spawn_pedsim_dynamic_obstacles(dynamic_obstacles_array)
 
+    # TASK MODE RANDOM SCENARIO
     def reset_random_scenario(
             self, 
             dynamic_obstacles=Constants.ObstacleManager.DYNAMIC_OBSTACLES,
@@ -156,6 +165,7 @@ class ObstacleManager:
 
         # Create dynamic obstacles 
         for ob_type in [num_adults,num_elder,num_child]:
+            dynamic_obstacles_array = np.array([],dtype=object).reshape(0,3)
             for i in range(ob_type[0]):
                 if rospy.get_param("pedsim"):
                     x = self.pedsimManager.create_pedsim_obstacle(True, i,self.map_manager, forbidden_zones)

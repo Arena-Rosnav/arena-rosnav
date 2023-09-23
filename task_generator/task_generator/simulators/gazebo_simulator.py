@@ -157,6 +157,7 @@ class GazeboSimulator(BaseSimulator):
                                             actor_pose.orientation.z,
                                             actor_pose.orientation.w) )
                 self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
+                self.spawned_obstacles.append(actor_id)
                 rospy.set_param("respawn_dynamic", False)
             
     def before_reset_task(self):
