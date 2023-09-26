@@ -1,0 +1,207 @@
+{
+    "robots": [
+        {
+            "start": [
+                5.0,
+                4.0,
+                0.0
+            ],
+            "goal": [
+                9.0,
+                4.0,
+                0.0
+            ]
+        }
+    ],
+    "obstacles": {
+        "dynamic": [
+            {
+                "name": "22",
+                "id": 0,
+                "pos": [
+                    13.29,
+                    7.91,
+                    0.0
+                ],
+                "type": "adult",
+                "yaml_file": "/home/jan/code/arena-rosnav_workspace/src/utils/arena-simulation-setup/dynamic_obstacles/person_two_legged.model.yaml",
+                "number_of_peds": 1,
+                "vmax": 0.3,
+                "start_up_mode": "default",
+                "wait_time": 0.0,
+                "trigger_zone_radius": 0.0,
+                "chatting_probability": 0.0,
+                "tell_story_probability": 0.0,
+                "group_talking_probability": 0.0,
+                "talking_and_walking_probability": 0.0,
+                "requesting_service_probability": 0.0,
+                "requesting_guide_probability": 0.0,
+                "requesting_follower_probability": 0.0,
+                "max_talking_distance": 5.0,
+                "max_servicing_radius": 5.0,
+                "talking_base_time": 10.0,
+                "tell_story_base_time": 0.0,
+                "group_talking_base_time": 10.0,
+                "talking_and_walking_base_time": 6.0,
+                "receiving_service_base_time": 20.0,
+                "requesting_service_base_time": 30.0,
+                "force_factor_desired": 1.0,
+                "force_factor_obstacle": 1.0,
+                "force_factor_social": 5.0,
+                "force_factor_robot": 0.0,
+                "waypoints": [
+                    [
+                        10.64,
+                        17.85,
+                        0.0
+                    ]
+                ],
+                "waypoint_mode": 0
+            },
+            {
+                "name": "23",
+                "id": 0,
+                "pos": [
+                    9.15,
+                    7.91,
+                    0.0
+                ],
+                "type": "adult",
+                "yaml_file": "/home/jan/code/arena-rosnav_workspace/src/utils/arena-simulation-setup/dynamic_obstacles/person_two_legged.model.yaml",
+                "number_of_peds": 1,
+                "vmax": 0.3,
+                "start_up_mode": "default",
+                "wait_time": 0.0,
+                "trigger_zone_radius": 0.0,
+                "chatting_probability": 0.0,
+                "tell_story_probability": 0.0,
+                "group_talking_probability": 0.0,
+                "talking_and_walking_probability": 0.0,
+                "requesting_service_probability": 0.0,
+                "requesting_guide_probability": 0.0,
+                "requesting_follower_probability": 0.0,
+                "max_talking_distance": 5.0,
+                "max_servicing_radius": 5.0,
+                "talking_base_time": 10.0,
+                "tell_story_base_time": 0.0,
+                "group_talking_base_time": 10.0,
+                "talking_and_walking_base_time": 6.0,
+                "receiving_service_base_time": 20.0,
+                "requesting_service_base_time": 30.0,
+                "force_factor_desired": 1.0,
+                "force_factor_obstacle": 1.0,
+                "force_factor_social": 5.0,
+                "force_factor_robot": 0.0,
+                "waypoints": [
+                    [
+                        10.64,
+                        17.85,
+                        0.0
+                    ]
+                ],
+                "waypoint_mode": 0
+            },
+            {
+                "name": "24",
+                "id": 0,
+                "pos": [
+                    5.38,
+                    8.1,
+                    0.0
+                ],
+                "type": "adult",
+                "yaml_file": "/home/jan/code/arena-rosnav_workspace/src/utils/arena-simulation-setup/dynamic_obstacles/person_two_legged.model.yaml",
+                "number_of_peds": 1,
+                "vmax": 0.3,
+                "start_up_mode": "default",
+                "wait_time": 0.0,
+                "trigger_zone_radius": 0.0,
+                "chatting_probability": 0.0,
+                "tell_story_probability": 0.0,
+                "group_talking_probability": 0.0,
+                "talking_and_walking_probability": 0.0,
+                "requesting_service_probability": 0.0,
+                "requesting_guide_probability": 0.0,
+                "requesting_follower_probability": 0.0,
+                "max_talking_distance": 5.0,
+                "max_servicing_radius": 5.0,
+                "talking_base_time": 10.0,
+                "tell_story_base_time": 0.0,
+                "group_talking_base_time": 10.0,
+                "talking_and_walking_base_time": 6.0,
+                "receiving_service_base_time": 20.0,
+                "requesting_service_base_time": 30.0,
+                "force_factor_desired": 1.0,
+                "force_factor_obstacle": 1.0,
+                "force_factor_social": 5.0,
+                "force_factor_robot": 0.0,
+                "waypoints": [
+                    [
+                        10.64,
+                        17.85,
+                        0.0
+                    ]
+                ],
+                "waypoint_mode": 0
+            },
+            {
+                "name": "25",
+                "id": 0,
+                "pos": [
+                    17.06,
+                    8.1,
+                    0.0
+                ],
+                "type": "adult",
+                "yaml_file": "/home/jan/code/arena-rosnav_workspace/src/utils/arena-simulation-setup/dynamic_obstacles/person_two_legged.model.yaml",
+                "number_of_peds": 1,
+                "vmax": 0.3,
+                "start_up_mode": "default",
+                "wait_time": 0.0,
+                "trigger_zone_radius": 0.0,
+                "chatting_probability": 0.0,
+                "tell_story_probability": 0.0,
+                "group_talking_probability": 0.0,
+                "talking_and_walking_probability": 0.0,
+                "requesting_service_probability": 0.0,
+                "requesting_guide_probability": 0.0,
+                "requesting_follower_probability": 0.0,
+                "max_talking_distance": 5.0,
+                "max_servicing_radius": 5.0,
+                "talking_base_time": 10.0,
+                "tell_story_base_time": 0.0,
+                "group_talking_base_time": 10.0,
+                "talking_and_walking_base_time": 6.0,
+                "receiving_service_base_time": 20.0,
+                "requesting_service_base_time": 30.0,
+                "force_factor_desired": 1.0,
+                "force_factor_obstacle": 1.0,
+                "force_factor_social": 5.0,
+                "force_factor_robot": 0.0,
+                "waypoints": [
+                    [
+                        10.64,
+                        17.85,
+                        0.0
+                    ]
+                ],
+                "waypoint_mode": 0
+            }
+        ],
+        "static": [
+            {
+                "name": "5",
+                "model_path": "/home/jan/code/arena-rosnav_workspace/src/utils/arena-simulation-setup/obstacles/shelf.yaml",
+                "pos": [
+                    23.67,
+                    7.42
+                ],
+                "angle": 0.0
+            }
+        ],
+        "interactive": []
+    },
+    "resets": 0,
+    "map": "map_empty",
+    "format": "arena-tools"
+}

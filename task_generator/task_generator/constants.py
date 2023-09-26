@@ -7,11 +7,10 @@ class Constants:
     class ObstacleManager:
         DYNAMIC_OBSTACLES = 15
         STATIC_OBSTACLES = 15
+        INTERACTIVE_OBSTACLES = 15
 
         OBSTACLE_MAX_RADIUS = 0.6
 
-        OBSTACLE_MAX_RADIUS = 0.6
-    
     class RobotManager:
         SPAWN_ROBOT_SAFE_DIST = 0.4
 
@@ -28,12 +27,15 @@ class TaskMode:
     RANDOM = "random"
     STAGED = "staged"
     SCENARIO = "scenario"
+    RANDOM_SCENARIO = "random_scenario"
 
     class Random:
-        MIN_DYNAMIC_OBS = 15
-        MAX_DYNAMIC_OBS = 15
-        MIN_STATIC_OBS = 15
-        MAX_STATIC_OBS = 15
+        MIN_DYNAMIC_OBS = 1
+        MAX_DYNAMIC_OBS = 10
+        MIN_STATIC_OBS = 1
+        MAX_STATIC_OBS = 10
+        MIN_INTERACTIVE_OBS = 1
+        MAX_INTERACTIVE_OBS = 10
 
     class Scenario:
         RESETS_DEFAULT = 5

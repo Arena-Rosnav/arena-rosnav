@@ -61,7 +61,8 @@ class TaskGenerator:
 
         self.number_of_resets = 0
 
-        self.reset_task()
+        # The second reset below caused bugs and did not help according to my testing
+        # self.reset_task()
 
         ## Timers
         rospy.Timer(rospy.Duration(0.5), self.check_task_status)
