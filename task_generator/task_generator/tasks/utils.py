@@ -84,7 +84,12 @@ def create_robot_managers(namespace, map_manager, simulator):
             name = f"{robot['model']}_{r}_{len(robot_managers)}"  
 
             robot_managers.append(
-                RobotManager(os.path.join(namespace, name), map_manager, simulator, robot)
+                #RobotManager(os.path.join(namespace, name), map_manager, simulator, robot)
+
+                #old but working due to namespace issue with "/" prefix in robot name
+                RobotManager(namespace + "/" + name, map_manager, simulator, robot)
+    
+
             )
 
     return robot_managers

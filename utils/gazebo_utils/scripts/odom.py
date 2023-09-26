@@ -37,6 +37,7 @@ if __name__ == "__main__":
     if namespace != "":
         odom_frame = namespace + "/odom"
         base_frame = namespace + f"/{base_frame}"
+        
 
     rate = rospy.Rate(50)  # ROS Rate at 50Hz
     pub = rospy.Publisher("odom", Odometry, queue_size=10)
