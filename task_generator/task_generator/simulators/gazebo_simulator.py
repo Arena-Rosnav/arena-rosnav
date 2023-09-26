@@ -3,21 +3,29 @@ import os
 import rospkg
 import random
 import subprocess
+import numpy as np
+import math
+
 from gazebo_msgs.msg import ModelState
-from gazebo_msgs.srv import SetModelState, SpawnModel, SpawnModelRequest
-from geometry_msgs.msg import Pose, PoseStamped, Quaternion
-from pedsim_srvs.srv import SpawnPeds
+from gazebo_msgs.srv import SetModelState, DeleteModel, SpawnModel, SpawnModelRequest
+
+from pedsim_srvs.srv import SpawnInteractiveObstacles, SpawnInteractiveObstaclesRequest,SpawnObstacle, SpawnObstacleRequest, SpawnPeds, SpawnPed
+from pedsim_msgs.msg import InteractiveObstacle, AgentStates, Waypoints, LineObstacle, Ped
+
+from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
+
 from std_msgs.msg import Empty
-from pedsim_srvs.srv import SpawnPeds, SpawnPed
-from pedsim_msgs.msg import Ped
-from geometry_msgs.msg import Point
 from std_srvs.srv import Empty, SetBool, Trigger
+
+from rospkg import RosPack
+
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from tf.transformations import quaternion_from_euler
-
 from ..constants import Constants, Pedsim
 from .base_simulator import BaseSimulator
 from .simulator_factory import SimulatorFactory
+from task_generator.utils import Utils
+from nav_msgs.srv import GetMap
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
@@ -33,9 +41,6 @@ class GazeboSimulator(BaseSimulator):
 
         rospy.wait_for_service("/gazebo/spawn_urdf_model")
         rospy.wait_for_service("/gazebo/set_model_state")
-        rospy.wait_for_service("/pedsim_simulator/spawn_peds", timeout=T)
-        rospy.wait_for_service("/pedsim_simulator/reset_all_peds", timeout=T)
-        rospy.wait_for_service("/pedsim_simulator/remove_all_peds", timeout=T)
 
         self._spawn_model_srv = rospy.ServiceProxy(
             self._ns_prefix("gazebo", "spawn_urdf_model"), SpawnModel
@@ -44,19 +49,12 @@ class GazeboSimulator(BaseSimulator):
             "/gazebo/set_model_state", SetModelState, persistent=True
         )
 
-        self._spawn_peds_srv = rospy.ServiceProxy(
-            "/pedsim_simulator/spawn_peds", SpawnPeds
-        )
-        self._remove_peds_srv = rospy.ServiceProxy(
-            "/pedsim_simulator/remove_all_peds", SetBool
-        )
-        self._reset_peds_srv = rospy.ServiceProxy(
-            "/pedsim_simulator/reset_all_peds", Trigger
-        )
         self.unpause = rospy.ServiceProxy("/gazebo/unpause_physics", Empty)
         self.pause = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
 
         self.map_manager = None
+
+        self.obstacle_names = []
 
     def before_reset_task(self):
         self.pause()
@@ -76,18 +74,6 @@ class GazeboSimulator(BaseSimulator):
     def spawn_obstacles(self, obstacles):
         pass
 
-    def spawn_pedsim_agents(self, dynamic_obstacles):
-        if len(dynamic_obstacles) <= 0:
-            return
-        
-        peds = [GazeboSimulator.create_ped_msg(p, i) for i, p in enumerate(dynamic_obstacles)]
-
-        spawn_ped_msg = SpawnPeds()
-
-        spawn_ped_msg.peds = peds
-
-        self._spawn_peds_srv(spawn_ped_msg)
-
     def reset_pedsim_agents(self):
         self._reset_peds_srv()
 
@@ -95,9 +81,7 @@ class GazeboSimulator(BaseSimulator):
         pass
 
     def spawn_random_dynamic_obstacle(self, **args):
-        peds = [self.create_random_ped(args["position"])]
-
-        self._spawn_peds_srv(peds)
+        pass
 
     def spawn_random_static_obstacle(self, **args):
         pass
@@ -133,7 +117,6 @@ class GazeboSimulator(BaseSimulator):
         self._move_model_srv(model_state_request)
 
     def spawn_robot(self, name, robot_name, namespace_appendix=""):
-        print("SPAWN", name, robot_name, namespace_appendix)
         request = SpawnModelRequest()
 
         robot_namespace = self._ns_prefix(namespace_appendix)
@@ -151,124 +134,31 @@ class GazeboSimulator(BaseSimulator):
 
         self._spawn_model_srv(request)
 
-    @staticmethod
-    def create_ped_msg(ped, id):
-        msg = Ped()
+    def remove_all_obstacles(self):
+        for obstacle in self.obstacle_names:
+            self.remove_model_srv(str(obstacle))
 
-        msg.id = id
+    def spawn_obstacle(self, position, yaml_path=""):
+        pass
 
-        pos = Point()
-        pos.x = ped["waypoints"][0][0]
-        pos.y = ped["waypoints"][0][1]
-        msg.pos = pos
+    def spawn_obstacles(self, obstacles):
+        pass
 
-        msg.type = "adult"
-        msg.yaml_file = os.path.join(
-            rospkg.RosPack().get_path("arena-simulation-setup"),
-            "dynamic_obstacles",
-            "person_two_legged.model.yaml"
-        )
-        msg.number_of_peds = 1
-        msg.vmax = 0.3
-        msg.start_up_mode = "default"
-        msg.wait_time = 0.0
-        msg.trigger_zone_radius = 0.0
-        msg.chatting_probability = 0.00
-        msg.tell_story_probability = 0
-        msg.group_talking_probability = 0.00
-        msg.talking_and_walking_probability = 0.00
-        msg.requesting_service_probability = 0.00
-        msg.requesting_guide_probability = 0.00
-        msg.requesting_follower_probability = 0.00
-        msg.max_talking_distance = 5
-        msg.max_servicing_radius = 5
-        msg.talking_base_time = 10
-        msg.tell_story_base_time = 0
-        msg.group_talking_base_time = 10
-        msg.talking_and_walking_base_time = 6
-        msg.receiving_service_base_time = 20
-        msg.requesting_service_base_time = 30
-        msg.force_factor_desired = 1
-        msg.force_factor_obstacle = 1
-        msg.force_factor_social = 5
-        msg.force_factor_robot = 1
+    def create_static_obstacle(self, position, **args):
+        return self.spawn_random_static_obstacle(position=position)
 
-        waypoints = []
+    def spawn_random_static_obstacle(self, **args):
+        pass
 
-        for w in ped["waypoints"]:
-            new_waypoint = Point()
-
-            new_waypoint.x = w[0]
-            new_waypoint.y = w[1]
-
-            waypoints.append(new_waypoint)
-
-        msg.waypoints = waypoints
-
-        msg.waypoint_mode = 0
-
-        return msg
-
-    def create_random_ped(self, desired_pos):
-        msg = Ped()
-
-        msg.id = random.randint(0, 1000)
-
-        pos = Point()
-        pos.x = desired_pos[0]
-        pos.y = desired_pos[1]
-        msg.pos = pos
-
-        msg.number_of_peds = 1
-        msg.vmax = Pedsim.VMAX
-        msg.start_up_mode = Pedsim.START_UP_MODE
-        msg.wait_time = Pedsim.WAIT_TIME
-        msg.trigger_zone_radius = Pedsim.TRIGGER_ZONE_RADIUS
-        msg.chatting_probability = Pedsim.CHATTING_PROBABILITY
-        msg.tell_story_probability = Pedsim.TELL_STORY_PROBABILITY
-        msg.group_talking_probability = Pedsim.GROUP_TALKING_PROBABILITY
-        msg.talking_and_walking_probability = Pedsim.TALKING_AND_WALKING_PROBABILITY
-        msg.requesting_service_probability = Pedsim.REQUESTING_SERVICE_PROBABILITY
-        msg.requesting_guide_probability = Pedsim.REQUESTING_GUIDE_PROBABILITY
-        msg.requesting_follower_probability = Pedsim.REQUESTING_FOLLOWER_PROBABILITY
-        msg.max_talking_distance = Pedsim.MAX_TALKING_DISTANCE
-        msg.max_servicing_radius = Pedsim.MAX_SERVICING_RADIUS
-        msg.talking_base_time = Pedsim.TALKING_BASE_TIME
-        msg.tell_story_base_time = Pedsim.TELL_STORY_BASE_TIME
-        msg.group_talking_base_time = Pedsim.GROUP_TALKING_BASE_TIME
-        msg.talking_and_walking_base_time = Pedsim.TALKING_AND_WALKING_BASE_TIME
-        msg.receiving_service_base_time = Pedsim.RECEIVING_SERVICE_BASE_TIME
-        msg.requesting_service_base_time = Pedsim.REQUESTING_SERVICE_BASE_TIME
-        msg.force_factor_desired = Pedsim.FORCE_FACTOR_DESIRED
-        msg.force_factor_obstacle = Pedsim.FORCE_FACTOR_OBSTACLE
-        msg.force_factor_social = Pedsim.FORCE_FACTOR_SOCIAL
-        msg.force_factor_robot = Pedsim.FORCE_FACTOR_ROBOT
-
-        waypoints = []
-
-        for w in range(10):
-            position = self.map_manager.get_random_pos_on_map(
-                safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS
-            )
-
-            new_waypoint = Point()
-
-            new_waypoint.x = position[0]
-            new_waypoint.y = position[1]
-
-            waypoints.append(new_waypoint)
-
-        msg.waypoints = waypoints
-        msg.waypoint_mode = 0
-
-        return msg
+    def create_dynamic_obstacle(self, position, **args):
+        pass
 
     @staticmethod
     def get_robot_description(robot_name, namespace):
         arena_sim_path = rospkg.RosPack().get_path("arena-simulation-setup")
-        
+
         return subprocess.check_output([
-            "rosrun", 
+            "rosrun",
             "xacro",
             "xacro",
             os.path.join(arena_sim_path, "robot", robot_name, "urdf", f"{robot_name}.urdf.xacro"),

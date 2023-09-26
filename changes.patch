@@ -1,0 +1,2165 @@
+diff --git a/arena_bringup/launch/start_arena.launch b/arena_bringup/launch/start_arena.launch
+index f3c52de..f91b692 100755
+--- a/arena_bringup/launch/start_arena.launch
++++ b/arena_bringup/launch/start_arena.launch
+@@ -33,10 +33,14 @@
+   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]" />
+   <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]" />
+   <arg name="simulator" default="flatland" doc="[flatland, gazebo]" />
++  <env name="SIMULATOR" value="$(arg simulator)" />
++
++  <arg name="pedsim" default="false" doc="[true, false]" />
++  <env name="PEDSIM" value="$(arg pedsim)" />
++  <param name="pedsim" value="$(arg pedsim)" />
+ 
+   <arg name="complexity" default="1" doc="1 = Map known, Position known; 2 = Map known, Position unknown (AMCL); 3 = Map unknown, Position unknown (SLAM)" />
+   
+-  <env name="SIMULATOR" value="$(arg simulator)" />
+ 
+   <arg name="agent_name" default="$(arg model)"     doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')" />
+   <!-- Or you can load a robot setup file to launch multiple robots in the same simulation -->
+@@ -140,12 +144,15 @@
+     <arg name="auto_reset" value="$(arg auto_reset)" />
+   </include>
+ 
+-  <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen">
++  <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(arg pedsim)">
+     <param name="simulation_factor" value="1" type="double"/>
+     <param name="pedsim_update_rate" value="30.0" type="double"/>
+     <param name="scene_file" value="$(find arena-simulation-setup)/world/$(arg world_file)/scenarios/$(arg world_file).xml" type="string"/>
+   </node>
+ 
++  <!-- Launch pedsim agent spawner  -->
++  <!-- <node name="pedsim_agent" pkg="pedsim_gazebo_plugin" type="spawn_pedsim_agents.py"></node> -->
++
+   <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/>
+ 
+   <!-- launch map generator if training with random map-->
+diff --git a/task_generator/scenarios/SCHEMA.json b/task_generator/scenarios/_SCHEMA.json
+similarity index 100%
+rename from task_generator/scenarios/SCHEMA.json
+rename to task_generator/scenarios/_SCHEMA.json
+diff --git a/task_generator/scenarios/new_scenario_1.json b/task_generator/scenarios/new_scenario_1.json
+new file mode 100644
+index 0000000..135d48e
+--- /dev/null
++++ b/task_generator/scenarios/new_scenario_1.json
+@@ -0,0 +1,30 @@
++{
++  "robots": [{ "start": [25.0, 25.0, 0], "goal": [25.0, 45.0, 0] }],
++  "obstacles": { 
++    "dynamic": [
++      {
++        "random": false,
++        "pos": [25.0, 43.0],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[25.0, 40.0], [25.0, 37.0], [25.0, 34.0], [25.0, 30.0]]
++      },
++      {
++        "random": false,
++        "pos": [27.0, 43.0],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[25.0, 40.0], [25.0, 37.0], [25.0, 34.0], [25.0, 30.0]]
++      },
++      {
++        "random": false,
++        "pos": [23.0, 43.0],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[25.0, 40.0], [25.0, 37.0], [25.0, 34.0], [25.0, 30.0]]
++      }
++    ], 
++    "interactive": [
++    ], 
++    "static": [] 
++},
++  "map": "map_empty",
++  "resets": 2
++}
+diff --git a/task_generator/scenarios/new_scenario_2.json b/task_generator/scenarios/new_scenario_2.json
+new file mode 100644
+index 0000000..8f4a567
+--- /dev/null
++++ b/task_generator/scenarios/new_scenario_2.json
+@@ -0,0 +1,82 @@
++{
++  "robots": [{ "start": [1.0, 1.0, 0], "goal": [29.0, 23.0, 0] }],
++  "obstacles": { 
++    "dynamic": [
++      {
++        "random": false,
++        "pos": [7.0, 7.0],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[7.0, 7.0], [7.0, 9.0], [9.0, 9.0], [9.0, 7.0]]
++      },
++      {
++        "random": false,
++        "pos": [10.0, 10.0],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[10.0, 10.0], [10.0, 12.0], [12.0, 12.0], [12.0, 10.0]]
++      },
++      {
++        "random": false,
++        "pos": [13.0, 13.0],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[13.0, 13.0], [13.0, 15.0], [15.0, 15.0], [15.0, 13.0]]
++      },
++      {
++        "random": false,
++        "pos": [16.0, 16.0],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[16.0, 16.0], [16.0, 18.0], [18.0, 18.0], [18.0, 16.0]]
++      },
++      {
++        "random": true
++      },
++      {
++        "random": true
++      },
++      {
++        "random": true
++      },
++      {
++        "random": true
++      },
++      {
++        "random": true
++      },
++      {
++        "random": true
++      },
++      {
++        "random": true
++      },
++      {
++        "random": true
++      },
++      {
++        "random": true
++      },
++      {
++        "random": true
++      },
++      {
++        "random": true
++      },
++      {
++        "random": true
++      },
++      {
++        "random": true
++      },
++      {
++        "random": true
++      }
++    ], 
++    "interactive": [
++    {
++      "pos": [28.0, 22.0],
++      "yaml_path": "long_shelf.model.yaml"
++    }
++    ], 
++    "static": [] 
++},
++  "map": "map10",
++  "resets": 2
++}
+diff --git a/task_generator/scenarios/new_scenario_3.json b/task_generator/scenarios/new_scenario_3.json
+new file mode 100644
+index 0000000..56984ae
+--- /dev/null
++++ b/task_generator/scenarios/new_scenario_3.json
+@@ -0,0 +1,70 @@
++{
++  "robots": [{ "start": [5.0, 13.0, 0], "goal": [15.0, 13.0, 0] }],
++  "obstacles": { 
++    "dynamic": [
++      {
++        "random": false,
++        "pos": [10.0, 7.0],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[10.0, 7.0], [10.0, 7.5], [10.0, 8.0], [10.0, 8.5]]
++      },
++      {
++        "random": false,
++        "pos": [10.0, 8.5],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[10.0, 8.5], [10.0, 9.0], [10.0, 9.5], [10.0, 10.0]]
++      },
++      {
++        "random": false,
++        "pos": [10.0, 10.0],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[10.0, 10.0], [10.0, 10.5], [10.0, 11.0], [10.0, 11.5]]
++      },
++      {
++        "random": false,
++        "pos": [10.0, 11.5],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[10.0, 11.5], [10.0, 12.0], [10.0, 12.5], [10.0, 13.0]]
++      },
++      {
++        "random": false,
++        "pos": [10.0, 13.0],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[10.0, 13.0], [10.0, 13.5], [10.0, 14.0], [10.0, 14.5]]
++      },
++      {
++        "random": false,
++        "pos": [10.0, 14.5],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[10.0, 14.5], [10.0, 15.0], [10.0, 15.5], [10.0, 16.0]]
++      },
++      {
++        "random": false,
++        "pos": [10.0, 16.0],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[10.0, 16.0], [10.0, 16.5], [10.0, 17.0], [10.0, 17.5]]
++      },
++      {
++        "random": false,
++        "pos": [10.0, 17.5],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[10.0, 17.5], [10.0, 18.0], [10.0, 18.5], [10.0, 19.0]]
++      },
++      {
++        "random": false,
++        "pos": [10.0, 19.0],
++        "yaml_path": "person_two_legged.model.yaml",
++        "waypoints": [[10.0, 19.0], [10.0, 19.5], [10.0, 20.0], [10.0, 20.5]]
++      }
++    ], 
++    "interactive": [
++    {
++      "pos": [10.0, 20.0],
++      "yaml_path": "long_shelf.model.yaml"
++    }
++    ], 
++    "static": [] 
++},
++  "map": "map_empty",
++  "resets": 2
++}
+diff --git a/task_generator/scenarios/Eval_13_02.json b/task_generator/scenarios/old/Eval_13_02.json
+similarity index 100%
+rename from task_generator/scenarios/Eval_13_02.json
+rename to task_generator/scenarios/old/Eval_13_02.json
+diff --git a/task_generator/scenarios/blocked_corridors.json b/task_generator/scenarios/old/blocked_corridors.json
+similarity index 100%
+rename from task_generator/scenarios/blocked_corridors.json
+rename to task_generator/scenarios/old/blocked_corridors.json
+diff --git a/task_generator/scenarios/eval_indoor_obs05.json b/task_generator/scenarios/old/eval_indoor_obs05.json
+similarity index 100%
+rename from task_generator/scenarios/eval_indoor_obs05.json
+rename to task_generator/scenarios/old/eval_indoor_obs05.json
+diff --git a/task_generator/scenarios/eval_indoor_obs10.json b/task_generator/scenarios/old/eval_indoor_obs10.json
+similarity index 100%
+rename from task_generator/scenarios/eval_indoor_obs10.json
+rename to task_generator/scenarios/old/eval_indoor_obs10.json
+diff --git a/task_generator/scenarios/eval_indoor_obs20.json b/task_generator/scenarios/old/eval_indoor_obs20.json
+similarity index 100%
+rename from task_generator/scenarios/eval_indoor_obs20.json
+rename to task_generator/scenarios/old/eval_indoor_obs20.json
+diff --git a/task_generator/scenarios/eval_outdoor_obs05.json b/task_generator/scenarios/old/eval_outdoor_obs05.json
+similarity index 100%
+rename from task_generator/scenarios/eval_outdoor_obs05.json
+rename to task_generator/scenarios/old/eval_outdoor_obs05.json
+diff --git a/task_generator/scenarios/eval_outdoor_obs10.json b/task_generator/scenarios/old/eval_outdoor_obs10.json
+similarity index 100%
+rename from task_generator/scenarios/eval_outdoor_obs10.json
+rename to task_generator/scenarios/old/eval_outdoor_obs10.json
+diff --git a/task_generator/scenarios/eval_outdoor_obs20.json b/task_generator/scenarios/old/eval_outdoor_obs20.json
+similarity index 100%
+rename from task_generator/scenarios/eval_outdoor_obs20.json
+rename to task_generator/scenarios/old/eval_outdoor_obs20.json
+diff --git a/task_generator/scenarios/evaluation_floor_obs05.json b/task_generator/scenarios/old/evaluation_floor_obs05.json
+similarity index 100%
+rename from task_generator/scenarios/evaluation_floor_obs05.json
+rename to task_generator/scenarios/old/evaluation_floor_obs05.json
+diff --git a/task_generator/scenarios/evaluation_floor_obs10.json b/task_generator/scenarios/old/evaluation_floor_obs10.json
+similarity index 100%
+rename from task_generator/scenarios/evaluation_floor_obs10.json
+rename to task_generator/scenarios/old/evaluation_floor_obs10.json
+diff --git a/task_generator/scenarios/evaluation_floor_obs20.json b/task_generator/scenarios/old/evaluation_floor_obs20.json
+similarity index 100%
+rename from task_generator/scenarios/evaluation_floor_obs20.json
+rename to task_generator/scenarios/old/evaluation_floor_obs20.json
+diff --git a/task_generator/scenarios/floor_obs05.json b/task_generator/scenarios/old/floor_obs05.json
+similarity index 100%
+rename from task_generator/scenarios/floor_obs05.json
+rename to task_generator/scenarios/old/floor_obs05.json
+diff --git a/task_generator/scenarios/floor_obs10.json b/task_generator/scenarios/old/floor_obs10.json
+similarity index 100%
+rename from task_generator/scenarios/floor_obs10.json
+rename to task_generator/scenarios/old/floor_obs10.json
+diff --git a/task_generator/scenarios/floor_obs20.json b/task_generator/scenarios/old/floor_obs20.json
+similarity index 100%
+rename from task_generator/scenarios/floor_obs20.json
+rename to task_generator/scenarios/old/floor_obs20.json
+diff --git a/task_generator/scenarios/marl_map_empty_obs0.json b/task_generator/scenarios/old/marl_map_empty_obs0.json
+similarity index 100%
+rename from task_generator/scenarios/marl_map_empty_obs0.json
+rename to task_generator/scenarios/old/marl_map_empty_obs0.json
+diff --git a/task_generator/scenarios/test_scenario.json b/task_generator/scenarios/old/test_scenario.json
+similarity index 98%
+rename from task_generator/scenarios/test_scenario.json
+rename to task_generator/scenarios/old/test_scenario.json
+index 6ffceca..d52a0f6 100644
+--- a/task_generator/scenarios/test_scenario.json
++++ b/task_generator/scenarios/old/test_scenario.json
+@@ -102,6 +102,6 @@
+   ],
+   "robot_position": [-1.27, -1.34],
+   "robot_goal": [22.35, 16.46],
+-  "map_path": "map4/map.yaml",
++  "map_path": "map_empty/map.yaml",
+   "format": "arena-tools"
+ }
+diff --git a/task_generator/scenarios/scenario.json b/task_generator/scenarios/scenario.json
+index 4e6dff4..99d6179 100644
+--- a/task_generator/scenarios/scenario.json
++++ b/task_generator/scenarios/scenario.json
+@@ -1,6 +1,6 @@
+ {
+-  "robots": [{ "start": [6.0, 78.0, 0], "goal": [128.5, 7.5, 0] }],
++  "robots": [{ "start": [8.75, 8.0, 0], "goal": [20.0, 11.0, 0] }],
+   "obstacles": { "dynamic": [], "static": [] },
+-  "map": "map",
+-  "resets": 10
++  "map": "map_empty",
++  "resets": 2
+ }
+diff --git a/task_generator/scenarios/test1.json b/task_generator/scenarios/test1.json
+new file mode 100644
+index 0000000..ae1d1f1
+--- /dev/null
++++ b/task_generator/scenarios/test1.json
+@@ -0,0 +1,196 @@
++{
++    "robots": [
++        {
++            "start": [
++                25.0,
++                45.0,
++                0.0
++            ],
++            "goal": [
++                24.0,
++                23.0,
++                0.0
++            ]
++        }
++    ],
++    "obstacles": {
++        "dynamic": [
++            {
++                "name": "1",
++                "id": 0,
++                "pos": [
++                    26.36,
++                    27.3,
++                    0.0
++                ],
++                "type": "adult",
++                "yaml_file": "/home/bassili/arena_ws/src/utils/arena-simulation-setup/dynamic_obstacles/person_two_legged.model.yaml",
++                "number_of_peds": 1,
++                "vmax": 0.6000000000000001,
++                "start_up_mode": "default",
++                "wait_time": 0.0,
++                "trigger_zone_radius": 0.0,
++                "chatting_probability": 0.0,
++                "tell_story_probability": 0.0,
++                "group_talking_probability": 0.0,
++                "talking_and_walking_probability": 0.0,
++                "requesting_service_probability": 0.0,
++                "requesting_guide_probability": 0.0,
++                "requesting_follower_probability": 0.0,
++                "max_talking_distance": 5,
++                "max_servicing_radius": 5,
++                "talking_base_time": 10,
++                "tell_story_base_time": 0.0,
++                "group_talking_base_time": 10,
++                "talking_and_walking_base_time": 6,
++                "receiving_service_base_time": 20,
++                "requesting_service_base_time": 30,
++                "force_factor_desired": 1,
++                "force_factor_obstacle": 1,
++                "force_factor_social": 5,
++                "force_factor_robot": 0,
++                "waypoints": [
++                    [
++                        26.54,
++                        44.45,
++                        0.0
++                    ]
++                ],
++                "waypoint_mode": 0
++            },
++            {
++                "name": "2",
++                "id": 0,
++                "pos": [
++                    26.0,
++                    30.31,
++                    0.0
++                ],
++                "type": "adult",
++                "yaml_file": "/home/bassili/arena_ws/src/utils/arena-simulation-setup/dynamic_obstacles/person_two_legged.model.yaml",
++                "number_of_peds": 1,
++                "vmax": 0.30000000000000004,
++                "start_up_mode": "default",
++                "wait_time": 0.0,
++                "trigger_zone_radius": 0.0,
++                "chatting_probability": 0.0,
++                "tell_story_probability": 0.0,
++                "group_talking_probability": 0.0,
++                "talking_and_walking_probability": 1.0,
++                "requesting_service_probability": 0.0,
++                "requesting_guide_probability": 0.0,
++                "requesting_follower_probability": 0.0,
++                "max_talking_distance": 5,
++                "max_servicing_radius": 5,
++                "talking_base_time": 10,
++                "tell_story_base_time": 0.0,
++                "group_talking_base_time": 10,
++                "talking_and_walking_base_time": 6,
++                "receiving_service_base_time": 20,
++                "requesting_service_base_time": 30,
++                "force_factor_desired": 1,
++                "force_factor_obstacle": 1,
++                "force_factor_social": 5,
++                "force_factor_robot": 0,
++                "waypoints": [
++                    [
++                        26.48,
++                        45.1,
++                        0.0
++                    ]
++                ],
++                "waypoint_mode": 0
++            },
++            {
++                "name": "3",
++                "id": 0,
++                "pos": [
++                    24.14,
++                    28.55,
++                    0.0
++                ],
++                "type": "adult",
++                "yaml_file": "/home/bassili/arena_ws/src/utils/arena-simulation-setup/dynamic_obstacles/person_two_legged.model.yaml",
++                "number_of_peds": 1,
++                "vmax": 0.30000000000000004,
++                "start_up_mode": "default",
++                "wait_time": 0.0,
++                "trigger_zone_radius": 0.0,
++                "chatting_probability": 0.0,
++                "tell_story_probability": 0.0,
++                "group_talking_probability": 0.0,
++                "talking_and_walking_probability": 1.0,
++                "requesting_service_probability": 0.0,
++                "requesting_guide_probability": 0.0,
++                "requesting_follower_probability": 0.0,
++                "max_talking_distance": 5,
++                "max_servicing_radius": 5,
++                "talking_base_time": 10,
++                "tell_story_base_time": 0.0,
++                "group_talking_base_time": 10,
++                "talking_and_walking_base_time": 6,
++                "receiving_service_base_time": 20,
++                "requesting_service_base_time": 30,
++                "force_factor_desired": 1,
++                "force_factor_obstacle": 1,
++                "force_factor_social": 5,
++                "force_factor_robot": 0,
++                "waypoints": [
++                    [
++                        23.63,
++                        44.94,
++                        0.0
++                    ]
++                ],
++                "waypoint_mode": 0
++            },
++            {
++                "name": "4",
++                "id": 0,
++                "pos": [
++                    24.53,
++                    25.42,
++                    0.0
++                ],
++                "type": "adult",
++                "yaml_file": "/home/bassili/arena_ws/src/utils/arena-simulation-setup/dynamic_obstacles/person_two_legged.model.yaml",
++                "number_of_peds": 1,
++                "vmax": 0.3,
++                "start_up_mode": "default",
++                "wait_time": 0.0,
++                "trigger_zone_radius": 0.0,
++                "chatting_probability": 0.0,
++                "tell_story_probability": 0.0,
++                "group_talking_probability": 0.0,
++                "talking_and_walking_probability": 0.0,
++                "requesting_service_probability": 0.0,
++                "requesting_guide_probability": 0.0,
++                "requesting_follower_probability": 0.0,
++                "max_talking_distance": 5.0,
++                "max_servicing_radius": 5.0,
++                "talking_base_time": 10.0,
++                "tell_story_base_time": 0.0,
++                "group_talking_base_time": 10.0,
++                "talking_and_walking_base_time": 6.0,
++                "receiving_service_base_time": 20.0,
++                "requesting_service_base_time": 30.0,
++                "force_factor_desired": 1.0,
++                "force_factor_obstacle": 1.0,
++                "force_factor_social": 5.0,
++                "force_factor_robot": 0.0,
++                "waypoints": [
++                    [
++                        24.5,
++                        43.46,
++                        0.0
++                    ]
++                ],
++                "waypoint_mode": 0
++            }
++        ],
++        "static": []
++    },
++    "resets": 0,
++    "map": "map23",
++    "format": "arena-tools"
++}
+\ No newline at end of file
+diff --git a/task_generator/task_generator/manager/obstacle_manager.py b/task_generator/task_generator/manager/obstacle_manager.py
+index 3b893a9..04507db 100644
+--- a/task_generator/task_generator/manager/obstacle_manager.py
++++ b/task_generator/task_generator/manager/obstacle_manager.py
+@@ -1,5 +1,6 @@
+ from task_generator.constants import Constants
+-
++import rospy
++import numpy as np
+ 
+ class ObstacleManager:
+     def __init__(self, namespace, map_manager, simulator):
+@@ -8,7 +9,14 @@ class ObstacleManager:
+         self.simulator = simulator
+ 
+     def start_scenario(self, scenario):
+-        self.simulator.spawn_pedsim_agents(scenario["obstacles"]["dynamic"])
++        if rospy.get_param("pedsim"):
++            print(scenario["obstacles"]["dynamic"])
++            self.simulator.spawn_pedsim_dynamic_scenario_obstacles(scenario["obstacles"]["dynamic"])
++            # self.simulator.spawn_pedsim_static_obstacles(scenario["obstacles"]["static"])
++            # self.simulator.spawn_pedsim_map_borders()
++            # self.simulator.spawn_pedsim_interactive_scenario_obstacles(scenario["obstacles"]["interactive"])
++        else:
++            self.simulator.spawn_pedsim_agents(scenario["obstacles"]["dynamic"])
+ 
+     def reset_scenario(self, scenario):
+         self.simulator.reset_pedsim_agents()
+@@ -30,6 +38,7 @@ class ObstacleManager:
+             self, 
+             dynamic_obstacles=Constants.ObstacleManager.DYNAMIC_OBSTACLES,
+             static_obstacles=Constants.ObstacleManager.STATIC_OBSTACLES,
++            interactive_obstacles=Constants.ObstacleManager.STATIC_OBSTACLES,
+             forbidden_zones=[]
+         ):
+         if forbidden_zones is None:
+@@ -37,20 +46,54 @@ class ObstacleManager:
+ 
+         self.simulator.remove_all_obstacles()
+ 
++        dynamic_obstacles_array = np.array([],dtype=object).reshape(0,3)
++        static_obstacles_array = np.array([],dtype=object).reshape(0,2)
++        interactive_obstacles_array = np.array([],dtype=object).reshape(0,2)
+         obstacles = []
+ 
+-        for _ in range(dynamic_obstacles):
++        # Create dynamic obstacles # TODO dynamic
++        for i in range(20):
++            position = self.map_manager.get_random_pos_on_map(
++                safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
++                forbidden_zones=forbidden_zones,
++            )
++            if rospy.get_param("pedsim"):
++                x = self.simulator.create_pedsim_dynamic_obstacle(i,self.map_manager, forbidden_zones)
++                dynamic_obstacles_array = np.vstack((dynamic_obstacles_array, x))
++
++            else: 
++                obstacles.append(self.simulator.create_dynamic_obstacle(position=position))
++
++        # Create interactive obstacles # TODO dynamic
++        for i in range(0):
+             position = self.map_manager.get_random_pos_on_map(
+                 safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
+                 forbidden_zones=forbidden_zones,
+             )
+-            obstacles.append(self.simulator.create_dynamic_obstacle(position=position))
++            if rospy.get_param("pedsim"):
++                x = self.simulator.create_pedsim_interactive_obstacle(i,self.map_manager, forbidden_zones)
++                interactive_obstacles_array = np.vstack((interactive_obstacles_array, x))
++            else: 
++                obstacles.append(self.simulator.create_interactive_obstacle(position=position))
+ 
+-        for _ in range(static_obstacles):
++        # Create static obstacles
++        for i in range(0):
+             position = self.map_manager.get_random_pos_on_map(
+                 safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
+                 forbidden_zones=forbidden_zones,
+             )
+-            obstacles.append(self.simulator.create_static_obstacle(position=position))
++            if rospy.get_param("pedsim"):
++                x = self.simulator.create_pedsim_static_obstacle(i,self.map_manager, forbidden_zones)
++                static_obstacles_array = np.vstack((static_obstacles_array, x))
++            else: 
++                obstacles.append(self.simulator.create_static_obstacle(position=position))
+ 
+-        self.simulator.spawn_obstacles(obstacles)
++        # Spawn obstacles
++        # TODO better solution instead of param
++        if rospy.get_param("pedsim"):
++            # self.simulator.spawn_pedsim_static_obstacles(static_obstacles_array)
++            # self.simulator.spawn_pedsim_interactive_obstacles(interactive_obstacles_array)
++            self.simulator.spawn_pedsim_dynamic_obstacles(dynamic_obstacles_array)
++            self.simulator.spawn_pedsim_map_borders()
++        else: 
++            self.simulator.spawn_obstacles(obstacles)
+\ No newline at end of file
+diff --git a/task_generator/task_generator/simulators/flatland_simulator.py b/task_generator/task_generator/simulators/flatland_simulator.py
+index 2f01ef6..d33e989 100644
+--- a/task_generator/task_generator/simulators/flatland_simulator.py
++++ b/task_generator/task_generator/simulators/flatland_simulator.py
+@@ -19,20 +19,26 @@ from flatland_msgs.srv import (
+     SpawnModelRequest,
+     SpawnModelsRequest
+ )
+-from geometry_msgs.msg import Pose2D
+ from flatland_msgs.msg import MoveModelMsg, Model
++from nav_msgs.srv import GetMap
++
+ from pedsim_srvs.srv import SpawnPeds
+ from pedsim_msgs.msg import Ped
++from pedsim_srvs.srv import SpawnInteractiveObstacles,SpawnInteractiveObstaclesRequest
++from pedsim_srvs.srv import SpawnObstacle,SpawnObstacleRequest
++from pedsim_msgs.msg import InteractiveObstacle, LineObstacle
++
+ from task_generator.manager.pedsim_manager import PedsimManager
+ from task_generator.utils import Utils
+-from geometry_msgs.msg import Point
++from geometry_msgs.msg import Point, Pose2D, Pose
+ from std_srvs.srv import Trigger
+ 
+-from ..constants import Constants, FlatlandRandomModel
++from ..constants import Constants, FlatlandRandomModel, Pedsim
+ from .base_simulator import BaseSimulator
+ from .simulator_factory import SimulatorFactory
+ 
+ 
++
+ T = Constants.WAIT_FOR_SERVICE_TIMEOUT
+ 
+ 
+@@ -78,6 +84,9 @@ class FlatlandSimulator(BaseSimulator):
+         rospy.wait_for_service(f"{self._ns_prefix}move_model", timeout=T)
+         rospy.wait_for_service(f"{self._ns_prefix}spawn_model", timeout=T)
+         rospy.wait_for_service(f"{self._ns_prefix}delete_model", timeout=T)
++        rospy.wait_for_service(f"{self._ns_prefix}pedsim_simulator/respawn_peds" , timeout=20)
++        rospy.wait_for_service(f"{self._ns_prefix}pedsim_simulator/respawn_interactive_obstacles" , timeout=20)
++        rospy.wait_for_service(f'{self._ns_prefix}pedsim_simulator/add_obstacle', timeout=20)
+ 
+         self._move_model_srv = rospy.ServiceProxy(
+             f"{self._ns_prefix}move_model", MoveModel, persistent=True
+@@ -97,6 +106,8 @@ class FlatlandSimulator(BaseSimulator):
+         self._delete_models_srv = rospy.ServiceProxy(
+             f"{self._ns_prefix}delete_models", DeleteModels
+         )
++        self.__respawn_peds_srv = rospy.ServiceProxy(
++            f"{self._ns_prefix}pedsim_simulator/respawn_peds" , SpawnPeds, persistent=True)
+ 
+         self._spawn_peds_srv = rospy.ServiceProxy(
+             f"{self._ns_prefix}pedsim_simulator/spawn_peds", SpawnPeds
+@@ -104,6 +115,11 @@ class FlatlandSimulator(BaseSimulator):
+         self._reset_peds_srv = rospy.ServiceProxy(
+             f"{self._ns_prefix}pedsim_simulator/reset_all_peds", Trigger
+         )
++        self.__add_obstacle_srv = rospy.ServiceProxy(
++            f'{self._ns_prefix}pedsim_simulator/add_obstacle' ,SpawnObstacle, persistent=True)
++
++        self.__respawn_interactive_obstacles_srv = rospy.ServiceProxy(
++        f"{self._ns_prefix}pedsim_simulator/respawn_interactive_obstacles" ,SpawnInteractiveObstacles, persistent=True)
+ 
+         self.obs_names = []
+ 
+@@ -131,9 +147,10 @@ class FlatlandSimulator(BaseSimulator):
+         self.obs_names = []
+ 
+     def spawn_pedsim_agents(self, dynamic_obstacles: List):
++        
+         if len(dynamic_obstacles) <= 0:
+             return
+-
++        
+         peds = [
+             FlatlandSimulator.create_ped_msg(p, i)
+             for i, p in enumerate(dynamic_obstacles)
+@@ -150,9 +167,20 @@ class FlatlandSimulator(BaseSimulator):
+ 
+     # CREATE OBSTACLES
+ 
++    # def spawn_random_ped_test(self, **args):
++    #     peds = [create_ped_msg(p, i) for i, p in enumerate(dynamic_obstacles)]
++
++    #     spawn_ped_msg = SpawnPeds()
++
++    #     spawn_ped_msg.peds = peds
++
++    #     self._spawn_peds_srv(spawn_ped_msg)
++    #     return 0
++
+     def create_dynamic_obstacle(self, **args):
+         return self._create_obstacle(**args, is_dynamic=True)
+ 
++
+     def create_static_obstacle(self, **args):
+         return self._create_obstacle(**args, is_dynamic=False)
+ 
+@@ -168,7 +196,6 @@ class FlatlandSimulator(BaseSimulator):
+         return yaml.dump(model), name, position
+ 
+     # SPAWN OBSTACLES
+-
+     def spawn_obstacle(
+         self, position: Tuple[int, int, int], yaml_path=""
+     ):
+@@ -182,6 +209,7 @@ class FlatlandSimulator(BaseSimulator):
+         self.add_obs_to_list(name)
+ 
+     def spawn_obstacles(self, obstacles):
++
+         request = SpawnModelsRequest()
+ 
+         models = []
+@@ -201,6 +229,245 @@ class FlatlandSimulator(BaseSimulator):
+ 
+         self._spawn_models_from_string_srv(request)
+ 
++
++    # PEDSIM INTEGRATION 
++    
++    def create_pedsim_static_obstacle(self, i, map_manager, forbidden_zones):
++        num_obstacles = 1
++        model_yaml_file_path = os.path.join("../utils/arena-simulation-setup/obstacles", "random.model.yaml")
++        start_pos = []
++        vertices = np.array([[0, 0], [0, 0], [0, 0], [0, 0]])
++        type_obstacle = "static"
++
++        max_num_try = 2
++        i_curr_try = 0
++        while i_curr_try < max_num_try:
++            spawn_request = SpawnModelRequest()
++            spawn_request.yaml_path = model_yaml_file_path
++            spawn_request.name = f'{name_prefix}_{instance_idx:02d}'
++            # x, y, theta = get_random_pos_on_map(self._free_space_indices, self.map,)
++            # set the postion of the obstacle out of the map to hidden them
++            if len(start_pos) == 0:
++                x = self.map.info.origin.position.x - 3 * \
++                    self.map.info.resolution * self.map.info.height
++                y = self.map.info.origin.position.y - 3 * \
++                    self.map.info.resolution * self.map.info.width
++                theta = theta = random.uniform(-math.pi, math.pi)
++            else:
++                assert len(start_pos) == 3
++                x = start_pos[0]
++                y = start_pos[1]
++                theta = start_pos[2]
++            spawn_request.pose.x = x
++            spawn_request.pose.y = y
++            spawn_request.pose.theta = theta
++            # try to call service
++            response = self._srv_spawn_model.call(spawn_request)
++            if not response.success:  # if service not succeeds, do something and redo service
++                rospy.logwarn(
++                    f"({self.ns}) spawn object {spawn_request.name} failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
++                rospy.logwarn(response.message)
++                i_curr_try += 1
++            else:
++                self.obstacle_name_list.append(spawn_request.name)
++                #tell the info of polygon obstacles to pedsim
++                add_pedsim_srv=SpawnObstacleRequest()
++                size=vertices.shape[0]
++                for i in range(size):
++                    lineObstacle=LineObstacle()
++                    lineObstacle.start.x,lineObstacle.start.y=vertices[i,0],vertices[i,1]
++                    lineObstacle.end.x,lineObstacle.end.y=vertices[(i+1)%size,0],vertices[(i+1)%size,1]
++                    add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
++                self.__add_obstacle_srv.call(add_pedsim_srv)
++                break
++        if i_curr_try == max_num_try:
++            raise rospy.ServiceException(f"({self.ns}) failed to register obstacles")
++        
++        return 
++
++    def create_pedsim_interactive_obstacle(self, i, map_manager, forbidden_zones):
++        self.map_manager = map_manager
++        ped_array =np.array([],dtype=object).reshape(0,3) # Not used
++        # self.human_id+=1
++        safe_distance = 3.5
++
++        [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
++        # print(obstacles[i])
++        # if random.uniform(0.0, 1.0) < 0.8:
++        ped=np.array([i+1, [x, y, 0.0]],dtype=object)
++        return ped
++
++    def create_pedsim_dynamic_obstacle(self,i, map_manager, forbidden_zones):
++        self.map_manager = map_manager
++        ped_array =np.array([],dtype=object).reshape(0,3) # Not used
++        # self.human_id+=1
++        safe_distance = 3.5
++
++        [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
++        # if random.uniform(0.0, 1.0) < 0.8:
++        waypoints = np.array( [x, y, 1]).reshape(1, 3) # the first waypoint
++        safe_distance = 0.1 # the other waypoints don't need to avoid robot
++        # print("316 safe")
++        for j in range(10): # noote was 1000
++            dist = 0
++            while dist < 8:
++                [x2, y2, theta2] = self.map_manager.get_random_pos_on_map( safe_distance, forbidden_zones)
++                dist = np.linalg.norm([waypoints[-1,0] - x2,waypoints[-1,1] - y2])
++            waypoints = np.vstack([waypoints, [x2, y2, 1]])
++        ped=np.array([i+1, [x, y, 0.0], waypoints],dtype=object)
++        return ped
++    
++    def spawn_pedsim_static_obstacles(self, obstacles):
++        # TODO adjust if necessary
++        # _add_map_border_in_pedsim
++        pass
++
++    def spawn_pedsim_interactive_obstacles(self, obstacles):
++        print("225spawning pedsim dynamic obstacles")
++
++        srv = SpawnInteractiveObstacles()
++        srv.InteractiveObstacles = []
++        i = 0
++        self.agent_topic_str=''   
++        while i < len(obstacles) : 
++            msg = InteractiveObstacle()
++            obstacle = obstacles[i]
++            # msg.id = obstacle[0]
++
++            msg.pose = Pose()
++            msg.pose.position.x = obstacle[1][0]
++            msg.pose.position.y = obstacle[1][1]
++            msg.pose.position.z = obstacle[1][2]
++
++            self.agent_topic_str+=f',{self._ns_prefix}pedsim_static_obstacle_{obstacle[0]}/0' 
++            msg.type = "shelf"
++            msg.interaction_radius = 0.0
++            msg.yaml_path = os.path.join(
++                rospkg.RosPack().get_path("arena-simulation-setup"),
++                "obstacles", "long_shelf.model.yaml"
++            )
++            srv.InteractiveObstacles.append(msg)
++            i = i+1
++
++        max_num_try = 2
++        i_curr_try = 0
++        print("trying to call service with static obstacles: ")    
++
++        while i_curr_try < max_num_try:
++        # try to call service
++            response=self.__respawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
++
++            if not response.success:  # if service not succeeds, do something and redo service
++                rospy.logwarn(
++                    f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
++                # rospy.logwarn(response.message)
++                i_curr_try += 1
++            else:
++                break
++        # self.__peds = peds
++        rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
++        return
++
++    def spawn_pedsim_dynamic_obstacles(self, peds):
++        print("225spawning pedsim dynamic obstacles")
++
++        srv = SpawnPeds()
++        srv.peds = []
++        i = 0
++        self.agent_topic_str=''   
++        while i < len(peds) : 
++            msg = Ped()
++            ped = peds[i]
++            print("printing a ped 238")
++            print(len(ped))
++            print(ped)
++            msg.id = ped[0]
++
++            msg.pos = Point()
++            msg.pos.x = ped[1][0]
++            msg.pos.y = ped[1][1]
++            msg.pos.z = ped[1][2]
++
++            self.agent_topic_str+=f',{self._ns_prefix}pedsim_agent_{ped[0]}/0' 
++            msg.type = "adult"
++            msg.yaml_file = os.path.join(
++                rospkg.RosPack().get_path("arena-simulation-setup"),
++                "dynamic_obstacles",
++                "person_two_legged.model.yaml"
++            )
++            msg.number_of_peds = 1
++            msg.vmax = 0.3
++            msg.start_up_mode = "default"
++            msg.wait_time = 0.0
++            msg.trigger_zone_radius = 0.0
++            msg.chatting_probability = 0.00
++            msg.tell_story_probability = 0
++            msg.group_talking_probability = 0.00
++            msg.talking_and_walking_probability = 0.00
++            msg.requesting_service_probability = 0.00
++            msg.requesting_guide_probability = 0.00
++            msg.requesting_follower_probability = 0.00
++            msg.max_talking_distance = 5
++            msg.max_servicing_radius = 5
++            msg.talking_base_time = 10
++            msg.tell_story_base_time = 0
++            msg.group_talking_base_time = 10
++            msg.talking_and_walking_base_time = 6
++            msg.receiving_service_base_time = 20
++            msg.requesting_service_base_time = 30
++            msg.force_factor_desired = 1
++            msg.force_factor_obstacle = 1
++            msg.force_factor_social = 5
++            msg.force_factor_robot = 1
++            msg.waypoint_mode = 0 # or 1 check later
++
++            msg.waypoints = []
++
++            for pos in ped[2]:
++                p = Point()
++                p.x = pos[0]
++                p.y = pos[1]
++                p.z = pos[2]
++                msg.waypoints.append(p)
++            srv.peds.append(msg)
++            i = i+1
++
++        max_num_try = 2
++        i_curr_try = 0
++        print("trying to call service with peds: ")    
++        print(peds)    
++        while i_curr_try < max_num_try:
++        # try to call service
++            response=self.__respawn_peds_srv.call(srv.peds)
++
++            if not response.success:  # if service not succeeds, do something and redo service
++                rospy.logwarn(
++                    f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
++                # rospy.logwarn(response.message)
++                i_curr_try += 1
++            else:
++                break
++        self.__peds = peds
++        rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
++        return
++
++    def spawn_pedsim_map_borders(self):
++        map_service = rospy.ServiceProxy("/static_map", GetMap)
++        self.map = map_service().map
++        self._free_space_indices = Utils.update_freespace_indices_maze(self.map)
++        border_vertex=Utils.generate_map_inner_border(self._free_space_indices,self.map)
++
++        self.map_border_vertices=border_vertex
++        add_pedsim_srv=SpawnObstacleRequest()
++        size=border_vertex.shape[0]
++        for i in range(size):
++            lineObstacle=LineObstacle()
++            lineObstacle.start.x,lineObstacle.start.y=border_vertex[i,0],border_vertex[i,1]
++            lineObstacle.end.x,lineObstacle.end.y=border_vertex[(i+1)%size,0],border_vertex[(i+1)%size,1]
++            add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
++        self.__add_obstacle_srv.call(add_pedsim_srv)
++        return
++
+     # ROBOT
+ 
+     def spawn_robot(self, name, robot_name, namespace_appendix=None, complexity=1):
+diff --git a/task_generator/task_generator/simulators/gazebo_simulator.py b/task_generator/task_generator/simulators/gazebo_simulator.py
+index 21a4b1d..e4be9e7 100644
+--- a/task_generator/task_generator/simulators/gazebo_simulator.py
++++ b/task_generator/task_generator/simulators/gazebo_simulator.py
+@@ -3,166 +3,791 @@ import os
+ import rospkg
+ import random
+ import subprocess
++import numpy as np
++import math
++
+ from gazebo_msgs.msg import ModelState
+-from gazebo_msgs.srv import SetModelState, SpawnModel, SpawnModelRequest
+-from geometry_msgs.msg import Pose, PoseStamped, Quaternion
+-from pedsim_srvs.srv import SpawnPeds
++from gazebo_msgs.srv import SetModelState, DeleteModel, SpawnModel, SpawnModelRequest
++
++from pedsim_srvs.srv import SpawnInteractiveObstacles, SpawnInteractiveObstaclesRequest,SpawnObstacle, SpawnObstacleRequest, SpawnPeds, SpawnPed
++from pedsim_msgs.msg import InteractiveObstacle, AgentStates, Waypoints, LineObstacle, Ped
++
++from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
++
+ from std_msgs.msg import Empty
+-from pedsim_srvs.srv import SpawnPeds, SpawnPed
+-from pedsim_msgs.msg import Ped
+-from geometry_msgs.msg import Point
+ from std_srvs.srv import Empty, SetBool, Trigger
++
++from rospkg import RosPack
++
+ from task_generator.simulators.simulator_factory import SimulatorFactory
+ from tf.transformations import quaternion_from_euler
+-
+ from ..constants import Constants, Pedsim
+ from .base_simulator import BaseSimulator
+ from .simulator_factory import SimulatorFactory
++from task_generator.utils import Utils
++from nav_msgs.srv import GetMap
+ 
+ T = Constants.WAIT_FOR_SERVICE_TIMEOUT
+ 
+ 
+ @SimulatorFactory.register("gazebo")
+ class GazeboSimulator(BaseSimulator):
+-    def __init__(self, namespace):
+-        super().__init__(namespace)
++  def __init__(self, namespace):
++    super().__init__(namespace)
++
++    self._goal_pub = rospy.Publisher(self._ns_prefix("/goal"), PoseStamped, queue_size=1, latch=True)
++
++    self._robot_name = rospy.get_param("robot_model", "")
++
++    rospy.wait_for_service("/gazebo/spawn_urdf_model")
++    rospy.wait_for_service("/gazebo/set_model_state")
++    rospy.wait_for_service("/pedsim_simulator/spawn_peds", timeout=T)
++    rospy.wait_for_service("/pedsim_simulator/reset_all_peds", timeout=T)
++    rospy.wait_for_service("/pedsim_simulator/remove_all_peds", timeout=T)
++    rospy.wait_for_service("pedsim_simulator/respawn_peds" , timeout=T)
++    rospy.wait_for_service("pedsim_simulator/respawn_interactive_obstacles" , timeout=T)
++    rospy.wait_for_service("pedsim_simulator/add_obstacle", timeout=20)
++    rospy.wait_for_service("/gazebo/set_model_state", timeout=20)
++
++    self._spawn_model_srv = rospy.ServiceProxy(
++        self._ns_prefix("gazebo", "spawn_urdf_model"), SpawnModel
++    )
++    self._move_model_srv = rospy.ServiceProxy(
++        "/gazebo/set_model_state", SetModelState, persistent=True
++    )
++
++    self._spawn_peds_srv = rospy.ServiceProxy(
++        "/pedsim_simulator/spawn_peds", SpawnPeds
++    )
++    self._remove_peds_srv = rospy.ServiceProxy(
++        "/pedsim_simulator/remove_all_peds", SetBool
++    )
++    self._reset_peds_srv = rospy.ServiceProxy(
++        "/pedsim_simulator/reset_all_peds", Trigger
++    )
++    self.__respawn_interactive_obstacles_srv = rospy.ServiceProxy(
++      "pedsim_simulator/respawn_interactive_obstacles" ,SpawnInteractiveObstacles, persistent=True)
++
++    self.__respawn_peds_srv = rospy.ServiceProxy(
++        "pedsim_simulator/respawn_peds" , SpawnPeds, persistent=True)
++
++    self._spawn_peds_srv = rospy.ServiceProxy(
++        "pedsim_simulator/spawn_peds", SpawnPeds)
++
++    self.__add_obstacle_srv = rospy.ServiceProxy(
++        "pedsim_simulator/add_obstacle" ,SpawnObstacle, persistent=True)
++
++    self.unpause = rospy.ServiceProxy("/gazebo/unpause_physics", Empty)
++    self.pause = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
++
++    self.map_manager = None
++
++
++    # From "spawn_pedsim_agents.py" - TODO Clean later
++    if rospy.get_param("pedsim"):
++      # rospy.init_node("spawn_pedsim_agents")
++      self._peds = []
++
++      rospack1 = RosPack()
++      pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
++      default_actor_model_file = pkg_path + "/models/actor_model.sdf"
++      # default_actor_model_file = pkg_path + "/models/actor2.sdf"
++      # default_actor_model_file = pkg_path + "/models/forklift_robot-master/model.sdf"
++      # default_actor_model_file = pkg_path + "/models/test_static_obstacle.sdf"
++      # default_actor_model_file = pkg_path + "/models/forklift3.sdf"
++      # default_actor_model_file = pkg_path + "/models/child.sdf"
++      # default_actor_model_file = pkg_path + "/models/prius.sdf"
++
++      actor_model_file = rospy.get_param('~actor_model_file', default_actor_model_file)
++      file_xml = open(actor_model_file)
++      self.xml_string = file_xml.read()
++      print("Waiting for gazebo services...")
++      rospy.wait_for_service("gazebo/spawn_sdf_model")
++      rospy.wait_for_service("gazebo/delete_model")
++      self.spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
++      self.remove_model_srv = rospy.ServiceProxy("gazebo/delete_model", DeleteModel)
++      print("service: spawn_sdf_model is available ....")
++      rospy.set_param("respawn_dynamic", True)
++      rospy.set_param("respawn_static", True)
++      rospy.Subscriber("/pedsim_simulator/simulated_waypoints", Waypoints, self.interactive_actor_poses_callback)
++      rospy.Subscriber("/pedsim_simulator/simulated_agents", AgentStates, self.dynamic_actor_poses_callback)
++
++      # while (rospy.is_shutdown()) == False:
++      #   rospy.spin()
++
++  def interactive_actor_poses_callback(self, actors):
++        if rospy.get_param("respawn_static"):
++          for actor in actors.waypoints:
++            if "interactive" in actor.name:
++              actor_name = str(actor.name)
++              rospy.loginfo("Spawning model: actor_id = %s", actor_name)
++
++              model_pose =  Pose(Point(x= actor.position.x,
++                                    y= actor.position.y,
++                                    z= actor.position.z)
++                                    ,
++                              Quaternion(0,
++                                          0,
++                                          0,
++                                          1) )
++              self.spawn_model(actor_name, self.xml_string, "", model_pose, "world")
++              rospy.set_param("respawn_static", False)
++
++  def dynamic_actor_poses_callback(self, actors):
++      # print(actors)
++      if rospy.get_param("respawn_dynamic"):
++        for actor in actors.agent_states:
++            actor_id = str(actor.id)
++            actor_pose = actor.pose
++            rospy.loginfo("Spawning model: actor_id = %s", actor_id)
++
++            model_pose = Pose(Point(x= actor_pose.position.x,
++                                  y= actor_pose.position.y,
++                                  z= actor_pose.position.z),
++                            Quaternion(actor_pose.orientation.x,
++                                        actor_pose.orientation.y,
++                                        actor_pose.orientation.z,
++                                        actor_pose.orientation.w) )
++            # new_xml_string= self.xml_string.replace("0 0 0.75",str(actor_pose.position.x)+" "+str(actor_pose.position.y) +" 0.75")
++            # new_xml_string= new_xml_string.replace("actor1",actor_id)
++            # print(new_xml_string)
++            self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
++            rospy.set_param("respawn_dynamic", False)
++      else:
++        for actor in actors.agent_states:
++            # print("moving", str(actor.id))
++            model_state_request = ModelState()
++            model_state_request.model_name = str(actor.id)
++            actor_pose = actor.pose
++            model_state_request.pose = Pose(Point(x= actor_pose.position.x,
++                                  y= actor_pose.position.y,
++                                  z= actor_pose.position.z),
++                            Quaternion(actor_pose.orientation.x,
++                                        actor_pose.orientation.y,
++                                        actor_pose.orientation.z,
++                                        actor_pose.orientation.w) )
++            
++            model_state_request.reference_frame = "world"
++
++            self._move_model_srv(model_state_request)
++            
++  def before_reset_task(self):
++    self.pause()
++
++  def after_reset_task(self):
++    self.unpause()
++
++    # PEDSIM INTEGRATION
++
++  def create_pedsim_static_obstacle(self, i, map_manager, forbidden_zones):
++      # TODO adjust if necessary
++
++      # num_obstacles = 1
++      # model_yaml_file_path = os.path.join("../utils/arena-simulation-setup/obstacles", "random.model.yaml")
++      # start_pos = []
++      # vertices = np.array([[0, 0], [0, 0], [0, 0], [0, 0]])
++      # type_obstacle = "static"
++
++      # max_num_try = 2
++      # i_curr_try = 0
++      # while i_curr_try < max_num_try:
++      #     spawn_request = SpawnModelRequest()
++      #     spawn_request.yaml_path = model_yaml_file_path
++      #     spawn_request.name = f'{name_prefix}_{instance_idx:02d}'
++      #     # x, y, theta = get_random_pos_on_map(self._free_space_indices, self.map,)
++      #     # set the postion of the obstacle out of the map to hidden them
++      #     if len(start_pos) == 0:
++      #         x = self.map.info.origin.position.x - 3 * \
++      #             self.map.info.resolution * self.map.info.height
++      #         y = self.map.info.origin.position.y - 3 * \
++      #             self.map.info.resolution * self.map.info.width
++      #         theta = theta = random.uniform(-math.pi, math.pi)
++      #     else:
++      #         assert len(start_pos) == 3
++      #         x = start_pos[0]
++      #         y = start_pos[1]
++      #         theta = start_pos[2]
++      #     spawn_request.pose.x = x
++      #     spawn_request.pose.y = y
++      #     spawn_request.pose.theta = theta
++      #     # try to call service
++      #     response = self._srv_spawn_model.call(spawn_request)
++      #     if not response.success:  # if service not succeeds, do something and redo service
++      #         rospy.logwarn(
++      #             f"({self.ns}) spawn object {spawn_request.name} failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
++      #         rospy.logwarn(response.message)
++      #         i_curr_try += 1
++      #     else:
++      #         self.obstacle_name_list.append(spawn_request.name)
++      #         #tell the info of polygon obstacles to pedsim
++      #         add_pedsim_srv=SpawnObstacleRequest()
++      #         size=vertices.shape[0]
++      #         for i in range(size):
++      #             lineObstacle=LineObstacle()
++      #             lineObstacle.start.x,lineObstacle.start.y=vertices[i,0],vertices[i,1]
++      #             lineObstacle.end.x,lineObstacle.end.y=vertices[(i+1)%size,0],vertices[(i+1)%size,1]
++      #             add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
++      #         self.__add_obstacle_srv.call(add_pedsim_srv)
++      #         break
++      # if i_curr_try == max_num_try:
++      #     raise rospy.ServiceException(f"({self.ns}) failed to register obstacles")
++
++      self.map_manager = map_manager
++      # self.human_id+=1
++      safe_distance = 3.5
++
++      [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
++      # print(obstacles[i])
++      # if random.uniform(0.0, 1.0) < 0.8:
++      ped=np.array([i+1, [x, y, 0.0]],dtype=object)
++      # print("323 safe")
++
++      return ped 
++
++  def create_pedsim_interactive_obstacle(self, i, map_manager, forbidden_zones):
++      self.map_manager = map_manager
++      # self.human_id+=1
++      safe_distance = 0.5
++
++      [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
++      # print(obstacles[i])
++      # if random.uniform(0.0, 1.0) < 0.8:
++      ped=np.array([i+1, [x, y, 0.0]],dtype=object)
++      return ped
++
++  def create_pedsim_dynamic_obstacle(self,i, map_manager, forbidden_zones):
++      self.map_manager = map_manager
++      ped_array =np.array([],dtype=object).reshape(0,3) # Not used
++      # self.human_id+=1
++      safe_distance = 0.5
++
++      [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
++      # print(obstacles[i])
++      # if random.uniform(0.0, 1.0) < 0.8:
++      waypoints = np.array( [x, y, 1]).reshape(1, 3) # the first waypoint
++      safe_distance = 0.1 # the other waypoints don't need to avoid robot
++      for j in range(10): # noote was 1000
++          dist = 0
++          while dist < 8:
++              [x2, y2, theta2] = self.map_manager.get_random_pos_on_map( safe_distance, forbidden_zones)
++              dist = np.linalg.norm([waypoints[-1,0] - x2,waypoints[-1,1] - y2])
++          waypoints = np.vstack([waypoints, [x2, y2, 1]])
++      ped=np.array([i+1, [x, y, 0.0], waypoints],dtype=object)
++      return ped
++
++
++  def spawn_pedsim_static_obstacles(self, obstacles):
++      # TODO adjust if necessary
++      return
++
++  def spawn_pedsim_interactive_obstacles(self, obstacles):
++      print("225spawning pedsim interactive obstacles")
++
++      srv = SpawnInteractiveObstacles()
++      srv.InteractiveObstacles = []
++      i = 0
++      self.agent_topic_str=''   
++      while i < len(obstacles) : 
++          msg = InteractiveObstacle()
++          obstacle = obstacles[i]
++          # msg.id = obstacle[0]
++
++          msg.pose = Pose()
++          msg.pose.position.x = obstacle[1][0]
++          msg.pose.position.y = obstacle[1][1]
++          msg.pose.position.z = obstacle[1][2]
++
++          self.agent_topic_str+=f',{self._ns_prefix}pedsim_static_obstacle_{obstacle[0]}/0' 
++          msg.type = "shelf"
++          # msg.name = "test"
++          msg.interaction_radius = 0.0
++          msg.yaml_path = os.path.join(
++              rospkg.RosPack().get_path("arena-simulation-setup"),
++              "obstacles", "long_shelf.model.yaml"
++          )
++          srv.InteractiveObstacles.append(msg)
++          i = i+1
++
++      max_num_try = 2
++      i_curr_try = 0
++      print("trying to call service with static obstacles: ")    
++
++      while i_curr_try < max_num_try:
++      # try to call service
++          print("209")
++          response=self.__respawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
++
++          if not response.success:  # if service not succeeds, do something and redo service
++              rospy.logwarn(
++                  f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
++              # rospy.logwarn(response.message)
++              i_curr_try += 1
++              print("217")
++          else:
++              break
++      # self._peds = peds
++      rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
++      return
++
++  def spawn_pedsim_dynamic_obstacles(self, peds):
++      # srv = SpawnPeds()
++      # srv.peds = []
++      # i = 0
++      self.agent_topic_str=''  
++      for ped in peds: 
++          id, pose, waypoints = ped
++          x, y, theta = pose
++
++          rospy.loginfo("Spawning model: actor_id = %s", id)
++
++          model_pose = Pose(Point(x=x,
++                                y=y,
++                                z=0), Quaternion())
++          new_xml_string= self.xml_string.replace("0 0 0.75", str(x) + " " + str(y) +" 0.75")
++          new_xml_string= new_xml_string.replace("actor2", str(id))
++          new_xml_string= new_xml_string.replace(
++             "__waypoints__", 
++             "".join(
++                [
++                   f"<waypoint>{x} {y} {theta}</waypoint>" for x, y, theta in waypoints
++                  ]
++                )
++              )
++
++          # print(new_xml_string)
++          self.spawn_model(str(id), new_xml_string, "", model_pose, "world")
++          # self.spawn_model(actor_id, self.xml_string, "", model_pose, "world")
++          rospy.set_param("respawn_dynamic", False)
++
++      #     msg = Ped()
++      #     ped = peds[i]
++      #     msg.id = ped[0]
++
++      #     msg.pos = Point()
++      #     msg.pos.x = ped[1][0]
++      #     msg.pos.y = ped[1][1]
++      #     msg.pos.z = ped[1][2]
++
++      #     self.agent_topic_str+=f',pedsim_agent_{ped[0]}/0' 
++      #     msg.type = "adult"
++      #     msg.yaml_file = os.path.join(
++      #         rospkg.RosPack().get_path("arena-simulation-setup"),
++      #         "dynamic_obstacles",
++      #         "person_two_legged.model.yaml"
++      #     )
++      #     msg.number_of_peds = 1
++      #     msg.vmax = 0.3
++      #     msg.start_up_mode = "default"
++      #     msg.wait_time = 0.0
++      #     msg.trigger_zone_radius = 0.0
++      #     msg.chatting_probability = 0.00
++      #     msg.tell_story_probability = 0
++      #     msg.group_talking_probability = 0.00
++      #     msg.talking_and_walking_probability = 0.00
++      #     msg.requesting_service_probability = 0.00
++      #     msg.requesting_guide_probability = 0.00
++      #     msg.requesting_follower_probability = 0.00
++      #     msg.max_talking_distance = 5
++      #     msg.max_servicing_radius = 5
++      #     msg.talking_base_time = 10
++      #     msg.tell_story_base_time = 0
++      #     msg.group_talking_base_time = 10
++      #     msg.talking_and_walking_base_time = 6
++      #     msg.receiving_service_base_time = 20
++      #     msg.requesting_service_base_time = 30
++      #     msg.force_factor_desired = 1
++      #     msg.force_factor_obstacle = 1
++      #     msg.force_factor_social = 5
++      #     msg.force_factor_robot = 1
++      #     msg.waypoint_mode = 0 # or 1 check later
++
++      #     msg.waypoints = []
++
++      #     for pos in ped[2]:
++      #         p = Point()
++      #         p.x = pos[0]
++      #         p.y = pos[1]
++      #         p.z = pos[2]
++      #         msg.waypoints.append(p)
++      #     srv.peds.append(msg)
++      #     i = i+1
++
++      # max_num_try = 2
++      # i_curr_try = 0
++      # print("trying to call service with peds: ")    
++      # while i_curr_try < max_num_try:
++      # # try to call service
++      #     response=self.__respawn_peds_srv.call(srv.peds)
++
++      #     if not response.success:  # if service not succeeds, do something and redo service
++      #         rospy.logwarn(
++      #             f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
++      #         # rospy.logwarn(response.message)
++      #         i_curr_try += 1
++      #     else:
++      #         break
++      self._peds = peds
++      rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
++      return
++      
++  def spawn_pedsim_map_borders(self):
++    # TODO adjust if necessary
++    map_service = rospy.ServiceProxy("/static_map", GetMap)
++    self.map = map_service().map
++    self._free_space_indices = Utils.update_freespace_indices_maze(self.map)
++    border_vertex=Utils.generate_map_inner_border(self._free_space_indices,self.map)
++
++    self.map_border_vertices=border_vertex
++    add_pedsim_srv=SpawnObstacleRequest()
++    size=border_vertex.shape[0]
++    for i in range(size):
++        lineObstacle=LineObstacle()
++        lineObstacle.start.x,lineObstacle.start.y=border_vertex[i,0],border_vertex[i,1]
++        lineObstacle.end.x,lineObstacle.end.y=border_vertex[(i+1)%size,0],border_vertex[(i+1)%size,1]
++        add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
++    self.__add_obstacle_srv.call(add_pedsim_srv)
++
++  # SCENARIO INTEGRATION
++  def spawn_pedsim_dynamic_scenario_obstacles(self, peds):
++      srv = SpawnPeds()
++      srv.peds = []
++      i = 0
++      self.agent_topic_str=''   
++      while i < len(peds) : 
++        ped = peds[i]
++        print("ped[i] ", i, " :")
++        print(ped)
++        msg = Ped()
++        msg.id = i 
++
++        msg.pos = Point()
++        msg.pos.x = ped["pos"][0]
++        msg.pos.y = ped["pos"][1]
++        msg.pos.z = 0
++
++        msg.waypoints = []
++        for pos in ped["waypoints"]:
++            p = Point()
++            p.x = pos[0]
++            p.y = pos[1]
++            p.z = 0
++            msg.waypoints.append(p)
++        msg.yaml_file = os.path.join(
++            rospkg.RosPack().get_path("arena-simulation-setup"),
++            "dynamic_obstacles",
++            "person_two_legged.model.yaml"
++          )
++
++        self.agent_topic_str+=f',pedsim_agent_{i}/0' 
++        msg.type = "adult"
++        msg.number_of_peds = 1
++        # msg.vmax = 0.3
++        msg.vmax = ped["vmax"]
++        msg.start_up_mode = ped["start_up_mode"]
++        msg.wait_time = ped["wait_time"]
++        msg.trigger_zone_radius = ped["trigger_zone_radius"]
++        msg.chatting_probability = ped["chatting_probability"]
++        msg.tell_story_probability = ped["tell_story_probability"]
++        msg.group_talking_probability = ped["group_talking_probability"]
++        msg.talking_and_walking_probability = ped["talking_and_walking_probability"]
++        msg.requesting_service_probability = ped["requesting_service_probability"]
++        msg.requesting_guide_probability = ped["requesting_guide_probability"]
++        msg.requesting_follower_probability = ped["requesting_follower_probability"]
++        msg.max_talking_distance = ped["max_talking_distance"]
++        msg.max_servicing_radius = ped["max_servicing_radius"]
++        msg.talking_base_time = ped["talking_base_time"]
++        msg.tell_story_base_time = ped["tell_story_base_time"]
++        msg.group_talking_base_time = ped["group_talking_base_time"]
++        msg.talking_and_walking_base_time = ped["talking_and_walking_base_time"]
++        msg.receiving_service_base_time = ped["receiving_service_base_time"]
++        msg.requesting_service_base_time = ped["requesting_service_base_time"]
++        msg.force_factor_desired = ped["force_factor_desired"]
++        msg.force_factor_obstacle = ped["force_factor_obstacle"]
++        msg.force_factor_social = ped["force_factor_social"]
++        msg.force_factor_robot = ped["force_factor_robot"]
++        msg.waypoint_mode = ped["waypoint_mode"] # or 1 check later
++
++        srv.peds.append(msg)
++        i = i+1
++
++      max_num_try = 2
++      i_curr_try = 0
++      # print("trying to call service with peds: ")    
++      while i_curr_try < max_num_try:
++      # try to call service
++          response=self.__respawn_peds_srv.call(srv.peds)
++
++          if not response.success:  # if service not succeeds, do something and redo service
++              rospy.logwarn(
++                  f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
++              # rospy.logwarn(response.message)
++              i_curr_try += 1
++          else:
++              break
++      self._peds = peds
++      rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
++      return
++
++  def spawn_pedsim_interactive_scenario_obstacles(self, obstacles):
++      srv = SpawnInteractiveObstacles()
++      srv.InteractiveObstacles = []
++      i = 0
++      self.agent_topic_str=''   
++      while i < len(obstacles) : 
++          msg = InteractiveObstacle()
++          obstacle = obstacles[i]
++          # msg.id = obstacle[0]
++
++          msg.pose = Pose()
++          msg.pose.position.x = obstacle["pos"][0]
++          msg.pose.position.y = obstacle["pos"][1]
++          msg.pose.position.z = 0
++
++          self.agent_topic_str+=f',{self._ns_prefix}pedsim_static_obstacle_{i}/0' 
++          msg.type = "shelf"
++          # msg.name = "test"
++          msg.interaction_radius = 0.0
++          msg.yaml_path = os.path.join(
++              rospkg.RosPack().get_path("arena-simulation-setup"),
++              "obstacles", obstacle["yaml_path"]
++          )
++          srv.InteractiveObstacles.append(msg)
++          i = i+1
++
++      max_num_try = 2
++      i_curr_try = 0
++      print("trying to call service with static obstacles: ")    
++
++      while i_curr_try < max_num_try:
++      # try to call service
++          response=self.__respawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
++
++          if not response.success:  # if service not succeeds, do something and redo service
++              rospy.logwarn(
++                  f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
++              # rospy.logwarn(response.message)
++              i_curr_try += 1
++          else:
++              break
++      # self.__peds = peds
++      rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
++      return
++
++  def remove_all_obstacles(self):
++    # self._remove_peds_srv(True)
++    # Anhand ID gazebo obstacles löschen
++    print("REMOVE ALL OBSTACLES")
++
++    for ped in self._peds:
++      #  print("remove obstacle", ped)
++      model_name = ped[0]
++      #self.remove_model_srv(str(model_name))
++
++  def spawn_obstacle(self, position, yaml_path=""):
++    pass
++
++  def spawn_obstacles(self, obstacles):
++    pass
++
++  def create_static_obstacle(self, position, **args):
++    return self.spawn_random_static_obstacle(position=position)
++
++  def spawn_random_static_obstacle(self, **args):
++    pass
++
++  def create_dynamic_obstacle(self, position, **args):
++    pass
++
++
++  def publish_goal(self, goal):
++    goal_msg = PoseStamped()
++    goal_msg.header.seq = 0
++    goal_msg.header.stamp = rospy.get_rostime()
++    goal_msg.header.frame_id = "map"
++    goal_msg.pose.position.x = goal[0]
++    goal_msg.pose.position.y = goal[1]
++
++    goal_msg.pose.orientation.w = 0
++    goal_msg.pose.orientation.x = 0
++    goal_msg.pose.orientation.y = 0
++    goal_msg.pose.orientation.z = 1
++
++    self._goal_pub.publish(goal_msg)
++
++  def move_robot(self, pos, name=None):
++    model_state_request = ModelState()
++    model_state_request.model_name = name if name else self._robot_name
++    pose = Pose()
++    pose.position.x = pos[0]
++    pose.position.y = pos[1]
++    pose.position.z = 0.1
++    pose.orientation = Quaternion(
++        *quaternion_from_euler(0.0, 0.0, pos[2], axes="sxyz")
++    )
++    model_state_request.pose = pose
++    model_state_request.reference_frame = "world"
++
++    self._move_model_srv(model_state_request)
++
++  def spawn_robot(self, name, robot_name, namespace_appendix=""):
++    request = SpawnModelRequest()
++
++    robot_namespace = self._ns_prefix(namespace_appendix)
++
++    robot_description = GazeboSimulator.get_robot_description(
++        robot_name, robot_namespace
++    )
++    rospy.set_param(os.path.join(robot_namespace, "robot_description"), robot_description)
++    rospy.set_param(os.path.join(robot_namespace, "tf_prefix"), robot_namespace)
++
++    request.model_name = name
++    request.model_xml = robot_description
++    request.robot_namespace = robot_namespace
++    request.reference_frame = "world"
++
++    self._spawn_model_srv(request)
++
++  def spawn_random_dynamic_obstacle(self, **args):
++    # TODO
++    peds = [self.create_random_ped(args["position"])]
+ 
+-        self._goal_pub = rospy.Publisher(self._ns_prefix("/goal"), PoseStamped, queue_size=1, latch=True)
+-
+-        self._robot_name = rospy.get_param("robot_model", "")
++    # self._spawn_peds_srv(peds)
+ 
+-        rospy.wait_for_service("/gazebo/spawn_urdf_model")
+-        rospy.wait_for_service("/gazebo/set_model_state")
+-        rospy.wait_for_service("/pedsim_simulator/spawn_peds", timeout=T)
+-        rospy.wait_for_service("/pedsim_simulator/reset_all_peds", timeout=T)
+-        rospy.wait_for_service("/pedsim_simulator/remove_all_peds", timeout=T)
++  def spawn_pedsim_agents(self, dynamic_obstacles):
++    if len(dynamic_obstacles) <= 0:
++      return
+ 
+-        self._spawn_model_srv = rospy.ServiceProxy(
+-            self._ns_prefix("gazebo", "spawn_urdf_model"), SpawnModel
+-        )
+-        self._move_model_srv = rospy.ServiceProxy(
+-            "/gazebo/set_model_state", SetModelState, persistent=True
+-        )
+-
+-        self._spawn_peds_srv = rospy.ServiceProxy(
+-            "/pedsim_simulator/spawn_peds", SpawnPeds
+-        )
+-        self._remove_peds_srv = rospy.ServiceProxy(
+-            "/pedsim_simulator/remove_all_peds", SetBool
+-        )
+-        self._reset_peds_srv = rospy.ServiceProxy(
+-            "/pedsim_simulator/reset_all_peds", Trigger
+-        )
+-        self.unpause = rospy.ServiceProxy("/gazebo/unpause_physics", Empty)
+-        self.pause = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
+-
+-        self.map_manager = None
+-
+-    def before_reset_task(self):
+-        self.pause()
+-
+-    def after_reset_task(self):
+-        self.unpause()
+-
+-    def remove_all_obstacles(self):
+-        self._remove_peds_srv(True)
+-
+-    def spawn_pedsim_agents(self, dynamic_obstacles):
+-        if len(dynamic_obstacles) <= 0:
+-            return
+-        
+-        peds = [GazeboSimulator.create_ped_msg(p, i) for i, p in enumerate(dynamic_obstacles)]
+-
+-        spawn_ped_msg = SpawnPeds()
+-
+-        spawn_ped_msg.peds = peds
+-
+-        self._spawn_peds_srv(spawn_ped_msg)
+-
+-    def create_dynamic_obstacle(self, **args):
+-        pass
+-
+-    def create_static_obstacle(self, **args):
+-        pass
+-
+-    def spawn_obstacles(self, obstacles):
+-        pass
+-
+-    def reset_pedsim_agents(self):
+-        self._reset_peds_srv()
+-
+-    def spawn_obstacle(self, position, yaml_path=""):
+-        pass
+-
+-    def spawn_random_dynamic_obstacle(self, **args):
+-        peds = [self.create_random_ped(args["position"])]
+-
+-        self._spawn_peds_srv(peds)
+-
+-    def spawn_random_static_obstacle(self, **args):
+-        pass
+-
+-    def publish_goal(self, goal):
+-        goal_msg = PoseStamped()
+-        goal_msg.header.seq = 0
+-        goal_msg.header.stamp = rospy.get_rostime()
+-        goal_msg.header.frame_id = "map"
+-        goal_msg.pose.position.x = goal[0]
+-        goal_msg.pose.position.y = goal[1]
+-
+-        goal_msg.pose.orientation.w = 0
+-        goal_msg.pose.orientation.x = 0
+-        goal_msg.pose.orientation.y = 0
+-        goal_msg.pose.orientation.z = 1
+-
+-        self._goal_pub.publish(goal_msg)
+-
+-    def move_robot(self, pos, name=None):
+-        model_state_request = ModelState()
+-        model_state_request.model_name = name if name else self._robot_name
+-        pose = Pose()
+-        pose.position.x = pos[0]
+-        pose.position.y = pos[1]
+-        pose.position.z = 0.1
+-        pose.orientation = Quaternion(
+-            *quaternion_from_euler(0.0, 0.0, pos[2], axes="sxyz")
+-        )
+-        model_state_request.pose = pose
+-        model_state_request.reference_frame = "world"
+-
+-        self._move_model_srv(model_state_request)
+-
+-    def spawn_robot(self, name, robot_name, namespace_appendix=""):
+-        request = SpawnModelRequest()
+-
+-        robot_namespace = self._ns_prefix(namespace_appendix)
+-        
+-        robot_description = GazeboSimulator.get_robot_description(
+-            robot_name, robot_namespace
+-        )
+-        rospy.set_param(os.path.join(robot_namespace, "robot_description"), robot_description)
+-        rospy.set_param(os.path.join(robot_namespace, "tf_prefix"), robot_namespace)
+-        
+-        request.model_name = name
+-        request.model_xml = robot_description
+-        request.robot_namespace = robot_namespace
+-        request.reference_frame = "world"
+-
+-        self._spawn_model_srv(request)
+-
+-    @staticmethod
+-    def create_ped_msg(ped, id):
+-        pass
+-    
++    peds = [GazeboSimulator.create_ped_msg(p, i) for i, p in enumerate(dynamic_obstacles)]
++
++    spawn_ped_msg = SpawnPeds()
+ 
+-    @staticmethod
+-    def get_robot_description(robot_name, namespace):
+-        arena_sim_path = rospkg.RosPack().get_path("arena-simulation-setup")
+-
+-        return subprocess.check_output([
+-            "rosrun",
+-            "xacro",
+-            "xacro",
+-            os.path.join(arena_sim_path, "robot", robot_name, "urdf", f"{robot_name}.urdf.xacro"),
+-            f"robot_namespace:={namespace}"
+-        ]).decode("utf-8")
+\ No newline at end of file
++    spawn_ped_msg.peds = peds
++
++    # self._spawn_peds_srv(spawn_ped_msg)
++
++  def reset_pedsim_agents(self):
++    self._reset_peds_srv()
++    
++  @staticmethod
++  def create_ped_msg(ped, id):
++    msg = Ped()
++
++    msg.id = id
++
++    pos = Point()
++    pos.x = ped["waypoints"][0][0]
++    pos.y = ped["waypoints"][0][1]
++    msg.pos = pos
++
++    msg.type = "adult"
++    msg.yaml_file = os.path.join(
++        rospkg.RosPack().get_path("arena-simulation-setup"),
++        "dynamic_obstacles",
++        "person_two_legged.model.yaml"
++    )
++    msg.number_of_peds = 1
++    msg.vmax = 0.3
++    msg.start_up_mode = "default"
++    msg.wait_time = 0.0
++    msg.trigger_zone_radius = 0.0
++    msg.chatting_probability = 0.00
++    msg.tell_story_probability = 0
++    msg.group_talking_probability = 0.00
++    msg.talking_and_walking_probability = 0.00
++    msg.requesting_service_probability = 0.00
++    msg.requesting_guide_probability = 0.00
++    msg.requesting_follower_probability = 0.00
++    msg.max_talking_distance = 5
++    msg.max_servicing_radius = 5
++    msg.talking_base_time = 10
++    msg.tell_story_base_time = 0
++    msg.group_talking_base_time = 10
++    msg.talking_and_walking_base_time = 6
++    msg.receiving_service_base_time = 20
++    msg.requesting_service_base_time = 30
++    msg.force_factor_desired = 1
++    msg.force_factor_obstacle = 1
++    msg.force_factor_social = 5
++    msg.force_factor_robot = 1
++
++    waypoints = []
++
++    for w in ped["waypoints"]:
++      new_waypoint = Point()
++
++      new_waypoint.x = w[0]
++      new_waypoint.y = w[1]
++
++      waypoints.append(new_waypoint)
++
++    msg.waypoints = waypoints
++
++    msg.waypoint_mode = 0
++
++    return msg
++
++  def create_random_ped(self, desired_pos):
++    msg = Ped()
++
++    msg.id = random.randint(0, 1000)
++
++    pos = Point()
++    pos.x = desired_pos[0]
++    pos.y = desired_pos[1]
++    msg.pos = pos
++
++    msg.number_of_peds = 1
++    msg.vmax = Pedsim.VMAX
++    msg.start_up_mode = Pedsim.START_UP_MODE
++    msg.wait_time = Pedsim.WAIT_TIME
++    msg.trigger_zone_radius = Pedsim.TRIGGER_ZONE_RADIUS
++    msg.chatting_probability = Pedsim.CHATTING_PROBABILITY
++    msg.tell_story_probability = Pedsim.TELL_STORY_PROBABILITY
++    msg.group_talking_probability = Pedsim.GROUP_TALKING_PROBABILITY
++    msg.talking_and_walking_probability = Pedsim.TALKING_AND_WALKING_PROBABILITY
++    msg.requesting_service_probability = Pedsim.REQUESTING_SERVICE_PROBABILITY
++    msg.requesting_guide_probability = Pedsim.REQUESTING_GUIDE_PROBABILITY
++    msg.requesting_follower_probability = Pedsim.REQUESTING_FOLLOWER_PROBABILITY
++    msg.max_talking_distance = Pedsim.MAX_TALKING_DISTANCE
++    msg.max_servicing_radius = Pedsim.MAX_SERVICING_RADIUS
++    msg.talking_base_time = Pedsim.TALKING_BASE_TIME
++    msg.tell_story_base_time = Pedsim.TELL_STORY_BASE_TIME
++    msg.group_talking_base_time = Pedsim.GROUP_TALKING_BASE_TIME
++    msg.talking_and_walking_base_time = Pedsim.TALKING_AND_WALKING_BASE_TIME
++    msg.receiving_service_base_time = Pedsim.RECEIVING_SERVICE_BASE_TIME
++    msg.requesting_service_base_time = Pedsim.REQUESTING_SERVICE_BASE_TIME
++    msg.force_factor_desired = Pedsim.FORCE_FACTOR_DESIRED
++    msg.force_factor_obstacle = Pedsim.FORCE_FACTOR_OBSTACLE
++    msg.force_factor_social = Pedsim.FORCE_FACTOR_SOCIAL
++    msg.force_factor_robot = Pedsim.FORCE_FACTOR_ROBOT
++
++    waypoints = []
++
++    for w in range(10):
++      position = self.map_manager.get_random_pos_on_map(
++          safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS
++      )
++
++      new_waypoint = Point()
++
++      new_waypoint.x = position[0]
++      new_waypoint.y = position[1]
++
++      waypoints.append(new_waypoint)
++
++    msg.waypoints = waypoints
++    msg.waypoint_mode = 0
++
++    return msg
++
++  @staticmethod
++  def get_robot_description(robot_name, namespace):
++    arena_sim_path = rospkg.RosPack().get_path("arena-simulation-setup")
++
++    return subprocess.check_output([
++        "rosrun",
++        "xacro",
++        "xacro",
++        os.path.join(arena_sim_path, "robot", robot_name, "urdf", f"{robot_name}.urdf.xacro"),
++        f"robot_namespace:={namespace}"
++    ]).decode("utf-8")
+diff --git a/task_generator/task_generator/tasks/scenario.py b/task_generator/task_generator/tasks/scenario.py
+index 598e13d..179f60e 100644
+--- a/task_generator/task_generator/tasks/scenario.py
++++ b/task_generator/task_generator/tasks/scenario.py
+@@ -72,6 +72,11 @@ class ScenarioTask(BaseTask):
+             self.scenario_file["map"],
+             "map.yaml"
+         )
++        # scenario_map_path = os.path.join(
++        #     rospkg.RosPack().get_path("arena-simulation-setup"), 
++        #     "maps", 
++        #     self.scenario_file["map_path"]
++        # )
+ 
+         if not static_map == scenario_map_path:
+             rospy.logerr("Map path of scenario and static map are not the same. Shutting down.")
+@@ -96,6 +101,7 @@ class ScenarioTask(BaseTask):
+         super()._set_up_robot_managers()
+ 
+     def _check_robot_manager_length(self):
++
+         scenario_robots_length = len(self.scenario_file["robots"])
+         setup_robot_length = len(self.robot_managers)
+ 
+@@ -106,4 +112,6 @@ class ScenarioTask(BaseTask):
+ 
+         if scenario_robots_length > setup_robot_length:
+             self.scenario_file["robots"] = self.scenario_file["robots"][:setup_robot_length]
+-            rospy.logwarn("Scenario file contains more robots than setup.")
+\ No newline at end of file
++            rospy.logwarn("Scenario file contains more robots than setup.")
++        
++        return
+diff --git a/task_generator/task_generator/utils.py b/task_generator/task_generator/utils.py
+index 737919e..15b9f57 100644
+--- a/task_generator/task_generator/utils.py
++++ b/task_generator/task_generator/utils.py
+@@ -1,7 +1,7 @@
+ import rospy
+ import os
+-
+-
++import numpy as np
++from nav_msgs.msg import OccupancyGrid
+ class Utils:
+     def get_simulator():
+         return rospy.get_param("simulator", "flatland").lower()
+@@ -9,4 +9,58 @@ class Utils:
+     def get_arena_type():
+         return os.getenv("ARENA_TYPE", "training").lower()
+         
+-    
+\ No newline at end of file
++    def generate_map_inner_border(free_space_indices, map_: OccupancyGrid):
++        """generate map border (four vertices of the map)
++
++        Returns:
++            vertex_coordinate_x_y(np.ndarray with shape 4 x 2):
++        """
++        n_freespace_cells = len(free_space_indices[0])
++        border_vertex=np.array([]).reshape(0, 2)
++        border_vertices=np.array([]).reshape(0, 2)
++        for idx in [0, n_freespace_cells-4]:
++            y_in_cells, x_in_cells = free_space_indices[0][idx], free_space_indices[1][idx]
++            y_in_meters = y_in_cells * map_.info.resolution + map_.info.origin.position.y
++            x_in_meters = x_in_cells * map_.info.resolution + map_.info.origin.position.x
++            border_vertex=np.vstack([border_vertex, [x_in_meters, y_in_meters]])
++        border_vertices=np.vstack([border_vertices, [border_vertex[0,0],border_vertex[0,1]]])
++        border_vertices=np.vstack([border_vertices, [border_vertex[0,0],border_vertex[1,1]]])
++        border_vertices=np.vstack([border_vertices, [border_vertex[1,0],border_vertex[1,1]]])
++        border_vertices=np.vstack([border_vertices, [border_vertex[1,0],border_vertex[0,1]]])
++        # print('border',border_vertices)
++        return border_vertices
++
++    def update_freespace_indices_maze( map_: OccupancyGrid):
++        """update the indices(represented in a tuple) of the freespace based on the map and the static polygons
++        ostacles manuelly added 
++        param map_ : original occupacy grid
++        param vertlist: vertex of the polygons
++
++        Returns:
++            indices_y_x(tuple): indices of the non-occupied cells, the first element is the y-axis indices,
++            the second element is the x-axis indices.
++        """
++        width_in_cell, height_in_cell = map_.info.width, map_.info.height
++        map_2d = np.reshape(map_.data, (height_in_cell, width_in_cell))
++        #height range and width range
++        wall_occupancy=np.array([[1.25, 12.65, 10.6, 10.8],
++                                                            [-4.45,18.35,16.3,16.5],
++                                                            [-4.45, 18.35, 4.9, 5.1], 
++                                                            [12.55, 12.75, -0.7, 22.1],
++                                                            [1.15, 1.35, -0.7, 22.1],
++                                                            [6.85, 7.05, 5.0, 16.4]])
++        size=wall_occupancy.shape[0]
++        for ranges in wall_occupancy:
++            height_low = int(ranges[0]/map_.info.resolution)
++            height_high = int(ranges[1]/map_.info.resolution)
++            width_low = int(ranges[2]/map_.info.resolution)
++            width_high = int(ranges[3]/map_.info.resolution)
++            height_grid=height_high-height_low
++            width_grid=width_high-width_low
++            for i in range(height_grid):
++                y =  height_low+ i
++                for j in range(width_grid):
++                    x= width_low + j
++                    map_2d[y, x]=100
++        free_space_indices_new = np.where(map_2d == 0)    
++        return free_space_indices_new
+diff --git a/utils/gazebo-ros-actor-plugin b/utils/gazebo-ros-actor-plugin
+new file mode 160000
+index 0000000..409e8bb
+--- /dev/null
++++ b/utils/gazebo-ros-actor-plugin
+@@ -0,0 +1 @@
++Subproject commit 409e8bb4382438614d912b8a8c3875a85f68f420
+diff --git a/utils/gazebo_utils/src/ActorPlugin.cpp b/utils/gazebo_utils/src/ActorPlugin.cpp
+index 9df6e99..0a31f9b 100644
+--- a/utils/gazebo_utils/src/ActorPlugin.cpp
++++ b/utils/gazebo_utils/src/ActorPlugin.cpp
+@@ -43,12 +43,15 @@ namespace gazebo
+     // call back function when receive rosmsg
+     void OnRosMsg(const pedsim_msgs::AgentStatesConstPtr msg)
+     {
++      // ROS_ERROR(msg);
+       double distanceTraveled;
+       bool actorFound = false;
++      ROS_WARN("49");
+       for (uint actor = 0; actor < msg->agent_states.size(); actor++)
+       {
+         if (this->actor->GetName() == "person_" + std::to_string(msg->agent_states[actor].id))
+         {
++          ROS_WARN("53");
+           actorFound = true;
+           ignition::math::Pose3d pose = this->actor->WorldPose();
+           ignition::math::Pose3d gzb_pose;
+@@ -63,6 +66,7 @@ namespace gazebo
+           gzb_pose.Rot() = ignition::math::Quaterniond(1.5707, 0.0, yaw.Radian() + 1.5707);
+           try
+           {
++            ROS_WARN("69");
+             distanceTraveled = (gzb_pose.Pos() -
+                                 pose.Pos())
+                                    .Length();
+@@ -79,6 +83,7 @@ namespace gazebo
+       if (!actorFound)
+       // Actor not found in pedsim simulation -> place him far away in Gazebo so it doesn't intervene
+       {
++        ROS_WARN("Actor not found in pedsim simulation -> place him far away in Gazebo so it doesn't intervene");
+         ignition::math::Pose3d pose = this->actor->WorldPose();
+         pose.Pos().Z() = -20.0;
+         this->actor->SetWorldPose(pose, true, false);
+diff --git a/utils/gazebo_utils/src/AttachModelPlugin.cc b/utils/gazebo_utils/src/AttachModelPlugin.cc
+index 85eb924..4ab91b4 100644
+--- a/utils/gazebo_utils/src/AttachModelPlugin.cc
++++ b/utils/gazebo_utils/src/AttachModelPlugin.cc
+@@ -13,11 +13,12 @@
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
+-*/
++ */
+ 
+ #include <map>
+ #include <vector>
+ #include <ignition/math/Pose3.hh>
++#include <ros/ros.h>
+ 
+ #include <gazebo/common/Events.hh>
+ #include <gazebo/physics/Link.hh>
+@@ -25,24 +26,28 @@
+ #include <gazebo/physics/World.hh>
+ #include "AttachModelPlugin.hh"
+ 
+-
+ namespace servicesim
+ {
+   /// \brief Private data class for the AttachModelPlugin class
+   class AttachModelPluginPrivate
+   {
+     /// \brief Event connections
+-    public: std::vector<gazebo::event::ConnectionPtr> connections;
++  public:
++    std::vector<gazebo::event::ConnectionPtr> connections;
+ 
+     /// \brief Pointer to this model
+-    public: gazebo::physics::ModelPtr model;
++  public:
++    gazebo::physics::ModelPtr model;
+ 
+     /// \brief Pointer to the world
+-    public: gazebo::physics::WorldPtr world;
++  public:
++    gazebo::physics::WorldPtr world;
+ 
+     /// \brief List of link and model pointers and the model pose offset
+-    public: std::map<gazebo::physics::LinkPtr,
+-        std::map<gazebo::physics::ModelPtr, ignition::math::Pose3d>> linkModels;
++  public:
++    std::map<gazebo::physics::LinkPtr,
++             std::map<gazebo::physics::ModelPtr, ignition::math::Pose3d>>
++        linkModels;
+   };
+ }
+ 
+@@ -95,12 +100,14 @@ void AttachModelPlugin::Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr _
+             // TODO: what if model hasn't been loaded yet
+             if (!model)
+             {
++              ROS_WARN("98 AttachModelPlugin.cc No Model found");
+               gzerr << "Model: '" << modelName << "' not found, make sure it is loaded before '"
+                     << _model->GetName() << "'." << std::endl;
+             }
+             else
+             {
+               // pose is optional
++              ROS_WARN("105 AttachModelPlugin.cc No pose found?");
+               ignition::math::Pose3d pose;
+               if (modelElem->HasElement("pose"))
+                 pose = modelElem->Get<ignition::math::Pose3d>("pose");
+@@ -121,7 +128,7 @@ void AttachModelPlugin::Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr _
+ 
+   this->dataPtr->connections.push_back(
+       gazebo::event::Events::ConnectWorldUpdateEnd(
+-      std::bind(&AttachModelPlugin::OnUpdate, this)));
++          std::bind(&AttachModelPlugin::OnUpdate, this)));
+ }
+ 
+ /////////////////////////////////////////////////
+@@ -140,4 +147,3 @@ void AttachModelPlugin::OnUpdate()
+     }
+   }
+ }
+- 

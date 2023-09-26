@@ -1,5 +1,6 @@
 from task_generator.constants import Constants
-
+import rospy
+import numpy as np
 
 class ObstacleManager:
     def __init__(self, namespace, map_manager, simulator):
@@ -11,16 +12,18 @@ class ObstacleManager:
         self.simulator.spawn_pedsim_agents(scenario["obstacles"]["dynamic"])
 
     def reset_scenario(self, scenario):
-        self.simulator.reset_pedsim_agents()
-
         self.simulator.remove_all_obstacles()
 
-        print(scenario.get("obstacles").get("static"))
-
-        if not scenario.get("obstacles") or not scenario.get("obstacles").get("static"):
+        if not scenario.get("obstacles") or not scenario.get("obstacles").get("static") or not scenario.get("obstacles").get("dynamic"):
             return
 
         for obstacle in scenario["obstacles"]["static"]:
+            self.simulator.spawn_obstacle(
+                [*obstacle["pos"], 0],
+                yaml_path=obstacle["yaml_path"],
+            )
+
+        for obstacle in scenario["obstacles"]["dynamic"]:
             self.simulator.spawn_obstacle(
                 [*obstacle["pos"], 0],
                 yaml_path=obstacle["yaml_path"],
@@ -39,18 +42,23 @@ class ObstacleManager:
 
         obstacles = []
 
-        for _ in range(dynamic_obstacles):
+        # Create dynamic obstacles
+        for i in range(dynamic_obstacles):
             position = self.map_manager.get_random_pos_on_map(
                 safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
                 forbidden_zones=forbidden_zones,
             )
+
             obstacles.append(self.simulator.create_dynamic_obstacle(position=position))
 
+        # Create static obstacles
         for _ in range(static_obstacles):
             position = self.map_manager.get_random_pos_on_map(
                 safe_dist=Constants.ObstacleManager.OBSTACLE_MAX_RADIUS,
                 forbidden_zones=forbidden_zones,
             )
+
             obstacles.append(self.simulator.create_static_obstacle(position=position))
 
+        # Spawn obstacles
         self.simulator.spawn_obstacles(obstacles)

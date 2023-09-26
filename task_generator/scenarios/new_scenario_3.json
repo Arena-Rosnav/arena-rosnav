@@ -1,0 +1,70 @@
+{
+  "robots": [{ "start": [5.0, 13.0, 0], "goal": [15.0, 13.0, 0] }],
+  "obstacles": { 
+    "dynamic": [
+      {
+        "random": false,
+        "pos": [10.0, 7.0],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[10.0, 7.0], [10.0, 7.5], [10.0, 8.0], [10.0, 8.5]]
+      },
+      {
+        "random": false,
+        "pos": [10.0, 8.5],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[10.0, 8.5], [10.0, 9.0], [10.0, 9.5], [10.0, 10.0]]
+      },
+      {
+        "random": false,
+        "pos": [10.0, 10.0],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[10.0, 10.0], [10.0, 10.5], [10.0, 11.0], [10.0, 11.5]]
+      },
+      {
+        "random": false,
+        "pos": [10.0, 11.5],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[10.0, 11.5], [10.0, 12.0], [10.0, 12.5], [10.0, 13.0]]
+      },
+      {
+        "random": false,
+        "pos": [10.0, 13.0],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[10.0, 13.0], [10.0, 13.5], [10.0, 14.0], [10.0, 14.5]]
+      },
+      {
+        "random": false,
+        "pos": [10.0, 14.5],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[10.0, 14.5], [10.0, 15.0], [10.0, 15.5], [10.0, 16.0]]
+      },
+      {
+        "random": false,
+        "pos": [10.0, 16.0],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[10.0, 16.0], [10.0, 16.5], [10.0, 17.0], [10.0, 17.5]]
+      },
+      {
+        "random": false,
+        "pos": [10.0, 17.5],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[10.0, 17.5], [10.0, 18.0], [10.0, 18.5], [10.0, 19.0]]
+      },
+      {
+        "random": false,
+        "pos": [10.0, 19.0],
+        "yaml_path": "person_two_legged.model.yaml",
+        "waypoints": [[10.0, 19.0], [10.0, 19.5], [10.0, 20.0], [10.0, 20.5]]
+      }
+    ], 
+    "interactive": [
+    {
+      "pos": [10.0, 20.0],
+      "yaml_path": "long_shelf.model.yaml"
+    }
+    ], 
+    "static": [] 
+},
+  "map": "map_empty",
+  "resets": 2
+}
