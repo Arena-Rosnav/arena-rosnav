@@ -60,14 +60,12 @@ class RobotManager:
         self.launch_robot(self.robot_setup)
 
         self.robot_radius = rospy.get_param(
-            os.path.join(
-                self.namespace, "robot_radius"
-            )
+            self.ns_prefix("robot_radius")
         )
 
         # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
         self._clear_costmaps_srv = rospy.ServiceProxy(
-            self.ns_prefix(self.namespace, "move_base", "clear_costmaps"), 
+            self.ns_prefix("move_base", "clear_costmaps"), 
             Empty
         )
 
