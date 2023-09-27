@@ -8,6 +8,17 @@ from task_generator.tasks.task_factory import TaskFactory
 from .base_task import BaseTask
 
 
+dynamic_obstacles_random = random.randint(
+    TaskMode.Random.MIN_DYNAMIC_OBS, TaskMode.Random.MAX_DYNAMIC_OBS
+)
+static_obstacles_random = random.randint(
+    TaskMode.Random.MIN_STATIC_OBS, TaskMode.Random.MAX_STATIC_OBS
+)
+interactive_obstacles_random = random.randint(
+    TaskMode.Random.MIN_INTERACTIVE_OBS, TaskMode.Random.MAX_INTERACTIVE_OBS
+)
+
+
 @TaskFactory.register(TaskMode.RANDOM)
 class RandomTask(BaseTask):
     """
@@ -45,32 +56,20 @@ class RandomTask(BaseTask):
         robot_positions = []
 
         for manager in self.robot_managers:
-            robot_positions.extend(
-                [
-                    pos[0],
-                    pos[1],
-                    manager.robot_radius + Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST,
-                ]
-                for pos in manager.reset(forbidden_zones=robot_positions)
-            )
-        dynamic_obstacles = (
-            random.randint(
-                TaskMode.Random.MIN_DYNAMIC_OBS, TaskMode.Random.MAX_DYNAMIC_OBS
-            )
-            if dynamic_obstacles is None
-            else dynamic_obstacles
-        )
-        static_obstacles = (
-            random.randint(
-                TaskMode.Random.MIN_STATIC_OBS, TaskMode.Random.MAX_STATIC_OBS
-            )
-            if static_obstacles is None
-            else static_obstacles
-        )
+            for pos in manager.reset(forbidden_zones=robot_positions):
+                robot_positions.append(
+                    [
+                        pos[0],
+                        pos[1],
+                        manager.robot_radius
+                        + Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST,
+                    ]
+                )
 
         self.obstacles_manager.reset_random(
-            dynamic_obstacles=dynamic_obstacles,
-            static_obstacles=static_obstacles,
+            dynamic_obstacles=dynamic_obstacles_random,
+            static_obstacles=static_obstacles_random,
+            interactive_obstacles=interactive_obstacles_random,
             forbidden_zones=robot_positions,
         )
 

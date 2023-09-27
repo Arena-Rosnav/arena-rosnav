@@ -50,7 +50,9 @@ class TaskGenerator:
         )
         self.srv_start_model_visualization(EmptyRequest())
 
-        # self.reset_task()
+        # rospy.sleep(5)
+
+        self.reset_task(first_map=True)
 
         rospy.sleep(2)
 
@@ -65,7 +67,9 @@ class TaskGenerator:
 
         self.number_of_resets = 0
 
-        self.reset_task(first_map=True)
+        # The second reset below caused bugs and did not help according to my testing
+        # self.reset_task()
+        # self.reset_task(first_map=True)
 
         ## Timers
         rospy.Timer(rospy.Duration(0.5), self.check_task_status)

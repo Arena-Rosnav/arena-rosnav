@@ -8,9 +8,6 @@ class Constants:
         DYNAMIC_OBSTACLES = 0
         STATIC_OBSTACLES = 0
         INTERACTIVE_OBSTACLES = 0
-
-        OBSTACLE_MAX_RADIUS = 0.6
-
         OBSTACLE_MAX_RADIUS = 0.6
 
     class RobotManager:
@@ -47,6 +44,7 @@ class TaskMode:
     RANDOM = "random"
     STAGED = "staged"
     SCENARIO = "scenario"
+    RANDOM_SCENARIO = "random_scenario"
     DYNAMIC_MAP_RANDOM = "dynamic_map_random"
     DYNAMIC_MAP_STAGED = "dynamic_map_staged"
 
@@ -55,6 +53,8 @@ class TaskMode:
         MAX_DYNAMIC_OBS = 0
         MIN_STATIC_OBS = 0
         MAX_STATIC_OBS = 0
+        MIN_INTERACTIVE_OBS = 1
+        MAX_INTERACTIVE_OBS = 10
 
     class Scenario:
         RESETS_DEFAULT = 5

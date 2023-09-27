@@ -1,0 +1,43 @@
+{
+    "robots": [
+        {
+            "start": [
+                2.0,
+                2.0,
+                0.0
+            ],
+            "goal": [
+                26.0,
+                17.0,
+                0.0
+            ]
+        }
+    ],
+    "obstacles": {
+        "dynamic": [],
+        "interactive": [
+            {
+                "name": "1",
+                "model_path": "/home/jan/code/arena-rosnav_workspace/src/utils/arena-simulation-setup/obstacles/shelf.yaml",
+                "pos": [
+                    10.04,
+                    11.2
+                ],
+                "angle": 0.0
+            },
+            {
+                "name": "2",
+                "model_path": "/home/jan/code/arena-rosnav_workspace/src/utils/arena-simulation-setup/obstacles/shelf.yaml",
+                "pos": [
+                    21.25,
+                    11.36
+                ],
+                "angle": 0.0
+            }
+        ],
+        "static":[]
+    },
+    "resets": 0,
+    "map": "map_empty",
+    "format": "arena-tools"
+}

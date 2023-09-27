@@ -19,6 +19,7 @@ from task_generator.tasks.random import RandomTask
 from task_generator.tasks.scenario import ScenarioTask
 from task_generator.tasks.staged import StagedRandomTask
 from task_generator.tasks.task_factory import TaskFactory
+from task_generator.tasks.random_scenario import RandomScenarioTask
 from task_generator.utils import Utils
 
 
@@ -85,6 +86,8 @@ def create_robot_managers(
             name = f"{robot['model']}_{r}_{len(robot_managers)}"
 
             robot_managers.append(
+                # RobotManager(os.path.join(namespace, name), map_manager, simulator, robot)
+                # old but working due to namespace issue with "/" prefix in robot name
                 RobotManager(namespace + "/" + name, map_manager, simulator, robot)
             )
 

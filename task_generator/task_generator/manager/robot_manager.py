@@ -62,11 +62,19 @@ class RobotManager:
 
         rospy.Subscriber(self.ns_prefix("odom"), Odometry, self.robot_pos_callback)
 
+        rospy.Subscriber(self.ns_prefix("odom"), Odometry, self.robot_pos_callback)
+
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             return
 
         self.launch_robot(self.robot_setup)
 
+        self.robot_radius = rospy.get_param(self.ns_prefix("robot_radius"))
+
+        # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
+        self._clear_costmaps_srv = rospy.ServiceProxy(
+            self.ns_prefix("move_base", "clear_costmaps"), Empty
+        )
         self.robot_radius = rospy.get_param(self.ns_prefix("robot_radius"))
 
         # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
@@ -186,7 +194,7 @@ class RobotManager:
             ["arena_bringup", "robot.launch"]
         )
 
-        print("START WITH MODEL", robot_setup["model"])
+        print("START WITH MODEL", self.namespace, robot_setup["model"])
 
         args = [
             f"model:={robot_setup['model']}",

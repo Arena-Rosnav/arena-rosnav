@@ -1,0 +1,15 @@
+digraph G {
+"map" -> "burger_0_0/odom"[label=" Broadcaster: /burger_0_0/transform_broadcaster\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"map" -> "odom"[label=" Broadcaster: /map_to_odom_tfpublisher\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"burger_0_0/base_footprint" -> "burger_0_0/base_link"[label=" Broadcaster: /burger_0_0/rob_st_pub\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"burger_0_0/odom" -> "burger_0_0/base_footprint"[label=" Broadcaster: /gazebo\nAverage rate: 30.199\nBuffer length: 4.967\nMost recent transform: 359.045\nOldest transform: 354.078\n"];
+"burger_0_0/base_link" -> "burger_0_0/caster_back_link"[label=" Broadcaster: /burger_0_0/rob_st_pub\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"burger_0_0/base_link" -> "burger_0_0/imu_link"[label=" Broadcaster: /burger_0_0/rob_st_pub\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"burger_0_0/base_link" -> "burger_0_0/base_scan"[label=" Broadcaster: /burger_0_0/rob_st_pub\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"burger_0_0/base_link" -> "burger_0_0/wheel_left_link"[label=" Broadcaster: /burger_0_0/rob_st_pub\nAverage rate: 30.199\nBuffer length: 4.967\nMost recent transform: 359.046\nOldest transform: 354.079\n"];
+"burger_0_0/base_link" -> "burger_0_0/wheel_right_link"[label=" Broadcaster: /burger_0_0/rob_st_pub\nAverage rate: 30.199\nBuffer length: 4.967\nMost recent transform: 359.046\nOldest transform: 354.079\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 359.071"[ shape=plaintext ] ;
+}->"map";
+}
