@@ -10,6 +10,9 @@ from task_generator.simulators.gazebo_simulator import GazeboSimulator
 from task_generator.simulators.flatland_simulator import FlatlandRandomModel
 from task_generator.manager.map_manager import MapManager
 from task_generator.manager.obstacle_manager import ObstacleManager
+from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
+from task_generator.manager.dynamic_manager.pedsim_manager import PedsimManager
+from task_generator.manager.dynamic_manager.sfm_manager import SFMManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.tasks.random import RandomTask
@@ -21,7 +24,7 @@ from task_generator.utils import Utils
 from map_distance_server.srv import GetDistanceMap
 
 
-def get_predefined_task(namespace, mode, simulator=None, **kwargs):
+def get_predefined_task(namespace, mode, simulator=None, social_mode="pedsim", **kwargs):
     """
     Gets the task based on the passed mode
     """
@@ -38,7 +41,14 @@ def get_predefined_task(namespace, mode, simulator=None, **kwargs):
 
     simulator.map_manager = map_manager
 
-    obstacle_manager = ObstacleManager(namespace, map_manager, simulator)
+    if social_mode == Constants.SocialMode.SFM:
+        dynamic_manager = SFMManager(namespace, simulator)
+    elif social_mode == Constants.SocialMode.PEDSIM:
+        dynamic_manager = PedsimManager(namespace, simulator)
+    else:
+        dynamic_manager = DynamicManager(namespace, simulator)
+
+    obstacle_manager = ObstacleManager(namespace, map_manager, simulator, dynamic_manager)
 
     robot_managers = create_robot_managers(namespace, map_manager, simulator)
 

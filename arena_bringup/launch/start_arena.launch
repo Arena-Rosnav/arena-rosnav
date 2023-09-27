@@ -38,10 +38,7 @@
   <arg name="pedsim" default="false" doc="[true, false]" />
   <env name="PEDSIM" value="$(arg pedsim)" />
   <param name="pedsim" value="$(arg pedsim)" />
-
-
-
- 
+  <arg name="social_mode" default="pedsim" doc="[pedsim,sfm]" />
 
 
   <arg name="complexity" default="1" doc="1 = Map known, Position known; 2 = Map known, Position unknown (AMCL); 3 = Map unknown, Position unknown (SLAM)" />
@@ -82,9 +79,11 @@
   <param name="model" value="$(arg model)" />
   <param name="simulator" value="$(arg simulator)" />
   <param name="task_mode" value="$(arg task_mode)" />
+  <param name="pedsim" type="bool" value="$(arg pedsim)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
   <param name="show_viz" value="$(arg show_rviz)"/>
+  <param name="social_mode" value="$(arg social_mode)" />
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
 

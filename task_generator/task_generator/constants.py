@@ -22,6 +22,11 @@ class Constants:
         TRAINING = "training"
         DEPLOYMENT = "deployment"
 
+    class SocialMode:
+        PEDSIM = "pedsim"
+        SFM = "sfm"
+
+
 
 class TaskMode:
     RANDOM = "random"
@@ -39,6 +44,7 @@ class TaskMode:
 
     class Scenario:
         RESETS_DEFAULT = 5
+
 
 class FlatlandRandomModel:
     BODY = {

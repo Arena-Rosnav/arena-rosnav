@@ -22,6 +22,7 @@ class TaskGenerator:
     def __init__(self) -> None:
         ## Params
         self.task_mode = rospy.get_param("/task_mode")
+        self.social_mode = rospy.get_param("/social_mode", "pedsim")
         self.auto_reset = rospy.get_param("~auto_reset", True)
 
         ## Publishers
@@ -37,7 +38,7 @@ class TaskGenerator:
         rospy.loginfo(f"Launching task mode: {self.task_mode}")
 
         self.start_time = rospy.get_time()
-        self.task = get_predefined_task("", self.task_mode, self.env_wrapper)
+        self.task = get_predefined_task("", self.task_mode, self.env_wrapper, self.social_mode)
         self.task.set_robot_names_param()
 
         self.number_of_resets = 0
