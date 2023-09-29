@@ -1,5 +1,7 @@
 # MAP-GENERATOR
 
+The Map-Generator encapsulates the option of providing different algorithms for static map generation.
+
 - Factory Design Pattern - modular design for easy implementation of further map algorithms
   - e.g. Rosnav, Barn
 - Add the decorator "MapGeneratorFactory.register()"
@@ -9,6 +11,14 @@
 ```
 
 - Configuration file at: "_arena-rosnav/arena_bringup/params/map_generator.yaml_"
+
+## IMPLEMENTATION OF NEW ALGORITHMS
+- For the new algorithm inherit from the base class: `BaseMapGenerator`
+  - Implement these functions:
+    -  ```update_params()```
+    -  ```retrieve_params()```
+    -  ```generate_grid_map()```
+-  Update the configuration file by adding the algorithm parameters to a dedicated section under _generator_configs_.
 
 ## MECHANISM
 
@@ -45,5 +55,7 @@ Class | on topic | Class
 ## NEW TASK MODES
 
 ### DYNAMIC MAP RANDOM MODE - "dm_random"
+Equivalent of random mode with dynamic map.
 
 ### DYNAMIC MAP STAGED MODE - "dm_staged"
+Equivalent of staged mode with dynamic map.

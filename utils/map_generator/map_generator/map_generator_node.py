@@ -21,7 +21,15 @@ from map_generator.utils.general import (
 
 
 class MapGeneratorNode:
-    def __init__(self, map_generator: BaseMapGenerator) -> None:
+    def __init__(self, map_generator: BaseMapGenerator):
+        """MapGenerator Node 
+
+        Args:
+            map_generator (BaseMapGenerator): Object encapsulating the map generation algorithm.
+
+        Raises:
+            AttributeError: Raised when the parsed object is not of type 'BaseMapGenerator'.
+        """        
         if not issubclass(type(map_generator), BaseMapGenerator):
             raise AttributeError(
                 "'map_generator' must be a subclass of BaseMapGenerator"
@@ -43,9 +51,24 @@ class MapGeneratorNode:
         self.robot_namespaces = MapGeneratorNode.get_all_robot_topics()
 
     def _get_occupancy_grid(self, occgrid_msg: OccupancyGrid):
+        """Saves the most recent occupancy grid.
+
+        Args:
+            occgrid_msg (OccupancyGrid): Message containing an the current occupancy grid.
+        """        
         self.occupancy_grid = occgrid_msg
 
     def callback_new_map(self, msg: String):
+        """Procedure to publish a new map.
+        
+        Steps on receiving a message on "/request_new_map":
+            1. Generates a grid map with the dedicated algorithm.
+            2. Saves the grid map as a png to be loaded by Flatland.
+            3. Publishes the new map.
+
+        Args:
+            msg (String): Empty message as the message is not used.
+        """        
         grid_map = self.map_generator.generate_grid_map()
         MapGeneratorNode.save_map(grid_map, ROSNAV_MAP_FOLDER, MAP_FOLDER_NAME)
 
@@ -87,9 +110,7 @@ def main():
     map_properties = rospy.get_param("map_properties", cfg["map_properties"])
     gen_cfg = rospy.get_param("generator_configs", cfg["generator_configs"])
 
-    gen_configs = (
-        gen_cfg["barn"] if generator.lower() == "barn" else get_rosnav_configs(gen_cfg)
-    )
+    gen_configs = gen_cfg[generator.lower()]
 
     robot_infl_rad = load_robot_config(rospy.get_param("model"))["robot_radius"]
 
