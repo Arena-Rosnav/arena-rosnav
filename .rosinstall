@@ -44,7 +44,7 @@
 - git:
     local-name: ../utils/arena-simulation-setup
     uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: v2.0.1
+    version: master
 
 - git:
     local-name: ../arena-evaluation

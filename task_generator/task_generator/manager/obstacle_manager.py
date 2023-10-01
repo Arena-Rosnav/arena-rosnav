@@ -29,7 +29,8 @@ class ObstacleManager:
         self.dynamic_manager.spawn_map_obstacles()
         self.dynamic_manager.spawn_dynamic_scenario_obstacles(scenario["obstacles"]["dynamic"])
         self.dynamic_manager.spawn_scenario_obstacles(scenario["obstacles"]["static"], interaction_radius=0.0)
-        self.dynamic_manager.spawn_scenario_obstacles(scenario["obstacles"]["interactive"], interaction_radius=1.0)
+        # Most scenarion files currently without interactive objects
+        # self.dynamic_manager.spawn_scenario_obstacles(scenario["obstacles"]["interactive"], interaction_radius=1.0)
 
     def reset_scenario(self, scenario):
         self.dynamic_manager.remove_interactive_obstacles()
@@ -37,7 +38,7 @@ class ObstacleManager:
 
         self.dynamic_manager.spawn_dynamic_scenario_obstacles(scenario["obstacles"]["dynamic"])
         self.dynamic_manager.spawn_scenario_obstacles(scenario["obstacles"]["static"], interaction_radius=0.0)
-        self.dynamic_manager.spawn_scenario_obstacles(scenario["obstacles"]["interactive"], interaction_radius=1.0)
+        # self.dynamic_manager.spawn_scenario_obstacles(scenario["obstacles"]["interactive"], interaction_radius=1.0)
 
     # TASK MODE RANDOM
     def reset_random(
