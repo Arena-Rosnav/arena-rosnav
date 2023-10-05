@@ -22,6 +22,8 @@ The Map-Generator encapsulates the option of providing different algorithms for 
 
 ## MECHANISM
 
+![mechanism](mechanism.png)
+
 | Line | Publisher        | on topic                   | Subscriber       |
 | ---- | ---------------- | -------------------------- | ---------------- |
 | 1    | TaskMode         | "/request_new_map"         | MapGeneratorNode |
@@ -34,23 +36,24 @@ Class | on topic | Class
 
 ### 1. TaskMode | "/request_new_map" | MapGeneratorNode
 
-- When the maximum number of episodes per map is reached, the TaskMode class sends a "/request_new_map" message to the MapGeneratorNode class to request a new map on reset.
+- When the maximum number of episodes per map is reached, the a task mode instance sends a "/request_new_map" message to the MapGeneratorNode to request a new map on reset.
+Meanwhile, the simulation is paused.
 
 ### 2. MapGeneratorNode | "/map" | FlatlandNode
 
-- The MapGeneratorNode class generates a grid map using a specified algorithm, saves it as a PNG file in the "dynamic_map" folder, and sends it to the FlatlandNode class, updating the underlying (static) map.
+- The MapGeneratorNode class generates a grid map using the specified algorithm, saves it as a PNG file in the "dynamic_map" folder, and sends it to Flatland, updating the underlying (static) map.
 
-### 3. MapGeneratorNode | "/map" | MapDistanceNode
+### 2. MapGeneratorNode | "/map" | MapDistanceNode
 
-- The MapGeneratorNode class triggers the replacement of the old distance map with the new map in the MapDistanceNode class when a new map is generated.
+- The MapGeneratorNode class triggers the update of the old distance map. The distance map being crucial for the position generation of the robot and obstacles.
 
-### 4. MapDistanceNode | "/signal_new_distance_map" | TaskMode
+### 3. MapDistanceNode | "/signal_new_distance_map" | TaskMode
 
-- The MapDistanceNode class sends a signal to continue resetting the scene and the TaskMode class receives it, with the distance map being crucial for the position generation of the robot and obstacles.
+- The MapDistanceNode class sends a signal to  reset the scene.
 
-### 5. TaskMode | "/dynamic_map/task_reset" | TaskMode
+### 4. TaskMode | "/dynamic_map/task_reset" | TaskMode
 
-- The TaskMode class sends a signal to all tasks in order to reset the scene, and the receiving end updates the MapManager with the recently generated distance map.
+- The task instance, initially detecting the target number of episodes, sends a signal to the other task instances in order to reset the scene, and the receiving end updates the MapManager with the recently generated distance map.
 
 ## NEW TASK MODES
 
