@@ -38,7 +38,7 @@ class TaskGenerator:
         rospy.loginfo(f"Launching task mode: {self.task_mode}")
 
         self.start_time = rospy.get_time()
-        self.task = get_predefined_task("", self.task_mode, self.env_wrapper, self.social_mode)
+        self.task = get_predefined_task(namespace="", mode=self.task_mode, simulator=self.env_wrapper, social_mode=self.social_mode)
         self.task.set_robot_names_param()
 
         self.number_of_resets = 0
