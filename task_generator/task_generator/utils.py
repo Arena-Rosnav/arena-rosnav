@@ -2,6 +2,10 @@ import rospy
 import os
 import numpy as np
 from nav_msgs.msg import OccupancyGrid
+
+import heapq
+import itertools
+
 class Utils:
     def get_simulator():
         return rospy.get_param("simulator", "flatland").lower()
@@ -64,3 +68,23 @@ class Utils:
                     map_2d[y, x]=100
         free_space_indices_new = np.where(map_2d == 0)    
         return free_space_indices_new
+
+
+class NamespaceIndexer:
+    def __init__(self, namespace: str, sep: str = "_"):
+        self.freed = list()
+        self.gen = itertools.count()
+        self.namespace = namespace
+        self.sep = sep
+
+    def free(self, index: int):
+        heapq.heappush(self.freed, index)
+
+    def get(self) -> int:
+        if len(self.freed):
+            return heapq.heappop(self.freed)
+        
+        return next(self.gen)
+
+    def __next__(self):
+        return f"{self.namespace}${self.sep}{self.get()}"

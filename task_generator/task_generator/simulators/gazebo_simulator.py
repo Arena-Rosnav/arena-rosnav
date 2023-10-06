@@ -11,9 +11,6 @@ from scipy.spatial.transform import Rotation
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState, DeleteModel, SpawnModel, SpawnModelRequest
 
-from pedsim_srvs.srv import SpawnInteractiveObstacles, SpawnInteractiveObstaclesRequest,SpawnObstacle, SpawnObstacleRequest, SpawnPeds, SpawnPed
-from pedsim_msgs.msg import InteractiveObstacle, AgentStates, Waypoints, LineObstacle, Ped, LineObstacles
-
 from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
 
 from std_msgs.msg import Empty
@@ -26,8 +23,10 @@ from tf.transformations import quaternion_from_euler
 from task_generator.constants import Constants, Pedsim
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
-from task_generator.utils import Utils
+from task_generator.utils import Utils, NamespaceIndexer
 from nav_msgs.srv import GetMap
+
+from task_generator.shared import ModelType, ObstacleDescriptionPose
 
 import xml.etree.ElementTree as ET
 
@@ -35,17 +34,22 @@ T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
 @SimulatorFactory.register("gazebo")
 class GazeboSimulator(BaseSimulator):
-    def __init__(self, namespace):
+    def __init__(self, namespace: str):
+
         super().__init__(namespace)
         self._goal_pub = rospy.Publisher(self._ns_prefix("/goal"), PoseStamped, queue_size=1, latch=True)
         self._robot_name = rospy.get_param("robot_model", "")
 
         rospy.wait_for_service("/gazebo/spawn_urdf_model")
+        rospy.wait_for_service("/gazebo/spawn_sdf_model")
         rospy.wait_for_service("/gazebo/set_model_state")
         rospy.wait_for_service("/gazebo/set_model_state", timeout=20)
 
-        self._spawn_model_srv = rospy.ServiceProxy(
+        self._spawn_model[ModelType.URDF] = rospy.ServiceProxy(
             self._ns_prefix("gazebo", "spawn_urdf_model"), SpawnModel
+        )
+        self._spawn_model[ModelType.SDF] = rospy.ServiceProxy(
+            self._ns_prefix("gazebo", "spawn_sdf_model"), SpawnModel
         )
         self._move_model_srv = rospy.ServiceProxy(
             "/gazebo/set_model_state", SetModelState, persistent=True
@@ -65,8 +69,9 @@ class GazeboSimulator(BaseSimulator):
         rospy.wait_for_service("gazebo/delete_model")
 
         print("service: spawn_sdf_model is available ....")
-        self.spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
         self.remove_model_srv = rospy.ServiceProxy("gazebo/delete_model", DeleteModel)
+
+        self.namespaces = dict()
 
 
     def interactive_actor_poses_callback(self, actors):
@@ -109,7 +114,7 @@ class GazeboSimulator(BaseSimulator):
         pose = Pose()
         pose.position.x = pos[0]
         pose.position.y = pos[1]
-        pose.position.z = 0.1
+        pose.position.z = 0.35
         pose.orientation = Quaternion(
             *quaternion_from_euler(0.0, 0.0, pos[2], axes="sxyz")
         )
@@ -132,7 +137,7 @@ class GazeboSimulator(BaseSimulator):
         request.robot_namespace = robot_namespace
         request.reference_frame = "world"
 
-        self._spawn_model_srv(request)
+        self.spawn_model(ModelType.URDF, request)
 
     def reset_pedsim_agents(self):
         self._reset_peds_srv()
@@ -151,3 +156,22 @@ class GazeboSimulator(BaseSimulator):
 
     def spawn_obstacles(self, obs):
         pass
+    
+    def index_namespace(self, namespace: str):
+        if namespace not in self.namespaces:
+            self.namespaces[namespace] = NamespaceIndexer(namespace)
+
+        return self.namespaces[namespace]
+
+    def spawn_obstacle(self, obs):
+        request = SpawnModelRequest()
+
+        name = next(self.index_namespace(obs.name))
+
+        request.model_name = name
+        request.model_xml = obs.model.description
+        request.initial_pose = obs.pose
+        request.robot_namespace = self._ns_prefix(name)
+        request.reference_frame = "world"
+
+        self.spawn_model(obs.model.type, request)

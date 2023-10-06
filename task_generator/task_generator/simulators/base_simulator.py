@@ -1,10 +1,22 @@
 import os
+from typing import Callable, Dict, Iterable, Tuple
 
+from task_generator.shared import ModelType, ObstacleDescription, ObstacleDescriptionPose
 
 class BaseSimulator:
-    def __init__(self, namespace):
+    
+    _spawn_model: Dict[ModelType, Callable]
+    
+    def __init__(self, namespace: str):
         self._namespace = namespace
         self._ns_prefix = lambda *topic: os.path.join(self._namespace, *topic)
+        self._spawn_model = dict()
+
+    def spawn_model(self, model_type: ModelType, *args, **kwargs):
+        if model_type in self._spawn_model:
+            return self._spawn_model[model_type](*args, **kwargs)
+        
+        raise NotImplementedError()
 
     def before_reset_task(self):
         """
@@ -80,5 +92,5 @@ class BaseSimulator:
     def reset_pedsim_agents(self):
         raise NotImplementedError()
 
-    def spawn_obstacle(self, position, yaml_path=""):
+    def spawn_obstacle(self, obs: ObstacleDescriptionPose):
         raise NotImplementedError()

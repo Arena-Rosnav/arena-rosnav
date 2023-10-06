@@ -1,4 +1,8 @@
+from task_generator.shared import CreatedDynamicObstacle, CreatedObstacle, ForbiddenZone, Model
 from task_generator.simulators.base_simulator import BaseSimulator
+from task_generator.manager.map_manager import MapManager
+
+from typing import Iterable, Tuple
 
 class DynamicManager:
     def __init__(self, namespace: str, simulator: BaseSimulator):
@@ -24,27 +28,18 @@ class DynamicManager:
         original waypoints
         """
         ...
-
-    def create_obstacle(self, dynamic, i, map_manager, forbidden_zones):
-        """ 
-        Creates and returns a newly generated obstacle Object as an array with entries: 
-        0: id that can be used as a name
-        1: Starting Position 3D
-        2: (optional) Waypoints for obstacle
+        
+    def spawn_obstacle(self, obstacle: CreatedObstacle, name: str, model: Model, interaction_radius: float = 0.):
         """
-        ...
-
-    def spawn_obstacles(self, obstacles, type, yaml, interaction_radius):
-        """
-        Loads given obstacles into the simulator. 
+        Loads given obstacle into the simulator. 
         If the object has an interaction radius of > 0, 
         then load it as an interactive obstacle instead of static
         """
         ...
 
-    def spawn_dynamic_obstacles(self, peds, type, yaml):
+    def spawn_dynamic_obstacle(self, obstacle: CreatedDynamicObstacle, name: str):
         """
-        Loads given peds into the simulator.
+        Loads given obstacle into the simulator.
         Currently by loading a existing sdf file, 
         then reaplacing the static values by dynamic ones 
         """
@@ -53,7 +48,7 @@ class DynamicManager:
     def spawn_map_obstacles(self):
         """
         Loads given obstacles into the simulator,
-        the map file is retireved from launch parameter "map_file"
+        the map file is retrieved from launch parameter "map_file"
         """
         ...
 
