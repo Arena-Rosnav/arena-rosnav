@@ -52,8 +52,6 @@ def get_predefined_task(namespace, mode, simulator=None, social_mode="pedsim", *
 
     robot_managers = create_robot_managers(namespace, map_manager, simulator)
 
-    scenario_manager = ScenarioTask(obstacle_manager, robot_managers, map_manager)
-
     # For every robot
     # - Create a unique namespace name
     # - Create a robot manager
