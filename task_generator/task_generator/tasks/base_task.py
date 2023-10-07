@@ -1,19 +1,34 @@
 from abc import abstractmethod
+import os
+from typing import Any, List
+
+from rospkg import RosPack
 import rospy
 
 from rosgraph_msgs.msg import Clock
 from nav_msgs.srv import GetMap
 from nav_msgs.msg import OccupancyGrid
 from task_generator.constants import Constants
-
+from task_generator.utils import ModelLoader
+from task_generator.manager.obstacle_manager import ObstacleManager
 
 class BaseTask():
     """
         Base Task as parent class for all other tasks.
     """
 
-    def __init__(self, obstacles_manager, robot_managers, map_manager, *args, **kwargs):
-        self.obstacles_manager = obstacles_manager
+    obstacle_manager: ObstacleManager
+    robot_managers: List[Any]
+    map_manager: Any
+
+    model_loader: ModelLoader
+    dynamic_model_loader: ModelLoader
+
+    clock: Clock
+    last_reset_time: int
+
+    def __init__(self, obstacle_manager: ObstacleManager, robot_managers, map_manager, *args, **kwargs):
+        self.obstacle_manager = obstacle_manager
         self.robot_managers = robot_managers
         self.map_manager = map_manager
 
@@ -22,6 +37,9 @@ class BaseTask():
         self.clock = Clock()
 
         self._set_up_robot_managers()
+
+        self.model_loader = ModelLoader(os.path.join(RosPack().get_path("arena-simulation-setup"), "obstacles"))
+        self.dynamic_model_loader = ModelLoader(os.path.join(RosPack().get_path("arena-simulation-setup"), "dynamic_obstacles"))
 
     def _set_up_robot_managers(self):
         for manager in self.robot_managers:

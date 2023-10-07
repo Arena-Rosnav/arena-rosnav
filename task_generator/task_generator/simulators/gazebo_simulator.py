@@ -9,7 +9,7 @@ import re
 from scipy.spatial.transform import Rotation
 
 from gazebo_msgs.msg import ModelState
-from gazebo_msgs.srv import SetModelState, DeleteModel, SpawnModel, SpawnModelRequest
+from gazebo_msgs.srv import SetModelState, DeleteModel, SpawnModel, SpawnModelRequest, DeleteModelRequest
 
 from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
 
@@ -26,7 +26,7 @@ from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.utils import Utils, NamespaceIndexer
 from nav_msgs.srv import GetMap
 
-from task_generator.shared import ModelType, ObstacleDescriptionPose
+from task_generator.shared import ModelType, Obstacle
 
 import xml.etree.ElementTree as ET
 
@@ -57,21 +57,12 @@ class GazeboSimulator(BaseSimulator):
         self.unpause = rospy.ServiceProxy("/gazebo/unpause_physics", Empty)
         self.pause = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
 
-        self.map_manager = None
-
-        self.obstacle_names = []
-
-        self.spawned_obstacles = []
-
-
         print("Waiting for gazebo services...")
         rospy.wait_for_service("gazebo/spawn_sdf_model")
         rospy.wait_for_service("gazebo/delete_model")
 
         print("service: spawn_sdf_model is available ....")
         self.remove_model_srv = rospy.ServiceProxy("gazebo/delete_model", DeleteModel)
-
-        self.namespaces = dict()
 
 
     def interactive_actor_poses_callback(self, actors):
@@ -85,12 +76,6 @@ class GazeboSimulator(BaseSimulator):
 
     def after_reset_task(self):
         self.unpause()
-
-    def remove_all_obstacles(self):
-        for ped in self.spawned_obstacles:
-            self.remove_model_srv(str(ped))
-        self.spawned_obstacles = []
-        return
 
     # ROBOT
     def publish_goal(self, goal):
@@ -154,24 +139,18 @@ class GazeboSimulator(BaseSimulator):
             f"robot_namespace:={namespace}"
         ]).decode("utf-8")
 
-    def spawn_obstacles(self, obs):
-        pass
-    
-    def index_namespace(self, namespace: str):
-        if namespace not in self.namespaces:
-            self.namespaces[namespace] = NamespaceIndexer(namespace)
-
-        return self.namespaces[namespace]
-
-    def spawn_obstacle(self, obs):
+    def spawn_obstacle(self, obstacle):
         request = SpawnModelRequest()
 
-        name = next(self.index_namespace(obs.name))
-
-        request.model_name = name
-        request.model_xml = obs.model.description
-        request.initial_pose = obs.pose
-        request.robot_namespace = self._ns_prefix(name)
+        request.model_name = obstacle.name
+        request.model_xml = obstacle.model.description
+        request.initial_pose = obstacle.pose
+        request.robot_namespace = self._ns_prefix(obstacle.name)
         request.reference_frame = "world"
 
-        self.spawn_model(obs.model.type, request)
+        self.spawn_model(obstacle.model.type, request)
+
+    def delete_obstacle(self, obstacle_id: str):
+        #indexer = self.index_namespace(obstacle_id)
+        self.remove_model_srv(DeleteModelRequest(model_name=obstacle_id))
+        #indexer.free(index)

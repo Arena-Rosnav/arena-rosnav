@@ -1,3 +1,6 @@
+from typing import Callable, Dict, Iterable, Iterator, List, Optional, Tuple
+
+from rospkg import RosPack
 import rospy
 import os
 import numpy as np
@@ -6,13 +9,18 @@ from nav_msgs.msg import OccupancyGrid
 import heapq
 import itertools
 
+from task_generator.shared import Model, ModelType
+
 class Utils:
+    @staticmethod
     def get_simulator():
-        return rospy.get_param("simulator", "flatland").lower()
+        return str(rospy.get_param("simulator", "flatland")).lower()
     
+    @staticmethod
     def get_arena_type():
         return os.getenv("ARENA_TYPE", "training").lower()
-        
+    
+    @staticmethod
     def generate_map_inner_border(free_space_indices, map_: OccupancyGrid):
         """generate map border (four vertices of the map)
 
@@ -34,6 +42,7 @@ class Utils:
         # print('border',border_vertices)
         return border_vertices
 
+    @staticmethod
     def update_freespace_indices_maze( map_: OccupancyGrid):
         """update the indices(represented in a tuple) of the freespace based on the map and the static polygons
         ostacles manuelly added 
@@ -71,20 +80,58 @@ class Utils:
 
 
 class NamespaceIndexer:
+
+    __freed: List[int]
+    __gen: Iterator[int]
+    __namespace: str
+    __sep: str
+
     def __init__(self, namespace: str, sep: str = "_"):
-        self.freed = list()
-        self.gen = itertools.count()
-        self.namespace = namespace
-        self.sep = sep
+        self.__freed = list()
+        self.__gen = itertools.count()
+        self.__namespace = namespace
+        self.__sep = sep
 
     def free(self, index: int):
-        heapq.heappush(self.freed, index)
+        heapq.heappush(self.__freed, index)
 
     def get(self) -> int:
-        if len(self.freed):
-            return heapq.heappop(self.freed)
+        if len(self.__freed):
+            return heapq.heappop(self.__freed)
         
-        return next(self.gen)
+        return next(self.__gen)
+    
+    def format(self, index: int) -> str:
+        return f"{self.__namespace}{self.__sep}{index}"
 
-    def __next__(self):
-        return f"{self.namespace}${self.sep}{self.get()}"
+    def __next__(self) -> Tuple[str, Callable[[], None]]:
+        index = self.get()
+        return self.format(index), lambda: self.free(index)
+
+
+class ModelLoader:
+
+    model_dir: str
+    models: Iterable[str]
+    __cache: Dict[str, Model]
+
+    def __init__(self, model_dir: str):
+        self.model_dir = model_dir
+        self.models = [name for name, _, _ in os.walk(model_dir)]
+
+    def load(self, model: str) -> Model:
+        if model in self.__cache:
+            return self.__cache[model]
+        
+        if model not in self.models:
+            raise FileNotFoundError()
+        
+        with open(os.path.join(self.model_dir, model, "model.sdf")) as f:
+            model_desc = f.read()
+        
+        model_obj = Model(
+            type=ModelType.SDF,
+            name=model,
+            description=model_desc
+        )
+        return model_obj

@@ -77,7 +77,9 @@ class TaskGenerator:
 
         self.env_wrapper.before_reset_task()
 
-        is_end = self.task.reset()
+        print("resetting")
+
+        is_end = self.task.reset(lambda:None)
 
         self.pub_scenario_reset.publish(self.number_of_resets)
         self._send_end_message_on_end(is_end)

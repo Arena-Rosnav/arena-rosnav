@@ -1,7 +1,7 @@
 import os
 from typing import Callable, Dict, Iterable, Tuple
 
-from task_generator.shared import ModelType, ObstacleDescription, ObstacleDescriptionPose
+from task_generator.shared import ModelType, Obstacle
 
 class BaseSimulator:
     
@@ -92,5 +92,8 @@ class BaseSimulator:
     def reset_pedsim_agents(self):
         raise NotImplementedError()
 
-    def spawn_obstacle(self, obs: ObstacleDescriptionPose):
+    def spawn_obstacle(self, obs: Obstacle):
+        raise NotImplementedError()
+    
+    def delete_obstacle(self, obstacle_id: str):
         raise NotImplementedError()

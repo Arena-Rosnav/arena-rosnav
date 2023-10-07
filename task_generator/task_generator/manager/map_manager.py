@@ -3,6 +3,8 @@ import random
 import math
 
 from map_distance_server.srv import GetDistanceMap
+from geometry_msgs.msg import Point
+from task_generator.shared import Waypoint
 
 class MapManager:
     """
@@ -22,7 +24,7 @@ class MapManager:
         )
         self.origin = map.info.origin.position
 
-    def get_random_pos_on_map(self, safe_dist, forbidden_zones=[]):
+    def get_random_pos_on_map(self, safe_dist, forbidden_zones=[]) -> Waypoint:
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both

@@ -1,10 +1,14 @@
-from task_generator.shared import CreatedDynamicObstacle, CreatedObstacle, ForbiddenZone, Model
+from task_generator.shared import DynamicObstacle, Obstacle, ForbiddenZone, Model
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.manager.map_manager import MapManager
-
-from typing import Iterable, Tuple
+from typing import Iterable, Optional, Tuple
+from geometry_msgs.msg import Point
 
 class DynamicManager:
+
+    namespace: str
+    simulator: BaseSimulator
+
     def __init__(self, namespace: str, simulator: BaseSimulator):
         """
             Initialize dynamic obstacle manager.
@@ -29,7 +33,7 @@ class DynamicManager:
         """
         ...
         
-    def spawn_obstacle(self, obstacle: CreatedObstacle, name: str, model: Model, interaction_radius: float = 0.):
+    def spawn_obstacle(self, obstacle: Obstacle):
         """
         Loads given obstacle into the simulator. 
         If the object has an interaction radius of > 0, 
@@ -37,40 +41,23 @@ class DynamicManager:
         """
         ...
 
-    def spawn_dynamic_obstacle(self, obstacle: CreatedDynamicObstacle, name: str):
+    def spawn_dynamic_obstacle(self, obstacle: DynamicObstacle):
         """
         Loads given obstacle into the simulator.
         Currently by loading a existing sdf file, 
         then reaplacing the static values by dynamic ones 
         """
-        ...
 
-    def spawn_map_obstacles(self):
+    def spawn_line_obstacle(self, name: str, _from: Point, _to: Point):
         """
-        Loads given obstacles into the simulator,
-        the map file is retrieved from launch parameter "map_file"
-        """
-        ...
-
-    def spawn_dynamic_scenario_obstacles(self, peds):
-        """
-        Loads given scenario peds into the simulator.
-        To-Do: consider merging with spawn_dynamic_obstacles or simplifying by calling it
+        Creates a line obstacle.
         """
         ...
 
-    def spawn_scenario_obstacles(self, obstacles, interaction_radius):
-        """
-        Loads given obstacles into the simulator.
-        If the object has an interaction radius of > 0, 
-        then load it as an interactive obstacle instead of static
-        To-Do: consider merging with spawn_obstacles or simplifying by calling it
-        """
-        ...
 
-    def remove_interactive_obstacles(self):
+    def remove_obstacles(self):
         """
-        Removes interactive obstacles from simulator.
+        Removes obstacles from simulator.
         """
         ...
 

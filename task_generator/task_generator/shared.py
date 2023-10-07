@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from typing import Iterable, Optional, Tuple
-from geometry_msgs.msg import Point, Pose
+from typing import Any, Iterable, List, Optional, Tuple
+from geometry_msgs.msg import Point, Pose, Quaternion
 import enum
 
 class ModelType(enum.Enum):
@@ -12,35 +12,75 @@ class ModelType(enum.Enum):
 @dataclass
 class Model:
     type: ModelType
-    description: str
-
-@dataclass
-class ObstacleDescription:
     name: str
-    model: Model
-
-@dataclass
-class ObstacleDescriptionPose(ObstacleDescription):
-    pose: Pose
-
+    description: str
 
 ForbiddenZone = Tuple[float, float, float]
 
+Position = Tuple[float, float, float]
 Waypoint = Tuple[float, float, float]
 
 @dataclass
-class CreatedObstacle:
-    id: str
-    position: Point
+class ObstacleConfig:
+    model: Model
+    position: Optional[Position] = None
+    
+@dataclass
+class DynamicObstacleConfig(ObstacleConfig):
+    waypoints: Optional[List[Waypoint]] = None
+
+
 
 @dataclass
-class CreatedStaticObstacle(CreatedObstacle):
-    ...
+class Obstacle:
+    name: str
+    pose: Pose
+    model: Model
+
+    @staticmethod
+    def parse(obj: Any):
+        return Obstacle(
+            name=obj["name"],
+            pose=Pose(
+                position=obj["pos"],
+                orientation=Quaternion(0,0,0,1)
+            ),
+            model=Model(type=ModelType.UNKNOWN, name="", description="")
+        )
 
 @dataclass
-class CreatedInteractiveObstacle(CreatedObstacle):
-    ...
-
-@dataclass
-class CreatedDynamicObstacle(CreatedObstacle):
+class DynamicObstacle(Obstacle):
     waypoints: Iterable[Waypoint]
+
+    @staticmethod
+    def parse(obj: Any):
+        return DynamicObstacle(
+            name=obj["name"],
+            pose=Pose(
+                position=obj["pos"],
+                orientation=Quaternion(0,0,0,1)
+            ),
+            model=Model(type=ModelType.UNKNOWN, name="", description=""),
+            waypoints=obj["waypoints"]
+        )
+
+
+@dataclass
+class ScenarioObstacles:
+    dynamic: List[DynamicObstacle]
+    static: List[Obstacle]
+    interactive: List[Obstacle]
+
+ScenarioMap = str
+
+@dataclass
+class RobotGoal:
+    start: Position
+    goal: Position
+
+@dataclass
+class Scenario:
+    obstacles: ScenarioObstacles
+    map: ScenarioMap
+    resets: int
+    robots: List[RobotGoal]
