@@ -1,7 +1,7 @@
 import os
-from typing import Callable, Dict, Optional
+from typing import Callable, Collection, Dict, Optional
 
-from task_generator.shared import ModelType, Obstacle, PositionOrientation, Position
+from task_generator.shared import ModelType, Obstacle, ObstacleProps, PositionOrientation, Position, Robot
 
 
 class BaseSimulator:
@@ -14,6 +14,10 @@ class BaseSimulator:
         self._namespace = namespace
         self._ns_prefix = lambda *topic: os.path.join(self._namespace, *topic)
         self._spawn_model = dict()
+
+    @property
+    def MODEL_TYPES(self) -> Collection[ModelType]:
+        return self._spawn_model.keys()
 
     def spawn_model(self, model_type: ModelType, *args, **kwargs):
         if model_type in self._spawn_model:
@@ -78,7 +82,7 @@ class BaseSimulator:
         """
         raise NotImplementedError()
 
-    def spawn_robot(self, name: str, robot_name: str, namespace_appendix: str = ""):
+    def spawn_robot(self, robot: Robot):
         """
         Spawn a robot in the simulator.
         A position is not specified because the robot is moved at the 
@@ -86,7 +90,7 @@ class BaseSimulator:
         """
         raise NotImplementedError()
 
-    def spawn_obstacle(self, obs: Obstacle) -> str:
+    def spawn_obstacle(self, obs: ObstacleProps) -> str:
         raise NotImplementedError()
 
     def delete_obstacle(self, obstacle_id: str):

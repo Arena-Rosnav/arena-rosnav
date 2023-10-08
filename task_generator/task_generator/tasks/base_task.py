@@ -1,5 +1,6 @@
+from dataclasses import asdict
 import os
-from typing import Callable, List, Optional, overload
+from typing import Callable, Dict, List, Optional, overload
 import numpy as np
 
 from rospkg import RosPack
@@ -12,7 +13,7 @@ from task_generator.manager.robot_manager import RobotManager
 from task_generator.utils import ModelLoader
 from task_generator.manager.obstacle_manager import ObstacleManager
 
-from task_generator.shared import DynamicObstacle, Obstacle, DynamicObstacleConfig, ObstacleConfig, Waypoint
+from task_generator.shared import BoundLoader, DynamicObstacle, Obstacle, DynamicObstacleSetup, ObstacleSetup, PositionOrientation, Waypoint
 from geometry_msgs.msg import Point, Pose, Quaternion
 
 
@@ -87,7 +88,7 @@ class BaseTask():
 
     @property
     def robot_names(self) -> List[str]:
-        return [manager.robot_name for manager in self._robot_managers]
+        return [manager.name for manager in self._robot_managers]
 
     def _set_up_robot_managers(self):
         for manager in self._robot_managers:
@@ -103,69 +104,48 @@ class CreateObstacleTask(BaseTask):
     """
     # moved from obstacle manager
 
-    @overload
-    def _create_obstacle(self, config: DynamicObstacleConfig) -> DynamicObstacle:
-        ...
 
-    @overload
-    def _create_obstacle(self, config: ObstacleConfig) -> Obstacle:
-        ...
+    def _create_dynamic_obstacle(self, name:str, model: BoundLoader, waypoints: Optional[List[Waypoint]] = None, extra: Optional[Dict] = None, **kwargs) -> DynamicObstacleSetup:
 
-    def _create_obstacle(self, config: ObstacleConfig) -> Obstacle:
+        setup = self._create_obstacle(name=name, model=model, extra=extra, **kwargs)
+
+        if waypoints is None:
+
+            safe_distance = 0.5
+            waypoints = [(*setup.position[:2], safe_distance)]  # the first waypoint
+            safe_distance = 0.1  # the other waypoints don't need to avoid robot
+            for j in range(10):
+                dist = 0
+                while dist < 8:
+                    [x2, y2, *
+                        _] = self._map_manager.get_random_pos_on_map(safe_distance)
+                    dist = np.linalg.norm(
+                        [waypoints[-1][0] - x2, waypoints[-1][1] - y2])
+                    waypoints.append((x2, y2, 1))
+
+        return DynamicObstacleSetup(**{
+            **asdict(setup),
+            **dict(waypoints=waypoints)
+        })
+
+    def _create_obstacle(self, name:str, model: BoundLoader, position: Optional[PositionOrientation] = None, extra: Optional[Dict] = None, **kwargs) -> ObstacleSetup:
         """ 
         Creates and returns a newly generated obstacle of requested type: 
         """
 
         safe_distance = 0.5
+        
+        if position is None:
+            point: Waypoint = self._map_manager.get_random_pos_on_map(safe_distance)
+            position = (point[0], point[1], np.pi * np.random.random())
 
-        if isinstance(config, DynamicObstacleConfig):
+        if extra is None:
+            extra = dict()
 
-            if config.position is None:
-                point: Waypoint = self._map_manager.get_random_pos_on_map(
-                    safe_distance)
-                config.position = (point[0], point[1],
-                                   np.pi * np.random.random())
-
-            if config.waypoints is None:
-                config.waypoints = [config.position]  # the first waypoint
-                safe_distance = 0.1  # the other waypoints don't need to avoid robot
-                for j in range(10):
-                    dist = 0
-                    while dist < 8:
-                        [x2, y2, *
-                            _] = self._map_manager.get_random_pos_on_map(safe_distance)
-                        dist = np.linalg.norm(
-                            [config.waypoints[-1][0] - x2, config.waypoints[-1][1] - y2])
-                        config.waypoints.append((x2, y2, 1))
-
-            return DynamicObstacle(
-                name=config.model.name,
-                model=config.model,
-                pose=Pose(
-                    position=Point(*config.position[:2], 0),
-                    orientation=Quaternion(x=0, y=0, z=config.position[2], w=1)
-                ),
-                waypoints=config.waypoints
-            )
-
-        elif isinstance(config, ObstacleConfig):
-
-            if config.position is None:
-                point: Waypoint = self._map_manager.get_random_pos_on_map(
-                    safe_distance)
-                config.position = (point[0], point[1],
-                                   np.pi * np.random.random())
-
-            safe_distance = 0.5
-
-            return Obstacle(
-                name=config.model.name,
-                model=config.model,
-                pose=Pose(
-                    position=Point(*config.position[:2], 0),
-                    orientation=Quaternion(x=0, y=0, z=config.position[2], w=1)
-                )
-            )
-
-        else:
-            raise ValueError()
+        return ObstacleSetup(
+            position=position,
+            name=name,
+            model=model,
+            extra=extra,
+            **kwargs
+        )

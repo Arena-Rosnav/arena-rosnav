@@ -6,7 +6,7 @@ import subprocess
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState, DeleteModel, SpawnModel, SpawnModelRequest, DeleteModelRequest
 
-from geometry_msgs.msg import Pose, PoseStamped, Quaternion
+from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 
 from std_msgs.msg import Empty
 from std_srvs.srv import Empty
@@ -18,7 +18,7 @@ from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
 
-from task_generator.shared import ModelType, Obstacle
+from task_generator.shared import ModelType, Obstacle, ObstacleProps, Robot
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -101,43 +101,32 @@ class GazeboSimulator(BaseSimulator):
 
         self._move_model_srv(model_state_request)
 
-    def spawn_robot(self, name, robot_name, namespace_appendix=""):
+    def spawn_robot(self, robot: Robot):
         request = SpawnModelRequest()
 
-        robot_namespace = self._ns_prefix(namespace_appendix)
-        robot_description = GazeboSimulator.get_robot_description(
-            robot_name, robot_namespace
-        )
+        robot_namespace = robot.namespace
+        
         rospy.set_param(os.path.join(robot_namespace,
-                        "robot_description"), robot_description)
+                        "robot_description"), robot.model.description)
         rospy.set_param(os.path.join(robot_namespace,
                         "tf_prefix"), robot_namespace)
-        request.model_name = name
-        request.model_xml = robot_description
+        
+        request.model_name = robot.name
+        request.model_xml = robot.model.description
         request.robot_namespace = robot_namespace
         request.reference_frame = "world"
 
-        self.spawn_model(ModelType.URDF, request)
+        self.spawn_model(robot.model.type, request)
 
-    @staticmethod
-    def get_robot_description(robot_name, namespace):
-        arena_sim_path = rospkg.RosPack().get_path("arena-simulation-setup")
-
-        return subprocess.check_output([
-            "rosrun",
-            "xacro",
-            "xacro",
-            os.path.join(arena_sim_path, "robot", robot_name,
-                         "urdf", f"{robot_name}.urdf.xacro"),
-            f"robot_namespace:={namespace}"
-        ]).decode("utf-8")
-
-    def spawn_obstacle(self, obstacle: Obstacle) -> str:
+    def spawn_obstacle(self, obstacle: ObstacleProps) -> str:
         request = SpawnModelRequest()
 
         request.model_name = obstacle.name
         request.model_xml = obstacle.model.description
-        request.initial_pose = obstacle.pose
+        request.initial_pose = Pose(
+            position=Point(x=obstacle.position[0], y=obstacle.position[1], z=0),
+            orientation=Quaternion(x=0, y=0, z=obstacle.position[2], w=1)
+        )
         request.robot_namespace = self._ns_prefix(obstacle.name)
         request.reference_frame = "world"
 

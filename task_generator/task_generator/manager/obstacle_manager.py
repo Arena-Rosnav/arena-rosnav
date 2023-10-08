@@ -6,7 +6,7 @@ import rospkg
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
 from task_generator.manager.map_manager import MapManager
 
-from task_generator.shared import DynamicObstacle, Obstacle
+from task_generator.shared import DynamicObstacle, DynamicObstacleSetup, Obstacle, ObstacleSetup
 
 from geometry_msgs.msg import Point
 
@@ -68,15 +68,15 @@ class ObstacleManager:
                 _to=_to
             )
 
-    def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
+    def spawn_dynamic_obstacles(self, setups: Collection[DynamicObstacleSetup]):
         """
         Loads given dynamic obstacles into the simulator.
         To-Do: consider merging with spawn_dynamic_obstacles or simplifying by calling it
         """
 
-        self.dynamic_manager.spawn_dynamic_obstacles(obstacles=obstacles)
+        self.dynamic_manager.spawn_dynamic_obstacles(setups=setups)
 
-    def spawn_obstacles(self, obstacles: Collection[Obstacle]):
+    def spawn_obstacles(self, setups: Collection[ObstacleSetup]):
         """
         Loads given obstacles into the simulator.
         If the object has an interaction radius of > 0, 
@@ -84,7 +84,7 @@ class ObstacleManager:
         To-Do: consider merging with spawn_obstacles or simplifying by calling it
         """
 
-        self.dynamic_manager.spawn_obstacles(obstacles=obstacles)
+        self.dynamic_manager.spawn_obstacles(setups=setups)
 
     def reset(self):
 

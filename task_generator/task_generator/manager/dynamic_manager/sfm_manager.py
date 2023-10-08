@@ -1,5 +1,6 @@
 # GRADUALLY REPLACE COPIED METHODS FROM THIS FILE WITH NEW NON-PEDSIM IMPLEMENTATIONS
 
+from dataclasses import asdict
 from typing import Any, Callable, Dict, Iterable, List, Tuple
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
 from task_generator.simulators.base_simulator import BaseSimulator
@@ -17,13 +18,13 @@ import io
 
 import xml.etree.ElementTree as ET
 
-from task_generator.shared import Model, Waypoint
+from task_generator.shared import DynamicObstacle, Model, Obstacle, PositionOrientation, Waypoint
 from task_generator.utils import NamespaceIndexer
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
 
-def fill_actor(xml_string: str, name: str, pose: Pose, waypoints: Iterable[Waypoint]) -> str:
+def fill_actor(xml_string: str, name: str, position: PositionOrientation, waypoints: Iterable[Waypoint]) -> str:
 
     file = io.StringIO(xml_string)
     xml = ET.parse(file)
@@ -36,9 +37,7 @@ def fill_actor(xml_string: str, name: str, pose: Pose, waypoints: Iterable[Waypo
 
     xml_pose = xml_actor.find("pose")
     assert (xml_pose is not None)
-    rotRPY = Rotation.from_quat([pose.orientation.x, pose.orientation.y,
-                                pose.orientation.z, pose.orientation.w]).as_euler("xyz", degrees=False)
-    xml_pose.text = f"{pose.position.x} {pose.position.y} {pose.position.z} {rotRPY[0]} {rotRPY[1]} {rotRPY[2]}"
+    xml_pose.text = f"{position[0]} {position[1]} 0 0 0 {position[2]}"
 
     xml_plugin = xml_actor.find(
         r"""plugin[@filename='libPedestrianSFMPlugin.so']""")
@@ -66,34 +65,53 @@ class SFMManager(DynamicManager):
         rospy.set_param("respawn_static", True)
         rospy.set_param("respawn_interactive", True)
 
-    def spawn_obstacles(self, obstacles):
+    def spawn_obstacles(self, setups):
 
-        for obstacle in obstacles:
-            name, free = next(self._index_namespace(obstacle.name))
+        for setup in setups:
+            
+            name, free = next(self._index_namespace(setup.name))
+
+            obstacle = Obstacle(**{
+                **asdict(setup),
+                **dict(
+                    name=name,
+                    model=setup.model(self._simulator.MODEL_TYPES)
+                )
+            })
+
             obstacle.name = name
             self._simulator.spawn_obstacle(obstacle)
             self._spawned_obstacles.append((name, free))
 
-    def spawn_dynamic_obstacles(self, obstacles):
+    def spawn_dynamic_obstacles(self, setups):
 
-        for obstacle in obstacles:
-            rospy.loginfo("Spawning model: actor_id = %s", obstacle.name)
+        for setup in setups:
 
-            name, free = next(self._index_namespace(obstacle.name))
+            name, free = next(self._index_namespace(setup.name))
+
+            rospy.loginfo("Spawning model: actor_id = %s", name)
+
+            model = setup.model(self._simulator.MODEL_TYPES)
 
             model_desc = fill_actor(
-                obstacle.model.description, name=name, pose=obstacle.pose, waypoints=obstacle.waypoints)
+                model.description, name=name, position=setup.position, waypoints=setup.waypoints)
 
-            obstacle.model = Model(
-                type=obstacle.model.type,
-                name=obstacle.name,
-                description=model_desc
-            )
+            obstacle = DynamicObstacle(**{
+                **asdict(setup),
+                **dict(
+                    name=name,
+                    model=Model(
+                        type=model.type,
+                        name=name,
+                        description=model_desc
+                    )
+                )
+            })
 
             self._simulator.spawn_obstacle(obstacle)
             self._spawned_obstacles.append((name, free))
 
-        if len(obstacles):
+        if len(setups):
             rospy.set_param("respawn_dynamic", False)
 
     def spawn_line_obstacle(self, name, _from, _to):

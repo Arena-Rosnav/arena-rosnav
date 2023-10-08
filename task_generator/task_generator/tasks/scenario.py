@@ -75,23 +75,11 @@ class ScenarioTask(BaseTask):
         with open(scenario_file_path, "r") as file:
             scenario_file = json.load(file)
 
-        def create_obstacle(obs: Any) -> Obstacle:
-            obstacle = Obstacle.parse(obs)
-            obstacle.model = self._model_loader.load(obs["model"])
-            return obstacle
-
-        def create_dynamic_obstacle(obs: Any) -> DynamicObstacle:
-            obstacle = DynamicObstacle.parse(obs)
-            obstacle.model = self._dynamic_model_loader.load(obs["model"])
-            return obstacle
-
         return Scenario(
             obstacles=ScenarioObstacles(
-                static=[create_obstacle(
-                    obs) for obs in scenario_file["obstacles"]["static"]],
+                static=[Obstacle.parse(obs, model=self._model_loader.load(obs["model"])) for obs in scenario_file["obstacles"]["static"]],
                 interactive=[],
-                dynamic=[create_dynamic_obstacle(
-                    obs) for obs in scenario_file["obstacles"]["dynamic"]]
+                dynamic=[DynamicObstacle.parse(obs, model=self._dynamic_model_loader.load(obs["model"])) for obs in scenario_file["obstacles"]["dynamic"]]
             ),
             map=scenario_file["map"],
             resets=scenario_file["resets"],

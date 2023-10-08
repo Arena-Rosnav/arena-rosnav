@@ -1,4 +1,8 @@
-from typing import Callable, Dict, Iterator, List, Tuple
+import functools
+import subprocess
+from typing import Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type
+
+from rospkg import RosPack
 
 import rospy
 import os
@@ -9,7 +13,7 @@ import heapq
 import itertools
 from task_generator.constants import Constants
 
-from task_generator.shared import Model, ModelType
+from task_generator.shared import BoundLoader, Model, ModelType
 
 
 class Utils:
@@ -115,32 +119,164 @@ class NamespaceIndexer:
         return self.format(index), lambda: self.free(index)
 
 
-# TODO extend with other model types
+class _ModelLoader:
+    @staticmethod
+    def list(model_dir: str) -> Collection[str]:
+        ...
+
+    @staticmethod
+    def load(model_dir: str, model: str, **kwargs) -> Optional[Model]:
+        ...
+
+
+pkg_path = RosPack().get_path('arena-simulation-setup')
+default_actor_model_file = os.path.join(
+    pkg_path, "dynamic_obstacles", "actor2", "model.sdf")
+
+actor_model_file: str = str(rospy.get_param(
+    '~actor_model_file', default_actor_model_file))
+with open(actor_model_file) as f:
+    _default_actor_model = Model(
+        type=ModelType.SDF, description=f.read(), name="actor2")
+
+
 class ModelLoader:
 
-    model_dir: str
-    models: List[str]
-    _cache: Dict[str, Model]
+    _registry: Dict[ModelType, Type[_ModelLoader]] = {}
+    _models: List[str]
+
+    @classmethod
+    def model(cls, model_type: ModelType):
+        def inner(loader: Type[_ModelLoader]):
+            cls._registry[model_type] = loader
+        return inner
+
+    _model_dir: str
 
     def __init__(self, model_dir: str):
-        self.model_dir = model_dir
-        self.models = [name for name in next(os.walk(model_dir))[1]]
+        self._model_dir = model_dir
         self._cache = dict()
 
-    def load(self, model: str) -> Model:
-        if model in self._cache:
-            return self._cache[model]
+    @property
+    def models(self) -> List[str]:
+        if self._models is None:
+            self._models = list(set([name for loader in self._registry.values(
+            ) for name in loader.list(self._model_dir)]))
 
-        if model not in self.models:
+        return self._models
+
+    def bind(self, model: str) -> BoundLoader:
+        return functools.partial(self.load, model)
+
+    def load(self, model: str, only: Optional[Collection[ModelType]] = None, **kwargs) -> Model:
+        if only is None:
+            only = self._registry.keys()
+
+        for model_type in only:  # cache pass
+            if (model_type, model) in self._cache:
+                return self._cache[model_type, model]
+
+        for model_type in only:  # disk pass
+            hit = self._load_single(
+                model_type=model_type, model=model, **kwargs)
+            if hit is not None:
+                self._cache[(model_type, model)] = hit
+                return self._cache[(model_type, model)]
+
+        else:
             raise FileNotFoundError(
-                f"{model} in {self.models} (from: {self.model_dir})")
+                f"no model {model} among {only} found in {self._model_dir}")
 
-        with open(os.path.join(self.model_dir, model, "model.sdf")) as f:
-            model_desc = f.read()
+    def _load_single(self, model_type: ModelType, model: str) -> Optional[Model]:
+        if model_type in self._registry:
+            return self._registry[model_type].load(self._model_dir, model)
 
-        model_obj = Model(
-            type=ModelType.SDF,
-            name=model,
-            description=model_desc
-        )
-        return model_obj
+        return None
+
+
+@ModelLoader.model(ModelType.YAML)
+class _ModelLoader_YAML(_ModelLoader):
+
+    @staticmethod
+    def list(model_dir):
+        return [name for name in next(os.walk(model_dir))[2] if os.path.splitext(name) == "yaml"]
+
+    @staticmethod
+    def load(model_dir, model, **kwargs):
+
+        try:
+            with open(os.path.join(model_dir, f"{model}.yaml")) as f:
+                model_desc = f.read()
+        except FileNotFoundError:
+            return None
+
+        else:
+            model_obj = Model(
+                type=ModelType.YAML,
+                name=model,
+                description=model_desc
+            )
+            return model_obj
+
+
+@ModelLoader.model(ModelType.SDF)
+class _ModelLoader_SDF(_ModelLoader):
+
+    @staticmethod
+    def list(model_dir):
+        return next(os.walk(model_dir))[1]
+
+    @staticmethod
+    def load(model_dir, model, **kwargs):
+
+        try:
+            with open(os.path.join(model_dir, model, "model.sdf")) as f:
+                model_desc = f.read()
+        except FileNotFoundError:
+            return None
+
+        else:
+            model_obj = Model(
+                type=ModelType.SDF,
+                name=model,
+                description=model_desc
+            )
+            return model_obj
+
+
+@ModelLoader.model(ModelType.URDF)
+class _ModelLoader_URDF(_ModelLoader):
+
+    @staticmethod
+    def list(model_dir):
+        return next(os.walk(model_dir))[1]
+
+    @staticmethod
+    def load(model_dir, model, **kwargs):
+
+        namespace: Optional[str] = kwargs.get("namespace")
+
+        file = os.path.join(model_dir, model, "urdf", f"{model}.urdf.xacro")
+
+        if not os.path.isfile(file):
+            return None
+
+        try:
+            model_desc = subprocess.check_output([
+                "rosrun",
+                "xacro",
+                "xacro",
+                file,
+                *([f"""robot_namespace:={namespace or "''"}"""] if namespace is not None else [])
+            ]).decode("utf-8")
+
+        except subprocess.CalledProcessError:
+            return None
+
+        else:
+            model_obj = Model(
+                type=ModelType.URDF,
+                name=model,
+                description=model_desc
+            )
+            return model_obj

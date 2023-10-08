@@ -1,12 +1,12 @@
 import traceback
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import rospy
 import rospkg
 import yaml
 import os
 from task_generator.constants import Constants
-from task_generator.shared import RobotSetup
+from task_generator.shared import BoundLoader, Model, ModelType, RobotSetup
 from task_generator.simulators.base_simulator import BaseSimulator
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
@@ -21,12 +21,12 @@ from task_generator.tasks.random import RandomTask  # noqa
 from task_generator.tasks.scenario import ScenarioTask  # noqa
 from task_generator.tasks.staged import StagedRandomTask  # noqa
 from task_generator.tasks.random_scenario import RandomScenarioTask  # noqa
-from task_generator.utils import Utils
+from task_generator.utils import ModelLoader, Utils
 
 from map_distance_server.srv import GetDistanceMap
 
 
-def get_predefined_task(namespace: str, mode: Constants.TaskMode, simulator: Optional[BaseSimulator] = None, social_mode: Constants.SocialMode = Constants.SocialMode.PEDSIM, **kwargs):
+def get_predefined_task(namespace: str, mode: Constants.TaskMode, robot_loader: ModelLoader, simulator: Optional[BaseSimulator] = None, social_mode: Constants.SocialMode = Constants.SocialMode.PEDSIM, **kwargs):
     """
     Gets the task based on the passed mode
     """
@@ -57,8 +57,7 @@ def get_predefined_task(namespace: str, mode: Constants.TaskMode, simulator: Opt
     obstacle_manager = ObstacleManager(
         namespace=namespace, map_manager=map_manager, simulator=simulator, dynamic_manager=dynamic_manager)
 
-    robot_managers = create_robot_managers(
-        namespace=namespace, simulator=simulator)
+    robot_managers = create_robot_managers(namespace=namespace, simulator=simulator, robot_loader=robot_loader)
 
     # For every robot
     # - Create a unique namespace name
@@ -77,59 +76,73 @@ def get_predefined_task(namespace: str, mode: Constants.TaskMode, simulator: Opt
     return task
 
 
-def create_robot_managers(namespace: str, simulator: BaseSimulator) -> List[RobotManager]:
+def create_robot_managers(namespace: str, simulator: BaseSimulator, robot_loader: ModelLoader) -> List[RobotManager]:
     # Read robot setup file
     robot_setup_file: str = str(rospy.get_param('/robot_setup_file', ""))
 
+    robot_model: str = str(rospy.get_param("/model"))
+
     if robot_setup_file == "":
         robots = create_default_robot_list(
-            rospy.get_param("/model"),
-            rospy.get_param("/local_planner", ""),
-            rospy.get_param("/agent_name", "")
+            robot_model=robot_loader.bind(robot_model),
+            planner=str(rospy.get_param("/local_planner", "")),
+            agent=str(rospy.get_param("/agent_name", "")),
+            namespace=robot_model,
+            name=robot_model
         )
     else:
-        robots = read_robot_setup_file(robot_setup_file)
+        robots = [
+            RobotSetup.parse(
+                robot,
+                position=(0,0,0),
+                namespace=f"""{namespace}/{robot["model"]}_{i}_{robot.get("amount", 1)}""",
+                model=robot_loader.bind(robot["model"])
+            )
+            for robot in read_robot_setup_file(robot_setup_file)
+            for i in range(robot.get("amount", 1))
+        ]
 
     if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-        return [RobotManager(namespace=namespace, simulator=simulator, robot_setup=robots[0])]
+        return [RobotManager(simulator=simulator, robot_setup=robots[0])]
 
     robot_managers: List[RobotManager] = []
 
     for robot in robots:
-        amount = robot["amount"]
+        robot_managers.append(
+            # RobotManager(os.path.join(namespace, name), simulator, robot)
 
-        for r in range(0, amount):
-            name = f"{robot['model']}_{r}_{len(robot_managers)}"
-
-            robot_managers.append(
-                # RobotManager(os.path.join(namespace, name), simulator, robot)
-
-                # old but working due to namespace issue with "/" prefix in robot name
-                RobotManager(namespace=namespace + "/" + name,
-                             simulator=simulator, robot_setup=robot)
-            )
+            # old but working due to namespace issue with "/" prefix in robot name
+            RobotManager(simulator=simulator, robot_setup=robot)
+        )
 
     return robot_managers
 
 
-def read_robot_setup_file(setup_file: str) -> List[RobotSetup]:
+def read_robot_setup_file(setup_file: str) -> List[Dict]:
     try:
         with open(
             os.path.join(rospkg.RosPack().get_path(
                 "task_generator"), "robot_setup", setup_file),
             "r"
-        ) as file:
-            return yaml.safe_load(file)["robots"]
+        ) as f:
+            robots: List[Dict] = yaml.safe_load(f)["robots"]
+
+        return robots
+
     except:
         traceback.print_exc()
         rospy.signal_shutdown("")
         raise Exception()
 
 
-def create_default_robot_list(robot_model: Any, planner: Any, agent: Any) -> List[RobotSetup]:
-    return [{
-        "model": robot_model,
-        "planner": planner,
-        "agent": agent,
-        "amount": 1
-    }]
+def create_default_robot_list(robot_model: BoundLoader, name:str, namespace: str, planner: str, agent: str) -> List[RobotSetup]:
+    return [RobotSetup(
+        model=robot_model,
+        planner=planner,
+        namespace=namespace,
+        agent=agent,
+        position=(0,0,0),
+        name=name,
+        record_data=False,
+        extra=dict()
+    )]

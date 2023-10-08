@@ -1,12 +1,14 @@
 #! /usr/bin/env python3
 
+import os
+from rospkg import RosPack
 import rospy
 from std_msgs.msg import Int16, Empty as EmptyMsg
 from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.tasks.base_task import BaseTask
 
-from task_generator.utils import Utils
+from task_generator.utils import ModelLoader, Utils
 from task_generator.constants import Constants
 
 from task_generator.tasks.utils import get_predefined_task
@@ -55,9 +57,12 @@ class TaskGenerator:
 
         rospy.loginfo(f"Launching task mode: {self.task_mode}")
 
+        # Loaders
+        robot_loader = ModelLoader(os.path.join(RosPack().get_path("arena-simulation-setup"), "robot"))
+
         self._start_time = rospy.get_time()
         self._task = get_predefined_task(
-            namespace="", mode=self.task_mode, simulator=self._env_wrapper, social_mode=self.social_mode)
+            namespace="", mode=self.task_mode, simulator=self._env_wrapper, social_mode=self.social_mode, robot_loader=robot_loader)
         rospy.set_param("/robot_names", self._task.robot_names)
 
         self._number_of_resets = 0

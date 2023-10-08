@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Collection, Dict, Iterable, List, Optional, Tuple
 from geometry_msgs.msg import Pose, Quaternion
 import enum
 
+EMPTY_LOADER = lambda *_, **__:Model(type=ModelType.UNKNOWN, name="", description="")
 
 class ModelType(enum.Enum):
     UNKNOWN = ""
@@ -13,12 +14,13 @@ class ModelType(enum.Enum):
     YAML = "yaml"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Model:
     type: ModelType
     name: str
     description: str
 
+BoundLoader = Callable[[Optional[Collection[ModelType]]], Model]
 
 ForbiddenZone = Tuple[float, float, float]
 
@@ -26,56 +28,86 @@ PositionOrientation = Tuple[float, float, float]
 Waypoint = Tuple[float, float, float]
 Position = Tuple[float, float]
 
+@dataclass
+class _NoModel:
+    model: BoundLoader
 
 @dataclass
-class ObstacleConfig:
+class _YesModel:
     model: Model
-    position: Optional[PositionOrientation] = None
 
 
 @dataclass
-class DynamicObstacleConfig(ObstacleConfig):
-    waypoints: Optional[List[Waypoint]] = None
-
-
-@dataclass
-class Obstacle:
+class ObstacleProps:
+    position: PositionOrientation
     name: str
-    pose: Pose
-    model: Model
-    extra: Dict = field(default_factory=lambda: dict(), init=False)
+    extra: Dict
 
+@dataclass
+class DynamicObstacleProps(ObstacleProps):
+    waypoints: List[Waypoint]
+
+@dataclass
+class RobotProps(ObstacleProps):
+    planner: str
+    namespace: str
+    agent: str
+    record_data: bool
+
+@dataclass
+class ObstacleSetup(ObstacleProps, _NoModel):
     @staticmethod
-    def parse(obj: Any):
-        obstacle = Obstacle(
+    def parse(obj: Dict, **kwargs) -> "ObstacleSetup":
+        obstacle = ObstacleSetup(
             name=obj["name"],
-            pose=Pose(
-                position=obj["pos"],
-                orientation=Quaternion(0, 0, 0, 1)
-            ),
-            model=Model(type=ModelType.UNKNOWN, name="", description=""),
+            position=(float(obj["pos"][0]), float(obj["pos"][1]), 0),
+            model=EMPTY_LOADER,
+            **kwargs
         )
         obstacle.extra = obj
         return obstacle
 
+@dataclass
+class DynamicObstacleSetup(DynamicObstacleProps, _NoModel):
+    @staticmethod
+    def parse(obj: Dict, **kwargs) -> "DynamicObstacleSetup":
+        obstacle = DynamicObstacleSetup(
+            name=obj["name"],
+            position=(float(obj["pos"][0]), float(obj["pos"][1]), 0),
+            model=EMPTY_LOADER,
+            waypoints=obj["waypoints"],
+            **kwargs
+        )
+        obstacle.extra = obj
+        return obstacle
 
 @dataclass
-class DynamicObstacle(Obstacle):
+class RobotSetup(RobotProps, _NoModel):
+    @staticmethod
+    def parse(obj: Dict, **kwargs) -> "RobotSetup":
+        robot = RobotSetup(
+            namespace=obj["namespace"],
+            planner=obj["planner"],
+            agent=obj["agent"],
+            model=EMPTY_LOADER,
+            record_data=False,
+            **kwargs
+        )
+        return robot
+
+
+@dataclass
+class Obstacle(ObstacleProps, _YesModel):
+    ...
+
+@dataclass
+class DynamicObstacle(DynamicObstacleProps, _YesModel):
     waypoints: Iterable[Waypoint]
 
-    @staticmethod
-    def parse(obj: Any):
-        obstacle = DynamicObstacle(
-            name=obj["name"],
-            pose=Pose(
-                position=obj["pos"],
-                orientation=Quaternion(0, 0, 0, 1)
-            ),
-            model=Model(type=ModelType.UNKNOWN, name="", description=""),
-            waypoints=obj["waypoints"]
-        )
-        obstacle.extra = obj
-        return obstacle
+@dataclass
+class Robot(RobotProps, _YesModel):
+    ...
+
 
 
 @dataclass
@@ -100,6 +132,3 @@ class Scenario:
     map: ScenarioMap
     resets: int
     robots: List[RobotGoal]
-
-
-RobotSetup = Any

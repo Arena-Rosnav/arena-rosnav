@@ -1,7 +1,7 @@
 import os
 from rospkg import RosPack
 import rospy
-from task_generator.shared import DynamicObstacle, ModelType, Obstacle, Model
+from task_generator.shared import DynamicObstacle, DynamicObstacleSetup, ModelType, Obstacle, Model, ObstacleSetup
 from task_generator.simulators.base_simulator import BaseSimulator
 from typing import Callable, Collection
 from geometry_msgs.msg import Point
@@ -51,7 +51,7 @@ class DynamicManager:
         self._spawned_obstacles = []
         self._namespaces = dict()
 
-    def spawn_obstacles(self, obstacles: Collection[Obstacle]):
+    def spawn_obstacles(self, setups: Collection[ObstacleSetup]):
         """
         Loads given obstacles into the simulator. 
         If the object has an interaction radius of > 0, 
@@ -59,7 +59,7 @@ class DynamicManager:
         """
         ...
 
-    def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
+    def spawn_dynamic_obstacles(self, setups: Collection[DynamicObstacleSetup]):
         """
         Loads given obstacles into the simulator.
         Currently by loading a existing sdf file, 

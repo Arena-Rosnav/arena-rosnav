@@ -9,7 +9,7 @@ from task_generator.tasks.task_factory import TaskFactory
 
 from task_generator.tasks.base_task import CreateObstacleTask
 
-from task_generator.shared import DynamicObstacle, Obstacle, DynamicObstacleConfig, ObstacleConfig, Waypoint
+from task_generator.shared import DynamicObstacle, Obstacle, DynamicObstacleSetup, ObstacleSetup, Waypoint
 
 import xml.etree.ElementTree as ET
 
@@ -87,9 +87,9 @@ class RandomScenarioTask(CreateObstacleTask):
         num_child = [int(str(root[4][0].text)), root[4]
                      [1].text, root[4][2].text]
 
-        dynamic_obstacles_array: List[DynamicObstacle]
-        static_obstacles_array: List[Obstacle]
-        interactive_obstacles_array: List[Obstacle]
+        dynamic_obstacles_array: List[DynamicObstacleSetup]
+        static_obstacles_array: List[ObstacleSetup]
+        interactive_obstacles_array: List[ObstacleSetup]
 
         self._obstacle_manager.spawn_map_obstacles()
 
@@ -101,11 +101,11 @@ class RandomScenarioTask(CreateObstacleTask):
         # Create static obstacles
         for ob_type in [num_tables]:
 
-            model = self._model_loader.load(ob_type[1])
+            model = ob_type[1]
 
             static_obstacles_array = list()
             for i in range(ob_type[0]):
-                obstacle = self._create_obstacle(ObstacleConfig(model=model))
+                obstacle = self._create_obstacle(name=model, model=self._model_loader.bind(model))
                 obstacle.extra["type"] = ob_type[1]
                 obstacle.extra["yaml"] = os.path.join(
                     obstacle_path, ob_type[2])
@@ -113,31 +113,29 @@ class RandomScenarioTask(CreateObstacleTask):
 
             if len(static_obstacles_array):
                 self._obstacle_manager.spawn_obstacles(
-                    obstacles=static_obstacles_array)
+                    setups=static_obstacles_array)
 
         # Create interactive obstacles
         for ob_type in [num_shelves]:
 
-            model = self._model_loader.load(ob_type[1])
+            model = ob_type[1]
 
             interactive_obstacles_array = list()
             for i in range(ob_type[0]):
-                obstacle = self._create_obstacle(ObstacleConfig(model=model))
+                obstacle = self._create_obstacle(name=model, model=self._model_loader.bind(model))
                 obstacle.extra["type"] = ob_type[1]
-                obstacle.extra["yaml"] = os.path.join(
-                    obstacle_path, ob_type[2])
+                obstacle.extra["yaml"] = os.path.join(obstacle_path, ob_type[2])
                 interactive_obstacles_array.append(obstacle)
 
             if len(interactive_obstacles_array):
                 self._obstacle_manager.spawn_obstacles(
-                    obstacles=interactive_obstacles_array)
+                    setups=interactive_obstacles_array)
 
         # Create dynamic obstacles
         for ob_type in [num_adults, num_elder, num_child]:
             dynamic_obstacles_array = list()
             for i in range(ob_type[0]):
-                obstacle = self._create_obstacle(DynamicObstacleConfig(
-                    model=self._obstacle_manager.dynamic_manager._default_actor_model))
+                obstacle = self._create_dynamic_obstacle(name=self._obstacle_manager.dynamic_manager._default_actor_model.name, model=lambda *_, **__:self._obstacle_manager.dynamic_manager._default_actor_model)
                 obstacle.extra["type"] = ob_type[1]
                 obstacle.extra["yaml"] = os.path.join(
                     dynamic_obstacle_path, ob_type[2])
@@ -145,6 +143,6 @@ class RandomScenarioTask(CreateObstacleTask):
 
             if len(dynamic_obstacles_array):
                 self._obstacle_manager.spawn_dynamic_obstacles(
-                    obstacles=dynamic_obstacles_array)
+                    setups=dynamic_obstacles_array)
 
         return False, (0, 0, 0)

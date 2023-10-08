@@ -117,17 +117,16 @@ class MapManager:
         return point
 
     def _is_pos_valid(self, x: float, y: float, safe_dist: float, forbidden_zones: List[Waypoint]):
-        if len(forbidden_zones) == 0:
-            return True
-
+        """
+        @safe_dist: minimal distance to the next obstacles for calculated positions
+        """
         for p in forbidden_zones:
             f_x, f_y, radius = p
 
-            dist = math.floor(math.sqrt(
-                (x - f_x) ** 2 + (y - f_y) ** 2
-            ))
+            # euklidian distance to the forbidden zone
+            dist = math.floor(np.linalg.norm(np.array([x,y]) - np.array([f_x, f_y]))) - radius
 
-            if dist > safe_dist + radius:
-                return True
+            if dist <= safe_dist:
+                return False
 
-        return False
+        return True
