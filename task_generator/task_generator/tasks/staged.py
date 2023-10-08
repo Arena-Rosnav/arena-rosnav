@@ -1,6 +1,6 @@
 import rospy
 import os
-from task_generator.constants import TaskMode
+from task_generator.constants import Constants
 from task_generator.tasks.task_factory import TaskFactory
 import yaml
 import json
@@ -10,7 +10,7 @@ from filelock import FileLock
 from task_generator.tasks.random import RandomTask
 
 
-@TaskFactory.register(TaskMode.STAGED)
+@TaskFactory.register(Constants.TaskMode.STAGED)
 class StagedRandomTask(RandomTask):
     """
     The staged task mode is designed for the trainings

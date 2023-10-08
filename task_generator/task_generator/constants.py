@@ -1,7 +1,10 @@
+from enum import Enum
+
+
 class Constants:
     GOAL_REACHED_TOLERANCE = 1.0
-    TIMEOUT = 3.0 * 60 ## 3 min
-    WAIT_FOR_SERVICE_TIMEOUT = 60 # 5 secs
+    TIMEOUT = 3.0 * 60  # 3 min
+    WAIT_FOR_SERVICE_TIMEOUT = 60  # 5 secs
     MAX_RESET_FAIL_TIMES = 3
 
     class ObstacleManager:
@@ -14,25 +17,23 @@ class Constants:
     class RobotManager:
         SPAWN_ROBOT_SAFE_DIST = 0.4
 
-    class Simulator:
+    class Simulator(Enum):
         FLATLAND = "flatland"
         GAZEBO = "gazebo"
 
-    class ArenaType:
+    class ArenaType(Enum):
         TRAINING = "training"
         DEPLOYMENT = "deployment"
 
-    class SocialMode:
+    class SocialMode(Enum):
         PEDSIM = "pedsim"
         SFM = "sfm"
 
-
-
-class TaskMode:
-    RANDOM = "random"
-    STAGED = "staged"
-    SCENARIO = "scenario"
-    RANDOM_SCENARIO = "random_scenario"
+    class TaskMode(Enum):
+        RANDOM = "random"
+        STAGED = "staged"
+        SCENARIO = "scenario"
+        RANDOM_SCENARIO = "random_scenario"
 
     class Random:
         MIN_DYNAMIC_OBS = 1
@@ -69,6 +70,7 @@ class FlatlandRandomModel:
     }
     LINEAR_VEL = 0.2
     ANGLUAR_VEL_MAX = 0.2
+
 
 class Pedsim:
     VMAX = 0.3

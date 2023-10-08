@@ -4,17 +4,17 @@ from typing import List, Optional
 
 from rospkg import RosPack
 
-from task_generator.constants import Constants, TaskMode
+from task_generator.constants import Constants
 from task_generator.tasks.task_factory import TaskFactory
 
 from task_generator.tasks.base_task import CreateObstacleTask
 
-from task_generator.shared import DynamicObstacle, Obstacle, DynamicObstacleConfig, ObstacleConfig
+from task_generator.shared import DynamicObstacle, Obstacle, DynamicObstacleConfig, ObstacleConfig, Waypoint
 
 import xml.etree.ElementTree as ET
 
 
-@TaskFactory.register(TaskMode.RANDOM_SCENARIO)
+@TaskFactory.register(Constants.TaskMode.RANDOM_SCENARIO)
 class RandomScenarioTask(CreateObstacleTask):
     """
         The random task spawns static and dynamic
@@ -43,30 +43,30 @@ class RandomScenarioTask(CreateObstacleTask):
         static_obstacles: Optional[int] = None,
     ):
 
-        self.obstacle_manager.reset()
-        self.map_manager.init_forbidden_zones()
+        robot_positions: List[Waypoint] = []  # may be needed in the future idk
 
-        robot_positions = []
+        interactive_obstacles: int = 0
 
-        for manager in self.robot_managers:
-            for pos in manager.reset(
-                forbidden_zones=robot_positions
-            ):
-                robot_positions.append(
-                    [
-                        pos[0],
-                        pos[1],
-                        manager.robot_radius + Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST
-                    ]
-                )
+        for manager in self._robot_managers:
+
+            start_pos = self._map_manager.get_random_pos_on_map(
+                manager.safe_distance)
+            goal_pos = self._map_manager.get_random_pos_on_map(
+                manager.safe_distance, forbidden_zones=[start_pos])
+
+            manager.reset(start_pos=start_pos[:2], goal_pos=goal_pos[:2])
+
+            robot_positions.append(start_pos)
+            robot_positions.append(goal_pos)
 
         dynamic_obstacles = random.randint(
-            TaskMode.Random.MIN_DYNAMIC_OBS,
-            TaskMode.Random.MAX_DYNAMIC_OBS
+            Constants.Random.MIN_DYNAMIC_OBS,
+            Constants.Random.MAX_DYNAMIC_OBS
         ) if dynamic_obstacles is None else dynamic_obstacles
+
         static_obstacles = random.randint(
-            TaskMode.Random.MIN_STATIC_OBS,
-            TaskMode.Random.MAX_STATIC_OBS
+            Constants.Random.MIN_STATIC_OBS,
+            Constants.Random.MAX_STATIC_OBS
         ) if static_obstacles is None else static_obstacles
 
         xml_path = os.path.join(
@@ -91,55 +91,60 @@ class RandomScenarioTask(CreateObstacleTask):
         static_obstacles_array: List[Obstacle]
         interactive_obstacles_array: List[Obstacle]
 
-        self.obstacle_manager.spawn_map_obstacles()
+        self._obstacle_manager.spawn_map_obstacles()
 
-        obstacle_path: str = os.path.join(RosPack().get_path("arena-simulation-setup"), "obstacles")
-        dynamic_obstacle_path: str = os.path.join(RosPack().get_path("arena-simulation-setup"), "dynamic_obstacles")
+        obstacle_path: str = os.path.join(
+            RosPack().get_path("arena-simulation-setup"), "obstacles")
+        dynamic_obstacle_path: str = os.path.join(
+            RosPack().get_path("arena-simulation-setup"), "dynamic_obstacles")
 
         # Create static obstacles
         for ob_type in [num_tables]:
 
-            model = self.model_loader.load(ob_type[1])
+            model = self._model_loader.load(ob_type[1])
 
             static_obstacles_array = list()
             for i in range(ob_type[0]):
-                obstacle = self.create_obstacle(ObstacleConfig(model=model))
+                obstacle = self._create_obstacle(ObstacleConfig(model=model))
                 obstacle.extra["type"] = ob_type[1]
-                obstacle.extra["yaml"] = os.path.join(obstacle_path, ob_type[2])
+                obstacle.extra["yaml"] = os.path.join(
+                    obstacle_path, ob_type[2])
                 static_obstacles_array.append(obstacle)
 
             if len(static_obstacles_array):
-                self.obstacle_manager.spawn_obstacles(
+                self._obstacle_manager.spawn_obstacles(
                     obstacles=static_obstacles_array)
 
         # Create interactive obstacles
         for ob_type in [num_shelves]:
 
-            model = self.model_loader.load(ob_type[1])
+            model = self._model_loader.load(ob_type[1])
 
             interactive_obstacles_array = list()
             for i in range(ob_type[0]):
-                obstacle = self.create_obstacle(ObstacleConfig(model=model))
+                obstacle = self._create_obstacle(ObstacleConfig(model=model))
                 obstacle.extra["type"] = ob_type[1]
-                obstacle.extra["yaml"] = os.path.join(obstacle_path, ob_type[2])
+                obstacle.extra["yaml"] = os.path.join(
+                    obstacle_path, ob_type[2])
                 interactive_obstacles_array.append(obstacle)
 
             if len(interactive_obstacles_array):
-                self.obstacle_manager.spawn_obstacles(
+                self._obstacle_manager.spawn_obstacles(
                     obstacles=interactive_obstacles_array)
 
         # Create dynamic obstacles
         for ob_type in [num_adults, num_elder, num_child]:
             dynamic_obstacles_array = list()
             for i in range(ob_type[0]):
-                obstacle = self.create_obstacle(DynamicObstacleConfig(
-                    model=self.obstacle_manager.dynamic_manager._default_actor_model))
+                obstacle = self._create_obstacle(DynamicObstacleConfig(
+                    model=self._obstacle_manager.dynamic_manager._default_actor_model))
                 obstacle.extra["type"] = ob_type[1]
-                obstacle.extra["yaml"] = os.path.join(dynamic_obstacle_path, ob_type[2])
+                obstacle.extra["yaml"] = os.path.join(
+                    dynamic_obstacle_path, ob_type[2])
                 dynamic_obstacles_array.append(obstacle)
 
             if len(dynamic_obstacles_array):
-                self.obstacle_manager.spawn_dynamic_obstacles(
+                self._obstacle_manager.spawn_dynamic_obstacles(
                     obstacles=dynamic_obstacles_array)
 
         return False, (0, 0, 0)

@@ -18,13 +18,13 @@ from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
 
-from task_generator.shared import ModelType
+from task_generator.shared import ModelType, Obstacle
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
 
-@SimulatorFactory.register("gazebo")
+@SimulatorFactory.register(Constants.Simulator.GAZEBO)
 class GazeboSimulator(BaseSimulator):
     def __init__(self, namespace: str):
 
@@ -119,9 +119,6 @@ class GazeboSimulator(BaseSimulator):
 
         self.spawn_model(ModelType.URDF, request)
 
-    def reset_pedsim_agents(self):
-        self._reset_peds_srv()
-
     @staticmethod
     def get_robot_description(robot_name, namespace):
         arena_sim_path = rospkg.RosPack().get_path("arena-simulation-setup")
@@ -135,7 +132,7 @@ class GazeboSimulator(BaseSimulator):
             f"robot_namespace:={namespace}"
         ]).decode("utf-8")
 
-    def spawn_obstacle(self, obstacle):
+    def spawn_obstacle(self, obstacle: Obstacle) -> str:
         request = SpawnModelRequest()
 
         request.model_name = obstacle.name
@@ -146,7 +143,7 @@ class GazeboSimulator(BaseSimulator):
 
         self.spawn_model(obstacle.model.type, request)
 
+        return obstacle.name
+
     def delete_obstacle(self, obstacle_id: str):
-        # indexer = self.index_namespace(obstacle_id)
         self.remove_model_srv(DeleteModelRequest(model_name=obstacle_id))
-        # indexer.free(index)

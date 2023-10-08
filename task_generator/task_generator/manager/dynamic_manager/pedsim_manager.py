@@ -52,8 +52,8 @@ class PedsimManager(DynamicManager):
 
         self._id_gen = itertools.count(20)
 
-        self._simulator.interactive_actor_poses_callback = self.interactive_actor_poses_callback
-        self._simulator.dynamic_actor_poses_callback = self.dynamic_actor_poses_callback
+        self._simulator.interactive_actor_poses_callback = self._interactive_actor_poses_callback
+        self._simulator.dynamic_actor_poses_callback = self._dynamic_actor_poses_callback
 
         rospy.wait_for_service("/pedsim_simulator/spawn_peds", timeout=T)
         rospy.wait_for_service("/pedsim_simulator/reset_all_peds", timeout=T)
@@ -93,9 +93,9 @@ class PedsimManager(DynamicManager):
         rospy.set_param("respawn_static", True)
         rospy.set_param("respawn_interactive", True)
         rospy.Subscriber("/pedsim_simulator/simulated_waypoints",
-                         Waypoints, self.interactive_actor_poses_callback)
+                         Waypoints, self._interactive_actor_poses_callback)
         rospy.Subscriber("/pedsim_simulator/simulated_agents",
-                         AgentStates, self.dynamic_actor_poses_callback)
+                         AgentStates, self._dynamic_actor_poses_callback)
 
         # override
         self._xml_string = """
@@ -253,11 +253,14 @@ class PedsimManager(DynamicManager):
             f'{self._ns_prefix()}agent_topic_string', self.agent_topic_str)
         rospy.set_param("respawn_dynamic", True)
 
+    def spawn_line_obstacle(self, name, _from, _to):
+        return
+
     def remove_obstacles(self):
         self._remove_all_interactive_obstacles_srv.call()
         self._remove_peds_srv.call()
 
-    def interactive_actor_poses_callback(self, actors):
+    def _interactive_actor_poses_callback(self, actors):
         if rospy.get_param("respawn_interactive"):
             for actor in actors.waypoints:
                 if "interactive" in actor.name:
@@ -344,7 +347,7 @@ class PedsimManager(DynamicManager):
                     )
                     rospy.set_param("respawn_static", False)
 
-    def dynamic_actor_poses_callback(self, actors):
+    def _dynamic_actor_poses_callback(self, actors):
         if rospy.get_param("respawn_dynamic"):
             for actor in actors.agent_states:
                 actor_id = str(actor.id)

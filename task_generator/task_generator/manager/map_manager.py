@@ -8,6 +8,7 @@ from map_distance_server.srv import GetDistanceMapResponse
 from geometry_msgs.msg import Point
 from task_generator.shared import Waypoint
 
+
 class MapManager:
     """
     The map manager manages the static map
@@ -27,7 +28,7 @@ class MapManager:
     def update_map(self, map: GetDistanceMapResponse):
         self._map = map
         self._map_with_distances = np.reshape(
-            self._map.data, 
+            self._map.data,
             (self._map.info.height, self._map.info.width)
         )
         self._origin = map.info.origin.position
@@ -38,8 +39,10 @@ class MapManager:
 
         self._forbidden_zones = init
 
+    def forbid(self, forbidden_zones: List[Waypoint]):
+        self._forbidden_zones += forbidden_zones
 
-    def get_random_pos_on_map(self, safe_dist: float, forbid: bool = True) -> Waypoint:
+    def get_random_pos_on_map(self, safe_dist: float, forbid: bool = True, forbidden_zones: Optional[List[Waypoint]] = None) -> Waypoint:
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both
@@ -52,6 +55,7 @@ class MapManager:
         Args:
             safe_dist: minimal distance to the next
                 obstacles for calculated positons
+            forbid: add returned waypoint to forbidden zones
             forbidden_zones: Array of (x, y, radius),
                 describing circles on the map. New
                 position should not lie on forbidden
@@ -63,30 +67,32 @@ class MapManager:
         # safe_dist is in meters so at first calc safe dist to distance on
         # map -> resolution of map is m / cell -> safe_dist in cells is
         # safe_dist / resolution
-        safe_dist_in_cells = math.ceil(safe_dist / self._map.info.resolution) + 1
+        safe_dist_in_cells = math.ceil(
+            safe_dist / self._map.info.resolution) + 1
 
-        forbidden_zones_in_cells : List[Waypoint] = [
+        forbidden_zones_in_cells: List[Waypoint] = [
             (
                 math.ceil(point[0] / self._map.info.resolution),
                 math.ceil(point[1] / self._map.info.resolution),
                 math.ceil(point[2] / self._map.info.resolution)
             )
-            for point in self._forbidden_zones
+            for point in self._forbidden_zones + (forbidden_zones if forbidden_zones is not None else [])
         ]
 
         # Now get index of all cells were dist is > safe_dist_in_cells
-        possible_cells: List[Tuple[np.intp, np.intp]] = np.array(np.where(self._map_with_distances > safe_dist_in_cells)).transpose().tolist()
+        possible_cells: List[Tuple[np.intp, np.intp]] = np.array(
+            np.where(self._map_with_distances > safe_dist_in_cells)).transpose().tolist()
 
         assert len(possible_cells) > 0, "No cells available"
 
-        # The position should not lie in the forbidden zones and keep the safe 
+        # The position should not lie in the forbidden zones and keep the safe
         # dist to these zones as well. We could remove all cells here but since
         # we only need one position and the amount of cells can get very high
-        # we just pick positions at random and check if the distance to all 
+        # we just pick positions at random and check if the distance to all
         # forbidden zones is high enough
 
         while len(possible_cells) > 0:
-            
+
             # Select a random cell
             x, y = possible_cells.pop(random.randrange(len(possible_cells)))
 
@@ -97,11 +103,10 @@ class MapManager:
         else:
             raise Exception("can't find any non-occupied spaces")
 
-
         theta = random.uniform(-math.pi, math.pi)
 
         point: Waypoint = (
-            np.round(y * self._map.info.resolution + self._origin.y, 3), 
+            np.round(y * self._map.info.resolution + self._origin.y, 3),
             np.round(x * self._map.info.resolution + self._origin.x, 3),
             theta
         )
@@ -116,13 +121,13 @@ class MapManager:
             return True
 
         for p in forbidden_zones:
-                f_x, f_y, radius = p
+            f_x, f_y, radius = p
 
-                dist = math.floor(math.sqrt(
-                    (x - f_x) ** 2 + (y - f_y) ** 2
-                ))
+            dist = math.floor(math.sqrt(
+                (x - f_x) ** 2 + (y - f_y) ** 2
+            ))
 
-                if dist > safe_dist + radius:
-                    return True
+            if dist > safe_dist + radius:
+                return True
 
         return False

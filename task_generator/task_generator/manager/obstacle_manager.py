@@ -1,12 +1,9 @@
-from typing import Generator, Iterable, Iterator, List, Optional, Tuple, overload
-from task_generator.constants import Constants
+from typing import Collection, Iterator
 import rospy
-import numpy as np
 import os
 import xml.etree.ElementTree as ET
 import rospkg
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
-import time
 from task_generator.manager.map_manager import MapManager
 
 from task_generator.shared import DynamicObstacle, Obstacle
@@ -17,7 +14,8 @@ import itertools
 
 from task_generator.simulators.base_simulator import BaseSimulator
 
-#GRADUALLY MIGRATE ALL METHODS FOR STATIC OBSTACLES FROM DYNAMIC_MANAGERS TO HERE
+# GRADUALLY MIGRATE ALL METHODS FOR STATIC OBSTACLES FROM DYNAMIC_MANAGERS TO HERE
+
 
 class ObstacleManager:
 
@@ -38,7 +36,7 @@ class ObstacleManager:
 
         self.id_generator = itertools.count(434)
 
-
+    # TODO replace with already loaded XML
     def spawn_map_obstacles(self, map_path: str = "map_empty"):
         """
         Loads given obstacles into the simulator,
@@ -46,8 +44,8 @@ class ObstacleManager:
         """
         map = rospy.get_param("map_file")
         map_path = os.path.join(
-            rospkg.RosPack().get_path("arena-simulation-setup"), 
-            "worlds", 
+            rospkg.RosPack().get_path("arena-simulation-setup"),
+            "worlds",
             map_path,
             "ped_scenarios",
             f"{map}.xml"
@@ -57,18 +55,20 @@ class ObstacleManager:
 
         for child in root:
 
-            _from = Point(float(child.attrib['x1']),float(child.attrib['y1']), 0)
-            _to = Point(float(child.attrib['x2']),float(child.attrib['y2']), 0)
+            _from = Point(float(child.attrib['x1']), float(
+                child.attrib['y1']), 0)
+            _to = Point(float(child.attrib['x2']),
+                        float(child.attrib['y2']), 0)
 
             identifier = str(next(self.id_generator))
 
             self.dynamic_manager.spawn_line_obstacle(
-                name = f"wall{identifier}",
-                _from = _from,
-                _to = _to
+                name=f"wall{identifier}",
+                _from=_from,
+                _to=_to
             )
 
-    def spawn_dynamic_obstacles(self, obstacles: Iterable[DynamicObstacle]):
+    def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
         """
         Loads given dynamic obstacles into the simulator.
         To-Do: consider merging with spawn_dynamic_obstacles or simplifying by calling it
@@ -76,7 +76,7 @@ class ObstacleManager:
 
         self.dynamic_manager.spawn_dynamic_obstacles(obstacles=obstacles)
 
-    def spawn_obstacles(self, obstacles: Iterable[Obstacle]):
+    def spawn_obstacles(self, obstacles: Collection[Obstacle]):
         """
         Loads given obstacles into the simulator.
         If the object has an interaction radius of > 0, 
@@ -85,10 +85,10 @@ class ObstacleManager:
         """
 
         self.dynamic_manager.spawn_obstacles(obstacles=obstacles)
-    
+
     def reset(self):
 
         if self.first_reset:
             self.first_reset = False
-        else:  
+        else:
             self.dynamic_manager.remove_obstacles()

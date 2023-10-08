@@ -42,7 +42,7 @@ import xml.etree.ElementTree as ET
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
 
-@SimulatorFactory.register("flatland")
+@SimulatorFactory.register(Constants.Simulator.FLATLAND)
 class FlatlandSimulator(BaseSimulator):
     """
     This is the flatland encoder for connecting
