@@ -10,6 +10,7 @@ from rosgraph_msgs.msg import Clock
 from nav_msgs.srv import GetMap
 from nav_msgs.msg import OccupancyGrid
 from task_generator.constants import Constants
+from task_generator.manager.map_manager import MapManager
 from task_generator.utils import ModelLoader
 from task_generator.manager.obstacle_manager import ObstacleManager
 
@@ -24,7 +25,7 @@ class BaseTask():
 
     obstacle_manager: ObstacleManager
     robot_managers: List[Any]
-    map_manager: Any
+    map_manager: MapManager
 
     model_loader: ModelLoader
     dynamic_model_loader: ModelLoader

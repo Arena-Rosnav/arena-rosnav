@@ -17,6 +17,7 @@ class Model:
 
 ForbiddenZone = Tuple[float, float, float]
 
+Position2D = Tuple[float, float]
 Position = Tuple[float, float, float]
 Waypoint = Tuple[float, float, float]
 

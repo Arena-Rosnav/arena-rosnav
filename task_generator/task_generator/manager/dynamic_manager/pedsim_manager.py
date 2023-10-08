@@ -17,7 +17,7 @@ from scipy.spatial.transform import Rotation
 from pedsim_srvs.srv import SpawnInteractiveObstacles, SpawnObstacle, SpawnPeds
 from pedsim_msgs.msg import InteractiveObstacle, AgentStates, Waypoints, Ped
 
-from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
+from geometry_msgs.msg import Point, Pose, Quaternion
 
 from std_srvs.srv import SetBool, Trigger
 

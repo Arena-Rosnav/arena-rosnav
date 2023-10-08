@@ -1,4 +1,5 @@
 import traceback
+from typing import Any, Callable
 import rospy
 import roslaunch
 import rospkg
@@ -12,6 +13,9 @@ from geometry_msgs.msg import PoseStamped
 from std_srvs.srv import Empty
 
 from task_generator.constants import Constants
+from task_generator.manager.map_manager import MapManager
+from task_generator.shared import Position2D
+from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.utils import Utils
 
 
@@ -21,21 +25,37 @@ class RobotManager:
         position of a robot for all task modes.
     """
 
-    def __init__(self, namespace, map_manager, simulator, robot_setup):
+    namespace: str
+    ns_prefix: Callable[..., str]
+
+    map_manager: MapManager
+    simulator: BaseSimulator
+
+    start_pos: Position2D
+    end_pos: Position2D
+    position: Position2D
+
+    goal_radius: float
+    is_goal_reached: bool
+
+    robot_setup: Any
+    record_data: bool
+
+    def __init__(self, namespace: str, map_manager: MapManager, simulator: BaseSimulator, robot_setup: Any):
         self.namespace = namespace
         self.ns_prefix = lambda *topic: os.path.join(self.namespace, *topic)
 
         self.map_manager = map_manager
         self.simulator = simulator
 
-        self.start_pos = [0, 0]
-        self.goal_pos = [0, 0]
+        self.start_pos = (0, 0)
+        self.goal_pos = (0, 0)
 
-        self.goal_radius = rospy.get_param("goal_radius", 0.7) + 1
+        self.goal_radius = float(str(rospy.get_param("goal_radius", 0.7))) + 1
         self.is_goal_reached = False
 
         self.robot_setup = robot_setup
-        self.record_data = rospy.get_param('record_data', False)#  and rospy.get_param('task_mode', 'scenario') == 'scenario'
+        self.record_data = bool(rospy.get_param('record_data', False)) #  and rospy.get_param('task_mode', 'scenario') == 'scenario'
 
         self.position = self.start_pos
 
@@ -46,7 +66,7 @@ class RobotManager:
         self.simulator.spawn_robot(self.namespace, self.robot_setup["model"], self._robot_name())
 
         self.move_base_goal_pub = rospy.Publisher(self.ns_prefix("move_base_simple", "goal"), PoseStamped, queue_size=10)
-        self.pub_goal_timer = rospy.Timer(rospy.Duration(0.25), self.publish_goal_periodically)
+        self.pub_goal_timer = rospy.Timer(rospy.Duration(nsecs=int(0.25e9)), self.publish_goal_periodically)
 
         rospy.Subscriber(
             self.ns_prefix("odom"), 

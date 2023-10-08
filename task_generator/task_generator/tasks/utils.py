@@ -1,11 +1,12 @@
 import traceback
-from typing import List
+from typing import List, Optional
 
 import rospy
 import rospkg
 import yaml
 import os
 from task_generator.constants import Constants
+from task_generator.simulators.base_simulator import BaseSimulator
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.manager.map_manager import MapManager
@@ -21,38 +22,36 @@ from task_generator.tasks.staged import StagedRandomTask
 from task_generator.tasks.random_scenario import RandomScenarioTask
 from task_generator.utils import Utils
 
-from map_distance_server.srv import GetDistanceMap
+from map_distance_server.srv import GetDistanceMap, GetDistanceMapResponse
 
 #guard against autoflake
 RandomTask, ScenarioTask, StagedRandomTask, RandomScenarioTask
 
-def get_predefined_task(namespace, mode, simulator=None, social_mode="pedsim", **kwargs):
+def get_predefined_task(namespace, mode, simulator: Optional[BaseSimulator]=None, social_mode="pedsim", **kwargs):
     """
     Gets the task based on the passed mode
     """
-    if simulator == None:
+    if simulator is None:
         simulator = SimulatorFactory.instantiate(Utils.get_simulator())(namespace)
 
     rospy.wait_for_service("/distance_map")
 
     service_client_get_map = rospy.ServiceProxy("/distance_map", GetDistanceMap)
 
-    map_response = service_client_get_map()
+    map_response: GetDistanceMapResponse = service_client_get_map()
 
     map_manager = MapManager(map_response)
-
-    simulator.map_manager = map_manager
 
     dynamic_manager: DynamicManager
 
     if social_mode == Constants.SocialMode.SFM:
-        dynamic_manager = SFMManager(namespace, simulator)
+        dynamic_manager = SFMManager(namespace=namespace, simulator=simulator)
     elif social_mode == Constants.SocialMode.PEDSIM:
-        dynamic_manager = PedsimManager(namespace, simulator)
+        dynamic_manager = PedsimManager(namespace=namespace, simulator=simulator)
     else:
-        dynamic_manager = DynamicManager(namespace, simulator)
+        dynamic_manager = DynamicManager(namespace=namespace, simulator=simulator)
 
-    obstacle_manager = ObstacleManager(namespace, map_manager, simulator, dynamic_manager)
+    obstacle_manager = ObstacleManager(namespace=namespace, map_manager=map_manager, simulator=simulator, dynamic_manager=dynamic_manager)
 
     robot_managers = create_robot_managers(namespace, map_manager, simulator)
 

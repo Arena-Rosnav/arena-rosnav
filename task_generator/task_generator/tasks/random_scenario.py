@@ -44,6 +44,7 @@ class RandomScenarioTask(CreateObstacleTask):
     ):
 
         self.obstacle_manager.reset()
+        self.map_manager.init_forbidden_zones()
 
         robot_positions = []
 

@@ -63,6 +63,7 @@ class RandomTask(CreateObstacleTask):
                 )
 
         self.obstacle_manager.reset()
+        self.map_manager.init_forbidden_zones()
 
         dynamic_obstacles_array: List[DynamicObstacle]
         static_obstacles_array: List[Obstacle]
