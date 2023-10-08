@@ -6,7 +6,7 @@ class TaskFactory:
     @classmethod
     def register(cls, name):
         def inner_wrapper(wrapped_class):
-            assert name not in cls.registry, f"Simulator '{name}' already exists!"
+            assert name not in cls.registry, f"TaskMode '{name}' already exists!"
             assert issubclass(wrapped_class, BaseTask)
 
             cls.registry[name] = wrapped_class
@@ -16,7 +16,7 @@ class TaskFactory:
 
     @classmethod
     def instantiate(cls, name: str, *args, **kwargs):
-        assert name in cls.registry, f"Simulator '{name}' is not registered!"
+        assert name in cls.registry, f"TaskMode '{name}' is not registered!"
         simulator = cls.registry[name]
         
         if issubclass(simulator, BaseTask):

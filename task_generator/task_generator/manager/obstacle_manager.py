@@ -36,9 +36,6 @@ class ObstacleManager:
         self.first_reset = True
         self.dynamic_manager = dynamic_manager
 
-        simulator.interactive_actor_poses_callback = self.dynamic_manager.interactive_actor_poses_callback
-        simulator.dynamic_actor_poses_callback = self.dynamic_manager.dynamic_actor_poses_callback
-
         self.id_generator = itertools.count(434)
 
 
@@ -77,8 +74,7 @@ class ObstacleManager:
         To-Do: consider merging with spawn_dynamic_obstacles or simplifying by calling it
         """
 
-        for obstacle in obstacles:
-            self.dynamic_manager.spawn_dynamic_obstacle(obstacle=obstacle)
+        self.dynamic_manager.spawn_dynamic_obstacles(obstacles=obstacles)
 
     def spawn_obstacles(self, obstacles: Iterable[Obstacle]):
         """
@@ -88,8 +84,7 @@ class ObstacleManager:
         To-Do: consider merging with spawn_obstacles or simplifying by calling it
         """
 
-        for obstacle in obstacles:
-            self.dynamic_manager.spawn_obstacle(obstacle=obstacle)
+        self.dynamic_manager.spawn_obstacles(obstacles=obstacles)
     
     def reset(self):
 

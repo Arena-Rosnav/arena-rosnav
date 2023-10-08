@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Any, Iterable, List, Optional, Tuple
+from dataclasses import dataclass, field
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 from geometry_msgs.msg import Point, Pose, Quaternion
 import enum
 
@@ -36,17 +36,20 @@ class Obstacle:
     name: str
     pose: Pose
     model: Model
+    extra: Dict = field(default_factory=lambda:dict(), init=False)
 
     @staticmethod
     def parse(obj: Any):
-        return Obstacle(
+        obstacle = Obstacle(
             name=obj["name"],
             pose=Pose(
                 position=obj["pos"],
                 orientation=Quaternion(0,0,0,1)
             ),
-            model=Model(type=ModelType.UNKNOWN, name="", description="")
+            model=Model(type=ModelType.UNKNOWN, name="", description=""),
         )
+        obstacle.extra = obj
+        return obstacle
 
 @dataclass
 class DynamicObstacle(Obstacle):
@@ -54,7 +57,7 @@ class DynamicObstacle(Obstacle):
 
     @staticmethod
     def parse(obj: Any):
-        return DynamicObstacle(
+        obstacle = DynamicObstacle(
             name=obj["name"],
             pose=Pose(
                 position=obj["pos"],
@@ -63,6 +66,8 @@ class DynamicObstacle(Obstacle):
             model=Model(type=ModelType.UNKNOWN, name="", description=""),
             waypoints=obj["waypoints"]
         )
+        obstacle.extra = obj
+        return obstacle
 
 
 @dataclass

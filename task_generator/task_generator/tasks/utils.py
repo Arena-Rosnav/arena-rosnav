@@ -1,4 +1,6 @@
 import traceback
+from typing import List
+
 import rospy
 import rospkg
 import yaml
@@ -6,8 +8,6 @@ import os
 from task_generator.constants import Constants
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
-from task_generator.simulators.gazebo_simulator import GazeboSimulator
-from task_generator.simulators.flatland_simulator import FlatlandRandomModel
 from task_generator.manager.map_manager import MapManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
@@ -23,6 +23,8 @@ from task_generator.utils import Utils
 
 from map_distance_server.srv import GetDistanceMap
 
+#guard against autoflake
+RandomTask, ScenarioTask, StagedRandomTask, RandomScenarioTask
 
 def get_predefined_task(namespace, mode, simulator=None, social_mode="pedsim", **kwargs):
     """
@@ -40,6 +42,8 @@ def get_predefined_task(namespace, mode, simulator=None, social_mode="pedsim", *
     map_manager = MapManager(map_response)
 
     simulator.map_manager = map_manager
+
+    dynamic_manager: DynamicManager
 
     if social_mode == Constants.SocialMode.SFM:
         dynamic_manager = SFMManager(namespace, simulator)
@@ -105,7 +109,7 @@ def create_robot_managers(namespace, map_manager, simulator):
     return robot_managers
 
 
-def read_robot_setup_file(setup_file):
+def read_robot_setup_file(setup_file) -> List:
     try:
         with open(
             os.path.join(rospkg.RosPack().get_path("task_generator"), "robot_setup", setup_file),
@@ -114,7 +118,8 @@ def read_robot_setup_file(setup_file):
             return yaml.safe_load(file)["robots"]
     except:
         traceback.print_exc()
-        rospy.signal_shutdown()
+        rospy.signal_shutdown("")
+        raise Exception()
 
 
 def create_default_robot_list(robot_model, planner, agent):
@@ -124,3 +129,4 @@ def create_default_robot_list(robot_model, planner, agent):
         "agent": agent,
         "amount": 1
     }]
+

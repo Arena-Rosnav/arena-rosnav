@@ -1,43 +1,36 @@
 import rospy
 import os
 import rospkg
-import random
 import subprocess
-import numpy as np
-import math
-import re
-from scipy.spatial.transform import Rotation
 
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState, DeleteModel, SpawnModel, SpawnModelRequest, DeleteModelRequest
 
-from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
+from geometry_msgs.msg import Pose, PoseStamped, Quaternion
 
 from std_msgs.msg import Empty
-from std_srvs.srv import Empty, SetBool, Trigger
+from std_srvs.srv import Empty
 
-from rospkg import RosPack
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from tf.transformations import quaternion_from_euler
-from task_generator.constants import Constants, Pedsim
+from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
-from task_generator.utils import Utils, NamespaceIndexer
-from nav_msgs.srv import GetMap
 
-from task_generator.shared import ModelType, Obstacle
+from task_generator.shared import ModelType
 
-import xml.etree.ElementTree as ET
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
+
 
 @SimulatorFactory.register("gazebo")
 class GazeboSimulator(BaseSimulator):
     def __init__(self, namespace: str):
 
         super().__init__(namespace)
-        self._goal_pub = rospy.Publisher(self._ns_prefix("/goal"), PoseStamped, queue_size=1, latch=True)
+        self._goal_pub = rospy.Publisher(self._ns_prefix(
+            "/goal"), PoseStamped, queue_size=1, latch=True)
         self._robot_name = rospy.get_param("robot_model", "")
 
         rospy.wait_for_service("/gazebo/spawn_urdf_model")
@@ -62,15 +55,15 @@ class GazeboSimulator(BaseSimulator):
         rospy.wait_for_service("gazebo/delete_model")
 
         print("service: spawn_sdf_model is available ....")
-        self.remove_model_srv = rospy.ServiceProxy("gazebo/delete_model", DeleteModel)
-
+        self.remove_model_srv = rospy.ServiceProxy(
+            "gazebo/delete_model", DeleteModel)
 
     def interactive_actor_poses_callback(self, actors):
         raise RuntimeError("needs to be managed by obstacle_manager")
 
     def dynamic_actor_poses_callback(self, actors):
         raise RuntimeError("needs to be managed by obstacle_manager")
-            
+
     def before_reset_task(self):
         self.pause()
 
@@ -115,8 +108,10 @@ class GazeboSimulator(BaseSimulator):
         robot_description = GazeboSimulator.get_robot_description(
             robot_name, robot_namespace
         )
-        rospy.set_param(os.path.join(robot_namespace, "robot_description"), robot_description)
-        rospy.set_param(os.path.join(robot_namespace, "tf_prefix"), robot_namespace)
+        rospy.set_param(os.path.join(robot_namespace,
+                        "robot_description"), robot_description)
+        rospy.set_param(os.path.join(robot_namespace,
+                        "tf_prefix"), robot_namespace)
         request.model_name = name
         request.model_xml = robot_description
         request.robot_namespace = robot_namespace
@@ -126,7 +121,7 @@ class GazeboSimulator(BaseSimulator):
 
     def reset_pedsim_agents(self):
         self._reset_peds_srv()
-    
+
     @staticmethod
     def get_robot_description(robot_name, namespace):
         arena_sim_path = rospkg.RosPack().get_path("arena-simulation-setup")
@@ -135,7 +130,8 @@ class GazeboSimulator(BaseSimulator):
             "rosrun",
             "xacro",
             "xacro",
-            os.path.join(arena_sim_path, "robot", robot_name, "urdf", f"{robot_name}.urdf.xacro"),
+            os.path.join(arena_sim_path, "robot", robot_name,
+                         "urdf", f"{robot_name}.urdf.xacro"),
             f"robot_namespace:={namespace}"
         ]).decode("utf-8")
 
@@ -151,6 +147,6 @@ class GazeboSimulator(BaseSimulator):
         self.spawn_model(obstacle.model.type, request)
 
     def delete_obstacle(self, obstacle_id: str):
-        #indexer = self.index_namespace(obstacle_id)
+        # indexer = self.index_namespace(obstacle_id)
         self.remove_model_srv(DeleteModelRequest(model_name=obstacle_id))
-        #indexer.free(index)
+        # indexer.free(index)

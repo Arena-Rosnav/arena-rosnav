@@ -1,13 +1,18 @@
-from task_generator.shared import DynamicObstacle, Obstacle, ForbiddenZone, Model
+import os
+from rospkg import RosPack
+import rospy
+from task_generator.shared import DynamicObstacle, ModelType, Obstacle, Model
 from task_generator.simulators.base_simulator import BaseSimulator
-from task_generator.manager.map_manager import MapManager
-from typing import Iterable, Optional, Tuple
+from typing import Collection
 from geometry_msgs.msg import Point
 
 class DynamicManager:
 
     namespace: str
     simulator: BaseSimulator
+
+    #TODO temporary
+    default_actor_model:Model
 
     def __init__(self, namespace: str, simulator: BaseSimulator):
         """
@@ -16,34 +21,27 @@ class DynamicManager:
             @namespace: global namespace
             @simulator: Simulator instance
         """
-        ...
 
-    def interactive_actor_poses_callback(self, actors):
-        """
-        If respawn_interactive or respawn_static are True
-        the corresponding objects will be reloaded at original position
-        """
-        ...
-    
-    def dynamic_actor_poses_callback(self, actors):
-        """
-        If respawn_dynamic==True ,
-        the given actors will be reloaded at original point with
-        original waypoints
-        """
-        ...
+        self.simulator = simulator
+
+        pkg_path = RosPack().get_path('arena-simulation-setup')
+        default_actor_model_file = os.path.join(pkg_path, "dynamic_obstacles", "actor2", "model.sdf")
         
-    def spawn_obstacle(self, obstacle: Obstacle):
+        actor_model_file: str = str(rospy.get_param('~actor_model_file', default_actor_model_file))
+        with open(actor_model_file) as f:
+            self.default_actor_model = Model(type=ModelType.SDF, description=f.read(), name="actor2")
+        
+    def spawn_obstacles(self, obstacles: Collection[Obstacle]):
         """
-        Loads given obstacle into the simulator. 
+        Loads given obstacles into the simulator. 
         If the object has an interaction radius of > 0, 
         then load it as an interactive obstacle instead of static
         """
         ...
 
-    def spawn_dynamic_obstacle(self, obstacle: DynamicObstacle):
+    def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
         """
-        Loads given obstacle into the simulator.
+        Loads given obstacles into the simulator.
         Currently by loading a existing sdf file, 
         then reaplacing the static values by dynamic ones 
         """

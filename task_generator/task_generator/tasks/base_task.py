@@ -1,6 +1,7 @@
 from abc import abstractmethod
 import os
-from typing import Any, List
+from typing import Any, List, overload
+import numpy as np
 
 from rospkg import RosPack
 import rospy
@@ -11,6 +12,10 @@ from nav_msgs.msg import OccupancyGrid
 from task_generator.constants import Constants
 from task_generator.utils import ModelLoader
 from task_generator.manager.obstacle_manager import ObstacleManager
+
+from task_generator.shared import DynamicObstacle, Obstacle, DynamicObstacleConfig, ForbiddenZone, Model, ModelType, ObstacleConfig, Waypoint
+from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
+
 
 class BaseTask():
     """
@@ -98,3 +103,72 @@ class BaseTask():
                 return False
         
         return True
+
+
+
+
+
+class CreateObstacleTask(BaseTask):
+    """
+        Extends BaseTask with a create_obstacle method that provides a convenient way to create random obstacles.
+    """
+    # moved from obstacle manager
+
+    @overload
+    def create_obstacle(self, config: DynamicObstacleConfig) -> DynamicObstacle:
+        ...
+    @overload
+    def create_obstacle(self, config: ObstacleConfig) -> Obstacle:
+        ...
+    def create_obstacle(self, config: ObstacleConfig) -> Obstacle:
+        """ 
+        Creates and returns a newly generated obstacle of requested type: 
+        """
+
+        safe_distance = 0.5
+
+        if isinstance(config, DynamicObstacleConfig):
+
+            if config.position is None:
+                point: Waypoint = self.map_manager.get_random_pos_on_map(safe_distance)
+                config.position = (point[0], point[1], 0)
+
+            if config.waypoints is None:
+                config.waypoints = [config.position] # the first waypoint
+                safe_distance = 0.1 # the other waypoints don't need to avoid robot
+                for j in range(10): 
+                    dist = 0
+                    while dist < 8:
+                        [x2, y2, *_] = self.map_manager.get_random_pos_on_map(safe_distance)
+                        dist = np.linalg.norm([config.waypoints[-1][0] - x2, config.waypoints[-1][1] - y2])
+                        config.waypoints.append((x2, y2, 1))
+            
+            return DynamicObstacle(
+                name=config.model.name,
+                model=config.model,
+                pose=Pose(
+                    position=Point(*config.position),
+                    orientation=Quaternion(x=0, y=0, z=0, w=1)
+                ),
+                waypoints=config.waypoints
+            )
+        
+        elif isinstance(config, ObstacleConfig):
+
+            if config.position is None:
+                point: Waypoint = self.map_manager.get_random_pos_on_map(safe_distance)
+                config.position = (point[0], point[1], 0)
+
+            safe_distance = 0.5
+
+            return Obstacle(
+                name=config.model.name,
+                model=config.model,
+                pose=Pose(
+                    position=Point(*config.position),
+                    orientation=Quaternion(x=0, y=0, z=0, w=1)
+                )
+            )
+        
+        else:
+            raise ValueError()

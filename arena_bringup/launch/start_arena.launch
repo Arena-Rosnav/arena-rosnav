@@ -35,11 +35,10 @@
   <arg name="simulator" default="flatland" doc="[flatland, gazebo]" />
   <env name="SIMULATOR" value="$(arg simulator)" />
 
-  <arg name="pedsim" default="false" doc="[true, false]" />
+  <arg name="social_mode" default="pedsim" doc="[pedsim,sfm]" />
+  <arg name="pedsim" value="$(eval social_mode == 'pedsim')" />
   <env name="PEDSIM" value="$(arg pedsim)" />
   <param name="pedsim" value="$(arg pedsim)" />
-  <arg name="social_mode" default="pedsim" doc="[pedsim,sfm]" />
-
 
   <arg name="complexity" default="1" doc="1 = Map known, Position known; 2 = Map known, Position unknown (AMCL); 3 = Map unknown, Position unknown (SLAM)" />
   
@@ -130,6 +129,7 @@
     <arg name="headless" default="false" />
     <arg name="gui" default="true" />
     <arg name="world" default="$(arg world_file)" />
+    <arg name="pedsim" value="$(arg pedsim)"/>
   </include>
 
   <!-- map server-->

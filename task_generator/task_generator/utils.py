@@ -1,6 +1,5 @@
-from typing import Callable, Dict, Iterable, Iterator, List, Optional, Tuple
+from typing import Callable, Dict, Iterator, List, Tuple
 
-from rospkg import RosPack
 import rospy
 import os
 import numpy as np
@@ -109,22 +108,24 @@ class NamespaceIndexer:
         return self.format(index), lambda: self.free(index)
 
 
+#TODO extend with other model types
 class ModelLoader:
 
     model_dir: str
-    models: Iterable[str]
+    models: List[str]
     __cache: Dict[str, Model]
 
     def __init__(self, model_dir: str):
         self.model_dir = model_dir
-        self.models = [name for name, _, _ in os.walk(model_dir)]
+        self.models = [name for name in next(os.walk(model_dir))[1]]
+        self.__cache = dict()
 
     def load(self, model: str) -> Model:
         if model in self.__cache:
             return self.__cache[model]
         
         if model not in self.models:
-            raise FileNotFoundError()
+            raise FileNotFoundError(f"{model} in {self.models} (from: {self.model_dir})")
         
         with open(os.path.join(self.model_dir, model, "model.sdf")) as f:
             model_desc = f.read()
