@@ -80,28 +80,28 @@ class Utils:
 
 class NamespaceIndexer:
 
-    __freed: List[int]
-    __gen: Iterator[int]
-    __namespace: str
-    __sep: str
+    _freed: List[int]
+    _gen: Iterator[int]
+    _namespace: str
+    _sep: str
 
     def __init__(self, namespace: str, sep: str = "_"):
-        self.__freed = list()
-        self.__gen = itertools.count()
-        self.__namespace = namespace
-        self.__sep = sep
+        self._freed = list()
+        self._gen = itertools.count()
+        self._namespace = namespace
+        self._sep = sep
 
     def free(self, index: int):
-        heapq.heappush(self.__freed, index)
+        heapq.heappush(self._freed, index)
 
     def get(self) -> int:
-        if len(self.__freed):
-            return heapq.heappop(self.__freed)
+        if len(self._freed):
+            return heapq.heappop(self._freed)
         
-        return next(self.__gen)
+        return next(self._gen)
     
     def format(self, index: int) -> str:
-        return f"{self.__namespace}{self.__sep}{index}"
+        return f"{self._namespace}{self._sep}{index}"
 
     def __next__(self) -> Tuple[str, Callable[[], None]]:
         index = self.get()
@@ -113,16 +113,16 @@ class ModelLoader:
 
     model_dir: str
     models: List[str]
-    __cache: Dict[str, Model]
+    _cache: Dict[str, Model]
 
     def __init__(self, model_dir: str):
         self.model_dir = model_dir
         self.models = [name for name in next(os.walk(model_dir))[1]]
-        self.__cache = dict()
+        self._cache = dict()
 
     def load(self, model: str) -> Model:
-        if model in self.__cache:
-            return self.__cache[model]
+        if model in self._cache:
+            return self._cache[model]
         
         if model not in self.models:
             raise FileNotFoundError(f"{model} in {self.models} (from: {self.model_dir})")

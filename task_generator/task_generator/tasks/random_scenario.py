@@ -132,7 +132,7 @@ class RandomScenarioTask(CreateObstacleTask):
             dynamic_obstacles_array = list()
             for i in range(ob_type[0]):
                 obstacle = self.create_obstacle(DynamicObstacleConfig(
-                    model=self.obstacle_manager.dynamic_manager.default_actor_model))
+                    model=self.obstacle_manager.dynamic_manager._default_actor_model))
                 obstacle.extra["type"] = ob_type[1]
                 obstacle.extra["yaml"] = os.path.join(dynamic_obstacle_path, ob_type[2])
                 dynamic_obstacles_array.append(obstacle)

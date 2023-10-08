@@ -33,22 +33,27 @@ T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
 class PedsimManager(DynamicManager):
 
-    __id_gen: itertools.count
+    _id_gen: itertools.count
+
+    _spawn_peds_srv: rospy.ServiceProxy
+    _remove_peds_srv: rospy.ServiceProxy
+    _reset_peds_srv: rospy.ServiceProxy
+    _respawn_interactive_obstacles_srv: rospy.ServiceProxy
+    _remove_all_interactive_obstacles_srv: rospy.ServiceProxy
+    _spawn_interactive_obstacles_srv: rospy.ServiceProxy
+    _respawn_peds_srv: rospy.ServiceProxy
+    _add_obstacle_srv: rospy.ServiceProxy
+
+    _xml_string: str
 
     def __init__(self, namespace: str, simulator: BaseSimulator):
 
         super().__init__(namespace, simulator)
 
-        self.__id_gen = itertools.count(20)
+        self._id_gen = itertools.count(20)
 
-        self.simulator.interactive_actor_poses_callback = self.interactive_actor_poses_callback
-        self.simulator.dynamic_actor_poses_callback = self.dynamic_actor_poses_callback
-
-        self._ns_prefix = lambda *topic: os.path.join(namespace, *topic)
-        self._goal_pub = rospy.Publisher(self._ns_prefix(
-            "/goal"), PoseStamped, queue_size=1, latch=True)
-
-        self._robot_name = rospy.get_param("robot_model", "")
+        self._simulator.interactive_actor_poses_callback = self.interactive_actor_poses_callback
+        self._simulator.dynamic_actor_poses_callback = self.dynamic_actor_poses_callback
 
         rospy.wait_for_service("/pedsim_simulator/spawn_peds", timeout=T)
         rospy.wait_for_service("/pedsim_simulator/reset_all_peds", timeout=T)
@@ -60,31 +65,28 @@ class PedsimManager(DynamicManager):
             "pedsim_simulator/remove_all_interactive_obstacles", timeout=T)
         rospy.wait_for_service("pedsim_simulator/add_obstacle", timeout=T)
 
-        self.__spawn_peds_srv = rospy.ServiceProxy(
+        self._spawn_peds_srv = rospy.ServiceProxy(
             "/pedsim_simulator/spawn_peds", SpawnPeds
         )
-        self.__remove_peds_srv = rospy.ServiceProxy(
+        self._remove_peds_srv = rospy.ServiceProxy(
             "/pedsim_simulator/remove_all_peds", SetBool
         )
-        self.__reset_peds_srv = rospy.ServiceProxy(
+        self._reset_peds_srv = rospy.ServiceProxy(
             "/pedsim_simulator/reset_all_peds", Trigger
         )
-        self.__respawn_interactive_obstacles_srv = rospy.ServiceProxy(
+        self._respawn_interactive_obstacles_srv = rospy.ServiceProxy(
             "pedsim_simulator/respawn_interactive_obstacles", SpawnInteractiveObstacles, persistent=True)
 
-        self.__remove_all_interactive_obstacles_srv = rospy.ServiceProxy(
+        self._remove_all_interactive_obstacles_srv = rospy.ServiceProxy(
             "pedsim_simulator/remove_all_interactive_obstacles", Trigger)
 
-        self.spawn_interactive_obstacles_srv = rospy.ServiceProxy(
+        self._spawn_interactive_obstacles_srv = rospy.ServiceProxy(
             "pedsim_simulator/spawn_interactive_obstacles", SpawnInteractiveObstacles, persistent=True)
 
-        self.__respawn_peds_srv = rospy.ServiceProxy(
+        self._respawn_peds_srv = rospy.ServiceProxy(
             "pedsim_simulator/respawn_peds", SpawnPeds, persistent=True)
 
-        self.__spawn_peds_srv = rospy.ServiceProxy(
-            "pedsim_simulator/spawn_peds", SpawnPeds)
-
-        self.__add_obstacle_srv = rospy.ServiceProxy(
+        self._add_obstacle_srv = rospy.ServiceProxy(
             "pedsim_simulator/add_obstacle", SpawnObstacle, persistent=True)
 
         rospy.set_param("respawn_dynamic", True)
@@ -95,10 +97,8 @@ class PedsimManager(DynamicManager):
         rospy.Subscriber("/pedsim_simulator/simulated_agents",
                          AgentStates, self.dynamic_actor_poses_callback)
 
-        self.map_manager = None
-
         # override
-        self.xml_string = """
+        self._xml_string = """
             <?xml version="1.0" ?>
             <sdf version="1.5">
             <model name="actor_model">
@@ -150,7 +150,7 @@ class PedsimManager(DynamicManager):
 
         while i_curr_try < max_num_try:
             # try to call service
-            response = self.spawn_interactive_obstacles_srv.call(
+            response = self._spawn_interactive_obstacles_srv.call(
                 srv.InteractiveObstacles)
 
             if not response.success:  # if service not succeeds, do something and redo service
@@ -172,7 +172,7 @@ class PedsimManager(DynamicManager):
         self.agent_topic_str = ''
         for obstacle in obstacles:
             msg = Ped()
-            msg.id = next(self.__id_gen)
+            msg.id = next(self._id_gen)
 
             msg.pos = obstacle.pose.position
 
@@ -241,7 +241,7 @@ class PedsimManager(DynamicManager):
         i_curr_try = 0
         while i_curr_try < max_num_try:
             # try to call service
-            response = self.__respawn_peds_srv.call(srv.peds)
+            response = self._respawn_peds_srv.call(srv.peds)
 
             if not response.success:  # if service not succeeds, do something and redo service
                 # rospy.logwarn(
@@ -254,8 +254,8 @@ class PedsimManager(DynamicManager):
         rospy.set_param("respawn_dynamic", True)
 
     def remove_obstacles(self):
-        self.__remove_all_interactive_obstacles_srv.call()
-        self.__remove_peds_srv.call()
+        self._remove_all_interactive_obstacles_srv.call()
+        self._remove_peds_srv.call()
 
     def interactive_actor_poses_callback(self, actors):
         if rospy.get_param("respawn_interactive"):
@@ -290,7 +290,7 @@ class PedsimManager(DynamicManager):
                                             z=actor.position.z),
                                       Quaternion(rot_quat[0], rot_quat[1], rot_quat[2], rot_quat[3]))
 
-                    self.simulator.spawn_obstacle(
+                    self._simulator.spawn_obstacle(
                         Obstacle(
                             name=actor_name,
                             pose=model_pose,
@@ -334,7 +334,7 @@ class PedsimManager(DynamicManager):
                                                  rot_quat[2],
                                                  rot_quat[3]))
 
-                    self.simulator.spawn_obstacle(
+                    self._simulator.spawn_obstacle(
                         Obstacle(
                             name=actor_name,
                             pose=model_pose,
@@ -352,12 +352,12 @@ class PedsimManager(DynamicManager):
                 rospy.loginfo(
                     "Spawning dynamic obstacle: actor_id = %s", actor_id)
 
-                self.simulator.spawn_obstacle(
+                self._simulator.spawn_obstacle(
                     Obstacle(
                         name=actor_id,
                         pose=actor_pose,
                         model=Model(type=ModelType.SDF, name=actor_id,
-                                    description=self.xml_string)
+                                    description=self._xml_string)
                     )
                 )
                 rospy.set_param("respawn_dynamic", False)

@@ -48,51 +48,43 @@ def fill_actor(xml_string: str, name: str, pose: Pose, waypoints: Iterable[Waypo
     xml.write(file, encoding="Unicode", xml_declaration=True)
     new_xml_string = file.getvalue().replace("__waypoints__", "".join([f"<waypoint>{x} {y} {theta}</waypoint>" for x, y, theta in waypoints]))
 
+    print("AAA", xml.find("model"))
+    print(file.getvalue())
+
     return new_xml_string
 
 class SFMManager(DynamicManager):
 
-    # COPIED FROM PEDSIM_MANAGER
-
-    __spawned_obstacles: List[Tuple[str, Callable[[], Any]]]
-    __namespaces: Dict[str, NamespaceIndexer]
+    _spawned_obstacles: List[Tuple[str, Callable[[], Any]]]
+    _namespaces: Dict[str, NamespaceIndexer]
     
     def __init__(self, namespace: str, simulator: BaseSimulator):
-
         super().__init__(namespace, simulator)
-
-        self._ns_prefix = lambda *topic: os.path.join(namespace, *topic)
-        self._goal_pub = rospy.Publisher(self._ns_prefix("/goal"), PoseStamped, queue_size=1, latch=True)
-
-        self._robot_name = rospy.get_param("robot_model", "")
 
         rospy.set_param("respawn_dynamic", True)
         rospy.set_param("respawn_static", True)
         rospy.set_param("respawn_interactive", True)
 
-        self.__spawned_obstacles = []
-        self.__namespaces = dict()
+    def _index_namespace(self, namespace: str) -> NamespaceIndexer:
+        if namespace not in self._namespaces:
+            self._namespaces[namespace] = NamespaceIndexer(namespace)
 
-    def __index_namespace(self, namespace: str) -> NamespaceIndexer:
-        if namespace not in self.__namespaces:
-            self.__namespaces[namespace] = NamespaceIndexer(namespace)
-
-        return self.__namespaces[namespace]
+        return self._namespaces[namespace]
     
     def spawn_obstacles(self, obstacles):
 
         for obstacle in obstacles:
-            name, free = next(self.__index_namespace(obstacle.name))
+            name, free = next(self._index_namespace(obstacle.name))
             obstacle.name = name
-            self.simulator.spawn_obstacle(obstacle)
-            self.__spawned_obstacles.append((name, free))
+            self._simulator.spawn_obstacle(obstacle)
+            self._spawned_obstacles.append((name, free))
     
     def spawn_dynamic_obstacles(self, obstacles):
 
         for obstacle in obstacles:
             rospy.loginfo("Spawning model: actor_id = %s", obstacle.name)
 
-            name, free = next(self.__index_namespace(obstacle.name))
+            name, free = next(self._index_namespace(obstacle.name))
 
             model_desc = fill_actor(obstacle.model.description, name=name, pose=obstacle.pose, waypoints=obstacle.waypoints)
             
@@ -103,8 +95,8 @@ class SFMManager(DynamicManager):
                 description=model_desc
             )
 
-            self.simulator.spawn_obstacle(obstacle)
-            self.__spawned_obstacles.append((name, free))
+            self._simulator.spawn_obstacle(obstacle)
+            self._spawned_obstacles.append((name, free))
 
         if len(obstacles):
             rospy.set_param("respawn_dynamic", False)
@@ -114,9 +106,9 @@ class SFMManager(DynamicManager):
         pass;
 
     def remove_obstacles(self):
-        for name, cleanup in self.__spawned_obstacles:
+        for name, cleanup in self._spawned_obstacles:
             # print(f"removing {name}")
-            self.simulator.delete_obstacle(obstacle_id=name)
+            self._simulator.delete_obstacle(obstacle_id=name)
             cleanup()
     
     def interactive_actor_poses_callback(self, actors):
