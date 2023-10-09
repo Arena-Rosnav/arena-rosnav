@@ -95,6 +95,7 @@ class RandomScenarioTask(CreateObstacleTask):
 
         self._obstacle_manager.spawn_map_obstacles()
 
+        #TODO load this from the main loaders
         obstacle_path: str = os.path.join(
             RosPack().get_path("arena-simulation-setup"), "obstacles")
         dynamic_obstacle_path: str = os.path.join(
@@ -126,7 +127,7 @@ class RandomScenarioTask(CreateObstacleTask):
             for i in range(ob_type[0]):
                 obstacle = self._create_obstacle(name=model, model=self._model_loader.bind(model))
                 obstacle.extra["type"] = ob_type[1]
-                obstacle.extra["yaml"] = os.path.join(obstacle_path, ob_type[2])
+                obstacle.extra["yaml"] = os.path.join(obstacle_path, ob_type[2].split(os.extsep, 1)[0], ob_type[2])
                 interactive_obstacles_array.append(obstacle)
 
             if len(interactive_obstacles_array):
@@ -139,8 +140,7 @@ class RandomScenarioTask(CreateObstacleTask):
             for i in range(ob_type[0]):
                 obstacle = self._create_dynamic_obstacle(name=self._obstacle_manager._dynamic_manager._default_actor_model.name, model=self._obstacle_manager._dynamic_manager._default_actor_model)
                 obstacle.extra["type"] = ob_type[1]
-                obstacle.extra["yaml"] = os.path.join(
-                    dynamic_obstacle_path, ob_type[2])
+                obstacle.extra["yaml"] = os.path.join(dynamic_obstacle_path, ob_type[2].split(os.extsep, 1)[0], ob_type[2])
                 dynamic_obstacles_array.append(obstacle)
 
             if len(dynamic_obstacles_array):
