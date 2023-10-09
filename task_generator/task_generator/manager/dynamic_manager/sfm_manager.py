@@ -88,7 +88,8 @@ class SFMManager(DynamicManager):
             model_desc = fill_actor(model.description, name=name, position=obstacle.position, waypoints=obstacle.waypoints)
 
             obstacle.name = name
-            obstacle.model = ModelWrapper.from_model(
+            obstacle.model.override(
+                model_type = ModelType.SDF,
                 model = Model(
                     type=model.type,
                     name=name,

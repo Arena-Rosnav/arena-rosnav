@@ -79,8 +79,7 @@ class RandomScenarioTask(CreateObstacleTask):
 
         tree = ET.parse(xml_path)
         root = tree.getroot()
-        num_tables = [int(str(root[0][0].text)), root[0]
-                      [1].text, root[0][2].text]
+        num_tables = [int(str(root[0][0].text)), root[0][1].text, root[0][2].text]
         num_shelves = [int(str(root[1][0].text)), root[1]
                        [1].text, root[1][2].text]
         num_adults = [int(str(root[2][0].text)), root[2]
@@ -102,7 +101,7 @@ class RandomScenarioTask(CreateObstacleTask):
             RosPack().get_path("arena-simulation-setup"), "dynamic_obstacles")
 
         # Create static obstacles
-        for ob_type in [num_tables]:
+        for ob_type in []:# [num_tables]:
 
             model = ob_type[1]
 
@@ -138,7 +137,7 @@ class RandomScenarioTask(CreateObstacleTask):
         for ob_type in [num_adults, num_elder, num_child]:
             dynamic_obstacles_array = list()
             for i in range(ob_type[0]):
-                obstacle = self._create_dynamic_obstacle(name=self._obstacle_manager.dynamic_manager._default_actor_model.name, model=ModelWrapper.from_model(model=self._obstacle_manager.dynamic_manager._default_actor_model))
+                obstacle = self._create_dynamic_obstacle(name=self._obstacle_manager._dynamic_manager._default_actor_model.name, model=self._obstacle_manager._dynamic_manager._default_actor_model)
                 obstacle.extra["type"] = ob_type[1]
                 obstacle.extra["yaml"] = os.path.join(
                     dynamic_obstacle_path, ob_type[2])

@@ -1,7 +1,8 @@
+import itertools
 import os
 from typing import Callable, Collection, Dict, Optional
 
-from task_generator.shared import ModelType, ObstacleProps, PositionOrientation, Position, Robot
+from task_generator.shared import ModelType, ObstacleProps, PositionOrientation, Robot
 
 
 class BaseSimulator:
@@ -10,10 +11,18 @@ class BaseSimulator:
     _ns_prefix: Callable[..., str]
     _spawn_model: Dict[ModelType, Callable]
 
+    __counter: itertools.count
+
     def __init__(self, namespace: str):
         self._namespace = namespace
         self._ns_prefix = lambda *topic: os.path.join(self._namespace, *topic)
         self._spawn_model = dict()
+
+        self.__counter = itertools.count()
+
+    def generate_random_name(self) -> str:
+        return f"random_name_{next(self.__counter)}"
+
 
     @property
     def MODEL_TYPES(self) -> Collection[ModelType]:
@@ -39,58 +48,19 @@ class BaseSimulator:
         """
         raise NotImplementedError()
 
-    def remove_all_obstacles(self):
+    def spawn_robot(self, robot: Robot) -> str:
         """
-        Removes all obstacles from the current simulator. Does not remove
-        the robot!
-        """
-        raise NotImplementedError()
-
-    def spawn_random_dynamic_obstacle(self, **args):
-        """
-        Spawn a single random dynamic obstacle.
-
-        Args:
-            position: [int, int, int] denoting the x, y and angle.
-            min_radius: minimal radius of the obstacle
-            max_radius: maximal radius of the obstacle
-            linear_vel: linear velocity
-            angular_vel_max: maximal angular velocity
+        Spawn a robot in the simulator.
         """
         raise NotImplementedError()
-
-    def spawn_random_static_obstacles(self, **args):
-        """
-        Spawn a single random static obstacle.
-
-        Args:
-            position: [int, int, int] denoting the x, y and angle.
-            min_radius: minimal radius of the obstacle
-            max_radius: maximal radius of the obstacle
-        """
-        raise NotImplementedError()
-
-    def publish_goal(self, goal: Position):
-        """
-        Publishes the goal. 
-        """
-        raise NotImplementedError()
-
+    
     def move_robot(self, pos: PositionOrientation, name: Optional[str] = None):
         """
         Move the robot to the given position. 
         """
         raise NotImplementedError()
 
-    def spawn_robot(self, robot: Robot):
-        """
-        Spawn a robot in the simulator.
-        A position is not specified because the robot is moved at the 
-        desired position anyway.
-        """
-        raise NotImplementedError()
-
-    def spawn_obstacle(self, obs: ObstacleProps) -> str:
+    def spawn_obstacle(self, obstacle: ObstacleProps) -> str:
         raise NotImplementedError()
 
     def delete_obstacle(self, obstacle_id: str):

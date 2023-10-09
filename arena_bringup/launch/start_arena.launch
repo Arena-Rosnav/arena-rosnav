@@ -114,7 +114,7 @@
   <!-- use simulator-->
 
   <!-- Flatland -->
-  <include file="$(find arena_bringup)/launch/testing//simulators/flatland.launch" if="$(eval arg('simulator') == 'flatland')">
+  <include file="$(find arena_bringup)/launch/testing/simulators/flatland.launch" if="$(eval arg('simulator') == 'flatland')">
     <arg name="visualization" default="$(arg visualization)" />
     <arg name="rviz_file" value="$(arg rviz_file)" />
     <arg name="model" value="$(arg model)" />

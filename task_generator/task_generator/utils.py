@@ -128,18 +128,6 @@ class _ModelLoader:
     def load(model_dir: str, model: str, **kwargs) -> Optional[Model]:
         ...
 
-
-pkg_path = RosPack().get_path('arena-simulation-setup')
-default_actor_model_file = os.path.join(
-    pkg_path, "dynamic_obstacles", "actor2", "model.sdf")
-
-actor_model_file: str = str(rospy.get_param(
-    '~actor_model_file', default_actor_model_file))
-with open(actor_model_file) as f:
-    _default_actor_model = Model(
-        type=ModelType.SDF, description=f.read(), name="actor2")
-
-
 class ModelLoader:
 
     _registry: Dict[ModelType, Type[_ModelLoader]] = {}
@@ -210,7 +198,7 @@ class _ModelLoader_YAML(_ModelLoader):
     def load(model_dir, model, **kwargs):
 
         try:
-            with open(os.path.join(model_dir, f"{model}.yaml")) as f:
+            with open(os.path.join(model_dir, model, f"{model}.model.yaml")) as f:
                 model_desc = f.read()
         except FileNotFoundError:
             return None

@@ -71,20 +71,6 @@ class GazeboSimulator(BaseSimulator):
         self.unpause()
 
     # ROBOT
-    def publish_goal(self, goal):
-        goal_msg = PoseStamped()
-        goal_msg.header.seq = 0
-        goal_msg.header.stamp = rospy.get_rostime()
-        goal_msg.header.frame_id = "map"
-        goal_msg.pose.position.x = goal[0]
-        goal_msg.pose.position.y = goal[1]
-
-        goal_msg.pose.orientation.w = 0
-        goal_msg.pose.orientation.x = 0
-        goal_msg.pose.orientation.y = 0
-        goal_msg.pose.orientation.z = 1
-
-        self._goal_pub.publish(goal_msg)
 
     def move_robot(self, pos, name=None):
         model_state_request = ModelState()
@@ -120,7 +106,9 @@ class GazeboSimulator(BaseSimulator):
 
         self.spawn_model(model.type, request)
 
-    def spawn_obstacle(self, obstacle: ObstacleProps) -> str:
+        return robot.name
+
+    def spawn_obstacle(self, obstacle):
         request = SpawnModelRequest()
 
         model = obstacle.model.get(self.MODEL_TYPES)
@@ -140,3 +128,18 @@ class GazeboSimulator(BaseSimulator):
 
     def delete_obstacle(self, obstacle_id: str):
         self.remove_model_srv(DeleteModelRequest(model_name=obstacle_id))
+
+    def _publish_goal(self, goal):
+        goal_msg = PoseStamped()
+        goal_msg.header.seq = 0
+        goal_msg.header.stamp = rospy.get_rostime()
+        goal_msg.header.frame_id = "map"
+        goal_msg.pose.position.x = goal[0]
+        goal_msg.pose.position.y = goal[1]
+
+        goal_msg.pose.orientation.w = 0
+        goal_msg.pose.orientation.x = 0
+        goal_msg.pose.orientation.y = 0
+        goal_msg.pose.orientation.z = 1
+
+        self._goal_pub.publish(goal_msg)

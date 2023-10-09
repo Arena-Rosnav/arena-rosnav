@@ -1,9 +1,9 @@
 import os
 from rospkg import RosPack
 import rospy
-from task_generator.shared import DynamicObstacle, ModelType, Obstacle, Model
+from task_generator.shared import DynamicObstacle, ModelType, ModelWrapper, Obstacle, Model
 from task_generator.simulators.base_simulator import BaseSimulator
-from typing import Callable, Collection
+from typing import Callable, Collection, Dict
 from geometry_msgs.msg import Point
 
 from geometry_msgs.msg import PoseStamped
@@ -19,7 +19,7 @@ class DynamicManager:
     _goal_pub: rospy.Publisher
 
     # TODO temporary
-    _default_actor_model: Model
+    _default_actor_model: ModelWrapper
 
     def __init__(self, namespace: str, simulator: BaseSimulator):
         """
@@ -33,14 +33,26 @@ class DynamicManager:
         self._namespace = namespace
 
         pkg_path = RosPack().get_path('arena-simulation-setup')
-        default_actor_model_file = os.path.join(
-            pkg_path, "dynamic_obstacles", "actor2", "model.sdf")
+        default_actor_model_name = "actor2"
 
-        actor_model_file: str = str(rospy.get_param(
-            '~actor_model_file', default_actor_model_file))
-        with open(actor_model_file) as f:
-            self._default_actor_model = Model(
-                type=ModelType.SDF, description=f.read(), name="actor2")
+        #TODO get rid of this once random_scenario loads models randomly
+        actor_model_name: str = str(rospy.get_param(
+            '~actor_model_name', default_actor_model_name))
+        
+        actor_model_path = os.path.join(pkg_path, "dynamic_obstacles", actor_model_name)
+
+        model_dict: Dict[ModelType, Model] = dict()
+
+        with open(os.path.join(actor_model_path, "model.sdf")) as f:
+            model_dict[ModelType.SDF] = Model(type=ModelType.SDF, description=f.read(), name="actor2")
+
+        with open(os.path.join(actor_model_path, f"{actor_model_name}.model.yaml")) as f:
+            model_dict[ModelType.YAML] = Model(type=ModelType.YAML, description=f.read(), name="actor2")
+
+        self._default_actor_model = ModelWrapper.Constant(
+            name="actor2",
+            models=model_dict
+        )
 
         self._ns_prefix = lambda *topic: os.path.join(namespace, *topic)
         self._goal_pub = rospy.Publisher(self._ns_prefix(

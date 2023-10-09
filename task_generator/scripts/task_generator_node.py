@@ -14,7 +14,7 @@ from task_generator.constants import Constants
 from task_generator.tasks.utils import get_predefined_task
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
-from task_generator.simulators.flatland_simulator import FlatlandRandomModel  # noqa
+from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
 
 
 class TaskGenerator:
