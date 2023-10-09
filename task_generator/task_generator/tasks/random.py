@@ -5,7 +5,7 @@ from typing import List
 from task_generator.constants import Constants
 from task_generator.tasks.task_factory import TaskFactory
 
-from task_generator.shared import DynamicObstacle, Obstacle, DynamicObstacleSetup, ObstacleSetup, Waypoint
+from task_generator.shared import DynamicObstacle, Obstacle, Waypoint
 
 from task_generator.tasks.base_task import CreateObstacleTask
 
@@ -55,9 +55,9 @@ class RandomTask(CreateObstacleTask):
         self._obstacle_manager.reset()
         self._map_manager.init_forbidden_zones()
 
-        dynamic_obstacles_array: List[DynamicObstacleSetup]
-        static_obstacles_array: List[ObstacleSetup]
-        interactive_obstacles_array: List[ObstacleSetup]
+        dynamic_obstacles_array: List[DynamicObstacle]
+        static_obstacles_array: List[Obstacle]
+        interactive_obstacles_array: List[Obstacle]
 
         self._obstacle_manager.spawn_map_obstacles()
 
@@ -65,7 +65,7 @@ class RandomTask(CreateObstacleTask):
         static_obstacles_array = list()
         for i in range(static_obstacles):
             model = random.choice(self._model_loader.models)
-            obs = self._create_obstacle(name=model, model=self._model_loader.bind(model))
+            obs = self._create_obstacle(name=model, model=self._model_loader._load(model))
             static_obstacles_array.append(obs)
 
         if len(static_obstacles_array):
@@ -75,7 +75,7 @@ class RandomTask(CreateObstacleTask):
         interactive_obstacles_array = list()
         for i in range(interactive_obstacles):
             model = random.choice(self._model_loader.models)
-            obs = self._create_obstacle(name=model, model=self._model_loader.bind(model))
+            obs = self._create_obstacle(name=model, model=self._model_loader._load(model))
             interactive_obstacles_array.append(obs)
 
         if len(interactive_obstacles_array):
@@ -85,7 +85,7 @@ class RandomTask(CreateObstacleTask):
         dynamic_obstacles_array = list()
         for i in range(dynamic_obstacles):
             model = random.choice(self._dynamic_model_loader.models)
-            obs = self._create_dynamic_obstacle(name=model, model=self._model_loader.bind(model))
+            obs = self._create_dynamic_obstacle(name=model, model=self._dynamic_model_loader._load(model))
             dynamic_obstacles_array.append(obs)
 
         if len(dynamic_obstacles_array):

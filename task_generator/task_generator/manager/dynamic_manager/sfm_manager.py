@@ -9,8 +9,6 @@ from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.constants import Constants
 
 import rospy
-from geometry_msgs.msg import Pose
-from scipy.spatial.transform import Rotation
 
 
 import io
@@ -18,7 +16,7 @@ import io
 
 import xml.etree.ElementTree as ET
 
-from task_generator.shared import DynamicObstacle, Model, Obstacle, PositionOrientation, Waypoint
+from task_generator.shared import DynamicObstacle, Model, ModelType, ModelWrapper, PositionOrientation, Waypoint
 from task_generator.utils import NamespaceIndexer
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -65,53 +63,43 @@ class SFMManager(DynamicManager):
         rospy.set_param("respawn_static", True)
         rospy.set_param("respawn_interactive", True)
 
-    def spawn_obstacles(self, setups):
+    def spawn_obstacles(self, obstacles):
 
-        for setup in setups:
-            
-            name, free = next(self._index_namespace(setup.name))
+        for obstacle in obstacles:
 
-            obstacle = Obstacle(**{
-                **asdict(setup),
-                **dict(
-                    name=name,
-                    model=setup.model(self._simulator.MODEL_TYPES)
-                )
-            })
+            name, free = next(self._index_namespace(obstacle.name))
+
+            obstacle.name = name
 
             obstacle.name = name
             self._simulator.spawn_obstacle(obstacle)
             self._spawned_obstacles.append((name, free))
 
-    def spawn_dynamic_obstacles(self, setups):
+    def spawn_dynamic_obstacles(self, obstacles):
 
-        for setup in setups:
+        for obstacle in obstacles:
 
-            name, free = next(self._index_namespace(setup.name))
+            name, free = next(self._index_namespace(obstacle.name))
 
             rospy.loginfo("Spawning model: actor_id = %s", name)
 
-            model = setup.model(self._simulator.MODEL_TYPES)
+            model = obstacle.model.get([ModelType.SDF])
 
-            model_desc = fill_actor(
-                model.description, name=name, position=setup.position, waypoints=setup.waypoints)
+            model_desc = fill_actor(model.description, name=name, position=obstacle.position, waypoints=obstacle.waypoints)
 
-            obstacle = DynamicObstacle(**{
-                **asdict(setup),
-                **dict(
+            obstacle.name = name
+            obstacle.model = ModelWrapper.from_model(
+                model = Model(
+                    type=model.type,
                     name=name,
-                    model=Model(
-                        type=model.type,
-                        name=name,
-                        description=model_desc
-                    )
+                    description=model_desc
                 )
-            })
+            )
 
             self._simulator.spawn_obstacle(obstacle)
             self._spawned_obstacles.append((name, free))
 
-        if len(setups):
+        if len(obstacles):
             rospy.set_param("respawn_dynamic", False)
 
     def spawn_line_obstacle(self, name, _from, _to):

@@ -1,7 +1,7 @@
 import os
 from typing import Callable, Collection, Dict, Optional
 
-from task_generator.shared import ModelType, Obstacle, ObstacleProps, PositionOrientation, Position, Robot
+from task_generator.shared import ModelType, ObstacleProps, PositionOrientation, Position, Robot
 
 
 class BaseSimulator:
@@ -23,7 +23,7 @@ class BaseSimulator:
         if model_type in self._spawn_model:
             return self._spawn_model[model_type](*args, **kwargs)
 
-        raise NotImplementedError()
+        raise NotImplementedError(f"{type(self).__name__} does not implement spawn_model[{model_type}]")
 
     def before_reset_task(self):
         """

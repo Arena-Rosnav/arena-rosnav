@@ -1,12 +1,12 @@
 import traceback
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import rospy
 import rospkg
 import yaml
 import os
 from task_generator.constants import Constants
-from task_generator.shared import BoundLoader, Model, ModelType, RobotSetup
+from task_generator.shared import Model, ModelWrapper, Robot
 from task_generator.simulators.base_simulator import BaseSimulator
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
@@ -25,6 +25,7 @@ from task_generator.utils import ModelLoader, Utils
 
 from map_distance_server.srv import GetDistanceMap
 
+#TODO only task_generator_node uses all of this, turn this into its instance methods to simplify the calls
 
 def get_predefined_task(namespace: str, mode: Constants.TaskMode, robot_loader: ModelLoader, simulator: Optional[BaseSimulator] = None, social_mode: Constants.SocialMode = Constants.SocialMode.PEDSIM, **kwargs):
     """
@@ -87,23 +88,27 @@ def create_robot_managers(namespace: str, simulator: BaseSimulator, robot_loader
             robot_model=robot_loader.bind(robot_model),
             planner=str(rospy.get_param("/local_planner", "")),
             agent=str(rospy.get_param("/agent_name", "")),
-            namespace=robot_model,
-            name=robot_model
+            name=robot_model,
+            namespace=f"{namespace}/{robot_model}",
         )
     else:
         robots = [
-            RobotSetup.parse(
-                robot,
-                position=(0,0,0),
+            Robot(
+                name=f"""{robot["model"]}_{i}_{robot.get("amount", 1)}""",
                 namespace=f"""{namespace}/{robot["model"]}_{i}_{robot.get("amount", 1)}""",
-                model=robot_loader.bind(robot["model"])
+                planner=robot["planner"],
+                agent=robot["agent"],
+                record_data=False,
+                position=(0,0,0),
+                model=robot_loader.bind(robot["model"]),
+                extra=dict()
             )
             for robot in read_robot_setup_file(robot_setup_file)
             for i in range(robot.get("amount", 1))
         ]
 
     if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-        return [RobotManager(simulator=simulator, robot_setup=robots[0])]
+        return [RobotManager(simulator=simulator, robot=robots[0])]
 
     robot_managers: List[RobotManager] = []
 
@@ -112,7 +117,7 @@ def create_robot_managers(namespace: str, simulator: BaseSimulator, robot_loader
             # RobotManager(os.path.join(namespace, name), simulator, robot)
 
             # old but working due to namespace issue with "/" prefix in robot name
-            RobotManager(simulator=simulator, robot_setup=robot)
+            RobotManager(simulator=simulator, robot=robot)
         )
 
     return robot_managers
@@ -135,8 +140,8 @@ def read_robot_setup_file(setup_file: str) -> List[Dict]:
         raise Exception()
 
 
-def create_default_robot_list(robot_model: BoundLoader, name:str, namespace: str, planner: str, agent: str) -> List[RobotSetup]:
-    return [RobotSetup(
+def create_default_robot_list(robot_model: ModelWrapper, name:str, namespace: str, planner: str, agent: str) -> List[Robot]:
+    return [Robot(
         model=robot_model,
         planner=planner,
         namespace=namespace,

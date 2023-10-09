@@ -9,7 +9,7 @@ from task_generator.tasks.task_factory import TaskFactory
 
 from task_generator.tasks.base_task import CreateObstacleTask
 
-from task_generator.shared import DynamicObstacle, Obstacle, DynamicObstacleSetup, ObstacleSetup, Waypoint
+from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, Waypoint
 
 import xml.etree.ElementTree as ET
 
@@ -59,6 +59,9 @@ class RandomScenarioTask(CreateObstacleTask):
             robot_positions.append(start_pos)
             robot_positions.append(goal_pos)
 
+        self._obstacle_manager.reset()
+        self._map_manager.init_forbidden_zones()
+
         dynamic_obstacles = random.randint(
             Constants.Random.MIN_DYNAMIC_OBS,
             Constants.Random.MAX_DYNAMIC_OBS
@@ -87,9 +90,9 @@ class RandomScenarioTask(CreateObstacleTask):
         num_child = [int(str(root[4][0].text)), root[4]
                      [1].text, root[4][2].text]
 
-        dynamic_obstacles_array: List[DynamicObstacleSetup]
-        static_obstacles_array: List[ObstacleSetup]
-        interactive_obstacles_array: List[ObstacleSetup]
+        dynamic_obstacles_array: List[DynamicObstacle]
+        static_obstacles_array: List[Obstacle]
+        interactive_obstacles_array: List[Obstacle]
 
         self._obstacle_manager.spawn_map_obstacles()
 
@@ -135,7 +138,7 @@ class RandomScenarioTask(CreateObstacleTask):
         for ob_type in [num_adults, num_elder, num_child]:
             dynamic_obstacles_array = list()
             for i in range(ob_type[0]):
-                obstacle = self._create_dynamic_obstacle(name=self._obstacle_manager.dynamic_manager._default_actor_model.name, model=lambda *_, **__:self._obstacle_manager.dynamic_manager._default_actor_model)
+                obstacle = self._create_dynamic_obstacle(name=self._obstacle_manager.dynamic_manager._default_actor_model.name, model=ModelWrapper.from_model(model=self._obstacle_manager.dynamic_manager._default_actor_model))
                 obstacle.extra["type"] = ob_type[1]
                 obstacle.extra["yaml"] = os.path.join(
                     dynamic_obstacle_path, ob_type[2])

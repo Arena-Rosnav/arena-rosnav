@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Collection, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Collection, Dict, Iterable, List, Optional, Tuple, overload
 from geometry_msgs.msg import Pose, Quaternion
 import enum
 
@@ -20,25 +20,57 @@ class Model:
     name: str
     description: str
 
-BoundLoader = Callable[[Optional[Collection[ModelType]]], Model]
-
 ForbiddenZone = Tuple[float, float, float]
 
 PositionOrientation = Tuple[float, float, float]
 Waypoint = Tuple[float, float, float]
 Position = Tuple[float, float]
 
-@dataclass
-class _NoModel:
-    model: BoundLoader
-
-@dataclass
-class _YesModel:
-    model: Model
 
 
+class ModelWrapper:
+
+    get: Callable[[Collection[ModelType]], Model]
+    _name: str
+
+    @staticmethod
+    def bind(name: str, callback: Callable[..., Model]) -> "ModelWrapper":
+        wrap = ModelWrapper()
+        wrap._name = name
+        wrap.get = callback
+        return wrap
+
+    @staticmethod
+    def Constant(name: str, models: Dict[ModelType, Model]) -> ModelWrapper:
+
+        wrap = ModelWrapper()
+
+        def get(only: Collection[ModelType]) -> Model:
+            if only is None:
+                only = list(models.keys())
+
+            for model_type in only:
+                if model_type in models:
+                    return models[model_type]
+            else:
+                raise LookupError(f"no matching model found for {name} (available: {list(models.keys())}, requested: {list(only)})")
+
+        wrap.get = get
+
+        return wrap
+    
+    @staticmethod
+    def from_model(model: Model) -> ModelWrapper:
+        return ModelWrapper.Constant(name=model.name, models={model.type: model})
+
+
 @dataclass
-class ObstacleProps:
+class HasModel:
+    model: ModelWrapper
+
+
+@dataclass
+class ObstacleProps(HasModel):
     position: PositionOrientation
     name: str
     extra: Dict
@@ -54,60 +86,29 @@ class RobotProps(ObstacleProps):
     agent: str
     record_data: bool
 
+
 @dataclass
-class ObstacleSetup(ObstacleProps, _NoModel):
+class Obstacle(ObstacleProps):
     @staticmethod
-    def parse(obj: Dict, **kwargs) -> "ObstacleSetup":
-        obstacle = ObstacleSetup(
-            name=obj["name"],
-            position=(float(obj["pos"][0]), float(obj["pos"][1]), 0),
-            model=EMPTY_LOADER,
-            **kwargs
-        )
-        obstacle.extra = obj
-        return obstacle
+    def parse(obj: Dict, **kwargs) -> "Obstacle":
+        #TODO
+        ...
 
 @dataclass
-class DynamicObstacleSetup(DynamicObstacleProps, _NoModel):
-    @staticmethod
-    def parse(obj: Dict, **kwargs) -> "DynamicObstacleSetup":
-        obstacle = DynamicObstacleSetup(
-            name=obj["name"],
-            position=(float(obj["pos"][0]), float(obj["pos"][1]), 0),
-            model=EMPTY_LOADER,
-            waypoints=obj["waypoints"],
-            **kwargs
-        )
-        obstacle.extra = obj
-        return obstacle
-
-@dataclass
-class RobotSetup(RobotProps, _NoModel):
-    @staticmethod
-    def parse(obj: Dict, **kwargs) -> "RobotSetup":
-        robot = RobotSetup(
-            namespace=obj["namespace"],
-            planner=obj["planner"],
-            agent=obj["agent"],
-            model=EMPTY_LOADER,
-            record_data=False,
-            **kwargs
-        )
-        return robot
-
-
-@dataclass
-class Obstacle(ObstacleProps, _YesModel):
-    ...
-
-@dataclass
-class DynamicObstacle(DynamicObstacleProps, _YesModel):
+class DynamicObstacle(DynamicObstacleProps):
     waypoints: Iterable[Waypoint]
 
-@dataclass
-class Robot(RobotProps, _YesModel):
-    ...
+    @staticmethod
+    def parse(obj: Dict, **kwargs) -> "DynamicObstacle":
+        #TODO
+        ...
 
+@dataclass
+class Robot(RobotProps):
+    @staticmethod
+    def parse(obj: Dict, **kwargs) -> "Robot":
+        #TODO
+        ...
 
 
 @dataclass

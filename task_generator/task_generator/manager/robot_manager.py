@@ -12,7 +12,7 @@ from geometry_msgs.msg import PoseStamped
 from std_srvs.srv import Empty
 
 from task_generator.constants import Constants
-from task_generator.shared import Position, Robot, RobotSetup
+from task_generator.shared import Position, Robot
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.utils import Utils
 
@@ -43,7 +43,7 @@ class RobotManager:
     _pub_goal_timer: rospy.Timer
     _clear_costmaps_srv: rospy.ServiceProxy
 
-    def __init__(self, simulator: BaseSimulator, robot_setup: RobotSetup):
+    def __init__(self, simulator: BaseSimulator, robot: Robot):
         self._ns_prefix = lambda *topic: os.path.join(self._robot.namespace, *topic)
 
         self._simulator = simulator
@@ -53,10 +53,7 @@ class RobotManager:
 
         self._goal_radius = float(str(rospy.get_param("goal_radius", 0.7))) + 1
 
-        self._robot = Robot(**{
-            **asdict(robot_setup),
-            **dict(model=robot_setup.model(self._simulator.MODEL_TYPES))
-        })
+        self._robot = robot
         # and rospy.get_param('task_mode', 'scenario') == 'scenario'
 
         self._position = self._start_pos
@@ -174,15 +171,15 @@ class RobotManager:
             ["arena_bringup", "robot.launch"]
         )
 
-        print("START WITH MODEL", self._robot.namespace, self._robot.model.name)
+        print("START WITH MODEL", self._robot.namespace)
 
         args = [
-            f"model:={self._robot.model.name}",
+            f"model:={self._robot.model.get([]).name}",
             f"local_planner:={self._robot.planner}",
             f"namespace:={self._robot.namespace}",
             f"complexity:={rospy.get_param('complexity', 1)}",
             f"record_data:={self._robot.record_data}",
-            *([f"agent_name:={self._robot.agent}"] if self._robot.agent is not None else [])
+            f"agent_name:={self._robot.agent}"
         ]
 
         self.process = roslaunch.parent.ROSLaunchParent(

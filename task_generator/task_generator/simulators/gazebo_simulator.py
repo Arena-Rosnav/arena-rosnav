@@ -105,24 +105,28 @@ class GazeboSimulator(BaseSimulator):
         request = SpawnModelRequest()
 
         robot_namespace = robot.namespace
+
+        model = robot.model.get(self.MODEL_TYPES)
         
         rospy.set_param(os.path.join(robot_namespace,
-                        "robot_description"), robot.model.description)
+                        "robot_description"), model.description)
         rospy.set_param(os.path.join(robot_namespace,
                         "tf_prefix"), robot_namespace)
-        
-        request.model_name = robot.name
-        request.model_xml = robot.model.description
+
+        request.model_name = robot_namespace
+        request.model_xml = model.description
         request.robot_namespace = robot_namespace
         request.reference_frame = "world"
 
-        self.spawn_model(robot.model.type, request)
+        self.spawn_model(model.type, request)
 
     def spawn_obstacle(self, obstacle: ObstacleProps) -> str:
         request = SpawnModelRequest()
 
+        model = obstacle.model.get(self.MODEL_TYPES)
+
         request.model_name = obstacle.name
-        request.model_xml = obstacle.model.description
+        request.model_xml = model.description
         request.initial_pose = Pose(
             position=Point(x=obstacle.position[0], y=obstacle.position[1], z=0),
             orientation=Quaternion(x=0, y=0, z=obstacle.position[2], w=1)
@@ -130,7 +134,7 @@ class GazeboSimulator(BaseSimulator):
         request.robot_namespace = self._ns_prefix(obstacle.name)
         request.reference_frame = "world"
 
-        self.spawn_model(obstacle.model.type, request)
+        self.spawn_model(model.type, request)
 
         return obstacle.name
 

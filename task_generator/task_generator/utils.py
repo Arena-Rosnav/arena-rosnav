@@ -13,7 +13,7 @@ import heapq
 import itertools
 from task_generator.constants import Constants
 
-from task_generator.shared import BoundLoader, Model, ModelType
+from task_generator.shared import ModelWrapper, Model, ModelType
 
 
 class Utils:
@@ -156,25 +156,30 @@ class ModelLoader:
     def __init__(self, model_dir: str):
         self._model_dir = model_dir
         self._cache = dict()
+        self._models = []
+
+        # potentially expensive
+        print(f"models in {os.path.basename(model_dir)}: {self.models}")
 
     @property
     def models(self) -> List[str]:
-        if self._models is None:
+        if not len(self._models):
             self._models = list(set([name for loader in self._registry.values(
             ) for name in loader.list(self._model_dir)]))
 
         return self._models
 
-    def bind(self, model: str) -> BoundLoader:
-        return functools.partial(self.load, model)
+    def bind(self, model: str) -> ModelWrapper:
+        return ModelWrapper.bind(name=model, callback=functools.partial(self._load, model))
 
-    def load(self, model: str, only: Optional[Collection[ModelType]] = None, **kwargs) -> Model:
-        if only is None:
+    def _load(self, model: str, only: Collection[ModelType], **kwargs) -> Model:
+        
+        if not len(only):
             only = self._registry.keys()
 
         for model_type in only:  # cache pass
             if (model_type, model) in self._cache:
-                return self._cache[model_type, model]
+                return self._cache[(model_type, model)]
 
         for model_type in only:  # disk pass
             hit = self._load_single(
@@ -254,7 +259,7 @@ class _ModelLoader_URDF(_ModelLoader):
     @staticmethod
     def load(model_dir, model, **kwargs):
 
-        namespace: Optional[str] = kwargs.get("namespace")
+        namespace: str = kwargs.get("namespace", "")
 
         file = os.path.join(model_dir, model, "urdf", f"{model}.urdf.xacro")
 
@@ -267,7 +272,7 @@ class _ModelLoader_URDF(_ModelLoader):
                 "xacro",
                 "xacro",
                 file,
-                *([f"""robot_namespace:={namespace or "''"}"""] if namespace is not None else [])
+                *([f"""robot_namespace:={namespace}"""] if namespace != "" else [])
             ]).decode("utf-8")
 
         except subprocess.CalledProcessError:

@@ -77,9 +77,11 @@ class ScenarioTask(BaseTask):
 
         return Scenario(
             obstacles=ScenarioObstacles(
-                static=[Obstacle.parse(obs, model=self._model_loader.load(obs["model"])) for obs in scenario_file["obstacles"]["static"]],
+                static=[Obstacle.parse(obs, model=self._model_loader._load(
+                    obs["model"])) for obs in scenario_file["obstacles"]["static"]],
                 interactive=[],
-                dynamic=[DynamicObstacle.parse(obs, model=self._dynamic_model_loader.load(obs["model"])) for obs in scenario_file["obstacles"]["dynamic"]]
+                dynamic=[DynamicObstacle.parse(obs, model=self._dynamic_model_loader._load(
+                    obs["model"])) for obs in scenario_file["obstacles"]["dynamic"]]
             ),
             map=scenario_file["map"],
             resets=scenario_file["resets"],

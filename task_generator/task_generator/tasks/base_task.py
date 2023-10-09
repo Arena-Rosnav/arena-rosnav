@@ -1,6 +1,6 @@
 from dataclasses import asdict
 import os
-from typing import Callable, Dict, List, Optional, overload
+from typing import Callable, Dict, List, Optional
 import numpy as np
 
 from rospkg import RosPack
@@ -13,8 +13,7 @@ from task_generator.manager.robot_manager import RobotManager
 from task_generator.utils import ModelLoader
 from task_generator.manager.obstacle_manager import ObstacleManager
 
-from task_generator.shared import BoundLoader, DynamicObstacle, Obstacle, DynamicObstacleSetup, ObstacleSetup, PositionOrientation, Waypoint
-from geometry_msgs.msg import Point, Pose, Quaternion
+from task_generator.shared import DynamicObstacle, Model, ModelWrapper, Obstacle, PositionOrientation, Waypoint
 
 
 class BaseTask():
@@ -105,7 +104,7 @@ class CreateObstacleTask(BaseTask):
     # moved from obstacle manager
 
 
-    def _create_dynamic_obstacle(self, name:str, model: BoundLoader, waypoints: Optional[List[Waypoint]] = None, extra: Optional[Dict] = None, **kwargs) -> DynamicObstacleSetup:
+    def _create_dynamic_obstacle(self, name:str, model: ModelWrapper, waypoints: Optional[List[Waypoint]] = None, extra: Optional[Dict] = None, **kwargs) -> DynamicObstacle:
 
         setup = self._create_obstacle(name=name, model=model, extra=extra, **kwargs)
 
@@ -123,12 +122,12 @@ class CreateObstacleTask(BaseTask):
                         [waypoints[-1][0] - x2, waypoints[-1][1] - y2])
                     waypoints.append((x2, y2, 1))
 
-        return DynamicObstacleSetup(**{
+        return DynamicObstacle(**{
             **asdict(setup),
             **dict(waypoints=waypoints)
         })
 
-    def _create_obstacle(self, name:str, model: BoundLoader, position: Optional[PositionOrientation] = None, extra: Optional[Dict] = None, **kwargs) -> ObstacleSetup:
+    def _create_obstacle(self, name:str, model: ModelWrapper, position: Optional[PositionOrientation] = None, extra: Optional[Dict] = None, **kwargs) -> Obstacle:
         """ 
         Creates and returns a newly generated obstacle of requested type: 
         """
@@ -142,7 +141,7 @@ class CreateObstacleTask(BaseTask):
         if extra is None:
             extra = dict()
 
-        return ObstacleSetup(
+        return Obstacle(
             position=position,
             name=name,
             model=model,

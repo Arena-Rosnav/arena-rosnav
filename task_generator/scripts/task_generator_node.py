@@ -23,6 +23,8 @@ class TaskGenerator:
     Will initialize and reset all tasks. The task to use is read from the `/task_mode` param.
     """
 
+    _namespace: str
+
     _pub_scenario_reset: rospy.Publisher
     _pub_scenario_finished: rospy.Publisher
 
@@ -32,14 +34,17 @@ class TaskGenerator:
     _task: BaseTask
 
     _number_of_resets: int
-    _desired_resets: int
+    _desired_resets: int    
 
     def __init__(self) -> None:
+
+        self._namespace = "/"
+
         # Params
         self.task_mode: Constants.TaskMode = Constants.TaskMode(
-            rospy.get_param("/task_mode"))
+            rospy.get_param(os.path.join(self._namespace, "task_mode")))
         self.social_mode: Constants.SocialMode = Constants.SocialMode(
-            rospy.get_param("/social_mode", "pedsim"))
+            rospy.get_param(os.path.join(self._namespace, "social_mode"), "pedsim"))
         self.auto_reset: bool = bool(rospy.get_param("~auto_reset", True))
 
         # Publishers
@@ -58,7 +63,8 @@ class TaskGenerator:
         rospy.loginfo(f"Launching task mode: {self.task_mode}")
 
         # Loaders
-        robot_loader = ModelLoader(os.path.join(RosPack().get_path("arena-simulation-setup"), "robot"))
+        robot_loader = ModelLoader(os.path.join(
+            RosPack().get_path("arena-simulation-setup"), "robot"))
 
         self._start_time = rospy.get_time()
         self._task = get_predefined_task(
@@ -135,7 +141,7 @@ class TaskGenerator:
         rospy.loginfo("Shutting down. All tasks completed")
 
         # Send Task finished to Backend
-        if rospy.get_param("/is_webapp_docker", False):
+        if rospy.get_param(os.path.join(self._namespace, "is_webapp_docker"), False):
             while self._pub_scenario_finished.get_num_connections() <= 0:
                 pass
 
