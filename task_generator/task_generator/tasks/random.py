@@ -65,7 +65,7 @@ class RandomTask(CreateObstacleTask):
         static_obstacles_array = list()
         for i in range(static_obstacles):
             model = random.choice(self._model_loader.models)
-            obs = self._create_obstacle(name=model, model=self._model_loader._load(model))
+            obs = self._create_obstacle(name=model, model=self._model_loader.bind(model))
             static_obstacles_array.append(obs)
 
         if len(static_obstacles_array):
@@ -75,7 +75,7 @@ class RandomTask(CreateObstacleTask):
         interactive_obstacles_array = list()
         for i in range(interactive_obstacles):
             model = random.choice(self._model_loader.models)
-            obs = self._create_obstacle(name=model, model=self._model_loader._load(model))
+            obs = self._create_obstacle(name=model, model=self._model_loader.bind(model))
             interactive_obstacles_array.append(obs)
 
         if len(interactive_obstacles_array):
@@ -85,7 +85,7 @@ class RandomTask(CreateObstacleTask):
         dynamic_obstacles_array = list()
         for i in range(dynamic_obstacles):
             model = random.choice(self._dynamic_model_loader.models)
-            obs = self._create_dynamic_obstacle(name=model, model=self._dynamic_model_loader._load(model))
+            obs = self._create_dynamic_obstacle(name=model, model=self._dynamic_model_loader.bind(model))
             dynamic_obstacles_array.append(obs)
 
         if len(dynamic_obstacles_array):
