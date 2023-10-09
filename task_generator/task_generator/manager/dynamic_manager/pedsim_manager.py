@@ -56,9 +56,6 @@ class PedsimManager(DynamicManager):
 
         self._id_gen = itertools.count(20)
 
-        self._simulator.interactive_actor_poses_callback = self._interactive_actor_poses_callback
-        self._simulator.dynamic_actor_poses_callback = self._dynamic_actor_poses_callback
-
         rospy.wait_for_service("/pedsim_simulator/spawn_peds", timeout=T)
         rospy.wait_for_service("/pedsim_simulator/reset_all_peds", timeout=T)
         rospy.wait_for_service("/pedsim_simulator/remove_all_peds", timeout=T)

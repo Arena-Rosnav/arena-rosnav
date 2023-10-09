@@ -58,12 +58,6 @@ class GazeboSimulator(BaseSimulator):
         self.remove_model_srv = rospy.ServiceProxy(
             "gazebo/delete_model", DeleteModel)
 
-    def interactive_actor_poses_callback(self, actors):
-        raise RuntimeError("needs to be managed by obstacle_manager")
-
-    def dynamic_actor_poses_callback(self, actors):
-        raise RuntimeError("needs to be managed by obstacle_manager")
-
     def before_reset_task(self):
         self.pause()
 
