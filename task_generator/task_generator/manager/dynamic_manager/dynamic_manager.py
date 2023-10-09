@@ -44,10 +44,10 @@ class DynamicManager:
         model_dict: Dict[ModelType, Model] = dict()
 
         with open(os.path.join(actor_model_path, "model.sdf")) as f:
-            model_dict[ModelType.SDF] = Model(type=ModelType.SDF, description=f.read(), name="actor2")
+            model_dict[ModelType.SDF] = Model(type=ModelType.SDF, description=f.read(), name="actor2", path=os.path.join(actor_model_path, "model.sdf"))
 
         with open(os.path.join(actor_model_path, f"{actor_model_name}.model.yaml")) as f:
-            model_dict[ModelType.YAML] = Model(type=ModelType.YAML, description=f.read(), name="actor2")
+            model_dict[ModelType.YAML] = Model(type=ModelType.YAML, description=f.read(), name="actor2", path=os.path.join(actor_model_path, f"{actor_model_name}.model.yaml"))
 
         self._default_actor_model = ModelWrapper.Constant(
             name="actor2",

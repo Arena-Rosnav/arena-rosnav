@@ -1,6 +1,7 @@
 # GRADUALLY REPLACE COPIED METHODS FROM THIS FILE WITH NEW NON-PEDSIM IMPLEMENTATIONS
 
 from dataclasses import asdict
+import dataclasses
 from typing import Any, Callable, Dict, Iterable, List, Tuple
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
 from task_generator.simulators.base_simulator import BaseSimulator
@@ -69,10 +70,9 @@ class SFMManager(DynamicManager):
 
             name, free = next(self._index_namespace(obstacle.name))
 
-            obstacle.name = name
+            obstacle = dataclasses.replace(obstacle, name=name)
 
-            obstacle.name = name
-            self._simulator.spawn_obstacle(obstacle)
+            name = self._simulator.spawn_obstacle(obstacle)
             self._spawned_obstacles.append((name, free))
 
     def spawn_dynamic_obstacles(self, obstacles):
@@ -87,17 +87,19 @@ class SFMManager(DynamicManager):
 
             model_desc = fill_actor(model.description, name=name, position=obstacle.position, waypoints=obstacle.waypoints)
 
-            obstacle.name = name
+            obstacle = dataclasses.replace(obstacle, name=name)
+
             obstacle.model.override(
                 model_type = ModelType.SDF,
                 model = Model(
                     type=model.type,
                     name=name,
-                    description=model_desc
+                    description=model_desc,
+                    path=""
                 )
             )
 
-            self._simulator.spawn_obstacle(obstacle)
+            name = self._simulator.spawn_obstacle(obstacle)
             self._spawned_obstacles.append((name, free))
 
         if len(obstacles):

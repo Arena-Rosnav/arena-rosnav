@@ -197,8 +197,10 @@ class _ModelLoader_YAML(_ModelLoader):
     @staticmethod
     def load(model_dir, model, **kwargs):
 
+        model_path = os.path.join(model_dir, model, f"{model}.model.yaml")
+
         try:
-            with open(os.path.join(model_dir, model, f"{model}.model.yaml")) as f:
+            with open(model_path) as f:
                 model_desc = f.read()
         except FileNotFoundError:
             return None
@@ -207,7 +209,8 @@ class _ModelLoader_YAML(_ModelLoader):
             model_obj = Model(
                 type=ModelType.YAML,
                 name=model,
-                description=model_desc
+                description=model_desc,
+                path=model_path
             )
             return model_obj
 
@@ -222,8 +225,10 @@ class _ModelLoader_SDF(_ModelLoader):
     @staticmethod
     def load(model_dir, model, **kwargs):
 
+        model_path = os.path.join(model_dir, model, "model.sdf")
+
         try:
-            with open(os.path.join(model_dir, model, "model.sdf")) as f:
+            with open(model_path) as f:
                 model_desc = f.read()
         except FileNotFoundError:
             return None
@@ -232,7 +237,8 @@ class _ModelLoader_SDF(_ModelLoader):
             model_obj = Model(
                 type=ModelType.SDF,
                 name=model,
-                description=model_desc
+                description=model_desc,
+                path=model_path
             )
             return model_obj
 
@@ -249,9 +255,9 @@ class _ModelLoader_URDF(_ModelLoader):
 
         namespace: str = kwargs.get("namespace", "")
 
-        file = os.path.join(model_dir, model, "urdf", f"{model}.urdf.xacro")
+        model_path = os.path.join(model_dir, model, "urdf", f"{model}.urdf.xacro")
 
-        if not os.path.isfile(file):
+        if not os.path.isfile(model_path):
             return None
 
         try:
@@ -259,7 +265,7 @@ class _ModelLoader_URDF(_ModelLoader):
                 "rosrun",
                 "xacro",
                 "xacro",
-                file,
+                model_path,
                 *([f"""robot_namespace:={namespace}"""] if namespace != "" else [])
             ]).decode("utf-8")
 
@@ -270,6 +276,7 @@ class _ModelLoader_URDF(_ModelLoader):
             model_obj = Model(
                 type=ModelType.URDF,
                 name=model,
-                description=model_desc
+                description=model_desc,
+                path=model_path
             )
             return model_obj

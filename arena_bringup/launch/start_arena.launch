@@ -153,7 +153,7 @@
     <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(arg pedsim)">
       <param name="simulation_factor" value="1" type="double"/>
       <param name="pedsim_update_rate" value="30.0" type="double"/>
-      <param name="scene_file" value="$(find arena-simulation-setup)/world/$(arg world_file)/scenarios/$(arg world_file).xml" type="string"/>
+      <param name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" type="string"/>
     </node>
   </group>
 

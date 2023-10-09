@@ -1,7 +1,10 @@
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, List
 from task_generator.constants import Constants
+from task_generator.manager.map_manager import MapManager
+from task_generator.manager.robot_manager import RobotManager
 
-from task_generator.shared import DynamicObstacle, Obstacle, RobotGoal, Scenario, ScenarioObstacles
+from task_generator.shared import DynamicObstacle, Obstacle, PositionOrientation
 import rospy
 import rospkg
 import os
@@ -14,74 +17,103 @@ from task_generator.tasks.task_factory import TaskFactory
 from task_generator.manager.obstacle_manager import ObstacleManager
 
 
+
+@dataclass
+class ScenarioObstacles:
+    dynamic: List[DynamicObstacle]
+    static: List[Obstacle]
+    interactive: List[Obstacle]
+
+
+ScenarioMap = str
+
+
+@dataclass
+class RobotGoal:
+    start: PositionOrientation
+    goal: PositionOrientation
+
+
+@dataclass
+class Scenario:
+    obstacles: ScenarioObstacles
+    map: ScenarioMap
+    resets: int
+    robots: List[RobotGoal]
+
+
+
 @TaskFactory.register(Constants.TaskMode.SCENARIO)
 class ScenarioTask(BaseTask):
 
-    scenario: Scenario
+    _scenario: Scenario
+
+    _reset_count: int
+    _desired_resets: int
 
     def __init__(
         self,
         obstacle_manager: ObstacleManager,
-        robot_managers,
-        map_manager,
+        robot_managers: List[RobotManager],
+        map_manager: MapManager,
         **kwargs
     ):
+        super().__init__(obstacle_manager=obstacle_manager, robot_managers=robot_managers, map_manager=map_manager, **kwargs)
+
         scenario_file_path = rospy.get_param("~scenario_json_path")
+        self._scenario = self._read_scenario_file(scenario_file_path)
 
-        self.scenario = self._read_scenario_file(scenario_file_path)
-
-        super().__init__(obstacle_manager, robot_managers, map_manager, **kwargs)
+        self._check_robot_manager_length()
 
         self._check_map_paths()
 
-        # self._set_up_robot_managers()
+        self._reset_count = 0
 
-        self.reset_count = 0
-
-        self.desired_resets = self.scenario.resets
-
-        if self.desired_resets <= 0 or self.desired_resets == None:
+        self._desired_resets = self._scenario.resets
+        if not self._desired_resets > 0:
             rospy.loginfo(
                 f"Setting resets to default of {Constants.Scenario.RESETS_DEFAULT}"
             )
-            self.desired_resets = Constants.Scenario.RESETS_DEFAULT
+            self._desired_resets = Constants.Scenario.RESETS_DEFAULT
 
         self._reset_scenario()
 
     def reset(self):
-        if self.reset_count >= self.desired_resets:
+        if self._reset_count >= self._desired_resets:
             return True
 
         super().reset(
             lambda: self._reset_scenario()
         )
 
-        self.reset_count += 1
+        self._reset_count += 1
 
         return False
 
     def _reset_scenario(self):
         # print("resetting scenario in scenario task")
         self._obstacle_manager.reset()
-        self._obstacle_manager.spawn_map_obstacles(self.scenario.map)
-        self._obstacle_manager.spawn_obstacles(self.scenario.obstacles.static)
+        self._obstacle_manager.spawn_map_obstacles(self._scenario.map)
+        self._obstacle_manager.spawn_obstacles(self._scenario.obstacles.static)
         self._obstacle_manager.spawn_obstacles(
-            self.scenario.obstacles.interactive)
+            self._scenario.obstacles.interactive)
         self._obstacle_manager.spawn_dynamic_obstacles(
-            self.scenario.obstacles.dynamic)
+            self._scenario.obstacles.dynamic)
         self._reset_robots()
 
     def _read_scenario_file(self, scenario_file_path) -> Scenario:
         with open(scenario_file_path, "r") as file:
             scenario_file = json.load(file)
 
+        static_obstacles = [Obstacle.parse(obs, model=self._model_loader.bind(obs["model"])) for obs in scenario_file["obstacles"]["static"]]
+        interactive_obstacles = []
+        dynamic_obstacles = [DynamicObstacle.parse(obs, model=self._dynamic_model_loader.bind(obs["model"])) for obs in scenario_file["obstacles"]["dynamic"]]
+
         return Scenario(
             obstacles=ScenarioObstacles(
-                static=[Obstacle.parse(obs, model=self._model_loader._load(
-                    obs["model"])) for obs in scenario_file["obstacles"]["static"]],
-                interactive=[],
-                dynamic=[DynamicObstacle.parse(obs, model=self._dynamic_model_loader._load(
-                    obs["model"])) for obs in scenario_file["obstacles"]["dynamic"]]
+                static=static_obstacles,
+                interactive=interactive_obstacles,
+                dynamic=dynamic_obstacles
             ),
             map=scenario_file["map"],
             resets=scenario_file["resets"],
@@ -94,11 +126,11 @@ class ScenarioTask(BaseTask):
         scenario_map_path = os.path.join(
             rospkg.RosPack().get_path("arena-simulation-setup"),
             "maps",
-            self.scenario.map,
+            self._scenario.map,
             "map.yaml"
         )
 
-        if not static_map == scenario_map_path:
+        if static_map != scenario_map_path:
             rospy.logerr(
                 "Map path of scenario and static map are not the same. Shutting down.")
             rospy.logerr(f"Scenario Map Path {scenario_map_path}")
@@ -109,7 +141,7 @@ class ScenarioTask(BaseTask):
             sys.exit()
 
     def _reset_robots(self):
-        for index, robot in enumerate(self.scenario.robots):
+        for index, robot in enumerate(self._scenario.robots):
             if len(self._robot_managers) <= index:
                 break
 
@@ -118,13 +150,8 @@ class ScenarioTask(BaseTask):
             manager.reset(start_pos=robot.start[:2], goal_pos=robot.goal[:2])
             manager.move_robot_to_pos(pos=robot.start[:2])
 
-    def _set_up_robot_managers(self):
-        self._check_robot_manager_length()
-
-        super()._set_up_robot_managers()
-
     def _check_robot_manager_length(self):
-        scenario_robots_length = len(self.scenario.robots)
+        scenario_robots_length = len(self._scenario.robots)
         setup_robot_length = len(self._robot_managers)
 
         if setup_robot_length > scenario_robots_length:
@@ -134,5 +161,6 @@ class ScenarioTask(BaseTask):
             return
 
         if scenario_robots_length > setup_robot_length:
-            self.scenario.robots = self.scenario.robots[:setup_robot_length]
+            self._scenario.robots = self._scenario.robots[:setup_robot_length]
             rospy.logwarn("Scenario file contains more robots than setup.")
+

@@ -112,7 +112,7 @@ class ObstacleManager:
         else:
             raise NotImplementedError()
 
-    def generate_YAML_model(self, is_dynamic=False, min_radius: float = FlatlandRandomModel.MIN_RADIUS, max_radius: float = FlatlandRandomModel.MAX_RADIUS, linear_vel: float = FlatlandRandomModel.LINEAR_VEL, angular_vel_max: float = FlatlandRandomModel.ANGLUAR_VEL_MAX) -> Model:
+    def _generate_YAML_model(self, is_dynamic=False, min_radius: float = FlatlandRandomModel.MIN_RADIUS, max_radius: float = FlatlandRandomModel.MAX_RADIUS, linear_vel: float = FlatlandRandomModel.LINEAR_VEL, angular_vel_max: float = FlatlandRandomModel.ANGLUAR_VEL_MAX) -> Model:
         """
         Creates a random yaml model.
 
@@ -190,5 +190,6 @@ class ObstacleManager:
         return Model(
             type=ModelType.YAML,
             name="random_obstacle",
-            description=yaml.dump(model)
+            description=yaml.dump(model),
+            path=""
         )

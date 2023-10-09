@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Collection, Dict, Iterable, List, Tuple
+from typing import Any, Callable, Collection, Dict, Iterable, List, Sequence, Tuple
 
 import enum
 
 
+# TODO maybe move this to utils/model
 
 EMPTY_LOADER = lambda *_, **__: Model(type=ModelType.UNKNOWN,
-                                      name="", description="")
+                                      name="",
+                                      description="",
+                                      path="")
 
 
 class ModelType(enum.Enum):
@@ -23,6 +26,7 @@ class Model:
     type: ModelType
     name: str
     description: str
+    path: str
 
 
 ForbiddenZone = Tuple[float, float, float]
@@ -86,77 +90,73 @@ class ModelWrapper:
     def from_model(model: Model) -> ModelWrapper:
         return ModelWrapper.Constant(name=model.name, models={model.type: model})
 
-
-@dataclass
+@dataclass(frozen=True)
 class HasModel:
     model: ModelWrapper
 
-
-@dataclass
+@dataclass(frozen=True)
 class ObstacleProps(HasModel):
     position: PositionOrientation
     name: str
     extra: Dict
 
-
-@dataclass
+@dataclass(frozen=True)
 class DynamicObstacleProps(ObstacleProps):
     waypoints: List[Waypoint]
 
 
-@dataclass
+@dataclass(frozen=True)
 class RobotProps(ObstacleProps):
     planner: str
     namespace: str
     agent: str
     record_data: bool
 
+def parse_Point3D(obj: Sequence, fill: float = 0.) -> Tuple[float, float, float]:
+    position: Tuple[float, ...] = tuple([float(v) for v in obj[:3]])
 
-@dataclass
+    if len(position) < 3:
+        position = (*position, *((3-len(position)) * [fill]))
+
+    return (position[0], position[1], position[2])
+
+@dataclass(frozen=True)
 class Obstacle(ObstacleProps):
     @staticmethod
-    def parse(obj: Dict, **kwargs) -> "Obstacle":
-        # TODO
-        ...
+    def parse(obj: Dict, model: ModelWrapper) -> "Obstacle":
 
+        name = str(obj.get("name", "MISSING"))
+        position = parse_Point3D(obj.get("pos", (0, 0, 0)))
 
-@dataclass
+        return Obstacle(
+            name=name,
+            position=position,
+            model=model,
+            extra=obj
+        )
+
+@dataclass(frozen=True)
 class DynamicObstacle(DynamicObstacleProps):
     waypoints: Iterable[Waypoint]
 
     @staticmethod
-    def parse(obj: Dict, **kwargs) -> "DynamicObstacle":
-        # TODO
-        ...
+    def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
 
+        name = str(obj.get("name", "MISSING"))
+        position = parse_Point3D(obj.get("pos", (0, 0, 0)))
+        waypoints = [parse_Point3D(waypoint) for waypoint in obj.get("waypoints", [])]
 
-@dataclass
+        return DynamicObstacle(
+            name=name,
+            position=position,
+            model=model,
+            waypoints=waypoints,
+            extra=obj
+        )
+
+@dataclass(frozen=True)
 class Robot(RobotProps):
     @staticmethod
     def parse(obj: Dict, **kwargs) -> "Robot":
         # TODO
-        ...
-
-
-@dataclass
-class ScenarioObstacles:
-    dynamic: List[DynamicObstacle]
-    static: List[Obstacle]
-    interactive: List[Obstacle]
-
-
-ScenarioMap = str
-
-
-@dataclass
-class RobotGoal:
-    start: PositionOrientation
-    goal: PositionOrientation
-
-
-@dataclass
-class Scenario:
-    obstacles: ScenarioObstacles
-    map: ScenarioMap
-    resets: int
-    robots: List[RobotGoal]
+        raise NotImplementedError()
