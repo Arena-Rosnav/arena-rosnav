@@ -25,7 +25,8 @@ from rospkg import RosPack
 
 from task_generator.constants import Constants, Pedsim
 
-from task_generator.shared import Model, ModelType, Obstacle
+from task_generator.shared import Model, ModelType, ModelWrapper, Obstacle
+from task_generator.utils import ModelLoader
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -45,6 +46,9 @@ class PedsimManager(DynamicManager):
     _add_obstacle_srv: rospy.ServiceProxy
 
     _xml_string: str
+
+    #TODO unclean
+    _pedsim_model_loader: ModelLoader
 
     def __init__(self, namespace: str, simulator: BaseSimulator):
 
@@ -129,7 +133,12 @@ class PedsimManager(DynamicManager):
         self.agent_topic_str = ''
         for obstacle in obstacles:
             msg = InteractiveObstacle()
-            msg.pose = Pose(position=obstacle.pose.position)
+
+            #TODO create a global helper function for this kind of use case
+            msg.pose = Pose(
+                position=Point(x=obstacle.position[0], y=obstacle.position[1], z=0),
+                orientation=Quaternion(x=0, y=0, z=obstacle.position[2], w=1)
+            )
 
             interaction_radius: float = obstacle.extra.get(
                 "interaction_radius", 0.)
@@ -174,7 +183,7 @@ class PedsimManager(DynamicManager):
             msg = Ped()
             msg.id = next(self._id_gen)
 
-            msg.pos = obstacle.pose.position
+            msg.pos = Point(*obstacle.position)
 
             self.agent_topic_str += f',pedsim_agent_{obstacle.name}/0'
             msg.type = obstacle.extra["type"]
@@ -280,10 +289,8 @@ class PedsimManager(DynamicManager):
                     rospy.loginfo(
                         "Spawning interactive: actor_id = %s", actor_name)
 
-                    rospack1 = RosPack()
-                    pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
-
-                    z = os.path.join(pkg_path, "models", f"{ob_type}.sdf")
+                    #TODO get rid of this
+                    z = os.path.join(RosPack().get_path('pedsim_gazebo_plugin'), "models", f"{ob_type}.sdf")
 
                     with open(z) as file_xml:
                         x = file_xml.read()
@@ -296,9 +303,15 @@ class PedsimManager(DynamicManager):
                     self._simulator.spawn_obstacle(
                         Obstacle(
                             name=actor_name,
-                            pose=model_pose,
-                            model=Model(type=ModelType.SDF,
-                                        name=actor_name, description=x)
+                            position=(model_pose.position.x, model_pose.position.y, model_pose.orientation.z),
+                            model=ModelWrapper.from_model(
+                                Model(
+                                    type=ModelType.SDF,
+                                    name=actor_name,
+                                    description=x
+                                )
+                            ),
+                            extra=dict()
                         )
                     )
                     rospy.set_param("respawn_interactive", False)
@@ -323,11 +336,9 @@ class PedsimManager(DynamicManager):
 
                     rospy.loginfo("Spawning static: actor_id = %s", actor_name)
 
-                    rospack1 = RosPack()
-                    pkg_path = rospack1.get_path('pedsim_gazebo_plugin')
-                    z = pkg_path + "/models/table.sdf"
-                    file_xml = open(z)
-                    x = file_xml.read()
+                    #TODO get rid of this
+                    with open(os.path.join(RosPack().get_path('pedsim_gazebo_plugin'), "models", "table.sdf")) as file_xml:
+                        x = file_xml.read()
 
                     model_pose = Pose(Point(x=actor.position.x-direction_x,
                                             y=actor.position.y-direction_y,
@@ -340,9 +351,15 @@ class PedsimManager(DynamicManager):
                     self._simulator.spawn_obstacle(
                         Obstacle(
                             name=actor_name,
-                            pose=model_pose,
-                            model=Model(type=ModelType.SDF,
-                                        name=actor_name, description=x)
+                            position=(model_pose.position.x, model_pose.position.y, model_pose.orientation.z),
+                            model=ModelWrapper.from_model(
+                                Model(
+                                    type=ModelType.SDF,
+                                    name=actor_name,
+                                    description=x
+                                )
+                            ),
+                            extra=dict()
                         )
                     )
                     rospy.set_param("respawn_static", False)
@@ -352,15 +369,15 @@ class PedsimManager(DynamicManager):
             for actor in actors.agent_states:
                 actor_id = str(actor.id)
                 actor_pose = actor.pose
-                rospy.loginfo(
-                    "Spawning dynamic obstacle: actor_id = %s", actor_id)
+                rospy.loginfo("Spawning dynamic obstacle: actor_id = %s", actor_id)
 
                 self._simulator.spawn_obstacle(
                     Obstacle(
                         name=actor_id,
-                        pose=actor_pose,
-                        model=Model(type=ModelType.SDF, name=actor_id,
-                                    description=self._xml_string)
+                        position=(actor_pose.position.x, actor_pose.position.y, actor_pose.orientation.z),
+                        model=ModelWrapper.from_model(model=Model(type=ModelType.SDF, name=actor_id, description=self._xml_string)),
+                        extra=dict()
                     )
                 )
+                
                 rospy.set_param("respawn_dynamic", False)
