@@ -171,7 +171,7 @@ class RobotManager:
             ["arena_bringup", "robot.launch"]
         )
 
-        print("START WITH MODEL", self._robot.namespace)
+        rospy.loginfo(f"START WITH MODEL {self._robot.namespace}")
 
         args = [
             f"model:={self._robot.model.get([]).name}",

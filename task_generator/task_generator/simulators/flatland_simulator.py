@@ -115,8 +115,6 @@ class FlatlandSimulator(BaseSimulator):
     # SPAWN OBSTACLES
     def spawn_obstacle(self, obstacle):
 
-        print(f"spawning {obstacle.name}")
-
         model = obstacle.model.get(self.MODEL_TYPES)
 
         request = SpawnModelRequest()

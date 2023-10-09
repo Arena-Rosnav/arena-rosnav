@@ -65,7 +65,7 @@ def get_predefined_task(namespace: str, mode: Constants.TaskMode, robot_loader: 
     # - Create a robot manager
     # - Launch the robot.launch file
 
-    print("utils calls task factory")
+    rospy.logdebug("utils calls task factory")
     task = TaskFactory.instantiate(mode)(
         obstacle_manager=obstacle_manager,
         robot_managers=robot_managers,

@@ -105,7 +105,7 @@ class TaskGenerator:
 
         self._env_wrapper.before_reset_task()
 
-        print("resetting")
+        rospy.loginfo("resetting")
 
         is_end = self._task.reset()
 

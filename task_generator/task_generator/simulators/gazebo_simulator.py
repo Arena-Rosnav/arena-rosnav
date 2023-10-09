@@ -50,11 +50,11 @@ class GazeboSimulator(BaseSimulator):
         self.unpause = rospy.ServiceProxy("/gazebo/unpause_physics", Empty)
         self.pause = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
 
-        print("Waiting for gazebo services...")
+        rospy.loginfo("Waiting for gazebo services...")
         rospy.wait_for_service("gazebo/spawn_sdf_model")
         rospy.wait_for_service("gazebo/delete_model")
 
-        print("service: spawn_sdf_model is available ....")
+        rospy.loginfo("service: spawn_sdf_model is available ....")
         self.remove_model_srv = rospy.ServiceProxy(
             "gazebo/delete_model", DeleteModel)
 

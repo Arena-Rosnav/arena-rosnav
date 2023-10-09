@@ -109,7 +109,7 @@ class SFMManager(DynamicManager):
 
     def remove_obstacles(self):
         for name, cleanup in self._spawned_obstacles:
-            # print(f"removing {name}")
+            rospy.logdebug(f"removing {name}")
             self._simulator.delete_obstacle(obstacle_id=name)
             cleanup()
 

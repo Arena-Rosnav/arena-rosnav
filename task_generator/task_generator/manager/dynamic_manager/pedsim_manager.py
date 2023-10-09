@@ -150,12 +150,12 @@ class PedsimManager(DynamicManager):
 
             #TODO feed the content from a Model[ModelType.YAML] to this, maybe with a working dir
             msg.yaml_path = obstacle.extra["yaml"]
-            
+
             srv.InteractiveObstacles.append(msg)
 
         max_num_try = 1
         i_curr_try = 0
-        print("trying to call service with interactive obstacles: ")
+        rospy.logdebug("trying to call service with interactive obstacles: ")
 
         while i_curr_try < max_num_try:
             # try to call service
@@ -270,7 +270,7 @@ class PedsimManager(DynamicManager):
         self._remove_peds_srv.call()
 
     def _interactive_actor_poses_callback(self, actors):
-        return;
+        return; #TODO reconsider the necessity
         if rospy.get_param("respawn_interactive"):
             for actor in actors.waypoints:
                 if "interactive" in actor.name:
@@ -366,7 +366,7 @@ class PedsimManager(DynamicManager):
                     rospy.set_param("respawn_static", False)
 
     def _dynamic_actor_poses_callback(self, actors):
-        return;
+        return;  #TODO reconsider the necessity
         if rospy.get_param("respawn_dynamic"):
             for actor in actors.agent_states:
                 actor_id = str(actor.id)

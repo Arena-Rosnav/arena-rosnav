@@ -147,7 +147,7 @@ class ModelLoader:
         self._models = []
 
         # potentially expensive
-        print(f"models in {os.path.basename(model_dir)}: {self.models}")
+        rospy.logdebug(f"models in {os.path.basename(model_dir)}: {self.models}")
 
     @property
     def models(self) -> List[str]:
