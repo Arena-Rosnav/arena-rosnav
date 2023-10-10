@@ -86,3 +86,27 @@
     local-name: ../planners/mpc
     uri: https://github.com/rst-tu-dortmund/mpc_local_planner
     version: master
+- git:
+    local-name: ../planners/all_in_one
+    uri: https://github.com/Arena-Rosnav/all_in_one
+    version: master
+- git:
+    local-name: ../planners/applr
+    uri: https://github.com/Arena-Rosnav/applr
+    version: master
+- git:
+    local-name: ../planners/lflh
+    uri: https://github.com/Arena-Rosnav/lflh
+    version: master
+- git:
+    local-name: ../planners/dragon
+    uri: https://github.com/Arena-Rosnav/dragon
+    version: master
+- git:
+    local-name: ../planners/trail
+    uri: https://github.com/Arena-Rosnav/trail
+    version: master
+- git:
+    local-name: ../planners/cohan
+    uri: https://github.com/Arena-Rosnav/cohan_planner_multi
+    version: master
