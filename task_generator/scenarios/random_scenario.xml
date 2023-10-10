@@ -3,12 +3,12 @@
   <obstacle name="table">
     <num>5</num>
     <name>table</name>
-    <yaml>shelf.yaml</yaml>
+    <yaml>shelf.model.yaml</yaml>
   </obstacle>
   <obstacle name="shelf">
     <num>5</num>
     <name>shelf</name>
-    <yaml>shelf.yaml</yaml>
+    <yaml>shelf.model.yaml</yaml>
   </obstacle>
   <obstacle name="adult">
     <num>15</num>

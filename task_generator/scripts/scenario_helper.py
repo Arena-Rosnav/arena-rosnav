@@ -22,7 +22,7 @@ def on_click(event, map):
 
 if __name__ == "__main__":
     rospy.init_node("task_generator")
-    
+
     rospy.wait_for_service("/static_map")
 
     service_client_get_map = rospy.ServiceProxy("/static_map", GetMap)
@@ -35,9 +35,9 @@ if __name__ == "__main__":
     fig = plt.figure()
 
     imgplot = plt.imshow(np.reshape(
-            map.data, 
-            (map.info.height, map.info.width)
-        ))
+        map.data,
+        (map.info.height, map.info.width)
+    ))
 
     fig.canvas.mpl_connect("button_press_event", lambda x: on_click(x, map))
 

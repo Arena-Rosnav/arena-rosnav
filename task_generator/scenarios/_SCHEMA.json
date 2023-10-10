@@ -3,8 +3,9 @@
     "dynamic": ["<PEDSIM AGENT DESCRIPTION>"],
     "static": [
       {
-        "pos": ["X", "Y"],
-        "yaml_path": "<PATH TO YAML DECLARATION FILE>"
+        "name": "<object name>",
+        "pos": ["X", "Y", "theta"],
+        "model": "<model name>"
       }
     ]
   },

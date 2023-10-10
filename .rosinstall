@@ -35,12 +35,16 @@
     local-name: ../utils/3rd-party-robot-packages
     uri: https://github.com/Arena-Rosnav/3rd-party-robot-packages
 
+- git:
+    local-name: ../utils/gazebo_sfm_plugin
+    uri: https://github.com/robotics-upo/gazebo_sfm_plugin.git
+
 ### ARENA INFRASTRUCTURE
 
 - git:
     local-name: ../utils/arena-simulation-setup
     uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: v2.0.1
+    version: master
 
 - git:
     local-name: ../arena-evaluation

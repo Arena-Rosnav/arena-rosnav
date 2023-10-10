@@ -1,179 +1,195 @@
-from task_generator.constants import Constants
-import rospy
+from ast import Dict
+import random
+from typing import Collection, Iterator
+
 import numpy as np
+import yaml
+import rospy
 import os
 import xml.etree.ElementTree as ET
 import rospkg
-from task_generator.manager.pedsim_manager import PedsimManager
-import time
+from task_generator.constants import FlatlandRandomModel
+from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
+from task_generator.manager.map_manager import MapManager
+
+from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle
+
+from geometry_msgs.msg import Point
+
+import itertools
+
+from task_generator.simulators.base_simulator import BaseSimulator
+
+# GRADUALLY MIGRATE ALL METHODS FOR STATIC OBSTACLES FROM DYNAMIC_MANAGERS TO HERE
 
 
 class ObstacleManager:
-    def __init__(self, namespace, map_manager, simulator):
-        self.map_manager = map_manager
-        self.namespace = namespace
-        self.simulator = simulator
+
+    _map_manager: MapManager
+    _namespace: str
+    _dynamic_manager: DynamicManager
+    _simulator: BaseSimulator
+
+    first_reset: bool
+
+    id_generator: Iterator[int]
+
+    def __init__(self, namespace, map_manager, simulator: BaseSimulator, dynamic_manager: DynamicManager):
+        self._map_manager = map_manager
+        self._namespace = namespace
+        self._simulator = simulator
+
         self.first_reset = True
-        self.pedsimManager = PedsimManager(namespace)
+        self._dynamic_manager = dynamic_manager
 
-    # TASK MODE SCENARIO 
-    def start_scenario(self, scenario):
-        print("spawning scenario obstacles")
-        if rospy.get_param("pedsim"):
-            self.pedsimManager.spawn_pedsim_map_obstacles()
-            self.pedsimManager.spawn_pedsim_dynamic_scenario_obstacles(scenario["obstacles"]["dynamic"])
-            self.pedsimManager.spawn_pedsim_scenario_obstacles(scenario["obstacles"]["static"], interaction_radius=0.0)
-            self.pedsimManager.spawn_pedsim_scenario_obstacles(scenario["obstacles"]["interactive"], interaction_radius=1.0)
+        self.id_generator = itertools.count(434)
 
-    def reset_scenario(self, scenario):
-        if rospy.get_param("pedsim"):
-            self.pedsimManager.remove_interactive_obstacles_pedsim()
-        self.simulator.remove_all_obstacles()
-
-        if rospy.get_param("pedsim"):
-            self.pedsimManager.spawn_pedsim_dynamic_scenario_obstacles(scenario["obstacles"]["dynamic"])
-            self.pedsimManager.spawn_pedsim_scenario_obstacles(scenario["obstacles"]["static"], interaction_radius=0.0)
-            self.pedsimManager.spawn_pedsim_scenario_obstacles(scenario["obstacles"]["interactive"], interaction_radius=1.0)
-
-    # TASK MODE RANDOM
-    def reset_random(
-            self, 
-            dynamic_obstacles=Constants.ObstacleManager.DYNAMIC_OBSTACLES,
-            static_obstacles=Constants.ObstacleManager.STATIC_OBSTACLES,
-            interactive_obstacles=Constants.ObstacleManager.INTERACTIVE_OBSTACLES,
-            forbidden_zones=[]
-        ):
-
-        if forbidden_zones is None:
-            forbidden_zones = []
-
-        if self.first_reset:
-            self.first_reset = False
-        else:  
-            self.simulator.remove_all_obstacles() 
-            if rospy.get_param("pedsim"):
-                self.pedsimManager.remove_interactive_obstacles_pedsim()
-
-        dynamic_obstacles_array = np.array([],dtype=object).reshape(0,3)
-        static_obstacles_array = np.array([],dtype=object).reshape(0,2)
-        interactive_obstacles_array = np.array([],dtype=object).reshape(0,2)
-
-        if rospy.get_param("pedsim"):
-            forbidden_zones = forbidden_zones + self.pedsimManager.spawn_pedsim_map_obstacles()
-
-        # Create static obstacles
-        for i in range(static_obstacles):
-            if rospy.get_param("pedsim"):
-                x = self.pedsimManager.create_pedsim_obstacle(False, i ,self.map_manager, forbidden_zones)
-                forbidden_zones.append([x[1][0], x[1][1], 40])
-                static_obstacles_array = np.vstack((static_obstacles_array, x))
-            else: 
-                pass
-
-        if static_obstacles_array.size > 0:
-            self.pedsimManager.spawn_pedsim_obstacles(static_obstacles_array, interaction_radius=0.0)
-
-        # Create interactive obstacles  
-        for i in range(interactive_obstacles):
-            if rospy.get_param("pedsim"):
-                x = self.pedsimManager.create_pedsim_obstacle(False, i,self.map_manager, forbidden_zones)
-                forbidden_zones.append([x[1][0], x[1][1], 40])
-                interactive_obstacles_array = np.vstack((interactive_obstacles_array, x))
-            else: 
-                pass
-
-        if interactive_obstacles_array.size > 0:
-            self.pedsimManager.spawn_pedsim_obstacles(interactive_obstacles_array, interaction_radius=1.0)
-
-        # Create dynamic obstacles 
-        for i in range(dynamic_obstacles):
-            if rospy.get_param("pedsim"):
-                x = self.pedsimManager.create_pedsim_obstacle(True, i,self.map_manager, forbidden_zones)
-                dynamic_obstacles_array = np.vstack((dynamic_obstacles_array, x))
-            else: 
-                pass
-
-        if dynamic_obstacles_array.size > 0:
-            self.pedsimManager.spawn_pedsim_dynamic_obstacles(dynamic_obstacles_array)
-
-    # TASK MODE RANDOM SCENARIO
-    def reset_random_scenario(
-            self, 
-            dynamic_obstacles=Constants.ObstacleManager.DYNAMIC_OBSTACLES,
-            static_obstacles=Constants.ObstacleManager.STATIC_OBSTACLES,
-            interactive_obstacles=Constants.ObstacleManager.INTERACTIVE_OBSTACLES,
-            forbidden_zones=[]
-        ):
-
-        if forbidden_zones is None:
-            forbidden_zones = []
-
-        if self.first_reset:
-            self.first_reset = False
-        else:  
-            self.simulator.remove_all_obstacles()
-            if rospy.get_param("pedsim"):
-                self.pedsimManager.remove_interactive_obstacles_pedsim()
-        
-        xml_path = os.path.join(
-        rospkg.RosPack().get_path("task_generator"), 
-        "scenarios", 
-        "random_scenario.xml")
-            
-        tree = ET.parse(xml_path)
+    # TODO replace with already loaded XML
+    def spawn_map_obstacles(self, map_path: str = "map_empty"):
+        """
+        Loads given obstacles into the simulator,
+        the map file is retrieved from launch parameter "map_file"
+        """
+        map = rospy.get_param("map_file")
+        map_path = os.path.join(
+            rospkg.RosPack().get_path("arena-simulation-setup"),
+            "worlds",
+            map_path,
+            "ped_scenarios",
+            f"{map}.xml"
+        )
+        tree = ET.parse(map_path)
         root = tree.getroot()
-        num_tables = [int(root[0][0].text),root[0][1].text,root[0][2].text]
-        num_shelves = [int(root[1][0].text),root[1][1].text,root[1][2].text]
-        num_adults = [int(root[2][0].text),root[2][1].text,root[2][2].text]
-        num_elder = [int(root[3][0].text),root[3][1].text,root[3][2].text]
-        num_child = [int(root[4][0].text),root[4][1].text,root[4][2].text]
 
-        dynamic_obstacles_array = np.array([],dtype=object).reshape(0,3)
-        static_obstacles_array = np.array([],dtype=object).reshape(0,2)
-        interactive_obstacles_array = np.array([],dtype=object).reshape(0,2)
+        for child in root:
 
-        if rospy.get_param("pedsim"):
-            forbidden_zones = forbidden_zones + self.pedsimManager.spawn_pedsim_map_obstacles()
+            _from = Point(float(child.attrib['x1']), float(
+                child.attrib['y1']), 0)
+            _to = Point(float(child.attrib['x2']),
+                        float(child.attrib['y2']), 0)
 
-        # Create static obstacles
-        for ob_type in [num_tables]:
-            static_obstacles_array = np.array([],dtype=object).reshape(0,2)
-            for i in range(ob_type[0]):
-                if rospy.get_param("pedsim"):
-                    x = self.pedsimManager.create_pedsim_obstacle(False, i,self.map_manager, forbidden_zones)
-                    forbidden_zones.append([x[1][0], x[1][1], 40])
-                    static_obstacles_array = np.vstack((static_obstacles_array, x))
-                else: 
-                    pass
+            identifier = str(next(self.id_generator))
 
-            if static_obstacles_array.size > 0:
-                self.pedsimManager.spawn_pedsim_obstacles(static_obstacles_array, ob_type[1], ob_type[2], interaction_radius=0.0)
+            self._dynamic_manager.spawn_line_obstacle(
+                name=f"wall{identifier}",
+                _from=_from,
+                _to=_to
+            )
 
-        # Create interactive obstacles  
-        for ob_type in [num_shelves]:
-            interactive_obstacles_array = np.array([],dtype=object).reshape(0,2)
-            for i in range(ob_type[0]):
-                if rospy.get_param("pedsim"):
-                    x = self.pedsimManager.create_pedsim_obstacle(False, i,self.map_manager, forbidden_zones)
-                    forbidden_zones.append([x[1][0], x[1][1], 40])
-                    interactive_obstacles_array = np.vstack((interactive_obstacles_array, x))
-                else: 
-                    pass
+    def spawn_dynamic_obstacles(self, setups: Collection[DynamicObstacle]):
+        """
+        Loads given dynamic obstacles into the simulator.
+        To-Do: consider merging with spawn_dynamic_obstacles or simplifying by calling it
+        """
 
-            if interactive_obstacles_array.size > 0:
-                self.pedsimManager.spawn_pedsim_obstacles(interactive_obstacles_array, ob_type[1], ob_type[2], interaction_radius=1.0)
+        self._dynamic_manager.spawn_dynamic_obstacles(obstacles=setups)
 
-        # Create dynamic obstacles 
-        for ob_type in [num_adults,num_elder,num_child]:
-            dynamic_obstacles_array = np.array([],dtype=object).reshape(0,3)
-            for i in range(ob_type[0]):
-                if rospy.get_param("pedsim"):
-                    x = self.pedsimManager.create_pedsim_obstacle(True, i,self.map_manager, forbidden_zones)
-                    dynamic_obstacles_array = np.vstack((dynamic_obstacles_array, x))
-                else: 
-                    pass
+    def spawn_obstacles(self, setups: Collection[Obstacle]):
+        """
+        Loads given obstacles into the simulator.
+        If the object has an interaction radius of > 0, 
+        then load it as an interactive obstacle instead of static
+        To-Do: consider merging with spawn_obstacles or simplifying by calling it
+        """
 
-            if dynamic_obstacles_array.size > 0:
-                self.pedsimManager.spawn_pedsim_dynamic_obstacles(dynamic_obstacles_array, ob_type[1],ob_type[2])
+        self._dynamic_manager.spawn_obstacles(obstacles=setups)
+
+    def reset(self):
+
+        if self.first_reset:
+            self.first_reset = False
+        else:
+            self._dynamic_manager.remove_obstacles()
 
 
+
+
+    #TODO refactor this with a registry
+    def generate_random_model(self, model_type: ModelType, **kwargs) -> Model:
+        if model_type == ModelType.YAML:
+            return self.generate_random_model(**kwargs)
+        
+        else:
+            raise NotImplementedError()
+
+    def _generate_YAML_model(self, is_dynamic=False, min_radius: float = FlatlandRandomModel.MIN_RADIUS, max_radius: float = FlatlandRandomModel.MAX_RADIUS, linear_vel: float = FlatlandRandomModel.LINEAR_VEL, angular_vel_max: float = FlatlandRandomModel.ANGLUAR_VEL_MAX) -> Model:
+        """
+        Creates a random yaml model.
+
+        Since a lot of the variables are untouched
+        the majority of the dict is filled up with
+        constants defined in the `Constants` file.
+        """
+
+        def generate_random_footprint_type(min_radius: float, max_radius: float) -> dict:
+            """
+            An object in flatland can either be a circle with a
+            specific radius or a polygon shape.
+
+            This function will choose a shape randomly and
+            creates a shape from this.
+
+            For the circle the radius is chosen randomly and
+            lies in a specific range defined in the `constants` file
+
+            For the polygon, the amount of vertexes is determined
+            at first. Then the vertexes are distributed around the center
+            and for each vertex a distance to the center is calculated.
+            At the end, the vertexes form the polygon. The distance
+            to the center is chosen randomly and lies in the range
+            defined in `constants`.
+            """
+            type = random.choice(["circle", "polygon"])
+
+            if type == "circle":
+                radius = random.uniform(min_radius, max_radius)
+
+                return {"type": type, "radius": radius}
+
+            # Defined in flatland definition
+            points_amount = random.randint(3, 8)
+            angle_interval = 2 * np.pi / points_amount
+
+            points = []
+
+            for p in range(points_amount):
+                angle = random.uniform(0, angle_interval)
+                radius = random.uniform(min_radius, max_radius)
+
+                real_angle = angle_interval * p + angle
+
+                points.append(
+                    [np.cos(real_angle) * radius, np.sin(real_angle) * radius]
+                )
+
+            return {"type": type, "points": list(points)}
+
+        body = {
+            **FlatlandRandomModel.BODY,
+            "type": "dynamic" if is_dynamic else "static",
+        }
+
+        footprint = {
+            **FlatlandRandomModel.FOOTPRINT,
+            **generate_random_footprint_type(min_radius, max_radius),
+        }
+
+        body["footprints"] = [footprint]
+
+        model = {"bodies": [body], "plugins": []}
+
+        if is_dynamic:
+            model["plugins"].append(
+                {
+                    **FlatlandRandomModel.RANDOM_MOVE_PLUGIN,
+                    "linear_velocity": random.uniform(0, linear_vel),
+                    "angular_velocity_max": angular_vel_max,
+                }
+            )
+
+        return Model(
+            type=ModelType.YAML,
+            name="random_obstacle",
+            description=yaml.dump(model),
+            path=""
+        )

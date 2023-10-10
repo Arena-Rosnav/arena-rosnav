@@ -1,16 +1,20 @@
 #! /usr/bin/env python3
 
+import os
+from rospkg import RosPack
 import rospy
 from std_msgs.msg import Int16, Empty as EmptyMsg
 from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
+from task_generator.simulators.base_simulator import BaseSimulator
+from task_generator.tasks.base_task import BaseTask
 
-from task_generator.utils import Utils
-from task_generator.constants import Constants, TaskMode
+from task_generator.utils import ModelLoader, Utils
+from task_generator.constants import Constants
 
 from task_generator.tasks.utils import get_predefined_task
 from task_generator.simulators.simulator_factory import SimulatorFactory
-from task_generator.simulators.gazebo_simulator import GazeboSimulator
-from task_generator.simulators.flatland_simulator import FlatlandRandomModel
+from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
+from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
 
 
 class TaskGenerator:
@@ -19,31 +23,59 @@ class TaskGenerator:
     Will initialize and reset all tasks. The task to use is read from the `/task_mode` param.
     """
 
+    _namespace: str
+
+    _pub_scenario_reset: rospy.Publisher
+    _pub_scenario_finished: rospy.Publisher
+
+    _env_wrapper: BaseSimulator
+
+    _start_time: float
+    _task: BaseTask
+
+    _number_of_resets: int
+    _desired_resets: int    
+
     def __init__(self) -> None:
-        ## Params
-        self.task_mode = rospy.get_param("/task_mode")
-        self.auto_reset = rospy.get_param("~auto_reset", True)
 
-        ## Publishers
-        self.pub_scenario_reset = rospy.Publisher("scenario_reset", Int16, queue_size=1)
-        self.pub_scenario_finished = rospy.Publisher('scenario_finished', EmptyMsg, queue_size=10)
-        
-        ## Services
-        rospy.Service("reset_task", Empty, self.reset_task_srv_callback)
+        self._namespace = "/"
 
-        ## Vars
-        self.env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())("")
+        # Params
+        self.task_mode: Constants.TaskMode = Constants.TaskMode(
+            rospy.get_param(os.path.join(self._namespace, "task_mode")))
+        self.social_mode: Constants.SocialMode = Constants.SocialMode(
+            rospy.get_param(os.path.join(self._namespace, "social_mode"), "pedsim"))
+        self.auto_reset: bool = bool(rospy.get_param("~auto_reset", True))
+
+        # Publishers
+        self._pub_scenario_reset = rospy.Publisher(
+            "scenario_reset", Int16, queue_size=1)
+        self._pub_scenario_finished = rospy.Publisher(
+            'scenario_finished', EmptyMsg, queue_size=10)
+
+        # Services
+        rospy.Service("reset_task", Empty, self._reset_task_srv_callback)
+
+        # Vars
+        self._env_wrapper = SimulatorFactory.instantiate(
+            Utils.get_simulator())("")
 
         rospy.loginfo(f"Launching task mode: {self.task_mode}")
 
-        self.start_time = rospy.get_time()
-        self.task = get_predefined_task("", self.task_mode, self.env_wrapper)
-        self.task.set_robot_names_param()
+        # Loaders
+        robot_loader = ModelLoader(os.path.join(
+            RosPack().get_path("arena-simulation-setup"), "robot"))
 
-        self.number_of_resets = 0
-        self.desired_resets = rospy.get_param("desired_resets", 2)
+        self._start_time = rospy.get_time()
+        self._task = get_predefined_task(
+            namespace="", mode=self.task_mode, simulator=self._env_wrapper, social_mode=self.social_mode, robot_loader=robot_loader)
+        rospy.set_param("/robot_names", self._task.robot_names)
 
-        self.srv_start_model_visualization = rospy.ServiceProxy("start_model_visualization", Empty)
+        self._number_of_resets = 0
+        self._desired_resets = int(str(rospy.get_param("desired_resets", 2)))
+
+        self.srv_start_model_visualization = rospy.ServiceProxy(
+            "start_model_visualization", Empty)
         self.srv_start_model_visualization(EmptyRequest())
 
         rospy.sleep(5)
@@ -54,63 +86,66 @@ class TaskGenerator:
 
         try:
             rospy.set_param("task_generator_setup_finished", True)
-            self.srv_setup_finished = rospy.ServiceProxy("task_generator_setup_finished", Empty)
+            self.srv_setup_finished = rospy.ServiceProxy(
+                "task_generator_setup_finished", Empty)
             self.srv_setup_finished(EmptyRequest())
         except:
             pass
 
-        self.number_of_resets = 0
+        self._number_of_resets = 0
 
         # The second reset below caused bugs and did not help according to my testing
         # self.reset_task()
 
-        ## Timers
-        rospy.Timer(rospy.Duration(0.5), self.check_task_status)
-
-    def check_task_status(self, _):
-        if self.task.is_done():
-            self.reset_task()
+        # Timers
+        rospy.Timer(rospy.Duration(nsecs=int(0.5e9)), self._check_task_status)
 
     def reset_task(self):
-        self.start_time = rospy.get_time()
+        self._start_time = rospy.get_time()
 
-        self.env_wrapper.before_reset_task()
+        self._env_wrapper.before_reset_task()
 
-        is_end = self.task.reset()
+        rospy.loginfo("resetting")
 
-        self.pub_scenario_reset.publish(self.number_of_resets)
+        is_end = self._task.reset()
+
+        self._pub_scenario_reset.publish(self._number_of_resets)
         self._send_end_message_on_end(is_end)
 
-        self.env_wrapper.after_reset_task()
+        self._env_wrapper.after_reset_task()
 
         rospy.loginfo("=============")
         rospy.loginfo("Task Reseted!")
         rospy.loginfo("=============")
 
-        self.number_of_resets += 1
+        self._number_of_resets += 1
 
-    def reset_task_srv_callback(self, req):
+    def _check_task_status(self, *args, **kwargs):
+        if self._task.is_done:
+            self.reset_task()
+
+    def _reset_task_srv_callback(self, req: Empty):
         rospy.logdebug("Task Generator received task-reset request!")
 
         self.reset_task()
 
         return EmptyResponse()
 
-    def _send_end_message_on_end(self, is_end):
+    def _send_end_message_on_end(self, is_end: bool):
         if (
-            (not is_end and self.task_mode == TaskMode.SCENARIO) 
-            or (self.task_mode != TaskMode.SCENARIO and self.number_of_resets < self.desired_resets)
+            (not is_end and self.task_mode == Constants.TaskMode.SCENARIO)
+            or (self.task_mode != Constants.TaskMode.SCENARIO and self._number_of_resets < self._desired_resets)
         ):
             return
 
         rospy.loginfo("Shutting down. All tasks completed")
 
         # Send Task finished to Backend
-        if rospy.get_param("/is_webapp_docker", False):
-            while self.pub_scenario_finished.get_num_connections() <= 0:
+        if rospy.get_param(os.path.join(self._namespace, "is_webapp_docker"), False):
+            while self._pub_scenario_finished.get_num_connections() <= 0:
                 pass
 
-            self.pub_scenario_finished.publish(EmptyMsg())
+            self._pub_scenario_finished.publish(EmptyMsg())
 
         rospy.signal_shutdown("Finished all episodes of the current scenario")
 

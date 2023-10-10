@@ -35,14 +35,10 @@
   <arg name="simulator" default="flatland" doc="[flatland, gazebo]" />
   <env name="SIMULATOR" value="$(arg simulator)" />
 
-  <arg name="pedsim" default="false" doc="[true, false]" />
+  <arg name="social_mode" default="pedsim" doc="[pedsim,sfm]" />
+  <arg name="pedsim" value="$(eval social_mode == 'pedsim')" />
   <env name="PEDSIM" value="$(arg pedsim)" />
   <param name="pedsim" value="$(arg pedsim)" />
-
-
-
- 
-
 
   <arg name="complexity" default="1" doc="1 = Map known, Position known; 2 = Map known, Position unknown (AMCL); 3 = Map unknown, Position unknown (SLAM)" />
   
@@ -82,9 +78,11 @@
   <param name="model" value="$(arg model)" />
   <param name="simulator" value="$(arg simulator)" />
   <param name="task_mode" value="$(arg task_mode)" />
+  <param name="pedsim" type="bool" value="$(arg pedsim)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
   <param name="show_viz" value="$(arg show_rviz)"/>
+  <param name="social_mode" value="$(arg social_mode)" />
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
 
@@ -116,7 +114,7 @@
   <!-- use simulator-->
 
   <!-- Flatland -->
-  <include file="$(find arena_bringup)/launch/testing//simulators/flatland.launch" if="$(eval arg('simulator') == 'flatland')">
+  <include file="$(find arena_bringup)/launch/testing/simulators/flatland.launch" if="$(eval arg('simulator') == 'flatland')">
     <arg name="visualization" default="$(arg visualization)" />
     <arg name="rviz_file" value="$(arg rviz_file)" />
     <arg name="model" value="$(arg model)" />
@@ -131,6 +129,7 @@
     <arg name="headless" default="false" />
     <arg name="gui" default="true" />
     <arg name="world" default="$(arg world_file)" />
+    <arg name="pedsim" value="$(arg pedsim)"/>
   </include>
 
   <!-- map server-->
@@ -154,7 +153,7 @@
     <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(arg pedsim)">
       <param name="simulation_factor" value="1" type="double"/>
       <param name="pedsim_update_rate" value="30.0" type="double"/>
-      <param name="scene_file" value="$(find arena-simulation-setup)/world/$(arg world_file)/scenarios/$(arg world_file).xml" type="string"/>
+      <param name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" type="string"/>
     </node>
   </group>
 
