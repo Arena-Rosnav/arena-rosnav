@@ -12,13 +12,7 @@ from task_generator.tasks.task_factory import TaskFactory
 
 @TaskFactory.register(TaskMode.SCENARIO)
 class ScenarioTask(BaseTask):
-    def __init__(
-        self,
-        obstacles_manager,
-        robot_managers,
-        map_manager,
-        **kwargs
-    ):
+    def __init__(self, obstacles_manager, robot_managers, map_manager, **kwargs):
         scenario_file_path = rospy.get_param("~scenario_json_path")
 
         self.scenario_file = self.read_scenario_file(scenario_file_path)
@@ -30,7 +24,7 @@ class ScenarioTask(BaseTask):
         # self._set_up_robot_managers()
 
         self.reset_count = 0
-        
+
         self.desired_resets = self.scenario_file.get("resets")
 
         if self.desired_resets <= 0 or self.desired_resets == None:
@@ -41,21 +35,19 @@ class ScenarioTask(BaseTask):
 
         self.obstacles_manager.start_scenario(self.scenario_file)
 
-    def reset(self):
+    def reset(self, *args, **kwargs):
         if self.reset_count >= self.desired_resets:
             return True
 
-        super().reset(
-            lambda: self.reset_scenario()
-        )
+        super().reset(lambda: self.reset_scenario())
 
         self.reset_count += 1
 
         return False
 
     def reset_scenario(self):
-        # self.obstacles_manager.reset_scenario(self.scenario_file)
-
+        # print("resetting scenario in scenario task")
+        self.obstacles_manager.reset_scenario(self.scenario_file)
         self._reset_robots()
 
     def read_scenario_file(self, scenario_file_path):
@@ -67,23 +59,22 @@ class ScenarioTask(BaseTask):
     def _check_map_paths(self):
         static_map = rospy.get_param("map_path")
         scenario_map_path = os.path.join(
-            rospkg.RosPack().get_path("arena-simulation-setup"), 
-            "maps", 
+            rospkg.RosPack().get_path("arena-simulation-setup"),
+            "maps",
             self.scenario_file["map"],
-            "map.yaml"
+            "map.yaml",
         )
-        # scenario_map_path = os.path.join(
-        #     rospkg.RosPack().get_path("arena-simulation-setup"), 
-        #     "maps", 
-        #     self.scenario_file["map_path"]
-        # )
 
         if not static_map == scenario_map_path:
-            rospy.logerr("Map path of scenario and static map are not the same. Shutting down.")
+            rospy.logerr(
+                "Map path of scenario and static map are not the same. Shutting down."
+            )
             rospy.logerr(f"Scenario Map Path {scenario_map_path}")
             rospy.logerr(f"Static Map Path {static_map}")
 
-            rospy.signal_shutdown("Map path of scenario and static map are not the same.")
+            rospy.signal_shutdown(
+                "Map path of scenario and static map are not the same."
+            )
             sys.exit()
 
     def _reset_robots(self):
@@ -101,7 +92,6 @@ class ScenarioTask(BaseTask):
         super()._set_up_robot_managers()
 
     def _check_robot_manager_length(self):
-
         scenario_robots_length = len(self.scenario_file["robots"])
         setup_robot_length = len(self.robot_managers)
 
@@ -111,7 +101,7 @@ class ScenarioTask(BaseTask):
             return
 
         if scenario_robots_length > setup_robot_length:
-            self.scenario_file["robots"] = self.scenario_file["robots"][:setup_robot_length]
+            self.scenario_file["robots"] = self.scenario_file["robots"][
+                :setup_robot_length
+            ]
             rospy.logwarn("Scenario file contains more robots than setup.")
-        
-        return

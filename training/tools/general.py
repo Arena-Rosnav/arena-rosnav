@@ -1,27 +1,18 @@
-import os, rospy
-import rosnode
-import rospkg
+import os
+import random
+import string
 import time
 import warnings
+from datetime import datetime as dt
+from typing import Tuple
+
+import numpy as np
+import rosnode
+import rospkg
+import rospy
 import yaml
 
-from datetime import datetime as dt
-
-from stable_baselines3 import PPO
-
 from .model_utils import check_batch_size
-
-
-def populate_ros_params(params):
-    rospy.set_param("task_mode", params["task_mode"])
-    rospy.set_param(
-        "is_action_space_discrete", params["rl_agent"]["discrete_action_space"]
-    )
-    rospy.set_param("goal_radius", params["goal_radius"])
-
-
-def populate_ros_configs(config):
-    rospy.set_param("debug_mode", config["debug_mode"])
 
 
 def initialize_config(
@@ -228,3 +219,38 @@ def generate_agent_name(config: dict) -> str:
         agent_name = f"{robot_model}_{architecture_name}_{encoder_name}_{START_TIME}"
         config["agent_name"] = agent_name
         return agent_name
+    else:
+        config["agent_name"] = config["rl_agent"]["resume"]
+        return config["rl_agent"]["resume"]
+
+
+def generate_discrete_action_dict(
+    linear_range: Tuple[float, float],
+    angular_range: Tuple[float, float],
+    num_linear_actions: int,
+    num_angular_actions: int,
+):
+    NAME_LEN = 12  # len for random action name
+
+    linear_actions = np.linspace(
+        linear_range[0], linear_range[1], num_linear_actions, dtype=np.float16
+    )
+    angular_actions = np.linspace(
+        angular_range[0], angular_range[1], num_angular_actions, dtype=np.float16
+    )
+
+    discrete_action_space = [
+        (float(linear_action), float(angular_action))
+        for linear_action in linear_actions
+        for angular_action in angular_actions
+    ]
+    discrete_action_space.append((0, 0))
+
+    return [
+        {
+            "name": "".join(random.sample(string.ascii_lowercase, NAME_LEN)),
+            "linear": linear,
+            "angular": angular,
+        }
+        for linear, angular in discrete_action_space
+    ]

@@ -22,6 +22,8 @@ from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
 class FlatlandEnv(gym.Env):
     """Custom Environment that follows gym interface"""
 
+    render_mode = None
+
     def __init__(
         self,
         ns: str,
@@ -33,6 +35,7 @@ class FlatlandEnv(gym.Env):
         task_mode: str = "staged",
         PATHS: dict = dict(),
         extended_eval: bool = False,
+        requires_task_manager: bool = True,
         *args,
         **kwargs,
     ):
@@ -69,7 +72,7 @@ class FlatlandEnv(gym.Env):
         # process specific namespace in ros system
         self.ns_prefix = lambda x: os.path.join(self.ns, x)
 
-        if not rospy.get_param("/debug_mode"):
+        if not rospy.get_param("/debug_mode", True):
             rospy.init_node("env_" + self.ns, anonymous=True)
 
         self._extended_eval = extended_eval
@@ -90,7 +93,7 @@ class FlatlandEnv(gym.Env):
 
         # reward calculator
         if safe_dist is None:
-            safe_dist = self.model_space_encoder._radius + 0.1
+            safe_dist = self.model_space_encoder._radius + 0.25
 
         self.reward_calculator = RewardCalculator(
             holonomic=self.model_space_encoder._is_holonomic,
@@ -123,12 +126,14 @@ class FlatlandEnv(gym.Env):
             )
 
         # instantiate task manager
-        self.task = get_predefined_task(
-            self.ns,
-            mode=task_mode,
-            start_stage=kwargs["curr_stage"],
-            paths=PATHS,
-        )
+        self._requires_task_manager = requires_task_manager
+        if requires_task_manager:
+            self.task = get_predefined_task(
+                self.ns,
+                mode=task_mode,
+                start_stage=kwargs["curr_stage"],
+                paths=PATHS,
+            )
 
         self._steps_curr_episode = 0
         self._episode = 0
@@ -145,7 +150,7 @@ class FlatlandEnv(gym.Env):
 
         self.last_mean_reward = 0
         self.mean_reward = [0, 0]
-
+        self.total_step_count = 0
         self.step_time = [0, 0]
 
         self._done_reasons = {
@@ -177,14 +182,8 @@ class FlatlandEnv(gym.Env):
         decoded_action = self.model_space_encoder.decode_action(action)
         self._pub_action(decoded_action)
 
-        self._pub_action(decoded_action)
-
         if self._is_train_mode:
             self.call_service_takeSimStep()
-
-        obs_dict = self.observation_collector.get_observations(
-            last_action=self._last_action
-        )
 
         self._steps_curr_episode += 1
 
@@ -195,11 +194,8 @@ class FlatlandEnv(gym.Env):
 
         # calculate reward
         reward, reward_info = self.reward_calculator.get_reward(
-            laser_scan=obs_dict["laser_scan"],
-            goal_in_robot_frame=obs_dict["goal_in_robot_frame"],
             action=decoded_action,
-            global_plan=obs_dict["global_plan"],
-            robot_pose=obs_dict["robot_pose"],
+            **obs_dict,
         )
         done = reward_info["is_done"]
 
@@ -229,6 +225,7 @@ class FlatlandEnv(gym.Env):
         self.step_time[1] += 1
         self.mean_reward[1] += 1
         self.mean_reward[0] += reward
+        self.total_step_count += 1
 
         if done:
             # print(self.ns_prefix, "DONE", info["done_reason"], sum(self._done_hist), min(obs_dict["laser_scan"]))
@@ -238,22 +235,24 @@ class FlatlandEnv(gym.Env):
             # if self._steps_curr_episode <= 1:
             #     print(self.ns_prefix, "DONE", info, min(obs_dict["laser_scan"]), obs_dict["goal_in_robot_frame"])
 
-            if sum(self._done_hist) >= 5:
+            if sum(self._done_hist) >= 10:
                 mean_reward = self.mean_reward[0] / self.mean_reward[1]
                 diff = round(mean_reward - self.last_mean_reward, 5)
 
                 print(
-                    f"[{self.ns}] Last 5 Episodes:\t"
+                    f"[{self.ns}] Last 10 Episodes:\t"
                     f"{self._done_reasons[str(0)]}: {self._done_hist[0]}\t"
                     f"{self._done_reasons[str(1)]}: {self._done_hist[1]}\t"
                     f"{self._done_reasons[str(2)]}: {self._done_hist[2]}\t"
                     f"Mean step time: {round(self.step_time[0] / self.step_time[1] * 100, 2)}\t"
-                    f"Mean reward: {round(mean_reward, 5)} ({'+' if diff >= 0 else ''}{diff})"
+                    f"Mean reward: {round(mean_reward, 5)} ({'+' if diff >= 0 else ''}{diff})\t"
+                    f"Mean steps: {self.total_step_count/10}\t"
                 )
                 self._done_hist = [0] * 3
                 self.step_time = [0, 0]
                 self.last_mean_reward = mean_reward
                 self.mean_reward = [0, 0]
+                self.total_step_count = 0
             self._done_hist[int(info["done_reason"])] += 1
 
         self.step_time[0] += time.time() - start_time
@@ -276,12 +275,16 @@ class FlatlandEnv(gym.Env):
         # self._step_world_publisher.publish(request)
 
     def reset(self):
-
         # set task
         # regenerate start position end goal position of the robot and change the obstacles accordingly
         self._episode += 1
         self.agent_action_pub.publish(Twist())
-        self.task.reset()
+        first_map = self._episode <= 1 if self.ns == "sim_1" else False
+        if self._requires_task_manager:
+            self.task.reset(
+                first_map=first_map,
+                reset_after_new_map=self._steps_curr_episode == 0,
+            )
         self.reward_calculator.reset()
         self._steps_curr_episode = 0
         self._last_action = np.array([0, 0, 0])

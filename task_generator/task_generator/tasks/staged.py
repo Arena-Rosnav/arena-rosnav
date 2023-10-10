@@ -31,7 +31,7 @@ class StagedRandomTask(RandomTask):
         start_stage: int = 1,
         paths=None,
         namespace: str = "",
-        **kwargs
+        **kwargs,
     ):
         super().__init__(obstacles_manager, robot_manager, map_manager)
 
@@ -40,7 +40,7 @@ class StagedRandomTask(RandomTask):
 
         self._curr_stage = start_stage
         self._stages = {}
-        self._stages = self._read_stages_from_file(paths.get("curriculum"))
+        self._stages = self._read_stages_from_file(paths["curriculum"])
         self._debug_mode = rospy.get_param("debug_mode", False)
 
         self._check_start_stage(start_stage)
@@ -89,7 +89,7 @@ class StagedRandomTask(RandomTask):
         rospy.set_param("/curr_stage", stage)
         rospy.set_param("/last_state_reached", stage == len(self._stages))
 
-        self._update_stage_in_config(stage)
+        # self._update_stage_in_config(stage)
 
         return stage
 
@@ -124,7 +124,7 @@ class StagedRandomTask(RandomTask):
 
         self._config_lock.release()
 
-    def reset(self):
+    def reset(self, *args, **kwargs):
         super().reset(
             static_obstacles=self._stages[self._curr_stage]["static"],
             dynamic_obstacles=self._stages[self._curr_stage]["dynamic"],
@@ -139,10 +139,11 @@ class StagedRandomTask(RandomTask):
             **kwargs,
         )
 
-    def _init_stage(self, stage):
+    def _init_stage(self, stage: int):
         static_obstacles = self._stages[stage]["static"]
         dynamic_obstacles = self._stages[stage]["dynamic"]
 
+        self._populate_goal_radius(stage)
         self._reset_robot_and_obstacles(
             static_obstacles=static_obstacles, dynamic_obstacles=dynamic_obstacles
         )
@@ -172,3 +173,11 @@ class StagedRandomTask(RandomTask):
         ), f"{path} has the wrong format! Check the Docs to see the correct format."
 
         return stages
+
+    def _populate_goal_radius(self, stage: int):
+        try:
+            goal_radius = self._stages[stage]["goal_radius"]
+        except KeyError:
+            goal_radius = rospy.get_param("/goal_radius", 0.3)
+
+        rospy.set_param("/goal_radius", goal_radius)

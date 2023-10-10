@@ -17,18 +17,17 @@ from flatland_msgs.srv import (
     DeleteModels,
     DeleteModelsRequest,
     SpawnModelRequest,
-    SpawnModelsRequest
+    SpawnModelsRequest,
 )
 from flatland_msgs.msg import MoveModelMsg, Model
 from nav_msgs.srv import GetMap
 
 from pedsim_srvs.srv import SpawnPeds
 from pedsim_msgs.msg import Ped
-from pedsim_srvs.srv import SpawnInteractiveObstacles,SpawnInteractiveObstaclesRequest
-from pedsim_srvs.srv import SpawnObstacle,SpawnObstacleRequest
+from pedsim_srvs.srv import SpawnInteractiveObstacles, SpawnInteractiveObstaclesRequest
+from pedsim_srvs.srv import SpawnObstacle, SpawnObstacleRequest
 from pedsim_msgs.msg import InteractiveObstacle, LineObstacle
 
-from task_generator.manager.pedsim_manager import PedsimManager
 from task_generator.utils import Utils
 from geometry_msgs.msg import Point, Pose2D, Pose
 from std_srvs.srv import Trigger
@@ -36,7 +35,7 @@ from std_srvs.srv import Trigger
 from ..constants import Constants, FlatlandRandomModel, Pedsim
 from .base_simulator import BaseSimulator
 from .simulator_factory import SimulatorFactory
-
+import xml.etree.ElementTree as ET
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -76,17 +75,17 @@ class FlatlandSimulator(BaseSimulator):
 
         self._robot_name = rospy.get_param("robot_model", "")
         self._robot_radius = rospy.get_param("robot_radius", "")
-        self._is_training_mode = rospy.get_param("train_mode", "")
+        self._is_training_mode = rospy.get_param("train_mode", False)
         self._step_size = rospy.get_param("step_size", "")
         # self._robot_yaml_path = rospy.get_param("robot_yaml_path")
         self._tmp_model_path = rospy.get_param("tmp_model_path", "/tmp")
+        self._additional_full_range_laser = rospy.get_param(
+            "laser/full_range_laser", False
+        )
 
         rospy.wait_for_service(f"{self._ns_prefix}move_model", timeout=T)
         rospy.wait_for_service(f"{self._ns_prefix}spawn_model", timeout=T)
         rospy.wait_for_service(f"{self._ns_prefix}delete_model", timeout=T)
-        rospy.wait_for_service(f"{self._ns_prefix}pedsim_simulator/respawn_peds" , timeout=20)
-        rospy.wait_for_service(f"{self._ns_prefix}pedsim_simulator/respawn_interactive_obstacles" , timeout=20)
-        rospy.wait_for_service(f'{self._ns_prefix}pedsim_simulator/add_obstacle', timeout=20)
 
         self._move_model_srv = rospy.ServiceProxy(
             f"{self._ns_prefix}move_model", MoveModel, persistent=True
@@ -106,22 +105,9 @@ class FlatlandSimulator(BaseSimulator):
         self._delete_models_srv = rospy.ServiceProxy(
             f"{self._ns_prefix}delete_models", DeleteModels
         )
-        self.__respawn_peds_srv = rospy.ServiceProxy(
-            f"{self._ns_prefix}pedsim_simulator/respawn_peds" , SpawnPeds, persistent=True)
-
-        self._spawn_peds_srv = rospy.ServiceProxy(
-            f"{self._ns_prefix}pedsim_simulator/spawn_peds", SpawnPeds
-        )
-        self._reset_peds_srv = rospy.ServiceProxy(
-            f"{self._ns_prefix}pedsim_simulator/reset_all_peds", Trigger
-        )
-        self.__add_obstacle_srv = rospy.ServiceProxy(
-            f'{self._ns_prefix}pedsim_simulator/add_obstacle' ,SpawnObstacle, persistent=True)
-
-        self.__respawn_interactive_obstacles_srv = rospy.ServiceProxy(
-        f"{self._ns_prefix}pedsim_simulator/respawn_interactive_obstacles" ,SpawnInteractiveObstacles, persistent=True)
-
         self.obs_names = []
+        self.dynamic_obs_amount = 0
+        self.static_obs_amount = 0
 
     @property
     def obstacles_amount(self):
@@ -137,33 +123,14 @@ class FlatlandSimulator(BaseSimulator):
         pass
 
     # PEDSIM
-
     def remove_all_obstacles(self):
+        self.static_obs_amount, self.dynamic_obs_amount = 0, 0
         request = DeleteModelsRequest()
         request.name = self.obs_names
 
         self._delete_models_srv(request)
 
         self.obs_names = []
-
-    def spawn_pedsim_agents(self, dynamic_obstacles: List):
-        
-        if len(dynamic_obstacles) <= 0:
-            return
-        
-        peds = [
-            FlatlandSimulator.create_ped_msg(p, i)
-            for i, p in enumerate(dynamic_obstacles)
-        ]
-
-        spawn_ped_msg = SpawnPeds()
-
-        spawn_ped_msg.peds = peds
-
-        self._spawn_peds_srv(peds)
-
-    def reset_pedsim_agents(self):
-        self._reset_peds_srv()
 
     # CREATE OBSTACLES
 
@@ -178,10 +145,11 @@ class FlatlandSimulator(BaseSimulator):
     #     return 0
 
     def create_dynamic_obstacle(self, **args):
+        self.dynamic_obs_amount += 1
         return self._create_obstacle(**args, is_dynamic=True)
 
-
     def create_static_obstacle(self, **args):
+        self.static_obs_amount += 1
         return self._create_obstacle(**args, is_dynamic=False)
 
     def _create_obstacle(self, is_dynamic=False, position=None, **args):
@@ -196,9 +164,7 @@ class FlatlandSimulator(BaseSimulator):
         return yaml.dump(model), name, position
 
     # SPAWN OBSTACLES
-    def spawn_obstacle(
-        self, position: Tuple[int, int, int], yaml_path=""
-    ):
+    def spawn_obstacle(self, position: Tuple[int, int, int], yaml_path=""):
         name = FlatlandSimulator.create_obs_name(self.obstacles_amount)
 
         try:
@@ -209,7 +175,6 @@ class FlatlandSimulator(BaseSimulator):
         self.add_obs_to_list(name)
 
     def spawn_obstacles(self, obstacles):
-
         request = SpawnModelsRequest()
 
         models = []
@@ -229,257 +194,20 @@ class FlatlandSimulator(BaseSimulator):
 
         self._spawn_models_from_string_srv(request)
 
-
-    # PEDSIM INTEGRATION 
-    
-    def create_pedsim_static_obstacle(self, i, map_manager, forbidden_zones):
-        num_obstacles = 1
-        model_yaml_file_path = os.path.join("../utils/arena-simulation-setup/obstacles", "random.model.yaml")
-        start_pos = []
-        vertices = np.array([[0, 0], [0, 0], [0, 0], [0, 0]])
-        type_obstacle = "static"
-
-        max_num_try = 2
-        i_curr_try = 0
-        while i_curr_try < max_num_try:
-            spawn_request = SpawnModelRequest()
-            spawn_request.yaml_path = model_yaml_file_path
-            spawn_request.name = f'{name_prefix}_{instance_idx:02d}'
-            # x, y, theta = get_random_pos_on_map(self._free_space_indices, self.map,)
-            # set the postion of the obstacle out of the map to hidden them
-            if len(start_pos) == 0:
-                x = self.map.info.origin.position.x - 3 * \
-                    self.map.info.resolution * self.map.info.height
-                y = self.map.info.origin.position.y - 3 * \
-                    self.map.info.resolution * self.map.info.width
-                theta = theta = random.uniform(-math.pi, math.pi)
-            else:
-                assert len(start_pos) == 3
-                x = start_pos[0]
-                y = start_pos[1]
-                theta = start_pos[2]
-            spawn_request.pose.x = x
-            spawn_request.pose.y = y
-            spawn_request.pose.theta = theta
-            # try to call service
-            response = self._srv_spawn_model.call(spawn_request)
-            if not response.success:  # if service not succeeds, do something and redo service
-                rospy.logwarn(
-                    f"({self.ns}) spawn object {spawn_request.name} failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
-                rospy.logwarn(response.message)
-                i_curr_try += 1
-            else:
-                self.obstacle_name_list.append(spawn_request.name)
-                #tell the info of polygon obstacles to pedsim
-                add_pedsim_srv=SpawnObstacleRequest()
-                size=vertices.shape[0]
-                for i in range(size):
-                    lineObstacle=LineObstacle()
-                    lineObstacle.start.x,lineObstacle.start.y=vertices[i,0],vertices[i,1]
-                    lineObstacle.end.x,lineObstacle.end.y=vertices[(i+1)%size,0],vertices[(i+1)%size,1]
-                    add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
-                self.__add_obstacle_srv.call(add_pedsim_srv)
-                break
-        if i_curr_try == max_num_try:
-            raise rospy.ServiceException(f"({self.ns}) failed to register obstacles")
-        
-        return 
-
-    def create_pedsim_interactive_obstacle(self, i, map_manager, forbidden_zones):
-        self.map_manager = map_manager
-        ped_array =np.array([],dtype=object).reshape(0,3) # Not used
-        # self.human_id+=1
-        safe_distance = 3.5
-
-        [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
-        # print(obstacles[i])
-        # if random.uniform(0.0, 1.0) < 0.8:
-        ped=np.array([i+1, [x, y, 0.0]],dtype=object)
-        return ped
-
-    def create_pedsim_dynamic_obstacle(self,i, map_manager, forbidden_zones):
-        self.map_manager = map_manager
-        ped_array =np.array([],dtype=object).reshape(0,3) # Not used
-        # self.human_id+=1
-        safe_distance = 3.5
-
-        [x, y, theta] = self.map_manager.get_random_pos_on_map(safe_distance, forbidden_zones) # check later for the need of free indicies and map papram
-        # if random.uniform(0.0, 1.0) < 0.8:
-        waypoints = np.array( [x, y, 1]).reshape(1, 3) # the first waypoint
-        safe_distance = 0.1 # the other waypoints don't need to avoid robot
-        # print("316 safe")
-        for j in range(10): # noote was 1000
-            dist = 0
-            while dist < 8:
-                [x2, y2, theta2] = self.map_manager.get_random_pos_on_map( safe_distance, forbidden_zones)
-                dist = np.linalg.norm([waypoints[-1,0] - x2,waypoints[-1,1] - y2])
-            waypoints = np.vstack([waypoints, [x2, y2, 1]])
-        ped=np.array([i+1, [x, y, 0.0], waypoints],dtype=object)
-        return ped
-    
-    def spawn_pedsim_static_obstacles(self, obstacles):
-        # TODO adjust if necessary
-        # _add_map_border_in_pedsim
-        pass
-
-    def spawn_pedsim_interactive_obstacles(self, obstacles):
-        print("225spawning pedsim dynamic obstacles")
-
-        srv = SpawnInteractiveObstacles()
-        srv.InteractiveObstacles = []
-        i = 0
-        self.agent_topic_str=''   
-        while i < len(obstacles) : 
-            msg = InteractiveObstacle()
-            obstacle = obstacles[i]
-            # msg.id = obstacle[0]
-
-            msg.pose = Pose()
-            msg.pose.position.x = obstacle[1][0]
-            msg.pose.position.y = obstacle[1][1]
-            msg.pose.position.z = obstacle[1][2]
-
-            self.agent_topic_str+=f',{self._ns_prefix}pedsim_static_obstacle_{obstacle[0]}/0' 
-            msg.type = "shelf"
-            msg.interaction_radius = 0.0
-            msg.yaml_path = os.path.join(
-                rospkg.RosPack().get_path("arena-simulation-setup"),
-                "obstacles", "long_shelf.model.yaml"
-            )
-            srv.InteractiveObstacles.append(msg)
-            i = i+1
-
-        max_num_try = 2
-        i_curr_try = 0
-        print("trying to call service with static obstacles: ")    
-
-        while i_curr_try < max_num_try:
-        # try to call service
-            response=self.__respawn_interactive_obstacles_srv.call(srv.InteractiveObstacles)
-
-            if not response.success:  # if service not succeeds, do something and redo service
-                rospy.logwarn(
-                    f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
-                # rospy.logwarn(response.message)
-                i_curr_try += 1
-            else:
-                break
-        # self.__peds = peds
-        rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
-        return
-
-    def spawn_pedsim_dynamic_obstacles(self, peds):
-        print("225spawning pedsim dynamic obstacles")
-
-        srv = SpawnPeds()
-        srv.peds = []
-        i = 0
-        self.agent_topic_str=''   
-        while i < len(peds) : 
-            msg = Ped()
-            ped = peds[i]
-            print("printing a ped 238")
-            print(len(ped))
-            print(ped)
-            msg.id = ped[0]
-
-            msg.pos = Point()
-            msg.pos.x = ped[1][0]
-            msg.pos.y = ped[1][1]
-            msg.pos.z = ped[1][2]
-
-            self.agent_topic_str+=f',{self._ns_prefix}pedsim_agent_{ped[0]}/0' 
-            msg.type = "adult"
-            msg.yaml_file = os.path.join(
-                rospkg.RosPack().get_path("arena-simulation-setup"),
-                "dynamic_obstacles",
-                "person_two_legged.model.yaml"
-            )
-            msg.number_of_peds = 1
-            msg.vmax = 0.3
-            msg.start_up_mode = "default"
-            msg.wait_time = 0.0
-            msg.trigger_zone_radius = 0.0
-            msg.chatting_probability = 0.00
-            msg.tell_story_probability = 0
-            msg.group_talking_probability = 0.00
-            msg.talking_and_walking_probability = 0.00
-            msg.requesting_service_probability = 0.00
-            msg.requesting_guide_probability = 0.00
-            msg.requesting_follower_probability = 0.00
-            msg.max_talking_distance = 5
-            msg.max_servicing_radius = 5
-            msg.talking_base_time = 10
-            msg.tell_story_base_time = 0
-            msg.group_talking_base_time = 10
-            msg.talking_and_walking_base_time = 6
-            msg.receiving_service_base_time = 20
-            msg.requesting_service_base_time = 30
-            msg.force_factor_desired = 1
-            msg.force_factor_obstacle = 1
-            msg.force_factor_social = 5
-            msg.force_factor_robot = 1
-            msg.waypoint_mode = 0 # or 1 check later
-
-            msg.waypoints = []
-
-            for pos in ped[2]:
-                p = Point()
-                p.x = pos[0]
-                p.y = pos[1]
-                p.z = pos[2]
-                msg.waypoints.append(p)
-            srv.peds.append(msg)
-            i = i+1
-
-        max_num_try = 2
-        i_curr_try = 0
-        print("trying to call service with peds: ")    
-        print(peds)    
-        while i_curr_try < max_num_try:
-        # try to call service
-            response=self.__respawn_peds_srv.call(srv.peds)
-
-            if not response.success:  # if service not succeeds, do something and redo service
-                rospy.logwarn(
-                    f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
-                # rospy.logwarn(response.message)
-                i_curr_try += 1
-            else:
-                break
-        self.__peds = peds
-        rospy.set_param(f'{self._ns_prefix}agent_topic_string', self.agent_topic_str)
-        return
-
-    def spawn_pedsim_map_borders(self):
-        map_service = rospy.ServiceProxy("/static_map", GetMap)
-        self.map = map_service().map
-        self._free_space_indices = Utils.update_freespace_indices_maze(self.map)
-        border_vertex=Utils.generate_map_inner_border(self._free_space_indices,self.map)
-
-        self.map_border_vertices=border_vertex
-        add_pedsim_srv=SpawnObstacleRequest()
-        size=border_vertex.shape[0]
-        for i in range(size):
-            lineObstacle=LineObstacle()
-            lineObstacle.start.x,lineObstacle.start.y=border_vertex[i,0],border_vertex[i,1]
-            lineObstacle.end.x,lineObstacle.end.y=border_vertex[(i+1)%size,0],border_vertex[(i+1)%size,1]
-            add_pedsim_srv.staticObstacles.obstacles.append(lineObstacle)
-        self.__add_obstacle_srv.call(add_pedsim_srv)
-        return
-
     # ROBOT
-
     def spawn_robot(self, name, robot_name, namespace_appendix=None, complexity=1):
         base_model_path = os.path.join(
+            # "/home/tuananhroman/catkin_arena/src/utils/arena-simulation-setup",
             rospkg.RosPack().get_path("arena-simulation-setup"),
             "robot",
             robot_name,
         )
 
-        yaml_path = os.path.join(base_model_path, robot_name + ".model.yaml")
+        yaml_path = os.path.join(base_model_path, f"{robot_name}.model.yaml")
 
-        file_content = self._update_plugin_topics(self._read_yaml(yaml_path), name)
+        file_content = self._update_plugin_topics(
+            self._read_yaml(yaml_path), name, self._additional_full_range_laser
+        )
 
         self._spawn_model(
             yaml.dump(file_content),
@@ -504,7 +232,6 @@ class FlatlandSimulator(BaseSimulator):
         self._move_model_srv(move_model_request)
 
     # UTILS
-
     def _spawn_model(
         self,
         yaml_path: str,
@@ -620,11 +347,13 @@ class FlatlandSimulator(BaseSimulator):
 
         return model_file_name
 
-    def _update_plugin_topics(self, file_content, namespace):
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            return file_content
-
+    def _update_plugin_topics(self, file_content, namespace, full_range_laser=False):
         plugins = file_content["plugins"]
+
+        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+            if full_range_laser:
+                plugins.append(Constants.PLUGIN_FULL_RANGE_LASER)
+            return file_content
 
         for plugin in plugins:
             if FlatlandSimulator.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"]):
@@ -648,61 +377,3 @@ class FlatlandSimulator(BaseSimulator):
     @staticmethod
     def check_yaml_path(path):
         return os.path.isfile(path)
-
-    @staticmethod
-    def create_ped_msg(ped, id):
-        msg = Ped()
-
-        msg.id = id
-
-        pos = Point()
-        pos.x = ped["waypoints"][0][0]
-        pos.y = ped["waypoints"][0][1]
-        msg.pos = pos
-
-        msg.type = "adult"
-        msg.yaml_file = os.path.join(
-            rospkg.RosPack().get_path("arena-simulation-setup"),
-            "dynamic_obstacles",
-            "person_two_legged.model.yaml",
-        )
-        msg.number_of_peds = 1
-        msg.vmax = 0.3
-        msg.start_up_mode = "default"
-        msg.wait_time = 0.0
-        msg.trigger_zone_radius = 0.0
-        msg.chatting_probability = 0.00
-        msg.tell_story_probability = 0
-        msg.group_talking_probability = 0.00
-        msg.talking_and_walking_probability = 0.00
-        msg.requesting_service_probability = 0.00
-        msg.requesting_guide_probability = 0.00
-        msg.requesting_follower_probability = 0.00
-        msg.max_talking_distance = 5
-        msg.max_servicing_radius = 5
-        msg.talking_base_time = 10
-        msg.tell_story_base_time = 0
-        msg.group_talking_base_time = 10
-        msg.talking_and_walking_base_time = 6
-        msg.receiving_service_base_time = 20
-        msg.requesting_service_base_time = 30
-        msg.force_factor_desired = 1
-        msg.force_factor_obstacle = 1
-        msg.force_factor_social = 5
-        msg.force_factor_robot = 1
-
-        waypoints = []
-
-        for w in ped["waypoints"]:
-            new_waypoint = Point()
-
-            new_waypoint.x = w[0]
-            new_waypoint.y = w[1]
-
-            waypoints.append(new_waypoint)
-
-        msg.waypoints = waypoints
-
-        msg.waypoint_mode = 0
-
-        return msg

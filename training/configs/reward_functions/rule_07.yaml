@@ -1,0 +1,28 @@
+goal_reached:
+  reward: 17.5
+
+safe_dist:
+  punishment: 0.15
+
+collision:
+  punishment: 10
+
+goal_approached:
+  reward_factor: 0.45
+  penalty_factor: 0.6
+
+reverse_drive:
+  penalty: 0.0001
+
+abrupt_vel_change:
+  "0":
+    vel_idx: 0
+    factor: 0.375
+
+  "-1":
+    vel_idx: -1
+    factor: 0.13
+
+  "1":
+    vel_idx: 1
+    factor: 0.13

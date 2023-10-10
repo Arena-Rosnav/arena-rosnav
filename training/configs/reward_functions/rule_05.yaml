@@ -14,9 +14,6 @@ goal_approached:
 distance_traveled:
   consumption_factor: 0.0075
 
-following_global_plan:
-  reward_factor: 0.15
-
 distance_global_plan:
   reward_factor: 0.2
   penalty_factor: 0.3
