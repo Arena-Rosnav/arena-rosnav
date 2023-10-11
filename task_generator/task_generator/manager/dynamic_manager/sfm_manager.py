@@ -69,6 +69,8 @@ class SFMManager(DynamicManager):
 
             name, free = next(self._index_namespace(obstacle.name))
 
+            rospy.logdebug("Spawning obstacle: actor_id = %s", name)
+
             obstacle = dataclasses.replace(obstacle, name=name)
 
             name = self._simulator.spawn_obstacle(obstacle)
@@ -80,17 +82,20 @@ class SFMManager(DynamicManager):
 
             name, free = next(self._index_namespace(obstacle.name))
 
-            rospy.loginfo("Spawning model: actor_id = %s", name)
+            rospy.logdebug("Spawning dynamic obstacle: actor_id = %s", name)
 
             model = obstacle.model.get([ModelType.SDF])
 
-            model_desc = fill_actor(model.description, name=name, position=obstacle.position, waypoints=obstacle.waypoints)
-
-            
+            model_desc = fill_actor(
+                model.description,
+                name=name,
+                position=obstacle.position,
+                waypoints=obstacle.waypoints
+            )
 
             model = obstacle.model.override(
-                model_type = ModelType.SDF,
-                model = Model(
+                model_type=ModelType.SDF,
+                model=Model(
                     type=model.type,
                     name=name,
                     description=model_desc,
@@ -112,7 +117,7 @@ class SFMManager(DynamicManager):
 
     def remove_obstacles(self):
         for name, cleanup in self._spawned_obstacles:
-            rospy.logdebug(f"removing {name}")
+            rospy.logdebug(f"Removing obstacle {name}")
             self._simulator.delete_obstacle(obstacle_id=name)
             cleanup()
 

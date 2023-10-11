@@ -177,6 +177,6 @@
         ],
         "interactive": []
     },
-    "resets": 5,
+    "resets": 50,
     "map": "map_empty"
 }

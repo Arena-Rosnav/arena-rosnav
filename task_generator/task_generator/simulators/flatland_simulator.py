@@ -123,28 +123,9 @@ class FlatlandSimulator(BaseSimulator):
         request.ns = self._namespace
         request.pose = Pose2D(x=obstacle.position[0], y=obstacle.position[1], theta=obstacle.position[2])
 
+        self.spawn_model(model.type, request)
+
         return obstacle.name
-
-    def spawn_obstacles(self, obstacles):
-
-        request = SpawnModelsRequest()
-
-        models = []
-
-        for obstacle in obstacles:
-            m = flatland_msgs.msg.Model()
-            m.yaml_path = obstacle[0]
-            m.name = obstacle[1]
-            m.ns = self._namespace
-            m.pose.x = obstacle[2][0]
-            m.pose.y = obstacle[2][1]
-            m.pose.theta = obstacle[2][2]
-
-            models.append(m)
-
-        request.models = models
-
-        self._spawn_models_from_string_srv(request)
 
     # ROBOT
     def spawn_robot(self, robot):
@@ -188,12 +169,31 @@ class FlatlandSimulator(BaseSimulator):
                     plugin[name] = os.path.join(namespace, plugin[name])
 
         return file_content
+    
+    def _spawn_obstacles(self, obstacles):
 
+        request = SpawnModelsRequest()
+
+        models = []
+
+        for obstacle in obstacles:
+            m = flatland_msgs.msg.Model()
+            m.yaml_path = obstacle[0]
+            m.name = obstacle[1]
+            m.ns = self._namespace
+            m.pose.x = obstacle[2][0]
+            m.pose.y = obstacle[2][1]
+            m.pose.theta = obstacle[2][2]
+
+            models.append(m)
+
+        request.models = models
+
+        self._spawn_models_from_string_srv(request)
 
 
 def check_yaml_path(path: str) -> bool:
     return os.path.isfile(path)
-    
 
 def parse_yaml(content: str):
     return yaml.safe_load(content)
