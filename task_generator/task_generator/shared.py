@@ -32,7 +32,7 @@ class Model:
 ForbiddenZone = Tuple[float, float, float]
 
 PositionOrientation = Tuple[float, float, float]
-Waypoint = Tuple[float, float, float]
+Waypoint = PositionOrientation
 Position = Tuple[float, float]
 
 

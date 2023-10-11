@@ -38,7 +38,11 @@ def fill_actor(xml_string: str, name: str, position: PositionOrientation, waypoi
     xml_pose.text = f"{position[0]} {position[1]} 0 0 0 {position[2]}"
 
     xml_plugin = xml_actor.find(SDFUtil.SFM_PLUGIN_SELECTOR)
-    assert (xml_plugin is not None)
+
+    if xml_plugin is None:
+        xml_plugin = ET.SubElement(xml_actor, "plugin")
+        xml_plugin.set("filename", 'libPedestrianSFMPlugin.so')
+
     xml_plugin.append(ET.fromstring(f"<group><model>{name}</model></group>"))
     xml_plugin.set("name", f"{name}_sfm_plugin")
 
