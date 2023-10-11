@@ -110,7 +110,7 @@ class RobotManager:
         return self._is_goal_reached
 
     def move_robot_to_pos(self, pos: Position):
-        self._simulator.move_robot((*pos, 0), name=self._robot.namespace)
+        self._simulator.move_entity((*pos, 0), name=self._robot.namespace)
 
     def reset(self, start_pos: Position, goal_pos: Position):
         """

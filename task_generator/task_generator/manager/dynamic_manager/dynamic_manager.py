@@ -69,7 +69,7 @@ class DynamicManager:
         If the object has an interaction radius of > 0, 
         then load it as an interactive obstacle instead of static
         """
-        ...
+        raise NotImplementedError()
 
     def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
         """
@@ -82,10 +82,10 @@ class DynamicManager:
         """
         Creates a line obstacle.
         """
-        ...
+        raise NotImplementedError()
 
     def remove_obstacles(self):
         """
         Removes obstacles from simulator.
         """
-        ...
+        raise NotImplementedError()

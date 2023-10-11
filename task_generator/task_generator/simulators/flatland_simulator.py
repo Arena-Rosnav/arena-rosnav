@@ -162,14 +162,14 @@ class FlatlandSimulator(BaseSimulator):
         self.spawn_model(model.type, request)
         return robot.name
 
-    def move_robot(self, pos, name = None):
+    def move_entity(self, pos, name):
         pose = Pose2D()
         pose.x = pos[0]
         pose.y = pos[1]
         pose.theta = pos[2]
 
         move_model_request = MoveModelRequest()
-        move_model_request.name = name or self._robot_name
+        move_model_request.name = name
         move_model_request.pose = pose
 
         self._move_model_srv(move_model_request)

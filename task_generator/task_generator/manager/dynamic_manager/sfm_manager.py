@@ -4,6 +4,7 @@ from dataclasses import asdict
 import dataclasses
 from typing import Any, Callable, Dict, Iterable, List, Tuple
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
+from task_generator.manager.dynamic_manager.utils import SDFUtil
 from task_generator.simulators.base_simulator import BaseSimulator
 
 
@@ -25,12 +26,10 @@ T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
 def fill_actor(xml_string: str, name: str, position: PositionOrientation, waypoints: Iterable[Waypoint]) -> str:
 
-    file = io.StringIO(xml_string)
-    xml = ET.parse(file)
+    xml = SDFUtil.parse(xml_string)
 
-    xml_actor = xml.getroot()
-    if xml_actor.tag != "actor":
-        xml_actor = xml.find("actor")
+    xml_actor = SDFUtil.get_model_root(sdf=xml, tag="actor")
+
     assert (xml_actor is not None)
     xml_actor.set("name", name)
 
@@ -38,18 +37,18 @@ def fill_actor(xml_string: str, name: str, position: PositionOrientation, waypoi
     assert (xml_pose is not None)
     xml_pose.text = f"{position[0]} {position[1]} 0 0 0 {position[2]}"
 
-    xml_plugin = xml_actor.find(
-        r"""plugin[@filename='libPedestrianSFMPlugin.so']""")
+    xml_plugin = xml_actor.find(SDFUtil.SFM_PLUGIN_SELECTOR)
     assert (xml_plugin is not None)
     xml_plugin.append(ET.fromstring(f"<group><model>{name}</model></group>"))
     xml_plugin.set("name", f"{name}_sfm_plugin")
 
-    file = io.StringIO()
-    xml.write(file, encoding="Unicode", xml_declaration=True)
-    new_xml_string = file.getvalue().replace("__waypoints__", "".join(
-        [f"<waypoint>{x} {y} {theta}</waypoint>" for x, y, theta in waypoints]))
+    xml_trajectory = ET.fromstring("<trajectory><cyclic>true</cyclic></trajectory>")
+    for x,y,theta in waypoints:
+        xml_trajectory.append(ET.fromstring(f"<waypoint>{x} {y} {theta}</waypoint>"))
+        
+    xml_plugin.append(xml_trajectory)
 
-    return new_xml_string
+    return SDFUtil.serialize(xml)
 
 
 class SFMManager(DynamicManager):
@@ -87,9 +86,9 @@ class SFMManager(DynamicManager):
 
             model_desc = fill_actor(model.description, name=name, position=obstacle.position, waypoints=obstacle.waypoints)
 
-            obstacle = dataclasses.replace(obstacle, name=name)
+            
 
-            obstacle.model.override(
+            model = obstacle.model.override(
                 model_type = ModelType.SDF,
                 model = Model(
                     type=model.type,
@@ -98,6 +97,8 @@ class SFMManager(DynamicManager):
                     path=""
                 )
             )
+
+            obstacle = dataclasses.replace(obstacle, name=name, model=model)
 
             name = self._simulator.spawn_obstacle(obstacle)
             self._spawned_obstacles.append((name, free))

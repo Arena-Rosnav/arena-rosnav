@@ -54,7 +54,7 @@ class BaseSimulator:
         """
         raise NotImplementedError()
     
-    def move_robot(self, pos: PositionOrientation, name: Optional[str] = None):
+    def move_entity(self, pos: PositionOrientation, name: Optional[str] = None):
         """
         Move the robot to the given position. 
         """

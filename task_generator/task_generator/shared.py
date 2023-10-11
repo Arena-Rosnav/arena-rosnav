@@ -46,8 +46,16 @@ class ModelWrapper:
         self._name = name
         self._override = dict()
 
-    def override(self, model_type: ModelType, model: Model):
-        self._override[model_type] = model
+    def clone(self) -> ModelWrapper:
+        clone = ModelWrapper(self.name)
+        clone._get = self._get
+        clone._override = self._override
+        return clone
+
+    def override(self, model_type: ModelType, model: Model) -> ModelWrapper:
+        clone = self.clone()
+        clone._override = {**self._override, model_type: model}
+        return clone
 
     def get(self, only: Collection[ModelType]) -> Model:
         for model_type in (only or self._override.keys()):
@@ -72,7 +80,7 @@ class ModelWrapper:
         wrap = ModelWrapper(name)
 
         def get(only: Collection[ModelType]) -> Model:
-            if only is None:
+            if not len(only):
                 only = list(models.keys())
 
             for model_type in only:
@@ -99,6 +107,7 @@ class ObstacleProps(HasModel):
     position: PositionOrientation
     name: str
     extra: Dict
+
 
 @dataclass(frozen=True)
 class DynamicObstacleProps(ObstacleProps):

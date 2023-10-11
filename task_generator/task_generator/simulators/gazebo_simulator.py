@@ -1,10 +1,8 @@
 import rospy
 import os
-import rospkg
-import subprocess
 
 from gazebo_msgs.msg import ModelState
-from gazebo_msgs.srv import SetModelState, DeleteModel, SpawnModel, SpawnModelRequest, DeleteModelRequest
+from gazebo_msgs.srv import SetModelState, SetModelStateRequest, DeleteModel, SpawnModel, SpawnModelRequest, DeleteModelRequest
 
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 
@@ -18,7 +16,7 @@ from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
 
-from task_generator.shared import ModelType, Obstacle, ObstacleProps, Robot
+from task_generator.shared import ModelType, Robot
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -66,9 +64,12 @@ class GazeboSimulator(BaseSimulator):
 
     # ROBOT
 
-    def move_robot(self, pos, name=None):
-        model_state_request = ModelState()
-        model_state_request.model_name = name if name else self._robot_name
+    def move_entity(self, pos, name):
+
+        request = SetModelStateRequest()
+        request.model_state = ModelState()
+
+        request.model_state.model_name = name
         pose = Pose()
         pose.position.x = pos[0]
         pose.position.y = pos[1]
@@ -76,10 +77,10 @@ class GazeboSimulator(BaseSimulator):
         pose.orientation = Quaternion(
             *quaternion_from_euler(0.0, 0.0, pos[2], axes="sxyz")
         )
-        model_state_request.pose = pose
-        model_state_request.reference_frame = "world"
+        request.model_state.pose = pose
+        request.model_state.reference_frame = "world"
 
-        self._move_model_srv(model_state_request)
+        self._move_model_srv(request)
 
     def spawn_robot(self, robot: Robot):
         request = SpawnModelRequest()
