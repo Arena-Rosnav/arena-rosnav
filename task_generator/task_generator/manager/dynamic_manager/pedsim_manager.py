@@ -275,6 +275,7 @@ class PedsimManager(DynamicManager):
                 )
 
                 # TODO this works about 90% but the animation trajectories keep overriding the positions set by pedsim
+                # TODO assume models are agnostic and inject sfm plugin using the sfm manager instead
                 # base_model = obstacle.model.get([ModelType.SDF])
                 # base_desc = SDFUtil.parse(sdf=base_model.description)
                 # SDFUtil.set_name(sdf=base_desc, name=pedsim_name, tag="actor")
