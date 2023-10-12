@@ -1,6 +1,7 @@
 import os
 import random
-from typing import List, Optional
+from typing import List, Optional, Union
+import rospy
 
 from rospkg import RosPack
 
@@ -45,10 +46,9 @@ class RandomScenarioTask(CreateObstacleTask):
 
         robot_positions: List[Waypoint] = []  # may be needed in the future idk
 
-        interactive_obstacles: int = 0
+        interactive_obstacles: int = 0 # interactive obstacles still to be implemented
 
         for manager in self._robot_managers:
-
             start_pos = self._map_manager.get_random_pos_on_map(
                 manager.safe_distance)
             goal_pos = self._map_manager.get_random_pos_on_map(
@@ -62,16 +62,6 @@ class RandomScenarioTask(CreateObstacleTask):
         self._obstacle_manager.reset()
         self._map_manager.init_forbidden_zones()
 
-        dynamic_obstacles = random.randint(
-            Constants.Random.MIN_DYNAMIC_OBS,
-            Constants.Random.MAX_DYNAMIC_OBS
-        ) if dynamic_obstacles is None else dynamic_obstacles
-
-        static_obstacles = random.randint(
-            Constants.Random.MIN_STATIC_OBS,
-            Constants.Random.MAX_STATIC_OBS
-        ) if static_obstacles is None else static_obstacles
-
         xml_path = os.path.join(
             RosPack().get_path("task_generator"),
             "scenarios",
@@ -79,19 +69,22 @@ class RandomScenarioTask(CreateObstacleTask):
 
         tree = ET.parse(xml_path)
         root = tree.getroot()
-        num_tables = [int(str(root[0][0].text)), root[0][1].text, root[0][2].text]
-        num_shelves = [int(str(root[1][0].text)), root[1]
-                       [1].text, root[1][2].text]
-        num_adults = [int(str(root[2][0].text)), root[2]
-                      [1].text, root[2][2].text]
-        num_elder = [int(str(root[3][0].text)), root[3]
-                     [1].text, root[3][2].text]
-        num_child = [int(str(root[4][0].text)), root[4]
-                     [1].text, root[4][2].text]
 
-        dynamic_obstacles_array: List[DynamicObstacle]
-        static_obstacles_array: List[Obstacle]
-        interactive_obstacles_array: List[Obstacle]
+        obstacles = list()
+        for obst in root.findall("obstacle"):
+            try:
+                obstacles.append({
+                    "name": obst.find("name").text,
+                    "yaml": obst.find("yaml").text,
+                    "type": obst.find("type").text,
+                    "num": int(obst.find("num").text) if not obst.find("num") == None else 
+                            random.randint(int(obst.find("min-num").text), int(obst.find("max-num").text)),
+                })
+            except:
+                rospy.logwarn(f"The Scenarion file had faulty configuration!")
+                continue
+
+        obstacles_array: Union(List[DynamicObstacle], List[Obstacle])
 
         self._obstacle_manager.spawn_map_obstacles()
 
@@ -100,51 +93,33 @@ class RandomScenarioTask(CreateObstacleTask):
             RosPack().get_path("arena-simulation-setup"), "obstacles")
         dynamic_obstacle_path: str = os.path.join(
             RosPack().get_path("arena-simulation-setup"), "dynamic_obstacles")
+        
+        # Create obstacles
+        for ob_type in obstacles:
+            model = ob_type["name"]
+            obstacles_array = list()
+            obst_path = obstacle_path
 
-        # Create static obstacles
-        for ob_type in []:# [num_tables]:
+            for _ in range(ob_type["num"]):
 
-            model = ob_type[1]
+                if ob_type["type"] == "dynamic":
+                    obstacle = self._create_dynamic_obstacle(name=self._obstacle_manager._dynamic_manager._default_actor_model.name, model=self._obstacle_manager._dynamic_manager._default_actor_model)
+                    obst_path = dynamic_obstacle_path
+                else: # interactive / static
+                    obstacle = self._create_obstacle(name=model, model=self._model_loader.bind(model))
 
-            static_obstacles_array = list()
-            for i in range(ob_type[0]):
-                obstacle = self._create_obstacle(name=model, model=self._model_loader.bind(model))
-                obstacle.extra["type"] = ob_type[1]
+                obstacle.extra["type"] = ob_type["name"]
                 obstacle.extra["yaml"] = os.path.join(
-                    obstacle_path, ob_type[2])
-                static_obstacles_array.append(obstacle)
+                    obst_path, ob_type["yaml"])
+                obstacles_array.append(obstacle)
 
-            if len(static_obstacles_array):
-                self._obstacle_manager.spawn_obstacles(
-                    setups=static_obstacles_array)
-
-        # Create interactive obstacles
-        for ob_type in [num_shelves]:
-
-            model = ob_type[1]
-
-            interactive_obstacles_array = list()
-            for i in range(ob_type[0]):
-                obstacle = self._create_obstacle(name=model, model=self._model_loader.bind(model))
-                obstacle.extra["type"] = ob_type[1]
-                obstacle.extra["yaml"] = os.path.join(obstacle_path, ob_type[2].split(os.extsep, 1)[0], ob_type[2])
-                interactive_obstacles_array.append(obstacle)
-
-            if len(interactive_obstacles_array):
-                self._obstacle_manager.spawn_obstacles(
-                    setups=interactive_obstacles_array)
-
-        # Create dynamic obstacles
-        for ob_type in [num_adults, num_elder, num_child]:
-            dynamic_obstacles_array = list()
-            for i in range(ob_type[0]):
-                obstacle = self._create_dynamic_obstacle(name=self._obstacle_manager._dynamic_manager._default_actor_model.name, model=self._obstacle_manager._dynamic_manager._default_actor_model)
-                obstacle.extra["type"] = ob_type[1]
-                obstacle.extra["yaml"] = os.path.join(dynamic_obstacle_path, ob_type[2].split(os.extsep, 1)[0], ob_type[2])
-                dynamic_obstacles_array.append(obstacle)
-
-            if len(dynamic_obstacles_array):
-                self._obstacle_manager.spawn_dynamic_obstacles(
-                    setups=dynamic_obstacles_array)
+            if len(obstacles_array):
+                if ob_type["type"] == "dynamic":
+                    self._obstacle_manager.spawn_dynamic_obstacles(
+                        setups=obstacles_array)
+                else: # interactive / static
+                    self._obstacle_manager.spawn_obstacles(
+                        setups=obstacles_array)
+                    
 
         return False, (0, 0, 0)

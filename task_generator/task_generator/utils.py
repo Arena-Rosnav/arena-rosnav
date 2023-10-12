@@ -177,9 +177,11 @@ class ModelLoader:
                 return self._cache[(model_type, model)]
 
         else:
-            #TODO refactor so None is returned instead of raising error
-            raise FileNotFoundError(
-                f"no model {model} among {only} found in {self._model_dir}")
+            # return None
+            return Model(type=ModelType.UNKNOWN,
+                                      name="",
+                                      description="",
+                                      path="")
 
     def _load_single(self, model_type: ModelType, model: str) -> Optional[Model]:
         if model_type in self._registry:

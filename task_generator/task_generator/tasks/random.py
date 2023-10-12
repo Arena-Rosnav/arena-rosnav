@@ -1,5 +1,5 @@
 import random
-from typing import List
+from typing import List, Optional
 
 
 from task_generator.constants import Constants
@@ -27,7 +27,7 @@ class RandomTask(CreateObstacleTask):
         each task.
     """
 
-    def reset(self, static_obstacles: int = 0, dynamic_obstacles: int = 0):
+    def reset(self, static_obstacles: Optional[int] = None, dynamic_obstacles: Optional[int] = None):
         return super().reset(
             lambda: self._reset_robot_and_obstacles(
                 static_obstacles=static_obstacles,
@@ -35,7 +35,7 @@ class RandomTask(CreateObstacleTask):
             )
         )
 
-    def _reset_robot_and_obstacles(self, dynamic_obstacles: int = 0, static_obstacles: int = 0):
+    def _reset_robot_and_obstacles(self, dynamic_obstacles: Optional[int] = None, static_obstacles: Optional[int] = None):
         robot_positions: List[Waypoint] = []  # may be needed in the future idk
 
         interactive_obstacles: int = 0
@@ -54,6 +54,17 @@ class RandomTask(CreateObstacleTask):
 
         self._obstacle_manager.reset()
         self._map_manager.init_forbidden_zones()
+
+        # If the count of obstacles wasn't set already choose it randomly
+        dynamic_obstacles = random.randint(
+            Constants.Random.MIN_DYNAMIC_OBS,
+            Constants.Random.MAX_DYNAMIC_OBS
+        ) if dynamic_obstacles is None else dynamic_obstacles
+
+        static_obstacles = random.randint(
+            Constants.Random.MIN_STATIC_OBS,
+            Constants.Random.MAX_STATIC_OBS
+        ) if static_obstacles is None else static_obstacles
 
         dynamic_obstacles_array: List[DynamicObstacle]
         static_obstacles_array: List[Obstacle]
