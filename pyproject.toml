@@ -22,7 +22,6 @@ tensorboard = "^2.12.2"
 stable-baselines3 = {path = "../utils/stable-baselines3", develop = true}
 sb3-contrib = "^1.8.0"
 torchdiffeq = "^0.2.3"
-tensorboard = "^2.12.0"
 diffcp = "^1.0.21"
 cvxpy = "^1.3.0"
 cvxpylayers = "^0.1.5"
