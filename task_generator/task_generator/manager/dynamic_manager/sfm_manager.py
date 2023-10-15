@@ -1,6 +1,7 @@
 # GRADUALLY REPLACE COPIED METHODS FROM THIS FILE WITH NEW NON-PEDSIM IMPLEMENTATIONS
 
 import dataclasses
+import itertools
 from typing import Any, Callable, Dict, Iterable, List, Tuple
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
 from task_generator.manager.dynamic_manager.utils import SDFUtil
@@ -23,29 +24,49 @@ def fill_actor(model: Model, name: str, position: PositionOrientation, waypoints
 
     xml = SDFUtil.parse(model.description)
 
-    xml_actor = SDFUtil.get_model_root(sdf=xml, tag="actor")
+    ##### XML MODIFICATIONS
 
-    assert (xml_actor is not None)
+    # ACTOR
+    xml_actor = SDFUtil.get_model_root(sdf=xml, tag="actor")
+    assert (xml_actor is not None), "NO ACTOR FOUND IN SDF"
     xml_actor.set("name", name)
 
+    ## ACTOR/POSE
     xml_pose = xml_actor.find("pose")
-    assert (xml_pose is not None)
+    if xml_pose is None:
+        xml_pose = ET.SubElement(xml_actor, "pose")
     xml_pose.text = f"{position[0]} {position[1]} 0 0 0 {position[2]}"
 
-    xml_plugin = xml_actor.find(SDFUtil.SFM_PLUGIN_SELECTOR)
+    ## ACTOR/STATIC
+    xml_static = xml_actor.find("static")
+    if xml_static is None:
+        xml_static = ET.SubElement(xml_actor, "static")
+    xml_static.text = "true"
 
-    if xml_plugin is None:
-        xml_plugin = ET.SubElement(xml_actor, "plugin")
-        xml_plugin.set("filename", 'libPedestrianSFMPlugin.so')
+    ## ACTOR/SFM_PLUGIN
+    xml_sfm_plugin = xml_actor.find(SDFUtil.SFM_PLUGIN_SELECTOR)
+    if xml_sfm_plugin is None:
+        xml_sfm_plugin = ET.SubElement(xml_actor, "plugin")
+        xml_sfm_plugin.set("filename", 'libPedestrianSFMPlugin.so')
+    xml_sfm_plugin.set("name", f"{name}_sfm_plugin")
 
-    xml_plugin.append(ET.fromstring(f"<group><model>{name}</model></group>"))
-    xml_plugin.set("name", f"{name}_sfm_plugin")
-
-    xml_trajectory = ET.fromstring("<trajectory><cyclic>true</cyclic></trajectory>")
-    for x,y,theta in waypoints:
+    ### ACTOR/SFM_PLUGIN/TRAJECTORY
+    xml_trajectory = xml_sfm_plugin.find("trajectory")
+    if xml_trajectory is None:
+        xml_trajectory = ET.fromstring("<trajectory><cyclic>true</cyclic></trajectory>")
+        xml_sfm_plugin.append(xml_trajectory)
+    for x,y,theta in itertools.chain([position], waypoints):
         xml_trajectory.append(ET.fromstring(f"<waypoint>{x} {y} {theta}</waypoint>"))
-        
-    xml_plugin.append(xml_trajectory)
+
+    # ACTOR/COLLISIONS_PLUGIN
+    xml_collisions_plugin = xml_actor.find(SDFUtil.COLLISONS_PLUGIN_SELECTOR)
+    if xml_collisions_plugin is None:
+        xml_collisions_plugin = ET.SubElement(xml_actor, "plugin")
+        xml_collisions_plugin.set("filename", 'libActorCollisionsPlugin.so')
+
+    xml_collisions_plugin.set("name", f"{name}_collisions_plugin")
+    
+    #####
 
     return model.replace(description=SDFUtil.serialize(xml))
 
@@ -57,10 +78,6 @@ class SFMManager(DynamicManager):
 
     def __init__(self, namespace: str, simulator: BaseSimulator):
         super().__init__(namespace, simulator)
-
-        rospy.set_param("respawn_dynamic", True)
-        rospy.set_param("respawn_static", True)
-        rospy.set_param("respawn_interactive", True)
 
     def spawn_obstacles(self, obstacles):
 
@@ -91,10 +108,7 @@ class SFMManager(DynamicManager):
             obstacle = dataclasses.replace(obstacle, name=name, model=model)
 
             name = self._simulator.spawn_obstacle(obstacle)
-            self._spawned_obstacles.append((name, free))
-
-        if len(obstacles):
-            rospy.set_param("respawn_dynamic", False)
+            self._spawned_obstacles.append((name, lambda:None))
 
     def spawn_line_obstacle(self, name, _from, _to):
         # TODO
@@ -105,6 +119,8 @@ class SFMManager(DynamicManager):
             rospy.logdebug(f"Removing obstacle {name}")
             self._simulator.delete_obstacle(obstacle_id=name)
             cleanup()
+
+        self._spawned_obstacles = []
 
     def _index_namespace(self, namespace: str) -> NamespaceIndexer:
         if namespace not in self._namespaces:

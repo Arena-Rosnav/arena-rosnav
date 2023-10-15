@@ -35,6 +35,7 @@ class SDFUtil:
 
 
     SFM_PLUGIN_SELECTOR = r"""plugin[@filename='libPedestrianSFMPlugin.so']"""
+    COLLISONS_PLUGIN_SELECTOR =  r"""plugin[@filename='libActorCollisionsPlugin.so']"""
 
     @staticmethod
     def delete_all(sdf: ET.ElementTree, selector:str) -> int:
