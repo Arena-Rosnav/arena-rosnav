@@ -317,6 +317,7 @@ class PedsimManager(DynamicManager):
     def remove_obstacles(self):
         self._remove_all_interactive_obstacles_srv.call()
         self._remove_peds_srv.call()
+        #TODO mechanism to remove static obstacles
 
         for obstacle_id, obstacle in self._known_obstacles.items():
             if obstacle.spawned:
