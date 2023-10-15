@@ -107,7 +107,7 @@ class GazeboSimulator(BaseSimulator):
         request = SpawnModelRequest()
 
         model = obstacle.model.get(self.MODEL_TYPES)
-
+        
         request.model_name = obstacle.name
         request.model_xml = model.description
         request.initial_pose = Pose(

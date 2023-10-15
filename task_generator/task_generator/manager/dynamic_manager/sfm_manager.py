@@ -1,6 +1,5 @@
 # GRADUALLY REPLACE COPIED METHODS FROM THIS FILE WITH NEW NON-PEDSIM IMPLEMENTATIONS
 
-from dataclasses import asdict
 import dataclasses
 from typing import Any, Callable, Dict, Iterable, List, Tuple
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
@@ -12,10 +11,6 @@ from task_generator.constants import Constants
 
 import rospy
 
-
-import io
-
-
 import xml.etree.ElementTree as ET
 
 from task_generator.shared import DynamicObstacle, Model, ModelType, ModelWrapper, PositionOrientation, Waypoint
@@ -23,10 +18,10 @@ from task_generator.utils import NamespaceIndexer
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
+#TODO(@voshch) make this universal
+def fill_actor(model: Model, name: str, position: PositionOrientation, waypoints: Iterable[Waypoint]) -> Model:
 
-def fill_actor(xml_string: str, name: str, position: PositionOrientation, waypoints: Iterable[Waypoint]) -> str:
-
-    xml = SDFUtil.parse(xml_string)
+    xml = SDFUtil.parse(model.description)
 
     xml_actor = SDFUtil.get_model_root(sdf=xml, tag="actor")
 
@@ -52,7 +47,7 @@ def fill_actor(xml_string: str, name: str, position: PositionOrientation, waypoi
         
     xml_plugin.append(xml_trajectory)
 
-    return SDFUtil.serialize(xml)
+    return model.replace(description=SDFUtil.serialize(xml))
 
 
 class SFMManager(DynamicManager):
@@ -88,25 +83,11 @@ class SFMManager(DynamicManager):
 
             rospy.logdebug("Spawning dynamic obstacle: actor_id = %s", name)
 
-            model = obstacle.model.get([ModelType.SDF])
-
-            model_desc = fill_actor(
-                model.description,
-                name=name,
-                position=obstacle.position,
-                waypoints=obstacle.waypoints
-            )
-
             model = obstacle.model.override(
                 model_type=ModelType.SDF,
-                model=Model(
-                    type=model.type,
-                    name=name,
-                    description=model_desc,
-                    path=""
-                )
+                override=lambda m: fill_actor(model=m, name=name, position=obstacle.position, waypoints=obstacle.waypoints)
             )
-
+            
             obstacle = dataclasses.replace(obstacle, name=name, model=model)
 
             name = self._simulator.spawn_obstacle(obstacle)

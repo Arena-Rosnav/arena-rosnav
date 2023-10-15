@@ -167,14 +167,14 @@ class RobotManager:
         self._move_base_goal_pub.publish(goal_msg)
 
     def _launch_robot(self):
-        roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(
+        roslaunch_file = roslaunch.rlutil.resolve_launch_arguments( # type: ignore
             ["arena_bringup", "robot.launch"]
         )
 
         rospy.loginfo(f"START WITH MODEL {self._robot.namespace}")
 
         args = [
-            f"model:={self._robot.model.get([]).name}",
+            f"model:={self._robot.model.get().name}",
             f"local_planner:={self._robot.planner}",
             f"namespace:={self._robot.namespace}",
             f"complexity:={rospy.get_param('complexity', 1)}",
@@ -182,8 +182,8 @@ class RobotManager:
             f"agent_name:={self._robot.agent}"
         ]
 
-        self.process = roslaunch.parent.ROSLaunchParent(
-            roslaunch.rlutil.get_or_generate_uuid(None, False),
+        self.process = roslaunch.parent.ROSLaunchParent( # type: ignore
+            roslaunch.rlutil.get_or_generate_uuid(None, False), # type: ignore
             [(*roslaunch_file, args)]
         )
         self.process.start()
