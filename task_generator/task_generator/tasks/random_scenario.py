@@ -92,7 +92,7 @@ class RandomScenarioTask(CreateObstacleTask):
 
         self._obstacle_manager.spawn_map_obstacles()
 
-        # TODO load this from the main loaders
+        #TODO load this from the main loaders
         obstacle_path: str = os.path.join(
             RosPack().get_path("arena-simulation-setup"), "obstacles")
         dynamic_obstacle_path: str = os.path.join(

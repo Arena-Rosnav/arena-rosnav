@@ -7,7 +7,7 @@ from task_generator.tasks.task_factory import TaskFactory
 from task_generator.shared import DynamicObstacle, Obstacle, Waypoint
 from task_generator.tasks.base_task import CreateObstacleTask
 
-# TODO generate this in the instance
+#TODO generate this in the instance
 dynamic_obstacles_random = random.randint(
     Constants.Random.MIN_DYNAMIC_OBS, Constants.Random.MAX_DYNAMIC_OBS)
 static_obstacles_random = random.randint(

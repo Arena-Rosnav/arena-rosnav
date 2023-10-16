@@ -29,7 +29,7 @@ class SDFUtil:
     def set_name(sdf: ET.ElementTree, name: str, tag="model") -> None:
         root = SDFUtil.get_model_root(sdf, tag)
 
-        # TODO reconsider whether this should fail silently
+        #TODO reconsider whether this should fail silently
         if root is not None:
             root.set("name", name)
 

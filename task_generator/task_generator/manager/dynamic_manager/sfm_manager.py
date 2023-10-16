@@ -18,7 +18,7 @@ import xml.etree.ElementTree as ET
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
-# TODO(@voshch) make this universal
+#TODO(@voshch) make this universal
 
 
 def fill_actor(model: Model, name: str, position: PositionOrientation, waypoints: Iterable[Waypoint]) -> Model:
@@ -115,7 +115,7 @@ class SFMManager(DynamicManager):
             self._spawned_obstacles.append((name, lambda: None))
 
     def spawn_line_obstacle(self, name, _from, _to):
-        # TODO
+        #TODO
         pass
 
     def remove_obstacles(self):

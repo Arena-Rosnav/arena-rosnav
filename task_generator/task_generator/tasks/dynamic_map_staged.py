@@ -30,11 +30,11 @@ class DynamicMapStagedRandomTask(DynamicMapRandomTask):
         super().__init__(obstacle_manager=obstacle_manager,
                          robot_managers=robot_managers, map_manager=map_manager, **kwargs)
 
-        # TODO refactor this into multiple inheriatance together with staged.py, random.py, dynamic_map_random.py
+        #TODO refactor this into multiple inheriatance together with staged.py, random.py, dynamic_map_random.py
         self.namespace = namespace
         self.namespace_prefix = f"/{namespace}/" if namespace else ""
 
-        # TODO rework this
+        #TODO rework this
         if paths is None:
             paths = dict(
                 curriculum=os.path.join(rospkg.RosPack().get_path(

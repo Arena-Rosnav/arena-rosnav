@@ -42,7 +42,7 @@ class PedsimManager(DynamicManager):
     # store obstacle descs and whether they have been spawned
     _known_obstacles: Dict[str, KnownObstacle]
 
-    # TODO temporary
+    #TODO temporary
     __default_pedsim_model: Model
 
     def __init__(self, namespace: str, simulator: BaseSimulator):
@@ -138,7 +138,7 @@ class PedsimManager(DynamicManager):
         for obstacle in obstacles:
             msg = InteractiveObstacle()
 
-            # TODO create a global helper function for this kind of use case
+            #TODO create a global helper function for this kind of use case
             msg.pose = Pose(
                 position=Point(
                     x=obstacle.position[0], y=obstacle.position[1], z=0),
@@ -269,10 +269,10 @@ class PedsimManager(DynamicManager):
 
             srv.peds.append(msg)  # type: ignore
 
-            # TODO move this to utils when replacement works
+            #TODO move this to utils when replacement works
             # def replace_SDF(model: Model) -> Model:
-            # TODO this works about 90% but the animation trajectories keep overriding the positions set by pedsim
-            # TODO assume models are agnostic and inject sfm plugin using the sfm manager instead
+            #TODO this works about 90% but the animation trajectories keep overriding the positions set by pedsim
+            #TODO assume models are agnostic and inject sfm plugin using the sfm manager instead
             # base_model = obstacle.model.get(ModelType.SDF)
             # base_desc = SDFUtil.parse(sdf=base_model.description)
             # SDFUtil.set_name(sdf=base_desc, name=pedsim_name, tag="actor")
@@ -317,7 +317,7 @@ class PedsimManager(DynamicManager):
     def remove_obstacles(self):
         self._remove_all_interactive_obstacles_srv.call()
         self._remove_peds_srv.call()
-        # TODO mechanism to remove static obstacles
+        #TODO mechanism to remove static obstacles
 
         for obstacle_id, obstacle in self._known_obstacles.items():
             if obstacle.spawned:
@@ -402,7 +402,7 @@ class PedsimManager(DynamicManager):
         direction_y = 0.
         ob_type = ""
 
-        # TODO unclean
+        #TODO unclean
         if not isinstance(self._simulator, FlatlandSimulator):
             orientation = float(re.findall(
                 r'\(.*?\)', str(actor.name))[0].replace("(", "").replace(")", "").replace(",", "."))

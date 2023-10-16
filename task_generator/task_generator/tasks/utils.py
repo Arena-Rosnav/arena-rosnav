@@ -30,7 +30,7 @@ from task_generator.tasks.dynamic_map_staged import DynamicMapStagedRandomTask  
 
 from map_distance_server.srv import GetDistanceMap
 
-# TODO only task_generator_node uses all of this, turn this into its instance methods to simplify the calls
+#TODO only task_generator_node uses all of this, turn this into its instance methods to simplify the calls
 
 
 def get_predefined_task(namespace: str, mode: Constants.TaskMode, robot_loader: ModelLoader, simulator: Optional[BaseSimulator] = None, social_mode: Constants.SocialMode = Constants.SocialMode.PEDSIM, **kwargs):

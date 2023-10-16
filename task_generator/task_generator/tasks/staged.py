@@ -45,7 +45,7 @@ class StagedRandomTask(RandomTask):
         self.namespace = namespace
         self.namespace_prefix = f"/{namespace}/" if namespace else ""
 
-        # TODO rework this
+        #TODO rework this
         if paths is None:
             paths = dict(
                 curriculum=os.path.join(rospkg.RosPack().get_path(

@@ -240,5 +240,5 @@ class DynamicObstacle(DynamicObstacleProps):
 class Robot(RobotProps):
     @staticmethod
     def parse(obj: Dict, **kwargs) -> "Robot":
-        # TODO
+        #TODO
         raise NotImplementedError()

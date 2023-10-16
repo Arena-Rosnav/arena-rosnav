@@ -40,7 +40,7 @@ class ObstacleManager:
 
         self.id_generator = itertools.count(434)
 
-    # TODO replace with already loaded XML
+    #TODO replace with already loaded XML
     def spawn_map_obstacles(self, map_path: str = "map_empty"):
         """
         Loads given obstacles into the simulator,
@@ -97,7 +97,7 @@ class ObstacleManager:
         else:
             self._dynamic_manager.remove_obstacles()
 
-    # TODO refactor this with a registry
+    #TODO refactor this with a registry
 
     def generate_random_model(self, model_type: ModelType, **kwargs) -> Model:
         if model_type == ModelType.YAML:
