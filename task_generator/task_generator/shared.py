@@ -6,8 +6,6 @@ from typing import Callable, Collection, Dict, Iterable, List, Sequence, Tuple, 
 import enum
 
 
-# TODO maybe move this to utils/model
-
 EMPTY_LOADER = lambda *_, **__: Model(type=ModelType.UNKNOWN,
                                       name="",
                                       description="",
@@ -34,7 +32,7 @@ class Model:
         Returns a (Model)->Model mapper that simply returns this model
         """
         return lambda m: self
-    
+
     def replace(self, **kwargs) -> Model:
         """
         Wrapper for dataclasses.replace
@@ -72,7 +70,7 @@ class ModelWrapper:
         clone._get = self._get
         clone._override = self._override
         return clone
-    
+
     def override(self, model_type: ModelType, override: Callable[[Model], Model], noload: bool = False) -> ModelWrapper:
         """
         Create new ModelWrapper with an overridden ModelType callback
@@ -83,7 +81,6 @@ class ModelWrapper:
         clone = self.clone()
         clone._override = {**self._override, model_type: (noload, override)}
         return clone
-
 
     @overload
     def get(self, only: ModelType) -> Model: ...
@@ -116,7 +113,7 @@ class ModelWrapper:
         for model_type in only:
             if model_type in self._override:
                 noload, mapper = self._override[model_type]
-                
+
                 if noload == True:
                     return mapper(EMPTY_LOADER())
 
@@ -142,7 +139,6 @@ class ModelWrapper:
 
     @staticmethod
     def Constant(name: str, models: Dict[ModelType, Model]) -> ModelWrapper:
-
         """
         Create new ModelWrapper from a dict of already existing models
         @name: name of model
@@ -169,7 +165,7 @@ class ModelWrapper:
         @model: Model to wrap
         """
         return ModelWrapper.Constant(name=model.name, models={model.type: model})
-    
+
 
 @dataclasses.dataclass(frozen=True)
 class ObstacleProps:
@@ -177,6 +173,7 @@ class ObstacleProps:
     name: str
     model: ModelWrapper
     extra: Dict
+
 
 @dataclasses.dataclass(frozen=True)
 class DynamicObstacleProps(ObstacleProps):
@@ -190,6 +187,7 @@ class RobotProps(ObstacleProps):
     agent: str
     record_data: bool
 
+
 def parse_Point3D(obj: Sequence, fill: float = 0.) -> Tuple[float, float, float]:
     position: Tuple[float, ...] = tuple([float(v) for v in obj[:3]])
 
@@ -197,6 +195,7 @@ def parse_Point3D(obj: Sequence, fill: float = 0.) -> Tuple[float, float, float]
         position = (*position, *((3-len(position)) * [fill]))
 
     return (position[0], position[1], position[2])
+
 
 @dataclasses.dataclass(frozen=True)
 class Obstacle(ObstacleProps):
@@ -213,6 +212,7 @@ class Obstacle(ObstacleProps):
             extra=obj
         )
 
+
 @dataclasses.dataclass(frozen=True)
 class DynamicObstacle(DynamicObstacleProps):
     waypoints: Iterable[Waypoint]
@@ -222,7 +222,8 @@ class DynamicObstacle(DynamicObstacleProps):
 
         name = str(obj.get("name", "MISSING"))
         position = parse_Point3D(obj.get("pos", (0, 0, 0)))
-        waypoints = [parse_Point3D(waypoint) for waypoint in obj.get("waypoints", [])]
+        waypoints = [parse_Point3D(waypoint)
+                     for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
             name=name,
@@ -231,6 +232,7 @@ class DynamicObstacle(DynamicObstacleProps):
             waypoints=waypoints,
             extra=obj
         )
+
 
 @dataclasses.dataclass(frozen=True)
 class Robot(RobotProps):

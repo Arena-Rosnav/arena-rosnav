@@ -1,21 +1,19 @@
 from dataclasses import dataclass
-from typing import Any, List
+from typing import List
 from task_generator.constants import Constants
 from task_generator.manager.map_manager import MapManager
 from task_generator.manager.robot_manager import RobotManager
 
-from task_generator.shared import DynamicObstacle, Obstacle, PositionOrientation
 import rospy
 import rospkg
 import os
 import sys
 import json
 
+from task_generator.shared import DynamicObstacle, Obstacle, PositionOrientation
 from task_generator.tasks.base_task import BaseTask
 from task_generator.tasks.task_factory import TaskFactory
-
 from task_generator.manager.obstacle_manager import ObstacleManager
-
 
 
 @dataclass
@@ -42,7 +40,6 @@ class Scenario:
     robots: List[RobotGoal]
 
 
-
 @TaskFactory.register(Constants.TaskMode.SCENARIO)
 class ScenarioTask(BaseTask):
 
@@ -58,7 +55,8 @@ class ScenarioTask(BaseTask):
         map_manager: MapManager,
         **kwargs
     ):
-        super().__init__(obstacle_manager=obstacle_manager, robot_managers=robot_managers, map_manager=map_manager, **kwargs)
+        super().__init__(obstacle_manager=obstacle_manager,
+                         robot_managers=robot_managers, map_manager=map_manager, **kwargs)
 
         scenario_file_path = rospy.get_param("~scenario_json_path")
         self._scenario = self._read_scenario_file(scenario_file_path)
@@ -105,9 +103,11 @@ class ScenarioTask(BaseTask):
         with open(scenario_file_path, "r") as file:
             scenario_file = json.load(file)
 
-        static_obstacles = [Obstacle.parse(obs, model=self._model_loader.bind(obs["model"])) for obs in scenario_file["obstacles"]["static"]]
+        static_obstacles = [Obstacle.parse(obs, model=self._model_loader.bind(
+            obs["model"])) for obs in scenario_file["obstacles"]["static"]]
         interactive_obstacles = []
-        dynamic_obstacles = [DynamicObstacle.parse(obs, model=self._dynamic_model_loader.bind(obs["model"])) for obs in scenario_file["obstacles"]["dynamic"]]
+        dynamic_obstacles = [DynamicObstacle.parse(obs, model=self._dynamic_model_loader.bind(
+            obs["model"])) for obs in scenario_file["obstacles"]["dynamic"]]
 
         return Scenario(
             obstacles=ScenarioObstacles(
@@ -163,4 +163,3 @@ class ScenarioTask(BaseTask):
         if scenario_robots_length > setup_robot_length:
             self._scenario.robots = self._scenario.robots[:setup_robot_length]
             rospy.logwarn("Scenario file contains more robots than setup.")
-

@@ -4,9 +4,7 @@ import rospy
 from task_generator.shared import DynamicObstacle, ModelType, ModelWrapper, Obstacle, Model
 from task_generator.simulators.base_simulator import BaseSimulator
 from typing import Callable, Collection, Dict
-from geometry_msgs.msg import Point
-
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Point, PoseStamped
 
 
 class DynamicManager:
@@ -35,19 +33,22 @@ class DynamicManager:
         pkg_path = RosPack().get_path('arena-simulation-setup')
         default_actor_model_name = "actor2"
 
-        #TODO get rid of this once random_scenario loads models randomly
+        # TODO get rid of this once random_scenario loads models randomly
         actor_model_name: str = str(rospy.get_param(
             '~actor_model_name', default_actor_model_name))
-        
-        actor_model_path = os.path.join(pkg_path, "dynamic_obstacles", actor_model_name)
+
+        actor_model_path = os.path.join(
+            pkg_path, "dynamic_obstacles", actor_model_name)
 
         model_dict: Dict[ModelType, Model] = dict()
 
         with open(os.path.join(actor_model_path, "model.sdf")) as f:
-            model_dict[ModelType.SDF] = Model(type=ModelType.SDF, description=f.read(), name="actor2", path=os.path.join(actor_model_path, "model.sdf"))
+            model_dict[ModelType.SDF] = Model(type=ModelType.SDF, description=f.read(
+            ), name="actor2", path=os.path.join(actor_model_path, "model.sdf"))
 
         with open(os.path.join(actor_model_path, f"{actor_model_name}.model.yaml")) as f:
-            model_dict[ModelType.YAML] = Model(type=ModelType.YAML, description=f.read(), name="actor2", path=os.path.join(actor_model_path, f"{actor_model_name}.model.yaml"))
+            model_dict[ModelType.YAML] = Model(type=ModelType.YAML, description=f.read(
+            ), name="actor2", path=os.path.join(actor_model_path, f"{actor_model_name}.model.yaml"))
 
         self._default_actor_model = ModelWrapper.Constant(
             name="actor2",

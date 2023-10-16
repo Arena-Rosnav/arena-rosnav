@@ -10,10 +10,9 @@ from rosgraph_msgs.msg import Clock
 from task_generator.constants import Constants
 from task_generator.manager.map_manager import MapManager
 from task_generator.manager.robot_manager import RobotManager
-from task_generator.utils import ModelLoader
 from task_generator.manager.obstacle_manager import ObstacleManager
-
-from task_generator.shared import DynamicObstacle, Model, ModelWrapper, Obstacle, PositionOrientation, Waypoint
+from task_generator.utils import ModelLoader
+from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, PositionOrientation, Waypoint
 
 
 class BaseTask():
@@ -103,15 +102,16 @@ class CreateObstacleTask(BaseTask):
     """
     # moved from obstacle manager
 
+    def _create_dynamic_obstacle(self, name: str, model: ModelWrapper, waypoints: Optional[List[Waypoint]] = None, extra: Optional[Dict] = None, **kwargs) -> DynamicObstacle:
 
-    def _create_dynamic_obstacle(self, name:str, model: ModelWrapper, waypoints: Optional[List[Waypoint]] = None, extra: Optional[Dict] = None, **kwargs) -> DynamicObstacle:
-
-        setup = self._create_obstacle(name=name, model=model, extra=extra, **kwargs)
+        setup = self._create_obstacle(
+            name=name, model=model, extra=extra, **kwargs)
 
         if waypoints is None:
 
             safe_distance = 0.5
-            waypoints = [(*setup.position[:2], safe_distance)]  # the first waypoint
+            # the first waypoint
+            waypoints = [(*setup.position[:2], safe_distance)]
             safe_distance = 0.1  # the other waypoints don't need to avoid robot
             for j in range(10):
                 dist = 0
@@ -127,15 +127,16 @@ class CreateObstacleTask(BaseTask):
             **dict(waypoints=waypoints)
         })
 
-    def _create_obstacle(self, name:str, model: ModelWrapper, position: Optional[PositionOrientation] = None, extra: Optional[Dict] = None, **kwargs) -> Obstacle:
+    def _create_obstacle(self, name: str, model: ModelWrapper, position: Optional[PositionOrientation] = None, extra: Optional[Dict] = None, **kwargs) -> Obstacle:
         """ 
         Creates and returns a newly generated obstacle of requested type: 
         """
 
         safe_distance = 0.5
-        
+
         if position is None:
-            point: Waypoint = self._map_manager.get_random_pos_on_map(safe_distance)
+            point: Waypoint = self._map_manager.get_random_pos_on_map(
+                safe_distance)
             position = (point[0], point[1], np.pi * np.random.random())
 
         if extra is None:

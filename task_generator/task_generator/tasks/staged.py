@@ -3,7 +3,6 @@ import os
 from task_generator.constants import Constants
 from task_generator.tasks.task_factory import TaskFactory
 import yaml
-import json
 from std_msgs.msg import Bool
 from filelock import FileLock
 

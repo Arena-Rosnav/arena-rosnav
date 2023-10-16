@@ -1,5 +1,4 @@
-from dataclasses import asdict
-from typing import Any, Callable
+from typing import Callable
 
 import numpy as np
 import rospy
@@ -15,8 +14,6 @@ from task_generator.constants import Constants
 from task_generator.shared import Position, Robot
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.utils import Utils
-
-from geometry_msgs.msg import Pose, Point, Quaternion
 
 
 class RobotManager:
@@ -44,7 +41,8 @@ class RobotManager:
     _clear_costmaps_srv: rospy.ServiceProxy
 
     def __init__(self, simulator: BaseSimulator, robot: Robot):
-        self._ns_prefix = lambda *topic: os.path.join(self._robot.namespace, *topic)
+        self._ns_prefix = lambda *topic: os.path.join(
+            self._robot.namespace, *topic)
 
         self._simulator = simulator
 
@@ -167,7 +165,7 @@ class RobotManager:
         self._move_base_goal_pub.publish(goal_msg)
 
     def _launch_robot(self):
-        roslaunch_file = roslaunch.rlutil.resolve_launch_arguments( # type: ignore
+        roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(  # type: ignore
             ["arena_bringup", "robot.launch"]
         )
 
@@ -182,8 +180,8 @@ class RobotManager:
             f"agent_name:={self._robot.agent}"
         ]
 
-        self.process = roslaunch.parent.ROSLaunchParent( # type: ignore
-            roslaunch.rlutil.get_or_generate_uuid(None, False), # type: ignore
+        self.process = roslaunch.parent.ROSLaunchParent(  # type: ignore
+            roslaunch.rlutil.get_or_generate_uuid(None, False),  # type: ignore
             [(*roslaunch_file, args)]
         )
         self.process.start()

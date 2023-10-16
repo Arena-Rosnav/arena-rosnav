@@ -1,7 +1,7 @@
 from typing import Dict, Type
 
 from task_generator.constants import Constants
-from .base_task import BaseTask
+from task_generator.tasks.base_task import BaseTask
 
 
 class TaskFactory:

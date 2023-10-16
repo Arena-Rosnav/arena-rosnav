@@ -34,7 +34,7 @@ class TaskGenerator:
     _task: BaseTask
 
     _number_of_resets: int
-    _desired_resets: int    
+    _desired_resets: int
 
     def __init__(self) -> None:
 

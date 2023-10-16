@@ -124,7 +124,8 @@ class MapManager:
             f_x, f_y, radius = p
 
             # euklidian distance to the forbidden zone
-            dist = math.floor(np.linalg.norm(np.array([x,y]) - np.array([f_x, f_y]))) - radius
+            dist = math.floor(np.linalg.norm(
+                np.array([x, y]) - np.array([f_x, f_y]))) - radius
 
             if dist <= safe_dist:
                 return False

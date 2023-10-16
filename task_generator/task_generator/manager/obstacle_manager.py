@@ -1,4 +1,3 @@
-from ast import Dict
 import random
 from typing import Collection, Iterator
 
@@ -8,19 +7,16 @@ import rospy
 import os
 import xml.etree.ElementTree as ET
 import rospkg
+
 from task_generator.constants import FlatlandRandomModel
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
 from task_generator.manager.map_manager import MapManager
-
 from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle
+from task_generator.simulators.base_simulator import BaseSimulator
 
 from geometry_msgs.msg import Point
 
 import itertools
-
-from task_generator.simulators.base_simulator import BaseSimulator
-
-# GRADUALLY MIGRATE ALL METHODS FOR STATIC OBSTACLES FROM DYNAMIC_MANAGERS TO HERE
 
 
 class ObstacleManager:
@@ -101,14 +97,12 @@ class ObstacleManager:
         else:
             self._dynamic_manager.remove_obstacles()
 
+    # TODO refactor this with a registry
 
-
-
-    #TODO refactor this with a registry
     def generate_random_model(self, model_type: ModelType, **kwargs) -> Model:
         if model_type == ModelType.YAML:
             return self.generate_random_model(**kwargs)
-        
+
         else:
             raise NotImplementedError()
 

@@ -1,7 +1,8 @@
-from typing import Any, Callable, Dict, Type
+from typing import Dict, Type
 
 from task_generator.constants import Constants
-from .base_simulator import BaseSimulator
+from task_generator.simulators.base_simulator import BaseSimulator
+
 
 class SimulatorFactory:
     registry: Dict[Constants.Simulator, Type[BaseSimulator]] = {}
@@ -22,5 +23,5 @@ class SimulatorFactory:
         assert name in cls.registry, f"Simulator '{name}' is not registered!"
 
         simulator = cls.registry[name]
-        
+
         return simulator

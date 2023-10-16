@@ -23,7 +23,6 @@ class BaseSimulator:
     def generate_random_name(self) -> str:
         return f"random_name_{next(self.__counter)}"
 
-
     @property
     def MODEL_TYPES(self) -> Collection[ModelType]:
         return self._spawn_model.keys()
@@ -32,7 +31,8 @@ class BaseSimulator:
         if model_type in self._spawn_model:
             return self._spawn_model[model_type](*args, **kwargs)
 
-        raise NotImplementedError(f"{type(self).__name__} does not implement spawn_model[{model_type}]")
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement spawn_model[{model_type}]")
 
     def before_reset_task(self):
         """
@@ -53,7 +53,7 @@ class BaseSimulator:
         Spawn a robot in the simulator.
         """
         raise NotImplementedError()
-    
+
     def move_entity(self, pos: PositionOrientation, name: Optional[str] = None):
         """
         Move the robot to the given position. 

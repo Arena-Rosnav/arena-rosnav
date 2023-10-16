@@ -6,7 +6,7 @@ import rospkg
 import yaml
 import os
 from task_generator.constants import Constants
-from task_generator.shared import Model, ModelWrapper, Robot
+from task_generator.shared import ModelWrapper, Robot
 from task_generator.simulators.base_simulator import BaseSimulator
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
@@ -25,7 +25,8 @@ from task_generator.utils import ModelLoader, Utils
 
 from map_distance_server.srv import GetDistanceMap
 
-#TODO only task_generator_node uses all of this, turn this into its instance methods to simplify the calls
+# TODO only task_generator_node uses all of this, turn this into its instance methods to simplify the calls
+
 
 def get_predefined_task(namespace: str, mode: Constants.TaskMode, robot_loader: ModelLoader, simulator: Optional[BaseSimulator] = None, social_mode: Constants.SocialMode = Constants.SocialMode.PEDSIM, **kwargs):
     """
@@ -58,7 +59,8 @@ def get_predefined_task(namespace: str, mode: Constants.TaskMode, robot_loader: 
     obstacle_manager = ObstacleManager(
         namespace=namespace, map_manager=map_manager, simulator=simulator, dynamic_manager=dynamic_manager)
 
-    robot_managers = create_robot_managers(namespace=namespace, simulator=simulator, robot_loader=robot_loader)
+    robot_managers = create_robot_managers(
+        namespace=namespace, simulator=simulator, robot_loader=robot_loader)
 
     # For every robot
     # - Create a unique namespace name
@@ -99,7 +101,7 @@ def create_robot_managers(namespace: str, simulator: BaseSimulator, robot_loader
                 planner=robot["planner"],
                 agent=robot["agent"],
                 record_data=False,
-                position=(0,0,0),
+                position=(0, 0, 0),
                 model=robot_loader.bind(robot["model"]),
                 extra=dict()
             )
@@ -140,13 +142,13 @@ def read_robot_setup_file(setup_file: str) -> List[Dict]:
         raise Exception()
 
 
-def create_default_robot_list(robot_model: ModelWrapper, name:str, namespace: str, planner: str, agent: str) -> List[Robot]:
+def create_default_robot_list(robot_model: ModelWrapper, name: str, namespace: str, planner: str, agent: str) -> List[Robot]:
     return [Robot(
         model=robot_model,
         planner=planner,
         namespace=namespace,
         agent=agent,
-        position=(0,0,0),
+        position=(0, 0, 0),
         name=name,
         record_data=False,
         extra=dict()

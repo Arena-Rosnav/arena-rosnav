@@ -29,20 +29,19 @@ class SDFUtil:
     def set_name(sdf: ET.ElementTree, name: str, tag="model") -> None:
         root = SDFUtil.get_model_root(sdf, tag)
 
-        #TODO reconsider whether this should fail silently
+        # TODO reconsider whether this should fail silently
         if root is not None:
             root.set("name", name)
 
-
     SFM_PLUGIN_SELECTOR = r"""plugin[@filename='libPedestrianSFMPlugin.so']"""
-    COLLISONS_PLUGIN_SELECTOR =  r"""plugin[@filename='libActorCollisionsPlugin.so']"""
+    COLLISONS_PLUGIN_SELECTOR = r"""plugin[@filename='libActorCollisionsPlugin.so']"""
 
     @staticmethod
-    def delete_all(sdf: ET.ElementTree, selector:str) -> int:
+    def delete_all(sdf: ET.ElementTree, selector: str) -> int:
         hits = 0
         for plugin_parent in sdf.findall(f".//{selector}/.."):
             for plugin in plugin_parent.findall(f"./{selector}"):
                 plugin_parent.remove(plugin)
                 hits += 1
-        
+
         return hits

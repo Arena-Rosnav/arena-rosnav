@@ -2,7 +2,6 @@ import functools
 import subprocess
 from typing import Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type
 
-from rospkg import RosPack
 
 import rospy
 import os
@@ -128,6 +127,7 @@ class _ModelLoader:
     def load(model_dir: str, model: str, **kwargs) -> Optional[Model]:
         ...
 
+
 class ModelLoader:
 
     _registry: Dict[ModelType, Type[_ModelLoader]] = {}
@@ -147,7 +147,8 @@ class ModelLoader:
         self._models = []
 
         # potentially expensive
-        rospy.logdebug(f"models in {os.path.basename(model_dir)}: {self.models}")
+        rospy.logdebug(
+            f"models in {os.path.basename(model_dir)}: {self.models}")
 
     @property
     def models(self) -> List[str]:
@@ -161,7 +162,7 @@ class ModelLoader:
         return ModelWrapper.bind(name=model, callback=functools.partial(self._load, model))
 
     def _load(self, model: str, only: Collection[ModelType], **kwargs) -> Model:
-        
+
         if not len(only):
             only = self._registry.keys()
 
@@ -177,7 +178,7 @@ class ModelLoader:
                 return self._cache[(model_type, model)]
 
         else:
-            #TODO refactor so None is returned instead of raising error
+            # TODO refactor so None is returned instead of raising error
             raise FileNotFoundError(
                 f"no model {model} among {only} found in {self._model_dir}")
 
@@ -256,7 +257,8 @@ class _ModelLoader_URDF(_ModelLoader):
 
         namespace: str = kwargs.get("namespace", "")
 
-        model_path = os.path.join(model_dir, model, "urdf", f"{model}.urdf.xacro")
+        model_path = os.path.join(
+            model_dir, model, "urdf", f"{model}.urdf.xacro")
 
         if not os.path.isfile(model_path):
             return None

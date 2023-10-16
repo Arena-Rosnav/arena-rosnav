@@ -23,10 +23,9 @@ from task_generator.shared import ModelType
 from task_generator.utils import Utils
 from geometry_msgs.msg import Pose2D
 
-from ..constants import Constants
-from .base_simulator import BaseSimulator
-from .simulator_factory import SimulatorFactory
-
+from task_generator.constants import Constants
+from task_generator.simulators.base_simulator import BaseSimulator
+from task_generator.simulators.simulator_factory import SimulatorFactory
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -67,7 +66,8 @@ class FlatlandSimulator(BaseSimulator):
     def __init__(self, namespace):
         super().__init__(namespace)
         self._namespace = namespace
-        self._ns_prefix = lambda *x: os.path.join("" if namespace == "" else "/" + namespace, *x)
+        self._ns_prefix = lambda *x: os.path.join(
+            "" if namespace == "" else "/" + namespace, *x)
 
         self._move_robot_pub = rospy.Publisher(
             self._ns_prefix("move_model"), flatland_msgs.msg.MoveModelMsg, queue_size=10
@@ -121,7 +121,8 @@ class FlatlandSimulator(BaseSimulator):
         request.yaml_path = model.description
         request.name = obstacle.name
         request.ns = self._namespace
-        request.pose = Pose2D(x=obstacle.position[0], y=obstacle.position[1], theta=obstacle.position[2])
+        request.pose = Pose2D(
+            x=obstacle.position[0], y=obstacle.position[1], theta=obstacle.position[2])
 
         self.spawn_model(model.type, request)
 
@@ -132,13 +133,15 @@ class FlatlandSimulator(BaseSimulator):
 
         model = robot.model.get(self.MODEL_TYPES)
 
-        file_content = self._update_plugin_topics(read_yaml(StringIO(model.description)), robot.name)
+        file_content = self._update_plugin_topics(
+            read_yaml(StringIO(model.description)), robot.name)
 
         request = SpawnModelRequest()
         request.yaml_path = yaml.dump(file_content)
         request.name = robot.namespace
         request.ns = robot.namespace
-        request.pose = Pose2D(x=robot.position[0], y=robot.position[1], theta=robot.position[2])
+        request.pose = Pose2D(
+            x=robot.position[0], y=robot.position[1], theta=robot.position[2])
 
         self.spawn_model(model.type, request)
         return robot.name
@@ -163,13 +166,14 @@ class FlatlandSimulator(BaseSimulator):
 
         for plugin in plugins:
             if self._PLUGIN_PROPS_TO_EXTEND.get(plugin["type"]):
-                prop_names = self._PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], [])
+                prop_names = self._PLUGIN_PROPS_TO_EXTEND.get(
+                    plugin["type"], [])
 
                 for name in prop_names:
                     plugin[name] = os.path.join(namespace, plugin[name])
 
         return file_content
-    
+
     def _spawn_obstacles(self, obstacles):
 
         request = SpawnModelsRequest()
@@ -195,14 +199,18 @@ class FlatlandSimulator(BaseSimulator):
 def check_yaml_path(path: str) -> bool:
     return os.path.isfile(path)
 
+
 def parse_yaml(content: str):
     return yaml.safe_load(content)
+
 
 @overload
 def read_yaml(yaml: StringIO): ...
 
+
 @overload
 def read_yaml(yaml: str): ...
+
 
 def read_yaml(yaml: Union[StringIO, str]) -> Any:
     if isinstance(yaml, StringIO):
@@ -211,6 +219,6 @@ def read_yaml(yaml: Union[StringIO, str]) -> Any:
     elif isinstance(yaml, str):
         with open(yaml, "r") as file:
             return parse_yaml(file.read())
-        
+
     else:
         raise ValueError(f"can't process yaml descriptor of type {type(yaml)}")
