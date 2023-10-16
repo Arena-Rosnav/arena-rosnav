@@ -113,7 +113,7 @@ class CreateObstacleTask(BaseTask):
             # the first waypoint
             waypoints = [(*setup.position[:2], safe_distance)]
             safe_distance = 0.1  # the other waypoints don't need to avoid robot
-            for j in range(10):
+            for j in range(1):
                 dist = 0
                 while dist < 8:
                     [x2, y2, *
