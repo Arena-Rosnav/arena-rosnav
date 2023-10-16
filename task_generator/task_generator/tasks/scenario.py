@@ -76,7 +76,7 @@ class ScenarioTask(BaseTask):
 
         self._reset_scenario()
 
-    def reset(self):
+    def reset(self, **kwargs):
         if self._reset_count >= self._desired_resets:
             return True
 

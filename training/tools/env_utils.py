@@ -5,7 +5,12 @@ import os
 
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import set_random_seed
-from stable_baselines3.common.vec_env import VecNormalize, SubprocVecEnv, DummyVecEnv
+from stable_baselines3.common.vec_env import (
+    VecNormalize,
+    SubprocVecEnv,
+    DummyVecEnv,
+    VecFrameStack,
+)
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 
 from rl_utils.envs.flatland_gym_env import (
@@ -44,7 +49,7 @@ def make_envs(
             env = FlatlandEnv(
                 train_ns,
                 config["rl_agent"]["reward_fnc"],
-                config["rl_agent"]["discrete_action_space"],
+                config["rl_agent"]["action_space"]["discrete"],
                 goal_radius=config["goal_radius"],
                 max_steps_per_episode=config["max_num_moves_per_eps"],
                 task_mode=config["task_mode"],
@@ -57,7 +62,7 @@ def make_envs(
                 FlatlandEnv(
                     eval_ns,
                     config["rl_agent"]["reward_fnc"],
-                    config["rl_agent"]["discrete_action_space"],
+                    config["rl_agent"]["action_space"]["discrete"],
                     goal_radius=config["goal_radius"],
                     max_steps_per_episode=config["max_num_moves_per_eps"],
                     task_mode=config["task_mode"],
@@ -81,21 +86,34 @@ def load_vec_normalize(config: dict, PATHS: dict, env: VecEnv, eval_env: VecEnv)
             env = VecNormalize.load(load_path=load_path, venv=env)
             eval_env = VecNormalize.load(load_path=load_path, venv=eval_env)
             print("Succesfully loaded VecNormalize object from pickle file..")
-        else:
+        elif not config["rl_agent"]["resume"]:
+            # New agent so init new VecNormalize object
             env = VecNormalize(
                 env,
                 training=True,
                 norm_obs=True,
-                norm_reward=False,
-                clip_reward=15,
+                norm_reward=True,
+                clip_reward=17.5,
             )
             eval_env = VecNormalize(
                 eval_env,
-                training=True,
+                training=False,
                 norm_obs=True,
                 norm_reward=False,
-                clip_reward=15,
+                clip_reward=17.5,
             )
+        else:
+            raise ValueError("No VecNormalize object found..")
+    return env, eval_env
+
+
+def load_vec_framestack(config: dict, env: VecEnv, eval_env: VecEnv):
+    fs_cfg = config["rl_agent"]["frame_stacking"]
+    if fs_cfg["enabled"]:
+        env = VecFrameStack(env, n_stack=fs_cfg["stack_size"], channels_order="first")
+        eval_env = VecFrameStack(
+            eval_env, n_stack=fs_cfg["stack_size"], channels_order="first"
+        )
     return env, eval_env
 
 
@@ -149,4 +167,5 @@ def init_envs(
     else:
         eval_env = train_env
 
+    train_env, eval_env = load_vec_framestack(config, train_env, eval_env)
     return load_vec_normalize(config, paths, train_env, eval_env)

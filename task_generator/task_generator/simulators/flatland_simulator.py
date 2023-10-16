@@ -13,7 +13,7 @@ from flatland_msgs.srv import (
     DeleteModelRequest,
     DeleteModels,
     SpawnModelRequest,
-    SpawnModelsRequest
+    SpawnModelsRequest,
 )
 
 import flatland_msgs.msg
@@ -26,7 +26,6 @@ from geometry_msgs.msg import Pose2D
 from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
-
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
@@ -75,10 +74,13 @@ class FlatlandSimulator(BaseSimulator):
 
         self._robot_name = rospy.get_param("robot_model", "")
         self._robot_radius = rospy.get_param("robot_radius", "")
-        self._is_training_mode = rospy.get_param("train_mode", "")
+        self._is_training_mode = rospy.get_param("train_mode", False)
         self._step_size = rospy.get_param("step_size", "")
         # self._robot_yaml_path = rospy.get_param("robot_yaml_path")
         self._tmp_model_path = str(rospy.get_param("tmp_model_path", "/tmp"))
+        self._additional_full_range_laser = rospy.get_param(
+            "laser/full_range_laser", False
+        )
 
         rospy.wait_for_service(self._ns_prefix("move_model"), timeout=T)
         rospy.wait_for_service(self._ns_prefix("spawn_model"), timeout=T)

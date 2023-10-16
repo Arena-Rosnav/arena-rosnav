@@ -1,10 +1,12 @@
+import os
 import traceback
 from typing import Dict, List, Optional
 
 import rospy
 import rospkg
+import rospy
 import yaml
-import os
+from map_distance_server.srv import GetDistanceMap
 from task_generator.constants import Constants
 from task_generator.shared import ModelWrapper, Robot
 from task_generator.simulators.base_simulator import BaseSimulator
@@ -16,12 +18,15 @@ from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManage
 from task_generator.manager.dynamic_manager.pedsim_manager import PedsimManager
 from task_generator.manager.dynamic_manager.sfm_manager import SFMManager
 from task_generator.manager.robot_manager import RobotManager
+from task_generator.utils import ModelLoader, Utils
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.tasks.random import RandomTask  # noqa
 from task_generator.tasks.scenario import ScenarioTask  # noqa
 from task_generator.tasks.staged import StagedRandomTask  # noqa
 from task_generator.tasks.random_scenario import RandomScenarioTask  # noqa
-from task_generator.utils import ModelLoader, Utils
+from task_generator.tasks.dynamic_map_random import DynamicMapRandomTask  # noqa
+from task_generator.tasks.dynamic_map_staged import DynamicMapStagedRandomTask  # noqa
+
 
 from map_distance_server.srv import GetDistanceMap
 
@@ -42,7 +47,6 @@ def get_predefined_task(namespace: str, mode: Constants.TaskMode, robot_loader: 
         "/distance_map", GetDistanceMap)
 
     map_response = service_client_get_map()
-
     map_manager = MapManager(map_response)
 
     dynamic_manager: DynamicManager

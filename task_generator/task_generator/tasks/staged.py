@@ -1,3 +1,6 @@
+from typing import Dict, List, Optional
+
+import rospkg
 import rospy
 import os
 from task_generator.constants import Constants
@@ -7,6 +10,10 @@ from std_msgs.msg import Bool
 from filelock import FileLock
 
 from task_generator.tasks.random import RandomTask
+from task_generator.constants import Constants
+from task_generator.manager.map_manager import MapManager
+from task_generator.manager.robot_manager import RobotManager
+from task_generator.manager.obstacle_manager import ObstacleManager
 
 
 @TaskFactory.register(Constants.TaskMode.STAGED)
@@ -24,22 +31,30 @@ class StagedRandomTask(RandomTask):
 
     def __init__(
         self,
-        obstacles_manager,
-        robot_manager,
-        map_manager,
+        obstacle_manager: ObstacleManager,
+        robot_managers: List[RobotManager],
+        map_manager: MapManager,
+        paths: Optional[Dict[str, str]] = None,
         start_stage: int = 1,
-        paths=None,
         namespace: str = "",
-        **kwargs
+        **kwargs,
     ):
-        super().__init__(obstacles_manager, robot_manager, map_manager)
+        super().__init__(obstacle_manager=obstacle_manager,
+                         robot_managers=robot_managers, map_manager=map_manager)
 
         self.namespace = namespace
         self.namespace_prefix = f"/{namespace}/" if namespace else ""
 
+        # TODO rework this
+        if paths is None:
+            paths = dict(
+                curriculum=os.path.join(rospkg.RosPack().get_path(
+                    "training"), "configs", "training_curriculums", "default.yaml")
+            )
+
         self._curr_stage = start_stage
-        self._stages = {}
-        self._stages = self._read_stages_from_file(paths.get("curriculum"))
+        self._stages = dict()
+        self._stages = self._read_stages_from_file(paths["curriculum"])
         self._debug_mode = rospy.get_param("debug_mode", False)
 
         self._check_start_stage(start_stage)
@@ -88,7 +103,7 @@ class StagedRandomTask(RandomTask):
         rospy.set_param("/curr_stage", stage)
         rospy.set_param("/last_state_reached", stage == len(self._stages))
 
-        self._update_stage_in_config(stage)
+        # self._update_stage_in_config(stage)
 
         return stage
 
@@ -119,31 +134,22 @@ class StagedRandomTask(RandomTask):
             config["callbacks"]["training_curriculum"]["curr_stage"] = stage
 
         with open(self._config_file_path, "w", encoding="utf-8") as target:
-            yaml.dump(config, target, ensure_ascii=False, indent=4)
+            yaml.dump(config, target, allow_unicode=True, indent=4)
 
         self._config_lock.release()
 
-    def reset(self):
-        super().reset(
-            static_obstacles=self._stages[self._curr_stage]["static"],
-            dynamic_obstacles=self._stages[self._curr_stage]["dynamic"],
-        )
+    def reset(self, stage=None, **kwargs):
+        self._init_stage(self._curr_stage, **kwargs)
 
-    def _reset_robot_and_obstacles(
-        self, static_obstacles=None, dynamic_obstacles=None, **kwargs
-    ):
-        super()._reset_robot_and_obstacles(
-            static_obstacles=static_obstacles,
-            dynamic_obstacles=dynamic_obstacles,
-            **kwargs,
-        )
-
-    def _init_stage(self, stage):
+    def _init_stage(self, stage: int, **kwargs):
         static_obstacles = self._stages[stage]["static"]
         dynamic_obstacles = self._stages[stage]["dynamic"]
 
-        self._reset_robot_and_obstacles(
-            static_obstacles=static_obstacles, dynamic_obstacles=dynamic_obstacles
+        self._populate_goal_radius(stage)
+        super().reset(
+            static_obstacles=static_obstacles,
+            dynamic_obstacles=dynamic_obstacles,
+            **kwargs
         )
 
         rospy.loginfo(
@@ -171,3 +177,11 @@ class StagedRandomTask(RandomTask):
         ), f"{path} has the wrong format! Check the Docs to see the correct format."
 
         return stages
+
+    def _populate_goal_radius(self, stage: int):
+        try:
+            goal_radius = self._stages[stage]["goal_radius"]
+        except KeyError:
+            goal_radius = rospy.get_param("/goal_radius", 0.3)
+
+        rospy.set_param("/goal_radius", goal_radius)

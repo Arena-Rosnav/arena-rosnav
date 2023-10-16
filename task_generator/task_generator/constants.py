@@ -5,7 +5,7 @@ class Constants:
     GOAL_REACHED_TOLERANCE = 1.0
     TIMEOUT = 3.0 * 60  # 3 min
     WAIT_FOR_SERVICE_TIMEOUT = 60  # 5 secs
-    MAX_RESET_FAIL_TIMES = 3
+    MAX_RESET_FAIL_TIMES = 10
 
     class ObstacleManager:
         DYNAMIC_OBSTACLES = 15
@@ -15,7 +15,7 @@ class Constants:
         OBSTACLE_MAX_RADIUS = 0.6
 
     class RobotManager:
-        SPAWN_ROBOT_SAFE_DIST = 0.4
+        SPAWN_ROBOT_SAFE_DIST = 0.1
 
     class Simulator(Enum):
         FLATLAND = "flatland"
@@ -34,12 +34,32 @@ class Constants:
         STAGED = "staged"
         SCENARIO = "scenario"
         RANDOM_SCENARIO = "random_scenario"
+        DYNAMIC_MAP_RANDOM = "dynamic_map_random"
+        DYNAMIC_MAP_STAGED = "dynamic_map_staged"
+
+    class MapGenerator:
+        NODE_NAME = "map_generator"
+        MAP_FOLDER_NAME = "dynamic_map"
+
+    PLUGIN_FULL_RANGE_LASER = {
+        "type": "Laser",
+        "name": "full_static_laser",
+        "frame": "full_laser",
+        "topic": "full_scan",
+        "body": "base_link",
+        "broadcast_tf": "true",
+        "origin": [0, 0, 0],
+        "range": 2.0,
+        "angle": {"min": -3.14, "max": 3.14, "increment": 0.01745},
+        "noise_std_dev": 0.0,
+        "update_rate": 10,
+    }
 
     class Random:
-        MIN_DYNAMIC_OBS = 1
-        MAX_DYNAMIC_OBS = 10
-        MIN_STATIC_OBS = 1
-        MAX_STATIC_OBS = 10
+        MIN_DYNAMIC_OBS = 0
+        MAX_DYNAMIC_OBS = 0
+        MIN_STATIC_OBS = 0
+        MAX_STATIC_OBS = 0
         MIN_INTERACTIVE_OBS = 1
         MAX_INTERACTIVE_OBS = 10
 
@@ -52,21 +72,21 @@ class FlatlandRandomModel:
         "name": "base_link",
         "pose": [0, 0, 0],
         "color": [1, 0.2, 0.1, 1.0],
-        "footprints": []
+        "footprints": [],
     }
     FOOTPRINT = {
         "density": 1,
         "restitution": 1,
         "layers": ["all"],
         "collision": "true",
-        "sensor": "false"
+        "sensor": "false",
     }
     MIN_RADIUS = 0.2
     MAX_RADIUS = 0.6
     RANDOM_MOVE_PLUGIN = {
         "type": "RandomMove",
         "name": "RandomMove_Plugin",
-        "body": "base_link"
+        "body": "base_link",
     }
     LINEAR_VEL = 0.2
     ANGLUAR_VEL_MAX = 0.2

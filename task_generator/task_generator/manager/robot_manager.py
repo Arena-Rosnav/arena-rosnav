@@ -7,9 +7,14 @@ import os
 import time
 
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseStamped
-from std_srvs.srv import Empty
+import os
+import time
 
+import roslaunch
+import rospy
+from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Odometry
+from std_srvs.srv import Empty
 from task_generator.constants import Constants
 from task_generator.shared import Position, Robot
 from task_generator.simulators.base_simulator import BaseSimulator
@@ -18,8 +23,8 @@ from task_generator.utils import Utils
 
 class RobotManager:
     """
-        The robot manager manages the goal and start 
-        position of a robot for all task modes.
+    The robot manager manages the goal and start
+    position of a robot for all task modes.
     """
 
     _ns_prefix: Callable[..., str]

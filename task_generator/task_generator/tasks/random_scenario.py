@@ -22,21 +22,17 @@ class RandomScenarioTask(CreateObstacleTask):
     """
 
     def reset(
-        self, start=None, goal=None,
-        static_obstacles=None, dynamic_obstacles=None,
+        self, static_obstacles=None, dynamic_obstacles=None, **kwargs
     ):
         return super().reset(
             lambda: self._reset_robot_and_obstacles(
-                start=start, goal=goal,
                 static_obstacles=static_obstacles,
-                dynamic_obstacles=dynamic_obstacles,
+                dynamic_obstacles=dynamic_obstacles
             )
         )
 
     def _reset_robot_and_obstacles(
         self,
-        start=None,
-        goal=None,
         dynamic_obstacles: Optional[int] = None,
         static_obstacles: Optional[int] = None,
     ):
@@ -60,15 +56,17 @@ class RandomScenarioTask(CreateObstacleTask):
         self._obstacle_manager.reset()
         self._map_manager.init_forbidden_zones()
 
-        dynamic_obstacles = random.randint(
-            Constants.Random.MIN_DYNAMIC_OBS,
-            Constants.Random.MAX_DYNAMIC_OBS
-        ) if dynamic_obstacles is None else dynamic_obstacles
+        if dynamic_obstacles is None:
+            dynamic_obstacles = random.randint(
+                Constants.Random.MIN_DYNAMIC_OBS,
+                Constants.Random.MAX_DYNAMIC_OBS
+            )
 
-        static_obstacles = random.randint(
-            Constants.Random.MIN_STATIC_OBS,
-            Constants.Random.MAX_STATIC_OBS
-        ) if static_obstacles is None else static_obstacles
+        if static_obstacles is None:
+            static_obstacles = random.randint(
+                Constants.Random.MIN_STATIC_OBS,
+                Constants.Random.MAX_STATIC_OBS
+            )
 
         xml_path = os.path.join(
             RosPack().get_path("task_generator"),

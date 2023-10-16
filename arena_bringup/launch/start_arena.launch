@@ -20,6 +20,9 @@
   <param name="base_url" value="$(arg base_url)" />
   <param name="task_finished_endpoint" value="$(arg task_finished_endpoint)" />
   <param name="new_best_model_endpoint" value="$(arg new_best_model_endpoint)" />
+  <!-- debug mode training -->
+  <param name="debug_mode" value="true" />
+
 
   <node name="task_progress_publisher" type="task_progress_publisher.py" pkg="task_progress_publisher" if="$(eval arg('is_webapp_docker') == true)" />
   <!-- -->
@@ -59,12 +62,15 @@
   <param name="complexity" value="$(arg complexity)" />
   
 
-  <arg name="task_mode" default="random" doc="[random, staged, scenario, random_scenario]" />
+  <arg name="task_mode" default="random" doc="[random, staged, scenario, random_scenario, dynamic_map_random, dynamic_map_staged]" />
   <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
   <arg name="show_rviz" default="true" doc="Enables rviz in gazebo" />
   <arg name="rviz_file" default="nav"/>
   
   <arg name="auto_reset" default="true"/>
+
+  <arg name="reset_remove_all" default="true" />
+  <param name="reset_remove_all" value="$(arg reset_remove_all)" />
 
   <arg name="scenario_file" default="test_scenario.json" />
   <arg name="map_file" default="map_empty" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]" />
@@ -74,7 +80,8 @@
 
   <!-- ___________ PARAMS ___________ -->
   <param name="use_sim_time" value="true"/>
-
+  <param name="rosnav_move_base" value="true" />
+  
   <param name="model" value="$(arg model)" />
   <param name="simulator" value="$(arg simulator)" />
   <param name="task_mode" value="$(arg task_mode)" />
@@ -85,18 +92,19 @@
   <param name="social_mode" value="$(arg social_mode)" />
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
+  <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" />
+
 
   <!-- TEST IF YOU NEED THIS -->
   <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" if="$(eval arg('robot_setup_file') == '')" /> 
-  
-  
+
   
   <!-- <param name="robot_yaml_path" value="$(find arena-simulation-setup)/robot/$(arg model)/$(arg model).model.yaml" /> -->
   <!-- <param name="tmp_model_path" value="/tmp" /> -->
 
   <!-- the folder name under the path arena-simulation-setup/maps  -->
   <param name="world_path" value="$(find arena-simulation-setup)/maps/$(arg map_file)/map.world.yaml" />
-  <param name="map_layer_path" value="$(find arena-simulation-setup)/maps/$(arg map_file)/map_layer.yaml" />
+  <param name="map_layer_path" value="$(find arena-simulation-setup)/maps/$(arg map_file)/map.world.yaml" />
   <param name="map_file" value="$(arg map_file)" />
 
   <!-- DRL action frequency -->
@@ -134,6 +142,7 @@
 
   <!-- map server-->
   <include file="$(find arena_bringup)/launch/utils/map_server.launch">
+    <arg name="map_file" value="$(arg map_file)" />
     <arg name="map_path" value="$(arg map_path)" />
   </include>
 
@@ -161,11 +170,6 @@
   <group if="$(eval arg('pedsim'))">
     <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/>
   </group>
-
-  <!-- launch map generator if training with random map-->
-  <!-- <group if="$(eval arg('map_file') == 'random_map')">
-    <node pkg="arena-simulation-setup" name="map_generator_node" type="map_generator_node.py" />
-  </group> -->
 
   <include file="$(find arena_bringup)/launch/testing/sensor_sim.launch">
 

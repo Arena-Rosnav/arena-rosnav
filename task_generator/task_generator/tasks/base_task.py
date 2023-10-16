@@ -15,9 +15,9 @@ from task_generator.utils import ModelLoader
 from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, PositionOrientation, Waypoint
 
 
-class BaseTask():
+class BaseTask:
     """
-        Base Task as parent class for all other tasks.
+    Base Task as parent class for all other tasks.
     """
 
     _obstacle_manager: ObstacleManager
@@ -48,10 +48,10 @@ class BaseTask():
 
     def reset(self, callback: Optional[Callable] = None) -> bool:
         """
-            Calls a passed reset function (usually the tasks own reset)
-            inside a loop so when the callback fails once it is tried
-            again. After MAX_RESET_FAIL_TIMES the reset is considered
-            as fail and the simulation is shut down.
+        Calls a passed reset function (usually the tasks own reset)
+        inside a loop so when the callback fails once it is tried
+        again. After MAX_RESET_FAIL_TIMES the reset is considered
+        as fail and the simulation is shut down.
         """
         fails = 0
         return_val = False

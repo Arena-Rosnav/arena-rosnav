@@ -6,10 +6,12 @@ from typing import Callable, Collection, Dict, Iterable, List, Sequence, Tuple, 
 import enum
 
 
-EMPTY_LOADER = lambda *_, **__: Model(type=ModelType.UNKNOWN,
-                                      name="",
-                                      description="",
-                                      path="")
+EMPTY_LOADER = lambda *_, **__: Model(
+    type=ModelType.UNKNOWN,
+    name="",
+    description="",
+    path=""
+)
 
 
 class ModelType(enum.Enum):
