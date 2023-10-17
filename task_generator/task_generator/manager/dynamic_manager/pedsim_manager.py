@@ -11,18 +11,13 @@ from std_srvs.srv import SetBool, Trigger
 
 
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
+from task_generator.manager.dynamic_manager.utils import KnownObstacles
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.constants import Constants, Pedsim
 from task_generator.shared import Model, ModelType, Obstacle, ObstacleProps
 from task_generator.simulators.flatland_simulator import FlatlandSimulator
 
 from typing import Dict, List
-
-
-@dataclasses.dataclass
-class KnownObstacle:
-    obstacle: ObstacleProps
-    spawned: bool = False
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -39,17 +34,16 @@ class PedsimManager(DynamicManager):
     _respawn_peds_srv: rospy.ServiceProxy
     _add_obstacle_srv: rospy.ServiceProxy
 
-    # store obstacle descs and whether they have been spawned
-    _known_obstacles: Dict[str, KnownObstacle]
+    _known_obstacles: KnownObstacles
 
     #TODO temporary
     __default_pedsim_model: Model
 
     def __init__(self, namespace: str, simulator: BaseSimulator):
 
-        super().__init__(namespace, simulator)
-
-        self._known_obstacles = dict()
+        DynamicManager.__init__(self, namespace=namespace, simulator=simulator)
+        
+        self._known_obstacles = KnownObstacles()
 
         rospy.wait_for_service("/pedsim_simulator/spawn_peds", timeout=T)
         rospy.wait_for_service("/pedsim_simulator/reset_all_peds", timeout=T)
@@ -166,8 +160,7 @@ class PedsimManager(DynamicManager):
 
             srv.InteractiveObstacles.append(msg)  # type: ignore
 
-            self._known_obstacles[pedsim_name] = KnownObstacle(
-                obstacle=obstacle, spawned=False)
+            self._known_obstacles.create(pedsim_name, obstacle=obstacle, spawned=False)
 
         max_num_try = 1
         i_curr_try = 0
@@ -291,8 +284,7 @@ class PedsimManager(DynamicManager):
                 )
             )
 
-            self._known_obstacles[pedsim_name] = KnownObstacle(
-                obstacle=obstacle, spawned=False)
+            self._known_obstacles.create(pedsim_name, obstacle=obstacle, spawned=False)
 
         max_num_try = 1
         i_curr_try = 0
@@ -321,7 +313,7 @@ class PedsimManager(DynamicManager):
 
         for obstacle_id, obstacle in self._known_obstacles.items():
             if obstacle.spawned:
-                self._simulator.delete_obstacle(obstacle_id=obstacle_id)
+                self._simulator.delete_obstacle(name=obstacle_id)
 
         self._known_obstacles.clear()
 
@@ -351,12 +343,13 @@ class PedsimManager(DynamicManager):
 
             actor_id = str(actor.id)
 
-            if actor_id not in self._known_obstacles:
+            obstacle = self._known_obstacles.get(actor_id)
+
+            if obstacle is None:
                 rospy.logwarn(
                     f"dynamic obstacle {actor_id} not known by {type(self).__name__}")
                 continue
 
-            obstacle = self._known_obstacles[actor_id]
             actor_pose = actor.pose
 
             if obstacle.spawned == True:
@@ -392,7 +385,9 @@ class PedsimManager(DynamicManager):
 
         actor_name = str(actor.name).split("(")[0]
 
-        if actor_name not in self._known_obstacles:
+        obstacle = self._known_obstacles.get(actor_name)
+
+        if obstacle is None:
             rospy.logwarn(
                 f"obstacle {actor_name} not known by {type(self).__name__}")
             return
@@ -413,8 +408,7 @@ class PedsimManager(DynamicManager):
             ob_type = actor.name[actor.name.index(
                 "&")+1: actor.name.index("!")]
 
-        obstacle = self._known_obstacles[actor_name]
-        actor_position = Point(
+        obstacle_position = Point(
             x=actor.position.x-direction_x,
             y=actor.position.y-direction_y,
             z=actor.position.z
@@ -423,8 +417,8 @@ class PedsimManager(DynamicManager):
         if obstacle.spawned == True:
             self._simulator.move_entity(
                 pos=(
-                    actor_position.x,
-                    actor_position.y,
+                    obstacle_position.x,
+                    obstacle_position.y,
                     orientation
                 ),
                 name=actor_name
@@ -437,8 +431,8 @@ class PedsimManager(DynamicManager):
                 Obstacle(
                     name=actor_name,
                     position=(
-                        actor_position.x,
-                        actor_position.y,
+                        obstacle_position.x,
+                        obstacle_position.y,
                         orientation
                     ),
                     model=obstacle.obstacle.model,

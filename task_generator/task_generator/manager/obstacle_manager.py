@@ -40,22 +40,13 @@ class ObstacleManager:
 
         self.id_generator = itertools.count(434)
 
-    #TODO replace with already loaded XML
-    def spawn_map_obstacles(self, map_path: str = "map_empty"):
+    def spawn_map_obstacles(self, map: ET.ElementTree):
         """
         Loads given obstacles into the simulator,
         the map file is retrieved from launch parameter "map_file"
         """
-        map = rospy.get_param("map_file")
-        map_path = os.path.join(
-            rospkg.RosPack().get_path("arena-simulation-setup"),
-            "worlds",
-            map_path,
-            "ped_scenarios",
-            f"{map}.xml"
-        )
-        tree = ET.parse(map_path)
-        root = tree.getroot()
+        
+        root = map.getroot()
 
         for child in root:
 

@@ -56,7 +56,27 @@ class DynamicMapStagedRandomTask(DynamicMapRandomTask):
             f"{self.namespace_prefix}previous_stage", Bool, self._previous_stage
         )
 
-        self._init_stage(self._curr_stage)
+        self.reset(stage=self._curr_stage)
+
+    def reset(self, stage: Optional[int] = None, **kwargs):
+
+        if stage is None:
+            stage = self._curr_stage
+
+        static_obstacles = self._stages[stage]["static"]
+        dynamic_obstacles = self._stages[stage]["dynamic"]
+
+        def callback() -> bool:
+            # set obstacle num according to current stage
+            self._populate_map_info(stage)
+            self._populate_goal_radius(stage)
+            
+            rospy.loginfo(
+                f"({self.namespace}) Stage {self._curr_stage}: Spawning {static_obstacles} static and {dynamic_obstacles} dynamic obstacles!"
+            )
+            return False
+        
+        return super().reset(callback=callback, **kwargs)
 
     def _read_stages_from_file(self, path: str) -> dict:
         assert os.path.isfile(path), f"{path} is not a file"
@@ -82,7 +102,8 @@ class DynamicMapStagedRandomTask(DynamicMapRandomTask):
         ), f"Found no 'training_config.yaml' at {self._config_file_path}"
 
     def _init_stage_and_update_config(self, stage: int) -> int:
-        self._init_stage(stage)
+
+        self.reset(stage=stage, first_map=True)
 
         if self.namespace != "eval_sim":
             return -1
@@ -92,32 +113,7 @@ class DynamicMapStagedRandomTask(DynamicMapRandomTask):
 
         # self._update_stage_in_config(stage)
 
-        self.reset(first_map=True)
-
         return stage
-
-    def _init_stage(self, stage: int, **kwargs):
-        self._populate_map_info(stage)
-        self._populate_goal_radius(stage)
-        static_obstacles = self._stages[stage]["static"]
-        dynamic_obstacles = self._stages[stage]["dynamic"]
-
-        super().reset(
-            static_obstacles=static_obstacles,
-            dynamic_obstacles=dynamic_obstacles,
-            **kwargs
-        )
-
-        rospy.loginfo(
-            f"({self.namespace}) Stage {self._curr_stage}: Spawning {static_obstacles} static and {dynamic_obstacles} dynamic obstacles!"
-        )
-
-    def reset(
-        self,
-        **kwargs
-    ):
-        # set obstacle num according to current stage
-        self._init_stage(self._curr_stage, **kwargs)
 
     def _next_stage(self, _):
         if self._curr_stage >= len(self._stages):

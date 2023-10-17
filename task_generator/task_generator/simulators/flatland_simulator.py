@@ -11,6 +11,7 @@ from flatland_msgs.srv import (
     SpawnModels,
     DeleteModel,
     DeleteModelRequest,
+    DeleteModelResponse,
     DeleteModels,
     SpawnModelRequest,
     SpawnModelsRequest,
@@ -111,8 +112,9 @@ class FlatlandSimulator(BaseSimulator):
     def after_reset_task(self):
         pass
 
-    def delete_obstacle(self, obstacle_id):
-        self._delete_model_srv(DeleteModelRequest(name=obstacle_id))
+    def delete_obstacle(self, name):
+        res: DeleteModelResponse = self._delete_model_srv(DeleteModelRequest(name=name))
+        return bool(res.success)
 
     # SPAWN OBSTACLES
     def spawn_obstacle(self, obstacle):
@@ -126,9 +128,9 @@ class FlatlandSimulator(BaseSimulator):
         request.pose = Pose2D(
             x=obstacle.position[0], y=obstacle.position[1], theta=obstacle.position[2])
 
-        self.spawn_model(model.type, request)
+        res = self.spawn_model(model.type, request)
 
-        return obstacle.name
+        return res.success
 
     # ROBOT
     def spawn_robot(self, robot):
@@ -145,8 +147,9 @@ class FlatlandSimulator(BaseSimulator):
         request.pose = Pose2D(
             x=robot.position[0], y=robot.position[1], theta=robot.position[2])
 
-        self.spawn_model(model.type, request)
-        return robot.name
+        res = self.spawn_model(model.type, request)
+        
+        return res.success
 
     def move_entity(self, pos, name):
         pose = Pose2D()

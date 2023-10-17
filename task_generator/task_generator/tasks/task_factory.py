@@ -3,7 +3,6 @@ from typing import Dict, Type
 from task_generator.constants import Constants
 from task_generator.tasks.base_task import BaseTask
 
-
 class TaskFactory:
     registry: Dict[Constants.TaskMode, Type[BaseTask]] = {}
 

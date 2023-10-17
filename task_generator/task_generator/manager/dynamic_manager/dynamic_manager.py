@@ -6,7 +6,6 @@ from task_generator.simulators.base_simulator import BaseSimulator
 from typing import Callable, Collection, Dict
 from geometry_msgs.msg import Point, PoseStamped
 
-
 class DynamicManager:
 
     _namespace: str

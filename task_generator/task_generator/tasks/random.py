@@ -5,7 +5,8 @@ from typing import List, Optional
 from task_generator.constants import Constants
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.shared import DynamicObstacle, Obstacle, Waypoint
-from task_generator.tasks.base_task import CreateObstacleTask
+from task_generator.tasks.base_task import BaseTask
+from task_generator.tasks.utils import ObstacleInterface
 
 #TODO generate this in the instance
 dynamic_obstacles_random = random.randint(
@@ -17,7 +18,7 @@ interactive_obstacles_random = random.randint(
 
 
 @TaskFactory.register(Constants.TaskMode.RANDOM)
-class RandomTask(CreateObstacleTask):
+class RandomTask(BaseTask, ObstacleInterface):
     """
         The random task spawns static and dynamic
         obstacles on every reset and will create
@@ -25,13 +26,17 @@ class RandomTask(CreateObstacleTask):
         each task.
     """
 
+    @BaseTask.reset_helper(parent=BaseTask)
     def reset(self, static_obstacles: Optional[int] = None, dynamic_obstacles: Optional[int] = None, **kwargs):
-        return super().reset(
-            lambda: self._reset_robot_and_obstacles(
+        
+        def callback():
+            self._reset_robot_and_obstacles(
                 static_obstacles=static_obstacles,
                 dynamic_obstacles=dynamic_obstacles
             )
-        )
+            return False
+        
+        return callback
 
     def _reset_robot_and_obstacles(self, dynamic_obstacles: Optional[int] = None, static_obstacles: Optional[int] = None):
 

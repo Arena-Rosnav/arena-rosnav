@@ -1,9 +1,10 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import rospkg
 import rospy
 import os
 from task_generator.constants import Constants
+from task_generator.tasks.base_task import BaseTask
 from task_generator.tasks.task_factory import TaskFactory
 import yaml
 from std_msgs.msg import Bool
@@ -72,7 +73,7 @@ class StagedRandomTask(RandomTask):
 
         self._init_stage(self._curr_stage)
 
-    def next_stage(self, _):
+    def next_stage(self, *args, **kwargs):
         if self._curr_stage >= len(self._stages):
             rospy.loginfo(
                 f"({self.namespace}) INFO: Tried to trigger next stage but already reached last one"
@@ -83,7 +84,7 @@ class StagedRandomTask(RandomTask):
 
         return self._init_stage_and_update_config(self._curr_stage)
 
-    def previous_stage(self, _):
+    def previous_stage(self, *args, **kwargs):
         if self._curr_stage <= 1:
             rospy.loginfo(
                 f"({self.namespace}) INFO: Tried to trigger previous stage but already reached first one"
@@ -138,10 +139,21 @@ class StagedRandomTask(RandomTask):
 
         self._config_lock.release()
 
-    def reset(self, stage=None, **kwargs):
-        self._init_stage(self._curr_stage, **kwargs)
+    @BaseTask.reset_helper(parent=RandomTask)
+    def reset(self, stage: Optional[int]=None, **kwargs):
 
-    def _init_stage(self, stage: int, **kwargs):
+        def callback():
+            self._init_stage(stage=stage, **kwargs)
+            return False
+        
+        return callback
+        
+
+    def _init_stage(self, stage: Optional[int] = None, **kwargs):
+
+        if stage is None:
+            stage = self._curr_stage
+
         static_obstacles = self._stages[stage]["static"]
         dynamic_obstacles = self._stages[stage]["dynamic"]
 

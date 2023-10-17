@@ -2,10 +2,11 @@
 
 import dataclasses
 import itertools
+import time
 from typing import Any, Callable, Dict, Iterable, List, Tuple
 
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
-from task_generator.manager.dynamic_manager.utils import SDFUtil
+from task_generator.manager.dynamic_manager.utils import KnownObstacles, SDFUtil
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.shared import Model, ModelType, PositionOrientation, Waypoint
 from task_generator.utils import NamespaceIndexer
@@ -76,30 +77,44 @@ def fill_actor(model: Model, name: str, position: PositionOrientation, waypoints
 
 class SFMManager(DynamicManager):
 
-    _spawned_obstacles: List[Tuple[str, Callable[[], Any]]]
-    _namespaces: Dict[str, NamespaceIndexer]
+    _known_obstacles: KnownObstacles
 
     def __init__(self, namespace: str, simulator: BaseSimulator):
-        super().__init__(namespace, simulator)
+        super().__init__(namespace=namespace, simulator=simulator)
+        self._known_obstacles = KnownObstacles()
 
     def spawn_obstacles(self, obstacles):
 
         for obstacle in obstacles:
 
-            name, free = next(self._index_namespace(obstacle.name))
+            rospy.logdebug("Spawning obstacle: actor_id = %s", obstacle.name)
 
-            rospy.logdebug("Spawning obstacle: actor_id = %s", name)
+            obstacle = dataclasses.replace(obstacle, name=obstacle.name)
 
-            obstacle = dataclasses.replace(obstacle, name=name)
+            known_obstacle = self._known_obstacles.create(obstacle.name, obstacle=obstacle)
 
-            name = self._simulator.spawn_obstacle(obstacle)
-            self._spawned_obstacles.append((name, free))
+            #TODO aggregate deletes & spawns and leverage simulator parallelization
+            #TODO find a solution without respawning
+            if known_obstacle.spawned:
+                self._simulator.delete_obstacle(name=known_obstacle.obstacle.name)
+                known_obstacle.spawned = False
+                time.sleep(0.15)
+
+                known_obstacle.obstacle = obstacle
+                self._simulator.spawn_obstacle(obstacle=known_obstacle.obstacle)
+                known_obstacle.spawned = True
+            else:
+                self._simulator.spawn_obstacle(known_obstacle.obstacle)
+                known_obstacle.spawned = True
+
+            time.sleep(0.05)
+            
 
     def spawn_dynamic_obstacles(self, obstacles):
 
         for obstacle in obstacles:
 
-            name, free = next(self._index_namespace(obstacle.name))
+            name = obstacle.name
 
             rospy.logdebug("Spawning dynamic obstacle: actor_id = %s", name)
 
@@ -109,25 +124,35 @@ class SFMManager(DynamicManager):
                     model=m, name=name, position=obstacle.position, waypoints=obstacle.waypoints)
             )
 
+
             obstacle = dataclasses.replace(obstacle, name=name, model=model)
 
-            name = self._simulator.spawn_obstacle(obstacle)
-            self._spawned_obstacles.append((name, lambda: None))
+            known_obstacle = self._known_obstacles.create(obstacle.name, obstacle=obstacle)
+
+            #TODO aggregate deletes & spawns and leverage simulator parallelization
+            #TODO find a solution without respawning
+            if known_obstacle.spawned:
+                self._simulator.delete_obstacle(name=known_obstacle.obstacle.name)
+                known_obstacle.spawned = False
+                time.sleep(0.15)
+
+                known_obstacle.obstacle = obstacle
+                self._simulator.spawn_obstacle(obstacle=known_obstacle.obstacle)
+                known_obstacle.spawned = True
+            else:
+                self._simulator.spawn_obstacle(known_obstacle.obstacle)
+                known_obstacle.spawned = True
+
+            time.sleep(0.05)
 
     def spawn_line_obstacle(self, name, _from, _to):
         #TODO
         pass
 
     def remove_obstacles(self):
-        for name, cleanup in self._spawned_obstacles:
-            rospy.logdebug(f"Removing obstacle {name}")
-            self._simulator.delete_obstacle(obstacle_id=name)
-            cleanup()
-
-        self._spawned_obstacles = []
-
-    def _index_namespace(self, namespace: str) -> NamespaceIndexer:
-        if namespace not in self._namespaces:
-            self._namespaces[namespace] = NamespaceIndexer(namespace)
-
-        return self._namespaces[namespace]
+        for obstacle_id, obstacle in self._known_obstacles.items():
+            if obstacle.spawned:
+                self._simulator.delete_obstacle(name=obstacle_id)
+                time.sleep(0.05)
+            
+        self._known_obstacles.clear()

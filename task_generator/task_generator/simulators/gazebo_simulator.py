@@ -2,7 +2,7 @@ import rospy
 import os
 
 from gazebo_msgs.msg import ModelState
-from gazebo_msgs.srv import SetModelState, SetModelStateRequest, DeleteModel, SpawnModel, SpawnModelRequest, DeleteModelRequest
+from gazebo_msgs.srv import SetModelState, SetModelStateRequest, DeleteModel, SpawnModel, SpawnModelRequest, DeleteModelRequest, DeleteModelResponse
 
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 
@@ -118,12 +118,13 @@ class GazeboSimulator(BaseSimulator):
         request.robot_namespace = self._ns_prefix(obstacle.name)
         request.reference_frame = "world"
 
-        self.spawn_model(model.type, request)
+        res = self.spawn_model(model.type, request)
 
-        return obstacle.name
+        return res.success
 
-    def delete_obstacle(self, obstacle_id: str):
-        self.remove_model_srv(DeleteModelRequest(model_name=obstacle_id))
+    def delete_obstacle(self, name):
+        res: DeleteModelResponse = self.remove_model_srv(DeleteModelRequest(model_name=name))
+        return bool(res.success)
 
     def _publish_goal(self, goal):
         goal_msg = PoseStamped()

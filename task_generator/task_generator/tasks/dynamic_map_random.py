@@ -79,26 +79,28 @@ class DynamicMapRandomTask(RandomTask):
         first_map: bool = False,
         **kwargs
     ):
-        try:
-            if (
-                float(str(rospy.get_param("/dynamic_map/curr_eps", 0))
-                      ) >= self._eps_per_map
-                or first_map
-            ):
-                self.request_new_map(first_map=first_map)
-                return
-        except Exception:
-            pass
+        def callback() -> bool:
+            try:
+                if (
+                    float(str(rospy.get_param("/dynamic_map/curr_eps", 0))
+                        ) >= self._eps_per_map
+                    or first_map
+                ):
+                    self.request_new_map(first_map=first_map)
+                    return False
+                
+            except Exception:
+                pass
 
-        if not reset_after_new_map:
-            # only update eps count when resetting the scene
-            new_count = float(
-                str(rospy.get_param("/dynamic_map/curr_eps"))) + self._iterator
-            rospy.set_param("/dynamic_map/curr_eps", new_count)
+            if not reset_after_new_map:
+                # only update eps count when resetting the scene
+                new_count = float(str(rospy.get_param("/dynamic_map/curr_eps")))
+                new_count += self._iterator
+                rospy.set_param("/dynamic_map/curr_eps", new_count)
 
-        return super().reset(
-            **kwargs
-        )
+            return False
+
+        return super().reset(callback=callback, **kwargs)
 
     def request_new_map(self, first_map: bool = False):
         # set current eps immediately to 0 so that only one task

@@ -3,17 +3,24 @@ import random
 from typing import List, Optional
 
 from rospkg import RosPack
+import rospy
 
 from task_generator.constants import Constants
+from task_generator.manager.map_manager import MapManager
+from task_generator.manager.obstacle_manager import ObstacleManager
+from task_generator.manager.robot_manager import RobotManager
+from task_generator.tasks.scenario import ScenarioTask
 from task_generator.tasks.task_factory import TaskFactory
-from task_generator.tasks.base_task import CreateObstacleTask
+from task_generator.tasks.base_task import BaseTask
 from task_generator.shared import DynamicObstacle, Obstacle, Waypoint
 
 import xml.etree.ElementTree as ET
 
+from task_generator.tasks.utils import ObstacleInterface, Scenario, ScenarioInterface, ScenarioMap, ScenarioObstacles
+
 
 @TaskFactory.register(Constants.TaskMode.RANDOM_SCENARIO)
-class RandomScenarioTask(CreateObstacleTask):
+class RandomScenarioTask(ScenarioTask, ScenarioInterface, ObstacleInterface):
     """
         The random task spawns static and dynamic
         obstacles on every reset and will create
@@ -21,21 +28,21 @@ class RandomScenarioTask(CreateObstacleTask):
         each task.
     """
 
-    def reset(
-        self, static_obstacles=None, dynamic_obstacles=None, **kwargs
-    ):
-        return super().reset(
-            lambda: self._reset_robot_and_obstacles(
-                static_obstacles=static_obstacles,
-                dynamic_obstacles=dynamic_obstacles
-            )
-        )
+    @BaseTask.reset_helper(parent=BaseTask)
+    def reset(self, **kwargs):
 
-    def _reset_robot_and_obstacles(
+        def callback():
+            self._obstacle_manager.reset()
+            self._setup_scenario(self._generate_scenario())
+            return False
+    
+        return callback
+
+    def _generate_scenario(
         self,
-        dynamic_obstacles: Optional[int] = None,
         static_obstacles: Optional[int] = None,
-    ):
+        dynamic_obstacles: Optional[int] = None
+    ) -> Scenario:
 
         robot_positions: List[Waypoint] = []  # may be needed in the future idk
 
@@ -86,11 +93,9 @@ class RandomScenarioTask(CreateObstacleTask):
         num_child = [int(str(root[4][0].text)), root[4]
                      [1].text, root[4][2].text]
 
-        dynamic_obstacles_array: List[DynamicObstacle]
-        static_obstacles_array: List[Obstacle]
-        interactive_obstacles_array: List[Obstacle]
-
-        self._obstacle_manager.spawn_map_obstacles()
+        dynamic_obstacles_array: List[DynamicObstacle] = list()
+        static_obstacles_array: List[Obstacle] = list()
+        interactive_obstacles_array: List[Obstacle] = list()
 
         #TODO load this from the main loaders
         obstacle_path: str = os.path.join(
@@ -100,53 +105,46 @@ class RandomScenarioTask(CreateObstacleTask):
 
         # Create static obstacles
         for ob_type in []:  # [num_tables]:
-
             model = ob_type[1]
-
-            static_obstacles_array = list()
             for i in range(ob_type[0]):
                 obstacle = self._create_obstacle(
-                    name=model, model=self._model_loader.bind(model))
+                    name=f"{model}_static_{len(static_obstacles_array)+1}", model=self._model_loader.bind(model))
                 obstacle.extra["type"] = ob_type[1]
                 obstacle.extra["yaml"] = os.path.join(
                     obstacle_path, ob_type[2])
                 static_obstacles_array.append(obstacle)
 
-            if len(static_obstacles_array):
-                self._obstacle_manager.spawn_obstacles(
-                    setups=static_obstacles_array)
-
         # Create interactive obstacles
         for ob_type in [num_shelves]:
-
             model = ob_type[1]
-
-            interactive_obstacles_array = list()
             for i in range(ob_type[0]):
                 obstacle = self._create_obstacle(
-                    name=model, model=self._model_loader.bind(model))
+                    name=f"{model}_interactive_{len(interactive_obstacles_array)+1}", model=self._model_loader.bind(model))
                 obstacle.extra["type"] = ob_type[1]
                 obstacle.extra["yaml"] = os.path.join(
                     obstacle_path, ob_type[2].split(os.extsep, 1)[0], ob_type[2])
                 interactive_obstacles_array.append(obstacle)
 
-            if len(interactive_obstacles_array):
-                self._obstacle_manager.spawn_obstacles(
-                    setups=interactive_obstacles_array)
-
         # Create dynamic obstacles
         for ob_type in [num_adults, num_elder, num_child]:
-            dynamic_obstacles_array = list()
+            model = self._obstacle_manager._dynamic_manager._default_actor_model.name
             for i in range(ob_type[0]):
                 obstacle = self._create_dynamic_obstacle(
-                    name=self._obstacle_manager._dynamic_manager._default_actor_model.name, model=self._obstacle_manager._dynamic_manager._default_actor_model)
+                    name=f"{model}_dynamic_{len(dynamic_obstacles_array)+1}", model=self._obstacle_manager._dynamic_manager._default_actor_model)
                 obstacle.extra["type"] = ob_type[1]
                 obstacle.extra["yaml"] = os.path.join(
                     dynamic_obstacle_path, ob_type[2].split(os.extsep, 1)[0], ob_type[2])
                 dynamic_obstacles_array.append(obstacle)
 
-            if len(dynamic_obstacles_array):
-                self._obstacle_manager.spawn_dynamic_obstacles(
-                    setups=dynamic_obstacles_array)
-
-        return False, (0, 0, 0)
+        return Scenario(
+            obstacles = ScenarioObstacles(
+                dynamic=dynamic_obstacles_array,
+                static=static_obstacles_array,
+                interactive=interactive_obstacles_array
+            ),
+            map = ScenarioMap(yaml=dict(), xml=ET.ElementTree(ET.Element("dummy")), path=""),
+            resets = 0,
+            robots = []
+        )
+    
+        
