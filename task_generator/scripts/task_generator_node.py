@@ -168,10 +168,9 @@ class TaskGenerator:
         dynamic_manager: DynamicManager
 
         if self._social_mode == Constants.SocialMode.SFM:
-            dynamic_manager = SFMManager(namespace=self._namespace, simulator=self._env_wrapper)
+            dynamic_manager = SFMManager(namespace="", simulator=self._env_wrapper)
         elif self._social_mode == Constants.SocialMode.PEDSIM:
-            dynamic_manager = PedsimManager(
-                namespace=self._namespace, simulator=self._env_wrapper)
+            dynamic_manager = PedsimManager(namespace="", simulator=self._env_wrapper)
         else:
             dynamic_manager = DynamicManager(
                 namespace=self._namespace, simulator=self._env_wrapper)
