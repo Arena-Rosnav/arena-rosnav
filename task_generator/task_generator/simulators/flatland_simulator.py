@@ -151,7 +151,7 @@ class FlatlandSimulator(BaseSimulator):
         
         return res.success
 
-    def move_entity(self, pos, name):
+    def move_entity(self, name, pos):
         pose = Pose2D()
         pose.x = pos[0]
         pose.y = pos[1]

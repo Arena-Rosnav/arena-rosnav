@@ -3,10 +3,7 @@ from typing import Collection, Iterator
 
 import numpy as np
 import yaml
-import rospy
-import os
 import xml.etree.ElementTree as ET
-import rospkg
 
 from task_generator.constants import FlatlandRandomModel
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
@@ -45,7 +42,7 @@ class ObstacleManager:
         Loads given obstacles into the simulator,
         the map file is retrieved from launch parameter "map_file"
         """
-        
+
         root = map.getroot()
 
         for child in root:
@@ -88,7 +85,7 @@ class ObstacleManager:
         else:
             self._dynamic_manager.remove_obstacles()
 
-    #TODO refactor this with a registry
+    # TODO refactor this with a registry
 
     def generate_random_model(self, model_type: ModelType, **kwargs) -> Model:
         if model_type == ModelType.YAML:

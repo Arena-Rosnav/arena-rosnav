@@ -3,12 +3,8 @@ import random
 from typing import List, Optional
 
 from rospkg import RosPack
-import rospy
 
 from task_generator.constants import Constants
-from task_generator.manager.map_manager import MapManager
-from task_generator.manager.obstacle_manager import ObstacleManager
-from task_generator.manager.robot_manager import RobotManager
 from task_generator.tasks.scenario import ScenarioTask
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.tasks.base_task import BaseTask
@@ -35,7 +31,7 @@ class RandomScenarioTask(ScenarioTask, ScenarioInterface, ObstacleInterface):
             self._obstacle_manager.reset()
             self._setup_scenario(self._generate_scenario())
             return False
-    
+
         return callback
 
     def _generate_scenario(
@@ -97,7 +93,7 @@ class RandomScenarioTask(ScenarioTask, ScenarioInterface, ObstacleInterface):
         static_obstacles_array: List[Obstacle] = list()
         interactive_obstacles_array: List[Obstacle] = list()
 
-        #TODO load this from the main loaders
+        # TODO load this from the main loaders
         obstacle_path: str = os.path.join(
             RosPack().get_path("arena-simulation-setup"), "obstacles")
         dynamic_obstacle_path: str = os.path.join(
@@ -137,14 +133,13 @@ class RandomScenarioTask(ScenarioTask, ScenarioInterface, ObstacleInterface):
                 dynamic_obstacles_array.append(obstacle)
 
         return Scenario(
-            obstacles = ScenarioObstacles(
+            obstacles=ScenarioObstacles(
                 dynamic=dynamic_obstacles_array,
                 static=static_obstacles_array,
                 interactive=interactive_obstacles_array
             ),
-            map = ScenarioMap(yaml=dict(), xml=ET.ElementTree(ET.Element("dummy")), path=""),
-            resets = 0,
-            robots = []
+            map=ScenarioMap(yaml=dict(), xml=ET.ElementTree(
+                ET.Element("dummy")), path=""),
+            resets=0,
+            robots=[]
         )
-    
-        

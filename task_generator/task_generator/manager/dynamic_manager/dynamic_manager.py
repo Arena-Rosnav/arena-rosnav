@@ -6,6 +6,7 @@ from task_generator.simulators.base_simulator import BaseSimulator
 from typing import Callable, Collection, Dict
 from geometry_msgs.msg import Point, PoseStamped
 
+
 class DynamicManager:
 
     _namespace: str
@@ -15,7 +16,7 @@ class DynamicManager:
     _ns_prefix: Callable[..., str]
     _goal_pub: rospy.Publisher
 
-    #TODO temporary
+    # TODO temporary
     _default_actor_model: ModelWrapper
 
     def __init__(self, namespace: str, simulator: BaseSimulator):
@@ -32,7 +33,7 @@ class DynamicManager:
         pkg_path = RosPack().get_path('arena-simulation-setup')
         default_actor_model_name = "actor2"
 
-        #TODO get rid of this once random_scenario loads models randomly
+        # TODO get rid of this once random_scenario loads models randomly
         actor_model_name: str = str(rospy.get_param(
             '~actor_model_name', default_actor_model_name))
 

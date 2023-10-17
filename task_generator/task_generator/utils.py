@@ -178,7 +178,7 @@ class ModelLoader:
                 return self._cache[(model_type, model)]
 
         else:
-            #TODO refactor so None is returned instead of raising error
+            # TODO refactor so None is returned instead of raising error
             raise FileNotFoundError(
                 f"no model {model} among {only} found in {self._model_dir}")
 

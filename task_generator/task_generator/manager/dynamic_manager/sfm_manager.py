@@ -3,13 +3,12 @@
 import dataclasses
 import itertools
 import time
-from typing import Any, Callable, Dict, Iterable, List, Tuple
+from typing import Iterable
 
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
 from task_generator.manager.dynamic_manager.utils import KnownObstacles, SDFUtil
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.shared import Model, ModelType, PositionOrientation, Waypoint
-from task_generator.utils import NamespaceIndexer
 from task_generator.constants import Constants
 
 import rospy
@@ -19,10 +18,10 @@ import xml.etree.ElementTree as ET
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
-#TODO(@voshch) make this universal
+# TODO(@voshch) make this universal
 
 
-def fill_actor(model: Model, name: str, position: PositionOrientation, waypoints: Iterable[Waypoint]) -> Model:
+def process_SDF(model: Model, name: str, position: PositionOrientation, waypoints: Iterable[Waypoint]) -> Model:
 
     xml = SDFUtil.parse(model.description)
 
@@ -91,24 +90,26 @@ class SFMManager(DynamicManager):
 
             obstacle = dataclasses.replace(obstacle, name=obstacle.name)
 
-            known_obstacle = self._known_obstacles.create(obstacle.name, obstacle=obstacle)
+            known_obstacle = self._known_obstacles.create(
+                obstacle.name, obstacle=obstacle)
 
-            #TODO aggregate deletes & spawns and leverage simulator parallelization
-            #TODO find a solution without respawning
+            # TODO aggregate deletes & spawns and leverage simulator parallelization
+            # TODO find a solution without respawning
             if known_obstacle.spawned:
-                self._simulator.delete_obstacle(name=known_obstacle.obstacle.name)
+                self._simulator.delete_obstacle(
+                    name=known_obstacle.obstacle.name)
                 known_obstacle.spawned = False
                 time.sleep(0.15)
 
                 known_obstacle.obstacle = obstacle
-                self._simulator.spawn_obstacle(obstacle=known_obstacle.obstacle)
+                self._simulator.spawn_obstacle(
+                    obstacle=known_obstacle.obstacle)
                 known_obstacle.spawned = True
             else:
                 self._simulator.spawn_obstacle(known_obstacle.obstacle)
                 known_obstacle.spawned = True
 
             time.sleep(0.05)
-            
 
     def spawn_dynamic_obstacles(self, obstacles):
 
@@ -120,24 +121,26 @@ class SFMManager(DynamicManager):
 
             model = obstacle.model.override(
                 model_type=ModelType.SDF,
-                override=lambda m: fill_actor(
+                override=lambda m: process_SDF(
                     model=m, name=name, position=obstacle.position, waypoints=obstacle.waypoints)
             )
 
-
             obstacle = dataclasses.replace(obstacle, name=name, model=model)
 
-            known_obstacle = self._known_obstacles.create(obstacle.name, obstacle=obstacle)
+            known_obstacle = self._known_obstacles.create(
+                obstacle.name, obstacle=obstacle)
 
-            #TODO aggregate deletes & spawns and leverage simulator parallelization
-            #TODO find a solution without respawning
+            # TODO aggregate deletes & spawns and leverage simulator parallelization
+            # TODO find a solution without respawning
             if known_obstacle.spawned:
-                self._simulator.delete_obstacle(name=known_obstacle.obstacle.name)
+                self._simulator.delete_obstacle(
+                    name=known_obstacle.obstacle.name)
                 known_obstacle.spawned = False
                 time.sleep(0.15)
 
                 known_obstacle.obstacle = obstacle
-                self._simulator.spawn_obstacle(obstacle=known_obstacle.obstacle)
+                self._simulator.spawn_obstacle(
+                    obstacle=known_obstacle.obstacle)
                 known_obstacle.spawned = True
             else:
                 self._simulator.spawn_obstacle(known_obstacle.obstacle)
@@ -146,7 +149,7 @@ class SFMManager(DynamicManager):
             time.sleep(0.05)
 
     def spawn_line_obstacle(self, name, _from, _to):
-        #TODO
+        # TODO
         pass
 
     def remove_obstacles(self):
@@ -154,5 +157,5 @@ class SFMManager(DynamicManager):
             if obstacle.spawned:
                 self._simulator.delete_obstacle(name=obstacle_id)
                 time.sleep(0.05)
-            
+
         self._known_obstacles.clear()

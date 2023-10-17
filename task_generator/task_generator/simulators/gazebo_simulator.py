@@ -64,7 +64,7 @@ class GazeboSimulator(BaseSimulator):
 
     # ROBOT
 
-    def move_entity(self, pos, name):
+    def move_entity(self, name, pos):
 
         request = SetModelStateRequest()
         request.model_state = ModelState()

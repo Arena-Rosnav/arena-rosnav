@@ -8,7 +8,7 @@ from task_generator.shared import DynamicObstacle, Obstacle, Waypoint
 from task_generator.tasks.base_task import BaseTask
 from task_generator.tasks.utils import ObstacleInterface
 
-#TODO generate this in the instance
+# TODO generate this in the instance
 dynamic_obstacles_random = random.randint(
     Constants.Random.MIN_DYNAMIC_OBS, Constants.Random.MAX_DYNAMIC_OBS)
 static_obstacles_random = random.randint(
@@ -28,14 +28,14 @@ class RandomTask(BaseTask, ObstacleInterface):
 
     @BaseTask.reset_helper(parent=BaseTask)
     def reset(self, static_obstacles: Optional[int] = None, dynamic_obstacles: Optional[int] = None, **kwargs):
-        
+
         def callback():
             self._reset_robot_and_obstacles(
                 static_obstacles=static_obstacles,
                 dynamic_obstacles=dynamic_obstacles
             )
             return False
-        
+
         return callback
 
     def _reset_robot_and_obstacles(self, dynamic_obstacles: Optional[int] = None, static_obstacles: Optional[int] = None):

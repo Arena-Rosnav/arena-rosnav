@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import rospkg
 import rospy
@@ -46,7 +46,7 @@ class StagedRandomTask(RandomTask):
         self.namespace = namespace
         self.namespace_prefix = f"/{namespace}/" if namespace else ""
 
-        #TODO rework this
+        # TODO rework this
         if paths is None:
             paths = dict(
                 curriculum=os.path.join(rospkg.RosPack().get_path(
@@ -140,14 +140,13 @@ class StagedRandomTask(RandomTask):
         self._config_lock.release()
 
     @BaseTask.reset_helper(parent=RandomTask)
-    def reset(self, stage: Optional[int]=None, **kwargs):
+    def reset(self, stage: Optional[int] = None, **kwargs):
 
         def callback():
             self._init_stage(stage=stage, **kwargs)
             return False
-        
+
         return callback
-        
 
     def _init_stage(self, stage: Optional[int] = None, **kwargs):
 

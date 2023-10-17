@@ -1,6 +1,6 @@
 import dataclasses
 import io
-from typing import Collection, Dict, Optional, Union
+from typing import Dict, Optional, Union
 import xml.etree.ElementTree as ET
 
 from task_generator.shared import ObstacleProps
@@ -32,7 +32,7 @@ class SDFUtil:
     def set_name(sdf: ET.ElementTree, name: str, tag="model") -> None:
         root = SDFUtil.get_model_root(sdf, tag)
 
-        #TODO reconsider whether this should fail silently
+        # TODO reconsider whether this should fail silently
         if root is not None:
             root.set("name", name)
 
@@ -55,6 +55,7 @@ class KnownObstacle:
     obstacle: ObstacleProps
     spawned: bool = False
 
+
 class KnownObstacles:
     """
     Helper interface to store known obstacles
@@ -69,23 +70,24 @@ class KnownObstacles:
     def forget(self, name: str):
         del self._known_obstacles[name]
 
-    def create(self, name: str, obstacle: ObstacleProps, spawned:bool=False) -> KnownObstacle:
+    def create(self, name: str, obstacle: ObstacleProps, spawned: bool = False) -> KnownObstacle:
         if name not in self._known_obstacles:
-            self._known_obstacles[name] = KnownObstacle(obstacle=obstacle, spawned=spawned)
-        
+            self._known_obstacles[name] = KnownObstacle(
+                obstacle=obstacle, spawned=spawned)
+
         return self._known_obstacles[name]
-    
+
     def get(self, name: str) -> Optional[KnownObstacle]:
         return self._known_obstacles.get(name, None)
-    
+
     def keys(self):
         return self._known_obstacles.keys()
-    
+
     def values(self):
         return self._known_obstacles.values()
-    
+
     def items(self):
         return self._known_obstacles.items()
-    
+
     def clear(self):
         return self._known_obstacles.clear()
