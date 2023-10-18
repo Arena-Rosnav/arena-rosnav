@@ -38,6 +38,8 @@ namespace gazebo
             
             this->animationFactor = _sdf->Get<double>("animation_factor", 1.0).first;
 
+            this->modelHeight = _sdf->Get<double>("model_height", 2.0).first / 2.0;
+
             rosNode.reset(new ros::NodeHandle("gazebo_client"));
             ros::SubscribeOptions so = ros::SubscribeOptions::create<pedsim_msgs::AgentStates>("/pedsim_simulator/simulated_agents", 1, boost::bind(&PedsimGazeboActorPlugin::OnRosMsg, this, _1), ros::VoidPtr(), &rosQueue);
             rosSub = rosNode->subscribe(so);
@@ -83,7 +85,7 @@ namespace gazebo
                 newPose.Pos().Set(
                     agentState.pose.position.x,
                     agentState.pose.position.y,
-                    agentState.pose.position.z + 1.);
+                    agentState.pose.position.z + this->modelHeight);
                 newPose.Rot() = ignition::math::Quaterniond(M_PI_2, 0, yaw.Radian() + M_PI_2); // P-R-Y
 
                 try
@@ -121,6 +123,7 @@ namespace gazebo
         physics::ModelPtr model;
         long unsigned int id;
         double animationFactor;
+        double modelHeight;
         
     };
     GZ_REGISTER_MODEL_PLUGIN(PedsimGazeboActorPlugin)
