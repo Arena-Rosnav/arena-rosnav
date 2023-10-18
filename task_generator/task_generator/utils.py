@@ -120,10 +120,6 @@ class NamespaceIndexer:
 
 class _ModelLoader:
     @staticmethod
-    def list(model_dir: str) -> Collection[str]:
-        ...
-
-    @staticmethod
     def load(model_dir: str, model: str, **kwargs) -> Optional[Model]:
         ...
 
@@ -153,8 +149,7 @@ class ModelLoader:
     @property
     def models(self) -> List[str]:
         if not len(self._models):
-            self._models = list(set([name for loader in self._registry.values(
-            ) for name in loader.list(self._model_dir)]))
+            self._models = next(os.walk(self._model_dir))[1]
 
         return self._models
 
@@ -193,13 +188,9 @@ class ModelLoader:
 class _ModelLoader_YAML(_ModelLoader):
 
     @staticmethod
-    def list(model_dir):
-        return [name for name in next(os.walk(model_dir))[2] if os.path.splitext(name) == "yaml"]
-
-    @staticmethod
     def load(model_dir, model, **kwargs):
 
-        model_path = os.path.join(model_dir, model, f"{model}.model.yaml")
+        model_path = os.path.join(model_dir, model, "yaml", f"{model}.yaml")
 
         try:
             with open(model_path) as f:
@@ -221,13 +212,9 @@ class _ModelLoader_YAML(_ModelLoader):
 class _ModelLoader_SDF(_ModelLoader):
 
     @staticmethod
-    def list(model_dir):
-        return next(os.walk(model_dir))[1]
-
-    @staticmethod
     def load(model_dir, model, **kwargs):
 
-        model_path = os.path.join(model_dir, model, "model.sdf")
+        model_path = os.path.join(model_dir, model, "sdf", f"{model}.sdf")
 
         try:
             with open(model_path) as f:
@@ -247,10 +234,6 @@ class _ModelLoader_SDF(_ModelLoader):
 
 @ModelLoader.model(ModelType.URDF)
 class _ModelLoader_URDF(_ModelLoader):
-
-    @staticmethod
-    def list(model_dir):
-        return next(os.walk(model_dir))[1]
 
     @staticmethod
     def load(model_dir, model, **kwargs):
