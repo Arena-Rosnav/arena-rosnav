@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Callable, Collection, Dict, Iterable, List, Sequence, Tuple, overload
+from typing import Callable, Collection, Dict, Iterable, List, Optional, Sequence, Tuple, overload
 
 import enum
 
@@ -73,15 +73,20 @@ class ModelWrapper:
         clone._override = self._override
         return clone
 
-    def override(self, model_type: ModelType, override: Callable[[Model], Model], noload: bool = False) -> ModelWrapper:
+    def override(self, model_type: ModelType, override: Callable[[Model], Model], noload: bool = False, name: Optional[str] = None) -> ModelWrapper:
         """
         Create new ModelWrapper with an overridden ModelType callback
         @model_type: Which ModelType to override
         @override: Mapping function (Model)->Model which replaces the loaded model with a new one
-        @noload: If True, indicates that the original Model is not used by the override function and a dummy Model can be passed to it instead
+        @noload: (default: False) If True, indicates that the original Model is not used by the override function and a dummy Model can be passed to it instead
+        @name: (optional) If set, overrides name of ModelWrapper
         """
         clone = self.clone()
         clone._override = {**self._override, model_type: (noload, override)}
+
+        if name is not None:
+            clone._name = name
+
         return clone
 
     @overload

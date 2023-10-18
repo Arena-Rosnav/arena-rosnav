@@ -54,6 +54,7 @@ class SDFUtil:
 class KnownObstacle:
     obstacle: ObstacleProps
     spawned: bool = False
+    used: bool = False
 
 
 class KnownObstacles:
@@ -68,26 +69,53 @@ class KnownObstacles:
         self._known_obstacles = dict()
 
     def forget(self, name: str):
+        """
+        Delete obstacle.
+        @name: name of obstacle
+        """
         del self._known_obstacles[name]
 
-    def create(self, name: str, obstacle: ObstacleProps, spawned: bool = False) -> KnownObstacle:
+    def create_or_get(self, name: str, **kwargs) -> KnownObstacle:
+        """
+        Get an existing obstacle or create it if it doesn't exist. To overwrite an existing obstacle, first remove it using forget().
+        @name: name of obstacle
+        @kwargs: arguments passed to KnownObstacle constructor
+        """
         if name not in self._known_obstacles:
-            self._known_obstacles[name] = KnownObstacle(
-                obstacle=obstacle, spawned=spawned)
+            self._known_obstacles[name] = KnownObstacle(**kwargs)
 
         return self._known_obstacles[name]
 
     def get(self, name: str) -> Optional[KnownObstacle]:
+        """
+        Get an existing obstacle or return None if it doesn't exist.
+        @name: name of obstacle
+        """
         return self._known_obstacles.get(name, None)
 
     def keys(self):
+        """
+        Get internal dict_keys.
+        """
         return self._known_obstacles.keys()
 
     def values(self):
+        """
+        Get internal dict_values.
+        """
         return self._known_obstacles.values()
 
     def items(self):
+        """
+        Get internal dict_items.
+        """
         return self._known_obstacles.items()
 
     def clear(self):
+        """
+        Clear internal dict.
+        """
         return self._known_obstacles.clear()
+    
+    def __contains__(self, item: str) -> bool:
+        return item in self._known_obstacles

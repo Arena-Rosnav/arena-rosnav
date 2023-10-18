@@ -67,8 +67,8 @@ class ScenarioTask(BaseTask, ScenarioInterface):
         def callback():
             if self._reset_count >= self._desired_resets:
                 return True
-            self._obstacle_manager.reset() # remove this once obstacle reusing works
-            self._setup_scenario(self._scenario)
+            self._obstacle_manager.respawn(lambda: self._setup_scenario(self._scenario))
+            
             self._reset_count += 1
             return False
     

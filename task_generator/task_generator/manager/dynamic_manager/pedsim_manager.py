@@ -204,8 +204,27 @@ class PedsimManager(DynamicManager):
 
             srv.InteractiveObstacles.append(msg)  # type: ignore
 
-            self._known_obstacles.create(
-                pedsim_name, obstacle=obstacle, spawned=False)
+            known = self._known_obstacles.get(pedsim_name)
+            if known is not None:
+                if known.obstacle.name != obstacle.name:
+                    raise RuntimeError(f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {pedsim_name} (did you forget to call remove_obstacles?)")
+
+                known.used = True
+
+                # TODO static obstacles don't have collisions if not re-spawned but moved instead, remove this once it works without respawning
+                self._simulator.delete_obstacle(pedsim_name)
+                known.spawned = False
+                #end 
+
+            else:
+                known = self._known_obstacles.create_or_get(
+                    name=pedsim_name,
+                    obstacle=obstacle,
+                    spawned=False,
+                    used=True
+                )
+
+            
 
         max_num_try = 1
         i_curr_try = 0
@@ -311,12 +330,24 @@ class PedsimManager(DynamicManager):
                 obstacle,
                 model=obstacle.model.override(
                     model_type=ModelType.SDF,
-                    override=functools.partial(process_SDF, str(pedsim_name))
+                    override=functools.partial(process_SDF, str(pedsim_name)),
+                    name=pedsim_name
                 )
             )
 
-            self._known_obstacles.create(
-                pedsim_name, obstacle=obstacle, spawned=False)
+            known = self._known_obstacles.get(pedsim_name)
+            if known is not None:
+                if known.obstacle.name != obstacle.name:
+                    raise RuntimeError(f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {pedsim_name} (did you forget to call remove_obstacles?)")
+
+                known.used = True
+            else:
+                known = self._known_obstacles.create_or_get(
+                    name=pedsim_name,
+                    obstacle=obstacle,
+                    spawned=False,
+                    used=True
+                )
 
         max_num_try = 1
         i_curr_try = 0
@@ -338,22 +369,22 @@ class PedsimManager(DynamicManager):
     def spawn_line_obstacle(self, name, _from, _to):
         return
 
-    def remove_obstacles(self):
+    def unuse_obstacles(self):
         self._remove_all_interactive_obstacles_srv.call()
         self._remove_peds_srv.call()
-        # TODO mechanism to remove static obstacles
 
+        for obstacle in self._known_obstacles.values():
+            obstacle.used = False
+
+    def remove_obstacles(self, purge):
         to_forget: List[str] = list()
 
         for obstacle_id, obstacle in self._known_obstacles.items():
-            if isinstance(obstacle.obstacle, DynamicObstacle):
-                continue
-
-            if obstacle.spawned:
+            if purge or not obstacle.used:
                 self._simulator.delete_obstacle(name=obstacle_id)
                 obstacle.spawned = False
-
-            to_forget.append(obstacle_id)
+                obstacle.used = False
+                to_forget.append(obstacle_id)
 
         for obstacle_id in to_forget:
             self._known_obstacles.forget(name=obstacle_id)
@@ -393,15 +424,15 @@ class PedsimManager(DynamicManager):
             actor_pose = actor.pose
 
             if obstacle.spawned:
-                continue
-                self._simulator.move_entity(
-                    name=actor_id,
-                    pos=(
-                        actor_pose.position.x,
-                        actor_pose.position.y,
-                        actor_pose.orientation.z
-                    )
-                )
+                pass;# handled by pedsim
+                # self._simulator.move_entity(
+                #     name=actor_id,
+                #     pos=(
+                #         actor_pose.position.x,
+                #         actor_pose.position.y,
+                #         actor_pose.orientation.z
+                #     )
+                # )
 
             else:
                 rospy.logdebug(

@@ -28,8 +28,8 @@ class RandomScenarioTask(ScenarioTask, ScenarioInterface, ObstacleInterface):
     def reset(self, **kwargs):
 
         def callback():
-            self._obstacle_manager.reset()
-            self._setup_scenario(self._generate_scenario())
+            self._obstacle_manager.respawn(lambda: self._setup_scenario(self._generate_scenario()))
+            
             return False
 
         return callback

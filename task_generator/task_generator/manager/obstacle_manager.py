@@ -1,5 +1,5 @@
 import random
-from typing import Collection, Iterator
+from typing import Any, Callable, Collection, Iterator
 
 import numpy as np
 import yaml
@@ -78,12 +78,23 @@ class ObstacleManager:
 
         self._dynamic_manager.spawn_obstacles(obstacles=setups)
 
-    def reset(self):
+    def respawn(self, callback: Callable[[], Any]):
+        """
+        Unuse obstacles, (re-)use them in callback, finally remove unused obstacles
+        @callback: Function to call between unuse and remove
+        """
+        self._dynamic_manager.unuse_obstacles()
+        callback()
+        self._dynamic_manager.remove_obstacles(purge=False)
 
+    def reset(self):
+        """
+        Unuse and remove all obstacles
+        """
         if self.first_reset:
             self.first_reset = False
         else:
-            self._dynamic_manager.remove_obstacles()
+            self._dynamic_manager.remove_obstacles(purge=True)
 
     # TODO refactor this with a registry
 

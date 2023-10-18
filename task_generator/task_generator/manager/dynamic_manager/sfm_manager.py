@@ -90,7 +90,7 @@ class SFMManager(DynamicManager):
 
             obstacle = dataclasses.replace(obstacle, name=obstacle.name)
 
-            known_obstacle = self._known_obstacles.create(
+            known_obstacle = self._known_obstacles.create_or_get(
                 obstacle.name, obstacle=obstacle)
 
             # TODO aggregate deletes & spawns and leverage simulator parallelization
@@ -127,7 +127,7 @@ class SFMManager(DynamicManager):
 
             obstacle = dataclasses.replace(obstacle, name=name, model=model)
 
-            known_obstacle = self._known_obstacles.create(
+            known_obstacle = self._known_obstacles.create_or_get(
                 obstacle.name, obstacle=obstacle)
 
             # TODO aggregate deletes & spawns and leverage simulator parallelization
@@ -152,7 +152,7 @@ class SFMManager(DynamicManager):
         # TODO
         pass
 
-    def remove_obstacles(self):
+    def unuse_obstacles(self):
         for obstacle_id, obstacle in self._known_obstacles.items():
             if obstacle.spawned:
                 self._simulator.delete_obstacle(name=obstacle_id)
