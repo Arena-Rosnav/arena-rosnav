@@ -42,8 +42,6 @@ class RandomScenarioTask(ScenarioTask, ScenarioInterface, ObstacleInterface):
 
         robot_positions: List[Waypoint] = []  # may be needed in the future idk
 
-        interactive_obstacles: int = 0
-
         for manager in self._robot_managers:
 
             start_pos = self._map_manager.get_random_pos_on_map(
@@ -56,7 +54,6 @@ class RandomScenarioTask(ScenarioTask, ScenarioInterface, ObstacleInterface):
             robot_positions.append(start_pos)
             robot_positions.append(goal_pos)
 
-        self._obstacle_manager.reset()
         self._map_manager.init_forbidden_zones()
 
         if dynamic_obstacles is None:

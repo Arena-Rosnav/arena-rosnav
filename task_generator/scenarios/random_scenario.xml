@@ -11,7 +11,7 @@
     <yaml>shelf.model.yaml</yaml>
   </obstacle>
   <obstacle name="adult">
-    <num>15</num>
+    <num>5</num>
     <name>adult</name>
     <yaml>person_two_legged.model.yaml</yaml>
   </obstacle>
