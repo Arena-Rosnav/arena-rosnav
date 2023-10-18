@@ -3,7 +3,7 @@ import json
 import os
 import random
 import sys
-from typing import Any, Dict, Generator, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple
 
 import numpy as np
 import yaml
@@ -18,6 +18,8 @@ from task_generator.manager.map_manager import MapManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.utils import ModelLoader, rosparam_get
+
+from std_msgs.msg import Bool
 
 import xml.etree.ElementTree as ET
 
@@ -250,9 +252,6 @@ class RandomObstacleList:
 class RandomInterface(ObstacleInterface, ManagerProps, ModelloaderProps):
 
     def _load_obstacle_list(self) -> RandomObstacleList:
-
-        
-
         def str_to_RandomList(value: list) -> RandomList:
             #TODO optional probability weighting of models in config
             return dict.fromkeys(value, 1)
@@ -336,3 +335,68 @@ class RandomInterface(ObstacleInterface, ManagerProps, ModelloaderProps):
             ])
 
         return False, (0, 0, 0)
+
+
+# StagedInterface
+
+@dataclass
+class Stage:
+    static: int
+    interactive: int
+    dynamic: int
+    goal_radius: Optional[float]
+
+StageIndex = int
+Stages = Dict[StageIndex, Stage]
+
+
+class StagedInterface(ObstacleInterface, ManagerProps, ModelloaderProps):
+
+    # TODO move to Stages
+    @staticmethod
+    def parse(config: Dict[int, Dict]) -> Stages:
+        return {
+            i:Stage(
+                static=stage.get("static", 0),
+                interactive=stage.get("interactive", 0),
+                dynamic=stage.get("dynamic", 0),
+                goal_radius=stage.get("goal_radius")
+            )
+            for i, stage in config.items()
+        }
+
+    def _subscribe(self, namespace:str, cb_previous:Callable, cb_next:Callable):
+        rospy.Subscriber(
+            f"{namespace}next_stage", Bool, cb_next
+        )
+        rospy.Subscriber(
+            f"{namespace}previous_stage", Bool, cb_previous
+        )
+
+    def _publish_curr_stage(self, stage: StageIndex):
+        rospy.set_param("/curr_stage", stage)
+
+    def _publish_last_state_reached(self, reached: bool):
+        rospy.set_param("/last_state_reached", reached)
+
+    def _check_start_stage(self, stages: Stages, start_stage: StageIndex):
+        assert isinstance(
+            start_stage, int
+        ), f"Given start stage {start_stage} is not an integer"
+
+        assert start_stage >= 1 and start_stage <= len(stages), (
+            "Start stage given for training curriculum out of bounds! Has to be between {1 to %d}!"
+            % len(stages)
+        )
+
+    def _read_stages_from_file(self, path: str) -> Stages:
+        assert os.path.isfile(path), f"{path} is not a file"
+
+        with open(path, "r") as file:
+            return StagedInterface.parse(yaml.load(file, Loader=yaml.FullLoader))
+
+    def _populate_goal_radius(self, goal_radius: Optional[float]):
+        if goal_radius is None:
+            goal_radius = rosparam_get(float, "/goal_radius", 0.3)
+
+        rospy.set_param("/goal_radius", goal_radius)

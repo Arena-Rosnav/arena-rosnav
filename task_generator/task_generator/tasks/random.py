@@ -26,9 +26,9 @@ class RandomTask(BaseTask, RandomInterface):
     _gen_interactive: Generator[int, None, None]
     _gen_dynamic: Generator[int, None, None]
 
-    static_obstacles: RandomList
-    interactive_obstacles: RandomList
-    dynamic_obstacles: RandomList
+    _static_obstacles: RandomList
+    _interactive_obstacles: RandomList
+    _dynamic_obstacles: RandomList
 
     def __init__(
         self,
@@ -51,9 +51,9 @@ class RandomTask(BaseTask, RandomInterface):
         self._gen_dynamic = RandomInterface._randrange_generator(obstacle_ranges.dynamic)
 
         allowed_obstacles = RandomInterface._load_obstacle_list(self)
-        self.static_obstacles = allowed_obstacles.static
-        self.interactive_obstacles = allowed_obstacles.interactive
-        self.dynamic_obstacles = allowed_obstacles.dynamic
+        self._static_obstacles = allowed_obstacles.static
+        self._interactive_obstacles = allowed_obstacles.interactive
+        self._dynamic_obstacles = allowed_obstacles.dynamic
 
     @BaseTask.reset_helper(parent=BaseTask)
     def reset(
@@ -76,13 +76,13 @@ class RandomTask(BaseTask, RandomInterface):
             n_dynamic_obstacles = next(self._gen_dynamic)
 
         if static_obstacles is None:
-            static_obstacles = self.static_obstacles
+            static_obstacles = self._static_obstacles
 
         if interactive_obstacles is None:
-            interactive_obstacles = self.interactive_obstacles
+            interactive_obstacles = self._interactive_obstacles
 
         if dynamic_obstacles is None:
-            dynamic_obstacles = self.dynamic_obstacles
+            dynamic_obstacles = self._dynamic_obstacles
 
         def callback():
 
