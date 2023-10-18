@@ -36,7 +36,6 @@ namespace gazebo
             if(!_sdf->GetAttribute("name")->Get<unsigned long>(this->id))
                 ROS_FATAL("PedsimGazeboActorPlugin: could not parse id");
             
-            
             this->animationFactor = _sdf->Get<double>("animation_factor", 1.0).first;
 
             rosNode.reset(new ros::NodeHandle("gazebo_client"));
@@ -89,10 +88,8 @@ namespace gazebo
 
                 try
                 {
-                    actor->SetWorldPose(newPose, true, true);
-
                     double newScriptTime = actor->ScriptTime() + (newPose.Pos() - oldPose.Pos()).Length() * this->animationFactor;
-                    ROS_WARN("%d: %lf by scaling %lf", this->id, newScriptTime, this->animationFactor);
+                    actor->SetWorldPose(newPose, true, true);
                     actor->SetScriptTime(newScriptTime);
                 }
                 catch (gazebo::common::Exception gz_ex)
