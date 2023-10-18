@@ -30,7 +30,6 @@ def process_SDF(name: str, base_model: Model) -> Model:
     base_desc = SDFUtil.parse(sdf=base_model.description)
     SDFUtil.set_name(sdf=base_desc, name=name, tag="actor")
     SDFUtil.delete_all(sdf=base_desc, selector=SDFUtil.SFM_PLUGIN_SELECTOR)
-    # SDFUtil.delete_all(sdf=base_desc, selector="animation")
 
     # actor = SDFUtil.get_model_root(base_desc, "actor")
 
@@ -56,7 +55,7 @@ def process_SDF(name: str, base_model: Model) -> Model:
     #     "<waypoint><time>0</time><pose>0 0 0 0 0 0</pose></waypoint>"))
     # # trajectory.append(ET.fromstring("<waypoint><time>1</time><pose>0 0 0 0 0 0</pose></waypoint>"))
 
-    pedsim_plugin = base_desc.find(SDFUtil.PEDSIM_PLUGIN_SELECTOR)
+    pedsim_plugin = base_desc.find(f".//{SDFUtil.PEDSIM_PLUGIN_SELECTOR}")
     if pedsim_plugin is not None:
         pedsim_plugin.set("name", name)
 
@@ -130,38 +129,6 @@ class PedsimManager(DynamicManager):
         rospy.Subscriber("/pedsim_simulator/simulated_agents",
                          AgentStates, self._dynamic_actor_poses_callback)
 
-        # override
-        xml_string: str = """
-            <?xml version="1.0" ?>
-            <sdf version="1.5">
-            <model name="actor_model">
-                <pose>0 0 0.75 0 0 0</pose>
-                <link name="link">
-                    <collision name="collision">
-                    <geometry>
-                        <box>
-                        <size>.5 .5 1.5</size>
-                        </box>
-                    </geometry>
-                    </collision>
-                    <visual name="visual">
-                    <geometry>
-                        <box>
-                        <size>.5 .5 1.5</size>
-                        </box>
-                    </geometry>
-                    </visual>
-                </link>
-            </model>
-        """
-
-        self.__default_pedsim_model = Model(
-            type=ModelType.SDF,
-            name="default_pedsim_model",
-            description=xml_string,
-            path=""
-        )
-
     def spawn_obstacles(self, obstacles):
 
         srv = SpawnInteractiveObstacles()
@@ -219,7 +186,7 @@ class PedsimManager(DynamicManager):
                 known = self._known_obstacles.create_or_get(
                     name=pedsim_name,
                     obstacle=obstacle,
-                    spawned=False,
+                    pedsim_spawned=False,
                     used=True
                 )
 
@@ -342,7 +309,7 @@ class PedsimManager(DynamicManager):
                 known = self._known_obstacles.create_or_get(
                     name=pedsim_name,
                     obstacle=obstacle,
-                    spawned=False,
+                    pedsim_spawned=False,
                     used=True
                 )
 
