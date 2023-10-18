@@ -1,9 +1,7 @@
-# GRADUALLY REPLACE COPIED METHODS FROM THIS FILE WITH NEW NON-PEDSIM IMPLEMENTATIONS
-
 import dataclasses
 import itertools
 import time
-from typing import Iterable
+from typing import Iterable, List
 
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
 from task_generator.manager.dynamic_manager.utils import KnownObstacles, SDFUtil
@@ -71,6 +69,8 @@ def process_SDF(model: Model, name: str, position: PositionOrientation, waypoint
 
     #####
 
+    SDFUtil.delete_all(sdf=xml, selector=SDFUtil.PEDSIM_PLUGIN_SELECTOR)
+
     return model.replace(description=SDFUtil.serialize(xml))
 
 
@@ -90,24 +90,21 @@ class SFMManager(DynamicManager):
 
             obstacle = dataclasses.replace(obstacle, name=obstacle.name)
 
-            known_obstacle = self._known_obstacles.create_or_get(
-                obstacle.name, obstacle=obstacle)
-
             # TODO aggregate deletes & spawns and leverage simulator parallelization
-            # TODO find a solution without respawning
-            if known_obstacle.spawned:
-                self._simulator.delete_obstacle(
-                    name=known_obstacle.obstacle.name)
-                known_obstacle.spawned = False
-                time.sleep(0.15)
+            known = self._known_obstacles.get(obstacle.name)
+            if known is not None:
+                if known.obstacle.name != obstacle.name:
+                    raise RuntimeError(f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {obstacle.name} (did you forget to call remove_obstacles?)")
 
-                known_obstacle.obstacle = obstacle
-                self._simulator.spawn_obstacle(
-                    obstacle=known_obstacle.obstacle)
-                known_obstacle.spawned = True
+                self._simulator.move_entity(obstacle.name, obstacle.position)
+                known.used = True
             else:
-                self._simulator.spawn_obstacle(known_obstacle.obstacle)
-                known_obstacle.spawned = True
+                known = self._known_obstacles.create_or_get(
+                    name=obstacle.name,
+                    obstacle=obstacle
+                )
+                self._simulator.spawn_obstacle(known.obstacle)
+                known.used = True
 
             time.sleep(0.05)
 
@@ -127,24 +124,24 @@ class SFMManager(DynamicManager):
 
             obstacle = dataclasses.replace(obstacle, name=name, model=model)
 
-            known_obstacle = self._known_obstacles.create_or_get(
-                obstacle.name, obstacle=obstacle)
 
             # TODO aggregate deletes & spawns and leverage simulator parallelization
-            # TODO find a solution without respawning
-            if known_obstacle.spawned:
-                self._simulator.delete_obstacle(
-                    name=known_obstacle.obstacle.name)
-                known_obstacle.spawned = False
-                time.sleep(0.15)
+            known = self._known_obstacles.get(obstacle.name)
+            if known is not None:
+                if known.obstacle.name != obstacle.name:
+                    raise RuntimeError(f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {obstacle.name} (did you forget to call remove_obstacles?)")
 
-                known_obstacle.obstacle = obstacle
-                self._simulator.spawn_obstacle(
-                    obstacle=known_obstacle.obstacle)
-                known_obstacle.spawned = True
+                self._simulator.move_entity(obstacle.name, obstacle.position)
+                known.used = True
+
             else:
-                self._simulator.spawn_obstacle(known_obstacle.obstacle)
-                known_obstacle.spawned = True
+                known = self._known_obstacles.create_or_get(
+                    name=obstacle.name,
+                    obstacle=obstacle,
+                    used=True
+                )
+                self._simulator.spawn_obstacle(known.obstacle)
+                known.used = True
 
             time.sleep(0.05)
 
@@ -153,9 +150,22 @@ class SFMManager(DynamicManager):
         pass
 
     def unuse_obstacles(self):
-        for obstacle_id, obstacle in self._known_obstacles.items():
-            if obstacle.spawned:
-                self._simulator.delete_obstacle(name=obstacle_id)
-                time.sleep(0.05)
 
-        self._known_obstacles.clear()
+        self.remove_obstacles(purge=True) # neither obstacle type can be used without respawning in gazebo (static obstacles lose collisions when moved, actor sfm plugin can't be modified on-the-fly)
+
+        for obstacle in self._known_obstacles.values():
+            obstacle.used = False
+
+    def remove_obstacles(self, purge):
+        to_forget: List[str] = list()
+
+        for obstacle_id, obstacle in self._known_obstacles.items():
+            if purge or not obstacle.used:
+                self._simulator.delete_obstacle(name=obstacle_id)
+                obstacle.used = False
+                time.sleep(0.05)
+                to_forget.append(obstacle_id)
+                
+
+        for obstacle_id in to_forget:
+            self._known_obstacles.forget(name=obstacle_id)

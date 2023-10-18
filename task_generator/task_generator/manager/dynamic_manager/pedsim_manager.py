@@ -56,8 +56,7 @@ def process_SDF(name: str, base_model: Model) -> Model:
     #     "<waypoint><time>0</time><pose>0 0 0 0 0 0</pose></waypoint>"))
     # # trajectory.append(ET.fromstring("<waypoint><time>1</time><pose>0 0 0 0 0 0</pose></waypoint>"))
 
-    pedsim_plugin = base_desc.find(
-        r""".//plugin[@filename='libPedsimGazeboActorPlugin.so']""")
+    pedsim_plugin = base_desc.find(SDFUtil.PEDSIM_PLUGIN_SELECTOR)
     if pedsim_plugin is not None:
         pedsim_plugin.set("name", name)
 
@@ -213,7 +212,7 @@ class PedsimManager(DynamicManager):
 
                 # TODO static obstacles don't have collisions if not re-spawned but moved instead, remove this once it works without respawning
                 self._simulator.delete_obstacle(pedsim_name)
-                known.spawned = False
+                known.pedsim_spawned = False
                 #end 
 
             else:
@@ -223,8 +222,6 @@ class PedsimManager(DynamicManager):
                     spawned=False,
                     used=True
                 )
-
-            
 
         max_num_try = 1
         i_curr_try = 0
@@ -372,7 +369,7 @@ class PedsimManager(DynamicManager):
     def unuse_obstacles(self):
         self._remove_all_interactive_obstacles_srv.call()
         self._remove_peds_srv.call()
-
+        
         for obstacle in self._known_obstacles.values():
             obstacle.used = False
 
@@ -382,7 +379,7 @@ class PedsimManager(DynamicManager):
         for obstacle_id, obstacle in self._known_obstacles.items():
             if purge or not obstacle.used:
                 self._simulator.delete_obstacle(name=obstacle_id)
-                obstacle.spawned = False
+                obstacle.pedsim_spawned = False
                 obstacle.used = False
                 to_forget.append(obstacle_id)
 
@@ -423,7 +420,7 @@ class PedsimManager(DynamicManager):
 
             actor_pose = actor.pose
 
-            if obstacle.spawned:
+            if obstacle.pedsim_spawned:
                 pass;# handled by pedsim
                 # self._simulator.move_entity(
                 #     name=actor_id,
@@ -451,7 +448,7 @@ class PedsimManager(DynamicManager):
                     )
                 )
 
-                obstacle.spawned = True
+                obstacle.pedsim_spawned = True
 
     def _respawn_obstacle(self, actor: Waypoint):
 
@@ -486,7 +483,7 @@ class PedsimManager(DynamicManager):
             z=actor.position.z
         )
 
-        if obstacle.spawned:
+        if obstacle.pedsim_spawned:
             self._simulator.move_entity(
                 pos=(
                     obstacle_position.x,
@@ -512,4 +509,4 @@ class PedsimManager(DynamicManager):
                 )
             )
 
-            obstacle.spawned = True
+            obstacle.pedsim_spawned = True

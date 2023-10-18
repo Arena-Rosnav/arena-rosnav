@@ -37,6 +37,7 @@ class SDFUtil:
             root.set("name", name)
 
     SFM_PLUGIN_SELECTOR = r"""plugin[@filename='libPedestrianSFMPlugin.so']"""
+    PEDSIM_PLUGIN_SELECTOR = r"""plugin[@filename='libPedsimGazeboActorPlugin.so']"""
     COLLISONS_PLUGIN_SELECTOR = r"""plugin[@filename='libActorCollisionsPlugin.so']"""
 
     @staticmethod
@@ -53,7 +54,7 @@ class SDFUtil:
 @dataclasses.dataclass
 class KnownObstacle:
     obstacle: ObstacleProps
-    spawned: bool = False
+    pedsim_spawned: bool = False
     used: bool = False
 
 
