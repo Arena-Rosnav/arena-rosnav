@@ -57,7 +57,7 @@ include_directories(
 )
 
 
-add_library(PedsimGazeboActorPlugin src/PedsimGazeboActorPlugin.cpp)
+add_library(PedsimGazeboActorPlugin SHARED src/PedsimGazeboActorPlugin.cc)
 target_link_libraries(PedsimGazeboActorPlugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 add_dependencies(PedsimGazeboActorPlugin ${catkin_EXPORTED_TARGETS})
 

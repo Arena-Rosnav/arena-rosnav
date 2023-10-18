@@ -21,6 +21,7 @@ namespace gazebo
     class PedsimGazeboActorPlugin : public ModelPlugin
     {
     public:
+
         PedsimGazeboActorPlugin() : ModelPlugin() {}
 
         void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
@@ -40,10 +41,10 @@ namespace gazebo
 
             this->modelHeight = _sdf->Get<double>("model_height", 2.0).first / 2.0;
 
-            rosNode.reset(new ros::NodeHandle("gazebo_client"));
-            ros::SubscribeOptions so = ros::SubscribeOptions::create<pedsim_msgs::AgentStates>("/pedsim_simulator/simulated_agents", 1, boost::bind(&PedsimGazeboActorPlugin::OnRosMsg, this, _1), ros::VoidPtr(), &rosQueue);
-            rosSub = rosNode->subscribe(so);
-            rosQueueThread = std::thread(std::bind(&PedsimGazeboActorPlugin::QueueThread, this));
+            this->rosNode.reset(new ros::NodeHandle("PEDSIM_ACTOR_" + std::to_string(this->id)));
+            ros::SubscribeOptions so = ros::SubscribeOptions::create<pedsim_msgs::AgentStates>("/pedsim_simulator/simulated_agents", 1, boost::bind(&PedsimGazeboActorPlugin::OnRosMsg, this, _1), ros::VoidPtr(), &this->rosQueue);
+            this->rosSub = this->rosNode->subscribe(so);
+            this->rosQueueThread = std::thread(std::bind(&PedsimGazeboActorPlugin::QueueThread, this));
             // in case you need to change/modify model on update
             // this->updateConnection_ = event::Events::ConnectWorldUpdateBegin(std::bind(&actorPosePlugin::OnUpdate, this));
 
@@ -107,9 +108,9 @@ namespace gazebo
         void QueueThread()
         {
             static const double timeout = 0.1;
-            while (rosNode->ok())
+            while (!this->shutdown && this->rosNode->ok())
             {
-                rosQueue.callAvailable(ros::WallDuration(timeout));
+                this->rosQueue.callAvailable(ros::WallDuration(timeout));
             }
         }
 
@@ -124,6 +125,8 @@ namespace gazebo
         long unsigned int id;
         double animationFactor;
         double modelHeight;
+
+        bool shutdown = false;
         
     };
     GZ_REGISTER_MODEL_PLUGIN(PedsimGazeboActorPlugin)

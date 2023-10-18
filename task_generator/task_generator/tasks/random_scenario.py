@@ -16,7 +16,7 @@ from task_generator.tasks.utils import ObstacleInterface, Scenario, ScenarioInte
 
 
 @TaskFactory.register(Constants.TaskMode.RANDOM_SCENARIO)
-class RandomScenarioTask(ScenarioTask, ScenarioInterface, ObstacleInterface):
+class RandomScenarioTask(BaseTask, ScenarioInterface, ObstacleInterface):
     """
         The random task spawns static and dynamic
         obstacles on every reset and will create
@@ -28,7 +28,7 @@ class RandomScenarioTask(ScenarioTask, ScenarioInterface, ObstacleInterface):
     def reset(self, **kwargs):
 
         def callback():
-            self._obstacle_manager.respawn(lambda: self._setup_scenario(self._generate_scenario()))
+            self._obstacle_manager.respawn(lambda: ScenarioInterface._setup_scenario(self, self._generate_scenario()))
             
             return False
 

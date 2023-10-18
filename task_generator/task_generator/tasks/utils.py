@@ -1,8 +1,9 @@
 from dataclasses import asdict, dataclass
 import json
 import os
+import random
 import sys
-from typing import Dict, List, Optional
+from typing import Any, Dict, Generator, List, Optional, Set, Tuple
 
 import numpy as np
 import yaml
@@ -10,15 +11,15 @@ import yaml
 import rospy
 import rospkg
 import rospy
+from task_generator.constants import Constants
 from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, PositionOrientation, Waypoint
 
 from task_generator.manager.map_manager import MapManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
-from task_generator.utils import ModelLoader
+from task_generator.utils import ModelLoader, rosparam_get
 
 import xml.etree.ElementTree as ET
-
 
 class ManagerProps:
     _obstacle_manager: ObstacleManager
@@ -227,3 +228,111 @@ class ScenarioInterface(ManagerProps, ModelloaderProps):
             manager.move_robot_to_pos(pos=robot.start[:2])
 
     
+
+# RandomInterface
+
+RandomRange = Tuple[int, int]
+
+@dataclass
+class RandomObstacleRanges:
+    static: RandomRange
+    interactive: RandomRange
+    dynamic: RandomRange
+
+RandomList = Dict[str, float]
+
+@dataclass
+class RandomObstacleList:
+    static: RandomList
+    interactive: RandomList
+    dynamic: RandomList
+
+class RandomInterface(ObstacleInterface, ManagerProps, ModelloaderProps):
+
+    def _load_obstacle_list(self) -> RandomObstacleList:
+
+        
+
+        def str_to_RandomList(value: list) -> RandomList:
+            #TODO optional probability weighting of models in config
+            return dict.fromkeys(value, 1)
+
+
+        return RandomObstacleList(
+            static=str_to_RandomList(value=rosparam_get(list, "~taskMode/random/static/models", self._model_loader.models)),
+            interactive=str_to_RandomList(value=rosparam_get(list, "~taskMode/random/interactive/models", self._model_loader.models)),
+            dynamic=str_to_RandomList(value=rosparam_get(list, "~taskMode/random/dynamic/models", self._dynamic_model_loader.models))
+        )
+
+    def _load_obstacle_ranges(self) -> RandomObstacleRanges:
+        return RandomObstacleRanges(
+            static=(
+                int(str(rosparam_get(int, "~taskMode/random/static/min", Constants.Random.MIN_STATIC_OBS))),
+                int(str(rosparam_get(int, "~taskMode/random/static/max", Constants.Random.MAX_STATIC_OBS)))
+            ),
+            interactive=(
+                int(str(rosparam_get(int, "~taskMode/random/interactive/min", Constants.Random.MIN_INTERACTIVE_OBS))),
+                int(str(rosparam_get(int, "~taskMode/random/interactive/max", Constants.Random.MAX_INTERACTIVE_OBS)))
+            ),
+            dynamic=(
+                int(str(rosparam_get(int, "~taskMode/random/dynamic/min", Constants.Random.MIN_DYNAMIC_OBS))),
+                int(str(rosparam_get(int, "~taskMode/random/dynamic/max", Constants.Random.MAX_DYNAMIC_OBS)))
+            )
+        )
+
+    @staticmethod
+    def _randrange_generator(r_range: RandomRange) -> Generator[int, None, None]:
+        range_min, range_max = r_range
+        range_max = max(range_min, range_max)
+        while True:
+            yield random.randint(range_min, range_max)
+
+    def _setup_random(
+        self,
+        n_static_obstacles: int,
+        n_interactive_obstacles: int,
+        n_dynamic_obstacles: int,
+        static_obstacles: RandomList,
+        interactive_obstacles: RandomList,
+        dynamic_obstacles: RandomList
+        ):
+
+        robot_positions: List[Waypoint] = []  # may be needed in the future idk
+
+        for manager in self._robot_managers:
+
+            start_pos = self._map_manager.get_random_pos_on_map(
+                manager.safe_distance)
+            goal_pos = self._map_manager.get_random_pos_on_map(
+                manager.safe_distance, forbidden_zones=[start_pos])
+
+            manager.reset(start_pos=start_pos[:2], goal_pos=goal_pos[:2])
+
+            robot_positions.append(start_pos)
+            robot_positions.append(goal_pos)
+
+        self._obstacle_manager.reset()
+        self._map_manager.init_forbidden_zones()
+
+        # Create static obstacles
+        if n_static_obstacles:
+            self._obstacle_manager.spawn_obstacles([
+                self._create_obstacle(name=model, model=self._model_loader.bind(model))
+                for model in random.choices(population=list(static_obstacles.keys()), weights=list(static_obstacles.values()), k=n_static_obstacles)
+            ])
+
+        # Create interactive obstacles
+        if n_interactive_obstacles:
+            self._obstacle_manager.spawn_obstacles([
+                self._create_obstacle(name=model, model=self._model_loader.bind(model))
+                for model in random.choices(population=list(interactive_obstacles.keys()), weights=list(interactive_obstacles.values()), k=n_interactive_obstacles)
+            ])
+
+        # Create dynamic obstacles
+        if n_dynamic_obstacles:
+            self._obstacle_manager.spawn_dynamic_obstacles([
+                self._create_dynamic_obstacle(name=model, model=self._dynamic_model_loader.bind(model))
+                for model in random.choices(population=list(dynamic_obstacles.keys()), weights=list(dynamic_obstacles.values()), k=n_dynamic_obstacles)
+            ])
+
+        return False, (0, 0, 0)

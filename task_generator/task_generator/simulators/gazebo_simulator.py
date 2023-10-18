@@ -11,12 +11,13 @@ from std_srvs.srv import Empty
 
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
+from task_generator.utils import rosparam_get
 from tf.transformations import quaternion_from_euler
 from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
 
-from task_generator.shared import ModelType, Robot
+from task_generator.shared import ModelType, PositionOrientation, Robot
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -24,12 +25,20 @@ T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
 @SimulatorFactory.register(Constants.Simulator.GAZEBO)
 class GazeboSimulator(BaseSimulator):
+
+    _goal_pub: rospy.Publisher
+    _robot_name: str
+
+    _unpause: rospy.ServiceProxy
+    _pause: rospy.ServiceProxy
+    _remove_model_srv: rospy.ServiceProxy
+
     def __init__(self, namespace: str):
 
         super().__init__(namespace)
         self._goal_pub = rospy.Publisher(self._ns_prefix(
             "/goal"), PoseStamped, queue_size=1, latch=True)
-        self._robot_name = rospy.get_param("robot_model", "")
+        self._robot_name = rosparam_get(str, "robot_model", "")
 
         rospy.wait_for_service("/gazebo/spawn_urdf_model")
         rospy.wait_for_service("/gazebo/spawn_sdf_model")
@@ -45,22 +54,22 @@ class GazeboSimulator(BaseSimulator):
         self._move_model_srv = rospy.ServiceProxy(
             "/gazebo/set_model_state", SetModelState, persistent=True
         )
-        self.unpause = rospy.ServiceProxy("/gazebo/unpause_physics", Empty)
-        self.pause = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
+        self._unpause = rospy.ServiceProxy("/gazebo/unpause_physics", Empty)
+        self._pause = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
 
         rospy.loginfo("Waiting for gazebo services...")
         rospy.wait_for_service("gazebo/spawn_sdf_model")
         rospy.wait_for_service("gazebo/delete_model")
 
         rospy.loginfo("service: spawn_sdf_model is available ....")
-        self.remove_model_srv = rospy.ServiceProxy(
+        self._remove_model_srv = rospy.ServiceProxy(
             "gazebo/delete_model", DeleteModel)
 
     def before_reset_task(self):
-        self.pause()
+        self._pause()
 
     def after_reset_task(self):
-        self.unpause()
+        self._unpause()
 
     # ROBOT
 
@@ -123,7 +132,7 @@ class GazeboSimulator(BaseSimulator):
         return res.success
 
     def delete_obstacle(self, name):
-        res: DeleteModelResponse = self.remove_model_srv(DeleteModelRequest(model_name=name))
+        res: DeleteModelResponse = self._remove_model_srv(DeleteModelRequest(model_name=name))
         return bool(res.success)
 
     def _publish_goal(self, goal):

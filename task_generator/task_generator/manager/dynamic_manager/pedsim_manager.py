@@ -16,10 +16,12 @@ from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManage
 from task_generator.manager.dynamic_manager.utils import KnownObstacles, SDFUtil
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.constants import Constants, Pedsim
-from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle
+from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle, PositionOrientation
 from task_generator.simulators.flatland_simulator import FlatlandSimulator
 
-from typing import List
+from typing import Generator, Iterator, List
+
+from task_generator.simulators.gazebo_simulator import GazeboSimulator
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -79,7 +81,8 @@ class PedsimManager(DynamicManager):
     _known_obstacles: KnownObstacles
 
     # TODO temporary
-    __default_pedsim_model: Model
+    _id_gen: Iterator[int]
+    # end
 
     def __init__(self, namespace: str, simulator: BaseSimulator):
 
@@ -128,6 +131,18 @@ class PedsimManager(DynamicManager):
                          Waypoints, self._interactive_actor_poses_callback)
         rospy.Subscriber("/pedsim_simulator/simulated_agents",
                          AgentStates, self._dynamic_actor_poses_callback)
+        
+        #temp
+        def gen_JAIL_POS(steps:int, x:int=1, y:int=0):
+            steps = max(steps,1)
+            while True:
+                x += y==steps
+                y %= steps
+                yield (-x,y,0)
+                y += 1
+        self.JAIL_POS = gen_JAIL_POS(10)
+        self._id_gen = itertools.count(20)
+        #end temp
 
     def spawn_obstacles(self, obstacles):
 
@@ -218,12 +233,10 @@ class PedsimManager(DynamicManager):
 
         self.agent_topic_str = ''
 
-        id_gen = itertools.count(20)
-
         for obstacle in obstacles:
             msg = Ped()
 
-            msg.id = next(id_gen)
+            msg.id = next(self._id_gen)
 
             pedsim_name = str(msg.id)
 
@@ -336,6 +349,7 @@ class PedsimManager(DynamicManager):
     def unuse_obstacles(self):
         self._remove_all_interactive_obstacles_srv.call()
         self._remove_peds_srv.call()
+        self._id_gen = itertools.count(20)
         
         for obstacle in self._known_obstacles.values():
             obstacle.used = False
@@ -345,6 +359,14 @@ class PedsimManager(DynamicManager):
 
         for obstacle_id, obstacle in self._known_obstacles.items():
             if purge or not obstacle.used:
+
+                # TODO remove this once actors can be deleted properly 
+                if isinstance(self._simulator, GazeboSimulator) and isinstance(obstacle.obstacle, DynamicObstacle):
+                    jail = next(self.JAIL_POS)
+                    self._simulator.move_entity(name=obstacle_id, pos=jail)
+                    continue;
+                # end
+
                 self._simulator.delete_obstacle(name=obstacle_id)
                 obstacle.pedsim_spawned = False
                 obstacle.used = False

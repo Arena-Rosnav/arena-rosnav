@@ -1,6 +1,6 @@
 import functools
 import subprocess
-from typing import Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type
+from typing import Callable, Collection, Dict, Iterator, List, Optional, Set, Tuple, Type, TypeVar
 
 
 import rospy
@@ -127,7 +127,7 @@ class _ModelLoader:
 class ModelLoader:
 
     _registry: Dict[ModelType, Type[_ModelLoader]] = {}
-    _models: List[str]
+    _models: Set[str]
 
     @classmethod
     def model(cls, model_type: ModelType):
@@ -140,16 +140,16 @@ class ModelLoader:
     def __init__(self, model_dir: str):
         self._model_dir = model_dir
         self._cache = dict()
-        self._models = []
+        self._models = set()
 
         # potentially expensive
         rospy.logdebug(
             f"models in {os.path.basename(model_dir)}: {self.models}")
 
     @property
-    def models(self) -> List[str]:
+    def models(self) -> Set[str]:
         if not len(self._models):
-            self._models = next(os.walk(self._model_dir))[1]
+            self._models = set(next(os.walk(self._model_dir))[1])
 
         return self._models
 
@@ -266,3 +266,10 @@ class _ModelLoader_URDF(_ModelLoader):
                 path=model_path
             )
             return model_obj
+
+T = TypeVar("T")
+_unspecified = rospy.client._Unspecified()
+def rosparam_get(cast:Type[T], param_name:str, default=_unspecified) -> T:
+    val = rospy.get_param(param_name=param_name, default=default)
+    assert isinstance(val, cast), f"param {param_name} is not of type {cast}"
+    return val
