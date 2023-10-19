@@ -1,3 +1,6 @@
+# For Unity Integration
+unity-ros package needs to be installed. Thus, run rosws update and compile with catkin_make. 
+
 ## Simple Installation
 
 Clone repo in any catkin ws or create new catkin ws
