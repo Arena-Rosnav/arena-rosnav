@@ -28,6 +28,10 @@
     local-name: ../utils/3rd-party-robot-packages
     uri: https://github.com/Arena-Rosnav/3rd-party-robot-packages
 
+- git:
+    local-name: ../utils/unity-ros-navigation
+    uri: https://github.com/Arena-Rosnav/unity-ros-navigation
+
 ### ARENA INFRASTRUCTURE
 
 - git:
