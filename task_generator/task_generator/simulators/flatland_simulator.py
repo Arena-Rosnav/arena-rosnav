@@ -11,9 +11,10 @@ from flatland_msgs.srv import (
     SpawnModels,
     DeleteModel,
     DeleteModelRequest,
+    DeleteModelResponse,
     DeleteModels,
     SpawnModelRequest,
-    SpawnModelsRequest
+    SpawnModelsRequest,
 )
 
 import flatland_msgs.msg
@@ -23,11 +24,9 @@ from task_generator.shared import ModelType
 from task_generator.utils import Utils
 from geometry_msgs.msg import Pose2D
 
-from ..constants import Constants
-from .base_simulator import BaseSimulator
-from .simulator_factory import SimulatorFactory
-
-
+from task_generator.constants import Constants
+from task_generator.simulators.base_simulator import BaseSimulator
+from task_generator.simulators.simulator_factory import SimulatorFactory
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
@@ -67,7 +66,8 @@ class FlatlandSimulator(BaseSimulator):
     def __init__(self, namespace):
         super().__init__(namespace)
         self._namespace = namespace
-        self._ns_prefix = lambda *x: os.path.join("" if namespace == "" else "/" + namespace, *x)
+        self._ns_prefix = lambda *x: os.path.join(
+            "" if namespace == "" else "/" + namespace, *x)
 
         self._move_robot_pub = rospy.Publisher(
             self._ns_prefix("move_model"), flatland_msgs.msg.MoveModelMsg, queue_size=10
@@ -75,10 +75,13 @@ class FlatlandSimulator(BaseSimulator):
 
         self._robot_name = rospy.get_param("robot_model", "")
         self._robot_radius = rospy.get_param("robot_radius", "")
-        self._is_training_mode = rospy.get_param("train_mode", "")
+        self._is_training_mode = rospy.get_param("train_mode", False)
         self._step_size = rospy.get_param("step_size", "")
         # self._robot_yaml_path = rospy.get_param("robot_yaml_path")
         self._tmp_model_path = str(rospy.get_param("tmp_model_path", "/tmp"))
+        self._additional_full_range_laser = rospy.get_param(
+            "laser/full_range_laser", False
+        )
 
         rospy.wait_for_service(self._ns_prefix("move_model"), timeout=T)
         rospy.wait_for_service(self._ns_prefix("spawn_model"), timeout=T)
@@ -109,8 +112,9 @@ class FlatlandSimulator(BaseSimulator):
     def after_reset_task(self):
         pass
 
-    def delete_obstacle(self, obstacle_id):
-        self._delete_model_srv(DeleteModelRequest(name=obstacle_id))
+    def delete_obstacle(self, name):
+        res: DeleteModelResponse = self._delete_model_srv(DeleteModelRequest(name=name))
+        return bool(res.success)
 
     # SPAWN OBSTACLES
     def spawn_obstacle(self, obstacle):
@@ -121,11 +125,61 @@ class FlatlandSimulator(BaseSimulator):
         request.yaml_path = model.description
         request.name = obstacle.name
         request.ns = self._namespace
-        request.pose = Pose2D(x=obstacle.position[0], y=obstacle.position[1], theta=obstacle.position[2])
+        request.pose = Pose2D(
+            x=obstacle.position[0], y=obstacle.position[1], theta=obstacle.position[2])
 
-        return obstacle.name
+        res = self.spawn_model(model.type, request)
 
-    def spawn_obstacles(self, obstacles):
+        return res.success
+
+    # ROBOT
+    def spawn_robot(self, robot):
+
+        model = robot.model.get(self.MODEL_TYPES)
+
+        file_content = self._update_plugin_topics(
+            read_yaml(StringIO(model.description)), robot.name)
+
+        request = SpawnModelRequest()
+        request.yaml_path = yaml.dump(file_content)
+        request.name = robot.namespace
+        request.ns = robot.namespace
+        request.pose = Pose2D(
+            x=robot.position[0], y=robot.position[1], theta=robot.position[2])
+
+        res = self.spawn_model(model.type, request)
+        
+        return res.success
+
+    def move_entity(self, name, pos):
+        pose = Pose2D()
+        pose.x = pos[0]
+        pose.y = pos[1]
+        pose.theta = pos[2]
+
+        move_model_request = MoveModelRequest()
+        move_model_request.name = name
+        move_model_request.pose = pose
+
+        self._move_model_srv(move_model_request)
+
+    def _update_plugin_topics(self, file_content: dict, namespace: str) -> dict:
+        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+            return file_content
+
+        plugins = file_content["plugins"]
+
+        for plugin in plugins:
+            if self._PLUGIN_PROPS_TO_EXTEND.get(plugin["type"]):
+                prop_names = self._PLUGIN_PROPS_TO_EXTEND.get(
+                    plugin["type"], [])
+
+                for name in prop_names:
+                    plugin[name] = os.path.join(namespace, plugin[name])
+
+        return file_content
+
+    def _spawn_obstacles(self, obstacles):
 
         request = SpawnModelsRequest()
 
@@ -146,63 +200,22 @@ class FlatlandSimulator(BaseSimulator):
 
         self._spawn_models_from_string_srv(request)
 
-    # ROBOT
-    def spawn_robot(self, robot):
-
-        model = robot.model.get(self.MODEL_TYPES)
-
-        file_content = self._update_plugin_topics(read_yaml(StringIO(model.description)), robot.name)
-
-        request = SpawnModelRequest()
-        request.yaml_path = yaml.dump(file_content)
-        request.name = robot.namespace
-        request.ns = robot.namespace
-        request.pose = Pose2D(x=robot.position[0], y=robot.position[1], theta=robot.position[2])
-
-        self.spawn_model(model.type, request)
-        return robot.name
-
-    def move_robot(self, pos, name = None):
-        pose = Pose2D()
-        pose.x = pos[0]
-        pose.y = pos[1]
-        pose.theta = pos[2]
-
-        move_model_request = MoveModelRequest()
-        move_model_request.name = name or self._robot_name
-        move_model_request.pose = pose
-
-        self._move_model_srv(move_model_request)
-
-    def _update_plugin_topics(self, file_content: dict, namespace: str) -> dict:
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            return file_content
-
-        plugins = file_content["plugins"]
-
-        for plugin in plugins:
-            if self._PLUGIN_PROPS_TO_EXTEND.get(plugin["type"]):
-                prop_names = self._PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], [])
-
-                for name in prop_names:
-                    plugin[name] = os.path.join(namespace, plugin[name])
-
-        return file_content
-
-
 
 def check_yaml_path(path: str) -> bool:
     return os.path.isfile(path)
-    
+
 
 def parse_yaml(content: str):
     return yaml.safe_load(content)
 
+
 @overload
 def read_yaml(yaml: StringIO): ...
 
+
 @overload
 def read_yaml(yaml: str): ...
+
 
 def read_yaml(yaml: Union[StringIO, str]) -> Any:
     if isinstance(yaml, StringIO):
@@ -211,6 +224,6 @@ def read_yaml(yaml: Union[StringIO, str]) -> Any:
     elif isinstance(yaml, str):
         with open(yaml, "r") as file:
             return parse_yaml(file.read())
-        
+
     else:
         raise ValueError(f"can't process yaml descriptor of type {type(yaml)}")

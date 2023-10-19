@@ -37,6 +37,7 @@
   <!-- the folder name under the path simulator_setup/maps  -->
   <arg name="map_folder_name" default="map_empty" />
   <param name="map_file" value="$(arg map_folder_name)" />
+  <param name="map_layer_path" value="$(find arena-simulation-setup)/maps/$(arg map_folder_name)/map.world.yaml" />
 
   <!-- if it's false flatland server will not publish any debug related infomation and you will not able to visuzalize e.g robot, dynamic obstacles  -->
   <!-- <param name="space_encoder" value="UniformEncoder" /> -->
@@ -47,20 +48,26 @@
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
+  <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" />
+
 
   <!--  PARAMS DON'T CHANGE THEM  -->
+  <arg name="reset_remove_all" default="false" />
+  <param name="reset_remove_all" value="$(arg reset_remove_all)" />
   <param name="use_sim_time" value="true" />
   <param name="train_mode" value="$(arg train_mode)" />
   <param name="num_envs" value="$(arg num_envs)" />
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_folder_name)/map.yaml" />
   <param name="world_path" value="$(find arena-simulation-setup)/maps/$(arg map_folder_name)/map.world.yaml" />
+  <param name="map_path" value="$(arg map_path)" />
   <param name="show_viz" value="$(arg show_viz)"/>
   <param name="_dedicated_train_launch" value="true" />
   <param name="model" value="$(arg model)" />
 
   <!-- map server-->
   <include file="$(find arena_bringup)/launch/utils/map_server.launch">
-    <arg name="map_path" value="$(arg map_path)" />
+    <arg name="map_file" value="$(arg map_folder_name)"/>
+    <arg name="map_path" value="$(arg map_path)"/>
   </include>
 
   <group if="$(eval arg('train_mode') == false)">

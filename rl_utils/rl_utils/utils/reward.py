@@ -1,10 +1,11 @@
 from typing import Any, Callable, Dict, List, Tuple
 
 import numpy as np
+import rospy
 import scipy.spatial
 from geometry_msgs.msg import Pose2D
-
 from tools.general import load_rew_fnc
+from task_generator.constants import TaskMode
 
 
 class RewardCalculator:
@@ -36,6 +37,7 @@ class RewardCalculator:
         self.last_action = None
         self._curr_dist_to_path = None
         self.safe_dist = safe_dist
+        self.task_mode = rospy.get_param("/task_mode", TaskMode.RANDOM)
 
         # load custom reward function from yaml
         self.custom_rew_dict = load_rew_fnc(rule)
@@ -59,6 +61,8 @@ class RewardCalculator:
         """
         reset variables related to the episode
         """
+        if self.task_mode in [TaskMode.STAGED, TaskMode.DYNAMIC_MAP_STAGED]:
+            self.goal_radius = rospy.get_param("/goal_radius", 0.3)
         self.last_goal_dist = None
         self.last_dist_to_path = None
         self.last_action = None
@@ -346,7 +350,11 @@ class RewardCalculator:
         :param laser_scan (np.ndarray): laser scan data
         :param punishment (float, optional): punishment for collision. defaults to 10
         """
-        if laser_scan.min() <= self.robot_radius:
+        coll_in_blind_spots = False
+        if "full_laser_scan" in kwargs:
+            coll_in_blind_spots = kwargs["full_laser_scan"].min() <= self.robot_radius
+
+        if laser_scan.min() <= self.robot_radius or coll_in_blind_spots:
             self.curr_reward -= punishment
 
             if not self._extended_eval:
@@ -365,7 +373,11 @@ class RewardCalculator:
         :param laser_scan (np.ndarray): laser scan data
         :param punishment (float, optional): punishment for undercutting. defaults to 0.15
         """
-        if laser_scan.min() < self.safe_dist:
+        violation_in_blind_spot = False
+        if "full_laser_scan" in kwargs:
+            violation_in_blind_spot = kwargs["full_laser_scan"].min() <= self.safe_dist
+
+        if laser_scan.min() < self.safe_dist or violation_in_blind_spot:
             self.curr_reward -= punishment
 
             if self._extended_eval:
@@ -484,6 +496,13 @@ class RewardCalculator:
             vel_diff = abs(curr_ang_vel - last_ang_vel)
             self.curr_reward -= (vel_diff**4) / 50
         self.last_action = action
+
+    def _reward_abrupt_forward_change(
+        self, action: np.ndarray = None, penalty: float = 0.0, *args, **kwargs
+    ):
+        if self.last_action is not None:
+            if 0 > (action[0] * self.last_action[0]):
+                self.curr_reward -= penalty
 
     def _reward_reverse_drive(
         self, action: np.array = None, penalty: float = 0.01, *args, **kwargs

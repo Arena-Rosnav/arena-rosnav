@@ -1,7 +1,5 @@
-from dataclasses import asdict
 import os
-from typing import Callable, Dict, List, Optional
-import numpy as np
+from typing import Callable, List, Type
 
 from rospkg import RosPack
 import rospy
@@ -10,23 +8,15 @@ from rosgraph_msgs.msg import Clock
 from task_generator.constants import Constants
 from task_generator.manager.map_manager import MapManager
 from task_generator.manager.robot_manager import RobotManager
-from task_generator.utils import ModelLoader
 from task_generator.manager.obstacle_manager import ObstacleManager
+from task_generator.tasks.utils import ManagerProps, ModelloaderProps
+from task_generator.utils import ModelLoader
 
-from task_generator.shared import DynamicObstacle, Model, ModelWrapper, Obstacle, PositionOrientation, Waypoint
 
-
-class BaseTask():
+class BaseTask(ManagerProps, ModelloaderProps):
     """
-        Base Task as parent class for all other tasks.
+    Base Task as parent class for all other tasks.
     """
-
-    _obstacle_manager: ObstacleManager
-    _robot_managers: List[RobotManager]
-    _map_manager: MapManager
-
-    _model_loader: ModelLoader
-    _dynamic_model_loader: ModelLoader
 
     _clock: Clock
     _last_reset_time: int
@@ -47,12 +37,26 @@ class BaseTask():
         self._dynamic_model_loader = ModelLoader(os.path.join(
             RosPack().get_path("arena-simulation-setup"), "dynamic_obstacles"))
 
-    def reset(self, callback: Optional[Callable] = None) -> bool:
+    @staticmethod
+    def reset_helper(parent: Type["BaseTask"]) -> Callable[..., Callable[..., bool]]:
         """
-            Calls a passed reset function (usually the tasks own reset)
-            inside a loop so when the callback fails once it is tried
-            again. After MAX_RESET_FAIL_TIMES the reset is considered
-            as fail and the simulation is shut down.
+        Decorate reset(self, ...)->Callable[..., bool] in any BaseTask subclass with @BaseTask.reset_helper(parent=parent_class) to bind into the reset chain.
+        First the reset body is called, then the chain is traversed up to BaseTask and then back down to the callback returned by reset. Return True from this callback to indicate all tasks are completed and the simulation can be shut down.
+        @parent: direct parent class
+        """
+        def outer(fn: Callable[..., Callable[[], bool]]) -> Callable[..., bool]:
+            def _reset(self, callback: Callable[[], bool], **kwargs) -> bool:
+                fn_callback = fn(self, **kwargs)
+                return parent.reset(self, callback=callback, **kwargs) or fn_callback()
+            return _reset
+        return outer
+
+    def reset(self, callback: Callable[[], bool], **kwargs) -> bool:
+        """
+        Calls a passed reset function (usually the tasks own reset)
+        inside a loop so when the callback fails once it is tried
+        again. After MAX_RESET_FAIL_TIMES the reset is considered
+        as fail and the simulation is shut down.
         """
         fails = 0
         return_val = False
@@ -61,7 +65,7 @@ class BaseTask():
 
         while fails < Constants.MAX_RESET_FAIL_TIMES:
             try:
-                return_val = return_val if callback is None else callback()
+                return_val = callback()
                 break
 
             except rospy.ServiceException as e:
@@ -97,54 +101,3 @@ class BaseTask():
         self._clock = clock
 
 
-class CreateObstacleTask(BaseTask):
-    """
-        Extends BaseTask with a create_obstacle method that provides a convenient way to create random obstacles.
-    """
-    # moved from obstacle manager
-
-
-    def _create_dynamic_obstacle(self, name:str, model: ModelWrapper, waypoints: Optional[List[Waypoint]] = None, extra: Optional[Dict] = None, **kwargs) -> DynamicObstacle:
-
-        setup = self._create_obstacle(name=name, model=model, extra=extra, **kwargs)
-
-        if waypoints is None:
-
-            safe_distance = 0.5
-            waypoints = [(*setup.position[:2], safe_distance)]  # the first waypoint
-            safe_distance = 0.1  # the other waypoints don't need to avoid robot
-            for j in range(10):
-                dist = 0
-                while dist < 8:
-                    [x2, y2, *
-                        _] = self._map_manager.get_random_pos_on_map(safe_distance)
-                    dist = np.linalg.norm(
-                        [waypoints[-1][0] - x2, waypoints[-1][1] - y2])
-                    waypoints.append((x2, y2, 1))
-
-        return DynamicObstacle(**{
-            **asdict(setup),
-            **dict(waypoints=waypoints)
-        })
-
-    def _create_obstacle(self, name:str, model: ModelWrapper, position: Optional[PositionOrientation] = None, extra: Optional[Dict] = None, **kwargs) -> Obstacle:
-        """ 
-        Creates and returns a newly generated obstacle of requested type: 
-        """
-
-        safe_distance = 0.5
-        
-        if position is None:
-            point: Waypoint = self._map_manager.get_random_pos_on_map(safe_distance)
-            position = (point[0], point[1], np.pi * np.random.random())
-
-        if extra is None:
-            extra = dict()
-
-        return Obstacle(
-            position=position,
-            name=name,
-            model=model,
-            extra=extra,
-            **kwargs
-        )

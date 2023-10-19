@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Callable, Collection, Dict, Iterable, List, Sequence, Tuple
+import dataclasses
+from typing import Callable, Collection, Dict, Iterable, List, Optional, Sequence, Tuple, overload
 
 import enum
 
 
-# TODO maybe move this to utils/model
-
-EMPTY_LOADER = lambda *_, **__: Model(type=ModelType.UNKNOWN,
-                                      name="",
-                                      description="",
-                                      path="")
+EMPTY_LOADER = lambda *_, **__: Model(
+    type=ModelType.UNKNOWN,
+    name="",
+    description="",
+    path=""
+)
 
 
 class ModelType(enum.Enum):
@@ -21,18 +21,32 @@ class ModelType(enum.Enum):
     YAML = "yaml"
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class Model:
     type: ModelType
     name: str
     description: str
     path: str
 
+    @property
+    def mapper(self) -> Callable[[Model], Model]:
+        """
+        Returns a (Model)->Model mapper that simply returns this model
+        """
+        return lambda m: self
+
+    def replace(self, **kwargs) -> Model:
+        """
+        Wrapper for dataclasses.replace
+        **kwargs: properties to replace
+        """
+        return dataclasses.replace(self, **kwargs)
+
 
 ForbiddenZone = Tuple[float, float, float]
 
 PositionOrientation = Tuple[float, float, float]
-Waypoint = Tuple[float, float, float]
+Waypoint = PositionOrientation
 Position = Tuple[float, float]
 
 
@@ -40,39 +54,106 @@ class ModelWrapper:
 
     _get: Callable[[Collection[ModelType]], Model]
     _name: str
-    _override: Dict[ModelType, Model]
+    _override: Dict[ModelType, Tuple[bool, Callable[[Model], Model]]]
 
     def __init__(self, name: str):
+        """
+        Create new ModelWrapper
+        @name: Name of the ModelWrapper (should match the underlying Models)
+        """
         self._name = name
         self._override = dict()
 
-    def override(self, model_type: ModelType, model: Model):
-        self._override[model_type] = model
+    def clone(self) -> ModelWrapper:
+        """
+        Clone (shallow copy) this ModelWrapper instance
+        """
+        clone = ModelWrapper(self.name)
+        clone._get = self._get
+        clone._override = self._override
+        return clone
 
-    def get(self, only: Collection[ModelType]) -> Model:
-        for model_type in (only or self._override.keys()):
+    def override(self, model_type: ModelType, override: Callable[[Model], Model], noload: bool = False, name: Optional[str] = None) -> ModelWrapper:
+        """
+        Create new ModelWrapper with an overridden ModelType callback
+        @model_type: Which ModelType to override
+        @override: Mapping function (Model)->Model which replaces the loaded model with a new one
+        @noload: (default: False) If True, indicates that the original Model is not used by the override function and a dummy Model can be passed to it instead
+        @name: (optional) If set, overrides name of ModelWrapper
+        """
+        clone = self.clone()
+        clone._override = {**self._override, model_type: (noload, override)}
+
+        if name is not None:
+            clone._name = name
+
+        return clone
+
+    @overload
+    def get(self, only: ModelType) -> Model: ...
+    """
+        load specific model
+        @only: single accepted ModelType
+    """
+
+    @overload
+    def get(self, only: Collection[ModelType]) -> Model: ...
+    """
+        load specific model from collection
+        @only: collection of acceptable ModelTypes
+    """
+
+    @overload
+    def get(self) -> Model: ...
+    """
+        load any available model
+    """
+
+    def get(self, only: ModelType | Collection[ModelType] | None = None) -> Model:
+
+        if only is None:
+            only = self._override.keys()
+
+        if isinstance(only, ModelType):
+            return self.get([only])
+
+        for model_type in only:
             if model_type in self._override:
-                return self._override[model_type]
+                noload, mapper = self._override[model_type]
+
+                if noload == True:
+                    return mapper(EMPTY_LOADER())
+
+                return mapper(self._get([model_type]))
 
         return self._get(only)
 
     @property
     def name(self) -> str:
+        """
+        get name
+        """
         return self._name
 
     @staticmethod
-    def bind(name: str, callback: Callable[..., Model]) -> "ModelWrapper":
+    def bind(name: str, callback: Callable[[Collection[ModelType]], Model]) -> ModelWrapper:
+        """
+        Create new ModelWrapper with bound callback method
+        """
         wrap = ModelWrapper(name)
         wrap._get = callback
         return wrap
 
     @staticmethod
     def Constant(name: str, models: Dict[ModelType, Model]) -> ModelWrapper:
-
-        wrap = ModelWrapper(name)
+        """
+        Create new ModelWrapper from a dict of already existing models
+        @name: name of model
+        @models: dictionary of ModelType->Model mappings
+        """
 
         def get(only: Collection[ModelType]) -> Model:
-            if only is None:
+            if not len(only):
                 only = list(models.keys())
 
             for model_type in only:
@@ -82,35 +163,37 @@ class ModelWrapper:
                 raise LookupError(
                     f"no matching model found for {name} (available: {list(models.keys())}, requested: {list(only)})")
 
-        wrap._get = get
-
-        return wrap
+        return ModelWrapper.bind(name, get)
 
     @staticmethod
     def from_model(model: Model) -> ModelWrapper:
+        """
+        Create new ModelWrapper containing a single existing Model
+        @model: Model to wrap
+        """
         return ModelWrapper.Constant(name=model.name, models={model.type: model})
 
-@dataclass(frozen=True)
-class HasModel:
-    model: ModelWrapper
 
-@dataclass(frozen=True)
-class ObstacleProps(HasModel):
+@dataclasses.dataclass(frozen=True)
+class ObstacleProps:
     position: PositionOrientation
     name: str
+    model: ModelWrapper
     extra: Dict
 
-@dataclass(frozen=True)
+
+@dataclasses.dataclass(frozen=True)
 class DynamicObstacleProps(ObstacleProps):
     waypoints: List[Waypoint]
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class RobotProps(ObstacleProps):
     planner: str
     namespace: str
     agent: str
     record_data: bool
+
 
 def parse_Point3D(obj: Sequence, fill: float = 0.) -> Tuple[float, float, float]:
     position: Tuple[float, ...] = tuple([float(v) for v in obj[:3]])
@@ -120,7 +203,8 @@ def parse_Point3D(obj: Sequence, fill: float = 0.) -> Tuple[float, float, float]
 
     return (position[0], position[1], position[2])
 
-@dataclass(frozen=True)
+
+@dataclasses.dataclass(frozen=True)
 class Obstacle(ObstacleProps):
     @staticmethod
     def parse(obj: Dict, model: ModelWrapper) -> "Obstacle":
@@ -135,7 +219,8 @@ class Obstacle(ObstacleProps):
             extra=obj
         )
 
-@dataclass(frozen=True)
+
+@dataclasses.dataclass(frozen=True)
 class DynamicObstacle(DynamicObstacleProps):
     waypoints: Iterable[Waypoint]
 
@@ -144,7 +229,8 @@ class DynamicObstacle(DynamicObstacleProps):
 
         name = str(obj.get("name", "MISSING"))
         position = parse_Point3D(obj.get("pos", (0, 0, 0)))
-        waypoints = [parse_Point3D(waypoint) for waypoint in obj.get("waypoints", [])]
+        waypoints = [parse_Point3D(waypoint)
+                     for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
             name=name,
@@ -154,7 +240,8 @@ class DynamicObstacle(DynamicObstacleProps):
             extra=obj
         )
 
-@dataclass(frozen=True)
+
+@dataclasses.dataclass(frozen=True)
 class Robot(RobotProps):
     @staticmethod
     def parse(obj: Dict, **kwargs) -> "Robot":

@@ -1,0 +1,14 @@
+taskMode:
+  random:
+    static:
+      min: 1
+      max: 5
+      models: ["shelf"]
+    interactive:
+      min: 0
+      max: 0
+      models: ["shelf"]
+    dynamic:
+      min: 1
+      max: 5
+      models: ["actor1"]

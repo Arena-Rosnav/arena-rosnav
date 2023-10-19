@@ -1,19 +1,20 @@
 ### UTILS
 
+  # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../utils/flatland
-    uri: https://github.com/Arena-Rosnav/flatland.git
+    uri: https://github.com/tuananhroman/flatland.git
     version: master
 
-    # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../utils/arena-tools
-    uri: https://github.com/basselfa/arena-tools.git
+    uri: https://github.com/Arena-Rosnav/arena-tools.git
     version: main
 
+  # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../utils/stable-baselines3
-    uri: https://github.com/Arena-Rosnav/stable-baselines3.git
+    uri: https://github.com/tuananhroman/stable-baselines3.git
     version: master
 
 - git:
@@ -21,10 +22,9 @@
     uri: https://bitbucket.org/acl-swarm/ford_msgs/src/master/
     version: master
 
-    # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../utils/pedsim_ros
-    uri: https://github.com/basselfa/pedsim_ros.git
+    uri: https://github.com/Arena-Rosnav/pedsim_ros.git
     version: master
 
 - git:
@@ -44,7 +44,7 @@
 - git:
     local-name: ../utils/arena-simulation-setup
     uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: master
+    version: dynamic_map
 
 - git:
     local-name: ../arena-evaluation
@@ -52,11 +52,11 @@
     version: master
 
 ### PLANNERS
-
+  # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../planners/rosnav
-    uri: https://github.com/Arena-Rosnav/rosnav-rl.git
-    version: v1.1.2
+    uri: https://github.com/tuananhroman/rosnav-rl.git
+    version: master
 
 - git:
     local-name: ../planners/arena-ros
@@ -86,4 +86,28 @@
 - git:
     local-name: ../planners/mpc
     uri: https://github.com/rst-tu-dortmund/mpc_local_planner
+    version: master
+- git:
+    local-name: ../planners/all_in_one
+    uri: https://github.com/Arena-Rosnav/all_in_one
+    version: master
+- git:
+    local-name: ../planners/applr
+    uri: https://github.com/Arena-Rosnav/applr
+    version: master
+- git:
+    local-name: ../planners/lflh
+    uri: https://github.com/Arena-Rosnav/lflh
+    version: master
+- git:
+    local-name: ../planners/dragon
+    uri: https://github.com/Arena-Rosnav/dragon
+    version: master
+- git:
+    local-name: ../planners/trail
+    uri: https://github.com/Arena-Rosnav/trail
+    version: master
+- git:
+    local-name: ../planners/cohan
+    uri: https://github.com/Arena-Rosnav/cohan_planner_multi
     version: master

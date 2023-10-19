@@ -1,8 +1,7 @@
 import functools
 import subprocess
-from typing import Callable, Collection, Dict, Iterator, List, Optional, Tuple, Type
+from typing import Callable, Collection, Dict, Iterator, List, Optional, Set, Tuple, Type, TypeVar
 
-from rospkg import RosPack
 
 import rospy
 import os
@@ -121,17 +120,14 @@ class NamespaceIndexer:
 
 class _ModelLoader:
     @staticmethod
-    def list(model_dir: str) -> Collection[str]:
-        ...
-
-    @staticmethod
     def load(model_dir: str, model: str, **kwargs) -> Optional[Model]:
         ...
+
 
 class ModelLoader:
 
     _registry: Dict[ModelType, Type[_ModelLoader]] = {}
-    _models: List[str]
+    _models: Set[str]
 
     @classmethod
     def model(cls, model_type: ModelType):
@@ -144,16 +140,16 @@ class ModelLoader:
     def __init__(self, model_dir: str):
         self._model_dir = model_dir
         self._cache = dict()
-        self._models = []
+        self._models = set()
 
         # potentially expensive
-        rospy.logdebug(f"models in {os.path.basename(model_dir)}: {self.models}")
+        rospy.logdebug(
+            f"models in {os.path.basename(model_dir)}: {self.models}")
 
     @property
-    def models(self) -> List[str]:
+    def models(self) -> Set[str]:
         if not len(self._models):
-            self._models = list(set([name for loader in self._registry.values(
-            ) for name in loader.list(self._model_dir)]))
+            self._models = set(next(os.walk(self._model_dir))[1])
 
         return self._models
 
@@ -161,7 +157,7 @@ class ModelLoader:
         return ModelWrapper.bind(name=model, callback=functools.partial(self._load, model))
 
     def _load(self, model: str, only: Collection[ModelType], **kwargs) -> Model:
-        
+
         if not len(only):
             only = self._registry.keys()
 
@@ -177,6 +173,7 @@ class ModelLoader:
                 return self._cache[(model_type, model)]
 
         else:
+            # TODO refactor so None is returned instead of raising error
             raise FileNotFoundError(
                 f"no model {model} among {only} found in {self._model_dir}")
 
@@ -191,13 +188,9 @@ class ModelLoader:
 class _ModelLoader_YAML(_ModelLoader):
 
     @staticmethod
-    def list(model_dir):
-        return [name for name in next(os.walk(model_dir))[2] if os.path.splitext(name) == "yaml"]
-
-    @staticmethod
     def load(model_dir, model, **kwargs):
 
-        model_path = os.path.join(model_dir, model, f"{model}.model.yaml")
+        model_path = os.path.join(model_dir, model, "yaml", f"{model}.yaml")
 
         try:
             with open(model_path) as f:
@@ -219,13 +212,9 @@ class _ModelLoader_YAML(_ModelLoader):
 class _ModelLoader_SDF(_ModelLoader):
 
     @staticmethod
-    def list(model_dir):
-        return next(os.walk(model_dir))[1]
-
-    @staticmethod
     def load(model_dir, model, **kwargs):
 
-        model_path = os.path.join(model_dir, model, "model.sdf")
+        model_path = os.path.join(model_dir, model, "sdf", f"{model}.sdf")
 
         try:
             with open(model_path) as f:
@@ -247,15 +236,12 @@ class _ModelLoader_SDF(_ModelLoader):
 class _ModelLoader_URDF(_ModelLoader):
 
     @staticmethod
-    def list(model_dir):
-        return next(os.walk(model_dir))[1]
-
-    @staticmethod
     def load(model_dir, model, **kwargs):
 
         namespace: str = kwargs.get("namespace", "")
 
-        model_path = os.path.join(model_dir, model, "urdf", f"{model}.urdf.xacro")
+        model_path = os.path.join(
+            model_dir, model, "urdf", f"{model}.urdf.xacro")
 
         if not os.path.isfile(model_path):
             return None
@@ -280,3 +266,10 @@ class _ModelLoader_URDF(_ModelLoader):
                 path=model_path
             )
             return model_obj
+
+T = TypeVar("T")
+_unspecified = rospy.client._Unspecified()
+def rosparam_get(cast:Type[T], param_name:str, default=_unspecified) -> T:
+    val = rospy.get_param(param_name=param_name, default=default)
+    assert isinstance(val, cast), f"param {param_name} is not of type {cast}"
+    return val

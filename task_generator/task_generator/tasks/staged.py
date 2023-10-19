@@ -1,17 +1,27 @@
+import functools
+import time
+from typing import Dict, Generator, List, Optional
+
+import rospkg
 import rospy
 import os
 from task_generator.constants import Constants
+from task_generator.tasks.base_task import BaseTask
 from task_generator.tasks.task_factory import TaskFactory
 import yaml
-import json
-from std_msgs.msg import Bool
 from filelock import FileLock
 
 from task_generator.tasks.random import RandomTask
+from task_generator.constants import Constants
+from task_generator.manager.map_manager import MapManager
+from task_generator.manager.robot_manager import RobotManager
+from task_generator.manager.obstacle_manager import ObstacleManager
+from task_generator.tasks.utils import RandomInterface, RandomList, StageIndex, StagedInterface, Stages
+from task_generator.utils import rosparam_get
 
 
 @TaskFactory.register(Constants.TaskMode.STAGED)
-class StagedRandomTask(RandomTask):
+class StagedRandomTask(BaseTask, RandomInterface, StagedInterface):
     """
     The staged task mode is designed for the trainings
     process of arena-rosnav. In general, it behaves
@@ -23,45 +33,69 @@ class StagedRandomTask(RandomTask):
     parameter.
     """
 
+    _static_obstacles: RandomList
+    _interactive_obstacles: RandomList
+    _dynamic_obstacles: RandomList
+
+    _namespace: str
+    _stages: Stages
+    _curr_stage: StageIndex
+
     def __init__(
         self,
-        obstacles_manager,
-        robot_manager,
-        map_manager,
-        start_stage: int = 1,
-        paths=None,
+        obstacle_manager: ObstacleManager,
+        robot_managers: List[RobotManager],
+        map_manager: MapManager,
+        paths: Optional[Dict[str, str]] = None,
+        start_stage: StageIndex = 1,
         namespace: str = "",
-        **kwargs
+        **kwargs,
     ):
-        super().__init__(obstacles_manager, robot_manager, map_manager)
+        BaseTask.__init__(
+            self,
+            obstacle_manager=obstacle_manager,
+            robot_managers=robot_managers,
+            map_manager=map_manager,
+            **kwargs
+        )
 
-        self.namespace = namespace
+        allowed_obstacles = RandomInterface._load_obstacle_list(self)
+        self._static_obstacles = allowed_obstacles.static
+        self._interactive_obstacles = allowed_obstacles.interactive
+        self._dynamic_obstacles = allowed_obstacles.dynamic
+
+        self._namespace = namespace
         self.namespace_prefix = f"/{namespace}/" if namespace else ""
 
+        # TODO rework this
+        if paths is None:
+            paths = dict(
+                curriculum=os.path.join(rospkg.RosPack().get_path(
+                    "training"), "configs", "training_curriculums", "default.yaml")
+            )
+
+        # TODO add mutexes for these against reset
+        self._subscribe(
+            self._namespace,
+            cb_previous=functools.partial(self.previous_stage, self),
+            cb_next=functools.partial(self.next_stage, self)
+        )
+
         self._curr_stage = start_stage
-        self._stages = {}
-        self._stages = self._read_stages_from_file(paths.get("curriculum"))
-        self._debug_mode = rospy.get_param("debug_mode", False)
+        
+        self._stages = self._read_stages_from_file(paths["curriculum"])
+        self._debug_mode = rosparam_get(bool, "debug_mode", False)
 
-        self._check_start_stage(start_stage)
-
-        rospy.set_param("/curr_stage", self._curr_stage)
+        self._check_start_stage(self._stages, start_stage)
+        self._publish_curr_stage(self._curr_stage)
 
         self._init_debug_mode(paths)
+        self.reset(lambda:None)
 
-        self._sub_next = rospy.Subscriber(
-            f"{self.namespace_prefix}next_stage", Bool, self.next_stage
-        )
-        self._sub_previous = rospy.Subscriber(
-            f"{self.namespace_prefix}previous_stage", Bool, self.previous_stage
-        )
-
-        self._init_stage(self._curr_stage)
-
-    def next_stage(self, _):
+    def next_stage(self, *args, **kwargs):
         if self._curr_stage >= len(self._stages):
             rospy.loginfo(
-                f"({self.namespace}) INFO: Tried to trigger next stage but already reached last one"
+                f"({self._namespace}) INFO: Tried to trigger next stage but already reached last one"
             )
             return
 
@@ -69,10 +103,10 @@ class StagedRandomTask(RandomTask):
 
         return self._init_stage_and_update_config(self._curr_stage)
 
-    def previous_stage(self, _):
+    def previous_stage(self, *args, **kwargs):
         if self._curr_stage <= 1:
             rospy.loginfo(
-                f"({self.namespace}) INFO: Tried to trigger previous stage but already reached first one"
+                f"({self._namespace}) INFO: Tried to trigger previous stage but already reached first one"
             )
             return
 
@@ -80,16 +114,16 @@ class StagedRandomTask(RandomTask):
 
         return self._init_stage_and_update_config(self._curr_stage)
 
-    def _init_stage_and_update_config(self, stage):
-        self._init_stage(stage)
+    def _init_stage_and_update_config(self, stage: StageIndex):
+        self.reset(lambda:None, stage=stage)
 
-        if self.namespace != "eval_sim":
+        if self._namespace != "eval_sim":
             return
 
-        rospy.set_param("/curr_stage", stage)
-        rospy.set_param("/last_state_reached", stage == len(self._stages))
+        self._publish_curr_stage(stage=stage)
+        self._publish_last_state_reached(stage == len(self._stages))
 
-        self._update_stage_in_config(stage)
+        # self._update_stage_in_config(stage)
 
         return stage
 
@@ -120,55 +154,68 @@ class StagedRandomTask(RandomTask):
             config["callbacks"]["training_curriculum"]["curr_stage"] = stage
 
         with open(self._config_file_path, "w", encoding="utf-8") as target:
-            yaml.dump(config, target, ensure_ascii=False, indent=4)
+            yaml.dump(config, target, allow_unicode=True, indent=4)
 
         self._config_lock.release()
 
-    def reset(self):
-        super().reset(
-            static_obstacles=self._stages[self._curr_stage]["static"],
-            dynamic_obstacles=self._stages[self._curr_stage]["dynamic"],
-        )
+    @BaseTask.reset_helper(parent=BaseTask)
+    def reset(
+        self,
+        n_static_obstacles: Optional[int] = None,
+        n_interactive_obstacles: Optional[int] = None, 
+        n_dynamic_obstacles: Optional[int] = None,
+        static_obstacles: Optional[RandomList] = None,
+        interactive_obstacles: Optional[RandomList] = None,
+        dynamic_obstacles: Optional[RandomList] = None,
+        stage: Optional[StageIndex] = None,
+        **kwargs):
 
-    def _reset_robot_and_obstacles(
-        self, static_obstacles=None, dynamic_obstacles=None, **kwargs
-    ):
-        super()._reset_robot_and_obstacles(
-            static_obstacles=static_obstacles,
-            dynamic_obstacles=dynamic_obstacles,
-            **kwargs,
-        )
+        if stage is None:
+            stage = self._curr_stage
 
-    def _init_stage(self, stage):
-        static_obstacles = self._stages[stage]["static"]
-        dynamic_obstacles = self._stages[stage]["dynamic"]
+        if n_static_obstacles is None:
+            n_static_obstacles = self._stages[stage].static
 
-        self._reset_robot_and_obstacles(
-            static_obstacles=static_obstacles, dynamic_obstacles=dynamic_obstacles
-        )
+        if n_interactive_obstacles is None:
+            n_interactive_obstacles = self._stages[stage].interactive
 
-        rospy.loginfo(
-            f"({self.namespace}) Stage {self._curr_stage}: Spawning {static_obstacles} static and {dynamic_obstacles} dynamic obstacles!"
-        )
+        if n_dynamic_obstacles is None:
+            n_dynamic_obstacles = self._stages[stage].dynamic
 
-    def _check_start_stage(self, start_stage):
-        assert isinstance(
-            start_stage, int
-        ), f"Given start stage {start_stage} is not an integer"
+        if static_obstacles is None:
+            static_obstacles = self._static_obstacles
 
-        assert start_stage >= 1 and start_stage <= len(self._stages), (
-            "Start stage given for training curriculum out of bounds! Has to be between {1 to %d}!"
-            % len(self._stages)
-        )
+        if interactive_obstacles is None:
+            interactive_obstacles = self._interactive_obstacles
 
-    def _read_stages_from_file(self, path):
-        assert os.path.isfile(path), f"{path} is not a file"
+        if dynamic_obstacles is None:
+            dynamic_obstacles = self._dynamic_obstacles
 
-        with open(path, "r") as file:
-            stages = yaml.load(file, Loader=yaml.FullLoader)
+        if stage is None:
+            stage = self._curr_stage
 
-        assert isinstance(
-            stages, dict
-        ), f"{path} has the wrong format! Check the Docs to see the correct format."
+        goal_radius = self._stages[stage].goal_radius
 
-        return stages
+        def callback():
+            self._populate_goal_radius(goal_radius=goal_radius)
+
+            rospy.loginfo(
+                f"({self._namespace}) Stage {self._curr_stage}: Spawning {n_static_obstacles} static and {n_dynamic_obstacles} dynamic obstacles!"
+            )
+
+            self._obstacle_manager.respawn(callback=lambda:
+            RandomInterface._setup_random(
+                self,
+                n_static_obstacles=n_static_obstacles,
+                n_interactive_obstacles=n_interactive_obstacles,
+                n_dynamic_obstacles=n_dynamic_obstacles,
+                static_obstacles=static_obstacles,
+                interactive_obstacles=interactive_obstacles,
+                dynamic_obstacles=dynamic_obstacles
+                )
+            )
+            time.sleep(1)
+
+            return False
+
+        return callback

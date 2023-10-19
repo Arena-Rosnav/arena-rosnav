@@ -1,122 +1,171 @@
-# GRADUALLY REPLACE COPIED METHODS FROM THIS FILE WITH NEW NON-PEDSIM IMPLEMENTATIONS
-
-from dataclasses import asdict
 import dataclasses
-from typing import Any, Callable, Dict, Iterable, List, Tuple
+import itertools
+import time
+from typing import Iterable, List
+
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
+from task_generator.manager.dynamic_manager.utils import KnownObstacles, SDFUtil
 from task_generator.simulators.base_simulator import BaseSimulator
-
-
+from task_generator.shared import Model, ModelType, PositionOrientation, Waypoint
 from task_generator.constants import Constants
 
 import rospy
 
-
-import io
-
-
 import xml.etree.ElementTree as ET
 
-from task_generator.shared import DynamicObstacle, Model, ModelType, ModelWrapper, PositionOrientation, Waypoint
-from task_generator.utils import NamespaceIndexer
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
+# TODO(@voshch) make this universal
 
-def fill_actor(xml_string: str, name: str, position: PositionOrientation, waypoints: Iterable[Waypoint]) -> str:
 
-    file = io.StringIO(xml_string)
-    xml = ET.parse(file)
+def process_SDF(model: Model, name: str, position: PositionOrientation, waypoints: Iterable[Waypoint]) -> Model:
 
-    xml_actor = xml.getroot()
-    if xml_actor.tag != "actor":
-        xml_actor = xml.find("actor")
-    assert (xml_actor is not None)
+    xml = SDFUtil.parse(model.description)
+
+    # XML MODIFICATIONS
+
+    # ACTOR
+    xml_actor = SDFUtil.get_model_root(sdf=xml, tag="actor")
+    assert (xml_actor is not None), "NO ACTOR FOUND IN SDF"
     xml_actor.set("name", name)
 
+    # ACTOR/POSE
     xml_pose = xml_actor.find("pose")
-    assert (xml_pose is not None)
+    if xml_pose is None:
+        xml_pose = ET.SubElement(xml_actor, "pose")
     xml_pose.text = f"{position[0]} {position[1]} 0 0 0 {position[2]}"
 
-    xml_plugin = xml_actor.find(
-        r"""plugin[@filename='libPedestrianSFMPlugin.so']""")
-    assert (xml_plugin is not None)
-    xml_plugin.append(ET.fromstring(f"<group><model>{name}</model></group>"))
-    xml_plugin.set("name", f"{name}_sfm_plugin")
+    # ACTOR/STATIC
+    xml_static = xml_actor.find("static")
+    if xml_static is None:
+        xml_static = ET.SubElement(xml_actor, "static")
+    xml_static.text = "true"
 
-    file = io.StringIO()
-    xml.write(file, encoding="Unicode", xml_declaration=True)
-    new_xml_string = file.getvalue().replace("__waypoints__", "".join(
-        [f"<waypoint>{x} {y} {theta}</waypoint>" for x, y, theta in waypoints]))
+    # ACTOR/SFM_PLUGIN
+    xml_sfm_plugin = xml_actor.find(SDFUtil.SFM_PLUGIN_SELECTOR)
+    if xml_sfm_plugin is None:
+        xml_sfm_plugin = ET.SubElement(xml_actor, "plugin")
+        xml_sfm_plugin.set("filename", 'libPedestrianSFMPlugin.so')
+    xml_sfm_plugin.set("name", f"{name}_sfm_plugin")
 
-    return new_xml_string
+    # ACTOR/SFM_PLUGIN/TRAJECTORY
+    xml_trajectory = xml_sfm_plugin.find("trajectory")
+    if xml_trajectory is None:
+        xml_trajectory = ET.fromstring(
+            "<trajectory><cyclic>true</cyclic></trajectory>")
+        xml_sfm_plugin.append(xml_trajectory)
+    for x, y, theta in itertools.chain([position], waypoints):
+        xml_trajectory.append(ET.fromstring(
+            f"<waypoint>{x} {y} {theta}</waypoint>"))
+
+    # ACTOR/COLLISIONS_PLUGIN
+    xml_collisions_plugin = xml_actor.find(SDFUtil.COLLISONS_PLUGIN_SELECTOR)
+    if xml_collisions_plugin is None:
+        xml_collisions_plugin = ET.SubElement(xml_actor, "plugin")
+        xml_collisions_plugin.set("filename", 'libActorCollisionsPlugin.so')
+
+    xml_collisions_plugin.set("name", f"{name}_collisions_plugin")
+
+    #####
+
+    SDFUtil.delete_all(sdf=xml, selector=SDFUtil.PEDSIM_PLUGIN_SELECTOR)
+
+    return model.replace(description=SDFUtil.serialize(xml))
 
 
 class SFMManager(DynamicManager):
 
-    _spawned_obstacles: List[Tuple[str, Callable[[], Any]]]
-    _namespaces: Dict[str, NamespaceIndexer]
+    _known_obstacles: KnownObstacles
 
     def __init__(self, namespace: str, simulator: BaseSimulator):
-        super().__init__(namespace, simulator)
-
-        rospy.set_param("respawn_dynamic", True)
-        rospy.set_param("respawn_static", True)
-        rospy.set_param("respawn_interactive", True)
+        super().__init__(namespace=namespace, simulator=simulator)
+        self._known_obstacles = KnownObstacles()
 
     def spawn_obstacles(self, obstacles):
 
         for obstacle in obstacles:
 
-            name, free = next(self._index_namespace(obstacle.name))
+            rospy.logdebug("Spawning obstacle: actor_id = %s", obstacle.name)
 
-            obstacle = dataclasses.replace(obstacle, name=name)
+            obstacle = dataclasses.replace(obstacle, name=obstacle.name)
 
-            name = self._simulator.spawn_obstacle(obstacle)
-            self._spawned_obstacles.append((name, free))
+            # TODO aggregate deletes & spawns and leverage simulator parallelization
+            known = self._known_obstacles.get(obstacle.name)
+            if known is not None:
+                if known.obstacle.name != obstacle.name:
+                    raise RuntimeError(f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {obstacle.name} (did you forget to call remove_obstacles?)")
+
+                self._simulator.move_entity(obstacle.name, obstacle.position)
+                known.used = True
+            else:
+                known = self._known_obstacles.create_or_get(
+                    name=obstacle.name,
+                    obstacle=obstacle
+                )
+                self._simulator.spawn_obstacle(known.obstacle)
+                known.used = True
+
+            time.sleep(0.05)
 
     def spawn_dynamic_obstacles(self, obstacles):
 
         for obstacle in obstacles:
 
-            name, free = next(self._index_namespace(obstacle.name))
+            name = obstacle.name
 
-            rospy.loginfo("Spawning model: actor_id = %s", name)
+            rospy.logdebug("Spawning dynamic obstacle: actor_id = %s", name)
 
-            model = obstacle.model.get([ModelType.SDF])
-
-            model_desc = fill_actor(model.description, name=name, position=obstacle.position, waypoints=obstacle.waypoints)
-
-            obstacle = dataclasses.replace(obstacle, name=name)
-
-            obstacle.model.override(
-                model_type = ModelType.SDF,
-                model = Model(
-                    type=model.type,
-                    name=name,
-                    description=model_desc,
-                    path=""
-                )
+            model = obstacle.model.override(
+                model_type=ModelType.SDF,
+                override=lambda m: process_SDF(
+                    model=m, name=name, position=obstacle.position, waypoints=obstacle.waypoints)
             )
 
-            name = self._simulator.spawn_obstacle(obstacle)
-            self._spawned_obstacles.append((name, free))
+            obstacle = dataclasses.replace(obstacle, name=name, model=model)
 
-        if len(obstacles):
-            rospy.set_param("respawn_dynamic", False)
+
+            # TODO aggregate deletes & spawns and leverage simulator parallelization
+            known = self._known_obstacles.get(obstacle.name)
+            if known is not None:
+                if known.obstacle.name != obstacle.name:
+                    raise RuntimeError(f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {obstacle.name} (did you forget to call remove_obstacles?)")
+
+                self._simulator.move_entity(obstacle.name, obstacle.position)
+                known.used = True
+
+            else:
+                known = self._known_obstacles.create_or_get(
+                    name=obstacle.name,
+                    obstacle=obstacle,
+                    used=True
+                )
+                self._simulator.spawn_obstacle(known.obstacle)
+                known.used = True
+
+            time.sleep(0.05)
 
     def spawn_line_obstacle(self, name, _from, _to):
         # TODO
         pass
 
-    def remove_obstacles(self):
-        for name, cleanup in self._spawned_obstacles:
-            rospy.logdebug(f"removing {name}")
-            self._simulator.delete_obstacle(obstacle_id=name)
-            cleanup()
+    def unuse_obstacles(self):
 
-    def _index_namespace(self, namespace: str) -> NamespaceIndexer:
-        if namespace not in self._namespaces:
-            self._namespaces[namespace] = NamespaceIndexer(namespace)
+        self.remove_obstacles(purge=True) # neither obstacle type can be used without respawning in gazebo (static obstacles lose collisions when moved, actor sfm plugin can't be modified on-the-fly)
 
-        return self._namespaces[namespace]
+        for obstacle in self._known_obstacles.values():
+            obstacle.used = False
+
+    def remove_obstacles(self, purge):
+        to_forget: List[str] = list()
+
+        for obstacle_id, obstacle in self._known_obstacles.items():
+            if purge or not obstacle.used:
+                self._simulator.delete_obstacle(name=obstacle_id)
+                obstacle.used = False
+                time.sleep(0.05)
+                to_forget.append(obstacle_id)
+                
+
+        for obstacle_id in to_forget:
+            self._known_obstacles.forget(name=obstacle_id)

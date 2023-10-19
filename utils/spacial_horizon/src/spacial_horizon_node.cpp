@@ -10,6 +10,7 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     has_goal = false;
 
     /*  fsm param  */
+    nh.param("disable_intermediate_planner", disable_intermediate_planner, true);
     nh.param("fsm/goal_tolerance", goal_tolerance, 0.5);
     nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 0.2);
     nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 0.5);
@@ -63,10 +64,23 @@ void SpacialHorizon::goalCallback(const geometry_msgs::PoseStampedPtr &msg)
     has_goal = true;
 
     getGlobalPath();
+
+    // when disable_intermediate_planner is true, the goal is the subgoal
+    if (disable_intermediate_planner){
+        geometry_msgs::PoseStamped pose_stamped;
+        pose_stamped.header.stamp = ros::Time::now();
+        pose_stamped.header.frame_id = "map";
+        pose_stamped.pose.position.x = end_pos(0);
+        pose_stamped.pose.position.y = end_pos(1);
+        pose_stamped.pose.position.z = 0.0;
+
+        pub_subgoal.publish(pose_stamped);
+        // std::cout << " SUBGOAL = GOAL" << std::endl;
+    }
 }
 
 bool SpacialHorizon::getSubgoal(Eigen::Vector2d &subgoal)
-{
+{   
     double dist_to_goal = (odom_pos - end_pos).norm();
 
     if (dist_to_goal <= goal_tolerance)
@@ -103,47 +117,53 @@ bool SpacialHorizon::getSubgoal(Eigen::Vector2d &subgoal)
 
 void SpacialHorizon::updateSubgoalCallback(const ros::TimerEvent &e)
 {
-    std::cout << "GEN NEW SUBGOAL" << std::endl;
-
-
-    if (!has_goal) {
-    std::cout << "NO GOAL" << std::endl;
-
-        return;
-
-    }
-    Eigen::Vector2d subgoal;
-    bool subgoal_success = getSubgoal(subgoal);
-    ;
-
-    // if to far away from subgoal -> recompute global path and subgoal
-    double dist_to_subgoal = (odom_pos - subgoal).norm();
-    if (dist_to_subgoal > planning_horizon + 1.0)
-    {
-        std::cout << "[Spacial Horizon]: Too far away from subgoal! Recomputing "
-                     "global path " << end_pos << " " << odom_pos
-                  << std::endl;
-        getGlobalPath();
-        subgoal_success = getSubgoal(subgoal);
-    }
-
-    if (!subgoal_success)
-    {
-    std::cout << "SUBGOAL SUCCESS" << std::endl;
-        
+    if (disable_intermediate_planner){
         return;
     }
+    else
+    {
+        std::cout << "GEN NEW SUBGOAL" << std::endl;
 
-    geometry_msgs::PoseStamped pose_stamped;
-    pose_stamped.header.stamp = ros::Time::now();
-    pose_stamped.header.frame_id = "map";
-    pose_stamped.pose.position.x = subgoal(0);
-    pose_stamped.pose.position.y = subgoal(1);
-    pose_stamped.pose.position.z = 0.0;
 
-    std::cout << "PUBLISHING SUBGOAL" << std::endl;
+        if (!has_goal) {
+        std::cout << "NO GOAL" << std::endl;
 
-    pub_subgoal.publish(pose_stamped);
+            return;
+
+        }
+        Eigen::Vector2d subgoal;
+        bool subgoal_success = getSubgoal(subgoal);
+        ;
+
+        // if to far away from subgoal -> recompute global path and subgoal
+        double dist_to_subgoal = (odom_pos - subgoal).norm();
+        if (dist_to_subgoal > planning_horizon + 1.0)
+        {
+            std::cout << "[Spacial Horizon]: Too far away from subgoal! Recomputing "
+                        "global path " << end_pos << " " << odom_pos
+                    << std::endl;
+            getGlobalPath();
+            subgoal_success = getSubgoal(subgoal);
+        }
+
+        if (!subgoal_success)
+        {
+        std::cout << "SUBGOAL SUCCESS" << std::endl;
+            
+            return;
+        }
+
+        geometry_msgs::PoseStamped pose_stamped;
+        pose_stamped.header.stamp = ros::Time::now();
+        pose_stamped.header.frame_id = "map";
+        pose_stamped.pose.position.x = subgoal(0);
+        pose_stamped.pose.position.y = subgoal(1);
+        pose_stamped.pose.position.z = 0.0;
+
+        std::cout << "PUBLISHING SUBGOAL" << std::endl;
+
+        pub_subgoal.publish(pose_stamped);
+    }
 }
 
 void SpacialHorizon::getGlobalPath(const ros::TimerEvent &e) {

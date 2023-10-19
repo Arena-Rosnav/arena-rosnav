@@ -4,9 +4,7 @@ import rospy
 from task_generator.shared import DynamicObstacle, ModelType, ModelWrapper, Obstacle, Model
 from task_generator.simulators.base_simulator import BaseSimulator
 from typing import Callable, Collection, Dict
-from geometry_msgs.msg import Point
-
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Point, PoseStamped
 
 
 class DynamicManager:
@@ -33,21 +31,34 @@ class DynamicManager:
         self._namespace = namespace
 
         pkg_path = RosPack().get_path('arena-simulation-setup')
-        default_actor_model_name = "actor2"
+        default_actor_model_name = "actor1"
 
-        #TODO get rid of this once random_scenario loads models randomly
+        # TODO get rid of this once all references use the actual loaders
         actor_model_name: str = str(rospy.get_param(
             '~actor_model_name', default_actor_model_name))
-        
-        actor_model_path = os.path.join(pkg_path, "dynamic_obstacles", actor_model_name)
+
+        actor_model_path = os.path.join(
+            pkg_path, "dynamic_obstacles", actor_model_name)
 
         model_dict: Dict[ModelType, Model] = dict()
 
-        with open(os.path.join(actor_model_path, "model.sdf")) as f:
-            model_dict[ModelType.SDF] = Model(type=ModelType.SDF, description=f.read(), name="actor2", path=os.path.join(actor_model_path, "model.sdf"))
+        file_path = os.path.join(actor_model_path, "sdf", f"{actor_model_name}.sdf")
+        with open(file_path) as f:
+            model_dict[ModelType.SDF] = Model(
+                type=ModelType.SDF,
+                description=f.read(),
+                name=actor_model_name,
+                path=file_path
+            )
 
-        with open(os.path.join(actor_model_path, f"{actor_model_name}.model.yaml")) as f:
-            model_dict[ModelType.YAML] = Model(type=ModelType.YAML, description=f.read(), name="actor2", path=os.path.join(actor_model_path, f"{actor_model_name}.model.yaml"))
+        file_path = os.path.join(actor_model_path, "yaml", f"{actor_model_name}.yaml")
+        with open(file_path) as f:
+            model_dict[ModelType.YAML] = Model(
+                type=ModelType.YAML,
+                description=f.read(),
+                name=actor_model_name,
+                path=file_path
+            )
 
         self._default_actor_model = ModelWrapper.Constant(
             name="actor2",
@@ -69,7 +80,7 @@ class DynamicManager:
         If the object has an interaction radius of > 0, 
         then load it as an interactive obstacle instead of static
         """
-        ...
+        raise NotImplementedError()
 
     def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
         """
@@ -82,10 +93,17 @@ class DynamicManager:
         """
         Creates a line obstacle.
         """
-        ...
+        raise NotImplementedError()
 
-    def remove_obstacles(self):
+    def unuse_obstacles(self):
+        """
+        Prepares obstacles for reuse or removal.
+        """
+        raise NotImplementedError()
+    
+    def remove_obstacles(self, purge: bool = True):
         """
         Removes obstacles from simulator.
+        @purge: if False, only remove unused obstacles
         """
-        ...
+        raise NotImplementedError()

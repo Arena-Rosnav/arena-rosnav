@@ -30,7 +30,7 @@
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find arena_bringup)/params/rosconsole.conf"/>
   
   <!-- spacial_horizon -->
-  <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node">
+  <node pkg="spacial_horizon" type="spacial_horizon_node" name="spacial_horizon_node" output="screen" >
     <remap from="$(arg namespace)/goal" to="$(arg namespace)/move_base_simple/goal" />
     <remap from="/move_base/NavfnROS/make_plan" to="$(arg namespace)/move_base/NavfnROS/make_plan" />
 

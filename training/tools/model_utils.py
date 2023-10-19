@@ -3,6 +3,7 @@ import sys
 from typing import Union, Type
 
 import wandb
+from sb3_contrib import RecurrentPPO
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import (
     EvalCallback,
@@ -17,6 +18,7 @@ from tools.staged_train_callback import InitiateNewTrainStage
 
 
 def setup_wandb(config: dict, agent: PPO) -> None:
+    wandb.login(key="58b5a2040f5cc9d5c3a7d6102877515716298192")
     wandb.init(
         project="Arena-RL",
         entity=None,
@@ -68,7 +70,7 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
 
     print("\n--------------------------------")
     print("UPDATING MODEL HYPERPARAMETER...")
-    print("(no change -> no print below")
+    print("(no change -> no print below)")
 
     ppo_params = config["rl_agent"]["ppo"]
     update(model, "batch_size", ppo_params["m_batch_size"])
@@ -94,11 +96,15 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
         model.update_n_envs()
         model.n_envs = config["n_envs"]
         model.rollout_buffer.buffer_size = ppo_params["n_steps"]
-    if not model.tensorboard_log and (
-        not config["debug_mode"] and config["monitoring"]["use_wandb"]
-    ):
+    if not config["debug_mode"] and config["monitoring"]["use_wandb"]:
         model.tensorboard_log = PATHS["tb"]
-        configure_logger(1, PATHS["tb"], "run", False)
+        logger = configure_logger(1, PATHS["tb"], "run", False)
+        model._logger = logger
+    if config["debug_mode"]:
+        model.tensorboard_log = None
+        model._logger = None
+
+    model._setup_rollout_buffer()
 
     print("--------------------------------\n")
 
@@ -119,7 +125,7 @@ def get_ppo_instance(
     )
 
     wandb_logging: bool = not config["debug_mode"] and config["monitoring"]["use_wandb"]
-    if wandb_logging and not new_model:
+    if wandb_logging:
         setup_wandb(config, model)
     return model
 
@@ -161,7 +167,12 @@ def instantiate_new_model(
             "'BaseAgent' or 'ActorCriticPolicy'!"
         )
 
-    return PPO(**ppo_kwargs)
+    is_lstm = "LSTM" in agent.type.name
+    return RecurrentPPO(**ppo_kwargs) if is_lstm else PPO(**ppo_kwargs)
+
+
+sys.modules["rl_agent"] = sys.modules["rosnav"]
+sys.modules["rl_utils.rl_utils.utils"] = sys.modules["rosnav.utils"]
 
 
 def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
@@ -187,7 +198,6 @@ def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
 def init_callbacks(
     config: dict, train_env: VecEnv, eval_env: VecEnv, paths
 ) -> EvalCallback:
-
     # threshold settings for training curriculum
     # type can be either 'succ' or 'rew'
     curriculum_cfg = config["callbacks"]["training_curriculum"]

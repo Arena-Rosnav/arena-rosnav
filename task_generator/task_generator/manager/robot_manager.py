@@ -1,5 +1,4 @@
-from dataclasses import asdict
-from typing import Any, Callable
+from typing import Callable
 
 import numpy as np
 import rospy
@@ -8,21 +7,24 @@ import os
 import time
 
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseStamped
-from std_srvs.srv import Empty
+import os
+import time
 
+import roslaunch
+import rospy
+from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Odometry
+from std_srvs.srv import Empty
 from task_generator.constants import Constants
 from task_generator.shared import Position, Robot
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.utils import Utils
 
-from geometry_msgs.msg import Pose, Point, Quaternion
-
 
 class RobotManager:
     """
-        The robot manager manages the goal and start 
-        position of a robot for all task modes.
+    The robot manager manages the goal and start
+    position of a robot for all task modes.
     """
 
     _ns_prefix: Callable[..., str]
@@ -44,7 +46,8 @@ class RobotManager:
     _clear_costmaps_srv: rospy.ServiceProxy
 
     def __init__(self, simulator: BaseSimulator, robot: Robot):
-        self._ns_prefix = lambda *topic: os.path.join(self._robot.namespace, *topic)
+        self._ns_prefix = lambda *topic: os.path.join(
+            self._robot.namespace, *topic)
 
         self._simulator = simulator
 
@@ -110,7 +113,7 @@ class RobotManager:
         return self._is_goal_reached
 
     def move_robot_to_pos(self, pos: Position):
-        self._simulator.move_robot((*pos, 0), name=self._robot.namespace)
+        self._simulator.move_entity(name=self._robot.namespace, pos=(*pos, 0))
 
     def reset(self, start_pos: Position, goal_pos: Position):
         """
@@ -167,14 +170,14 @@ class RobotManager:
         self._move_base_goal_pub.publish(goal_msg)
 
     def _launch_robot(self):
-        roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(
+        roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(  # type: ignore
             ["arena_bringup", "robot.launch"]
         )
 
         rospy.loginfo(f"START WITH MODEL {self._robot.namespace}")
 
         args = [
-            f"model:={self._robot.model.get([]).name}",
+            f"model:={self._robot.model.get().name}",
             f"local_planner:={self._robot.planner}",
             f"namespace:={self._robot.namespace}",
             f"complexity:={rospy.get_param('complexity', 1)}",
@@ -182,8 +185,8 @@ class RobotManager:
             f"agent_name:={self._robot.agent}"
         ]
 
-        self.process = roslaunch.parent.ROSLaunchParent(
-            roslaunch.rlutil.get_or_generate_uuid(None, False),
+        self.process = roslaunch.parent.ROSLaunchParent(  # type: ignore
+            roslaunch.rlutil.get_or_generate_uuid(None, False),  # type: ignore
             [(*roslaunch_file, args)]
         )
         self.process.start()

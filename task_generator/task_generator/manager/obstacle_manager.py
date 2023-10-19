@@ -1,26 +1,19 @@
-from ast import Dict
 import random
-from typing import Collection, Iterator
+from typing import Any, Callable, Collection, Iterator
 
 import numpy as np
 import yaml
-import rospy
-import os
 import xml.etree.ElementTree as ET
-import rospkg
+
 from task_generator.constants import FlatlandRandomModel
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
 from task_generator.manager.map_manager import MapManager
-
 from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle
+from task_generator.simulators.base_simulator import BaseSimulator
 
 from geometry_msgs.msg import Point
 
 import itertools
-
-from task_generator.simulators.base_simulator import BaseSimulator
-
-# GRADUALLY MIGRATE ALL METHODS FOR STATIC OBSTACLES FROM DYNAMIC_MANAGERS TO HERE
 
 
 class ObstacleManager:
@@ -44,22 +37,13 @@ class ObstacleManager:
 
         self.id_generator = itertools.count(434)
 
-    # TODO replace with already loaded XML
-    def spawn_map_obstacles(self, map_path: str = "map_empty"):
+    def spawn_map_obstacles(self, map: ET.ElementTree):
         """
         Loads given obstacles into the simulator,
         the map file is retrieved from launch parameter "map_file"
         """
-        map = rospy.get_param("map_file")
-        map_path = os.path.join(
-            rospkg.RosPack().get_path("arena-simulation-setup"),
-            "worlds",
-            map_path,
-            "ped_scenarios",
-            f"{map}.xml"
-        )
-        tree = ET.parse(map_path)
-        root = tree.getroot()
+
+        root = map.getroot()
 
         for child in root:
 
@@ -94,21 +78,30 @@ class ObstacleManager:
 
         self._dynamic_manager.spawn_obstacles(obstacles=setups)
 
-    def reset(self):
+    def respawn(self, callback: Callable[[], Any]):
+        """
+        Unuse obstacles, (re-)use them in callback, finally remove unused obstacles
+        @callback: Function to call between unuse and remove
+        """
+        self._dynamic_manager.unuse_obstacles()
+        callback()
+        self._dynamic_manager.remove_obstacles(purge=False)
 
+    def reset(self):
+        """
+        Unuse and remove all obstacles
+        """
         if self.first_reset:
             self.first_reset = False
         else:
-            self._dynamic_manager.remove_obstacles()
+            self._dynamic_manager.remove_obstacles(purge=True)
 
+    # TODO refactor this with a registry
 
-
-
-    #TODO refactor this with a registry
     def generate_random_model(self, model_type: ModelType, **kwargs) -> Model:
         if model_type == ModelType.YAML:
             return self.generate_random_model(**kwargs)
-        
+
         else:
             raise NotImplementedError()
 

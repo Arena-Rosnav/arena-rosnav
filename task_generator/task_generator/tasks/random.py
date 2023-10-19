@@ -1,25 +1,20 @@
 import random
-from typing import List
+import time
+from typing import Generator, List, Optional
 
 
 from task_generator.constants import Constants
+from task_generator.manager.map_manager import MapManager
+from task_generator.manager.obstacle_manager import ObstacleManager
+from task_generator.manager.robot_manager import RobotManager
 from task_generator.tasks.task_factory import TaskFactory
-
 from task_generator.shared import DynamicObstacle, Obstacle, Waypoint
-
-from task_generator.tasks.base_task import CreateObstacleTask
-
-
-dynamic_obstacles_random = random.randint(
-    Constants.Random.MIN_DYNAMIC_OBS, Constants.Random.MAX_DYNAMIC_OBS)
-static_obstacles_random = random.randint(
-    Constants.Random.MIN_STATIC_OBS, Constants.Random.MAX_STATIC_OBS)
-interactive_obstacles_random = random.randint(
-    Constants.Random.MIN_INTERACTIVE_OBS, Constants.Random.MAX_INTERACTIVE_OBS)
+from task_generator.tasks.base_task import BaseTask
+from task_generator.tasks.utils import ObstacleInterface, RandomInterface, RandomList
 
 
 @TaskFactory.register(Constants.TaskMode.RANDOM)
-class RandomTask(CreateObstacleTask):
+class RandomTask(BaseTask, RandomInterface):
     """
         The random task spawns static and dynamic
         obstacles on every reset and will create
@@ -27,68 +22,83 @@ class RandomTask(CreateObstacleTask):
         each task.
     """
 
-    def reset(self, static_obstacles: int = 0, dynamic_obstacles: int = 0):
-        return super().reset(
-            lambda: self._reset_robot_and_obstacles(
-                static_obstacles=static_obstacles,
-                dynamic_obstacles=dynamic_obstacles,
-            )
+    _gen_static: Generator[int, None, None]
+    _gen_interactive: Generator[int, None, None]
+    _gen_dynamic: Generator[int, None, None]
+
+    _static_obstacles: RandomList
+    _interactive_obstacles: RandomList
+    _dynamic_obstacles: RandomList
+
+    def __init__(
+        self,
+        obstacle_manager: ObstacleManager,
+        robot_managers: List[RobotManager],
+        map_manager: MapManager,
+        **kwargs
+    ):
+        BaseTask.__init__(
+            self,
+            obstacle_manager=obstacle_manager,
+            robot_managers=robot_managers,
+            map_manager=map_manager,
+            **kwargs
         )
 
-    def _reset_robot_and_obstacles(self, dynamic_obstacles: int = 0, static_obstacles: int = 0):
-        robot_positions: List[Waypoint] = []  # may be needed in the future idk
+        obstacle_ranges = RandomInterface._load_obstacle_ranges(self)
+        self._gen_static = RandomInterface._randrange_generator(obstacle_ranges.static)
+        self._gen_interactive = RandomInterface._randrange_generator(obstacle_ranges.interactive)
+        self._gen_dynamic = RandomInterface._randrange_generator(obstacle_ranges.dynamic)
 
-        interactive_obstacles: int = 0
+        allowed_obstacles = RandomInterface._load_obstacle_list(self)
+        self._static_obstacles = allowed_obstacles.static
+        self._interactive_obstacles = allowed_obstacles.interactive
+        self._dynamic_obstacles = allowed_obstacles.dynamic
 
-        for manager in self._robot_managers:
+    @BaseTask.reset_helper(parent=BaseTask)
+    def reset(
+        self,
+        n_static_obstacles: Optional[int] = None,
+        n_interactive_obstacles: Optional[int] = None, 
+        n_dynamic_obstacles: Optional[int] = None,
+        static_obstacles: Optional[RandomList] = None,
+        interactive_obstacles: Optional[RandomList] = None,
+        dynamic_obstacles: Optional[RandomList] = None,
+        **kwargs):
 
-            start_pos = self._map_manager.get_random_pos_on_map(
-                manager.safe_distance)
-            goal_pos = self._map_manager.get_random_pos_on_map(
-                manager.safe_distance, forbidden_zones=[start_pos])
+        if n_static_obstacles is None:
+            n_static_obstacles = next(self._gen_static)
 
-            manager.reset(start_pos=start_pos[:2], goal_pos=goal_pos[:2])
+        if n_interactive_obstacles is None:
+            n_interactive_obstacles = next(self._gen_interactive)
 
-            robot_positions.append(start_pos)
-            robot_positions.append(goal_pos)
+        if n_dynamic_obstacles is None:
+            n_dynamic_obstacles = next(self._gen_dynamic)
 
-        self._obstacle_manager.reset()
-        self._map_manager.init_forbidden_zones()
+        if static_obstacles is None:
+            static_obstacles = self._static_obstacles
 
-        dynamic_obstacles_array: List[DynamicObstacle]
-        static_obstacles_array: List[Obstacle]
-        interactive_obstacles_array: List[Obstacle]
+        if interactive_obstacles is None:
+            interactive_obstacles = self._interactive_obstacles
 
-        self._obstacle_manager.spawn_map_obstacles()
+        if dynamic_obstacles is None:
+            dynamic_obstacles = self._dynamic_obstacles
 
-        # Create static obstacles
-        static_obstacles_array = list()
-        for i in range(static_obstacles):
-            model = random.choice(self._model_loader.models)
-            obs = self._create_obstacle(name=model, model=self._model_loader.bind(model))
-            static_obstacles_array.append(obs)
+        def callback():
 
-        if len(static_obstacles_array):
-            self._obstacle_manager.spawn_obstacles(setups=static_obstacles_array)
+            self._obstacle_manager.respawn(callback=lambda: RandomInterface._setup_random(
+                self,
+                n_static_obstacles=n_static_obstacles,
+                n_interactive_obstacles=n_interactive_obstacles,
+                n_dynamic_obstacles=n_dynamic_obstacles,
+                static_obstacles=static_obstacles,
+                interactive_obstacles=interactive_obstacles,
+                dynamic_obstacles=dynamic_obstacles
+                )
+            )
+            time.sleep(1)
+            return False
 
-        # Create interactive obstacles
-        interactive_obstacles_array = list()
-        for i in range(interactive_obstacles):
-            model = random.choice(self._model_loader.models)
-            obs = self._create_obstacle(name=model, model=self._model_loader.bind(model))
-            interactive_obstacles_array.append(obs)
+        return callback
 
-        if len(interactive_obstacles_array):
-            self._obstacle_manager.spawn_obstacles(interactive_obstacles_array)
-
-        # Create dynamic obstacles
-        dynamic_obstacles_array = list()
-        for i in range(dynamic_obstacles):
-            model = random.choice(self._dynamic_model_loader.models)
-            obs = self._create_dynamic_obstacle(name=model, model=self._dynamic_model_loader.bind(model))
-            dynamic_obstacles_array.append(obs)
-
-        if len(dynamic_obstacles_array):
-            self._obstacle_manager.spawn_dynamic_obstacles(dynamic_obstacles_array)
-
-        return False, (0, 0, 0)
+    
