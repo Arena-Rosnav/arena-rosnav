@@ -1,5 +1,9 @@
 from enum import Enum
 
+class Defaults:
+    class task_config:
+        no_of_episodes = 5
+
 
 class Constants:
     GOAL_REACHED_TOLERANCE = 1.0
@@ -33,7 +37,7 @@ class Constants:
         RANDOM = "random"
         STAGED = "staged"
         SCENARIO = "scenario"
-        RANDOM_SCENARIO = "random_scenario"
+        PARAMETRIZED = "parametrized"
         DYNAMIC_MAP_RANDOM = "dynamic_map_random"
         DYNAMIC_MAP_STAGED = "dynamic_map_staged"
 

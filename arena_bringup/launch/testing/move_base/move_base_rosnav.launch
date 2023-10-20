@@ -41,7 +41,7 @@
 
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/global_costmap_params.yaml" command="load" />
-    <rosparam file="$(find arena-simulation-setup)/move_base/move_base_params.yaml" command="load" />
+    <rosparam file="$(find arena-simulation-setup)/configs/move_base/move_base_params.yaml" command="load" />
   
     <remap from="$(arg cmd_vel_topic)" to="/trash" />
     <remap from="odom" to="$(arg  odom_topic)"/>

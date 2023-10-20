@@ -23,6 +23,10 @@ from std_msgs.msg import Bool
 
 import xml.etree.ElementTree as ET
 
+from nav_msgs.msg import OccupancyGrid
+from map_distance_server.srv import GetDistanceMapResponse
+from std_msgs.msg import String
+
 class ManagerProps:
     _obstacle_manager: ObstacleManager
     _robot_managers: List[RobotManager]
@@ -122,13 +126,14 @@ class RobotGoal:
 class Scenario:
     obstacles: ScenarioObstacles
     map: ScenarioMap
-    resets: int
     robots: List[RobotGoal]
 
 class ScenarioInterface(ManagerProps, ModelloaderProps):
     """
     Helper methods to handle scenarios
     """
+
+    SCENARIO_BASE_PATH = os.path.join(rospkg.RosPack().get_path("arena_bringup"), "configs", "scenarios")
 
     def _read_scenario_file(self, scenario_file_content: str) -> Scenario:
         """
@@ -169,7 +174,6 @@ class ScenarioInterface(ManagerProps, ModelloaderProps):
                 dynamic=dynamic_obstacles
             ),
             map=ScenarioMap(yaml=map_yaml, path=map_path, xml=map_xml),
-            resets=scenario_file["resets"],
             robots=[RobotGoal(start=robot["start"], goal=robot["goal"])
                     for robot in scenario_file["robots"]]
         )
@@ -258,24 +262,24 @@ class RandomInterface(ObstacleInterface, ManagerProps, ModelloaderProps):
 
 
         return RandomObstacleList(
-            static=str_to_RandomList(value=rosparam_get(list, "~taskMode/random/static/models", self._model_loader.models)),
-            interactive=str_to_RandomList(value=rosparam_get(list, "~taskMode/random/interactive/models", self._model_loader.models)),
-            dynamic=str_to_RandomList(value=rosparam_get(list, "~taskMode/random/dynamic/models", self._dynamic_model_loader.models))
+            static=str_to_RandomList(value=rosparam_get(list, "~configuration/task_mode/random/static/models", self._model_loader.models)),
+            interactive=str_to_RandomList(value=rosparam_get(list, "~configuration/task_mode/random/interactive/models", self._model_loader.models)),
+            dynamic=str_to_RandomList(value=rosparam_get(list, "~configuration/task_mode/random/dynamic/models", self._dynamic_model_loader.models))
         )
 
     def _load_obstacle_ranges(self) -> RandomObstacleRanges:
         return RandomObstacleRanges(
             static=(
-                int(str(rosparam_get(int, "~taskMode/random/static/min", Constants.Random.MIN_STATIC_OBS))),
-                int(str(rosparam_get(int, "~taskMode/random/static/max", Constants.Random.MAX_STATIC_OBS)))
+                int(str(rosparam_get(int, "~configuration/task_mode/random/static/min", Constants.Random.MIN_STATIC_OBS))),
+                int(str(rosparam_get(int, "~configuration/task_mode/random/static/max", Constants.Random.MAX_STATIC_OBS)))
             ),
             interactive=(
-                int(str(rosparam_get(int, "~taskMode/random/interactive/min", Constants.Random.MIN_INTERACTIVE_OBS))),
-                int(str(rosparam_get(int, "~taskMode/random/interactive/max", Constants.Random.MAX_INTERACTIVE_OBS)))
+                int(str(rosparam_get(int, "~configuration/task_mode/random/interactive/min", Constants.Random.MIN_INTERACTIVE_OBS))),
+                int(str(rosparam_get(int, "~configuration/task_mode/random/interactive/max", Constants.Random.MAX_INTERACTIVE_OBS)))
             ),
             dynamic=(
-                int(str(rosparam_get(int, "~taskMode/random/dynamic/min", Constants.Random.MIN_DYNAMIC_OBS))),
-                int(str(rosparam_get(int, "~taskMode/random/dynamic/max", Constants.Random.MAX_DYNAMIC_OBS)))
+                int(str(rosparam_get(int, "~configuration/task_mode/random/dynamic/min", Constants.Random.MIN_DYNAMIC_OBS))),
+                int(str(rosparam_get(int, "~configuration/task_mode/random/dynamic/max", Constants.Random.MAX_DYNAMIC_OBS)))
             )
         )
 
@@ -354,7 +358,7 @@ class StagedInterface(ObstacleInterface, ManagerProps, ModelloaderProps):
 
     # TODO move to Stages
     @staticmethod
-    def parse(config: Dict[int, Dict]) -> Stages:
+    def parse(config: List[Dict]) -> Stages:
         return {
             i:Stage(
                 static=stage.get("static", 0),
@@ -362,16 +366,17 @@ class StagedInterface(ObstacleInterface, ManagerProps, ModelloaderProps):
                 dynamic=stage.get("dynamic", 0),
                 goal_radius=stage.get("goal_radius")
             )
-            for i, stage in config.items()
+            for i, stage in enumerate(config)
         }
 
     def _subscribe(self, namespace:str, cb_previous:Callable, cb_next:Callable):
-        rospy.Subscriber(
+        sub_next_stage = rospy.Subscriber(
             f"{namespace}next_stage", Bool, cb_next
         )
-        rospy.Subscriber(
+        sub_prev_stage = rospy.Subscriber(
             f"{namespace}previous_stage", Bool, cb_previous
         )
+        return sub_next_stage, sub_prev_stage
 
     def _publish_curr_stage(self, stage: StageIndex):
         rospy.set_param("/curr_stage", stage)
@@ -400,3 +405,51 @@ class StagedInterface(ObstacleInterface, ManagerProps, ModelloaderProps):
             goal_radius = rosparam_get(float, "/goal_radius", 0.3)
 
         rospy.set_param("/goal_radius", goal_radius)
+
+class DynamicMapInterface(ManagerProps):
+    def update_map(self, dist_map: GetDistanceMapResponse):
+        self._map_manager.update_map(dist_map)
+
+    def get_service(self):
+        # requests distance map from distance map server
+        get_dist_map_service = rospy.ServiceProxy("/distance_map", GetDistanceMapResponse)
+
+        return get_dist_map_service
+
+    def create_publishers(self):
+        # requests new map from map generator
+        map_request_pub = rospy.Publisher(
+            "/request_new_map", String, queue_size=1)
+        # task reset for all taskmanagers when one resets
+        task_reset_pub = rospy.Publisher(
+            "/dynamic_map/task_reset", String, queue_size=1
+        )
+
+        return map_request_pub, task_reset_pub
+        
+    def subscribe(self, callback: Callable):
+        self.task_reset_sub = rospy.Subscriber(
+            "/dynamic_map/task_reset", String, callback
+        )
+
+    def request_new_map(self, first_map: bool, request_pub: rospy.Publisher, reset_pub: rospy.Publisher):
+        # set current eps immediately to 0 so that only one task
+        # requests a new map
+        if not first_map:
+            rospy.set_param("/dynamic_map/curr_eps", 0)
+
+        request_pub.publish("")
+
+        rospy.wait_for_message("/map", OccupancyGrid)
+        rospy.wait_for_message("/signal_new_distance_map", String)
+
+        reset_pub.publish("")
+
+        rospy.loginfo("===================")
+        rospy.loginfo("+++ Got new map +++")
+        rospy.loginfo("===================")
+
+    def increment_episodes(self, step: float):
+        new_count = rosparam_get(int, "/dynamic_map/curr_eps", 0)
+        new_count += step
+        rospy.set_param("/dynamic_map/curr_eps", new_count)

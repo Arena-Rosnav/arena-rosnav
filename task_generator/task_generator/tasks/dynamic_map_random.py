@@ -9,12 +9,15 @@ from task_generator.constants import Constants
 from task_generator.manager.map_manager import MapManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
+from task_generator.tasks.base_task import BaseTask
 from task_generator.tasks.random import RandomTask
 from task_generator.tasks.task_factory import TaskFactory
+from task_generator.tasks.utils import DynamicMapInterface, RandomInterface
+from task_generator.utils import rosparam_get
 
 
 @TaskFactory.register(Constants.TaskMode.DYNAMIC_MAP_RANDOM)
-class DynamicMapRandomTask(RandomTask):
+class DynamicMapRandomTask(BaseTask, DynamicMapInterface):
     """
     The random task spawns static and dynamic
     obstacles on every reset and will create
@@ -24,6 +27,10 @@ class DynamicMapRandomTask(RandomTask):
 
     _eps_per_map: float
     _iterator: float
+
+    map_request_pub: rospy.Publisher
+    get_dist_map_service: rospy.ServiceProxy
+    task_reset_pub: rospy.Publisher
 
     def __init__(
         self,
@@ -40,20 +47,9 @@ class DynamicMapRandomTask(RandomTask):
                 "otherwise the MapGenerator isn't used."
             )
 
-        # requests new map from map generator
-        self.map_request_pub = rospy.Publisher(
-            "/request_new_map", String, queue_size=1)
-        # requests distance map from distance map server
-        self.get_dist_map_service = rospy.ServiceProxy(
-            "/distance_map", GetDistanceMap)
-
-        # task reset for all taskmanagers when one resets
-        self.task_reset_pub = rospy.Publisher(
-            "/dynamic_map/task_reset", String, queue_size=1
-        )
-        self.task_reset_sub = rospy.Subscriber(
-            "/dynamic_map/task_reset", String, self._cb_task_reset
-        )
+        DynamicMapInterface.subscribe(self, self._cb_task_reset)
+        self.map_request_pub, self.task_reset_pub = DynamicMapInterface.create_publishers(self)
+        self.get_dist_map_service = DynamicMapInterface.get_service(self)
 
         # iterate resets over 1 / num_envs
         # e.g. eps_per_map = 2
@@ -62,7 +58,7 @@ class DynamicMapRandomTask(RandomTask):
         # eps_per_map = sum_resets * 1 / num_envs
         self._eps_per_map = float(str(rospy.get_param("episode_per_map", 1)))
         denominator: float = (
-            float(str(rospy.get_param("num_envs", 1)))
+            rosparam_get(float, "num_envs", 1)
             if self._robot_managers[0].namespace != "eval_sim"
             else 1
         )
@@ -70,58 +66,39 @@ class DynamicMapRandomTask(RandomTask):
 
         rospy.set_param("/dynamic_map/curr_eps", 0)
 
-    def update_map(self):
-        self._map_manager.update_map(self.get_dist_map_service())
-
+    
+    @BaseTask.reset_helper(parent=BaseTask)
     def reset(
         self,
         reset_after_new_map: bool = False,
         first_map: bool = False,
         **kwargs
     ):
+        
+        if first_map is None:
+            first_map = rosparam_get(float, "/dynamic_map/curr_eps", 0) >= self._eps_per_map
+
         def callback() -> bool:
             try:
-                if (
-                    float(str(rospy.get_param("/dynamic_map/curr_eps", 0))
-                        ) >= self._eps_per_map
-                    or first_map
-                ):
-                    self.request_new_map(first_map=first_map)
-                    return False
+                self.request_new_map(first_map=first_map, request_pub=self.map_request_pub, reset_pub=self.task_reset_pub)
+                DynamicMapInterface.update_map(self, dist_map=self.get_dist_map_service())
+                return False
                 
             except Exception:
                 pass
 
             if not reset_after_new_map:
                 # only update eps count when resetting the scene
-                new_count = float(str(rospy.get_param("/dynamic_map/curr_eps")))
-                new_count += self._iterator
-                rospy.set_param("/dynamic_map/curr_eps", new_count)
+                DynamicMapInterface.increment_episodes(self, step=self._iterator)
 
             return False
 
-        return super().reset(callback=callback, **kwargs)
+        return callback
 
-    def request_new_map(self, first_map: bool = False):
-        # set current eps immediately to 0 so that only one task
-        # requests a new map
-        if not first_map:
-            rospy.set_param("/dynamic_map/curr_eps", 0)
-
-        self.map_request_pub.publish("")
-
-        rospy.wait_for_message("/map", OccupancyGrid)
-        rospy.wait_for_message("/signal_new_distance_map", String)
-
-        self.task_reset_pub.publish("")
-        self.update_map()
-
-        rospy.loginfo("===================")
-        rospy.loginfo("+++ Got new map +++")
-        rospy.loginfo("===================")
+    
 
     def _cb_task_reset(self, msg):
         # task reset for all taskmanagers when one resets
         # update map manager
-        self.update_map()
+        self.update_map(dist_map=self.get_dist_map_service())
         self.reset(reset_after_new_map=True)

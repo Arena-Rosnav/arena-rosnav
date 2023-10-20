@@ -112,7 +112,7 @@ class FlatlandSimulator(BaseSimulator):
     def after_reset_task(self):
         pass
 
-    def delete_obstacle(self, name):
+    def delete_entity(self, name):
         res: DeleteModelResponse = self._delete_model_srv(DeleteModelRequest(name=name))
         return bool(res.success)
 

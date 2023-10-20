@@ -54,14 +54,14 @@ class BaseSimulator:
         """
         raise NotImplementedError()
 
+    def spawn_obstacle(self, obstacle: ObstacleProps) -> bool:
+        raise NotImplementedError()
+    
     def move_entity(self, name: str, pos: PositionOrientation):
         """
         Move the robot to the given position.
         """
         raise NotImplementedError()
 
-    def spawn_obstacle(self, obstacle: ObstacleProps) -> bool:
-        raise NotImplementedError()
-
-    def delete_obstacle(self, name: str) -> bool:
+    def delete_entity(self, name: str) -> bool:
         raise NotImplementedError()

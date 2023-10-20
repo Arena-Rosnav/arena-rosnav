@@ -193,7 +193,7 @@ class PedsimManager(DynamicManager):
                 known.used = True
 
                 # TODO static obstacles don't have collisions if not re-spawned but moved instead, remove this once it works without respawning
-                self._simulator.delete_obstacle(pedsim_name)
+                self._simulator.delete_entity(pedsim_name)
                 known.pedsim_spawned = False
                 #end 
 
@@ -314,7 +314,8 @@ class PedsimManager(DynamicManager):
 
             known = self._known_obstacles.get(pedsim_name)
             if known is not None:
-                if known.obstacle.name != obstacle.name:
+                #TODO temp
+                if False and known.obstacle.name != obstacle.name:
                     raise RuntimeError(f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {pedsim_name} (did you forget to call remove_obstacles?)")
 
                 known.used = True
@@ -367,7 +368,7 @@ class PedsimManager(DynamicManager):
                     continue;
                 # end
 
-                self._simulator.delete_obstacle(name=obstacle_id)
+                self._simulator.delete_entity(name=obstacle_id)
                 obstacle.pedsim_spawned = False
                 obstacle.used = False
                 to_forget.append(obstacle_id)

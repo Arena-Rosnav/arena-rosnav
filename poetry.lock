@@ -830,7 +830,7 @@ tests = ["pytest", "pytest-cov", "pytest-env", "pytest-xdist", "pytype", "mypy",
 
 [package.source]
 type = "directory"
-url = "../utils/stable-baselines3"
+url = "../utils-extern/misc/stable-baselines3"
 
 [[package]]
 name = "tensorboard"

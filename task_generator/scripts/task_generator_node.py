@@ -16,8 +16,8 @@ from task_generator.simulators.base_simulator import BaseSimulator
 
 from task_generator.tasks import TaskFactory, BaseTask
 
-from task_generator.utils import ModelLoader, Utils
-from task_generator.constants import Constants
+from task_generator.utils import ModelLoader, Utils, rosparam_get
+from task_generator.constants import Constants, Defaults
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
@@ -88,11 +88,9 @@ class TaskGenerator:
         self._namespace = "/"
 
         # Params
-        self._task_mode = Constants.TaskMode(
-            rospy.get_param(os.path.join(self._namespace, "task_mode")))
-        self._social_mode = Constants.SocialMode(
-            rospy.get_param(os.path.join(self._namespace, "social_mode"), "pedsim"))
-        self._auto_reset = bool(rospy.get_param("~auto_reset", True))
+        self._task_mode = Constants.TaskMode(rosparam_get(str, "task_mode"))
+        self._social_mode = Constants.SocialMode(rosparam_get(str, "social_mode"))
+        self._auto_reset = rosparam_get(bool, "auto_reset", True)
 
         # Publishers
         self._pub_scenario_reset = rospy.Publisher(
@@ -117,7 +115,7 @@ class TaskGenerator:
         rospy.set_param("/robot_names", self._task.robot_names)
 
         self._number_of_resets = 0
-        self._desired_resets = int(str(rospy.get_param("desired_resets", 2)))
+        self._desired_resets = rosparam_get(int, "~configuration/task_config/no_of_episodes", Defaults.task_config.no_of_episodes)
 
         self.srv_start_model_visualization = rospy.ServiceProxy(
             "start_model_visualization", Empty
@@ -276,10 +274,7 @@ class TaskGenerator:
         return EmptyResponse()
 
     def _send_end_message_on_end(self, is_end: bool):
-        if (
-            (not is_end and self._task_mode == Constants.TaskMode.SCENARIO)
-            or (self._task_mode != Constants.TaskMode.SCENARIO and self._number_of_resets < self._desired_resets)
-        ):
+        if (self._number_of_resets < self._desired_resets):
             return
 
         rospy.loginfo("Shutting down. All tasks completed")

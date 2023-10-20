@@ -38,7 +38,7 @@ class DynamicManager:
             '~actor_model_name', default_actor_model_name))
 
         actor_model_path = os.path.join(
-            pkg_path, "dynamic_obstacles", actor_model_name)
+            pkg_path, "obstacles", "dynamic_obstacles", actor_model_name)
 
         model_dict: Dict[ModelType, Model] = dict()
 

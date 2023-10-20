@@ -1,0 +1,45 @@
+task_config:
+  no_of_episodes: 50
+  robot_models: [jackal]
+  map_file: map_empty
+  auto_reset: true
+
+task_mode:
+  scenario:
+    scenario_file: default.json
+
+  parametrized:
+    file: default.xml 
+
+  staged:
+    curriculum: "default.yaml"
+
+  random_map: {}
+
+  random:
+    static:
+      min: 1
+      max: 5
+      models: ["shelf"]
+    interactive:
+      min: 0
+      max: 0
+      models: ["shelf"]
+    dynamic:
+      min: 10
+      max: 20
+      models: ["actor1"]
+
+dynamic_obstacles:
+  pedsim:
+    default_actor_config:
+      VMAX: [0.2, 0.3]
+      CHATTING_PROBABILITY: [0, 10]
+      TELL_STORY_PROBABILITY: [0, 5]
+      GROUP_TALKING_PROBABILITY: [0, 10]
+      TALKING_AND_WALKING_PROBABILITY: [0, 10]
+      TELL_STORY_BASE_TIME: 5
+      FORCE_FACTOR_DESIRED: [1, 5]
+      FORCE_FACTOR_OBSTACLE: [1, 7]
+      FORCE_FACTOR_SOCIAL: [5, 8]
+      FORCE_FACTOR_ROBOT: [2, 10]

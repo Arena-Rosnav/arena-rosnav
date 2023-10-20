@@ -2,47 +2,49 @@
 
   # Change back to Arena-Rosnav once the PR is merged
 - git:
-    local-name: ../utils/flatland
+    local-name: ../utils-extern/plugins/flatland
     uri: https://github.com/tuananhroman/flatland.git
     version: master
 
-- git:
-    local-name: ../utils/arena-tools
-    uri: https://github.com/Arena-Rosnav/arena-tools.git
-    version: main
+# - git:
+#     local-name: ../utils/arena-tools
+#     uri: https://github.com/Arena-Rosnav/arena-tools.git
+#     version: main
 
   # Change back to Arena-Rosnav once the PR is merged
 - git:
-    local-name: ../utils/stable-baselines3
+    local-name: ../utils-extern/misc/stable-baselines3
     uri: https://github.com/tuananhroman/stable-baselines3.git
     version: master
 
 - git:
-    local-name: ../utils/navigation/msgs/ford
+    local-name: ../utils-extern/ros/navigation/msgs/ford
     uri: https://bitbucket.org/acl-swarm/ford_msgs/src/master/
     version: master
 
 - git:
-    local-name: ../utils/pedsim_ros
-    uri: https://github.com/Arena-Rosnav/pedsim_ros.git
+    local-name: ../utils-extern/ros/pedsim_ros
+    uri: https://github.com/voshch/pedsim_ros.git
     version: master
 
 - git:
-    local-name: ../utils/jackal
-    uri: https://github.com/jackal/jackal.git
-
-- git:
-    local-name: ../utils/3rd-party-robot-packages
+    local-name: ../utils-extern/misc/robots
     uri: https://github.com/Arena-Rosnav/3rd-party-robot-packages
 
 - git:
-    local-name: ../utils/gazebo_sfm_plugin
-    uri: https://github.com/robotics-upo/gazebo_sfm_plugin.git
+    local-name: ../utils-extern/misc/jackal
+    uri: https://github.com/jackal/jackal.git
+
+
+# - git:
+#   local-name: ../utils/gazebo_sfm_plugin
+#   uri: https://github.com/robotics-upo/gazebo_sfm_plugin.git -->
+
 
 ### ARENA INFRASTRUCTURE
 
 - git:
-    local-name: ../utils/arena-simulation-setup
+    local-name: ../arena-simulation-setup
     uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
     version: dynamic_map
 
