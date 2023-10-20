@@ -3,7 +3,12 @@
 # by determining the number of static/dynamic obstacles per stage
 # (will carry on training on last stage when threshhold reached)
 
-1:
+# Training Curriculum 
+# this yaml serves as container of the learning curriculum for the agent
+# by determining the number of static/dynamic obstacles per stage
+# (will carry on training on last stage when threshhold reached)
+
+- #0
   goal_radius: 1.0
   map_generator:
     barn:
@@ -19,7 +24,7 @@
         obstacle_extra_radius: 1
   static: 0
   dynamic: 0
-2:
+- #1
   goal_radius: 0.33
   map_generator:
     barn:
@@ -35,7 +40,7 @@
         obstacle_extra_radius: 1
   static: 0
   dynamic: 0
-3:
+- #2
   map_generator:
     barn:
       fill_pct: 0.05
@@ -50,7 +55,7 @@
         obstacle_extra_radius: 1
   static: 0
   dynamic: 0
-4:
+- #3
   map_generator:
     barn:
       fill_pct: 0.1
@@ -65,7 +70,7 @@
         obstacle_extra_radius: 1
   static: 0
   dynamic: 0
-5:
+- #4
   map_generator:
     barn:
         fill_pct: 0.15
@@ -80,7 +85,7 @@
           obstacle_extra_radius: 1
   static: 0
   dynamic: 0
-6:
+- #5
   map_generator:
     barn:
         fill_pct: 0.2
@@ -95,7 +100,7 @@
           obstacle_extra_radius: 1
   static: 0
   dynamic: 0
-7:
+- #6
   map_generator:
     barn:
         fill_pct: 0.23
