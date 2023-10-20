@@ -71,18 +71,21 @@ class RandomScenarioTask(CreateObstacleTask):
         root = tree.getroot()
 
         obstacles = list()
-        for obst in root.findall("obstacle"):
-            try:
-                obstacles.append({
-                    "name": obst.find("name").text,
-                    "yaml": obst.find("yaml").text,
-                    "type": obst.find("type").text,
-                    "num": int(obst.find("num").text) if not obst.find("num") == None else 
-                            random.randint(int(obst.find("min-num").text), int(obst.find("max-num").text)),
-                })
-            except:
-                rospy.logwarn(f"The Scenarion file had faulty configuration!")
-                continue
+        for type in ["static", "dynamic", "interactive"]:
+            rospy.logerr(f"Adding obstacle types: {type}")
+            for obst in root.findall(type + "/obstacle"):
+                try:
+                    rospy.logerr(f"Adding obstacle {obst.find('name').text}")
+                    obstacles.append({
+                        "name": obst.find("name").text,
+                        "yaml": obst.find("yaml").text,
+                        "type": type,
+                        "num": int(obst.find("num").text) if not obst.find("num") == None and not obst.find("num") == 0 else 
+                                random.randint(int(obst.find("min-num").text), int(obst.find("max-num").text)),
+                    })
+                except:
+                    rospy.logwarn(f"The Scenario file had faulty configuration!")
+                    continue
 
         obstacles_array: Union(List[DynamicObstacle], List[Obstacle])
 

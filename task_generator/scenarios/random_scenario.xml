@@ -1,34 +1,37 @@
-<?xml version="1.0" ?>
+<?xml version="1.0"?>
 <random_scenario>
-  <obstacle name="table">
-    <min-num>3</min-num>
-    <max-num>10</max-num>
-    <name>table</name>
-    <yaml>shelf.model.yaml</yaml>
-    <type>static</type>
-  </obstacle>
-  <obstacle name="shelf">
-    <num>0</num>
-    <type>interactive</type>
-    <name>shelf</name>
-    <yaml>shelf.model.yaml</yaml>
-  </obstacle>
-  <obstacle name="adult">
-    <num>15</num>
-    <type>dynamic</type>
-    <name>adult</name>
-    <yaml>person_two_legged.model.yaml</yaml>
-  </obstacle>
-  <obstacle name="elder">
-    <num>0</num>
-    <type>dynamic</type>
-    <name>elder</name>
-    <yaml>person_two_legged.model.yaml</yaml>
-  </obstacle>
-  <obstacle name="child">
-    <num>0</num>
-    <type>dynamic</type>
-    <name>child</name>
-    <yaml>person_two_legged.model.yaml</yaml>
-  </obstacle>
+  <static>
+    <obstacle name="table">
+      <min-num>3</min-num>
+      <max-num>10</max-num>
+      <name>table</name>
+      <yaml>shelf.model.yaml</yaml>
+    </obstacle>
+  </static>
+
+  <interactive>
+    <obstacle name="shelf">
+      <num>0</num>
+      <name>shelf</name>
+      <yaml>shelf.model.yaml</yaml>
+    </obstacle>
+  </interactive>
+
+  <dynamic>
+    <obstacle name="adult">
+      <num>15</num>
+      <name>adult</name>
+      <yaml>person_two_legged.model.yaml</yaml>
+    </obstacle>
+    <obstacle name="elder">
+      <num>0</num>
+      <name>elder</name>
+      <yaml>person_two_legged.model.yaml</yaml>
+    </obstacle>
+    <obstacle name="child">
+      <num>0</num>
+      <name>child</name>
+      <yaml>person_two_legged.model.yaml</yaml>
+    </obstacle>
+  </dynamic>
 </random_scenario>
