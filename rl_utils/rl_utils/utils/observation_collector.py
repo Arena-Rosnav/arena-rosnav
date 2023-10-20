@@ -1,39 +1,30 @@
 #! /usr/bin/env python3
+import os
+import random
+import time  # for debuging
+from collections import deque
 from threading import Thread
 from typing import Tuple
 
-from numpy.core.numeric import normalize_axis_tuple
-import rospy
-import random
-import os
-import numpy as np
-from collections import deque
-
-import time  # for debuging
-
-# observation msgs
-from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import Pose2D, PoseStamped, PoseWithCovarianceStamped
-from geometry_msgs.msg import Twist
-from nav_msgs.msg import Path
-from rosgraph_msgs.msg import Clock
-from nav_msgs.msg import Odometry
-
-# services
-from flatland_msgs.msg import StepWorld
-
 # message filter
 import message_filters
-
+import numpy as np
+import rospy
+# services
+from flatland_msgs.msg import StepWorld
+from geometry_msgs.msg import (Pose2D, PoseStamped, PoseWithCovarianceStamped,
+                               Twist)
+from nav_msgs.msg import Odometry, Path
+from numpy.core.numeric import normalize_axis_tuple
+from rosgraph_msgs.msg import Clock
+# observation msgs
+from sensor_msgs.msg import LaserScan
+from std_msgs.msg import Bool
 # for transformations
 from tf.transformations import *
 
-import numpy as np
-
-from std_msgs.msg import Bool
-
 from .debug import timeit
-
+from .utils import remove_double_slash
 
 class ObservationCollector:
     def __init__(
@@ -48,8 +39,7 @@ class ObservationCollector:
             num_lidar_beams (int): [description]
             lidar_range (float): [description]
         """
-        self.ns = ns
-
+        self.ns = remove_double_slash(ns)
         self.ns_prefix = lambda topic: os.path.join(self.ns, topic)
 
         self._laser_num_beams = num_lidar_beams
