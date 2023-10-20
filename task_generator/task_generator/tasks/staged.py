@@ -47,7 +47,7 @@ class StagedRandomTask(BaseTask, RandomInterface, StagedInterface):
         robot_managers: List[RobotManager],
         map_manager: MapManager,
         paths: Optional[Dict[str, str]] = None,
-        start_stage: StageIndex = 1,
+        start_stage: StageIndex = 0,
         namespace: str = "",
         **kwargs,
     ):
@@ -70,8 +70,13 @@ class StagedRandomTask(BaseTask, RandomInterface, StagedInterface):
         # TODO rework this
         if paths is None:
             paths = dict(
-                curriculum=os.path.join(rospkg.RosPack().get_path(
-                    "training"), "configs", "training_curriculums", "default.yaml")
+                curriculum=os.path.join(
+                    rospkg.RosPack().get_path("arena_bringup"),
+                    "configs",
+                    "training",
+                    "training_curriculums",
+                    rosparam_get(str, "~configuration/task_mode/staged/curriculum")
+                )
             )
 
         # TODO add mutexes for these against reset
@@ -93,7 +98,7 @@ class StagedRandomTask(BaseTask, RandomInterface, StagedInterface):
         self.reset(lambda:None)
 
     def next_stage(self, *args, **kwargs):
-        if self._curr_stage >= len(self._stages):
+        if self._curr_stage >= len(self._stages) - 1:
             rospy.loginfo(
                 f"({self._namespace}) INFO: Tried to trigger next stage but already reached last one"
             )
@@ -104,7 +109,7 @@ class StagedRandomTask(BaseTask, RandomInterface, StagedInterface):
         return self._init_stage_and_update_config(self._curr_stage)
 
     def previous_stage(self, *args, **kwargs):
-        if self._curr_stage <= 1:
+        if self._curr_stage <= 0:
             rospy.loginfo(
                 f"({self._namespace}) INFO: Tried to trigger previous stage but already reached first one"
             )

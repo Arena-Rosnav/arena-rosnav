@@ -1,15 +1,9 @@
 <?xml version="1.0" ?>
 <random>
   <static>
-    <obstacle name="table">
-      <min>5</min>
-      <max>8</max>
-      <type>table</type>
-      <model>table</model>
-    </obstacle>
     <obstacle name="shelf">
       <min>2</min>
-      <max>3</max>
+      <max>7</max>
       <type>shelf</type>
       <model>shelf</model>
     </obstacle>

@@ -358,7 +358,7 @@ class StagedInterface(ObstacleInterface, ManagerProps, ModelloaderProps):
 
     # TODO move to Stages
     @staticmethod
-    def parse(config: Dict[int, Dict]) -> Stages:
+    def parse(config: List[Dict]) -> Stages:
         return {
             i:Stage(
                 static=stage.get("static", 0),
@@ -366,7 +366,7 @@ class StagedInterface(ObstacleInterface, ManagerProps, ModelloaderProps):
                 dynamic=stage.get("dynamic", 0),
                 goal_radius=stage.get("goal_radius")
             )
-            for i, stage in config.items()
+            for i, stage in enumerate(config)
         }
 
     def _subscribe(self, namespace:str, cb_previous:Callable, cb_next:Callable):

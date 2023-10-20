@@ -1,5 +1,6 @@
 import os
 import random
+import time
 from typing import List, Optional
 
 from rospkg import RosPack
@@ -42,8 +43,14 @@ class ParametrizedTask(BaseTask, ScenarioInterface, RandomInterface, ObstacleInt
     def reset(self, **kwargs):
 
         def callback():
-            self._obstacle_manager.respawn(lambda: ScenarioInterface._setup_scenario(self, self._generate_scenario()))
             
+            #TODO temp
+            self._obstacle_manager.reset()
+            #end
+            
+            self._obstacle_manager.respawn(lambda: ScenarioInterface._setup_scenario(self, self._generate_scenario()))
+            time.sleep(1)
+
             return False
 
         return callback

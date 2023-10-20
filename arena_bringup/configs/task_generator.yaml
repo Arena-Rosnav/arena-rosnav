@@ -11,7 +11,6 @@ task_mode:
   parametrized:
     file: default.xml 
 
-
   staged:
     curriculum: "default.yaml"
 

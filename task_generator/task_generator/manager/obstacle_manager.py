@@ -23,8 +23,6 @@ class ObstacleManager:
     _dynamic_manager: DynamicManager
     _simulator: BaseSimulator
 
-    first_reset: bool
-
     id_generator: Iterator[int]
 
     def __init__(self, namespace, map_manager, simulator: BaseSimulator, dynamic_manager: DynamicManager):
@@ -32,7 +30,6 @@ class ObstacleManager:
         self._namespace = namespace
         self._simulator = simulator
 
-        self.first_reset = True
         self._dynamic_manager = dynamic_manager
 
         self.id_generator = itertools.count(434)
@@ -91,10 +88,7 @@ class ObstacleManager:
         """
         Unuse and remove all obstacles
         """
-        if self.first_reset:
-            self.first_reset = False
-        else:
-            self._dynamic_manager.remove_obstacles(purge=True)
+        self._dynamic_manager.remove_obstacles(purge=True)
 
     # TODO refactor this with a registry
 
