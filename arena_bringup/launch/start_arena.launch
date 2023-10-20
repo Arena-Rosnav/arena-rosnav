@@ -62,7 +62,7 @@
   <param name="complexity" value="$(arg complexity)" />
   
 
-  <arg name="task_mode" default="random" doc="[random, staged, scenario, random_scenario, dynamic_map_random, dynamic_map_staged]" />
+  <arg name="task_mode" default="random" doc="[random, staged, scenario, parametrized, dynamic_map_random, dynamic_map_staged]" />
   <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
   <arg name="show_rviz" default="true" doc="Enables rviz in gazebo" />
   <arg name="rviz_file" default="nav"/>
@@ -72,7 +72,6 @@
   <arg name="reset_remove_all" default="true" />
   <param name="reset_remove_all" value="$(arg reset_remove_all)" />
 
-  <arg name="scenario_file" default="test_scenario.json" />
   <arg name="map_file" default="map_empty" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]" />
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_file)/map.yaml" />
 
@@ -116,9 +115,6 @@
 
   <param name="robot_name" value="$(arg model)" />
 
-  <!-- data recorder -->
-  <param name="scenario_file"  value="$(arg scenario_file)"/>
-
   <!-- use simulator-->
 
   <!-- Flatland -->
@@ -153,8 +149,6 @@
   </include>
 
   <include file="$(find arena_bringup)/launch/testing/task_generator.launch">
-    <arg name="scenario_json_path" value="$(find task_generator)/scenarios/$(arg scenario_file)" />
-    <arg name="auto_reset" value="$(arg auto_reset)" />
   </include>
   
   <!-- Launch pedsim agent spawner  -->

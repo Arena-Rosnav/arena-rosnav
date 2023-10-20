@@ -2,10 +2,15 @@ task_config:
   no_of_episodes: 50
   robot_models: [jackal]
   map_file: map_empty
+  auto_reset: true
 
 task_mode:
   scenario:
-    scenario_file: "default.json"
+    scenario_file: default.json
+
+  parametrized:
+    file: default.xml 
+
 
   staged:
     curriculum: "default.yaml"

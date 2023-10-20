@@ -47,7 +47,9 @@
         </node>
     </group>
 
-    <node pkg="arena-evaluation" type="data_recorder_node.py" name="data_recorder_node" if="$(eval arg('record_data'))" />
+    <node pkg="arena-evaluation" type="data_recorder_node.py" name="data_recorder_node" if="$(eval arg('record_data'))">
+      <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load" ns="configuration"/>
+    </node>
     <!-- move_base plan manager: which provide basic global planner and cost map -->
 
     <include file="$(find arena_bringup)/launch/testing/move_base/move_base_$(arg local_planner).launch">

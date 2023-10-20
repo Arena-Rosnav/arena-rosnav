@@ -10,7 +10,7 @@ import rospy
 from task_generator.tasks.base_task import BaseTask
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.manager.obstacle_manager import ObstacleManager
-from task_generator.tasks.utils import Scenario, ScenarioInterface
+from task_generator.tasks.utils import RandomInterface, Scenario, ScenarioInterface
 from task_generator.utils import rosparam_get
 
 

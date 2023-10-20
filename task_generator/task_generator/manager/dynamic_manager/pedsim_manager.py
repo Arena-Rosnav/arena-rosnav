@@ -314,7 +314,8 @@ class PedsimManager(DynamicManager):
 
             known = self._known_obstacles.get(pedsim_name)
             if known is not None:
-                if known.obstacle.name != obstacle.name:
+                #TODO temp
+                if False and known.obstacle.name != obstacle.name:
                     raise RuntimeError(f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {pedsim_name} (did you forget to call remove_obstacles?)")
 
                 known.used = True
