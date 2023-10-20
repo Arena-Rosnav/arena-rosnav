@@ -161,7 +161,7 @@ class SFMManager(DynamicManager):
 
         for obstacle_id, obstacle in self._known_obstacles.items():
             if purge or not obstacle.used:
-                self._simulator.delete_obstacle(name=obstacle_id)
+                self._simulator.delete_entity(name=obstacle_id)
                 obstacle.used = False
                 time.sleep(0.05)
                 to_forget.append(obstacle_id)

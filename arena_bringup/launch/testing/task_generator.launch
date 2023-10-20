@@ -9,6 +9,6 @@
         <param name="scenario_json_path" value="$(arg scenario_json_path)"/>
         <param name="auto_reset" value="$(arg auto_reset)" />
         
-        <rosparam file="$(find arena_bringup)/launch/testing/task_generator.yaml" command="load"/>
+        <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load" ns="configuration"/>
     </node>
 </launch>

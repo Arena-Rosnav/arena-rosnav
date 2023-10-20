@@ -1,5 +1,9 @@
 from enum import Enum
 
+class Defaults:
+    class task_config:
+        no_of_episodes = 5
+
 
 class Constants:
     GOAL_REACHED_TOLERANCE = 1.0

@@ -69,7 +69,10 @@ class GazeboSimulator(BaseSimulator):
         self._pause()
 
     def after_reset_task(self):
-        self._unpause()
+        try:
+            self._unpause()
+        except rospy.service.ServiceException as e: # gazebo isn't the most reliable
+            rospy.logwarn(e)
 
     # ROBOT
 
@@ -131,7 +134,7 @@ class GazeboSimulator(BaseSimulator):
 
         return res.success
 
-    def delete_obstacle(self, name):
+    def delete_entity(self, name):
         res: DeleteModelResponse = self._remove_model_srv(DeleteModelRequest(model_name=name))
         return bool(res.success)
 

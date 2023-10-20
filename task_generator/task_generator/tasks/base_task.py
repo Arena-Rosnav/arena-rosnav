@@ -33,9 +33,9 @@ class BaseTask(ManagerProps, ModelloaderProps):
         self._set_up_robot_managers()
 
         self._model_loader = ModelLoader(os.path.join(
-            RosPack().get_path("arena-simulation-setup"), "obstacles"))
+            RosPack().get_path("arena-simulation-setup"), "obstacles", "static_obstacles"))
         self._dynamic_model_loader = ModelLoader(os.path.join(
-            RosPack().get_path("arena-simulation-setup"), "dynamic_obstacles"))
+            RosPack().get_path("arena-simulation-setup"), "obstacles", "dynamic_obstacles"))
 
     @staticmethod
     def reset_helper(parent: Type["BaseTask"]) -> Callable[..., Callable[..., bool]]:
@@ -66,6 +66,7 @@ class BaseTask(ManagerProps, ModelloaderProps):
         while fails < Constants.MAX_RESET_FAIL_TIMES:
             try:
                 return_val = callback()
+                print("RECEIVED CALLBACK", return_val)
                 break
 
             except rospy.ServiceException as e:

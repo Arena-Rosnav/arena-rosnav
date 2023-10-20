@@ -18,7 +18,7 @@
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/global_costmap_params.yaml" command="load" />
     <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/hateb_local_planner_params.yaml" command="load"  ns="HATebLocalPlannerROS"/>
-    <rosparam file="$(find arena-simulation-setup)/move_base/move_base_params.yaml" command="load" />
+    <rosparam file="$(find arena-simulation-setup)/configs/move_base/move_base_params.yaml" command="load" />
 
     <!-- Load specific hateb costmap params -->
     <rosparam file="$(find cohan_layers)/cfg/local_costmap_params.yaml" command="load" />

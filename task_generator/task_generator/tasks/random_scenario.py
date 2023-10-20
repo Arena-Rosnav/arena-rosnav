@@ -137,6 +137,5 @@ class RandomScenarioTask(BaseTask, ScenarioInterface, ObstacleInterface):
             ),
             map=ScenarioMap(yaml=dict(), xml=ET.ElementTree(
                 ET.Element("dummy")), path=""),
-            resets=0,
             robots=[]
         )

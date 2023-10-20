@@ -55,6 +55,8 @@ class RandomTask(BaseTask, RandomInterface):
         self._interactive_obstacles = allowed_obstacles.interactive
         self._dynamic_obstacles = allowed_obstacles.dynamic
 
+        self.iters = 0
+
     @BaseTask.reset_helper(parent=BaseTask)
     def reset(
         self,
@@ -97,6 +99,8 @@ class RandomTask(BaseTask, RandomInterface):
                 )
             )
             time.sleep(1)
+            self.iters += 1
+            print("iters", self.iters)
             return False
 
         return callback
