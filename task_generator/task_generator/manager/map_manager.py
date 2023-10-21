@@ -106,8 +106,8 @@ class MapManager:
         theta = random.uniform(-math.pi, math.pi)
 
         point: Waypoint = (
-            np.round(y * self._map.info.resolution + self._origin.y, 3),
-            np.round(x * self._map.info.resolution + self._origin.x, 3),
+            float(np.round(y * self._map.info.resolution + self._origin.y, 3)),
+            float(np.round(x * self._map.info.resolution + self._origin.x, 3)),
             theta
         )
 
