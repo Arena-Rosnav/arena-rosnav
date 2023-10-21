@@ -210,15 +210,10 @@ class TaskGenerator:
             )
         else:
             robots = [
-                Robot(
-                    name=f"""{robot["model"]}_{i}_{robot.get("amount", 1)}""",
-                    namespace=os.path.join(self._namespace, f"""{robot["model"]}_{i}_{robot.get("amount", 1)}"""),
-                    planner=robot["planner"],
-                    agent=robot["agent"],
-                    record_data=False,
-                    position=(0, 0, 0),
+                Robot.parse(
+                    robot,
                     model=self._robot_loader.bind(robot["model"]),
-                    extra=dict()
+                    namespace=os.path.join(self._namespace, f"""{robot["model"]}_{i}_{robot.get("amount", 1)}""")
                 )
                 for robot in read_robot_setup_file(robot_setup_file)
                 for i in range(robot.get("amount", 1))

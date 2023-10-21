@@ -244,17 +244,17 @@ class DynamicObstacle(DynamicObstacleProps):
 @dataclasses.dataclass(frozen=True)
 class Robot(RobotProps):
     @staticmethod
-    def parse(obj: Dict, **kwargs) -> "Robot":
+    def parse(obj: Dict, model: ModelWrapper, namespace: str) -> "Robot":
 
         name = str(obj.get("name", ""))
         position = parse_Point3D(obj.get("pos", (0, 0, 0)))
         planner = str(obj.get("planner",""))
-        model = str(obj.get("model",""))
         agent = str(obj.get("agent",""))
         record_data = bool(obj.get("record_data",False))
 
         return Robot(
             name=name,
+            namespace=namespace,
             position=position,
             planner=planner,
             model=model,
