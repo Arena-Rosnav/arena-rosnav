@@ -13,6 +13,7 @@ from rosnav import *
 from rosnav.msg import ResetStackedObs
 from rosnav.srv import GetAction, GetActionRequest
 from std_msgs.msg import Int16
+from rl_utils.utils.utils import remove_double_slash
 
 sys.modules["rl_agent"] = sys.modules["rosnav"]
 
@@ -28,6 +29,7 @@ class DeploymentDRLAgent:
             ns (str, optional):
                 Simulation specific ROS namespace. Defaults to None.
         """
+        ns = remove_double_slash(ns)
         self.observation_collector = ObservationCollector(
             ns, rospy.get_param("laser/num_beams"), external_time_sync=False
         )

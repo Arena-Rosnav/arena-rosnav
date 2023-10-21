@@ -19,3 +19,6 @@ def get_trained_models_path():
     return os.path.join(
         rospkg.RosPack().get_path("rosnav"), "agents"
     )
+    
+def remove_double_slash(string: str) -> str:
+    return string.replace("//", "/")
