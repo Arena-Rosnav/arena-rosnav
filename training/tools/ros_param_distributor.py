@@ -10,7 +10,7 @@ def populate_ros_params(params: dict):
     # general params
     rospy.set_param("task_mode", params["task_mode"])
 
-    is_discrete = params["rl_agent"]["action_space"]["custom_discretization"]["enabled"]
+    is_discrete = params["rl_agent"]["action_space"]["discrete"]
     rospy.set_param(
         "is_action_space_discrete",
         is_discrete,
@@ -59,22 +59,26 @@ def populate_laser_params(params: dict):
 
 def populate_discrete_action_space(params: dict):
     robot_model = rospy.get_param("model")
-
-    custom_disc_params = params["rl_agent"]["action_space"]["custom_discretization"]
-    buckets_linear_vel, buckets_angular_vel = (
-        custom_disc_params["buckets_linear_vel"],
-        custom_disc_params["buckets_angular_vel"],
-    )
-
     actions = get_actions_from_robot_yaml(robot_model)
-    action_range = actions["continuous"]
+    
+    custom_disc_params = params["rl_agent"]["action_space"]["custom_discretization"]
+    
+    if custom_disc_params["enabled"]:
+        buckets_linear_vel, buckets_angular_vel = (
+            custom_disc_params["buckets_linear_vel"],
+            custom_disc_params["buckets_angular_vel"],
+        )
 
-    discrete_actions_dict = generate_discrete_action_dict(
-        linear_range=action_range["linear_range"],
-        angular_range=action_range["angular_range"],
-        num_linear_actions=buckets_linear_vel,
-        num_angular_actions=buckets_angular_vel,
-    )
+        action_range = actions["continuous"]
+
+        discrete_actions_dict = generate_discrete_action_dict(
+            linear_range=action_range["linear_range"],
+            angular_range=action_range["angular_range"],
+            num_linear_actions=buckets_linear_vel,
+            num_angular_actions=buckets_angular_vel,
+        )
+    else:
+        discrete_actions_dict = actions["discrete"]
 
     rospy.set_param("actions/discrete", discrete_actions_dict)
 
