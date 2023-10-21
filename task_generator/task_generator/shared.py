@@ -209,7 +209,7 @@ class Obstacle(ObstacleProps):
     @staticmethod
     def parse(obj: Dict, model: ModelWrapper) -> "Obstacle":
 
-        name = str(obj.get("name", "MISSING"))
+        name = str(obj.get("name", ""))
         position = parse_Point3D(obj.get("pos", (0, 0, 0)))
 
         return Obstacle(
@@ -227,7 +227,7 @@ class DynamicObstacle(DynamicObstacleProps):
     @staticmethod
     def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
 
-        name = str(obj.get("name", "MISSING"))
+        name = str(obj.get("name", ""))
         position = parse_Point3D(obj.get("pos", (0, 0, 0)))
         waypoints = [parse_Point3D(waypoint)
                      for waypoint in obj.get("waypoints", [])]
@@ -245,5 +245,20 @@ class DynamicObstacle(DynamicObstacleProps):
 class Robot(RobotProps):
     @staticmethod
     def parse(obj: Dict, **kwargs) -> "Robot":
-        # TODO
-        raise NotImplementedError()
+
+        name = str(obj.get("name", ""))
+        position = parse_Point3D(obj.get("pos", (0, 0, 0)))
+        planner = str(obj.get("planner",""))
+        model = str(obj.get("model",""))
+        agent = str(obj.get("agent",""))
+        record_data = bool(obj.get("record_data",False))
+
+        return Robot(
+            name=name,
+            position=position,
+            planner=planner,
+            model=model,
+            agent=agent,
+            record_data=record_data,
+            extra=obj
+        )
