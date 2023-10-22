@@ -159,7 +159,7 @@ class SFMManager(DynamicManager):
     def remove_obstacles(self, purge):
         to_forget: List[str] = list()
 
-        for obstacle_id, obstacle in self._known_obstacles.items():
+        for obstacle_id, obstacle in list(self._known_obstacles.items()):
             if purge or not obstacle.used:
                 self._simulator.delete_entity(name=obstacle_id)
                 obstacle.used = False

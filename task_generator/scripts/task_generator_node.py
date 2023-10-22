@@ -122,11 +122,11 @@ class TaskGenerator:
         )
         self.srv_start_model_visualization(EmptyRequest())
 
-        # rospy.sleep(5)
+        rospy.sleep(1)
 
         self.reset_task(first_map=True)
 
-        rospy.sleep(2)
+        rospy.sleep(1)
 
         try:
             rospy.set_param("task_generator_setup_finished", True)
@@ -158,7 +158,9 @@ class TaskGenerator:
         rospy.wait_for_service("/distance_map")
 
         service_client_get_map = rospy.ServiceProxy(
-            "/distance_map", GetDistanceMap)
+            "/distance_map",
+            GetDistanceMap
+        )
 
         map_response = service_client_get_map()
         map_manager = MapManager(map_response)

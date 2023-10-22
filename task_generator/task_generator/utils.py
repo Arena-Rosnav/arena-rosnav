@@ -271,5 +271,9 @@ T = TypeVar("T")
 _unspecified = rospy.client._Unspecified()
 def rosparam_get(cast:Type[T], param_name:str, default=_unspecified) -> T:
     val = rospy.get_param(param_name=param_name, default=default)
+    try:
+        val = cast(val)
+    except ValueError as e:
+        raise ValueError(f"could not cast {val} to {cast}", e)
     assert isinstance(val, cast), f"param {param_name} is not of type {cast} but {type(val)} with val {val}"
     return val

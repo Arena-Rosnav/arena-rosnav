@@ -10,16 +10,15 @@ from geometry_msgs.msg import Point, Pose, Quaternion
 from pedsim_srvs.srv import SpawnInteractiveObstacles, SpawnObstacle, SpawnPeds
 from std_srvs.srv import SetBool, Trigger
 
-import xml.etree.ElementTree as ET
 
 from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
 from task_generator.manager.dynamic_manager.utils import KnownObstacles, SDFUtil
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.constants import Constants, Pedsim
-from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle, PositionOrientation
+from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle
 from task_generator.simulators.flatland_simulator import FlatlandSimulator
 
-from typing import Generator, Iterator, List
+from typing import Iterator, List
 
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
 
@@ -358,7 +357,7 @@ class PedsimManager(DynamicManager):
     def remove_obstacles(self, purge):
         to_forget: List[str] = list()
 
-        for obstacle_id, obstacle in self._known_obstacles.items():
+        for obstacle_id, obstacle in list(self._known_obstacles.items()):
             if purge or not obstacle.used:
 
                 # TODO remove this once actors can be deleted properly 

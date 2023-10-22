@@ -17,7 +17,7 @@ from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
 
-from task_generator.shared import ModelType, PositionOrientation, Robot
+from task_generator.shared import ModelType, Robot
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT

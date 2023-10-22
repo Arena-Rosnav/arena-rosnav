@@ -1,5 +1,5 @@
 import os
-from typing import Callable, List, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 from rospkg import RosPack
 import rospy
@@ -9,32 +9,61 @@ from task_generator.constants import Constants
 from task_generator.manager.map_manager import MapManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.obstacle_manager import ObstacleManager
-from task_generator.tasks.utils import ManagerProps, ModelloaderProps
 from task_generator.utils import ModelLoader
 
 
-class BaseTask(ManagerProps, ModelloaderProps):
+class Props_Manager:
+    obstacle_manager: ObstacleManager
+    robot_managers: List[RobotManager]
+    map_manager: MapManager
+
+
+class Props_Modelloader:
+    model_loader: ModelLoader
+    dynamic_model_loader: ModelLoader
+
+
+class Props_Namespace:
+    namespace: str
+    namespace_prefix: str
+
+
+class Props_(Props_Manager, Props_Modelloader, Props_Namespace):
+    ...
+
+
+class BaseTask(Props_):
     """
     Base Task as parent class for all other tasks.
     """
 
-    _clock: Clock
-    _last_reset_time: int
+    clock: Clock
+    last_reset_time: int
 
-    def __init__(self, obstacle_manager: ObstacleManager, robot_managers: List[RobotManager], map_manager: MapManager, *args, **kwargs):
-        self._obstacle_manager = obstacle_manager
-        self._robot_managers = robot_managers
-        self._map_manager = map_manager
+    def __init__(
+        self,
+        obstacle_manager: ObstacleManager,
+        robot_managers: List[RobotManager],
+        map_manager: MapManager,
+        namespace: str = "",
+        *args, **kwargs
+    ):
+        self.namespace = namespace
+        self.namespace_prefix = f"/{namespace}/" if os.path.basename(namespace) else ""
+
+        self.obstacle_manager = obstacle_manager
+        self.robot_managers = robot_managers
+        self.map_manager = map_manager
 
         rospy.Subscriber("/clock", Clock, self._clock_callback)
-        self._last_reset_time = 0
-        self._clock = Clock()
+        self.last_reset_time = 0
+        self.clock = Clock()
 
-        self._set_up_robot_managers()
+        self.set_up_robot_managers()
 
-        self._model_loader = ModelLoader(os.path.join(
+        self.model_loader = ModelLoader(os.path.join(
             RosPack().get_path("arena-simulation-setup"), "obstacles", "static_obstacles"))
-        self._dynamic_model_loader = ModelLoader(os.path.join(
+        self.dynamic_model_loader = ModelLoader(os.path.join(
             RosPack().get_path("arena-simulation-setup"), "obstacles", "dynamic_obstacles"))
 
     @staticmethod
@@ -44,10 +73,12 @@ class BaseTask(ManagerProps, ModelloaderProps):
         First the reset body is called, then the chain is traversed up to BaseTask and then back down to the callback returned by reset. Return True from this callback to indicate all tasks are completed and the simulation can be shut down.
         @parent: direct parent class
         """
-        def outer(fn: Callable[..., Callable[[], bool]]) -> Callable[..., bool]:
+        def outer(fn: Callable[..., Tuple[Dict[str, Any], Optional[Callable[[], bool]]]]) -> Callable[..., bool]:
             def _reset(self, callback: Callable[[], bool], **kwargs) -> bool:
-                fn_callback = fn(self, **kwargs)
-                return parent.reset(self, callback=callback, **kwargs) or fn_callback()
+                overrides, fn_callback = fn(self, **kwargs)
+                if fn_callback is None:
+                    return False
+                return parent.reset(self, callback=callback, **{**overrides, **kwargs}) or fn_callback()
             return _reset
         return outer
 
@@ -61,12 +92,13 @@ class BaseTask(ManagerProps, ModelloaderProps):
         fails = 0
         return_val = False
 
-        self._last_reset_time = self._clock.clock.secs
+        self.last_reset_time = self.clock.clock.secs
+
+        # TODO wait for previous reset to be done
 
         while fails < Constants.MAX_RESET_FAIL_TIMES:
             try:
                 return_val = callback()
-                print("RECEIVED CALLBACK", return_val)
                 break
 
             except rospy.ServiceException as e:
@@ -81,10 +113,10 @@ class BaseTask(ManagerProps, ModelloaderProps):
 
     @property
     def is_done(self) -> bool:
-        if self._clock.clock.secs - self._last_reset_time > Constants.TIMEOUT:
+        if self.clock.clock.secs - self.last_reset_time > Constants.TIMEOUT:
             return True
 
-        for manager in self._robot_managers:
+        for manager in self.robot_managers:
             if not manager.is_done:
                 return False
 
@@ -92,13 +124,11 @@ class BaseTask(ManagerProps, ModelloaderProps):
 
     @property
     def robot_names(self) -> List[str]:
-        return [manager.name for manager in self._robot_managers]
+        return [manager.name for manager in self.robot_managers]
 
-    def _set_up_robot_managers(self):
-        for manager in self._robot_managers:
+    def set_up_robot_managers(self):
+        for manager in self.robot_managers:
             manager.set_up_robot()
 
     def _clock_callback(self, clock: Clock):
-        self._clock = clock
-
-
+        self.clock = clock

@@ -83,6 +83,7 @@ class MapManager:
         possible_cells: List[Tuple[np.intp, np.intp]] = np.array(
             np.where(self._map_with_distances > safe_dist_in_cells)).transpose().tolist()
 
+        #return (random.randint(1,6), random.randint(1, 9), 0)
         assert len(possible_cells) > 0, "No cells available"
 
         # The position should not lie in the forbidden zones and keep the safe
