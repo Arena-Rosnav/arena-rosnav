@@ -90,7 +90,7 @@ class TaskGenerator:
         # Params
         self._task_mode = Constants.TaskMode(rosparam_get(str, "task_mode"))
         self._social_mode = Constants.SocialMode(rosparam_get(str, "social_mode"))
-        self._auto_reset = rosparam_get(bool, "auto_reset", True)
+        self._auto_reset = rosparam_get(bool, "~auto_reset", True)
 
         # Publishers
         self._pub_scenario_reset = rospy.Publisher(
@@ -115,7 +115,7 @@ class TaskGenerator:
         rospy.set_param("/robot_names", self._task.robot_names)
 
         self._number_of_resets = 0
-        self._desired_resets = rosparam_get(int, "~configuration/task_config/no_of_episodes", Defaults.task_config.no_of_episodes)
+        self._desired_resets = rosparam_get(int, "~configuration/no_of_episodes", Defaults.task_config.no_of_episodes)
 
         self.srv_start_model_visualization = rospy.ServiceProxy(
             "start_model_visualization", Empty
