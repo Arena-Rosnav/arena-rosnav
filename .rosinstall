@@ -3,7 +3,7 @@
   # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../utils-extern/plugins/flatland
-    uri: https://github.com/tuananhroman/flatland.git
+    uri: https://github.com/voshch/flatland.git
     version: master
 
 # - git:
