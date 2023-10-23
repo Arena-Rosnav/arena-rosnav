@@ -39,7 +39,7 @@ def create_default_robot_list(robot_model: ModelWrapper, name: str, namespace: s
         planner=planner,
         namespace=namespace,
         agent=agent,
-        position=(0, 0, 0),
+        position=(-1, -1, 0),
         name=name,
         record_data=False,
         extra=dict()

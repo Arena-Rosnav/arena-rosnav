@@ -54,7 +54,7 @@ class ModelWrapper:
 
     _get: Callable[[Collection[ModelType]], Model]
     _name: str
-    _override: Dict[ModelType, Tuple[bool, Callable[[Model], Model]]]
+    _override: Dict[ModelType, Tuple[bool, Callable[..., Model]]]
 
     def __init__(self, name: str):
         """
@@ -90,26 +90,26 @@ class ModelWrapper:
         return clone
 
     @overload
-    def get(self, only: ModelType) -> Model: ...
+    def get(self, only: ModelType, **kwargs) -> Model: ...
     """
         load specific model
         @only: single accepted ModelType
     """
 
     @overload
-    def get(self, only: Collection[ModelType]) -> Model: ...
+    def get(self, only: Collection[ModelType], **kwargs) -> Model: ...
     """
         load specific model from collection
         @only: collection of acceptable ModelTypes
     """
 
     @overload
-    def get(self) -> Model: ...
+    def get(self, **kwargs) -> Model: ...
     """
         load any available model
     """
 
-    def get(self, only: ModelType | Collection[ModelType] | None = None) -> Model:
+    def get(self, only: ModelType | Collection[ModelType] | None = None, **kwargs) -> Model:
 
         if only is None:
             only = self._override.keys()
@@ -124,9 +124,9 @@ class ModelWrapper:
                 if noload == True:
                     return mapper(EMPTY_LOADER())
 
-                return mapper(self._get([model_type]))
+                return mapper(self._get([model_type], **kwargs), **kwargs)
 
-        return self._get(only)
+        return self._get(only, **kwargs)
 
     @property
     def name(self) -> str:
@@ -247,7 +247,7 @@ class Robot(RobotProps):
     def parse(obj: Dict, model: ModelWrapper, namespace: str) -> "Robot":
 
         name = str(obj.get("name", ""))
-        position = parse_Point3D(obj.get("pos", (0, 0, 0)))
+        position = parse_Point3D(obj.get("pos", (-1, -1, 0)))
         planner = str(obj.get("planner",""))
         agent = str(obj.get("agent",""))
         record_data = bool(obj.get("record_data",False))

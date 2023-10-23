@@ -94,12 +94,12 @@ class GazeboSimulator(BaseSimulator):
 
         self._move_model_srv(request)
 
-    def spawn_robot(self, robot: Robot):
+    def spawn_robot(self, robot):
         request = SpawnModelRequest()
 
         robot_namespace = robot.namespace
 
-        model = robot.model.get(self.MODEL_TYPES)
+        model = robot.model.get(self.MODEL_TYPES, namespace=robot_namespace)
 
         rospy.set_param(os.path.join(robot_namespace,
                         "robot_description"), model.description)
@@ -110,6 +110,15 @@ class GazeboSimulator(BaseSimulator):
         request.model_xml = model.description
         request.robot_namespace = robot_namespace
         request.reference_frame = "world"
+        
+        pose = Pose()
+        pose.position.x = robot.position[0]
+        pose.position.y = robot.position[1]
+        pose.position.z = 0.5
+        pose.orientation = Quaternion(
+            *quaternion_from_euler(0.0, 0.0, robot.position[2], axes="sxyz")
+        )
+        request.initial_pose = pose
 
         self.spawn_model(model.type, request)
 

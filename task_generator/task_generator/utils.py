@@ -177,9 +177,9 @@ class ModelLoader:
             raise FileNotFoundError(
                 f"no model {model} among {only} found in {self._model_dir}")
 
-    def _load_single(self, model_type: ModelType, model: str) -> Optional[Model]:
+    def _load_single(self, model_type: ModelType, model: str, **kwargs) -> Optional[Model]:
         if model_type in self._registry:
-            return self._registry[model_type].load(self._model_dir, model)
+            return self._registry[model_type].load(self._model_dir, model, **kwargs)
 
         return None
 
@@ -238,7 +238,7 @@ class _ModelLoader_URDF(_ModelLoader):
     @staticmethod
     def load(model_dir, model, **kwargs):
 
-        namespace: str = kwargs.get("namespace", "")
+        namespace: Optional[str] = kwargs.get("namespace", None)
 
         model_path = os.path.join(
             model_dir, model, "urdf", f"{model}.urdf.xacro")
@@ -252,10 +252,11 @@ class _ModelLoader_URDF(_ModelLoader):
                 "xacro",
                 "xacro",
                 model_path,
-                *([f"""robot_namespace:={namespace}"""] if namespace != "" else [])
+                *([f"""robot_namespace:={namespace}"""] if namespace is not None else [])
             ]).decode("utf-8")
 
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
+            rospy.logerr_once(f"error processing model {model} URDF file {model_path}. refusing to load.\n{e}\n{e.output.decode('utf-8')}")
             return None
 
         else:

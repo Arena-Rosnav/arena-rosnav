@@ -1,6 +1,6 @@
 import itertools
 import os
-from typing import Callable, Collection, Dict
+from typing import Callable, Collection, Dict, Optional
 
 from task_generator.shared import ModelType, ObstacleProps, PositionOrientation, Robot
 

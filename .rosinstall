@@ -22,6 +22,7 @@
     uri: https://bitbucket.org/acl-swarm/ford_msgs/src/master/
     version: master
 
+    # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../utils-extern/ros/pedsim_ros
     uri: https://github.com/voshch/pedsim_ros.git
@@ -40,13 +41,17 @@
 #   local-name: ../utils/gazebo_sfm_plugin
 #   uri: https://github.com/robotics-upo/gazebo_sfm_plugin.git -->
 
+- git:
+    local-name: ../utils-extern/misc/unitree_ros
+    uri: https://github.com/voshch/unitree_ros
 
 ### ARENA INFRASTRUCTURE
 
+    # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../arena-simulation-setup
-    uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: dynamic_map
+    uri: https://github.com/voshch/arena-simulation-setup.git
+    version: dev
 
 - git:
     local-name: ../arena-evaluation

@@ -135,7 +135,7 @@ class FlatlandSimulator(BaseSimulator):
     # ROBOT
     def spawn_robot(self, robot):
 
-        model = robot.model.get(self.MODEL_TYPES)
+        model = robot.model.get(self.MODEL_TYPES, namespace=robot.namespace)
 
         file_content = self._update_plugin_topics(
             read_yaml(StringIO(model.description)), robot.name)
