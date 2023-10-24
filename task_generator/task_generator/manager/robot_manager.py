@@ -179,6 +179,7 @@ class RobotManager:
         goal_msg.header.frame_id = "map"
         goal_msg.pose.position.x = goal[0]
         goal_msg.pose.position.y = goal[1]
+        goal_msg.pose.position.z = 0
 
         goal_msg.pose.orientation = Quaternion(*quaternion_from_euler(0.0, 0.0, goal[2], axes="sxyz"))
 
