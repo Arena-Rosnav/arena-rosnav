@@ -29,7 +29,6 @@ from task_generator.manager.map_manager import MapManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
-from task_generator.manager.entity_manager.sfm_manager import SFMManager
 
 from map_distance_server.srv import GetDistanceMap
 
@@ -68,7 +67,7 @@ class TaskGenerator:
     """
 
     _task_mode: Constants.TaskMode
-    _social_mode: Constants.SocialMode
+    _entity_mode: Constants.EntityManager
     _auto_reset: bool
 
     _namespace: Namespace
@@ -89,7 +88,7 @@ class TaskGenerator:
 
         # Params
         self._task_mode = Constants.TaskMode(rosparam_get(str, "task_mode"))
-        self._social_mode = Constants.SocialMode(rosparam_get(str, "social_mode"))
+        self._entity_mode = Constants.EntityManager(rosparam_get(str, "entity_manager"))
         self._auto_reset = rosparam_get(bool, "~auto_reset", True)
 
         # Publishers
@@ -165,9 +164,7 @@ class TaskGenerator:
         map_response = service_client_get_map()
         map_manager = MapManager(map_response)
 
-        if self._social_mode == Constants.SocialMode.SFM:
-            self._entity_manager = SFMManager(namespace=self._namespace, simulator=self._env_wrapper)
-        elif self._social_mode == Constants.SocialMode.PEDSIM:
+        if self._entity_mode == Constants.EntityManager.PEDSIM:
             self._entity_manager = PedsimManager(namespace=self._namespace, simulator=self._env_wrapper)
         else:
             self._entity_manager = EntityManager(namespace=self._namespace, simulator=self._env_wrapper)

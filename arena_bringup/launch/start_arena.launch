@@ -38,8 +38,8 @@
   <arg name="simulator" default="flatland" doc="[flatland, gazebo]" />
   <env name="SIMULATOR" value="$(arg simulator)" />
 
-  <arg name="social_mode" default="pedsim" doc="[pedsim,sfm]" />
-  <arg name="pedsim" value="$(eval social_mode == 'pedsim')" />
+  <arg name="entity_manager" default="pedsim" doc="[pedsim]" />
+  <arg name="pedsim" value="$(eval entity_manager == 'pedsim')" />
   <env name="PEDSIM" value="$(arg pedsim)" />
   <param name="pedsim" value="$(arg pedsim)" />
 
@@ -88,7 +88,7 @@
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
   <param name="show_viz" value="$(arg show_rviz)"/>
-  <param name="social_mode" value="$(arg social_mode)" />
+  <param name="entity_manager" value="$(arg entity_manager)" />
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" />

@@ -29,9 +29,8 @@ class Constants:
         TRAINING = "training"
         DEPLOYMENT = "deployment"
 
-    class SocialMode(Enum):
+    class EntityManager(Enum):
         PEDSIM = "pedsim"
-        SFM = "sfm"
 
     class TaskMode(Enum):
         RANDOM = "random"
