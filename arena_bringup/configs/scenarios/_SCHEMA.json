@@ -15,6 +15,5 @@
       "goal": ["X", "Y"]
     }
   ],
-  "map": "<NAME OF THE MAP>",
-  "resets": "<AMOUNT OF RESETS>"
+  "map": "<NAME OF THE MAP>"
 }
