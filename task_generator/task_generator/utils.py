@@ -18,7 +18,7 @@ from task_generator.shared import ModelWrapper, Model, ModelType
 class Utils:
     @staticmethod
     def get_simulator() -> Constants.Simulator:
-        return Constants.Simulator(str(rospy.get_param("simulator", "flatland")).lower())
+        return Constants.Simulator(rosparam_get(str, "simulator", "flatland").lower())
 
     @staticmethod
     def get_arena_type() -> Constants.ArenaType:
@@ -270,11 +270,16 @@ class _ModelLoader_URDF(_ModelLoader):
 
 T = TypeVar("T")
 _unspecified = rospy.client._Unspecified()
-def rosparam_get(cast:Type[T], param_name:str, default=_unspecified) -> T:
+def rosparam_get(cast:Type[T], param_name:str, default=_unspecified, strict: bool = False) -> T:
     val = rospy.get_param(param_name=param_name, default=default)
-    try:
-        val = cast(val)
-    except ValueError as e:
-        raise ValueError(f"could not cast {val} to {cast}", e)
-    assert isinstance(val, cast), f"param {param_name} is not of type {cast} but {type(val)} with val {val}"
+
+    if strict:
+        if not isinstance(val, cast):
+            raise ValueError(f"param {param_name} is not of type {cast} but {type(val)} with val {val}")
+    else:
+        try:
+            val = cast(val)
+        except ValueError as e:
+            raise ValueError(f"could not cast {val} to {cast}", e)
+    
     return val

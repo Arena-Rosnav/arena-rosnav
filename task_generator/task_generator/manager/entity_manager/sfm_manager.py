@@ -3,9 +3,8 @@ import itertools
 import time
 from typing import Iterable, List
 
-from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
-from task_generator.manager.dynamic_manager.utils import KnownObstacles, SDFUtil
-from task_generator.simulators.base_simulator import BaseSimulator
+from task_generator.manager.entity_manager.entity_manager import EntityManager
+from task_generator.manager.entity_manager.utils import KnownObstacles, SDFUtil
 from task_generator.shared import Model, ModelType, PositionOrientation, Waypoint
 from task_generator.constants import Constants
 
@@ -74,11 +73,11 @@ def process_SDF(model: Model, name: str, position: PositionOrientation, waypoint
     return model.replace(description=SDFUtil.serialize(xml))
 
 
-class SFMManager(DynamicManager):
+class SFMManager(EntityManager):
 
     _known_obstacles: KnownObstacles
 
-    def __init__(self, namespace: str, simulator: BaseSimulator):
+    def __init__(self, namespace, simulator):
         super().__init__(namespace=namespace, simulator=simulator)
         self._known_obstacles = KnownObstacles()
 
@@ -103,7 +102,7 @@ class SFMManager(DynamicManager):
                     name=obstacle.name,
                     obstacle=obstacle
                 )
-                self._simulator.spawn_obstacle(known.obstacle)
+                self._simulator.spawn_entity(known.obstacle)
                 known.used = True
 
             time.sleep(0.05)
@@ -140,7 +139,7 @@ class SFMManager(DynamicManager):
                     obstacle=obstacle,
                     used=True
                 )
-                self._simulator.spawn_obstacle(known.obstacle)
+                self._simulator.spawn_entity(known.obstacle)
                 known.used = True
 
             time.sleep(0.05)

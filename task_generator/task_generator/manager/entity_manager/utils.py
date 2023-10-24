@@ -1,22 +1,27 @@
 import dataclasses
-import io
-from typing import Dict, Optional, Union
+from io import StringIO
+import os
+from typing import Any, Dict, List, Optional, Union
 import xml.etree.ElementTree as ET
 
+import yaml
+from task_generator.constants import Constants
+
 from task_generator.shared import ObstacleProps
+from task_generator.utils import Utils
 
 
 class SDFUtil:
 
     @staticmethod
     def parse(sdf: str) -> ET.ElementTree:
-        file = io.StringIO(sdf)
+        file = StringIO(sdf)
         xml = ET.parse(file)
         return xml
 
     @staticmethod
     def serialize(sdf: ET.ElementTree) -> str:
-        file = io.StringIO()
+        file = StringIO()
         sdf.write(file, encoding="Unicode", xml_declaration=True)
         return file.getvalue()
 
@@ -120,3 +125,48 @@ class KnownObstacles:
     
     def __contains__(self, item: str) -> bool:
         return item in self._known_obstacles
+
+
+class YAMLUtil:
+    @staticmethod
+    def check_yaml_path(path: str) -> bool:
+        return os.path.isfile(path)
+
+    @staticmethod
+    def parse_yaml(content: str):
+        return yaml.safe_load(content)
+
+    @staticmethod
+    def read_yaml(yaml: Union[StringIO, str]) -> Any:
+        if isinstance(yaml, StringIO):
+            return YAMLUtil.parse_yaml(yaml.read())
+
+        elif isinstance(yaml, str):
+            with open(yaml, "r") as file:
+                return YAMLUtil.parse_yaml(file.read())
+
+        else:
+            raise ValueError(f"can't process yaml descriptor of type {type(yaml)}")
+
+    @staticmethod
+    def serialize(obj: Any):
+        return yaml.dump(obj)
+
+    PLUGIN_PROPS_TO_EXTEND: Dict[str, List[str]] = {
+        "DiffDrive": ["odom_pub", "twist_sub"],
+        "Laser": ["topic"],
+    }
+
+    @staticmethod
+    def update_plugins(namespace: str, description: Any) -> Any:
+        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+            return description
+        
+        plugins: List[Dict] = description.get("plugins", [])
+
+        for plugin in plugins:
+            for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
+                plugin[prop] = os.path.join(namespace, plugin.get(prop, ""))
+
+        return description
+    

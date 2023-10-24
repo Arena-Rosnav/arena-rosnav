@@ -1,5 +1,3 @@
-from typing import Optional
-import rospy
 
 
 from task_generator.constants import Constants
@@ -38,9 +36,9 @@ class DynamicMapRandomTask(RandomTask):
         # if num_envs = 2, then 1 / 2 = 0.5
         # in sum we need 4 resets to get to the next map -> 4 * 0.5 = 2
         # eps_per_map = sum_resets * 1 / num_envs
-        self._eps_per_map = float(str(rospy.get_param("episode_per_map", 1)))
+        self._eps_per_map = rosparam_get(float, "episode_per_map", 1.)
         denominator: float = (
-            rosparam_get(float, "num_envs", 1)
+            rosparam_get(float, "num_envs", 1.)
             if self.robot_managers[0].namespace != "eval_sim"
             else 1.
         )

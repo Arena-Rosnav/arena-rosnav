@@ -1,6 +1,7 @@
 import dataclasses
 import functools
 import itertools
+
 import rospy
 import re
 
@@ -11,23 +12,22 @@ from pedsim_srvs.srv import SpawnInteractiveObstacles, SpawnObstacle, SpawnPeds
 from std_srvs.srv import SetBool, Trigger
 
 
-from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
-from task_generator.manager.dynamic_manager.utils import KnownObstacles, SDFUtil
-from task_generator.simulators.base_simulator import BaseSimulator
+from task_generator.manager.entity_manager.entity_manager import EntityManager
+from task_generator.manager.entity_manager.utils import KnownObstacles, SDFUtil, YAMLUtil
 from task_generator.constants import Constants, Pedsim
-from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle
+from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle, PositionOrientation, Robot
 from task_generator.simulators.flatland_simulator import FlatlandSimulator
 
 from typing import Iterator, List
 
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
+from task_generator.utils import rosparam_get
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
-
+#TODO structure these together
 def process_SDF(name: str, base_model: Model) -> Model:
-    # TODO(@voshch) make this universal
     base_desc = SDFUtil.parse(sdf=base_model.description)
     SDFUtil.set_name(sdf=base_desc, name=name, tag="actor")
     SDFUtil.delete_all(sdf=base_desc, selector=SDFUtil.SFM_PLUGIN_SELECTOR)
@@ -65,8 +65,7 @@ def process_SDF(name: str, base_model: Model) -> Model:
 
     return new_model
 
-
-class PedsimManager(DynamicManager):
+class PedsimManager(EntityManager):
 
     _spawn_peds_srv: rospy.ServiceProxy
     _remove_peds_srv: rospy.ServiceProxy
@@ -83,9 +82,9 @@ class PedsimManager(DynamicManager):
     _id_gen: Iterator[int]
     # end
 
-    def __init__(self, namespace: str, simulator: BaseSimulator):
+    def __init__(self, namespace, simulator):
 
-        DynamicManager.__init__(self, namespace=namespace, simulator=simulator)
+        EntityManager.__init__(self, namespace=namespace, simulator=simulator)
 
         self._known_obstacles = KnownObstacles()
 
@@ -168,11 +167,11 @@ class PedsimManager(DynamicManager):
 
             if interaction_radius > 0.1:
                 n_interactive_obstacles += 1
-                pedsim_name = self._ns_prefix(
+                pedsim_name = self._namespace(
                     f"interactive_obstacle_{n_interactive_obstacles}")
             else:
                 n_static_obstacles += 1
-                pedsim_name = self._ns_prefix(
+                pedsim_name = self._namespace(
                     f"static_obstacle_{n_static_obstacles}")
 
             self.agent_topic_str += f',{pedsim_name}/0'
@@ -219,7 +218,7 @@ class PedsimManager(DynamicManager):
                 i_curr_try += 1
             else:
                 break
-        rospy.set_param(self._ns_prefix(
+        rospy.set_param(self._namespace(
             "agent_topic_string"), self.agent_topic_str)
         rospy.set_param("respawn_static", True)
         rospy.set_param("respawn_interactive", True)
@@ -304,11 +303,24 @@ class PedsimManager(DynamicManager):
 
             obstacle = dataclasses.replace(
                 obstacle,
-                model=obstacle.model.override(
-                    model_type=ModelType.SDF,
-                    override=functools.partial(process_SDF, str(pedsim_name)),
-                    name=pedsim_name
-                )
+                model=obstacle.model
+                    .override(
+                        model_type=ModelType.SDF,
+                        override=functools.partial(process_SDF, str(pedsim_name)),
+                        name=pedsim_name
+                    )
+                    .override(
+                        model_type=ModelType.YAML,
+                        override=lambda model: model.replace(
+                            description=YAMLUtil.serialize(
+                                YAMLUtil.update_plugins(
+                                    namespace=self._simulator._namespace(str(pedsim_name)),
+                                    description=YAMLUtil.parse_yaml(model.description)
+                                )
+                            )
+                        ),
+                        name=pedsim_name
+                    )
             )
 
             known = self._known_obstacles.get(pedsim_name)
@@ -339,7 +351,7 @@ class PedsimManager(DynamicManager):
             else:
                 break
 
-        rospy.set_param(self._ns_prefix(
+        rospy.set_param(self._namespace(
             "agent_topic_string"), self.agent_topic_str)
         rospy.set_param("respawn_dynamic", True)
 
@@ -379,12 +391,12 @@ class PedsimManager(DynamicManager):
         waypoints: List[Waypoint] = actors.waypoints or []
 
         # only once
-        if rospy.get_param("respawn_interactive", False):
+        if rosparam_get(bool, "respawn_interactive", False):
             for actor in filter(lambda x: "interactive" in x.name, waypoints):
                 self._respawn_obstacle(actor)
             rospy.set_param("respawn_interactive", False)
 
-        if rospy.get_param("respawn_static", False):
+        if rosparam_get(bool, "respawn_static", False):
             for actor in filter(lambda x: "static" in x.name, waypoints):
                 self._respawn_obstacle(actor)
             rospy.set_param("respawn_static", False)
@@ -424,8 +436,8 @@ class PedsimManager(DynamicManager):
                 rospy.logdebug(
                     "Spawning dynamic obstacle: actor_id = %s", actor_id)
 
-                self._simulator.spawn_obstacle(
-                    obstacle=Obstacle(
+                self._simulator.spawn_entity(
+                    entity=Obstacle(
                         name=actor_id,
                         position=(
                             actor_pose.position.x,
@@ -441,13 +453,13 @@ class PedsimManager(DynamicManager):
 
     def _respawn_obstacle(self, actor: Waypoint):
 
-        actor_name = str(actor.name).split("(")[0]
+        obstacle_name = self._namespace(str(actor.name).split("(")[0])
 
-        obstacle = self._known_obstacles.get(actor_name)
+        obstacle = self._known_obstacles.get(obstacle_name)
 
         if obstacle is None:
             rospy.logwarn(
-                f"obstacle {actor_name} not known by {type(self).__name__}")
+                f"obstacle {obstacle_name} not known by {type(self).__name__}")
             return
 
         orientation = 0.
@@ -479,15 +491,15 @@ class PedsimManager(DynamicManager):
                     obstacle_position.y,
                     orientation
                 ),
-                name=actor_name
+                name=obstacle_name
             )
 
         else:
-            rospy.logdebug("Spawning obstacle: name = %s", actor_name)
+            rospy.logdebug("Spawning obstacle: name = %s", obstacle_name)
 
-            self._simulator.spawn_obstacle(
+            self._simulator.spawn_entity(
                 Obstacle(
-                    name=actor_name,
+                    name=obstacle_name,
                     position=(
                         obstacle_position.x,
                         obstacle_position.y,
@@ -499,3 +511,9 @@ class PedsimManager(DynamicManager):
             )
 
             obstacle.pedsim_spawned = True
+
+    def spawn_robot(self, robot: Robot):
+        self._simulator.spawn_entity(robot)
+    
+    def move_robot(self, name: str, position: PositionOrientation):
+        self._simulator.move_entity(name=name, pos=position)

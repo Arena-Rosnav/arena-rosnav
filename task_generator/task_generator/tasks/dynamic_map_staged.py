@@ -1,4 +1,3 @@
-import functools
 import os
 from typing import Optional
 
@@ -6,9 +5,7 @@ from typing import Optional
 import rospy
 from task_generator.constants import Constants
 from task_generator.tasks.base_task import BaseTask
-from task_generator.tasks.dynamic_map_random import DynamicMapRandomTask
 from task_generator.tasks.random import RandomTask
-from task_generator.tasks.staged import StagedTask
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.tasks.utils import ITF_DynamicMap, RandomList, StageIndex, ITF_Staged
 from task_generator.utils import rosparam_get
@@ -60,7 +57,7 @@ class DynamicMapStagedTask(RandomTask):
         )
         self.itf_dynamicmap.subscribe_reset(callback=self._cb_task_reset)
 
-        self._eps_per_map = float(str(rospy.get_param("episode_per_map", 1)))
+        self._eps_per_map = rosparam_get(float, "episode_per_map", 1.)
         denominator: float = (
             rosparam_get(float, "num_envs", 1)
             if self.robot_managers[0].namespace != "eval_sim"

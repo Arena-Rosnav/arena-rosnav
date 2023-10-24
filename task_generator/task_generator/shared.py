@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 import dataclasses
+import os
 from typing import Callable, Collection, Dict, Iterable, List, Optional, Sequence, Tuple, overload
 
 import enum
+
+class Namespace(str):
+    def __call__(self, *args: str) -> "Namespace":
+        return Namespace(os.path.join(self, *args))
 
 
 EMPTY_LOADER = lambda *_, **__: Model(
@@ -175,12 +180,15 @@ class ModelWrapper:
 
 
 @dataclasses.dataclass(frozen=True)
-class ObstacleProps:
+class EntityProps:
     position: PositionOrientation
     name: str
     model: ModelWrapper
     extra: Dict
 
+@dataclasses.dataclass(frozen=True)
+class ObstacleProps(EntityProps):
+    ...
 
 @dataclasses.dataclass(frozen=True)
 class DynamicObstacleProps(ObstacleProps):
@@ -188,9 +196,8 @@ class DynamicObstacleProps(ObstacleProps):
 
 
 @dataclasses.dataclass(frozen=True)
-class RobotProps(ObstacleProps):
+class RobotProps(EntityProps):
     planner: str
-    namespace: str
     agent: str
     record_data: bool
 
@@ -244,7 +251,7 @@ class DynamicObstacle(DynamicObstacleProps):
 @dataclasses.dataclass(frozen=True)
 class Robot(RobotProps):
     @staticmethod
-    def parse(obj: Dict, model: ModelWrapper, namespace: str) -> "Robot":
+    def parse(obj: Dict, model: ModelWrapper) -> "Robot":
 
         name = str(obj.get("name", ""))
         position = parse_Point3D(obj.get("pos", (-1, -1, 0)))
@@ -254,7 +261,6 @@ class Robot(RobotProps):
 
         return Robot(
             name=name,
-            namespace=namespace,
             position=position,
             planner=planner,
             model=model,

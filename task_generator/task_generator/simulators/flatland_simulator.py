@@ -1,9 +1,5 @@
-from io import StringIO
-from typing import Any, Dict, List, Union, overload
 
 import rospy
-import os
-import yaml
 from flatland_msgs.srv import (
     MoveModelRequest,
     MoveModel,
@@ -14,14 +10,13 @@ from flatland_msgs.srv import (
     DeleteModelResponse,
     DeleteModels,
     SpawnModelRequest,
-    SpawnModelsRequest,
 )
 
 import flatland_msgs.msg
 
 from task_generator.shared import ModelType
 
-from task_generator.utils import Utils
+from task_generator.utils import rosparam_get
 from geometry_msgs.msg import Pose2D
 
 from task_generator.constants import Constants
@@ -58,52 +53,36 @@ class FlatlandSimulator(BaseSimulator):
 
     _tmp_model_path: str
 
-    _PLUGIN_PROPS_TO_EXTEND: Dict[str, List[str]] = {
-        "DiffDrive": ["odom_pub", "twist_sub"],
-        "Laser": ["topic"],
-    }
-
     def __init__(self, namespace):
         super().__init__(namespace)
-        self._namespace = namespace
-        self._ns_prefix = lambda *x: os.path.join(
-            "" if namespace == "" else "/" + namespace, *x)
 
         self._move_robot_pub = rospy.Publisher(
-            self._ns_prefix("move_model"), flatland_msgs.msg.MoveModelMsg, queue_size=10
+            self._namespace("move_model"), flatland_msgs.msg.MoveModelMsg, queue_size=10
         )
 
-        self._robot_name = rospy.get_param("robot_model", "")
-        self._robot_radius = rospy.get_param("robot_radius", "")
-        self._is_training_mode = rospy.get_param("train_mode", False)
-        self._step_size = rospy.get_param("step_size", "")
-        # self._robot_yaml_path = rospy.get_param("robot_yaml_path")
-        self._tmp_model_path = str(rospy.get_param("tmp_model_path", "/tmp"))
-        self._additional_full_range_laser = rospy.get_param(
-            "laser/full_range_laser", False
-        )
+        self._tmp_model_path = str(rosparam_get(str, "tmp_model_path", "/tmp"))
 
-        rospy.wait_for_service(self._ns_prefix("move_model"), timeout=T)
-        rospy.wait_for_service(self._ns_prefix("spawn_model"), timeout=T)
-        rospy.wait_for_service(self._ns_prefix("delete_model"), timeout=T)
+        rospy.wait_for_service(self._namespace("move_model"), timeout=T)
+        rospy.wait_for_service(self._namespace("spawn_model"), timeout=T)
+        rospy.wait_for_service(self._namespace("delete_model"), timeout=T)
 
         self._move_model_srv = rospy.ServiceProxy(
-            self._ns_prefix("move_model"), MoveModel, persistent=True
+            self._namespace("move_model"), MoveModel, persistent=True
         )
         self._spawn_model_srv = rospy.ServiceProxy(
-            self._ns_prefix("spawn_model"), SpawnModel
+            self._namespace("spawn_model"), SpawnModel
         )
         self._spawn_model[ModelType.YAML] = rospy.ServiceProxy(
-            self._ns_prefix("spawn_model_from_string"), SpawnModel
+            self._namespace("spawn_model_from_string"), SpawnModel
         )
         self._spawn_models_from_string_srv = rospy.ServiceProxy(
-            self._ns_prefix("spawn_models_from_string"), SpawnModels
+            self._namespace("spawn_models_from_string"), SpawnModels
         )
         self._delete_model_srv = rospy.ServiceProxy(
-            self._ns_prefix("delete_model"), DeleteModel
+            self._namespace("delete_model"), DeleteModel
         )
         self._delete_models_srv = rospy.ServiceProxy(
-            self._ns_prefix("delete_models"), DeleteModels
+            self._namespace("delete_models"), DeleteModels
         )
 
     def before_reset_task(self):
@@ -116,39 +95,23 @@ class FlatlandSimulator(BaseSimulator):
         res: DeleteModelResponse = self._delete_model_srv(DeleteModelRequest(name=name))
         return bool(res.success)
 
-    # SPAWN OBSTACLES
-    def spawn_obstacle(self, obstacle):
+    def spawn_entity(self, entity):
 
-        model = obstacle.model.get(self.MODEL_TYPES)
+        model = entity.model.get(self.MODEL_TYPES)
 
         request = SpawnModelRequest()
         request.yaml_path = model.description
-        request.name = obstacle.name
-        request.ns = self._namespace
+
+        request.name = entity.name
+        request.ns = self._namespace(entity.name)
         request.pose = Pose2D(
-            x=obstacle.position[0], y=obstacle.position[1], theta=obstacle.position[2])
+            x=entity.position[0],
+            y=entity.position[1],
+            theta=entity.position[2]
+        )
 
         res = self.spawn_model(model.type, request)
 
-        return res.success
-
-    # ROBOT
-    def spawn_robot(self, robot):
-
-        model = robot.model.get(self.MODEL_TYPES, namespace=robot.namespace)
-
-        file_content = self._update_plugin_topics(
-            read_yaml(StringIO(model.description)), robot.name)
-
-        request = SpawnModelRequest()
-        request.yaml_path = yaml.dump(file_content)
-        request.name = robot.namespace
-        request.ns = robot.namespace
-        request.pose = Pose2D(
-            x=robot.position[0], y=robot.position[1], theta=robot.position[2])
-
-        res = self.spawn_model(model.type, request)
-        
         return res.success
 
     def move_entity(self, name, pos):
@@ -163,67 +126,25 @@ class FlatlandSimulator(BaseSimulator):
 
         self._move_model_srv(move_model_request)
 
-    def _update_plugin_topics(self, file_content: dict, namespace: str) -> dict:
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            return file_content
+    # def _spawn_obstacles(self, obstacles):
 
-        plugins = file_content["plugins"]
+    #     request = SpawnModelsRequest()
 
-        for plugin in plugins:
-            if self._PLUGIN_PROPS_TO_EXTEND.get(plugin["type"]):
-                prop_names = self._PLUGIN_PROPS_TO_EXTEND.get(
-                    plugin["type"], [])
+    #     models = []
 
-                for name in prop_names:
-                    plugin[name] = os.path.join(namespace, plugin[name])
+    #     for obstacle in obstacles:
+    #         m = flatland_msgs.msg.Model()
+    #         m.yaml_path = obstacle[0]
+    #         m.name = obstacle[1]
+    #         m.ns = self._namespace
+    #         m.pose.x = obstacle[2][0]
+    #         m.pose.y = obstacle[2][1]
+    #         m.pose.theta = obstacle[2][2]
 
-        return file_content
+    #         models.append(m)
 
-    def _spawn_obstacles(self, obstacles):
+    #     request.models = models
 
-        request = SpawnModelsRequest()
-
-        models = []
-
-        for obstacle in obstacles:
-            m = flatland_msgs.msg.Model()
-            m.yaml_path = obstacle[0]
-            m.name = obstacle[1]
-            m.ns = self._namespace
-            m.pose.x = obstacle[2][0]
-            m.pose.y = obstacle[2][1]
-            m.pose.theta = obstacle[2][2]
-
-            models.append(m)
-
-        request.models = models
-
-        self._spawn_models_from_string_srv(request)
+    #     self._spawn_models_from_string_srv(request)
 
 
-def check_yaml_path(path: str) -> bool:
-    return os.path.isfile(path)
-
-
-def parse_yaml(content: str):
-    return yaml.safe_load(content)
-
-
-@overload
-def read_yaml(yaml: StringIO): ...
-
-
-@overload
-def read_yaml(yaml: str): ...
-
-
-def read_yaml(yaml: Union[StringIO, str]) -> Any:
-    if isinstance(yaml, StringIO):
-        return parse_yaml(yaml.read())
-
-    elif isinstance(yaml, str):
-        with open(yaml, "r") as file:
-            return parse_yaml(file.read())
-
-    else:
-        raise ValueError(f"can't process yaml descriptor of type {type(yaml)}")

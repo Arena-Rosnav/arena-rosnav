@@ -193,7 +193,7 @@ class ITF_Scenario(ITF_Base):
     def check_scenario(self, scenario: Scenario) -> bool:
 
         # check map path
-        static_map: str = str(rospy.get_param("map_path", ""))
+        static_map: str = rosparam_get(str, "map_path", "")
         scenario_map_path = scenario.map.path
 
         if static_map != scenario_map_path:
@@ -237,8 +237,8 @@ class ITF_Scenario(ITF_Base):
 
             manager = self.PROPS.robot_managers[index]
 
-            manager.reset(start_pos=robot.start[:2], goal_pos=robot.goal[:2])
-            manager.move_robot_to_pos(pos=robot.start[:2])
+            manager.reset(start_pos=robot.start, goal_pos=robot.goal)
+            manager.move_robot_to_pos(position=robot.start)
 
 
 # RandomInterface
@@ -327,7 +327,7 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
             goal_pos = self.PROPS.map_manager.get_random_pos_on_map(
                 manager.safe_distance, forbidden_zones=[start_pos])
 
-            manager.reset(start_pos=start_pos[:2], goal_pos=goal_pos[:2])
+            manager.reset(start_pos=start_pos, goal_pos=goal_pos)
 
             robot_positions.append(start_pos)
             robot_positions.append(goal_pos)

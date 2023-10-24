@@ -82,7 +82,7 @@ class ParametrizedTask(BaseTask):
             goal_pos = self.map_manager.get_random_pos_on_map(
                 manager.safe_distance, forbidden_zones=[start_pos])
 
-            manager.reset(start_pos=start_pos[:2], goal_pos=goal_pos[:2])
+            manager.reset(start_pos=start_pos, goal_pos=goal_pos)
 
             robot_positions.append(start_pos)
             robot_positions.append(goal_pos)

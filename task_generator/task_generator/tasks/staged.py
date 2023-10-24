@@ -1,4 +1,3 @@
-import functools
 from typing import Optional
 
 import rospy
@@ -9,7 +8,7 @@ from task_generator.tasks.random import RandomTask
 from task_generator.tasks.task_factory import TaskFactory
 
 from task_generator.constants import Constants
-from task_generator.tasks.utils import ITF_Random, RandomList, StageIndex, ITF_Staged
+from task_generator.tasks.utils import StageIndex, ITF_Staged
 from task_generator.utils import rosparam_get
 
 
