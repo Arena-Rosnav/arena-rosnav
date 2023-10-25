@@ -39,6 +39,7 @@
   <env name="SIMULATOR" value="$(arg simulator)" />
 
   <arg name="entity_manager" default="pedsim" doc="[pedsim]" />
+  <arg name="pedsim_waypoint_plugin" default="" doc="[passthrough, moonwalk]"/>
   <arg name="pedsim" value="$(eval entity_manager == 'pedsim')" />
   <env name="PEDSIM" value="$(arg pedsim)" />
   <param name="pedsim" value="$(arg pedsim)" />
@@ -153,11 +154,24 @@
   
   <!-- Launch pedsim agent spawner  -->
   <group if="$(eval arg('pedsim'))">
-    <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(arg pedsim)">
-      <param name="simulation_factor" value="1" type="double"/>
-      <param name="pedsim_update_rate" value="30.0" type="double"/>
-      <param name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" type="string"/>
-    </node>
+
+    <arg name="has_pedsim_waypoint_plugin" value="$(eval arg('pedsim_waypoint_plugin') != '')" />
+
+    <group if="$(arg has_pedsim_waypoint_plugin)">
+      <remap from="pedsim_waypoint_plugin/simulated_agents_output" to="pedsim_simulator/simulated_agents" />
+      <node name="pedsim_waypoint_plugin" pkg="pedsim_waypoint_plugin" type="main.py" output="screen">
+        <param name="plugin_name" value="$(arg pedsim_waypoint_plugin)" />
+      </node>
+    </group>
+
+    <group>
+      <remap from="pedsim_simulator/simulated_agents" to="pedsim_waypoint_plugin/simulated_agents_input" if="$(arg has_pedsim_waypoint_plugin)"/>
+      <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(arg pedsim)">
+        <param name="simulation_factor" value="1" type="double"/>
+        <param name="pedsim_update_rate" value="30.0" type="double"/>
+        <param name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" type="string"/>
+      </node>
+    </group>
   </group>
 
   <!-- <node name="pedsim_agent" pkg="pedsim_gazebo_plugin" type="spawn_pedsim_agents.py"></node> -->
