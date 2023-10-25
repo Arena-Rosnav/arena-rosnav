@@ -8,7 +8,7 @@ import re
 
 from pedsim_msgs.msg import Ped, InteractiveObstacle, AgentState, AgentStates, Waypoints, Waypoint, Ped
 from geometry_msgs.msg import Point, Pose, Quaternion
-from pedsim_srvs.srv import SpawnInteractiveObstacles, SpawnObstacle, SpawnPeds
+from pedsim_srvs.srv import SpawnInteractiveObstacles, SpawnObstacle, SpawnPeds, RegisterRobot, RegisterRobotRequest
 from std_srvs.srv import SetBool, Trigger
 
 
@@ -75,6 +75,7 @@ class PedsimManager(EntityManager):
     _spawn_interactive_obstacles_srv: rospy.ServiceProxy
     _respawn_peds_srv: rospy.ServiceProxy
     _add_obstacle_srv: rospy.ServiceProxy
+    _register_robot_srv: rospy.ServiceProxy
 
     _known_obstacles: KnownObstacles
 
@@ -97,6 +98,7 @@ class PedsimManager(EntityManager):
         rospy.wait_for_service(
             "pedsim_simulator/remove_all_interactive_obstacles", timeout=T)
         rospy.wait_for_service("pedsim_simulator/add_obstacle", timeout=T)
+        rospy.wait_for_service("pedsim_simulator/register_robot", timeout=T)
 
         self._spawn_peds_srv = rospy.ServiceProxy(
             "/pedsim_simulator/spawn_peds", SpawnPeds
@@ -121,6 +123,10 @@ class PedsimManager(EntityManager):
 
         self._add_obstacle_srv = rospy.ServiceProxy(
             "pedsim_simulator/add_obstacle", SpawnObstacle, persistent=True)
+        
+        self._register_robot_srv = rospy.ServiceProxy(
+            "pedsim_simulator/register_robot", RegisterRobot, persistent=True
+        )
 
         rospy.set_param("respawn_dynamic", True)
         rospy.set_param("respawn_static", True)
@@ -514,6 +520,14 @@ class PedsimManager(EntityManager):
 
     def spawn_robot(self, robot: Robot):
         self._simulator.spawn_entity(robot)
+
+        request = RegisterRobotRequest()
+
+        request.name = robot.name
+        request.odom_topic = self._namespace(robot.name, "odom")
+
+        self._register_robot_srv(request)
+
     
     def move_robot(self, name: str, position: PositionOrientation):
         self._simulator.move_entity(name=name, pos=position)
