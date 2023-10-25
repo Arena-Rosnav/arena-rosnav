@@ -24,7 +24,7 @@ class InputData:
     header: std_msgs.msg.Header
     agents: List[pedsim_msgs.msg.AgentState]
     robots: List[pedsim_msgs.msg.RobotState]
-    groups: List[pedsim_msgs.msg.AgentGroups]
+    groups: List[pedsim_msgs.msg.AgentGroup]
     waypoints: List[pedsim_msgs.msg.Waypoint]
     line_obstacles: List[pedsim_msgs.msg.LineObstacle]
 
