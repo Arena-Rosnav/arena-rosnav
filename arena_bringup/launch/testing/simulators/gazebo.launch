@@ -13,6 +13,8 @@
 
   <arg name="visualization" default="" />
 
+  <arg name="pedsim" />
+
   <!-- <node name="generate_world" pkg="gazebo_utils" type="generate_world.py">
     <param name="world" value="$(arg world)"/>
   </node> -->
@@ -31,7 +33,5 @@
   <include file="$(find arena_bringup)/launch/utils/rviz.launch">
     <arg name="show_rviz" value="$(arg show_rviz)" />
   </include>
-
-  <node pkg="pedsim_gazebo_plugin" type="spawn_pedsim_agents.py" name="spawn_pedsim_agents" output="screen" />
 
 </launch>

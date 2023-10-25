@@ -1,10 +1,36 @@
-import os
+import itertools
+from typing import Callable, Collection, Dict
+
+from task_generator.shared import ModelType, EntityProps, Namespace, PositionOrientation
 
 
 class BaseSimulator:
-    def __init__(self, namespace):
+
+    _namespace: Namespace
+
+    _spawn_model: Dict[ModelType, Callable]
+
+    __counter: itertools.count
+
+    def __init__(self, namespace: Namespace):
         self._namespace = namespace
-        self._ns_prefix = lambda *topic: os.path.join(self._namespace, *topic)
+        self._spawn_model = dict()
+
+        self.__counter = itertools.count()
+
+    def generate_random_name(self) -> str:
+        return f"random_name_{next(self.__counter)}"
+
+    @property
+    def MODEL_TYPES(self) -> Collection[ModelType]:
+        return self._spawn_model.keys()
+
+    def spawn_model(self, model_type: ModelType, *args, **kwargs):
+        if model_type in self._spawn_model:
+            return self._spawn_model[model_type](*args, **kwargs)
+
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement spawn_model[{model_type}]")
 
     def before_reset_task(self):
         """
@@ -20,63 +46,14 @@ class BaseSimulator:
         """
         raise NotImplementedError()
 
-    def remove_all_obstacles(self):
-        """
-        Removes all obstacles from the current simulator. Does not remove
-        the robot!
-        """
+    def spawn_entity(self, entity: EntityProps) -> bool:
         raise NotImplementedError()
-
-    def spawn_random_dynamic_obstacle(self, **args):
-        """
-        Spawn a single random dynamic obstacle.
-
-        Args:
-            position: [int, int, int] denoting the x, y and angle.
-            min_radius: minimal radius of the obstacle
-            max_radius: maximal radius of the obstacle
-            linear_vel: linear velocity
-            angular_vel_max: maximal angular velocity
-        """
-        raise NotImplementedError()
-
-    def spawn_random_static_obstacles(self, **args):
-        """
-        Spawn a single random static obstacle.
-
-        Args:
-            position: [int, int, int] denoting the x, y and angle.
-            min_radius: minimal radius of the obstacle
-            max_radius: maximal radius of the obstacle
-        """
-        raise NotImplementedError()
-
-    def publish_goal(self, goal):
-        """
-        Publishes the goal.
-        """
-        raise NotImplementedError()
-
-    def move_robot(self, pos, name=None):
+    
+    def move_entity(self, name: str, pos: PositionOrientation):
         """
         Move the robot to the given position.
         """
         raise NotImplementedError()
 
-    def spawn_robot(self, complexity=1):
-        """
-        Spawn a robot in the simulator.
-        A position is not specified because the robot is moved at the
-        desired position anyway.
-        """
-        raise NotImplementedError()
-
-    def spawn_pedsim_agents(self, agents):
-        """ """
-        raise NotImplementedError()
-
-    def reset_pedsim_agents(self):
-        raise NotImplementedError()
-
-    def spawn_obstacle(self, position, yaml_path="", *args, **kwargs):
+    def delete_entity(self, name: str) -> bool:
         raise NotImplementedError()

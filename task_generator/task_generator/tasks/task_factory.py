@@ -1,12 +1,16 @@
-from .base_task import BaseTask
+from typing import Dict, Type
+
+from task_generator.constants import Constants
+from task_generator.tasks.base_task import BaseTask
+
 
 class TaskFactory:
-    registry = {}
+    registry: Dict[Constants.TaskMode, Type[BaseTask]] = {}
 
     @classmethod
-    def register(cls, name):
+    def register(cls, name: Constants.TaskMode):
         def inner_wrapper(wrapped_class):
-            assert name not in cls.registry, f"Simulator '{name}' already exists!"
+            assert name not in cls.registry, f"TaskMode '{name}' already exists!"
             assert issubclass(wrapped_class, BaseTask)
 
             cls.registry[name] = wrapped_class
@@ -15,11 +19,8 @@ class TaskFactory:
         return inner_wrapper
 
     @classmethod
-    def instantiate(cls, name: str, *args, **kwargs):
-        assert name in cls.registry, f"Simulator '{name}' is not registered!"
-        simulator = cls.registry[name]
-        
-        if issubclass(simulator, BaseTask):
-            return simulator(*args, **kwargs)
-        else:
-            return simulator
+    def instantiate(cls, name: Constants.TaskMode) -> Type[BaseTask]:
+        assert name in cls.registry, f"TaskMode '{name}' is not registered!"
+        task = cls.registry[name]
+
+        return task

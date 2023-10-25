@@ -53,7 +53,5 @@ poetry.lock
 **/.vscode
 
 #dolphin
-.directory
 
 /**/__pycache__
-

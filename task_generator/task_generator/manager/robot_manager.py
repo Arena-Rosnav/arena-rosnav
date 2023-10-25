@@ -1,19 +1,27 @@
-import math
+import dataclasses
+
+import numpy as np
+import rospy
+import roslaunch
 import os
 import time
-import traceback
+
+from nav_msgs.msg import Odometry
+import os
+import time
 
 import roslaunch
-import rosnode
-import rospkg
 import rospy
-import yaml
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Quaternion
 from nav_msgs.msg import Odometry
 from std_srvs.srv import Empty
 from task_generator.constants import Constants
-from task_generator.utils import Utils
+from task_generator.manager.entity_manager.entity_manager import EntityManager
+from task_generator.manager.entity_manager.utils import YAMLUtil
+from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
+from task_generator.utils import Utils, rosparam_get
 
+from tf.transformations import quaternion_from_euler
 
 class RobotManager:
     """
@@ -21,110 +29,124 @@ class RobotManager:
     position of a robot for all task modes.
     """
 
-    def __init__(self, namespace, map_manager, simulator, robot_setup):
-        self.namespace = namespace
-        self.ns_prefix = lambda *topic: os.path.join(self.namespace, *topic)
+    _namespace: Namespace
 
-        self.map_manager = map_manager
-        self.simulator = simulator
+    _entity_manager: EntityManager
 
-        self.start_pos = [0, 0]
-        self.goal_pos = [0, 0]
+    _start_pos: PositionOrientation
+    _goal_pos: PositionOrientation
+    _position: PositionOrientation
 
-        self.goal_radius = rospy.get_param("goal_radius", 0.7)
-        self.is_goal_reached = False
+    _robot_radius: float
+    _goal_radius: float
 
-        self.robot_setup = robot_setup
-        self.record_data = rospy.get_param(
-            "record_data", False
-        )  #  and rospy.get_param('task_mode', 'scenario') == 'scenario'
+    _robot: Robot
 
-        self.position = self.start_pos
+    _move_base_pub: rospy.Publisher
+    _move_base_goal_pub: rospy.Publisher
+    _pub_goal_timer: rospy.Timer
+    _clear_costmaps_srv: rospy.ServiceProxy
+
+    def __init__(self, namespace: Namespace, entity_manager: EntityManager, robot: Robot):
+        self._namespace = namespace
+
+        self._entity_manager = entity_manager
+
+        self._start_pos = (0, 0, 0)
+        self._goal_pos = (0, 0, 0)
+
+        self._goal_radius = rosparam_get(float, "goal_radius", 0.7) + 1
+
+        self._robot = robot
+
+        self._position = self._start_pos
 
     def set_up_robot(self):
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            self.robot_radius = rospy.get_param("robot_radius")
+            self._robot_radius = rosparam_get(float, "robot_radius")
 
-        self.simulator.spawn_robot(
-            self.namespace, self.robot_setup["model"], self._robot_name()
+        self._robot = dataclasses.replace(
+            self._robot, 
+            model=self._robot.model.override(
+                model_type=ModelType.YAML,
+                override=lambda model: model.replace(
+                    description=YAMLUtil.serialize(
+                        YAMLUtil.update_plugins(
+                            namespace=self.namespace,
+                            description=YAMLUtil.parse_yaml(model.description)
+                        )
+                    )
+                )
+            )
         )
 
-        self.move_base_goal_pub = rospy.Publisher(
-            self.ns_prefix("move_base_simple", "goal")
-            if rospy.get_param("rosnav_move_base", False)
-            else self.ns_prefix("goal"),
+        self._entity_manager.spawn_robot(self._robot)
+
+        self._move_base_goal_pub = rospy.Publisher(
+            self.namespace("move_base_simple", "goal"),
             PoseStamped,
-            queue_size=10,
+            queue_size=10
         )
-        self.pub_goal_timer = rospy.Timer(
-            rospy.Duration(0.25), self.publish_goal_periodically
+        
+        self._pub_goal_timer = rospy.Timer(
+            rospy.Duration(nsecs=int(0.25e9)),
+            self._publish_goal_periodically
         )
 
-        rospy.Subscriber(self.ns_prefix("odom"), Odometry, self.robot_pos_callback)
-
-        rospy.Subscriber(self.ns_prefix("odom"), Odometry, self.robot_pos_callback)
+        rospy.Subscriber(
+            self.namespace("odom"),
+            Odometry,
+            self._robot_pos_callback
+        )
 
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             return
 
-        self.launch_robot(self.robot_setup)
+        self._launch_robot()
 
-        self.robot_radius = rospy.get_param(self.ns_prefix("robot_radius"))
-
-        # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
-        self._clear_costmaps_srv = rospy.ServiceProxy(
-            self.ns_prefix("move_base", "clear_costmaps"), Empty
-        )
-        self.robot_radius = rospy.get_param(self.ns_prefix("robot_radius"))
+        self._robot_radius = rosparam_get(float, self.namespace("robot_radius"))
 
         # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
         self._clear_costmaps_srv = rospy.ServiceProxy(
-            self.ns_prefix("move_base", "clear_costmaps"), Empty
+            self.namespace("move_base", "clear_costmaps"),
+            Empty
         )
 
-    def _robot_name(self):
+    @property
+    def safe_distance(self) -> float:
+        return self._robot_radius + Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST
+
+    @property
+    def name(self) -> str:
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             return ""
 
-        return self.namespace
+        return self._robot.name
 
-    def reset(
-        self, forbidden_zones=None, start_pos=None, goal_pos=None, move_robot=True
-    ):
+    @property
+    def namespace(self) -> Namespace:
+        return self._namespace(self.name)
+
+    @property
+    def is_done(self) -> bool:
+        """kind of redundant right now, but could contain more logic in the future"""
+        return self._is_goal_reached
+
+    def move_robot_to_pos(self, position: PositionOrientation):
+        self._entity_manager.move_robot(name=self.name, position=position)
+
+    def reset(self, start_pos: PositionOrientation, goal_pos: PositionOrientation):
         """
-        The manager creates new start and goal position
-        when a task is reset, publishes the goal to
-        move base and rviz and moves the robot to
-        the start position.
+            Publishes start and goal to data_recorder, publishes goal to move_base
         """
-        if forbidden_zones is None:
-            forbidden_zones = []
+        self._start_pos, self._goal_pos = start_pos, goal_pos
 
-        self.start_pos, self.goal_pos = self.generate_new_start_and_goal(
-            forbidden_zones, start_pos, goal_pos
-        )
+        if self._robot.record_data:
+            rospy.set_param(self.namespace("goal"), str(list(self._goal_pos)))
+            rospy.set_param(self.namespace("start"), str(list(self._start_pos)))
 
-        if self.record_data:
-            rospy.set_param(
-                os.path.join(self.namespace, "goal"), str(list(self.goal_pos))
-            )
-            rospy.set_param(
-                os.path.join(self.namespace, "start"), str(list(self.start_pos))
-            )
-
-        self.publish_goal(self.goal_pos)
-
-        if move_robot:
-            try:
-                self.move_robot_to_start()
-            except:
-                self.reset(
-                    forbidden_zones=forbidden_zones,
-                    start_pos=start_pos,
-                    goal_pos=goal_pos,
-                )
-
-        self.set_is_goal_reached(self.start_pos, self.goal_pos)
+        self._publish_goal(self._goal_pos)
+        self.move_robot_to_pos(self._start_pos)
 
         time.sleep(0.1)
 
@@ -133,131 +155,80 @@ class RobotManager:
         except:
             pass
 
-        return self.position, self.goal_pos  # self.start_pos, self.goal_pos
+        return self._position, self._goal_pos
 
-    def publish_goal_periodically(self, _):
-        if self.goal_pos != None:
-            self.publish_goal(self.goal_pos)
+    @property
+    def _is_goal_reached(self) -> bool:
 
-    def generate_new_start_and_goal(self, forbidden_zones, start_pos, goal_pos):
-        new_start_pos = self._default_position(
-            start_pos,
-            self.map_manager.get_random_pos_on_map(
-                self.robot_radius + Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST,
-                forbidden_zones,
-            ),
-        )
+        start = self._position
+        goal = self._goal_pos
 
-        new_goal_pos = self._default_position(
-            goal_pos,
-            self.map_manager.get_random_pos_on_map(
-                self.robot_radius + Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST,
-                [
-                    *forbidden_zones,
-                    (new_start_pos[0], new_start_pos[1], self.goal_radius),
-                ],
-            ),
-        )
+        distance_to_goal: float = np.linalg.norm(
+            np.array(goal) - np.array(start))
 
-        return new_start_pos, new_goal_pos
+        return distance_to_goal < self._goal_radius
 
-    def publish_goal(self, goal):
+    def _publish_goal_periodically(self, *args, **kwargs):
+        if self._goal_pos is not None:
+            self._publish_goal(self._goal_pos)
+
+    def _publish_goal(self, goal: PositionOrientation):
         goal_msg = PoseStamped()
         goal_msg.header.seq = 0
         goal_msg.header.stamp = rospy.get_rostime()
         goal_msg.header.frame_id = "map"
         goal_msg.pose.position.x = goal[0]
         goal_msg.pose.position.y = goal[1]
+        goal_msg.pose.position.z = 0
 
-        goal_msg.pose.orientation.w = 0
-        goal_msg.pose.orientation.x = 0
-        goal_msg.pose.orientation.y = 0
-        goal_msg.pose.orientation.z = 1
+        goal_msg.pose.orientation = Quaternion(*quaternion_from_euler(0.0, 0.0, goal[2], axes="sxyz"))
 
-        self.move_base_goal_pub.publish(goal_msg)
+        self._move_base_goal_pub.publish(goal_msg)
 
-    def move_robot_to_start(self):
-        if not self.start_pos == None:
-            self.move_robot_to_pos(self.start_pos)
-
-    def move_robot_to_pos(self, pos):
-        self.simulator.move_robot(pos, name=self.namespace)
-
-    def _default_position(self, pos, callback_pos):
-        if not pos == None:
-            return pos
-
-        return callback_pos
-
-    def launch_robot(self, robot_setup):
-        roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(
+    def _launch_robot(self):
+        roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(  # type: ignore
             ["arena_bringup", "robot.launch"]
         )
 
-        print("START WITH MODEL", self.namespace, robot_setup["model"])
+        rospy.loginfo(f"START WITH MODEL {self.namespace}")
 
         args = [
-            f"model:={robot_setup['model']}",
-            f"local_planner:={robot_setup['planner']}",
+            f"name:={self.name}",
+            f"local_planner:={self._robot.planner}",
             f"namespace:={self.namespace}",
-            f"complexity:={rospy.get_param('complexity', 1)}",
-            f"record_data:={self.record_data}",
-            *(
-                [f"agent_name:={robot_setup.get('agent')}"]
-                if robot_setup.get("agent")
-                else []
-            ),
+            f"complexity:={rosparam_get(int, 'complexity', 1)}",
+            f"record_data:={self._robot.record_data}",
+            f"agent_name:={self._robot.agent}"
         ]
 
-        self.process = roslaunch.parent.ROSLaunchParent(
-            roslaunch.rlutil.get_or_generate_uuid(None, False),
-            [(*roslaunch_file, args)],
+        self.process = roslaunch.parent.ROSLaunchParent(  # type: ignore
+            roslaunch.rlutil.get_or_generate_uuid(None, False),  # type: ignore
+            [(*roslaunch_file, args)]
         )
         self.process.start()
 
         # Overwrite default move base params
-        base_frame = rospy.get_param(os.path.join(self.namespace, "robot_base_frame"))
-        sensor_frame = rospy.get_param(
-            os.path.join(self.namespace, "robot_sensor_frame")
+        base_frame: str = rosparam_get(str, self.namespace("robot_base_frame"))
+        sensor_frame: str = rosparam_get(str, self.namespace("robot_sensor_frame"))
+
+        rospy.set_param(
+            self.namespace("move_base", "global_costmap", "robot_base_frame"),
+            os.path.join(self.name, base_frame)
         )
         rospy.set_param(
-            os.path.join(
-                self.namespace, "move_base", "global_costmap", "robot_base_frame"
-            ),
-            self.namespace.replace("/", "") + "/" + base_frame,
+            self.namespace("move_base", "local_costmap", "robot_base_frame"),
+            os.path.join(self.name, base_frame)
         )
         rospy.set_param(
-            os.path.join(
-                self.namespace, "move_base", "local_costmap", "robot_base_frame"
-            ),
-            self.namespace.replace("/", "") + "/" + base_frame,
+            self.namespace("move_base", "local_costmap", "scan", "sensor_frame"),
+            os.path.join(self.name, sensor_frame)
         )
         rospy.set_param(
-            os.path.join(
-                self.namespace, "move_base", "local_costmap", "scan", "sensor_frame"
-            ),
-            self.namespace.replace("/", "") + "/" + sensor_frame,
-        )
-        rospy.set_param(
-            os.path.join(
-                self.namespace, "move_base", "global_costmap", "scan", "sensor_frame"
-            ),
-            self.namespace.replace("/", "") + "/" + base_frame,
+            self.namespace("move_base", "global_costmap", "scan", "sensor_frame"),
+            os.path.join(self.name, base_frame)
         )
 
-    def robot_pos_callback(self, data):
-        current_position = data.pose.pose.position
+    def _robot_pos_callback(self, data: Odometry):
+        current_position = data.pose.pose
 
-        self.position = [current_position.x, current_position.y]
-
-        self.set_is_goal_reached(self.position, self.goal_pos)
-
-    def set_is_goal_reached(self, start, goal):
-        distance_to_goal = math.sqrt(
-            (start[0] - goal[0]) ** 2 + (start[1] - goal[1]) ** 2
-        )
-
-        self.is_goal_reached = distance_to_goal < self.goal_radius
-
-    def is_done(self):
-        return self.is_goal_reached
+        self._position = (current_position.position.x, current_position.position.y, current_position.orientation.z)
