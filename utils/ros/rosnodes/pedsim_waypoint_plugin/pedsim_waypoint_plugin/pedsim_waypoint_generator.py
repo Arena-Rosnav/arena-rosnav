@@ -1,12 +1,15 @@
+import dataclasses
 from enum import Enum
-from typing import Dict, List, Type
+from typing import Dict, List, Optional, Type, TypeVar, get_type_hints
 import pedsim_msgs.msg
+import std_msgs.msg
 import rospy
 
 
 class Constants:
-    TOPIC_SUBSCRIBE = "pedsim_waypoint_plugin/simulated_agents_input"
-    TOPIC_PUBLISH = "pedsim_waypoint_plugin/simulated_agents_output"
+    TOPIC_SUBSCRIBE = "pedsim_waypoint_plugin/input"
+    TOPIC_PUBLISH = "pedsim_waypoint_plugin/output"
+    TOPIC_DEVNULL = "pedsim_waypoint_plugin/devnull"
 
 
 class WaypointPluginName(Enum):
@@ -14,13 +17,30 @@ class WaypointPluginName(Enum):
     SPINNY = "spinny"
 
 
-AgentStates = List[pedsim_msgs.msg.AgentState]
+InputMsg = pedsim_msgs.msg.WaypointPluginDataframe
 
+@dataclasses.dataclass
+class InputData:
+    header: std_msgs.msg.Header
+    agents: List[pedsim_msgs.msg.AgentState]
+    robots: List[pedsim_msgs.msg.RobotState]
+    groups: List[pedsim_msgs.msg.AgentGroups]
+    waypoints: List[pedsim_msgs.msg.Waypoint]
+    line_obstacles: List[pedsim_msgs.msg.LineObstacle]
+
+
+OutputData = List[pedsim_msgs.msg.AgentState]
+
+OutputMsg = pedsim_msgs.msg.AgentStates
 
 class WaypointPlugin:
-    def callback(self, agent_states: AgentStates) -> AgentStates:
+    def callback(self, data: InputData) -> OutputData:
         raise NotImplementedError()
 
+
+T = TypeVar("T")
+def NList(l: Optional[List[T]]) -> List[T]:
+    return [] if l is None else l
 
 class PedsimWaypointGenerator:
 
@@ -50,24 +70,35 @@ class PedsimWaypointGenerator:
 
         publisher = rospy.Publisher(
             name=Constants.TOPIC_PUBLISH,
-            data_class=pedsim_msgs.msg.AgentStates,
+            data_class=OutputMsg,
             queue_size=1
         )
 
-        def callback(msg: pedsim_msgs.msg.AgentStates):
+        
 
-            agent_states = msg.agent_states
+        def callback(dataframe: InputMsg):
 
-            if agent_states is not None:
-                msg = pedsim_msgs.msg.AgentStates()
-                msg.agent_states = plugin.callback(agent_states)
+            dataframe_data = InputData(
+                header = dataframe.header,
+                agents = NList(dataframe.agent_states),
+                robots = NList(dataframe.robot_states),
+                groups = NList(dataframe.simulated_groups),
+                waypoints = NList(dataframe.simulated_waypoints),
+                line_obstacles = NList(dataframe.line_obstacles)
+            )
 
-            publisher.publish(msg)
+            agent_states_data = plugin.callback(dataframe_data)
+
+            publisher.publish(
+                OutputMsg(
+                    agent_states = agent_states_data
+                )
+            )
             
 
         rospy.Subscriber(
             name=Constants.TOPIC_SUBSCRIBE,
-            data_class=pedsim_msgs.msg.AgentStates,
+            data_class=InputMsg,
             callback=callback,
             queue_size=1
         )
