@@ -1,21 +1,19 @@
 import itertools
-import os
-from typing import Callable, Collection, Dict, Optional
+from typing import Callable, Collection, Dict
 
-from task_generator.shared import ModelType, ObstacleProps, PositionOrientation, Robot
+from task_generator.shared import ModelType, EntityProps, Namespace, PositionOrientation
 
 
 class BaseSimulator:
 
-    _namespace: str
-    _ns_prefix: Callable[..., str]
+    _namespace: Namespace
+
     _spawn_model: Dict[ModelType, Callable]
 
     __counter: itertools.count
 
-    def __init__(self, namespace: str):
+    def __init__(self, namespace: Namespace):
         self._namespace = namespace
-        self._ns_prefix = lambda *topic: os.path.join(self._namespace, *topic)
         self._spawn_model = dict()
 
         self.__counter = itertools.count()
@@ -48,13 +46,7 @@ class BaseSimulator:
         """
         raise NotImplementedError()
 
-    def spawn_robot(self, robot: Robot) -> str:
-        """
-        Spawn a robot in the simulator.
-        """
-        raise NotImplementedError()
-
-    def spawn_obstacle(self, obstacle: ObstacleProps) -> bool:
+    def spawn_entity(self, entity: EntityProps) -> bool:
         raise NotImplementedError()
     
     def move_entity(self, name: str, pos: PositionOrientation):

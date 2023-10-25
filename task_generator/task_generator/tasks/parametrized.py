@@ -6,32 +6,33 @@ from typing import List, Optional
 from rospkg import RosPack
 
 from task_generator.constants import Constants
-from task_generator.tasks.scenario import ScenarioTask
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.tasks.base_task import BaseTask
 from task_generator.shared import DynamicObstacle, Obstacle, Waypoint
 
 import xml.etree.ElementTree as ET
 
-from task_generator.tasks.utils import ObstacleInterface, RandomInterface, Scenario, ScenarioInterface, ScenarioMap, ScenarioObstacles
+from task_generator.tasks.utils import ITF_Obstacle, ITF_Random, Scenario, ITF_Scenario, ScenarioMap, ScenarioObstacles
 from task_generator.utils import rosparam_get
+
 
 def get_attrib(element: ET.Element, attribute: str, default: Optional[str] = None) -> str:
     val = element.get(attribute)
     if val is not None:
         return str(val)
-    
+
     sub_elem = element.find(attribute)
     if sub_elem is not None:
         return str(sub_elem.text)
-    
+
     if default is not None:
         return default
 
     raise ValueError(f"attribute {attribute} not found in {element}")
 
+
 @TaskFactory.register(Constants.TaskMode.PARAMETRIZED)
-class ParametrizedTask(BaseTask, ScenarioInterface, RandomInterface, ObstacleInterface):
+class ParametrizedTask(BaseTask):
     """
         The random task spawns static and dynamic
         obstacles on every reset and will create
@@ -39,21 +40,32 @@ class ParametrizedTask(BaseTask, ScenarioInterface, RandomInterface, ObstacleInt
         each task.
     """
 
+    itf_scenario: ITF_Scenario
+    itf_random: ITF_Random
+    itf_obstacle: ITF_Obstacle
+
+    def __init__(self, **kwargs):
+        BaseTask.__init__(self, **kwargs)
+        self.itf_scenario = ITF_Scenario(self)
+        self.itf_random = ITF_Random(self)
+        self.itf_obstacle = ITF_Obstacle(self)
+
     @BaseTask.reset_helper(parent=BaseTask)
     def reset(self, **kwargs):
 
         def callback():
-            
-            #TODO temp
-            self._obstacle_manager.reset()
-            #end
-            
-            self._obstacle_manager.respawn(lambda: ScenarioInterface._setup_scenario(self, self._generate_scenario()))
+
+            # TODO temp
+            self.obstacle_manager.reset()
+            # end
+
+            self.obstacle_manager.respawn(
+                lambda: self.itf_scenario.setup_scenario(self._generate_scenario()))
             time.sleep(1)
 
             return False
 
-        return callback
+        return {}, callback
 
     def _generate_scenario(
         self,
@@ -63,21 +75,21 @@ class ParametrizedTask(BaseTask, ScenarioInterface, RandomInterface, ObstacleInt
 
         robot_positions: List[Waypoint] = []  # may be needed in the future idk
 
-        for manager in self._robot_managers:
+        for manager in self.robot_managers:
 
-            start_pos = self._map_manager.get_random_pos_on_map(
+            start_pos = self.map_manager.get_random_pos_on_map(
                 manager.safe_distance)
-            goal_pos = self._map_manager.get_random_pos_on_map(
+            goal_pos = self.map_manager.get_random_pos_on_map(
                 manager.safe_distance, forbidden_zones=[start_pos])
 
-            manager.reset(start_pos=start_pos[:2], goal_pos=goal_pos[:2])
+            manager.reset(start_pos=start_pos, goal_pos=goal_pos)
 
             robot_positions.append(start_pos)
             robot_positions.append(goal_pos)
 
-        self._map_manager.init_forbidden_zones()
+        self.map_manager.init_forbidden_zones()
 
-        obstacle_ranges = RandomInterface._load_obstacle_ranges(self)
+        obstacle_ranges = self.itf_random.load_obstacle_ranges()
 
         if dynamic_obstacles is None:
             dynamic_obstacles = random.randint(*obstacle_ranges.dynamic)
@@ -95,12 +107,12 @@ class ParametrizedTask(BaseTask, ScenarioInterface, RandomInterface, ObstacleInt
         tree = ET.parse(xml_path)
         root = tree.getroot()
 
-        assert isinstance(root, ET.Element) and root.tag == "random", "not a random.xml desc"
+        assert isinstance(
+            root, ET.Element) and root.tag == "random", "not a random.xml desc"
 
         dynamic_obstacles_array: List[DynamicObstacle] = list()
         static_obstacles_array: List[Obstacle] = list()
         interactive_obstacles_array: List[Obstacle] = list()
-
 
         # Create static obstacles
         for config in root.findall("./static/obstacle") or []:
@@ -110,9 +122,9 @@ class ParametrizedTask(BaseTask, ScenarioInterface, RandomInterface, ObstacleInt
                     int(get_attrib(config, "max"))
                 )
             ):
-                obstacle = self._create_obstacle(
+                obstacle = self.itf_obstacle.create_obstacle(
                     name=f'{get_attrib(config, "name")}_static_{i+1}',
-                    model=self._model_loader.bind(get_attrib(config, "model"))
+                    model=self.model_loader.bind(get_attrib(config, "model"))
                 )
                 obstacle.extra["type"] = get_attrib(config, "type", "")
                 static_obstacles_array.append(obstacle)
@@ -125,9 +137,9 @@ class ParametrizedTask(BaseTask, ScenarioInterface, RandomInterface, ObstacleInt
                     int(get_attrib(config, "max"))
                 )
             ):
-                obstacle = self._create_obstacle(
+                obstacle = self.itf_obstacle.create_obstacle(
                     name=f'{get_attrib(config, "name")}_interactive_{i+1}',
-                    model=self._model_loader.bind(get_attrib(config, "model"))
+                    model=self.model_loader.bind(get_attrib(config, "model"))
                 )
                 obstacle.extra["type"] = get_attrib(config, "type", "")
                 static_obstacles_array.append(obstacle)
@@ -140,9 +152,10 @@ class ParametrizedTask(BaseTask, ScenarioInterface, RandomInterface, ObstacleInt
                     int(get_attrib(config, "max"))
                 )
             ):
-                obstacle = self._create_dynamic_obstacle(
+                obstacle = self.itf_obstacle.create_dynamic_obstacle(
                     name=f'{get_attrib(config, "name")}_dynamic_{i+1}',
-                    model=self._dynamic_model_loader.bind(get_attrib(config, "model"))
+                    model=self.dynamic_model_loader.bind(
+                        get_attrib(config, "model"))
                 )
                 obstacle.extra["type"] = get_attrib(config, "type", "")
                 dynamic_obstacles_array.append(obstacle)
@@ -156,7 +169,7 @@ class ParametrizedTask(BaseTask, ScenarioInterface, RandomInterface, ObstacleInt
             map=ScenarioMap(
                 yaml=dict(),
                 xml=ET.ElementTree(
-                ET.Element("dummy")),
+                    ET.Element("dummy")),
                 path=""
             ),
             robots=[]

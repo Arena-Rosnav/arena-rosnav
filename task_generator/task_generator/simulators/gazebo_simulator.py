@@ -1,5 +1,4 @@
 import rospy
-import os
 
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState, SetModelStateRequest, DeleteModel, SpawnModel, SpawnModelRequest, DeleteModelRequest, DeleteModelResponse
@@ -17,7 +16,7 @@ from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
 
-from task_generator.shared import ModelType, PositionOrientation, Robot
+from task_generator.shared import ModelType
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -33,11 +32,15 @@ class GazeboSimulator(BaseSimulator):
     _pause: rospy.ServiceProxy
     _remove_model_srv: rospy.ServiceProxy
 
-    def __init__(self, namespace: str):
+    def __init__(self, namespace):
 
         super().__init__(namespace)
-        self._goal_pub = rospy.Publisher(self._ns_prefix(
-            "/goal"), PoseStamped, queue_size=1, latch=True)
+        self._goal_pub = rospy.Publisher(
+            self._namespace("/goal"),
+            PoseStamped,
+            queue_size=1,
+            latch=True
+        )
         self._robot_name = rosparam_get(str, "robot_model", "")
 
         rospy.wait_for_service("/gazebo/spawn_urdf_model")
@@ -46,10 +49,10 @@ class GazeboSimulator(BaseSimulator):
         rospy.wait_for_service("/gazebo/set_model_state", timeout=20)
 
         self._spawn_model[ModelType.URDF] = rospy.ServiceProxy(
-            self._ns_prefix("gazebo", "spawn_urdf_model"), SpawnModel
+            self._namespace("gazebo", "spawn_urdf_model"), SpawnModel
         )
         self._spawn_model[ModelType.SDF] = rospy.ServiceProxy(
-            self._ns_prefix("gazebo", "spawn_sdf_model"), SpawnModel
+            self._namespace("gazebo", "spawn_sdf_model"), SpawnModel
         )
         self._move_model_srv = rospy.ServiceProxy(
             "/gazebo/set_model_state", SetModelState, persistent=True
@@ -94,41 +97,27 @@ class GazeboSimulator(BaseSimulator):
 
         self._move_model_srv(request)
 
-    def spawn_robot(self, robot: Robot):
+    def spawn_entity(self, entity):
         request = SpawnModelRequest()
 
-        robot_namespace = robot.namespace
+        model = entity.model.get(self.MODEL_TYPES)
 
-        model = robot.model.get(self.MODEL_TYPES)
-
-        rospy.set_param(os.path.join(robot_namespace,
-                        "robot_description"), model.description)
-        rospy.set_param(os.path.join(robot_namespace,
-                        "tf_prefix"), robot_namespace)
-
-        request.model_name = robot_namespace
-        request.model_xml = model.description
-        request.robot_namespace = robot_namespace
-        request.reference_frame = "world"
-
-        self.spawn_model(model.type, request)
-
-        return robot.name
-
-    def spawn_obstacle(self, obstacle):
-        request = SpawnModelRequest()
-
-        model = obstacle.model.get(self.MODEL_TYPES)
-
-        request.model_name = obstacle.name
+        request.model_name = entity.name
         request.model_xml = model.description
         request.initial_pose = Pose(
             position=Point(
-                x=obstacle.position[0], y=obstacle.position[1], z=0),
-            orientation=Quaternion(x=0, y=0, z=obstacle.position[2], w=1)
+                x=entity.position[0],
+                y=entity.position[1],
+                z=0
+            ),
+            orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz")
         )
-        request.robot_namespace = self._ns_prefix(obstacle.name)
+        )
+        request.robot_namespace = self._namespace(entity.name)
         request.reference_frame = "world"
+
+        rospy.set_param(request.robot_namespace("robot_description"), model.description)
+        rospy.set_param(request.robot_namespace("tf_prefix"), str(request.robot_namespace))
 
         res = self.spawn_model(model.type, request)
 

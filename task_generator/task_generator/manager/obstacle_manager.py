@@ -6,7 +6,7 @@ import yaml
 import xml.etree.ElementTree as ET
 
 from task_generator.constants import FlatlandRandomModel
-from task_generator.manager.dynamic_manager.dynamic_manager import DynamicManager
+from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.map_manager import MapManager
 from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle
 from task_generator.simulators.base_simulator import BaseSimulator
@@ -20,12 +20,12 @@ class ObstacleManager:
 
     _map_manager: MapManager
     _namespace: str
-    _dynamic_manager: DynamicManager
+    _dynamic_manager: EntityManager
     _simulator: BaseSimulator
 
     id_generator: Iterator[int]
 
-    def __init__(self, namespace, map_manager, simulator: BaseSimulator, dynamic_manager: DynamicManager):
+    def __init__(self, namespace, map_manager, simulator: BaseSimulator, dynamic_manager: EntityManager):
         self._map_manager = map_manager
         self._namespace = namespace
         self._simulator = simulator

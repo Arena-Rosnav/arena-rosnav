@@ -83,6 +83,7 @@ class MapManager:
         possible_cells: List[Tuple[np.intp, np.intp]] = np.array(
             np.where(self._map_with_distances > safe_dist_in_cells)).transpose().tolist()
 
+        #return (random.randint(1,6), random.randint(1, 9), 0)
         assert len(possible_cells) > 0, "No cells available"
 
         # The position should not lie in the forbidden zones and keep the safe
@@ -106,8 +107,8 @@ class MapManager:
         theta = random.uniform(-math.pi, math.pi)
 
         point: Waypoint = (
-            np.round(y * self._map.info.resolution + self._origin.y, 3),
-            np.round(x * self._map.info.resolution + self._origin.x, 3),
+            float(np.round(y * self._map.info.resolution + self._origin.y, 3)),
+            float(np.round(x * self._map.info.resolution + self._origin.x, 3)),
             theta
         )
 

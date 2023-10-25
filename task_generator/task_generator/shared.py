@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 import dataclasses
+import os
 from typing import Callable, Collection, Dict, Iterable, List, Optional, Sequence, Tuple, overload
 
 import enum
+
+class Namespace(str):
+    def __call__(self, *args: str) -> "Namespace":
+        return Namespace(os.path.join(self, *args))
 
 
 EMPTY_LOADER = lambda *_, **__: Model(
@@ -54,7 +59,7 @@ class ModelWrapper:
 
     _get: Callable[[Collection[ModelType]], Model]
     _name: str
-    _override: Dict[ModelType, Tuple[bool, Callable[[Model], Model]]]
+    _override: Dict[ModelType, Tuple[bool, Callable[..., Model]]]
 
     def __init__(self, name: str):
         """
@@ -90,26 +95,26 @@ class ModelWrapper:
         return clone
 
     @overload
-    def get(self, only: ModelType) -> Model: ...
+    def get(self, only: ModelType, **kwargs) -> Model: ...
     """
         load specific model
         @only: single accepted ModelType
     """
 
     @overload
-    def get(self, only: Collection[ModelType]) -> Model: ...
+    def get(self, only: Collection[ModelType], **kwargs) -> Model: ...
     """
         load specific model from collection
         @only: collection of acceptable ModelTypes
     """
 
     @overload
-    def get(self) -> Model: ...
+    def get(self, **kwargs) -> Model: ...
     """
         load any available model
     """
 
-    def get(self, only: ModelType | Collection[ModelType] | None = None) -> Model:
+    def get(self, only: ModelType | Collection[ModelType] | None = None, **kwargs) -> Model:
 
         if only is None:
             only = self._override.keys()
@@ -124,9 +129,9 @@ class ModelWrapper:
                 if noload == True:
                     return mapper(EMPTY_LOADER())
 
-                return mapper(self._get([model_type]))
+                return mapper(self._get([model_type], **kwargs), **kwargs)
 
-        return self._get(only)
+        return self._get(only, **kwargs)
 
     @property
     def name(self) -> str:
@@ -175,12 +180,15 @@ class ModelWrapper:
 
 
 @dataclasses.dataclass(frozen=True)
-class ObstacleProps:
+class EntityProps:
     position: PositionOrientation
     name: str
     model: ModelWrapper
     extra: Dict
 
+@dataclasses.dataclass(frozen=True)
+class ObstacleProps(EntityProps):
+    ...
 
 @dataclasses.dataclass(frozen=True)
 class DynamicObstacleProps(ObstacleProps):
@@ -188,9 +196,8 @@ class DynamicObstacleProps(ObstacleProps):
 
 
 @dataclasses.dataclass(frozen=True)
-class RobotProps(ObstacleProps):
+class RobotProps(EntityProps):
     planner: str
-    namespace: str
     agent: str
     record_data: bool
 
@@ -209,7 +216,7 @@ class Obstacle(ObstacleProps):
     @staticmethod
     def parse(obj: Dict, model: ModelWrapper) -> "Obstacle":
 
-        name = str(obj.get("name", "MISSING"))
+        name = str(obj.get("name", ""))
         position = parse_Point3D(obj.get("pos", (0, 0, 0)))
 
         return Obstacle(
@@ -227,7 +234,7 @@ class DynamicObstacle(DynamicObstacleProps):
     @staticmethod
     def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
 
-        name = str(obj.get("name", "MISSING"))
+        name = str(obj.get("name", ""))
         position = parse_Point3D(obj.get("pos", (0, 0, 0)))
         waypoints = [parse_Point3D(waypoint)
                      for waypoint in obj.get("waypoints", [])]
@@ -244,6 +251,20 @@ class DynamicObstacle(DynamicObstacleProps):
 @dataclasses.dataclass(frozen=True)
 class Robot(RobotProps):
     @staticmethod
-    def parse(obj: Dict, **kwargs) -> "Robot":
-        # TODO
-        raise NotImplementedError()
+    def parse(obj: Dict, model: ModelWrapper) -> "Robot":
+
+        name = str(obj.get("name", ""))
+        position = parse_Point3D(obj.get("pos", (-1, -1, 0)))
+        planner = str(obj.get("planner",""))
+        agent = str(obj.get("agent",""))
+        record_data = bool(obj.get("record_data",False))
+
+        return Robot(
+            name=name,
+            position=position,
+            planner=planner,
+            model=model,
+            agent=agent,
+            record_data=record_data,
+            extra=obj
+        )

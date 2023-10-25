@@ -31,6 +31,9 @@ if __name__ == "__main__":
 
     args = parse_args()
     namespace = args.robot_namespace
+
+    name = os.path.basename(namespace) # breaks if robot name contains a /
+
     odom_frame = "odom"
     base_frame = rospy.get_param("robot_base_frame", "base_link")
     
@@ -49,7 +52,7 @@ if __name__ == "__main__":
     
     while not rospy.is_shutdown():
         # First param is the name of the robot in Gazebo
-        resp = caller(namespace, "world")
+        resp = caller(name, "world")
 
         now = rospy.get_rostime()
         msg = Odometry()

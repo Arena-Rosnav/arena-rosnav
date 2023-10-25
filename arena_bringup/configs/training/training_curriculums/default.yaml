@@ -12,7 +12,7 @@
   goal_radius: 1.0
   map_generator:
     barn:
-      fill_pct: 0.0
+      fill_pct: 5.0
       smooth_iter: 1
     rosnav:
       map_type: indoor

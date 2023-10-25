@@ -1,26 +1,23 @@
-import random
 import time
-from typing import Generator, List, Optional
+from typing import Generator, Optional
 
 
 from task_generator.constants import Constants
-from task_generator.manager.map_manager import MapManager
-from task_generator.manager.obstacle_manager import ObstacleManager
-from task_generator.manager.robot_manager import RobotManager
 from task_generator.tasks.task_factory import TaskFactory
-from task_generator.shared import DynamicObstacle, Obstacle, Waypoint
 from task_generator.tasks.base_task import BaseTask
-from task_generator.tasks.utils import ObstacleInterface, RandomInterface, RandomList
+from task_generator.tasks.utils import ITF_Random, RandomList
 
 
 @TaskFactory.register(Constants.TaskMode.RANDOM)
-class RandomTask(BaseTask, RandomInterface):
+class RandomTask(BaseTask):
     """
         The random task spawns static and dynamic
         obstacles on every reset and will create
         a new robot start and goal position for
         each task.
     """
+
+    itf_random: ITF_Random
 
     _gen_static: Generator[int, None, None]
     _gen_interactive: Generator[int, None, None]
@@ -30,43 +27,35 @@ class RandomTask(BaseTask, RandomInterface):
     _interactive_obstacles: RandomList
     _dynamic_obstacles: RandomList
 
-    def __init__(
-        self,
-        obstacle_manager: ObstacleManager,
-        robot_managers: List[RobotManager],
-        map_manager: MapManager,
-        **kwargs
-    ):
-        BaseTask.__init__(
-            self,
-            obstacle_manager=obstacle_manager,
-            robot_managers=robot_managers,
-            map_manager=map_manager,
-            **kwargs
-        )
+    def __init__(self, **kwargs):
+        BaseTask.__init__(self, **kwargs)
 
-        obstacle_ranges = RandomInterface._load_obstacle_ranges(self)
-        self._gen_static = RandomInterface._randrange_generator(obstacle_ranges.static)
-        self._gen_interactive = RandomInterface._randrange_generator(obstacle_ranges.interactive)
-        self._gen_dynamic = RandomInterface._randrange_generator(obstacle_ranges.dynamic)
+        self.itf_random = ITF_Random(self)
 
-        allowed_obstacles = RandomInterface._load_obstacle_list(self)
-        self._static_obstacles = allowed_obstacles.static
-        self._interactive_obstacles = allowed_obstacles.interactive
-        self._dynamic_obstacles = allowed_obstacles.dynamic
+        obstacle_ranges = self.itf_random.load_obstacle_ranges()
+        self._gen_static = ITF_Random.randrange_generator(
+            obstacle_ranges.static)
+        self._gen_interactive = ITF_Random.randrange_generator(
+            obstacle_ranges.interactive)
+        self._gen_dynamic = ITF_Random.randrange_generator(
+            obstacle_ranges.dynamic)
+
+        self._static_obstacles,\
+        self._interactive_obstacles,\
+        self._dynamic_obstacles = self.itf_random.load_obstacle_list()
 
         self.iters = 0
 
     @BaseTask.reset_helper(parent=BaseTask)
     def reset(
-        self,
-        n_static_obstacles: Optional[int] = None,
-        n_interactive_obstacles: Optional[int] = None, 
-        n_dynamic_obstacles: Optional[int] = None,
-        static_obstacles: Optional[RandomList] = None,
-        interactive_obstacles: Optional[RandomList] = None,
-        dynamic_obstacles: Optional[RandomList] = None,
-        **kwargs):
+            self,
+            n_static_obstacles: Optional[int] = None,
+            n_interactive_obstacles: Optional[int] = None,
+            n_dynamic_obstacles: Optional[int] = None,
+            static_obstacles: Optional[RandomList] = None,
+            interactive_obstacles: Optional[RandomList] = None,
+            dynamic_obstacles: Optional[RandomList] = None,
+            **kwargs):
 
         if n_static_obstacles is None:
             n_static_obstacles = next(self._gen_static)
@@ -88,21 +77,17 @@ class RandomTask(BaseTask, RandomInterface):
 
         def callback():
 
-            self._obstacle_manager.respawn(callback=lambda: RandomInterface._setup_random(
-                self,
+            self.obstacle_manager.respawn(callback=lambda: self.itf_random.setup_random(
                 n_static_obstacles=n_static_obstacles,
                 n_interactive_obstacles=n_interactive_obstacles,
                 n_dynamic_obstacles=n_dynamic_obstacles,
                 static_obstacles=static_obstacles,
                 interactive_obstacles=interactive_obstacles,
                 dynamic_obstacles=dynamic_obstacles
-                )
-            )
+            ))
             time.sleep(1)
             self.iters += 1
-            print("iters", self.iters)
+
             return False
 
-        return callback
-
-    
+        return {}, callback
