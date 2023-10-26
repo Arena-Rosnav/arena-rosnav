@@ -1,11 +1,11 @@
 import rospy
+import os
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.utils import rosparam_get
 from tf.transformations import quaternion_from_euler
 from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
-from task_generator.simulators.simulator_factory import SimulatorFactory
 
 from task_generator.shared import ModelType, Robot, ObstacleProps, PositionOrientation
 
@@ -21,11 +21,17 @@ class UnitySimulator(BaseSimulator):
     def __init__(self, namespace: str):
         super().__init__(namespace)
         self._robot_name = rosparam_get(str, "robot_model", "")
+        self._unity_file = "~/arena_ws/src/arena-rosnav/utils/misc/unity_simulator/unity_simulator.x86_64"
+
+        os.system(self._unity_file)
+
 
         # self._spawn_model[ModelType.URDF] = # TODO: Insert function to spawn model
         # self._spawn_model[ModelType.SDF] = # TODO: Insert function to spawn model
 
-        rospy.loginfo("Waiting for gazebo services...")
+        rospy.loginfo("Waiting for Unity services...")
+
+        os.system("echo 'test'>halid.txt")
 
         # TODO: Wait until the RESTful Server of Unity is online, e.g. by sending a test message
 

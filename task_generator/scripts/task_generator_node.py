@@ -23,6 +23,7 @@ from task_generator.constants import Constants, Defaults
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
 from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
+from task_generator.simulators.unity_simulator import UnitySimulator  # noqa
 from task_generator.simulators.simulator_factory import SimulatorFactory
 
 from task_generator.manager.map_manager import MapManager

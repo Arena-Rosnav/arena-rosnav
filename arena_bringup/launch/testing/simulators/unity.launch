@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <env name="GAZEBO_MODEL_PATH" value="$(find arena-simulation-setup)/worlds/$(arg world)/models" />
+
+  <arg name="world" default="turtlebot3_house" />
+  <arg name="model" default="burger"/>
+  <arg name="headless" default="false"/>
+  <arg name="gui" default="true"/>
+
+  <arg name="show_rviz" default="true" doc="Wether to show rviz or not" />
+  <arg name="rviz_file" default="nav_LP"/>
+
+  <arg name="visualization" default="" />
+
+  <arg name="pedsim" />
+
+  <!-- Start the Unity Simulator exe -->
+
+  <!-- <node name="generate_world" pkg="gazebo_utils" type="generate_world.py">
+    <param name="world" value="$(arg world)"/>
+  </node> -->
+
+  <!-- start World (Scenario) file in Gazebo -->
+  <!-- <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find arena-simulation-setup)/worlds/$(arg world)/worlds/$(arg world).world"/>
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="debug" value="false"/>
+    <arg name="verbose" value="true"/> 
+    <arg name="gui" value="$(arg gui)"/>    
+    <arg name="headless" value="$(arg headless)"/>  
+  </include> -->
+
+  <include file="$(find arena_bringup)/launch/utils/rviz.launch">
+    <arg name="show_rviz" value="$(arg show_rviz)" />
+  </include>
+
+</launch>
