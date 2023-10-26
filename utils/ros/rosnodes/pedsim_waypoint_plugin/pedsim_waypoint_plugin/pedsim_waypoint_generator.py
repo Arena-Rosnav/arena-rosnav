@@ -1,6 +1,6 @@
 import dataclasses
 from enum import Enum
-from typing import Dict, List, Optional, Type, TypeVar, get_type_hints
+from typing import Dict, List, Optional, Type, TypeVar
 import pedsim_msgs.msg
 import std_msgs.msg
 import rospy
@@ -29,9 +29,9 @@ class InputData:
     line_obstacles: List[pedsim_msgs.msg.LineObstacle]
 
 
-OutputData = List[pedsim_msgs.msg.AgentState]
+OutputData = List[pedsim_msgs.msg.AgentFeedback]
 
-OutputMsg = pedsim_msgs.msg.AgentStates
+OutputMsg = pedsim_msgs.msg.AgentFeedbacks
 
 class WaypointPlugin:
     def callback(self, data: InputData) -> OutputData:
@@ -72,9 +72,7 @@ class PedsimWaypointGenerator:
             name=Constants.TOPIC_PUBLISH,
             data_class=OutputMsg,
             queue_size=1
-        )
-
-        
+        )        
 
         def callback(dataframe: InputMsg):
 
@@ -91,7 +89,7 @@ class PedsimWaypointGenerator:
 
             publisher.publish(
                 OutputMsg(
-                    agent_states = agent_states_data
+                    agents = agent_states_data
                 )
             )
             
