@@ -8,7 +8,7 @@ import re
 
 from pedsim_msgs.msg import Ped, InteractiveObstacle, AgentState, AgentStates, Waypoints, Waypoint, Ped
 from geometry_msgs.msg import Point, Pose, Quaternion
-from pedsim_srvs.srv import SpawnInteractiveObstacles, SpawnObstacle, SpawnPeds
+from pedsim_srvs.srv import SpawnInteractiveObstacles, SpawnObstacle, SpawnPeds, RegisterRobot, RegisterRobotRequest
 from std_srvs.srv import SetBool, Trigger
 
 
@@ -75,6 +75,7 @@ class PedsimManager(EntityManager):
     _spawn_interactive_obstacles_srv: rospy.ServiceProxy
     _respawn_peds_srv: rospy.ServiceProxy
     _add_obstacle_srv: rospy.ServiceProxy
+    _register_robot_srv: rospy.ServiceProxy
 
     _known_obstacles: KnownObstacles
 
@@ -97,6 +98,7 @@ class PedsimManager(EntityManager):
         rospy.wait_for_service(
             "pedsim_simulator/remove_all_interactive_obstacles", timeout=T)
         rospy.wait_for_service("pedsim_simulator/add_obstacle", timeout=T)
+        rospy.wait_for_service("pedsim_simulator/register_robot", timeout=T)
 
         self._spawn_peds_srv = rospy.ServiceProxy(
             "/pedsim_simulator/spawn_peds", SpawnPeds
@@ -121,6 +123,10 @@ class PedsimManager(EntityManager):
 
         self._add_obstacle_srv = rospy.ServiceProxy(
             "pedsim_simulator/add_obstacle", SpawnObstacle, persistent=True)
+        
+        self._register_robot_srv = rospy.ServiceProxy(
+            "pedsim_simulator/register_robot", RegisterRobot, persistent=True
+        )
 
         rospy.set_param("respawn_dynamic", True)
         rospy.set_param("respawn_static", True)
@@ -246,52 +252,30 @@ class PedsimManager(EntityManager):
 
             msg.type = "adult"
             msg.number_of_peds = 1
-            msg.vmax = obstacle.extra.get("vmax", Pedsim.VMAX)
-            msg.start_up_mode = obstacle.extra.get(
-                "start_up_mode", Pedsim.START_UP_MODE)
-            msg.wait_time = obstacle.extra.get("wait_time", Pedsim.WAIT_TIME)
-            msg.trigger_zone_radius = obstacle.extra.get(
-                "trigger_zone_radius", Pedsim.TRIGGER_ZONE_RADIUS)
-            msg.chatting_probability = obstacle.extra.get(
-                "chatting_probability", Pedsim.CHATTING_PROBABILITY)
-            msg.tell_story_probability = obstacle.extra.get(
-                "tell_story_probability", Pedsim.TELL_STORY_PROBABILITY)
-            msg.group_talking_probability = obstacle.extra.get(
-                "group_talking_probability", Pedsim.GROUP_TALKING_PROBABILITY)
-            msg.talking_and_walking_probability = obstacle.extra.get(
-                "talking_and_walking_probability", Pedsim.TALKING_AND_WALKING_PROBABILITY)
-            msg.requesting_service_probability = obstacle.extra.get(
-                "requesting_service_probability", Pedsim.REQUESTING_SERVICE_PROBABILITY)
-            msg.requesting_guide_probability = obstacle.extra.get(
-                "requesting_guide_probability", Pedsim.REQUESTING_GUIDE_PROBABILITY)
-            msg.requesting_follower_probability = obstacle.extra.get(
-                "requesting_follower_probability", Pedsim.REQUESTING_FOLLOWER_PROBABILITY)
-            msg.max_talking_distance = obstacle.extra.get(
-                "max_talking_distance", Pedsim.MAX_TALKING_DISTANCE)
-            msg.max_servicing_radius = obstacle.extra.get(
-                "max_servicing_radius", Pedsim.MAX_SERVICING_RADIUS)
-            msg.talking_base_time = obstacle.extra.get(
-                "talking_base_time", Pedsim.TALKING_BASE_TIME)
-            msg.tell_story_base_time = obstacle.extra.get(
-                "tell_story_base_time", Pedsim.TELL_STORY_BASE_TIME)
-            msg.group_talking_base_time = obstacle.extra.get(
-                "group_talking_base_time", Pedsim.GROUP_TALKING_BASE_TIME)
-            msg.talking_and_walking_base_time = obstacle.extra.get(
-                "talking_and_walking_base_time", Pedsim.TALKING_AND_WALKING_BASE_TIME)
-            msg.receiving_service_base_time = obstacle.extra.get(
-                "receiving_service_base_time", Pedsim.RECEIVING_SERVICE_BASE_TIME)
-            msg.requesting_service_base_time = obstacle.extra.get(
-                "requesting_service_base_time", Pedsim.REQUESTING_SERVICE_BASE_TIME)
-            msg.force_factor_desired = obstacle.extra.get(
-                "force_factor_desired", Pedsim.FORCE_FACTOR_DESIRED)
-            msg.force_factor_obstacle = obstacle.extra.get(
-                "force_factor_obstacle", Pedsim.FORCE_FACTOR_OBSTACLE)
-            msg.force_factor_social = obstacle.extra.get(
-                "force_factor_social", Pedsim.FORCE_FACTOR_SOCIAL)
-            msg.force_factor_robot = obstacle.extra.get(
-                "force_factor_robot", Pedsim.FORCE_FACTOR_ROBOT)
-            msg.waypoint_mode = obstacle.extra.get(
-                "waypoint_mode", Pedsim.WAYPOINT_MODE)  # or 1 check later
+            msg.vmax = Pedsim.VMAX(obstacle.extra.get("vmax", None))
+            msg.start_up_mode = Pedsim.START_UP_MODE(obstacle.extra.get("start_up_mode", None))
+            msg.wait_time = Pedsim.WAIT_TIME(obstacle.extra.get("wait_time", None))
+            msg.trigger_zone_radius = Pedsim.TRIGGER_ZONE_RADIUS(obstacle.extra.get("trigger_zone_radius", None))
+            msg.chatting_probability = Pedsim.CHATTING_PROBABILITY(obstacle.extra.get("chatting_probability", None))
+            msg.tell_story_probability = Pedsim.TELL_STORY_PROBABILITY(obstacle.extra.get("tell_story_probability", None))
+            msg.group_talking_probability = Pedsim.GROUP_TALKING_PROBABILITY(obstacle.extra.get("group_talking_probability", None))
+            msg.talking_and_walking_probability = Pedsim.TALKING_AND_WALKING_PROBABILITY(obstacle.extra.get("talking_and_walking_probability", None))
+            msg.requesting_service_probability = Pedsim.REQUESTING_SERVICE_PROBABILITY(obstacle.extra.get("requesting_service_probability", None))
+            msg.requesting_guide_probability = Pedsim.REQUESTING_GUIDE_PROBABILITY(obstacle.extra.get("requesting_guide_probability", None))
+            msg.requesting_follower_probability = Pedsim.REQUESTING_FOLLOWER_PROBABILITY(obstacle.extra.get("requesting_follower_probability", None))
+            msg.max_talking_distance = Pedsim.MAX_TALKING_DISTANCE(obstacle.extra.get("max_talking_distance", None))
+            msg.max_servicing_radius = Pedsim.MAX_SERVICING_RADIUS(obstacle.extra.get("max_servicing_radius", None))
+            msg.talking_base_time = Pedsim.TALKING_BASE_TIME(obstacle.extra.get("talking_base_time", None))
+            msg.tell_story_base_time = Pedsim.TELL_STORY_BASE_TIME(obstacle.extra.get("tell_story_base_time", None))
+            msg.group_talking_base_time = Pedsim.GROUP_TALKING_BASE_TIME(obstacle.extra.get("group_talking_base_time", None))
+            msg.talking_and_walking_base_time = Pedsim.TALKING_AND_WALKING_BASE_TIME(obstacle.extra.get("talking_and_walking_base_time", None))
+            msg.receiving_service_base_time = Pedsim.RECEIVING_SERVICE_BASE_TIME(obstacle.extra.get("receiving_service_base_time", None))
+            msg.requesting_service_base_time = Pedsim.REQUESTING_SERVICE_BASE_TIME(obstacle.extra.get("requesting_service_base_time", None))
+            msg.force_factor_desired = Pedsim.FORCE_FACTOR_DESIRED(obstacle.extra.get("force_factor_desired", None))
+            msg.force_factor_obstacle = Pedsim.FORCE_FACTOR_OBSTACLE(obstacle.extra.get("force_factor_obstacle", None))
+            msg.force_factor_social = Pedsim.FORCE_FACTOR_SOCIAL(obstacle.extra.get("force_factor_social", None))
+            msg.force_factor_robot = Pedsim.FORCE_FACTOR_ROBOT(obstacle.extra.get("force_factor_robot", None))
+            msg.waypoint_mode = Pedsim.WAYPOINT_MODE(obstacle.extra.get("waypoint_mode", None))
 
             msg.waypoints = []
 
@@ -514,6 +498,14 @@ class PedsimManager(EntityManager):
 
     def spawn_robot(self, robot: Robot):
         self._simulator.spawn_entity(robot)
+
+        request = RegisterRobotRequest()
+
+        request.name = robot.name
+        request.odom_topic = self._namespace(robot.name, "odom")
+
+        self._register_robot_srv(request)
+
     
     def move_robot(self, name: str, position: PositionOrientation):
         self._simulator.move_entity(name=name, pos=position)

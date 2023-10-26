@@ -24,20 +24,20 @@ task_mode:
       max: 0
       models: ["shelf"]
     dynamic:
-      min: 1
-      max: 1
+      min: 3
+      max: 5
       models: ["actor1"]
 
-dynamic_obstacles:
-  pedsim:
-    default_actor_config:
-      VMAX: [0.2, 0.3]
-      CHATTING_PROBABILITY: [0, 10]
-      TELL_STORY_PROBABILITY: [0, 5]
-      GROUP_TALKING_PROBABILITY: [0, 10]
-      TALKING_AND_WALKING_PROBABILITY: [0, 10]
-      TELL_STORY_BASE_TIME: 5
-      FORCE_FACTOR_DESIRED: [1, 5]
-      FORCE_FACTOR_OBSTACLE: [1, 7]
-      FORCE_FACTOR_SOCIAL: [5, 8]
-      FORCE_FACTOR_ROBOT: [2, 10]
+
+pedsim:
+  default_actor_config:
+    VMAX: [0.2, 0.5]
+    CHATTING_PROBABILITY: [0, 10]
+    TELL_STORY_PROBABILITY: [0, 5]
+    GROUP_TALKING_PROBABILITY: [0, 10]
+    TALKING_AND_WALKING_PROBABILITY: [0, 10]
+    TELL_STORY_BASE_TIME: 5
+    FORCE_FACTOR_DESIRED: [1, 5]
+    FORCE_FACTOR_OBSTACLE: [1, 7]
+    FORCE_FACTOR_SOCIAL: [5, 8]
+    FORCE_FACTOR_ROBOT: [2, 10]
