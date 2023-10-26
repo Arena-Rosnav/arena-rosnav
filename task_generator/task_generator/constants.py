@@ -24,6 +24,7 @@ class Constants:
     class Simulator(Enum):
         FLATLAND = "flatland"
         GAZEBO = "gazebo"
+        UNITY = "unity"
 
     class ArenaType(Enum):
         TRAINING = "training"
