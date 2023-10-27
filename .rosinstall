@@ -15,7 +15,7 @@
 - git:
     local-name: ../utils-extern/misc/stable-baselines3
     uri: https://github.com/tuananhroman/stable-baselines3.git
-    version: master
+    version: update
 
 - git:
     local-name: ../utils-extern/ros/navigation/msgs/ford
