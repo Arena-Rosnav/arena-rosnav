@@ -1,5 +1,8 @@
 import rospy
 import os
+import subprocess
+import requests
+import time
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.utils import rosparam_get
@@ -23,7 +26,7 @@ class UnitySimulator(BaseSimulator):
         self._robot_name = rosparam_get(str, "robot_model", "")
         self._unity_file = "~/arena_ws/src/arena-rosnav/utils/misc/unity_simulator/unity_simulator.x86_64"
 
-        os.system(self._unity_file)
+        os.system(self._unity_file + "&")
 
 
         # self._spawn_model[ModelType.URDF] = # TODO: Insert function to spawn model
@@ -31,11 +34,10 @@ class UnitySimulator(BaseSimulator):
 
         rospy.loginfo("Waiting for Unity services...")
 
-        os.system("echo 'test'>halid.txt")
-
-        # TODO: Wait until the RESTful Server of Unity is online, e.g. by sending a test message
-
-        rospy.loginfo("service: spawn_sdf_model is available ....")
+        # Wait until the RESTful Server of Unity is online
+        while requests.get('http://127.0.0.1:8080/init', timeout=T).text != "Connected":
+            continue
+        rospy.loginfo("Unity Simulator available")
 
     def before_reset_task(self):
         """
