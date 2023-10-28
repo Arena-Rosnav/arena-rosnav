@@ -43,6 +43,19 @@ export ROS_IP=127.0.0.1
 
 pip install torch rospkg PyYAML filelock scipy PyQT5 empy defusedxml wandb lxml seaborn netifaces
 
+# add to zshrc. if exists
+if [ -e ~/.zshrc ]; then
+  if ! grep -q "source /opt/ros/noetic/setup.bash" ~/.zshrc; then
+    echo "source /opt/ros/noetic/setup.bash" >> ~/.zshrc
+  fi
+  if ! grep -q 'export PATH="$HOME/.local/bin"' ~/.zshrc; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+  fi
+  if ! grep -q 'source $HOME/arena_ws/devel/setup.bash' ~/.zshrc; then
+    echo 'source $HOME/arena_ws/devel/setup.bash' >> ~/.zshrc
+  fi
+fi
+
 # Return to the original working directory
 cd "$current_dir"
 
