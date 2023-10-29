@@ -30,7 +30,6 @@ if [[ -d ~/arena_ws ]]; then
 fi
 
 sudo apt update
-sudo apt install -y curl
 
 # ROS
 echo "Installing ROS...:"
@@ -38,7 +37,9 @@ sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main
 curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
 sudo apt update
 sudo apt install -y ros-noetic-desktop-full
-echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
+if ! grep -q "source /opt/ros/noetic/setup.bash" ~/.bashrc; then
+  echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
+fi
 source ~/.bashrc
 
 # Getting Packages
@@ -48,7 +49,9 @@ sudo apt install -y python3 python-is-python3 git python3-rosdep python3-pip pyt
 # Poetry
 echo "Installing Poetry...:"
 curl -sSL https://install.python-poetry.org | python3 -
-export PATH="$HOME/.local/bin:$PATH"
+if ! grep -q 'export PATH="$HOME/.local/bin"' ~/.bashrc; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+fi
 
 
 # Check if the default ROS sources.list file already exists
@@ -74,36 +77,12 @@ fi
 
 rosdep update
 
-# Project Setup
-echo "Preparing Project...:"
-mkdir -p ~/arena_ws/src 
-cd ~/arena_ws
-catkin_make
-cd src
-git clone https://github.com/Arena-Rosnav/arena-rosnav.git
-cd arena-rosnav
-rosws update
-poetry run poetry install
-
-# Missing Deps
-echo "Installing Missing Deps...:"
-sudo apt update && sudo apt install -y libopencv-dev liblua5.2-dev ros-noetic-navigation ros-noetic-teb-local-planner ros-noetic-mpc-local-planner libarmadillo-dev ros-noetic-nlopt ros-noetic-turtlebot3-description ros-noetic-turtlebot3-navigation ros-noetic-lms1xx ros-noetic-velodyne-description ros-noetic-hector-gazebo ros-noetic-ira-laser-tools 
-
-# Project Install
-echo "Installing Project...:"
-cd ../.. && catkin_make
-echo "source $HOME/arena_ws/devel/setup.bash" >> ~/.bashrc
-source ~/.bashrc
-
-export ROS_MASTER_URI=http://127.0.0.1:11311/
-export ROS_IP=127.0.0.1
-
-pip install torch rospkg PyYAML filelock scipy PyQT5 empy defusedxml wandb lxml seaborn netifaces
-
-echo ""
-echo "Installation Complete."
-echo "You can confirm that it works, by running:"
-echo "roslaunch arena_bringup start_arena.launch pedsim:=true simulator:=gazebo"
-
 # Return to the original working directory
 cd "$current_dir"
+
+echo ""
+echo "Now please run the second install script in a NEW terminal."
+echo "You NEED to open the new terminal AFTER this script finishes."
+echo "You can run the second script with the following command:"
+echo ""
+echo "curl https://raw.githubusercontent.com/Arena-Rosnav/arena-rosnav/master/install2.sh | bash"
