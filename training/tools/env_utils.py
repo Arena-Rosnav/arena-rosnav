@@ -13,9 +13,10 @@ from stable_baselines3.common.vec_env import (
 )
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 
-from rl_utils.envs.flatland_gym_env import (
-    FlatlandEnv,
-)
+# from rl_utils.envs.flatland_gym_env import (
+#     FlatlandEnv,
+# )
+from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
 
 
 def make_envs(

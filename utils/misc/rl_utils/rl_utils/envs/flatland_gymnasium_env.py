@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 import time
 import math
-import gym
+from typing import Tuple
 import gymnasium
 import os
 from stable_baselines3.common.env_checker import check_env
@@ -13,30 +13,29 @@ from geometry_msgs.msg import Twist
 from flatland_msgs.msg import StepWorld
 from std_srvs.srv import Empty
 
-from task_generator.tasks.utils import get_predefined_task
 
 from ..utils.reward import RewardCalculator
 from ..utils.observation_collector import ObservationCollector
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
+from task_generator.task_generator_node import TaskGenerator
+
+NUM_EPS = 10
 
 
-class FlatlandEnv(gym.Env):
+class FlatlandEnv(gymnasium.Env):
     """Custom Environment that follows gym interface"""
 
-    render_mode = None
+    metadata = {"render_modes": ["human"]}
 
     def __init__(
         self,
         ns: str,
         reward_fnc: str,
-        is_action_space_discrete,
         safe_dist: float = None,
         goal_radius: float = 0.1,
         max_steps_per_episode=100,
-        task_mode: str = "staged",
-        PATHS: dict = dict(),
-        extended_eval: bool = False,
         requires_task_manager: bool = True,
+        verbose: bool = True,
         *args,
         **kwargs,
     ):
@@ -49,7 +48,6 @@ class FlatlandEnv(gym.Env):
             task (ABSTask): [description]
             reward_fnc (str): [description]
             train_mode (bool): bool to differ between train and eval env during training
-            is_action_space_discrete (bool): [description]
             safe_dist (float, optional): [description]. Defaults to None.
             goal_radius (float, optional): [description]. Defaults to 0.1.
             extended_eval (bool): more episode info provided, no reset when crashing
@@ -57,6 +55,7 @@ class FlatlandEnv(gym.Env):
         super(FlatlandEnv, self).__init__()
 
         self.ns = ns
+        self._verbose = verbose
         try:
             # given every environment enough time to initialize, if we dont put sleep,
             # the training script may crash.
@@ -76,10 +75,7 @@ class FlatlandEnv(gym.Env):
         if not rospy.get_param("/debug_mode", True):
             rospy.init_node("env_" + self.ns, anonymous=True)
 
-        self._extended_eval = extended_eval
         self._is_train_mode = rospy.get_param("/train_mode")
-        self._is_action_space_discrete = is_action_space_discrete
-
         self.model_space_encoder = RosnavSpaceManager()
 
         # observation collector
@@ -102,7 +98,6 @@ class FlatlandEnv(gym.Env):
             safe_dist=safe_dist,
             goal_radius=goal_radius,
             rule=reward_fnc,
-            extended_eval=self._extended_eval,
         )
 
         # action agent publisher
@@ -129,11 +124,9 @@ class FlatlandEnv(gym.Env):
         # instantiate task manager
         self._requires_task_manager = requires_task_manager
         if requires_task_manager:
-            self.task = get_predefined_task(
-                self.ns,
-                mode=task_mode,
-                start_stage=kwargs["curr_stage"],
-                paths=PATHS,
+            task_generator = TaskGenerator(self.ns)
+            self.task = task_generator._get_predefined_task(
+                starting_stage=kwargs["curr_stage"]
             )
 
         self._steps_curr_episode = 0
@@ -151,7 +144,7 @@ class FlatlandEnv(gym.Env):
 
         self.last_mean_reward = 0
         self.mean_reward = [0, 0]
-        self.total_step_count = 0
+        self.step_count_hist = [0] * NUM_EPS
         self.step_time = [0, 0]
 
         self._done_reasons = {
@@ -198,63 +191,20 @@ class FlatlandEnv(gym.Env):
             action=decoded_action,
             **obs_dict,
         )
-        done = reward_info["is_done"]
 
-        # extended eval info
-        if self._extended_eval:
-            self._update_eval_statistics(obs_dict, reward_info)
+        self.update_statistics(reward=reward)
 
         # info
-        info = {}
+        info, done = FlatlandEnv.determine_termination(
+            reward_info=reward_info,
+            curr_steps=self._steps_curr_episode,
+            max_steps=self._max_steps_per_episode,
+        )
 
-        if done:
-            info["done_reason"] = reward_info["done_reason"]
-            info["is_success"] = reward_info["is_success"]
-
-        if self._steps_curr_episode >= self._max_steps_per_episode:
-            done = True
-            info["done_reason"] = 0
-            info["is_success"] = 0
-
-        # for logging
-        if self._extended_eval and done:
-            info["collisions"] = self._collisions
-            info["distance_travelled"] = round(self._distance_travelled, 2)
-            info["time_safe_dist"] = self._safe_dist_counter * self._action_frequency
-            info["time"] = self._steps_curr_episode * self._action_frequency
-
-        self.step_time[1] += 1
-        self.mean_reward[1] += 1
-        self.mean_reward[0] += reward
-        self.total_step_count += 1
-
-        if done:
-            # print(self.ns_prefix, "DONE", info["done_reason"], sum(self._done_hist), min(obs_dict["laser_scan"]))
-
-            # print(f"[{self.ns_prefix}]:\t\t", self.step_time[0] / self.step_time[1])
-
-            # if self._steps_curr_episode <= 1:
-            #     print(self.ns_prefix, "DONE", info, min(obs_dict["laser_scan"]), obs_dict["goal_in_robot_frame"])
-
-            if sum(self._done_hist) >= 10:
-                mean_reward = self.mean_reward[0] / self.mean_reward[1]
-                diff = round(mean_reward - self.last_mean_reward, 5)
-
-                print(
-                    f"[{self.ns}] Last 10 Episodes:\t"
-                    f"{self._done_reasons[str(0)]}: {self._done_hist[0]}\t"
-                    f"{self._done_reasons[str(1)]}: {self._done_hist[1]}\t"
-                    f"{self._done_reasons[str(2)]}: {self._done_hist[2]}\t"
-                    f"Mean step time: {round(self.step_time[0] / self.step_time[1] * 100, 2)}\t"
-                    f"Mean reward: {round(mean_reward, 5)} ({'+' if diff >= 0 else ''}{diff})\t"
-                    f"Mean steps: {self.total_step_count/10}\t"
-                )
-                self._done_hist = [0] * 3
-                self.step_time = [0, 0]
-                self.last_mean_reward = mean_reward
-                self.mean_reward = [0, 0]
-                self.total_step_count = 0
+        if done and self._verbose:
+            self.step_count_hist[self._episode % NUM_EPS] = self._steps_curr_episode
             self._done_hist[int(info["done_reason"])] += 1
+            self.print_statistics()
 
         self.step_time[0] += time.time() - start_time
 
@@ -264,22 +214,25 @@ class FlatlandEnv(gym.Env):
             ),
             reward,
             done,
+            False,
             info,
         )
 
     def call_service_takeSimStep(self, t=None):
-        request = StepWorld()
-        request.required_time = 0 if t == None else t
+        # request = StepWorld()
+        # request.required_time = 0 if t == None else t
 
         self._step_world_srv()
 
         # self._step_world_publisher.publish(request)
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
         # set task
         # regenerate start position end goal position of the robot and change the obstacles accordingly
         self._episode += 1
         self.agent_action_pub.publish(Twist())
+
         first_map = self._episode <= 1 if self.ns == "sim_1" else False
         if self._requires_task_manager:
             self.task.reset(
@@ -293,55 +246,66 @@ class FlatlandEnv(gym.Env):
         if self._is_train_mode:
             self.call_service_takeSimStep()
 
-        # extended eval info
-        if self._extended_eval:
-            self._last_robot_pose = None
-            self._distance_travelled = 0
-            self._safe_dist_counter = 0
-            self._collisions = 0
-
         obs_dict = self.observation_collector.get_observations()
-        return self.model_space_encoder.encode_observation(
-            obs_dict, ["laser_scan", "goal_in_robot_frame", "last_action"]
-        )  # reward, done, info can't be included
+        info_dict = {}
+        return (
+            self.model_space_encoder.encode_observation(
+                obs_dict, ["laser_scan", "goal_in_robot_frame", "last_action"]
+            ),
+            info_dict,
+        )
 
     def close(self):
         pass
 
-    def _update_eval_statistics(self, obs_dict: dict, reward_info: dict):
-        """
-        Updates the metrics for extended eval mode
+    def update_statistics(self, **kwargs) -> None:
+        self.step_time[1] += 1
+        self.mean_reward[1] += 1
+        self.mean_reward[0] += kwargs["reward"]
+        self._steps_curr_episode += 1
 
-        param obs_dict (dict): observation dictionary from ObservationCollector.get_observations(),
-            necessary entries: 'robot_pose'
-        param reward_info (dict): dictionary containing information returned from RewardCalculator.get_reward(),
-            necessary entries: 'crash', 'safe_dist'
-        """
-        # distance travelled
-        if self._last_robot_pose is not None:
-            self._distance_travelled += FlatlandEnv.get_distance(
-                self._last_robot_pose, obs_dict["robot_pose"]
+    def print_statistics(self):
+        if sum(self._done_hist) >= NUM_EPS:
+            mean_reward = self.mean_reward[0] / NUM_EPS
+            diff = round(mean_reward - self.last_mean_reward, 5)
+
+            print(
+                f"[{self.ns}] Last 10 Episodes:\t"
+                f"{self._done_reasons[str(0)]}: {self._done_hist[0]}\t"
+                f"{self._done_reasons[str(1)]}: {self._done_hist[1]}\t"
+                f"{self._done_reasons[str(2)]}: {self._done_hist[2]}\t"
+                f"Mean step time: {round(self.step_time[0] / self.step_time[1] * 100, 2)}\t"
+                f"Mean reward: {round(mean_reward, 5)} ({'+' if diff >= 0 else ''}{diff})\t"
+                f"Mean steps: {sum(self.step_count_hist) / NUM_EPS}\t"
             )
-
-        # collision detector
-        if "crash" in reward_info:
-            if reward_info["crash"] and not self._in_crash:
-                self._collisions += 1
-                # when crash occures, robot strikes obst for a few consecutive timesteps
-                # we want to count it as only one collision
-                self._in_crash = True
-        else:
-            self._in_crash = False
-
-        # safe dist detector
-        if "safe_dist" in reward_info and reward_info["safe_dist"]:
-            self._safe_dist_counter += 1
-
-        self._last_robot_pose = obs_dict["robot_pose"]
+            self._done_hist = [0] * 3
+            self.step_time = [0, 0]
+            self.last_mean_reward = mean_reward
+            self.mean_reward = [0, 0]
+            self.step_count_hist = [0] * NUM_EPS
 
     @staticmethod
-    def get_distance(pose_1, pose_2):
-        return math.hypot(pose_2.x - pose_1.x, pose_2.y - pose_1.y)
+    def determine_termination(
+        reward_info: dict,
+        curr_steps: int,
+        max_steps: int,
+        info: dict = None,
+    ) -> Tuple[dict, bool]:
+        if info is None:
+            info = {}
+
+        terminated = reward_info["is_done"]
+
+        if terminated:
+            info["done_reason"] = reward_info["done_reason"]
+            info["is_success"] = reward_info["is_success"]
+
+        if curr_steps >= max_steps:
+            terminated = True
+            info["done_reason"] = 0
+            info["is_success"] = 0
+
+        return info, terminated
 
 
 if __name__ == "__main__":
