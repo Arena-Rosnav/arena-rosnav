@@ -11,8 +11,8 @@
   },
   "robots": [
     {
-      "start": ["X", "Y"],
-      "goal": ["X", "Y"]
+      "start": ["X", "Y", "theta"],
+      "goal": ["X", "Y", "theta"]
     }
   ],
   "map": "<NAME OF THE MAP>"
