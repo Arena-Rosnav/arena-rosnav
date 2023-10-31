@@ -247,6 +247,15 @@ class DynamicObstacle(DynamicObstacleProps):
             extra=obj
         )
 
+def _gen_init_pos(steps:int, x:int=1, y:int=0):
+    steps = max(steps,1)
+    while True:
+        x += y==steps
+        y %= steps
+        yield (-x,y,0)
+        y += 1
+
+gen_init_pos = _gen_init_pos(10)
 
 @dataclasses.dataclass(frozen=True)
 class Robot(RobotProps):
@@ -254,7 +263,7 @@ class Robot(RobotProps):
     def parse(obj: Dict, model: ModelWrapper) -> "Robot":
 
         name = str(obj.get("name", ""))
-        position = parse_Point3D(obj.get("pos", (-1, -1, 0)))
+        position = parse_Point3D(obj.get("pos", next(gen_init_pos)))
         planner = str(obj.get("planner",""))
         agent = str(obj.get("agent",""))
         record_data = bool(obj.get("record_data",False))

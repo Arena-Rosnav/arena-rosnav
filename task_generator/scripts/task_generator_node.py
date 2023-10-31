@@ -12,7 +12,7 @@ import rospy
 from std_msgs.msg import Int16, Empty as EmptyMsg
 from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
 from task_generator.manager.robot_manager import RobotManager
-from task_generator.shared import ModelWrapper, Namespace, Robot
+from task_generator.shared import ModelWrapper, Namespace, Robot, gen_init_pos
 from task_generator.simulators.base_simulator import BaseSimulator
 
 from task_generator.tasks import TaskFactory, BaseTask
@@ -38,7 +38,7 @@ def create_default_robot_list(robot_model: ModelWrapper, name: str, planner: str
         model=robot_model,
         planner=planner,
         agent=agent,
-        position=(-1, -1, 0),
+        position=next(gen_init_pos),
         name=name,
         record_data=False,
         extra=dict()
@@ -48,7 +48,7 @@ def read_robot_setup_file(setup_file: str) -> List[Dict]:
     try:
         with open(
             os.path.join(rospkg.RosPack().get_path(
-                "task_generator"), "robot_setup", setup_file),
+                "arena_bringup"), "configs", "robot_setup", setup_file),
             "r"
         ) as f:
             robots: List[Dict] = yaml.safe_load(f)["robots"]
@@ -210,7 +210,7 @@ class TaskGenerator:
                         robot,
                         model=self._robot_loader.bind(robot["model"]),
                     ),
-                    name=f'{robot["model"]}_{i}_{robot.get("amount", 1)}'
+                    name=f'{robot["model"]}_{i}_{robot.get("amount", 1)-1}'
                 )
                 for robot in read_robot_setup_file(robot_setup_file)
                 for i in range(robot.get("amount", 1))
