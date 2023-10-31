@@ -172,10 +172,8 @@
         <param name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" type="string"/>
       </node>
     </group>
-  </group>
 
-  <!-- <node name="pedsim_agent" pkg="pedsim_gazebo_plugin" type="spawn_pedsim_agents.py"></node> -->
-  <group if="$(eval arg('pedsim'))">
+    <!-- <node name="pedsim_agent" pkg="pedsim_gazebo_plugin" type="spawn_pedsim_agents.py"></node> -->
     <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/>
   </group>
 
@@ -186,4 +184,5 @@
   <node type="create_config_file.py" pkg="rviz_utils" name="rviz_config_file_creator" />
   
   <node type="visualize_robot_model.py" pkg="rviz_utils" name="visualize_robot_model" output="screen" />
+
 </launch>
