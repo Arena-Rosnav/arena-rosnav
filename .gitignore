@@ -57,6 +57,5 @@ poetry.lock
 /**/__pycache__
 
 # Unity Data
-utils/misc/unity_simulator/unity_simulator_BurstDebugInformation_DoNotShip/*
-utils/misc/unity_simulator/unity_simulator_Data/*
-utils/misc/unity_simulator/UnityPlayer.so
+utils/misc/unity_simulator/unity_simulator_BurstDebugInformation_DoNotShip/
+!**/UnityPlayer.so
