@@ -15,7 +15,7 @@ class Constants:
 class WaypointPluginName(Enum):
     PASSTHROUGH = "passthrough"
     SPINNY = "spinny"
-    CROWDPRESSURE = "crowdpressure"
+    EVACUATION = "evacuation"
 
 
 InputMsg = pedsim_msgs.msg.WaypointPluginDataframe
