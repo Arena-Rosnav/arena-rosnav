@@ -3,7 +3,7 @@ auto_reset: true
 
 task_mode:
   scenario:
-    scenario_file: default.json
+    scenario_file: highly_social.json
 
   parametrized:
     file: default.xml 
@@ -31,16 +31,13 @@ task_mode:
 
 pedsim:
   default_actor_config:
-    VMAX: [0.3, 0.5]
-    MAX_TALKING_DISTANCE: 1
-    TALKING_BASE_TIME: 5
-    CHATTING_PROBABILITY: [0.10, 0.25]
-    TELL_STORY_PROBABILITY: [0.05, 0.15]
-    GROUP_TALKING_PROBABILITY: [0.15, 0.25]
-    TALKING_AND_WALKING_PROBABILITY: [0.10, 0.50]
+    VMAX: [0.2, 0.5]
+    CHATTING_PROBABILITY: [0, 10]
+    TELL_STORY_PROBABILITY: [0, 5]
+    GROUP_TALKING_PROBABILITY: [0, 10]
+    TALKING_AND_WALKING_PROBABILITY: [0, 10]
     TELL_STORY_BASE_TIME: 5
     FORCE_FACTOR_DESIRED: [1, 5]
     FORCE_FACTOR_OBSTACLE: [1, 7]
     FORCE_FACTOR_SOCIAL: [5, 8]
     FORCE_FACTOR_ROBOT: [2, 10]
-    WAYPOINT_MODE: 1
