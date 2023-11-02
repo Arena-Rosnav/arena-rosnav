@@ -1,7 +1,9 @@
 from pedsim_waypoint_plugin.pedsim_waypoint_generator import OutputData, PedsimWaypointGenerator, InputData, WaypointPluginName, WaypointPlugin
 import pedsim_msgs.msg
-from Integrators import *
-from Simulation_class import Simulation
+import Integrators
+from diff_equation import Diff_Equ
+from Room import Room
+import numpy as np
 
 
 @PedsimWaypointGenerator.register(WaypointPluginName.EVACUATION)
@@ -12,30 +14,34 @@ class Plugin_Evacuation(WaypointPlugin):
     def callback(self, data) -> OutputData:
         def calculate_forces(agent: pedsim_msgs.msg.AgentState) -> pedsim_msgs.msg.AgentFeedback:
             '''
-            There are different adjustments you can make to the Simulation.
-
-            room:
-            There are different rooms to choose from:
-                -"square": a standart square room with one exit
-                -"long_room": a standart rectangle room with one exit
-                -"long_room_v2": a rectangle room with two exits. Half of the agents will go to each exit
-                -"edu_11", "edu_1", "edu_room": square rooms with one exit and different walls inside the room
-
-            You can choose the number of agents in the simulation with "num_individuals".
-
-            "num_steps" is the duraten the simulation will runn (recommended:1000)
+            "num_steps" is the duration the simulation will run (recommended:1000)
 
             "method" is the method of integration. You should use leap_frog even though it will often explode
             since more relaible methods of integration like ode45 and monto carlo take a lot a computational power.
             '''
-            # calls the simulation with:
-            # the number of agents that are currently in the simulation,
-            # the number of force-calculation steps the simulation should go through (each callback should be 1 step?),
-            # the method of Integrating (leap-frog was the GoTo solution in the original project),
-            # room_size (TODO: figure out what value to put)
-            # room_square (TODO: figure out what value to put)
 
-            sim = Simulation(num_individuals=len(pedsim_msgs.msg.TrackedPersons.tracks), num_steps=1, method="leap_frog", room_size=20, room="square")
-            sim.run()           
-            return sim.forces
-        return [pedsim_msgs.msg.AgentFeedback(unforce=True) for agent in data.agents]
+            tau=0.1                                         # time-step (s), TODO: figure out right value
+            num_steps = 1                                   # the number of force-calculation steps the simulation should go through (each callback should be 1 step?)
+            method = getattr(Integrators, "leap_frog")      # method used for integration -> leap-frog was the GoTo solution in the original project
+            N = len(pedsim_msgs.msg.TrackedPersons.tracks)  # quantity of pedestrians aka the number of agents that are currently in the simulation
+            v = np.zeros((2, N, num_steps))                 # Three dimensional array of velocity, TODO: figure out right value
+            y = np.zeros((2, N, num_steps))                 # Three dimensional array of place: x = coordinates, y = Agent, z=Time, TODO: figure out right value
+            room_size = 20                                  # size of square room (m), TODO: has to be deleted or changed
+            room = Room("square", room_size)                # kind of room the simulation runs in, TODO: has to be deleted or changed
+            radii = np.ones(N)                              # radii of pedestrians (m), TODO: figure out right value -> was "0.4 * (np.ones(self.N)*variation).squeeze()" before
+            m = np.ones(N)                                  # mass of pedestrians (kg), TODO: figure out right value -> was "80 * (np.ones(self.N)*variation).squeeze()" before
+
+            diff_equ = Diff_Equ(N, room_size, tau, room, radii, m)  # initialize Differential equation
+
+            # calls the method of integration with the starting positions, diffequatial equation, number of steps, and delta t = tau
+            y, agents_escaped, forces = method(y[:, :, 0], v[:, :, 0], diff_equ.f, num_steps, tau, room)
+            
+            #TODO: Calculate x/y-Forces correctly
+            feedback = pedsim_msgs.msg.AgentFeedback()
+            feedback.id = agent.id
+            feedback.force.x = forces[0]
+            feedback.force.y = forces[1]
+
+            return feedback
+        
+        return [calculate_forces(agent) for agent in data.agents]
