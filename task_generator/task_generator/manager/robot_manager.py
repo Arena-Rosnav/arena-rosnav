@@ -23,6 +23,7 @@ from task_generator.utils import Utils, rosparam_get
 
 from tf.transformations import quaternion_from_euler
 
+
 class RobotManager:
     """
     The robot manager manages the goal and start
@@ -47,7 +48,9 @@ class RobotManager:
     _pub_goal_timer: rospy.Timer
     _clear_costmaps_srv: rospy.ServiceProxy
 
-    def __init__(self, namespace: Namespace, entity_manager: EntityManager, robot: Robot):
+    def __init__(
+        self, namespace: Namespace, entity_manager: EntityManager, robot: Robot
+    ):
         self._namespace = namespace
 
         self._entity_manager = entity_manager
@@ -66,38 +69,33 @@ class RobotManager:
             self._robot_radius = rosparam_get(float, "robot_radius")
 
         self._robot = dataclasses.replace(
-            self._robot, 
+            self._robot,
             model=self._robot.model.override(
                 model_type=ModelType.YAML,
                 override=lambda model: model.replace(
                     description=YAMLUtil.serialize(
                         YAMLUtil.update_plugins(
                             namespace=self.namespace,
-                            description=YAMLUtil.parse_yaml(model.description)
+                            description=YAMLUtil.parse_yaml(model.description),
                         )
                     )
-                )
-            )
+                ),
+            ),
         )
 
         self._entity_manager.spawn_robot(self._robot)
 
+        # TODO: ADJUST GOAL TOPIC ACCORDING TO TRAINING SETUP
+
         self._move_base_goal_pub = rospy.Publisher(
-            self.namespace("move_base_simple", "goal"),
-            PoseStamped,
-            queue_size=10
-        )
-        
-        self._pub_goal_timer = rospy.Timer(
-            rospy.Duration(nsecs=int(0.25e9)),
-            self._publish_goal_periodically
+            self.namespace("move_base_simple", "goal"), PoseStamped, queue_size=10
         )
 
-        rospy.Subscriber(
-            self.namespace("odom"),
-            Odometry,
-            self._robot_pos_callback
+        self._pub_goal_timer = rospy.Timer(
+            rospy.Duration(nsecs=int(0.25e9)), self._publish_goal_periodically
         )
+
+        rospy.Subscriber(self.namespace("odom"), Odometry, self._robot_pos_callback)
 
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             return
@@ -108,8 +106,7 @@ class RobotManager:
 
         # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
         self._clear_costmaps_srv = rospy.ServiceProxy(
-            self.namespace("move_base", "clear_costmaps"),
-            Empty
+            self.namespace("move_base", "clear_costmaps"), Empty
         )
 
     @property
@@ -137,7 +134,7 @@ class RobotManager:
 
     def reset(self, start_pos: PositionOrientation, goal_pos: PositionOrientation):
         """
-            Publishes start and goal to data_recorder, publishes goal to move_base
+        Publishes start and goal to data_recorder, publishes goal to move_base
         """
         self._start_pos, self._goal_pos = start_pos, goal_pos
 
@@ -159,12 +156,10 @@ class RobotManager:
 
     @property
     def _is_goal_reached(self) -> bool:
-
         start = self._position
         goal = self._goal_pos
 
-        distance_to_goal: float = np.linalg.norm(
-            np.array(goal) - np.array(start))
+        distance_to_goal: float = np.linalg.norm(np.array(goal) - np.array(start))
 
         return distance_to_goal < self._goal_radius
 
@@ -181,7 +176,9 @@ class RobotManager:
         goal_msg.pose.position.y = goal[1]
         goal_msg.pose.position.z = 0
 
-        goal_msg.pose.orientation = Quaternion(*quaternion_from_euler(0.0, 0.0, goal[2], axes="sxyz"))
+        goal_msg.pose.orientation = Quaternion(
+            *quaternion_from_euler(0.0, 0.0, goal[2], axes="sxyz")
+        )
 
         self._move_base_goal_pub.publish(goal_msg)
 
@@ -198,12 +195,12 @@ class RobotManager:
             f"namespace:={self.namespace}",
             f"complexity:={rosparam_get(int, 'complexity', 1)}",
             f"record_data:={self._robot.record_data}",
-            f"agent_name:={self._robot.agent}"
+            f"agent_name:={self._robot.agent}",
         ]
 
         self.process = roslaunch.parent.ROSLaunchParent(  # type: ignore
             roslaunch.rlutil.get_or_generate_uuid(None, False),  # type: ignore
-            [(*roslaunch_file, args)]
+            [(*roslaunch_file, args)],
         )
         self.process.start()
 
@@ -213,22 +210,26 @@ class RobotManager:
 
         rospy.set_param(
             self.namespace("move_base", "global_costmap", "robot_base_frame"),
-            os.path.join(self.name, base_frame)
+            os.path.join(self.name, base_frame),
         )
         rospy.set_param(
             self.namespace("move_base", "local_costmap", "robot_base_frame"),
-            os.path.join(self.name, base_frame)
+            os.path.join(self.name, base_frame),
         )
         rospy.set_param(
             self.namespace("move_base", "local_costmap", "scan", "sensor_frame"),
-            os.path.join(self.name, sensor_frame)
+            os.path.join(self.name, sensor_frame),
         )
         rospy.set_param(
             self.namespace("move_base", "global_costmap", "scan", "sensor_frame"),
-            os.path.join(self.name, base_frame)
+            os.path.join(self.name, base_frame),
         )
 
     def _robot_pos_callback(self, data: Odometry):
         current_position = data.pose.pose
 
-        self._position = (current_position.position.x, current_position.position.y, current_position.orientation.z)
+        self._position = (
+            current_position.position.x,
+            current_position.position.y,
+            current_position.orientation.z,
+        )

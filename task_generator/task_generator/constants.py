@@ -5,6 +5,7 @@ from typing import Any, Callable, Optional
 import rospy
 from task_generator.shared import Namespace
 
+
 class Defaults:
     class task_config:
         no_of_episodes = 5
@@ -36,6 +37,7 @@ class Constants:
 
     class EntityManager(Enum):
         PEDSIM = "pedsim"
+        FLATLAND = "flatland"
 
     class TaskMode(Enum):
         RANDOM = "random"
@@ -99,8 +101,11 @@ class FlatlandRandomModel:
     LINEAR_VEL = 0.2
     ANGLUAR_VEL_MAX = 0.2
 
+
 # no ~configuration possible because node is not fully initialized at this point
 pedsim_ns = Namespace("task_generator_node/configuration/pedsim/default_actor_config")
+
+
 def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     """
     load pedsim param
@@ -112,13 +117,15 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     gen = lambda: val
     if isinstance(val, list):
         lo, hi = val[:2]
-        gen = lambda: min(hi, max(lo, random.normalvariate((hi+lo)/2, (hi+lo)/6)))
+        gen = lambda: min(
+            hi, max(lo, random.normalvariate((hi + lo) / 2, (hi + lo) / 6))
+        )
         # gen = lambda: random.uniform(lo, hi)
-    
+
     return lambda x: x if x is not None else gen()
 
-class Pedsim:
 
+class Pedsim:
     VMAX = lp("VMAX", 0.3)
     START_UP_MODE = lp("START_UP_MODE", "default")
     WAIT_TIME = lp("WAIT_TIME", 0.0)

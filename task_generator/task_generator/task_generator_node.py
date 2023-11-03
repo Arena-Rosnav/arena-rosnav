@@ -29,6 +29,7 @@ from task_generator.manager.map_manager import MapManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
+from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
 
 from map_distance_server.srv import GetDistanceMap
 
@@ -99,15 +100,16 @@ class TaskGenerator:
         self._train_mode = rosparam_get(bool, "train_mode", False)
 
         # Publishers
-        self._pub_scenario_reset = rospy.Publisher(
-            "scenario_reset", Int16, queue_size=1
-        )
-        self._pub_scenario_finished = rospy.Publisher(
-            "scenario_finished", EmptyMsg, queue_size=10
-        )
+        if not self._train_mode:
+            self._pub_scenario_reset = rospy.Publisher(
+                "scenario_reset", Int16, queue_size=1
+            )
+            self._pub_scenario_finished = rospy.Publisher(
+                "scenario_finished", EmptyMsg, queue_size=10
+            )
 
-        # Services
-        rospy.Service("reset_task", Empty, self._reset_task_srv_callback)
+            # Services
+            rospy.Service("reset_task", Empty, self._reset_task_srv_callback)
 
         # Vars
         self._env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())(
@@ -121,11 +123,11 @@ class TaskGenerator:
             os.path.join(RosPack().get_path("arena-simulation-setup"), "robot")
         )
 
-        self._start_time = rospy.get_time()
-        self._task = self._get_predefined_task()
-        rospy.set_param("/robot_names", self._task.robot_names)
-
         if not self._train_mode:
+            self._start_time = rospy.get_time()
+            self._task = self._get_predefined_task()
+            rospy.set_param("/robot_names", self._task.robot_names)
+
             self._number_of_resets = 0
             self._desired_resets = rosparam_get(
                 int,
@@ -161,7 +163,7 @@ class TaskGenerator:
             # Timers
             rospy.Timer(rospy.Duration(nsecs=int(0.5e9)), self._check_task_status)
 
-    # SETUP
+        # SETUP
 
     def _get_predefined_task(self, **kwargs):
         """
@@ -181,6 +183,10 @@ class TaskGenerator:
 
         if self._entity_mode == Constants.EntityManager.PEDSIM:
             self._entity_manager = PedsimManager(
+                namespace=self._namespace, simulator=self._env_wrapper
+            )
+        elif self._entity_mode == Constants.EntityManager.FLATLAND:
+            self._entity_manager = FlatlandManager(
                 namespace=self._namespace, simulator=self._env_wrapper
             )
         else:
