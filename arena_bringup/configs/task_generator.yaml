@@ -3,7 +3,7 @@ auto_reset: true
 
 task_mode:
   scenario:
-    scenario_file: default.json
+    scenario_file: highly_social.json
 
   parametrized:
     file: default.xml 
