@@ -19,6 +19,7 @@ class WaypointPluginName(Enum):
 
 InputMsg = pedsim_msgs.msg.WaypointPluginDataframe
 
+
 @dataclasses.dataclass
 class InputData:
     header: std_msgs.msg.Header
@@ -33,14 +34,18 @@ OutputData = List[pedsim_msgs.msg.AgentFeedback]
 
 OutputMsg = pedsim_msgs.msg.AgentFeedbacks
 
+
 class WaypointPlugin:
     def callback(self, data: InputData) -> OutputData:
         raise NotImplementedError()
 
 
 T = TypeVar("T")
+
+
 def NList(l: Optional[List[T]]) -> List[T]:
     return [] if l is None else l
+
 
 class PedsimWaypointGenerator:
 
@@ -72,27 +77,29 @@ class PedsimWaypointGenerator:
             name=Constants.TOPIC_PUBLISH,
             data_class=OutputMsg,
             queue_size=1
-        )        
+        )
 
         def callback(dataframe: InputMsg):
 
+            if dataframe.agent_states is None or len(dataframe.agent_states) == 0:
+                return
+
             dataframe_data = InputData(
-                header = dataframe.header,
-                agents = NList(dataframe.agent_states),
-                robots = NList(dataframe.robot_states),
-                groups = NList(dataframe.simulated_groups),
-                waypoints = NList(dataframe.simulated_waypoints),
-                line_obstacles = NList(dataframe.line_obstacles)
+                header=dataframe.header,
+                agents=NList(dataframe.agent_states),
+                robots=NList(dataframe.robot_states),
+                groups=NList(dataframe.simulated_groups),
+                waypoints=NList(dataframe.simulated_waypoints),
+                line_obstacles=NList(dataframe.line_obstacles)
             )
 
             agent_states_data = plugin.callback(dataframe_data)
 
             publisher.publish(
                 OutputMsg(
-                    agents = agent_states_data
+                    agents=agent_states_data
                 )
             )
-            
 
         rospy.Subscriber(
             name=Constants.TOPIC_SUBSCRIBE,
