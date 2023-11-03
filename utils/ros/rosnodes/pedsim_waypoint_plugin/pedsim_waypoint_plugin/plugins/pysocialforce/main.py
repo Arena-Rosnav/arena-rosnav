@@ -1,10 +1,83 @@
 from pedsim_waypoint_plugin.pedsim_waypoint_generator import OutputData, PedsimWaypointGenerator, InputData, WaypointPluginName, WaypointPlugin
 import pedsim_msgs.msg
 
+import numpy as np
+from pathlib import Path
+from typing import Dict, List, Optional, Type, TypeVar
+
+import sys
+import os
+print(os.getcwd())
+print(Path(__file__).resolve().parent)
+sys.path.append(str(Path(__file__).resolve().parent))
+print(os.getcwd())
+import pysocialforce as psf
+
+
 @PedsimWaypointGenerator.register(WaypointPluginName.PYSOCIALFORCE)
 class Plugin_PySocialForce(WaypointPlugin):
     def __init__(self):
-        ...
+        self.first_call = True
+        self.simulator = None
 
-    def callback(self, data) -> OutputData:
-        return [pedsim_msgs.msg.AgentFeedback(unforce=True) for agent in data.agents]
+    @classmethod
+    def get_state_data(cls, 
+                       agents: List[pedsim_msgs.msg.AgentState], 
+                       groups: List[pedsim_msgs.msg.AgentGroup],
+                       reset_velocity: bool = False
+                       ) -> (np.ndarray, List):
+        
+        state_data = list()
+        for agent in agents:
+            p_x = agent.pose.position.x
+            p_y = agent.pose.position.y
+            v_x = agent.twist.linear.x if not reset_velocity else 1.0
+            v_y = agent.twist.linear.y if not reset_velocity else 1.0
+            d_x = agent.destination.x
+            d_y = agent.destination.y
+            state_data.append([p_x, p_y, v_x, v_y, d_x, d_y])
+        state = np.array(state_data)
+        groups = [[0, 2], [3, 4, 5]]
+        
+        return state, groups
+    
+    @classmethod
+    def map_force_to_feedback(cls,
+                              agents: List[pedsim_msgs.msg.AgentState],
+                              force: np.ndarray
+                              ) -> List[pedsim_msgs.msg.AgentFeedback]:
+        feedbacks = list()
+        for i in range(force.shape[0]):
+            feedback = pedsim_msgs.msg.AgentFeedback()
+            feedback.id = agents[i].id
+            feedback.force.x = force[i, 0]
+            feedback.force.y = force[i, 1]
+
+            feedbacks.append(feedback)
+        
+        return feedbacks
+
+
+    def callback(self, data: InputData) -> OutputData:
+        if len(data.agents) < 6:
+            return list()
+        
+        state, groups = self.get_state_data(data.agents, data.groups, reset_velocity=self.first_call)
+
+        if self.first_call:
+            # instantiate sim
+            self.first_call = False
+            obs = [[0.0, 25.0, 0.5, 0.5], [0.0, 25.0, 20.5, 20.5], [0.5, 0.5, 0.0, 21.0], [24.5, 24.5, 0.0, 21.0]]
+            self.simulator = psf.Simulator(
+                state=state,
+                groups=groups,
+                obstacles=obs,
+                config_file=Path(__file__).resolve().parent.joinpath("pysocialforce/config/default.toml")
+            )
+        else:
+            # update sim
+            self.simulator.peds.update(state, groups)
+
+        forces = self.simulator.compute_forces()
+
+        return self.map_force_to_feedback(data.agents, forces)
