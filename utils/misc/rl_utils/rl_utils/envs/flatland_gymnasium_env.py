@@ -236,6 +236,7 @@ class FlatlandEnv(gymnasium.Env):
         first_map = self._episode <= 1 if self.ns == "sim_1" else False
         if self._requires_task_manager:
             self.task.reset(
+                callback=lambda: False,
                 first_map=first_map,
                 reset_after_new_map=self._steps_curr_episode == 0,
             )
