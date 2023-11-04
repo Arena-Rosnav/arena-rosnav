@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Type, TypeVar
 
 import sys
-print(Path(__file__).resolve().parent)
 sys.path.append(str(Path(__file__).resolve().parent))
 import pysocialforce as psf
 

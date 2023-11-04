@@ -28,7 +28,7 @@ r = 0.2
 factor = 3.0
 
 [group_repulsive_force]
-factor = 1.12
+factor = 1.0
 threshold = 0.55
 
 [group_gaze_force]
@@ -37,7 +37,7 @@ factor = 4.0
 fov_phi = 90.0
 
 [desired_force]
-factor = 1.22324
+factor = 1.0
 relaxation_time = 0.5
 goal_threshold = 0.2
 
