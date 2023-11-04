@@ -69,9 +69,12 @@ class PedsimWaypointGenerator:
         plugin_class = self.__registry.get(plugin_name)
 
         if plugin_class is None:
-            raise RuntimeError(f"plugin {plugin_name.value} not registered")
+            raise RuntimeError(f"Plugin {plugin_name.value} has no registered implementation.\nImplemented plugins: {[name.value for name in self.__registry.keys()]}")
 
-        plugin = plugin_class()
+        try:
+            plugin = plugin_class()
+        except Exception as e:
+            raise RuntimeError(f"Could not initialize plugin {plugin_name.value}. Aborting.") from e
 
         rospy.loginfo(
             f"starting pedsim_waypoint_generator with plugin {type(plugin).__name__}")
