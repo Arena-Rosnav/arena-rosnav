@@ -3,7 +3,7 @@ import pedsim_msgs.msg
 from socialforce import Simulator
 from socialforce.potentials import *
 
-@PedsimWaypointGenerator.register(WaypointPluginName.DSF)
+@PedsimWaypointGenerator.register(WaypointPluginName.DEEPSOCIALFORCE)
 class Plugin_DSF(WaypointPlugin):
 
     steps = 1
