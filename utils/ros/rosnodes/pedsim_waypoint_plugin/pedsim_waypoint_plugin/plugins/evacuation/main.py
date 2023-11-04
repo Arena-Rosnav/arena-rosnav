@@ -1,8 +1,8 @@
 from pedsim_waypoint_plugin.pedsim_waypoint_generator import OutputData, PedsimWaypointGenerator, InputData, WaypointPluginName, WaypointPlugin
 import pedsim_msgs.msg
-import Integrators
-from diff_equation import Diff_Equ
-from Room import Room
+from .Integrators import leap_frog
+from .diff_equation import Diff_Equ
+from .Room import Room
 import numpy as np
 
 
@@ -22,16 +22,16 @@ class Plugin_Evacuation(WaypointPlugin):
         num_steps = 1                                   # the number of force-calculation steps the simulation should go through (each callback should be 1 step?)
         room_size = 500                                 # size of square room (m), TODO: has to be deleted or changed
         room = Room("square", room_size)                # kind of room the simulation runs in, TODO: has to be deleted or changed
-        method = getattr(Integrators, "leap_frog")      # method used for integration -> leap-frog was the GoTo solution in the original project
+        method = leap_frog                              # method used for integration -> leap-frog was the GoTo solution in the original project
         N = len(data.agents)                            # quantity of pedestrians aka the number of agents that are currently in the simulation
         
         v = np.zeros((2, N, num_steps))                 # Three dimensional array of velocity, TODO: figure out right value
         y = np.zeros((2, N, num_steps))                 # Three dimensional array of place: x = coordinates, y = Agent, z=Time, TODO: figure out right value
         for i in range(N):
-            x = data.agents[i].pose.position.x
-            y = data.agents[i].pose.position.y
-            pos = [x, y] 
-            y[:, i, 0] = pos     
+            pos_x = data.agents[i].pose.position.x
+            pos_y = data.agents[i].pose.position.y
+            pos = [pos_x, pos_y] 
+            y[:, i, 0] = pos 
 
         radii = 0.4 * np.ones(N)                        # radii of pedestrians (m) -> was "0.4 * (np.ones(self.N)*variation).squeeze()" before
         m = 80 * np.ones(N)                             # mass of pedestrians (kg) -> was "80 * (np.ones(self.N)*variation).squeeze()" before
