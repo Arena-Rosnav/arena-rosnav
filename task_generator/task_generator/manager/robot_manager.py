@@ -117,6 +117,10 @@ class RobotManager:
         return self._robot_radius + Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST
 
     @property
+    def model_name(self) -> str:
+        return self._robot.model.name
+
+    @property
     def name(self) -> str:
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             return ""
@@ -163,8 +167,7 @@ class RobotManager:
         start = self._position
         goal = self._goal_pos
 
-        distance_to_goal: float = np.linalg.norm(
-            np.array(goal) - np.array(start))
+        distance_to_goal: float = float(np.linalg.norm(np.array(goal) - np.array(start)))
 
         return distance_to_goal < self._goal_radius
 
@@ -193,6 +196,7 @@ class RobotManager:
         rospy.loginfo(f"START WITH MODEL {self.namespace}")
 
         args = [
+            f"model:={self.model_name}",
             f"name:={self.name}",
             f"local_planner:={self._robot.planner}",
             f"namespace:={self.namespace}",
