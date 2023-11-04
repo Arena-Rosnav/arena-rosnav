@@ -42,6 +42,13 @@ class Plugin_PySocialForce(WaypointPlugin):
             new_groups[group_idx].append(agents[agent_id])
 
         return new_groups
+    
+    def overwrite_group_pos(self,
+                        state: np.ndarray,
+                        agents: dict,
+                        ) -> np.ndarray:
+        # TODO
+        return state
 
     @classmethod
     def get_state_data(cls, 
@@ -90,6 +97,7 @@ class Plugin_PySocialForce(WaypointPlugin):
         
         state, agent_idx = self.get_state_data(data.agents, data.groups, reset_velocity=self.first_call)
         groups = self.assign_groups(agent_idx, data.groups)
+        state = self.overwrite_group_pos(state, agent_idx)
         print(groups)
 
         if self.first_call:
