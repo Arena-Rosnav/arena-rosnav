@@ -107,7 +107,6 @@ class GroupCoherenceForce(Force):
                 vectors, norms = stateutils.normalize(force_vec)
                 vectors[norms < threshold] = [0, 0]
                 forces[group, :] += vectors
-        print("Coherence factor:", self.factor)
         return forces * self.factor
 
 
@@ -125,7 +124,6 @@ class GroupCoherenceForceAlt(Force):
                 norms = stateutils.speeds(force_vec)
                 softened_factor = (np.tanh(norms - threshold) + 1) / 2
                 forces[group, :] += (force_vec.T * softened_factor).T
-        print("Coherence factor:", self.factor)
         return forces * self.factor
 
 
@@ -145,7 +143,6 @@ class GroupRepulsiveForce(Force):
                 # forces[group, :] += np.sum(diff, axis=0)
                 forces[group, :] += np.sum(diff.reshape((size, -1, 2)), axis=1)
 
-        print("Repulsive force:", self.factor)
         return forces * self.factor
 
 
@@ -184,7 +181,6 @@ class GroupGazeForce(Force):
                 )
                 force = -rotation.reshape(-1, 1) * member_directions
                 forces[group, :] += force
-        print("Gaze force:", self.factor)
         return forces * self.factor
 
 
@@ -224,7 +220,6 @@ class GroupGazeForceAlt(Force):
                     * member_directions
                 )
                 forces[group, :] += force
-        print("Gaze force:", self.factor)
         return forces * self.factor
 
 
@@ -248,7 +243,6 @@ class DesiredForce(Force):
         )[dist > goal_threshold, :]
         force[dist <= goal_threshold] = -1.0 * vel[dist <= goal_threshold]
         force /= relexation_time
-        print("Desired force:", self.factor)
         return force * self.factor
 
 

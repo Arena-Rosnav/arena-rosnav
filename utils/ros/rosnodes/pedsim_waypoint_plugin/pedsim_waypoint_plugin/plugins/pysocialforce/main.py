@@ -33,6 +33,8 @@ class Plugin_PySocialForce(WaypointPlugin):
             d_y = agent.destination.y
             state_data.append([p_x, p_y, v_x, v_y, d_x, d_y])
         state = np.array(state_data)
+
+        # hard-coded
         groups = [[0, 2], [3, 4, 5]]
         
         return state, groups
@@ -55,7 +57,7 @@ class Plugin_PySocialForce(WaypointPlugin):
 
 
     def callback(self, data: InputData) -> OutputData:
-        if len(data.agents) < 6:
+        if len(data.agents) < 1:
             return list()
         
         state, groups = self.get_state_data(data.agents, data.groups, reset_velocity=self.first_call)
@@ -63,6 +65,7 @@ class Plugin_PySocialForce(WaypointPlugin):
         if self.first_call:
             # instantiate sim
             self.first_call = False
+            # TODO: hard-coded -> remove once map edges are in line obstacles
             obs = [[0.0, 25.0, 0.5, 0.5], [0.0, 25.0, 20.5, 20.5], [0.5, 0.5, 0.0, 21.0], [24.5, 24.5, 0.0, 21.0]]
             self.simulator = psf.Simulator(
                 state=state,
