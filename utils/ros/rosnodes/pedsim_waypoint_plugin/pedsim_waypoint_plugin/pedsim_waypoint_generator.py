@@ -15,7 +15,7 @@ class Constants:
 class WaypointPluginName(Enum):
     PASSTHROUGH = "passthrough"
     SPINNY = "spinny"
-    PYS = "pys"
+    PYSOCIAL2 = "pysocial2"
     DSF = "dsf"
 
 
