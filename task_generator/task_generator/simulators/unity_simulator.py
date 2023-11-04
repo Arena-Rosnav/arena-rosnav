@@ -1,8 +1,6 @@
 import rospy
 import os
-import subprocess
 import requests
-import time
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.utils import rosparam_get
@@ -26,7 +24,10 @@ class UnitySimulator(BaseSimulator):
         self._robot_name = rosparam_get(str, "robot_model", "")
         self._unity_file = "~/arena_ws/src/arena-rosnav/utils/misc/unity_simulator/unity_simulator.x86_64"
 
-        os.system(self._unity_file + "&")
+
+        # if simulator not started yet, do so
+        if requests.get('http://127.0.0.1:8080/init', timeout=T).status_code != '200':
+            os.system(self._unity_file + "&")
 
 
         # self._spawn_model[ModelType.URDF] = # TODO: Insert function to spawn model
@@ -55,7 +56,8 @@ class UnitySimulator(BaseSimulator):
 
     # OBSTACLE
     def spawn_obstacle(self, obstacle: ObstacleProps) -> bool:
-        raise NotImplementedError()
+        if requests.post('http://127.0.0.1:8080/spawn-obstacle', timeout=T, data=obstacle).status_code != '200':
+            rospy.logwarn(f"Error while Spawning Obstacle: {obstacle.name}")
 
     # ROBOT
     def spawn_robot(self, robot: Robot) -> str:
