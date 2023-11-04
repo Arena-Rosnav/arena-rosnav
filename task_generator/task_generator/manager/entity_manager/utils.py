@@ -1,13 +1,18 @@
 import dataclasses
+import enum
 from io import StringIO
 import os
 from typing import Any, Dict, List, Optional, Union
 import xml.etree.ElementTree as ET
+import cv2
+import numpy as np
+import rospkg
 
 import yaml
 from task_generator.constants import Constants
+from task_generator.manager.utils import WorldMap, WorldWall, WorldWalls
 
-from task_generator.shared import ObstacleProps
+from task_generator.shared import Model, ModelType, ModelWrapper, Obstacle, ObstacleProps
 from task_generator.utils import Utils
 
 
@@ -55,12 +60,16 @@ class SDFUtil:
 
         return hits
 
+class ObstacleLayer(enum.IntEnum):
+    UNUSED = 0  # unused, could be garbage collected
+    INUSE = 1   # in use, but can be unused
+    WORLD = 2   # intrinsic part of world
 
 @dataclasses.dataclass
 class KnownObstacle:
     obstacle: ObstacleProps
     pedsim_spawned: bool = False
-    used: bool = False
+    layer: ObstacleLayer = ObstacleLayer.UNUSED
 
 
 class KnownObstacles:
@@ -169,4 +178,90 @@ class YAMLUtil:
                 plugin[prop] = os.path.join(namespace, plugin.get(prop, ""))
 
         return description
-    
+
+tmp_dir = os.path.join(rospkg.RosPack().get_path("arena-simulation-setup"), "tmp")
+os.makedirs(tmp_dir, exist_ok=True)
+
+
+def walls_to_obstacle(world_map: WorldMap, height: float = 1) -> Obstacle:
+
+    model_name = "__WALLS"
+    heightmap = world_map.occupancy
+
+    dtype = np.uint8
+
+    target_size: int = 2 ** np.ceil(np.log2(max(heightmap.shape))) + 1
+    pad_y: int = int(np.floor((target_size - heightmap.shape[0])/2))
+    pad_x: int = int(np.floor((target_size - heightmap.shape[1])/2))
+
+    padded_heightmap = np.pad(
+        heightmap,
+        [
+            (pad_y, pad_y + 1 - heightmap.shape[0] % 2), 
+            (pad_x, pad_x + 1 - heightmap.shape[1] % 2)
+        ],
+        mode="constant",
+        constant_values=0
+    )
+
+    img_uri = os.path.join(tmp_dir, f"__WALLS.png")#_{np.random.randint(0,65515)}.png")
+    cv2.imwrite(
+        img_uri,
+        np.iinfo(dtype).max - padded_heightmap.astype(dtype)
+    )
+
+    #TODO precompute heightmap as own geometry, gazebo heightmap implementation isn't optimal
+
+    mesh = \
+        f"""
+        <heightmap>
+            <uri>{img_uri}</uri>
+            <size>{padded_heightmap.shape[1] * world_map.resolution} {padded_heightmap.shape[0] * world_map.resolution} {2*height}</size>
+            <pos>{heightmap.shape[1] * .5  * world_map.resolution + world_map.origin[0]} {heightmap.shape[0] * .5 * world_map.resolution + world_map.origin[1]} {-height}</pos>
+            <texture>
+                <uri>file://media/materials/textures/beigeWall.jpg</uri>
+                <name>Gazebo/Grey</name>
+            </texture>
+            <blend></blend>
+            <use_terrain_paging>false</use_terrain_paging>
+        </heightmap>
+        """    
+
+    sdf_description = \
+        f"""
+        <?xml version="1.0" ?>
+        <sdf version="1.5">
+            <static>true</static>
+            <model name="{model_name}">
+                <link name="body">
+                    <visual name="visual">
+                        <pose>0 0 0 0 0 0</pose>
+                        <geometry>
+                            {mesh}
+                        </geometry>
+                    </visual>
+                    <collision name="collision">
+                        <pose>0 0 0 0 0 0</pose>
+                        <geometry>
+                            {mesh}
+                        </geometry>
+                    </collision>
+                </link>
+            </model>
+        </sdf>
+        """
+
+    model = ModelWrapper.Constant(
+        model_name,
+        models={
+            # ModelType.YAML: Model(type=ModelType.YAML, name=model_name, description="", path=""),
+            ModelType.SDF: Model(type=ModelType.SDF, name=model_name, description=sdf_description, path="")
+        }
+    )
+
+    return Obstacle(
+        position=(0,0,0),
+        name=model_name,
+        model=model,
+        extra=dict()
+    )

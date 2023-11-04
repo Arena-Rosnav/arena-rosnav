@@ -10,7 +10,7 @@ class Namespace(str):
     def __call__(self, *args: str) -> "Namespace":
         return Namespace(os.path.join(self, *args))
 
-
+# TODO deprecate this in favor of Model.EMPTY
 EMPTY_LOADER = lambda *_, **__: Model(
     type=ModelType.UNKNOWN,
     name="",
@@ -46,7 +46,6 @@ class Model:
         **kwargs: properties to replace
         """
         return dataclasses.replace(self, **kwargs)
-
 
 ForbiddenZone = Tuple[float, float, float]
 
@@ -178,6 +177,11 @@ class ModelWrapper:
         """
         return ModelWrapper.Constant(name=model.name, models={model.type: model})
 
+    @staticmethod
+    def EMPTY() -> ModelWrapper:
+        wrapper = ModelWrapper("__EMPTY")
+        wrapper._get = EMPTY_LOADER
+        return wrapper
 
 @dataclasses.dataclass(frozen=True)
 class EntityProps:
@@ -209,7 +213,6 @@ def parse_Point3D(obj: Sequence, fill: float = 0.) -> Tuple[float, float, float]
         position = (*position, *((3-len(position)) * [fill]))
 
     return (position[0], position[1], position[2])
-
 
 @dataclasses.dataclass(frozen=True)
 class Obstacle(ObstacleProps):

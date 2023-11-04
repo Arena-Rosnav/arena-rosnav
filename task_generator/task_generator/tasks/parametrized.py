@@ -2,6 +2,7 @@ import os
 import random
 import time
 from typing import List, Optional
+import numpy as np
 
 from rospkg import RosPack
 
@@ -77,9 +78,9 @@ class ParametrizedTask(BaseTask):
 
         for manager in self.robot_managers:
 
-            start_pos = self.map_manager.get_random_pos_on_map(
+            start_pos = self.world_manager.get_random_pos_on_map(
                 manager.safe_distance)
-            goal_pos = self.map_manager.get_random_pos_on_map(
+            goal_pos = self.world_manager.get_random_pos_on_map(
                 manager.safe_distance, forbidden_zones=[start_pos])
 
             manager.reset(start_pos=start_pos, goal_pos=goal_pos)
@@ -87,7 +88,7 @@ class ParametrizedTask(BaseTask):
             robot_positions.append(start_pos)
             robot_positions.append(goal_pos)
 
-        self.map_manager.init_forbidden_zones()
+        self.world_manager.init_forbidden_zones()
 
         obstacle_ranges = self.itf_random.load_obstacle_ranges()
 
@@ -168,8 +169,7 @@ class ParametrizedTask(BaseTask):
             ),
             map=ScenarioMap(
                 yaml=dict(),
-                xml=ET.ElementTree(
-                    ET.Element("dummy")),
+                occupancy=np.zeros((10,10)),
                 path=""
             ),
             robots=[]

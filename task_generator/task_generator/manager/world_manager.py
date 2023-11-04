@@ -6,32 +6,81 @@ import math
 
 from map_distance_server.srv import GetDistanceMapResponse
 from geometry_msgs.msg import Point
-from task_generator.shared import Waypoint
+from task_generator.manager.utils import RLE_2D, World, WorldEntities, WorldMap, WorldWalls, occupancy_to_walls
+from task_generator.shared import Position, Waypoint
 
 
-class MapManager:
+class WorldManager:
     """
     The map manager manages the static map
     and is used to get new goal, robot and
     obstacle positions.
     """
 
-    _map: GetDistanceMapResponse
-    _map_with_distances: np.ndarray
-    _origin: Point
+    _world: World
+    _walls: WorldWalls
     _forbidden_zones: List[Waypoint]
 
-    def __init__(self, map: GetDistanceMapResponse):
-        self.update_map(map)
+    def __init__(self, world_map: WorldMap, entities: Optional[WorldEntities] = None):
+        self.update_world(world_map=world_map, entities=entities)
         self.init_forbidden_zones()
 
-    def update_map(self, map: GetDistanceMapResponse):
-        self._map = map
-        self._map_with_distances = np.reshape(
-            self._map.data,
-            (self._map.info.height, self._map.info.width)
+    @property
+    def world(self) -> World:
+        return self._world
+
+    @property
+    def _origin(self) -> Position:
+        return self.world.map.origin
+    
+    @property
+    def _resolution(self) -> float:
+        return self.world.map.resolution
+
+    @property
+    def walls(self) -> WorldWalls:
+        return self._walls
+
+    def update_map(self, map: WorldMap):
+        # TODO deprecate in favor of direct call to update_world
+        self.update_world(world_map=map)
+
+    def update_world(
+        self,
+        entities: Optional[WorldEntities] = None,
+        world_map: Optional[WorldMap] = None,
+        walls: Optional[WorldWalls] = None
+    ):
+        
+        if world_map is None:
+            if entities is None: raise ValueError("occupancy was not passed and couldn't be inferred")
+        
+            raise NotImplementedError("implicit 3D -> 2D not implemented yet")
+
+            world_map = WorldMap()
+            # TODO compute occupancy map from 3D
+
+        self.init_forbidden_zones()
+
+        if walls is None:
+            if world_map is None: raise ValueError("walls was not passed and couldn't be inferred")
+
+            walls = occupancy_to_walls(
+                occupancy_grid=world_map.occupancy,
+                transform=lambda p: (p[0] * world_map.resolution + world_map.origin[0], (world_map.occupancy.shape[0] - p[1]) * world_map.resolution + world_map.origin[1])
+            )
+
+        if entities is None:
+            """this is OK because maps may not have preset entities"""
+            entities = list()
+
+        self.forbid([entity.position for entity in entities])
+
+        self._world = World(
+            entities=entities,
+            map=world_map,
+            walls=walls
         )
-        self._origin = map.info.origin.position
 
     def init_forbidden_zones(self, init: Optional[List[Waypoint]] = None):
         if init is None:
@@ -68,22 +117,25 @@ class MapManager:
         # map -> resolution of map is m / cell -> safe_dist in cells is
         # safe_dist / resolution
         safe_dist_in_cells = math.ceil(
-            safe_dist / self._map.info.resolution) + 1
+            safe_dist / self._resolution) + 1
+        
+        if forbidden_zones is None:
+            forbidden_zones = []
 
         forbidden_zones_in_cells: List[Waypoint] = [
             (
-                math.ceil(point[0] / self._map.info.resolution),
-                math.ceil(point[1] / self._map.info.resolution),
-                math.ceil(point[2] / self._map.info.resolution)
+                math.ceil(point[0] / self._resolution),
+                math.ceil(point[1] / self._resolution),
+                math.ceil(point[2] / self._resolution)
             )
-            for point in self._forbidden_zones + (forbidden_zones if forbidden_zones is not None else [])
+            for point in self._forbidden_zones + forbidden_zones
         ]
 
         # Now get index of all cells were dist is > safe_dist_in_cells
         possible_cells: List[Tuple[np.intp, np.intp]] = np.array(
-            np.where(self._map_with_distances > safe_dist_in_cells)).transpose().tolist()
+            np.where(self.world.map.occupancy > safe_dist_in_cells)).transpose().tolist()
 
-        #return (random.randint(1,6), random.randint(1, 9), 0)
+        # return (random.randint(1,6), random.randint(1, 9), 0)
         assert len(possible_cells) > 0, "No cells available"
 
         # The position should not lie in the forbidden zones and keep the safe
@@ -107,8 +159,10 @@ class MapManager:
         theta = random.uniform(-math.pi, math.pi)
 
         point: Waypoint = (
-            float(np.round(y * self._map.info.resolution + self._origin.y, 3)),
-            float(np.round(x * self._map.info.resolution + self._origin.x, 3)),
+            float(
+                np.round(y * self._resolution + self._origin[0], 3)),
+            float(
+                np.round(x * self._resolution + self._origin[1], 3)),
             theta
         )
 

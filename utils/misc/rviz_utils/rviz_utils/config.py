@@ -120,6 +120,28 @@ class Config:
         }
     }
 
+    PEDSIM_WALLS = {
+        "Class": "rviz/Marker",
+        "Enabled": True,
+        "Marker Topic": "/pedsim_visualizer/walls",
+        "Name": "PedsimWalls",
+        "Namespaces": {
+            "": True
+        },
+        "Queue Size": 100,
+        "Value": True
+    }
+
+    PEDSIM_WAYPOINTS = {
+        "Class": "rviz/MarkerArray",
+        "Enabled": False,
+        "Marker Topic": "/pedsim_visualizer/waypoints",
+        "Name": "PedsimWaypoints",
+        "Namespaces": {},
+        "Queue Size": 100,
+        "Value": False
+    }
+
     def create_model_display(robot_name, topic, color):
         return {
             "Class": "rviz/MarkerArray",

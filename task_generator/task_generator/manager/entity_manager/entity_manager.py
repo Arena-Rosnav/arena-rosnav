@@ -1,5 +1,7 @@
 import rospy
-from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot
+from task_generator.manager.entity_manager.utils import ObstacleLayer
+from task_generator.manager.utils import WorldMap, WorldWalls
+from task_generator.shared import DynamicObstacle, Namespace, Obstacle, Position, PositionOrientation, Robot
 from task_generator.simulators.base_simulator import BaseSimulator
 from typing import Collection
 from geometry_msgs.msg import Point, PoseStamped
@@ -47,10 +49,11 @@ class EntityManager:
         Currently by loading a existing sdf file, 
         then reaplacing the static values by dynamic ones 
         """
+        raise NotImplementedError()
 
-    def spawn_line_obstacle(self, name: str, _from: Point, _to: Point):
+    def spawn_line_obstacles(self, walls: WorldWalls, heightmap: WorldMap):
         """
-        Creates a line obstacle.
+        Creates walls.
         """
         raise NotImplementedError()
 
@@ -60,7 +63,7 @@ class EntityManager:
         """
         raise NotImplementedError()
     
-    def remove_obstacles(self, purge: bool = True):
+    def remove_obstacles(self, purge: ObstacleLayer = ObstacleLayer.UNUSED):
         """
         Removes obstacles from simulator.
         @purge: if False, only remove unused obstacles
