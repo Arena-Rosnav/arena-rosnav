@@ -28,7 +28,11 @@ gputil = "^1.4.0"
 tensorboardx = "^2.6"
 gym = "^0.22"
 
+# pedsim-waypoint-plugin deps
+
+
 [tool.poetry.dev-dependencies]
+pysocialforce = "^1.1.2"
 
 [build-system]
 requires = ["setuptools==62.2.0", "wheel==0.38.4"]
