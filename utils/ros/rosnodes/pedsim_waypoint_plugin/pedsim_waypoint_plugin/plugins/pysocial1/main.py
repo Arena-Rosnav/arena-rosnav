@@ -11,7 +11,7 @@ sys.path.append(str(Path(__file__).resolve().parent))
 import pysocialforce as psf
 
 
-@PedsimWaypointGenerator.register(WaypointPluginName.PYSOCIALFORCE)
+@PedsimWaypointGenerator.register(WaypointPluginName.PYSOCIAL1)
 class Plugin_PySocialForce(WaypointPlugin):
     def __init__(self):
         self.first_call = True

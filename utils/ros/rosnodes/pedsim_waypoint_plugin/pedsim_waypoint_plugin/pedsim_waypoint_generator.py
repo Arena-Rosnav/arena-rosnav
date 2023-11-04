@@ -15,7 +15,7 @@ class Constants:
 class WaypointPluginName(Enum):
     PASSTHROUGH = "passthrough"
     SPINNY = "spinny"
-    PYSOCIALFORCE = "pysocialforce"
+    PYSOCIAL1 = "pysocial1"
 
 
 InputMsg = pedsim_msgs.msg.WaypointPluginDataframe
