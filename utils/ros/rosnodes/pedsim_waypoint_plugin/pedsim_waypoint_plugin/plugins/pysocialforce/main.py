@@ -16,27 +16,32 @@ class Plugin_PySocialForce(WaypointPlugin):
     def __init__(self):
         self.first_call = True
         self.simulator = None
-        self.groups = list()
+        self.groups = dict()
+        self.group_count = 0
 
     def assign_groups(self,
                    agents: dict,
-                   groups: List[pedsim_msgs.msg.AgentGroup],
+                   _groups: List[pedsim_msgs.msg.AgentGroup],
                    ) -> list:
         
         # assign new agents to groups
         for agent_id, idx in agents.items():
             if agent_id in self.groups:
                 # agent already went through assignment
-                pass
+                continue
 
-            assigned_group = random.randint(0, len(self.groups))
-            if assigned_group == len(self.groups):
-                self.groups.append([agent_id])
-            else:
-                self.groups[assigned_group].append(agent_id)
+            # pick between existing groups and a new single one
+            assigned_group = random.randint(0, self.group_count)
+            if assigned_group == self.group_count:
+                self.group_count += 1
+            self.groups[agent_id] = assigned_group
 
         # form group list
-        return [[agents[id] for id in group] for group in self.groups]
+        new_groups = [list() for _ in range(self.group_count)]
+        for agent_id, group_idx in self.groups.items():
+            new_groups[group_idx].append(agents[agent_id])
+
+        return new_groups
 
     @classmethod
     def get_state_data(cls, 
