@@ -2,10 +2,10 @@ Don't forget to re-run `poetry install` in src/arena-rosnav.
 
 Test with following commands. Change simulator to `gazebo` for 3D.
 
-### pysocial ([PySocialForce](https://github.com/yuxiang-gao/PySocialForce))
+### pysocial1 ([PySocialForce](https://github.com/yuxiang-gao/PySocialForce))
 
 ```sh
-roslaunch arena_bringup start_arena.launch simulator:=flatland task_mode:=scenario map_file:=map_empty model:=jackal pedsim_waypoint_plugin:=pysocial
+roslaunch arena_bringup start_arena.launch simulator:=flatland task_mode:=scenario map_file:=map_empty model:=jackal pedsim_waypoint_plugin:=pysocial1
 ```
 
 ### pysocial2 ([PySocialForce](https://github.com/yuxiang-gao/PySocialForce))
