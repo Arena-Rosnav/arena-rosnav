@@ -10,6 +10,8 @@ from task_generator.simulators.base_simulator import BaseSimulator
 
 from task_generator.shared import EntityProps, ModelType, Robot, ObstacleProps, PositionOrientation
 
+from std_msgs.msg import Empty
+from std_srvs.srv import Empty
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
@@ -28,10 +30,10 @@ class UnitySimulator(BaseSimulator):
         rospy.wait_for_service("unity/spawn_model", timeout=T)
 
         self._spawn_model[ModelType.URDF] = rospy.ServiceProxy(
-            "unity/spawn_model"
+            "unity/spawn_model", Empty
         )
         self._spawn_model[ModelType.SDF] = rospy.ServiceProxy(
-            "unity/spawn_model"
+            "unity/spawn_model", Empty
         )
 
         rospy.loginfo("...Unity services now available.")
