@@ -113,7 +113,7 @@ class TaskGenerator:
 
         # Vars
         self._env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())(
-            namespace=self._namespace
+            namespace=self._namespace.simulation_ns
         )
 
         rospy.loginfo(f"Launching task mode: {self._task_mode}")
@@ -171,7 +171,7 @@ class TaskGenerator:
         """
         if self._env_wrapper is None:
             self._env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())(
-                self._namespace
+                self._namespace.simulation_ns
             )
 
         rospy.wait_for_service("/distance_map")
@@ -183,19 +183,19 @@ class TaskGenerator:
 
         if self._entity_mode == Constants.EntityManager.PEDSIM:
             self._entity_manager = PedsimManager(
-                namespace=self._namespace, simulator=self._env_wrapper
+                namespace=self._namespace.simulation_ns, simulator=self._env_wrapper
             )
         elif self._entity_mode == Constants.EntityManager.FLATLAND:
             self._entity_manager = FlatlandManager(
-                namespace=self._namespace, simulator=self._env_wrapper
+                namespace=self._namespace.simulation_ns, simulator=self._env_wrapper
             )
         else:
             self._entity_manager = EntityManager(
-                namespace=self._namespace, simulator=self._env_wrapper
+                namespace=self._namespace.simulation_ns, simulator=self._env_wrapper
             )
 
         obstacle_manager = ObstacleManager(
-            namespace=self._namespace,
+            namespace=self._namespace.simulation_ns,
             map_manager=map_manager,
             simulator=self._env_wrapper,
             dynamic_manager=self._entity_manager,

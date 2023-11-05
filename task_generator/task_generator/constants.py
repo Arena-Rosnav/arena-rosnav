@@ -51,6 +51,17 @@ class Constants:
         NODE_NAME = "map_generator"
         MAP_FOLDER_NAME = "dynamic_map"
 
+    class Random:
+        MIN_DYNAMIC_OBS = 1
+        MAX_DYNAMIC_OBS = 5
+        MIN_STATIC_OBS = 0
+        MAX_STATIC_OBS = 0
+        MIN_INTERACTIVE_OBS = 0
+        MAX_INTERACTIVE_OBS = 0
+
+    class Scenario:
+        RESETS_DEFAULT = 5
+
     PLUGIN_FULL_RANGE_LASER = {
         "type": "Laser",
         "name": "full_static_laser",
@@ -64,17 +75,6 @@ class Constants:
         "noise_std_dev": 0.0,
         "update_rate": 10,
     }
-
-    class Random:
-        MIN_DYNAMIC_OBS = 0
-        MAX_DYNAMIC_OBS = 0
-        MIN_STATIC_OBS = 0
-        MAX_STATIC_OBS = 0
-        MIN_INTERACTIVE_OBS = 1
-        MAX_INTERACTIVE_OBS = 10
-
-    class Scenario:
-        RESETS_DEFAULT = 5
 
 
 class FlatlandRandomModel:

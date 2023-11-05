@@ -58,7 +58,7 @@ class RobotManager:
         self._start_pos = (0, 0, 0)
         self._goal_pos = (0, 0, 0)
 
-        self._goal_radius = rosparam_get(float, "goal_radius", 0.7) + 1
+        self._goal_radius = rosparam_get(float, "goal_radius", 0.5)  # + 1
 
         self._robot = robot
 
@@ -85,10 +85,14 @@ class RobotManager:
 
         self._entity_manager.spawn_robot(self._robot)
 
-        # TODO: ADJUST GOAL TOPIC ACCORDING TO TRAINING SETUP
+        _gen_goal_topic = (
+            self.namespace("goal")
+            if Utils.get_arena_type() == Constants.ArenaType.TRAINING
+            else self.namespace("move_base_simple", "goal")
+        )
 
         self._move_base_goal_pub = rospy.Publisher(
-            self.namespace("move_base_simple", "goal"), PoseStamped, queue_size=10
+            _gen_goal_topic, PoseStamped, queue_size=10
         )
 
         self._pub_goal_timer = rospy.Timer(
@@ -130,7 +134,7 @@ class RobotManager:
         return self._is_goal_reached
 
     def move_robot_to_pos(self, position: PositionOrientation):
-        self._entity_manager.move_robot(name=self.name, position=position)
+        self._entity_manager.move_robot(name=self._robot.name, position=position)
 
     def reset(self, start_pos: PositionOrientation, goal_pos: PositionOrientation):
         """

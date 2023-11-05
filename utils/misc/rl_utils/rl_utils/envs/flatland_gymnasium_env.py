@@ -17,6 +17,7 @@ from std_srvs.srv import Empty
 from ..utils.reward import RewardCalculator
 from ..utils.observation_collector import ObservationCollector
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
+from task_generator.shared import Namespace
 from task_generator.task_generator_node import TaskGenerator
 
 NUM_EPS = 10
@@ -54,7 +55,7 @@ class FlatlandEnv(gymnasium.Env):
         """
         super(FlatlandEnv, self).__init__()
 
-        self.ns = ns
+        self.ns = Namespace(ns)
         self._verbose = verbose
         try:
             # given every environment enough time to initialize, if we dont put sleep,
@@ -68,9 +69,6 @@ class FlatlandEnv(gymnasium.Env):
                 "Can't not determinate the number of the environment, training script may crash!"
             )
             time.sleep(2)
-
-        # process specific namespace in ros system
-        self.ns_prefix = lambda x: os.path.join(self.ns, x)
 
         if not rospy.get_param("/debug_mode", True):
             rospy.init_node("env_" + self.ns, anonymous=True)
@@ -103,16 +101,16 @@ class FlatlandEnv(gymnasium.Env):
         # action agent publisher
         if self._is_train_mode:
             self.agent_action_pub = rospy.Publisher(
-                self.ns_prefix("cmd_vel"), Twist, queue_size=1
+                self.ns("cmd_vel"), Twist, queue_size=1
             )
         else:
             self.agent_action_pub = rospy.Publisher(
-                self.ns_prefix("cmd_vel_pub"), Twist, queue_size=1
+                self.ns("cmd_vel_pub"), Twist, queue_size=1
             )
 
         # service clients
         if self._is_train_mode:
-            self._service_name_step = self.ns_prefix("step_world")
+            self._service_name_step = self.ns.simulation_ns("step_world")
             # self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
             self._step_world_publisher = rospy.Publisher(
                 self._service_name_step, StepWorld, queue_size=10
@@ -179,8 +177,6 @@ class FlatlandEnv(gymnasium.Env):
         if self._is_train_mode:
             self.call_service_takeSimStep()
 
-        self._steps_curr_episode += 1
-
         obs_dict = self.observation_collector.get_observations(
             last_action=self._last_action
         )
@@ -204,7 +200,8 @@ class FlatlandEnv(gymnasium.Env):
         if done and self._verbose:
             self.step_count_hist[self._episode % NUM_EPS] = self._steps_curr_episode
             self._done_hist[int(info["done_reason"])] += 1
-            self.print_statistics()
+            if sum(self._done_hist) >= NUM_EPS:
+                self.print_statistics()
 
         self.step_time[0] += time.time() - start_time
 
@@ -266,24 +263,23 @@ class FlatlandEnv(gymnasium.Env):
         self._steps_curr_episode += 1
 
     def print_statistics(self):
-        if sum(self._done_hist) >= NUM_EPS:
-            mean_reward = self.mean_reward[0] / NUM_EPS
-            diff = round(mean_reward - self.last_mean_reward, 5)
+        mean_reward = self.mean_reward[0] / NUM_EPS
+        diff = round(mean_reward - self.last_mean_reward, 5)
 
-            print(
-                f"[{self.ns}] Last 10 Episodes:\t"
-                f"{self._done_reasons[str(0)]}: {self._done_hist[0]}\t"
-                f"{self._done_reasons[str(1)]}: {self._done_hist[1]}\t"
-                f"{self._done_reasons[str(2)]}: {self._done_hist[2]}\t"
-                f"Mean step time: {round(self.step_time[0] / self.step_time[1] * 100, 2)}\t"
-                f"Mean reward: {round(mean_reward, 5)} ({'+' if diff >= 0 else ''}{diff})\t"
-                f"Mean steps: {sum(self.step_count_hist) / NUM_EPS}\t"
-            )
-            self._done_hist = [0] * 3
-            self.step_time = [0, 0]
-            self.last_mean_reward = mean_reward
-            self.mean_reward = [0, 0]
-            self.step_count_hist = [0] * NUM_EPS
+        print(
+            f"[{self.ns}] Last 10 Episodes:\t"
+            f"{self._done_reasons[str(0)]}: {self._done_hist[0]}\t"
+            f"{self._done_reasons[str(1)]}: {self._done_hist[1]}\t"
+            f"{self._done_reasons[str(2)]}: {self._done_hist[2]}\t"
+            f"Mean step time: {round(self.step_time[0] / self.step_time[1] * 100, 2)}\t"
+            f"Mean reward: {round(mean_reward, 5)} ({'+' if diff >= 0 else ''}{diff})\t"
+            f"Mean steps: {sum(self.step_count_hist) / NUM_EPS}\t"
+        )
+        self._done_hist = [0] * 3
+        self.step_time = [0, 0]
+        self.last_mean_reward = mean_reward
+        self.mean_reward = [0, 0]
+        self.step_count_hist = [0] * NUM_EPS
 
     @staticmethod
     def determine_termination(

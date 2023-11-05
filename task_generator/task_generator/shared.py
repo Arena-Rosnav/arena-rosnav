@@ -18,8 +18,16 @@ import enum
 
 
 class Namespace(str):
-    def __call__(self, *args: str) -> "Namespace":
+    def __call__(self, *args: str) -> Namespace:
         return Namespace(os.path.join(self, *args))
+
+    @property
+    def simulation_ns(self) -> Namespace:
+        return Namespace(self.split("/")[0])
+
+    @property
+    def robot_ns(self) -> Namespace:
+        return Namespace(self.split("/")[1])
 
 
 EMPTY_LOADER = lambda *_, **__: Model(

@@ -5,14 +5,14 @@ from typing import Any, Dict, List, Optional, Union
 import xml.etree.ElementTree as ET
 
 import yaml
+import rospy
 from task_generator.constants import Constants
 
-from task_generator.shared import ObstacleProps
+from task_generator.shared import Namespace, ObstacleProps
 from task_generator.utils import Utils
 
 
 class SDFUtil:
-
     @staticmethod
     def parse(sdf: str) -> ET.ElementTree:
         file = StringIO(sdf)
@@ -122,7 +122,7 @@ class KnownObstacles:
         Clear internal dict.
         """
         return self._known_obstacles.clear()
-    
+
     def __contains__(self, item: str) -> bool:
         return item in self._known_obstacles
 
@@ -158,15 +158,22 @@ class YAMLUtil:
     }
 
     @staticmethod
-    def update_plugins(namespace: str, description: Any) -> Any:
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            return description
-        
+    def update_plugins(namespace: Namespace, description: Any) -> Any:
         plugins: List[Dict] = description.get("plugins", [])
+
+        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+            if rospy.get_param("laser/full_range_laser", False):
+                plugins.append(Constants.PLUGIN_FULL_RANGE_LASER)
+
+            for plugin in plugins:
+                for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
+                    plugin[prop] = os.path.join(
+                        namespace.robot_ns, plugin.get(prop, "")
+                    )
+
+            return description
 
         for plugin in plugins:
             for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
                 plugin[prop] = os.path.join(namespace, plugin.get(prop, ""))
-
         return description
-    

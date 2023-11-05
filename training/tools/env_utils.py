@@ -2,6 +2,7 @@ from typing import Union, Tuple
 
 import gym
 import os
+import rospy
 
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import set_random_seed
@@ -41,8 +42,9 @@ def make_envs(
     """
 
     def _init() -> Union[gym.Env, gym.Wrapper]:
-        train_ns = f"sim_{rank + 1}" if with_ns else ""
-        eval_ns = "eval_sim" if with_ns else ""
+        robot_model = rospy.get_param("model")
+        train_ns = f"sim_{rank + 1}/{robot_model}" if with_ns else ""
+        eval_ns = f"eval_sim/{robot_model}" if with_ns else ""
 
         curriculum_config = config["callbacks"]["training_curriculum"]
         if train:

@@ -34,6 +34,10 @@ class FlatlandManager(EntityManager):
         self._static_obs_count = 0
         self._dynamic_obs_count = 0
 
+    def spawn_obstacle(self, obstacle: Obstacle):
+        if not self._simulator.spawn_entity(obstacle):
+            rospy.logwarn(f"Couldn't spawn obstacle '{obstacle.name}'")
+
     def spawn_obstacles(self, obstacles: Collection[Obstacle]):
         for obstacle in obstacles:
             obs_name = FlatlandManager._generate_name(
@@ -54,16 +58,8 @@ class FlatlandManager(EntityManager):
 
             self.spawn_obstacle(obstacle)
 
-            self._spawned_obstacles.append(obs_name)
-
-    def spawn_obstacle(self, obstacle: Obstacle, is_dynamic: bool = False):
-        if not self._simulator.spawn_entity(obstacle):
-            rospy.logwarn(f"Couldn't spawn obstacle '{obstacle.name}'")
-
-        if is_dynamic:
-            self._dynamic_obs_count += 1
-        else:
             self._static_obs_count += 1
+            self._spawned_obstacles.append(obs_name)
 
     def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
         for obstacle in obstacles:
@@ -78,11 +74,12 @@ class FlatlandManager(EntityManager):
             )
             obstacle = dataclasses.replace(
                 obstacle,
-                name=FlatlandManager._generate_name(is_dynamic=True, count=obs_name),
+                name=obs_name,
             )
 
-            self.spawn_obstacle(obstacle, is_dynamic=True)
+            self.spawn_obstacle(obstacle)
 
+            self._dynamic_obs_count += 1
             self._spawned_obstacles.append(obs_name)
 
     def remove_obstacles(self, purge: bool = True):
