@@ -74,7 +74,7 @@ class GazeboSimulator(BaseSimulator):
     def after_reset_task(self):
         try:
             self._unpause()
-        except rospy.service.ServiceException as e: # gazebo isn't the most reliable
+        except rospy.service.ServiceException as e:  # gazebo isn't the most reliable
             rospy.logwarn(e)
 
     # ROBOT
@@ -106,25 +106,28 @@ class GazeboSimulator(BaseSimulator):
         request.model_xml = model.description
         request.initial_pose = Pose(
             position=Point(
-                x=entity.position[0],
-                y=entity.position[1],
+                x=entity.position.x,
+                y=entity.position.y,
                 z=0
             ),
-            orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz")
-        )
+            orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="sxyz")
+                                   )
         )
         request.robot_namespace = self._namespace(entity.name)
         request.reference_frame = "world"
 
-        rospy.set_param(request.robot_namespace("robot_description"), model.description)
-        rospy.set_param(request.robot_namespace("tf_prefix"), str(request.robot_namespace))
+        rospy.set_param(request.robot_namespace(
+            "robot_description"), model.description)
+        rospy.set_param(request.robot_namespace(
+            "tf_prefix"), str(request.robot_namespace))
 
         res = self.spawn_model(model.type, request)
 
         return res.success
 
     def delete_entity(self, name):
-        res: DeleteModelResponse = self._remove_model_srv(DeleteModelRequest(model_name=name))
+        res: DeleteModelResponse = self._remove_model_srv(
+            DeleteModelRequest(model_name=name))
         return bool(res.success)
 
     def _publish_goal(self, goal):

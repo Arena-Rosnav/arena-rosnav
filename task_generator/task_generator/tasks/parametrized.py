@@ -169,7 +169,7 @@ class ParametrizedTask(BaseTask):
             ),
             map=ScenarioMap(
                 yaml=dict(),
-                occupancy=np.zeros((10,10)),
+                occupancy=np.zeros((10, 10)),
                 path=""
             ),
             robots=[]

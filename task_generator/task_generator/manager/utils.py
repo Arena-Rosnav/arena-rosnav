@@ -3,58 +3,122 @@
 """
 
 import dataclasses
+import itertools
+import os
 import numpy as np
-from typing import Any, Callable, Collection, Optional, Tuple, Dict, List, Set, Type
+from typing import Callable, Collection, Optional, Tuple, Dict, List
+
+from rospkg import RosPack
 
 from map_distance_server.srv import GetDistanceMapResponse
 from task_generator.shared import Obstacle, Position, PositionOrientation
 
 from genpy.rostime import Time
-from geometry_msgs.msg import Pose
+from task_generator.utils import ModelLoader
 
 # TYPES
 
-@dataclasses.dataclass
-class WorldMap:
-    occupancy: np.ndarray
-    origin: Position
-    resolution: float
-    time: Time
 
-    @classmethod
-    def from_distmap(cls: Type["WorldMap"], distmap: GetDistanceMapResponse) -> "WorldMap":
-        return cls(
-            occupancy = np.array(distmap.data).reshape((distmap.info.height, distmap.info.width)),
-            origin = (distmap.info.origin.position.x, distmap.info.origin.position.y),
-            resolution = distmap.info.resolution,
-            time = distmap.info.map_load_time
-        )
-    
-    
 WorldWall = Tuple[Position, Position]
-WorldWalls = Set[WorldWall]
+WorldWalls = Collection[WorldWall]
+WorldObstacles = Collection[Obstacle]
 
 
 @dataclasses.dataclass
-class WorldEntityConfiguration:
+class WorldObstacleConfiguration:
     """
     only use this for receiving ros messages
     """
     position: PositionOrientation
-    scaling: float
     model_name: str
-    extra: Optional[Dict] = None #TODO pass this through to simulator
+    extra: Dict
 
-WorldEntities = Collection[Obstacle]
+
+@dataclasses.dataclass
+class WorldEntities:
+    obstacles: WorldObstacles
+    walls: WorldWalls
+
+
+class WorldOccupancy:
+    FULL: np.uint8 = np.uint8(np.iinfo(np.uint8).min)
+    EMPTY: np.uint8 = np.uint8(np.iinfo(np.uint8).max)
+
+    _grid: np.ndarray
+
+    @property
+    def grid(self) -> np.ndarray:
+        return self._grid
+
+    def __init__(self, grid: np.ndarray):
+        self._grid = grid
+
+    def clear(self):
+        self.grid.fill(WorldOccupancy.FULL)
+
+    def occupy(self, zone: Position, radius: float):
+        self._grid[
+            int(zone[1]-radius):int(zone[1]+radius),
+            int(zone[0]-radius):int(zone[0]+radius)
+        ] = WorldOccupancy.FULL
+
+
+class WorldLayers:
+    walls: WorldOccupancy      # walls
+    obstacles: WorldOccupancy  # intrinsic obstcales
+    forbidden: WorldOccupancy  # task obstacles
+
+    def __init__(self, walls: WorldOccupancy):
+        self.walls = walls
+        self.obstacles = WorldOccupancy(
+            np.full(walls.grid.shape, WorldOccupancy.EMPTY))
+        self.forbidden = WorldOccupancy(
+            np.full(walls.grid.shape, WorldOccupancy.EMPTY))
+
+    @property
+    def combined_occupancy(self) -> WorldOccupancy:
+        return np.minimum.reduce([
+            self.walls.grid,
+            self.obstacles.grid,
+            self.forbidden.grid
+        ])
+
+
+@dataclasses.dataclass
+class WorldMap:
+    occupancy: WorldLayers
+    origin: Position
+    resolution: float
+    time: Time
+
+    @staticmethod
+    def from_distmap(distmap: GetDistanceMapResponse) -> "WorldMap":
+        return WorldMap(
+            occupancy=WorldLayers(
+                walls=WorldOccupancy(
+                    np.array(distmap.data).reshape((distmap.info.height, distmap.info.width))
+                )
+            ),
+            origin=Position(
+                distmap.info.origin.position.x,
+                distmap.info.origin.position.y
+            ),
+            resolution=distmap.info.resolution,
+            time=distmap.info.map_load_time
+        )
+
+    @property
+    def shape(self) -> Tuple[int, ...]:
+        return self.occupancy.walls.grid.shape
+
 
 @dataclasses.dataclass
 class World:
     entities: WorldEntities
     map: WorldMap
-    walls: WorldWalls
-    extras: Optional[Dict[str, Any]] = dataclasses.field(default_factory=lambda:dict())
 
 # END TYPES
+
 
 def RLE_1D(grid: np.ndarray) -> List[List[int]]:
     """
@@ -112,10 +176,10 @@ class _WallLines(Dict[float, List[Tuple[float, float]]]):
         get WorldWalls object
         """
         if self._inverted:
-            return set([((start, major), (end, major)) for major, segment in self.items() for start, end in segment])
+            return set([(Position(start, major), Position(end, major)) for major, segment in self.items() for start, end in segment])
 
         else:
-            return set([((major, start), (major, end)) for major, segment in self.items() for start, end in segment])
+            return set([(Position(major, start), Position(major, end)) for major, segment in self.items() for start, end in segment])
 
 
 def RLE_2D(grid: np.ndarray) -> WorldWalls:
@@ -140,6 +204,7 @@ def RLE_2D(grid: np.ndarray) -> WorldWalls:
 
     return set().union(walls_x.lines, walls_y.lines)
 
+
 def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[[Position], Position]] = None) -> WorldWalls:
     binary_grid = (occupancy_grid > occupancy_grid.mean()).astype(np.bool_)
     walls = RLE_2D(grid=binary_grid)
@@ -147,4 +212,20 @@ def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[
     if transform is None:
         transform = lambda p: p
 
-    return set([(transform(wall[0]), transform(wall[1])) for wall in walls])
+    return [(transform(wall[0]), transform(wall[1])) for wall in walls]
+
+
+_world_model_loader = ModelLoader(os.path.join(
+    RosPack().get_path("arena-simulation-setup"), "tmp", "models"))
+
+
+def configurations_to_obstacles(configurations: Collection[WorldObstacleConfiguration]) -> WorldObstacles:
+
+    name_gen = itertools.count()
+
+    return [Obstacle(
+        position=configuration.position,
+        name=f"world_obstacle_{next(name_gen)}",
+        model=_world_model_loader.bind(configuration.model_name),
+        extra=configuration.extra
+    ) for configuration in configurations]

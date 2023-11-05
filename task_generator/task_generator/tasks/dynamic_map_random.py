@@ -1,5 +1,3 @@
-
-
 from task_generator.constants import Constants
 from task_generator.tasks.base_task import BaseTask
 from task_generator.tasks.random import RandomTask
@@ -72,4 +70,4 @@ class DynamicMapRandomTask(RandomTask):
         # task reset for all taskmanagers when one resets
         # update map manager
         self.itf_dynamicmap.update_map()
-        self.reset(callback=lambda:None, reset_after_new_map=True)
+        self.reset(callback=lambda: None, reset_after_new_map=True)

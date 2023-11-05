@@ -10,9 +10,9 @@ import rospkg
 
 import yaml
 from task_generator.constants import Constants
-from task_generator.manager.utils import WorldMap, WorldWall, WorldWalls
+from task_generator.manager.utils import WorldMap
 
-from task_generator.shared import Model, ModelType, ModelWrapper, Obstacle, ObstacleProps
+from task_generator.shared import Model, ModelType, ModelWrapper, Obstacle, ObstacleProps, PositionOrientation
 from task_generator.utils import Utils
 
 
@@ -60,10 +60,12 @@ class SDFUtil:
 
         return hits
 
+
 class ObstacleLayer(enum.IntEnum):
     UNUSED = 0  # unused, could be garbage collected
     INUSE = 1   # in use, but can be unused
     WORLD = 2   # intrinsic part of world
+
 
 @dataclasses.dataclass
 class KnownObstacle:
@@ -131,7 +133,7 @@ class KnownObstacles:
         Clear internal dict.
         """
         return self._known_obstacles.clear()
-    
+
     def __contains__(self, item: str) -> bool:
         return item in self._known_obstacles
 
@@ -155,7 +157,8 @@ class YAMLUtil:
                 return YAMLUtil.parse_yaml(file.read())
 
         else:
-            raise ValueError(f"can't process yaml descriptor of type {type(yaml)}")
+            raise ValueError(
+                f"can't process yaml descriptor of type {type(yaml)}")
 
     @staticmethod
     def serialize(obj: Any):
@@ -170,7 +173,7 @@ class YAMLUtil:
     def update_plugins(namespace: str, description: Any) -> Any:
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             return description
-        
+
         plugins: List[Dict] = description.get("plugins", [])
 
         for plugin in plugins:
@@ -179,14 +182,16 @@ class YAMLUtil:
 
         return description
 
-tmp_dir = os.path.join(rospkg.RosPack().get_path("arena-simulation-setup"), "tmp")
+
+tmp_dir = os.path.join(rospkg.RosPack().get_path(
+    "arena-simulation-setup"), "tmp", "heightmap")
 os.makedirs(tmp_dir, exist_ok=True)
 
 
-def walls_to_obstacle(world_map: WorldMap, height: float = 1) -> Obstacle:
+def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
 
     model_name = "__WALLS"
-    heightmap = world_map.occupancy
+    heightmap = world_map.occupancy.walls.grid
 
     dtype = np.uint8
 
@@ -197,26 +202,24 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 1) -> Obstacle:
     padded_heightmap = np.pad(
         heightmap,
         [
-            (pad_y, pad_y + 1 - heightmap.shape[0] % 2), 
+            (pad_y, pad_y + 1 - heightmap.shape[0] % 2),
             (pad_x, pad_x + 1 - heightmap.shape[1] % 2)
         ],
         mode="constant",
         constant_values=0
     )
 
-    img_uri = os.path.join(tmp_dir, f"__WALLS.png")#_{np.random.randint(0,65515)}.png")
+    img_uri = os.path.join(tmp_dir, f"__WALLS_{np.random.randint(0,65515)}.png")
     cv2.imwrite(
         img_uri,
         np.iinfo(dtype).max - padded_heightmap.astype(dtype)
     )
 
-    #TODO precompute heightmap as own geometry, gazebo heightmap implementation isn't optimal
-
     mesh = \
         f"""
         <heightmap>
             <uri>{img_uri}</uri>
-            <size>{padded_heightmap.shape[1] * world_map.resolution} {padded_heightmap.shape[0] * world_map.resolution} {2*height}</size>
+            <size>{padded_heightmap.shape[1] * world_map.resolution} {padded_heightmap.shape[0] * world_map.resolution} {height}</size>
             <pos>{heightmap.shape[1] * .5  * world_map.resolution + world_map.origin[0]} {heightmap.shape[0] * .5 * world_map.resolution + world_map.origin[1]} {-height}</pos>
             <texture>
                 <uri>file://media/materials/textures/beigeWall.jpg</uri>
@@ -225,7 +228,10 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 1) -> Obstacle:
             <blend></blend>
             <use_terrain_paging>false</use_terrain_paging>
         </heightmap>
-        """    
+        """
+
+    # TODO precompute heightmap as own geometry, gazebo heightmap implementation isn't optimal
+    # mesh = ""
 
     sdf_description = \
         f"""
@@ -255,12 +261,13 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 1) -> Obstacle:
         model_name,
         models={
             # ModelType.YAML: Model(type=ModelType.YAML, name=model_name, description="", path=""),
-            ModelType.SDF: Model(type=ModelType.SDF, name=model_name, description=sdf_description, path="")
+            ModelType.SDF: Model(
+                type=ModelType.SDF, name=model_name, description=sdf_description, path="")
         }
     )
 
     return Obstacle(
-        position=(0,0,0),
+        position=PositionOrientation(0, 0, 0),
         name=model_name,
         model=model,
         extra=dict()

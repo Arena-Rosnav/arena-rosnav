@@ -3,19 +3,15 @@ from typing import Any, Callable, Collection, Iterator
 
 import numpy as np
 import yaml
-import xml.etree.ElementTree as ET
+import itertools
 
 from task_generator.constants import FlatlandRandomModel
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import World
 from task_generator.manager.world_manager import WorldManager
-from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle, ObstacleProps
+from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle
 from task_generator.simulators.base_simulator import BaseSimulator
-
-from geometry_msgs.msg import Point
-
-import itertools
 
 
 class ObstacleManager:
@@ -42,8 +38,10 @@ class ObstacleManager:
         the map file is retrieved from launch parameter "map_file"
         """
 
-        self._entity_manager.spawn_line_obstacles(walls=world.walls, heightmap=world.map)
-        self._entity_manager.spawn_obstacles(obstacles=world.entities)
+        self._entity_manager.spawn_line_obstacles(
+            walls=world.entities.walls, heightmap=world.map)
+        self._entity_manager.spawn_obstacles(
+            obstacles=world.entities.obstacles)
 
     def spawn_dynamic_obstacles(self, setups: Collection[DynamicObstacle]):
         """

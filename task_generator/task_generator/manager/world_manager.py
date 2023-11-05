@@ -1,12 +1,10 @@
-from typing import List, Optional, Tuple
+from typing import Collection, List, Optional, Tuple
 import numpy as np
 import random
 import math
+import scipy.signal
 
-
-from map_distance_server.srv import GetDistanceMapResponse
-from geometry_msgs.msg import Point
-from task_generator.manager.utils import RLE_2D, World, WorldEntities, WorldMap, WorldWalls, occupancy_to_walls
+from task_generator.manager.utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls
 from task_generator.shared import Position, Waypoint
 
 
@@ -21,8 +19,10 @@ class WorldManager:
     _walls: WorldWalls
     _forbidden_zones: List[Waypoint]
 
-    def __init__(self, world_map: WorldMap, entities: Optional[WorldEntities] = None):
-        self.update_world(world_map=world_map, entities=entities)
+    _occupancy: np.ndarray
+
+    def __init__(self, world_map: WorldMap, world_obstacles: Optional[Collection[WorldObstacleConfiguration]] = None):
+        self.update_world(world_map=world_map, world_obstacles=world_obstacles)
         self.init_forbidden_zones()
 
     @property
@@ -32,7 +32,7 @@ class WorldManager:
     @property
     def _origin(self) -> Position:
         return self.world.map.origin
-    
+
     @property
     def _resolution(self) -> float:
         return self.world.map.resolution
@@ -47,40 +47,40 @@ class WorldManager:
 
     def update_world(
         self,
-        entities: Optional[WorldEntities] = None,
-        world_map: Optional[WorldMap] = None,
-        walls: Optional[WorldWalls] = None
+        world_map: WorldMap,
+        world_obstacles: Optional[Collection[WorldObstacleConfiguration]] = None
     ):
-        
-        if world_map is None:
-            if entities is None: raise ValueError("occupancy was not passed and couldn't be inferred")
-        
-            raise NotImplementedError("implicit 3D -> 2D not implemented yet")
 
-            world_map = WorldMap()
-            # TODO compute occupancy map from 3D
-
-        self.init_forbidden_zones()
-
-        if walls is None:
-            if world_map is None: raise ValueError("walls was not passed and couldn't be inferred")
-
-            walls = occupancy_to_walls(
-                occupancy_grid=world_map.occupancy,
-                transform=lambda p: (p[0] * world_map.resolution + world_map.origin[0], (world_map.occupancy.shape[0] - p[1]) * world_map.resolution + world_map.origin[1])
-            )
-
-        if entities is None:
+        if world_obstacles is None:
             """this is OK because maps may not have preset entities"""
-            entities = list()
+            world_obstacles = list()
 
-        self.forbid([entity.position for entity in entities])
+        walls = occupancy_to_walls(
+            occupancy_grid=world_map.occupancy.walls.grid,
+            transform=lambda p: Position(p[0] * world_map.resolution + world_map.origin[0],
+                                         (world_map.shape[0] - p[1]) * world_map.resolution + world_map.origin[1])
+        )
+
+        obstacles = configurations_to_obstacles(
+            configurations=world_obstacles
+        )
+
+        entities = WorldEntities(
+            obstacles=obstacles,
+            walls=walls
+        )
 
         self._world = World(
             entities=entities,
-            map=world_map,
-            walls=walls
+            map=world_map
         )
+
+        for obstacle in self.world.entities.obstacles:
+            self.world.map.occupancy.obstacles.occupy(
+                Position(obstacle.position.x, obstacle.position.y), 1)
+
+        self.init_forbidden_zones(
+            [obstacle.position for obstacle in self.world.entities.obstacles])
 
     def init_forbidden_zones(self, init: Optional[List[Waypoint]] = None):
         if init is None:
@@ -90,6 +90,10 @@ class WorldManager:
 
     def forbid(self, forbidden_zones: List[Waypoint]):
         self._forbidden_zones += forbidden_zones
+
+        for zone in forbidden_zones:
+            self.world.map.occupancy.forbidden.occupy(
+                Position(zone.x, zone.y), 1)
 
     def get_random_pos_on_map(self, safe_dist: float, forbid: bool = True, forbidden_zones: Optional[List[Waypoint]] = None) -> Waypoint:
         """
@@ -118,12 +122,12 @@ class WorldManager:
         # safe_dist / resolution
         safe_dist_in_cells = math.ceil(
             safe_dist / self._resolution) + 1
-        
+
         if forbidden_zones is None:
             forbidden_zones = []
 
         forbidden_zones_in_cells: List[Waypoint] = [
-            (
+            Waypoint(
                 math.ceil(point[0] / self._resolution),
                 math.ceil(point[1] / self._resolution),
                 math.ceil(point[2] / self._resolution)
@@ -133,7 +137,7 @@ class WorldManager:
 
         # Now get index of all cells were dist is > safe_dist_in_cells
         possible_cells: List[Tuple[np.intp, np.intp]] = np.array(
-            np.where(self.world.map.occupancy > safe_dist_in_cells)).transpose().tolist()
+            np.where(self._occupancy > safe_dist_in_cells)).transpose().tolist()
 
         # return (random.randint(1,6), random.randint(1, 9), 0)
         assert len(possible_cells) > 0, "No cells available"
@@ -158,7 +162,7 @@ class WorldManager:
 
         theta = random.uniform(-math.pi, math.pi)
 
-        point: Waypoint = (
+        point: Waypoint = Waypoint(
             float(
                 np.round(y * self._resolution + self._origin[0], 3)),
             float(
@@ -186,3 +190,14 @@ class WorldManager:
                 return False
 
         return True
+
+    def get_available_positions(self, safe_dist: float) -> Collection[np.ndarray]:
+        filt = np.full((int(2*safe_dist + 1), int(2*safe_dist + 1)), 1)
+        spread = scipy.signal.convolve2d(
+            self._occupancy,
+            filt
+        )
+        return np.where(spread == WorldOccupancy.EMPTY)
+
+    def get_random_available_position(self, safe_dist: float):
+        return np.random.choice(list(self.get_available_positions(safe_dist=safe_dist)))

@@ -15,15 +15,14 @@ import rospy
 import rospkg
 import rospy
 from task_generator.constants import Constants
-from task_generator.manager.utils import WorldMap
-from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, Position, PositionOrientation, Waypoint, parse_Point3D
+from task_generator.manager.utils import WorldMap, WorldLayers, WorldOccupancy
+from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, Position, PositionOrientation, Waypoint
 
 from task_generator.tasks.base_task import Props_
 from task_generator.utils import rosparam_get
 
 from std_msgs.msg import Bool
 
-import xml.etree.ElementTree as ET
 
 from nav_msgs.msg import OccupancyGrid
 from map_distance_server.srv import GetDistanceMap, GetDistanceMapResponse
@@ -63,16 +62,17 @@ class ITF_Obstacle(ITF_Base):
 
             safe_distance = 0.5
             # the first waypoint
-            waypoints = [(*setup.position[:2], safe_distance)]
+            waypoints = [Waypoint(setup.position.x, setup.position.y, safe_distance)]
             safe_distance = 0.1  # the other waypoints don't need to avoid robot
             for j in range(1):
                 dist = 0
                 x2, y2 = 0, 0
                 while dist < 8:
-                    [x2, y2, *_] = self.PROPS.world_manager.get_random_pos_on_map(safe_distance)
-                    dist = np.linalg.norm([waypoints[-1][0] - x2, waypoints[-1][1] - y2])
-                waypoints.append((x2, y2, 1))
-
+                    [x2, y2, *
+                        _] = self.PROPS.world_manager.get_random_pos_on_map(safe_distance)
+                    dist = np.linalg.norm(
+                        [waypoints[-1][0] - x2, waypoints[-1][1] - y2])
+                waypoints.append(Waypoint(x2, y2, 1))
 
         return DynamicObstacle(**{
             **dataclasses.asdict(setup),
@@ -93,7 +93,8 @@ class ITF_Obstacle(ITF_Base):
         if position is None:
             point: Waypoint = self.PROPS.world_manager.get_random_pos_on_map(
                 safe_distance)
-            position = (point[0], point[1], np.pi * np.random.random())
+            position = PositionOrientation(
+                point[0], point[1], np.pi * np.random.random())
 
         if extra is None:
             extra = dict()
@@ -118,7 +119,7 @@ class ScenarioObstacles:
 
 @dataclasses.dataclass
 class ScenarioMap:
-    yaml: Dict # TODO type this with a schema
+    yaml: Dict  # TODO type this with a schema
     occupancy: np.ndarray
     path: str
 
@@ -176,7 +177,8 @@ class ITF_Scenario(ITF_Base):
         with open(map_file) as f:
             map_yaml = yaml.load(f, Loader=yaml.FullLoader)
 
-        map_img = cv2.imread(os.path.join(map_path, map_yaml.get("image")), cv2.IMREAD_GRAYSCALE)
+        map_img = cv2.imread(os.path.join(
+            map_path, map_yaml.get("image")), cv2.IMREAD_GRAYSCALE)
 
         scenario = Scenario(
             obstacles=ScenarioObstacles(
@@ -229,14 +231,16 @@ class ITF_Scenario(ITF_Base):
 
         self.PROPS.world_manager.update_world(
             world_map=WorldMap(
-                occupancy=scenario.map.occupancy,
-                origin=parse_Point3D(scenario.map.yaml.get("origin", [0,0,0]))[:2],
+                occupancy=WorldLayers(
+                    walls=WorldOccupancy(scenario.map.occupancy)),
+                origin=Position(*scenario.map.yaml.get("origin", (0, 0, 0))[:2]),
                 resolution=float(scenario.map.yaml.get("resolution", 1.0)),
-                time=rospy.Time.now()
+                time=genpy.Time(0)
             )
         )
 
-        self.PROPS.obstacle_manager.spawn_world_obstacles(self.PROPS.world_manager.world)
+        self.PROPS.obstacle_manager.spawn_world_obstacles(
+            self.PROPS.world_manager.world)
         self.PROPS.obstacle_manager.spawn_obstacles(scenario.obstacles.static)
         self.PROPS.obstacle_manager.spawn_obstacles(
             scenario.obstacles.interactive)
@@ -453,21 +457,22 @@ class ITF_Staged(ITF_Obstacle, ITF_Base):
             self.__config_lock = FileLock(
                 f"{self.__training_config_path}.lock")
 
-
         self.on_change_stage = lambda stage: None
 
         def cb_next(*args, **kwargs):
             self.stage_index += 1
 
         rospy.Subscriber(
-            os.path.join(self.PROPS.namespace_prefix, ITF_Staged.TOPIC_NEXT_STAGE), Bool, cb_next
+            os.path.join(self.PROPS.namespace_prefix,
+                         ITF_Staged.TOPIC_NEXT_STAGE), Bool, cb_next
         )
 
         def cb_previous(*args, **kwargs):
             self.stage_index -= 1
 
         rospy.Subscriber(
-            os.path.join(self.PROPS.namespace_prefix, ITF_Staged.TOPIC_PREVIOUS_STAGE), Bool, cb_previous
+            os.path.join(self.PROPS.namespace_prefix,
+                         ITF_Staged.TOPIC_PREVIOUS_STAGE), Bool, cb_previous
         )
 
     # TODO move to Stages
@@ -656,7 +661,8 @@ class ITF_DynamicMap(ITF_Base):
             dist_map = self.__get_dist_map_service()
 
         if isinstance(dist_map, GetDistanceMapResponse):
-            self.PROPS.world_manager.update_world(world_map=WorldMap.from_distmap(distmap=dist_map))
+            self.PROPS.world_manager.update_world(
+                world_map=WorldMap.from_distmap(distmap=dist_map))
 
     def subscribe_reset(self, callback: Callable) -> rospy.Subscriber:
         return rospy.Subscriber(

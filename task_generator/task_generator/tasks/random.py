@@ -41,8 +41,8 @@ class RandomTask(BaseTask):
             obstacle_ranges.dynamic)
 
         self._static_obstacles,\
-        self._interactive_obstacles,\
-        self._dynamic_obstacles = self.itf_random.load_obstacle_list()
+            self._interactive_obstacles,\
+            self._dynamic_obstacles = self.itf_random.load_obstacle_list()
 
         self.iters = 0
 

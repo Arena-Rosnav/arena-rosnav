@@ -1,14 +1,17 @@
 from __future__ import annotations
+import collections
 
 import dataclasses
 import os
-from typing import Callable, Collection, Dict, Iterable, List, Optional, Sequence, Tuple, overload
+from typing import Callable, Collection, Dict, Iterable, List, Optional, Tuple, overload
 
 import enum
+
 
 class Namespace(str):
     def __call__(self, *args: str) -> "Namespace":
         return Namespace(os.path.join(self, *args))
+
 
 # TODO deprecate this in favor of Model.EMPTY
 EMPTY_LOADER = lambda *_, **__: Model(
@@ -47,11 +50,20 @@ class Model:
         """
         return dataclasses.replace(self, **kwargs)
 
-ForbiddenZone = Tuple[float, float, float]
 
-PositionOrientation = Tuple[float, float, float]
+Position = collections.namedtuple(
+    "Position",
+    ("x", "y")
+)
+
+PositionOrientation = collections.namedtuple(
+    "PositionOrientation",
+    ("x", "y", "orientation")
+)
+
+
 Waypoint = PositionOrientation
-Position = Tuple[float, float]
+ForbiddenZone = PositionOrientation
 
 
 class ModelWrapper:
@@ -183,6 +195,7 @@ class ModelWrapper:
         wrapper._get = EMPTY_LOADER
         return wrapper
 
+
 @dataclasses.dataclass(frozen=True)
 class EntityProps:
     position: PositionOrientation
@@ -190,9 +203,11 @@ class EntityProps:
     model: ModelWrapper
     extra: Dict
 
+
 @dataclasses.dataclass(frozen=True)
 class ObstacleProps(EntityProps):
     ...
+
 
 @dataclasses.dataclass(frozen=True)
 class DynamicObstacleProps(ObstacleProps):
@@ -206,21 +221,13 @@ class RobotProps(EntityProps):
     record_data: bool
 
 
-def parse_Point3D(obj: Sequence, fill: float = 0.) -> Tuple[float, float, float]:
-    position: Tuple[float, ...] = tuple([float(v) for v in obj[:3]])
-
-    if len(position) < 3:
-        position = (*position, *((3-len(position)) * [fill]))
-
-    return (position[0], position[1], position[2])
-
 @dataclasses.dataclass(frozen=True)
 class Obstacle(ObstacleProps):
     @staticmethod
     def parse(obj: Dict, model: ModelWrapper) -> "Obstacle":
 
         name = str(obj.get("name", ""))
-        position = parse_Point3D(obj.get("pos", (0, 0, 0)))
+        position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
 
         return Obstacle(
             name=name,
@@ -238,8 +245,8 @@ class DynamicObstacle(DynamicObstacleProps):
     def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
 
         name = str(obj.get("name", ""))
-        position = parse_Point3D(obj.get("pos", (0, 0, 0)))
-        waypoints = [parse_Point3D(waypoint)
+        position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
+        waypoints = [Waypoint(*waypoint)
                      for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
@@ -250,15 +257,18 @@ class DynamicObstacle(DynamicObstacleProps):
             extra=obj
         )
 
-def _gen_init_pos(steps:int, x:int=1, y:int=0):
-    steps = max(steps,1)
+
+def _gen_init_pos(steps: int, x: int = 1, y: int = 0):
+    steps = max(steps, 1)
     while True:
-        x += y==steps
+        x += y == steps
         y %= steps
-        yield (-x,y,0)
+        yield PositionOrientation(-x, y, 0)
         y += 1
 
+
 gen_init_pos = _gen_init_pos(10)
+
 
 @dataclasses.dataclass(frozen=True)
 class Robot(RobotProps):
@@ -266,10 +276,10 @@ class Robot(RobotProps):
     def parse(obj: Dict, model: ModelWrapper) -> "Robot":
 
         name = str(obj.get("name", ""))
-        position = parse_Point3D(obj.get("pos", next(gen_init_pos)))
-        planner = str(obj.get("planner",""))
-        agent = str(obj.get("agent",""))
-        record_data = bool(obj.get("record_data",False))
+        position = PositionOrientation(*obj.get("pos", next(gen_init_pos)))
+        planner = str(obj.get("planner", ""))
+        agent = str(obj.get("agent", ""))
+        record_data = bool(obj.get("record_data", False))
 
         return Robot(
             name=name,
