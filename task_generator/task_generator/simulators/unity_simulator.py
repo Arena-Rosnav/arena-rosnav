@@ -43,7 +43,6 @@ class UnitySimulator(BaseSimulator):
         Is executed each time before the task is reseted. This is useful in
         order to pause the simulation and physics.
         """
-        rospy.logerr("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
         raise NotImplementedError()
 
     def after_reset_task(self):
@@ -51,7 +50,6 @@ class UnitySimulator(BaseSimulator):
         Is executed after the task is reseted. This is useful to unpause the
         simulation and physics.
         """
-        rospy.logerr("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
         raise NotImplementedError()
 
     # OBSTACLE
@@ -59,24 +57,21 @@ class UnitySimulator(BaseSimulator):
         raise NotImplementedError()
     
     def spawn_entity(self, entity: EntityProps) -> bool:
-        rospy.logerr("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
-        self._spawn_model("AAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        self._spawn_model("This is only an example call of the function")
+        raise NotImplementedError()
         
     # ROBOT
     def spawn_robot(self, robot: Robot) -> str:
         """
         Spawn a robot in the simulator.
         """
-        rospy.logerr("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
         raise NotImplementedError()
 
     def move_entity(self, name: str, pos: PositionOrientation):
         """
         Move the robot to the given position.
         """
-        rospy.logerr("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
         raise NotImplementedError()
 
     def delete_entity(self, name: str) -> bool:
-        rospy.logerr("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
         raise NotImplementedError()
