@@ -1,39 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-
-  <env name="GAZEBO_MODEL_PATH" value="$(find arena-simulation-setup)/worlds/$(arg world)/models" />
-
   <arg name="world" default="turtlebot3_house" />
   <arg name="model" default="burger"/>
   <arg name="headless" default="false"/>
   <arg name="gui" default="true"/>
-
   <arg name="show_rviz" default="true" doc="Wether to show rviz or not" />
-  <arg name="rviz_file" default="nav_LP"/>
-
-  <arg name="visualization" default="" />
-
-  <arg name="pedsim" />
-
-  <!-- Start the Unity Simulator exe -->
-
-  <!-- <node name="generate_world" pkg="gazebo_utils" type="generate_world.py">
-    <param name="world" value="$(arg world)"/>
-  </node> -->
-
-  <!-- start World (Scenario) file in Gazebo -->
-  <!-- <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find arena-simulation-setup)/worlds/$(arg world)/worlds/$(arg world).world"/>
-    <arg name="paused" value="false"/>
-    <arg name="use_sim_time" value="true"/>
-    <arg name="debug" value="false"/>
-    <arg name="verbose" value="true"/> 
-    <arg name="gui" value="$(arg gui)"/>    
-    <arg name="headless" value="$(arg headless)"/>  
-  </include> -->
-
+  <arg name="tcp_ip" default="0.0.0.0"/>
+  <arg name="tcp_port" default="10000"/>
+  <arg 
+        name="world_file_path" 
+        default="$(find arena-simulation-setup)/worlds/$(arg world)/worlds/$(arg world).world" 
+    />
+  <param name="world_file_path" value="$(arg world_file_path)" />
+  <include file="$(find ros_tcp_endpoint)/launch/endpoint.launch">
+    <arg name="tcp_ip" value="$(arg tcp_ip)" />
+    <arg name="tcp_port" value="$(arg tcp_port)" />
+  </include>
   <include file="$(find arena_bringup)/launch/utils/rviz.launch">
     <arg name="show_rviz" value="$(arg show_rviz)" />
   </include>
-
+  <node 
+        pkg="unity_utils" 
+        name="load_world_service" 
+        type="load_world_service.py" 
+        output="screen"
+    />
 </launch>
