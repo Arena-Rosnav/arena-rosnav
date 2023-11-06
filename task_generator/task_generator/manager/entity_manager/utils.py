@@ -215,16 +215,14 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
         np.iinfo(dtype).max - padded_heightmap.astype(dtype)
     )
 
+    z_offset = -0.1
+
     mesh = \
         f"""
         <heightmap>
             <uri>{img_uri}</uri>
-            <size>{padded_heightmap.shape[1] * world_map.resolution} {padded_heightmap.shape[0] * world_map.resolution} {height}</size>
-            <pos>{heightmap.shape[1] * .5  * world_map.resolution + world_map.origin[0]} {heightmap.shape[0] * .5 * world_map.resolution + world_map.origin[1]} {-height}</pos>
-            <texture>
-                <uri>file://media/materials/textures/beigeWall.jpg</uri>
-                <name>Gazebo/Grey</name>
-            </texture>
+            <size>{padded_heightmap.shape[1] * world_map.resolution} {padded_heightmap.shape[0] * world_map.resolution} {height - z_offset}</size>
+            <pos>{heightmap.shape[1] * .5  * world_map.resolution + world_map.origin[0]} {heightmap.shape[0] * .5 * world_map.resolution + world_map.origin[1]} {z_offset}</pos>
             <blend></blend>
             <use_terrain_paging>false</use_terrain_paging>
         </heightmap>
@@ -246,12 +244,6 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
                             {mesh}
                         </geometry>
                     </visual>
-                    <collision name="collision">
-                        <pose>0 0 0 0 0 0</pose>
-                        <geometry>
-                            {mesh}
-                        </geometry>
-                    </collision>
                 </link>
             </model>
         </sdf>
