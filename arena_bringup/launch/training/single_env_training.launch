@@ -7,6 +7,7 @@
   <group ns="$(arg ns)" >
     <include file="$(find arena_bringup)/launch/utils/fake_localization.launch">
       <arg name="ns" value="$(arg ns)" />
+      <arg name="robot_name" value="$(arg model)" />
 
       <!-- ADJUST ODOM FRAME IN ROBOT MANAGER-->
       <arg name="odom_frame_id" value="$(arg ns)_$(arg model)_odom" />

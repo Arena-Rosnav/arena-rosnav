@@ -152,6 +152,10 @@ class YAMLUtil:
     def serialize(obj: Any):
         return yaml.dump(obj)
 
+    PLUGIN_PROPS_TO_CHANGE = {
+        "DiffDrive": {"odom_frame_id": lambda ns, robot_name: f"{ns}_{robot_name}_odom"}
+    }
+
     PLUGIN_PROPS_TO_EXTEND: Dict[str, List[str]] = {
         "DiffDrive": ["odom_pub", "twist_sub", "ground_truth_pub"],
         "Laser": ["topic"],
@@ -177,6 +181,11 @@ class YAMLUtil:
                         if prop in plugin
                         else YAMLUtil.PLUGIN_PROPS_DEFAULT_VAL[plugin["type"]][prop],
                     )
+
+                for prop in YAMLUtil.PLUGIN_PROPS_TO_CHANGE.get(plugin["type"], []):
+                    plugin[prop] = YAMLUtil.PLUGIN_PROPS_TO_CHANGE[plugin["type"]][
+                        prop
+                    ](ns=namespace.simulation_ns, robot_name=namespace.robot_ns)
 
             return description
 
