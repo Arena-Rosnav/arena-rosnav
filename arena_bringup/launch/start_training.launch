@@ -83,6 +83,7 @@
   <include file="$(find arena_bringup)/launch/training/start_envs.launch">
     <arg name="num_envs" value="$(arg num_envs)" />
     <arg name="ns_prefix" value="$(arg ns_prefix)" />
+    <arg name="model" value="$(arg model)" />
   </include> 
 
 </launch>

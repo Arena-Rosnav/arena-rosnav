@@ -42,7 +42,6 @@ class FlatlandEnv(gymnasium.Env):
     ):
         """Default env
         Flatland yaml node check the entries in the yaml file, therefore other robot related parameters cound only be saved in an other file.
-        TODO : write an uniform yaml paser node to handel with multiple yaml files.
 
 
         Args:

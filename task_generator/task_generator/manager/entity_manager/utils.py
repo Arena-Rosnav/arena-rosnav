@@ -153,8 +153,12 @@ class YAMLUtil:
         return yaml.dump(obj)
 
     PLUGIN_PROPS_TO_EXTEND: Dict[str, List[str]] = {
-        "DiffDrive": ["odom_pub", "twist_sub"],
+        "DiffDrive": ["odom_pub", "twist_sub", "ground_truth_pub"],
         "Laser": ["topic"],
+    }
+
+    PLUGIN_PROPS_DEFAULT_VAL = {
+        "DiffDrive": {"ground_truth_pub": "odometry/ground_truth"}
     }
 
     @staticmethod
@@ -168,7 +172,10 @@ class YAMLUtil:
             for plugin in plugins:
                 for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
                     plugin[prop] = os.path.join(
-                        namespace.robot_ns, plugin.get(prop, "")
+                        namespace.robot_ns,
+                        plugin.get(prop)
+                        if prop in plugin
+                        else YAMLUtil.PLUGIN_PROPS_DEFAULT_VAL[plugin["type"]][prop],
                     )
 
             return description
