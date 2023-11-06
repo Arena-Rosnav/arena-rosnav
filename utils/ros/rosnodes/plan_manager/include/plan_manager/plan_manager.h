@@ -81,6 +81,13 @@ private:
 
     ros::Publisher robot_state_pub_;
     
+    /* for namespace generation */
+    std::string robot_model_;
+
+    std::string goal_topic_;
+    std::string odom_topic_;
+    std::string global_plan_topic_;
+    std::string subgoal_topic_;
 
 
     /* helper functions */

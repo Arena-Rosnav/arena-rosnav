@@ -19,6 +19,8 @@ void PlanManager::init(ros::NodeHandle &nh)
   nh.param("/timeout_goal", timeout_goal_, 300.);      //sec
   nh.param("/timeout_subgoal", timeout_subgoal_, 60.); //sec
 
+  nh.param<std::string>("/model", robot_model_, "");
+
   /* initialize main modules */
   planner_collector_.reset(new PlanCollector);
   planner_collector_->initPlanModules(nh);
@@ -33,13 +35,29 @@ void PlanManager::init(ros::NodeHandle &nh)
   // exec_timer_ = nh.createTimer(ros::Duration(0.01), &PlanManager::execFSMCallback, this);
   //safety_timer_ = nh.createTimer(ros::Duration(0.05), &PlanManager::checkCollisionCallback, this);
 
+  /* SUBS */
+  goal_topic_ = "goal";
+  odom_topic_ = "odometry/ground_truth";
+
+  /* PUBS */
+  global_plan_topic_ = "global_plan";
+  subgoal_topic_ = "subgoal";
+
+  if (mode_ == TRAIN){
+  goal_topic_ = robot_model_ + "/" + goal_topic_;
+  odom_topic_ = robot_model_ + "/" + odom_topic_;
+
+  global_plan_topic_ = robot_model_ + "/" + global_plan_topic_;
+  subgoal_topic_ = robot_model_ + "/" + subgoal_topic_;
+  }
+
   // subscriber
-  goal_sub_ = nh.subscribe("goal", 1, &PlanManager::goalCallback, this);
-  odom_sub_ = nh.subscribe("odometry/ground_truth", 1, &PlanManager::odometryCallback, this,ros::TransportHints().tcpNoDelay()); // odom  //odometry/ground_truth
+  goal_sub_ = nh.subscribe(goal_topic_, 1, &PlanManager::goalCallback, this);
+  odom_sub_ = nh.subscribe(odom_topic_, 1, &PlanManager::odometryCallback, this,ros::TransportHints().tcpNoDelay()); // odom  //odometry/ground_truth
 
   // publisher
-  global_plan_pub_  = nh.advertise<nav_msgs::Path>("global_plan",10); // relative name:/ns/node_name/globalPlan
-  subgoal_pub_ = nh.advertise<geometry_msgs::PoseStamped>("subgoal", 10); // relative name:/ns/subgoal
+  global_plan_pub_  = nh.advertise<nav_msgs::Path>(global_plan_topic_,10); // relative name:/ns/node_name/globalPlan
+  subgoal_pub_ = nh.advertise<geometry_msgs::PoseStamped>(subgoal_topic_, 10); // relative name:/ns/subgoal
   robot_state_pub_ = nh.advertise<plan_msgs::RobotStateStamped>("robot_state", 10);
   /* test purpose*/
 }
