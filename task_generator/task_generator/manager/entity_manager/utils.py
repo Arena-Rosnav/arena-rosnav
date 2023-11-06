@@ -153,7 +153,7 @@ class YAMLUtil:
         return yaml.dump(obj)
 
     PLUGIN_PROPS_TO_CHANGE = {
-        "DiffDrive": {"odom_frame_id": lambda ns, robot_name: f"{ns}_{robot_name}_odom"}
+        "DiffDrive": {"odom_frame_id": lambda ns, robot_name: f"odom"}
     }
 
     PLUGIN_PROPS_TO_EXTEND: Dict[str, List[str]] = {
@@ -171,7 +171,7 @@ class YAMLUtil:
 
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             if rospy.get_param("laser/full_range_laser", False):
-                plugins.append(Constants.PLUGIN_FULL_RANGE_LASER)
+                plugins.append(Constants.PLUGIN_FULL_RANGE_LASER.copy())
 
             for plugin in plugins:
                 for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
@@ -182,10 +182,10 @@ class YAMLUtil:
                         else YAMLUtil.PLUGIN_PROPS_DEFAULT_VAL[plugin["type"]][prop],
                     )
 
-                for prop in YAMLUtil.PLUGIN_PROPS_TO_CHANGE.get(plugin["type"], []):
-                    plugin[prop] = YAMLUtil.PLUGIN_PROPS_TO_CHANGE[plugin["type"]][
-                        prop
-                    ](ns=namespace.simulation_ns, robot_name=namespace.robot_ns)
+                # for prop in YAMLUtil.PLUGIN_PROPS_TO_CHANGE.get(plugin["type"], []):
+                #     plugin[prop] = YAMLUtil.PLUGIN_PROPS_TO_CHANGE[plugin["type"]][
+                #         prop
+                #     ](ns=namespace.simulation_ns, robot_name=namespace.robot_ns)
 
             return description
 
