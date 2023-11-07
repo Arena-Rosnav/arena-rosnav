@@ -7,4 +7,5 @@ controller_patience: 15.0
 planner_frequency: 1.0
 
 DwaLocalPlannerROS:
+  - odom_topic: odom
   - max_vel_x: $(arg speed)
