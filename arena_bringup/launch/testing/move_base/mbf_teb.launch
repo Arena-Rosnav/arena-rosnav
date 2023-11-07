@@ -14,9 +14,4 @@
     command="load" subst_value="True" />
 
   <param name="base_local_planner" value="TebLocalPlannerROS" />
-  <param name="TebLocalPlannerROS/max_vel_x" value="$(arg speed)" />
-  <!-- <param name="controller_frequency" value="5.0" /> -->
-  <!-- <param name="controller_patience" value="15.0" /> -->
-  <!-- <param name="planner_frequency" value="1.0" /> -->
-
 </launch>

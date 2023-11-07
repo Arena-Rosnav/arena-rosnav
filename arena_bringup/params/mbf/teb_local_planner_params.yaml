@@ -4,5 +4,4 @@ controllers:
 
 TebLocalPlannerROS:
   odom_topic: odom
-
   max_vel_x: $(arg speed)
