@@ -52,8 +52,8 @@ class Constants:
         MAP_FOLDER_NAME = "dynamic_map"
 
     class Random:
-        MIN_DYNAMIC_OBS = 1
-        MAX_DYNAMIC_OBS = 5
+        MIN_DYNAMIC_OBS = 0
+        MAX_DYNAMIC_OBS = 0
         MIN_STATIC_OBS = 0
         MAX_STATIC_OBS = 0
         MIN_INTERACTIVE_OBS = 0

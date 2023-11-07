@@ -50,27 +50,21 @@ def make_envs(
         if train:
             # train env
             env = FlatlandEnv(
-                train_ns,
-                config["rl_agent"]["reward_fnc"],
-                config["rl_agent"]["action_space"]["discrete"],
-                goal_radius=config["goal_radius"],
+                ns=train_ns,
+                reward_fnc=config["rl_agent"]["reward_fnc"],
                 max_steps_per_episode=config["max_num_moves_per_eps"],
-                task_mode=config["task_mode"],
-                curr_stage=curriculum_config["curr_stage"],
-                PATHS=PATHS,
+                starting_stage=curriculum_config["curr_stage"],
+                curriculum_path=PATHS["curriculum"],
             )
         else:
             # eval env
             env = Monitor(
                 FlatlandEnv(
-                    eval_ns,
-                    config["rl_agent"]["reward_fnc"],
-                    config["rl_agent"]["action_space"]["discrete"],
-                    goal_radius=config["goal_radius"],
+                    ns=eval_ns,
+                    reward_fnc=config["rl_agent"]["reward_fnc"],
                     max_steps_per_episode=config["max_num_moves_per_eps"],
-                    task_mode=config["task_mode"],
-                    curr_stage=curriculum_config["curr_stage"],
-                    PATHS=PATHS,
+                    starting_stage=curriculum_config["curr_stage"],
+                    curriculum_path=PATHS["curriculum"],
                 ),
                 PATHS["eval"],
                 info_keywords=("done_reason", "is_success"),

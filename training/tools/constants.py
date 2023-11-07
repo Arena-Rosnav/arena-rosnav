@@ -46,7 +46,7 @@ class TRAINING_CONSTANTS(object):
 
         CURRICULUM = lambda file_name: os.path.join(
             TRAINING_CONSTANTS.PATHS.CONFIGS,
-            "configs",
+            "training",
             "training_curriculums",
             file_name,
         )

@@ -1,26 +1,41 @@
 #! /usr/bin/env python3
-import time
 import math
-from typing import Tuple
-import gymnasium
 import os
-from stable_baselines3.common.env_checker import check_env
+import time
+from typing import Tuple
 
+import gymnasium
 import numpy as np
 import rospy
-import time
-from geometry_msgs.msg import Twist
 from flatland_msgs.msg import StepWorld
-from std_srvs.srv import Empty
-
-
-from ..utils.reward import RewardCalculator
-from ..utils.observation_collector import ObservationCollector
+from geometry_msgs.msg import Twist
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
+from stable_baselines3.common.env_checker import check_env
+from std_srvs.srv import Empty
 from task_generator.shared import Namespace
 from task_generator.task_generator_node import TaskGenerator
+from task_generator.tasks.base_task import BaseTask
+from task_generator.utils import rosparam_get
 
-NUM_EPS = 10
+from ..utils.observation_collector import ObservationCollector
+from ..utils.reward import RewardCalculator
+
+NUM_EPS = 20
+
+
+def delay_node_init(ns):
+    try:
+        # given every environment enough time to initialize, if we dont put sleep,
+        # the training script may crash.
+        import re
+
+        ns_int = int(re.search(r"\d+", ns)[0])
+        time.sleep((ns_int + 1) * 2)
+    except Exception:
+        rospy.logwarn(
+            "Can't not determinate the number of the environment, training script may crash!"
+        )
+        time.sleep(2)
 
 
 class FlatlandEnv(gymnasium.Env):
@@ -32,10 +47,7 @@ class FlatlandEnv(gymnasium.Env):
         self,
         ns: str,
         reward_fnc: str,
-        safe_dist: float = None,
-        goal_radius: float = 0.1,
         max_steps_per_episode=100,
-        requires_task_manager: bool = True,
         verbose: bool = True,
         *args,
         **kwargs,
@@ -56,18 +68,8 @@ class FlatlandEnv(gymnasium.Env):
 
         self.ns = Namespace(ns)
         self._verbose = verbose
-        try:
-            # given every environment enough time to initialize, if we dont put sleep,
-            # the training script may crash.
-            import re
 
-            ns_int = int(re.search(r"\d+", ns)[0])
-            time.sleep((ns_int + 1) * 2)
-        except Exception:
-            rospy.logwarn(
-                "Can't not determinate the number of the environment, training script may crash!"
-            )
-            time.sleep(2)
+        delay_node_init(ns=self.ns.simulation_ns)
 
         if not rospy.get_param("/debug_mode", True):
             rospy.init_node("env_" + self.ns, anonymous=True)
@@ -85,15 +87,16 @@ class FlatlandEnv(gymnasium.Env):
         self.action_space = self.model_space_encoder.get_action_space()
         self.observation_space = self.model_space_encoder.get_observation_space()
 
-        # reward calculator
-        if safe_dist is None:
-            safe_dist = self.model_space_encoder._radius + 0.25
+        # instantiate task manager
+        task_generator = TaskGenerator(self.ns)
+        self.task: BaseTask = task_generator._get_predefined_task(**kwargs)
 
+        # reward calculator
         self.reward_calculator = RewardCalculator(
             holonomic=self.model_space_encoder._is_holonomic,
-            robot_radius=self.model_space_encoder._radius,
-            safe_dist=safe_dist,
-            goal_radius=goal_radius,
+            robot_radius=self.task.robot_managers[0]._robot_radius,
+            safe_dist=self.task.robot_managers[0].safe_distance,
+            goal_radius=rosparam_get(float, "goal_radius", 0.3),
             rule=reward_fnc,
         )
 
@@ -116,14 +119,6 @@ class FlatlandEnv(gymnasium.Env):
             )
             self._step_world_srv = rospy.ServiceProxy(
                 self._service_name_step, Empty, persistent=True
-            )
-
-        # instantiate task manager
-        self._requires_task_manager = requires_task_manager
-        if requires_task_manager:
-            task_generator = TaskGenerator(self.ns)
-            self.task = task_generator._get_predefined_task(
-                starting_stage=kwargs["curr_stage"]
             )
 
         self._steps_curr_episode = 0
@@ -229,13 +224,12 @@ class FlatlandEnv(gymnasium.Env):
         self._episode += 1
         self.agent_action_pub.publish(Twist())
 
-        first_map = self._episode <= 1 if self.ns == "sim_1" else False
-        if self._requires_task_manager:
-            self.task.reset(
-                callback=lambda: False,
-                first_map=first_map,
-                reset_after_new_map=self._steps_curr_episode == 0,
-            )
+        first_map = self._episode <= 1 if "sim_1" in self.ns else False
+        self.task.reset(
+            callback=lambda: False,
+            first_map=first_map,
+            reset_after_new_map=self._steps_curr_episode == 0,
+        )
         self.reward_calculator.reset()
         self._steps_curr_episode = 0
         self._last_action = np.array([0, 0, 0])
@@ -271,7 +265,7 @@ class FlatlandEnv(gymnasium.Env):
             f"{self._done_reasons[str(1)]}: {self._done_hist[1]}\t"
             f"{self._done_reasons[str(2)]}: {self._done_hist[2]}\t"
             f"Mean step time: {round(self.step_time[0] / self.step_time[1] * 100, 2)}\t"
-            f"Mean reward: {round(mean_reward, 5)} ({'+' if diff >= 0 else ''}{diff})\t"
+            f"Mean cum. reward: {round(mean_reward, 5)} ({'+' if diff >= 0 else ''}{diff})\t"
             f"Mean steps: {sum(self.step_count_hist) / NUM_EPS}\t"
         )
         self._done_hist = [0] * 3
