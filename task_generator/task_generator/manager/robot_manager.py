@@ -195,8 +195,10 @@ class RobotManager:
 
         args = [
             f"name:={self.name}",
-            f"local_planner:={self._robot.planner}",
+            f"model:={self._robot.model.name}",
             f"namespace:={self.namespace}",
+            f"frame:={self.name+'/' if self.name != '' else ''}",
+            f"local_planner:={self._robot.planner}",
             f"complexity:={rosparam_get(int, 'complexity', 1)}",
             f"record_data:={self._robot.record_data}",
             f"agent_name:={self._robot.agent}",
