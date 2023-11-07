@@ -1,0 +1,8 @@
+controllers:
+  - name: TebLocalPlannerROS
+    type: teb_local_planner/TebLocalPlannerROS
+
+TebLocalPlannerROS:
+  odom_topic: odom
+
+  max_vel_x: $(arg speed)

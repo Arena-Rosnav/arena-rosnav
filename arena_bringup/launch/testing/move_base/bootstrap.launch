@@ -26,19 +26,19 @@
     <node pkg="mbf_costmap_nav" type="mbf_costmap_nav" respawn="false" name="move_base_flex" output="log">
 
         <!-- system defaults -->
-        <rosparam file="$(find arena-simulation-setup)/configs/mbf/move_base_params.yaml"
+        <rosparam file="$(find arena_bringup)/params/mbf/move_base_params.yaml"
             command="load" subst_value="True" />
         <rosparam
-            file="$(find arena-simulation-setup)/configs/costmaps/costmap_common_params.yaml"
+            file="$(find arena_bringup)/params/costmaps/costmap_common_params.yaml"
             command="load" ns="global_costmap" subst_value="True" />
         <rosparam
-            file="$(find arena-simulation-setup)/configs/costmaps/costmap_common_params.yaml"
+            file="$(find arena_bringup)/params/costmaps/costmap_common_params.yaml"
             command="load" ns="local_costmap" subst_value="True" />
         <rosparam
-            file="$(find arena-simulation-setup)/configs/costmaps/global_costmap_params.yaml"
+            file="$(find arena_bringup)/params/costmaps/global_costmap_params.yaml"
             command="load" ns="global_costmap" subst_value="True" />
         <rosparam
-            file="$(find arena-simulation-setup)/configs/costmaps/local_costmap_params.yaml"
+            file="$(find arena_bringup)/params/costmaps/local_costmap_params.yaml"
             command="load" ns="local_costmap" subst_value="True" />
 
         <!-- robot overrides -->

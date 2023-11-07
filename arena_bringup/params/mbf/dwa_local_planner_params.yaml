@@ -1,0 +1,10 @@
+controllers:
+  - name: DwaLocalPlannerROS
+    type: dwa_local_planner/DWAPlannerROS
+
+controller_frequency: 5.0
+controller_patience: 15.0
+planner_frequency: 1.0
+
+DwaLocalPlannerROS:
+  - max_vel_x: $(arg speed)
