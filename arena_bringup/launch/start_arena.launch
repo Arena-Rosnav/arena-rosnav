@@ -158,7 +158,7 @@
     <arg name="has_pedsim_waypoint_plugin" value="$(eval arg('pedsim_waypoint_plugin') != '')" />
 
     <group if="$(arg has_pedsim_waypoint_plugin)">
-      <remap from="pedsim_waypoint_plugin/output" to="pedsim_simulator/simulated_agents" />
+      <remap from="pedsim_waypoint_plugin/output" to="pedsim_simulator/waypoint_plugin_feedback" />
       <node name="pedsim_waypoint_plugin" pkg="pedsim_waypoint_plugin" type="main.py" output="screen">
         <param name="plugin_name" value="$(arg pedsim_waypoint_plugin)" />
       </node>
@@ -166,7 +166,6 @@
 
     <group>
       <remap from="pedsim_simulator/waypoint_plugin_data" to="pedsim_waypoint_plugin/input" if="$(arg has_pedsim_waypoint_plugin)"/>
-      <remap from="pedsim_simulator/simulated_agents" to="pedsim_waypoint_plugin/devnull" if="$(arg has_pedsim_waypoint_plugin)"/>
       <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(arg pedsim)">
         <param name="simulation_factor" value="1" type="double"/>
         <param name="pedsim_update_rate" value="30.0" type="double"/>
