@@ -9,12 +9,13 @@ class Room:
     def __init__(self, room, room_size):
         self.room_size = room_size
         
+        # DIEGO: created this room for our scenario 
         if room == "arena":
-            self.wallshere = False
+            self.wallshere = False                # Diego: not sure what exactly to put here, False if there are no static obstacles I suppose
             self.door_size = 1                    # size of the door is proportional to the size of the room
             self.room_len = room_size
             self.room_with = room_size
-            self.destination = np.array([0,0])   # destination the agents want to go to
+            self.destination = np.array([0,0])   # destination the agents want to go to, Diego: set it to [0,0] for now but we need to change it (if this is possible)
             self.num_walls = 4
             self.walls = np.array([[[0, 0], [0, room_size]], # Simulator Edge Wall 1
                           [[0,room_size], [room_size, room_size]],  # Simulator Edge Wall 2

@@ -18,10 +18,10 @@ class Plugin_Evacuation(WaypointPlugin):
        "method" is the method of integration. You should use leap_frog even though it will often explode
         since more relaible methods of integration like ode45 and monto carlo take a lot a computational power.
         '''
-        tau = 1                                         # time-step (s), TODO: figure out right value
+        tau = 0.1                                         # time-step (s), TODO: figure out right value
         num_steps = 2                                   # the number of force-calculation steps the simulation should go through (each callback should be 1 step?)
-        room_size = 500                                 # size of square room (m), TODO: has to be deleted or changed
-        room = Room("arena", room_size)                # kind of room the simulation runs in, TODO: has to be deleted or changed
+        room_size = 500                                 # size of square room (m), TODO: figure out right value
+        room = Room("arena", room_size)                 # kind of room the simulation runs in, added arena room
         method = leap_frog                              # method used for integration -> leap-frog was the GoTo solution in the original project
         N = len(data.agents)                            # quantity of pedestrians aka the number of agents that are currently in the simulation
         
@@ -31,7 +31,9 @@ class Plugin_Evacuation(WaypointPlugin):
             pos_x = data.agents[i].pose.position.x
             pos_y = data.agents[i].pose.position.y
             pos = [pos_x, pos_y] 
-            y[:, i, 0] = pos 
+            y[:, i, 0] = pos
+            #y[0][i][0] = pos_x
+            #y[1][i][0] = pos_y
 
         radii = 0.4 * np.ones(N)                        # radii of pedestrians (m) -> was "0.4 * (np.ones(self.N)*variation).squeeze()" before
         m = 80 * np.ones(N)                             # mass of pedestrians (kg) -> was "80 * (np.ones(self.N)*variation).squeeze()" before
@@ -41,18 +43,16 @@ class Plugin_Evacuation(WaypointPlugin):
 
         # calls the method of integration with the starting positions, diffequatial equation, number of steps, and delta t = tau
         y, agents_escaped, forces = method(y[:, :, 0], v[:, :, 0], diff_equ.f, num_steps, tau, room)
-           
+        # forces is of shape (2, N, 2)
+
         feedbacks = []
 
-        for agent, force in zip(data.agents,forces):
+        for i, agent in enumerate(data.agents):
             #copied from Nhat
             feedback = pedsim_msgs.msg.AgentFeedback()
             feedback.id = agent.id
-            feedback.force.x = force[0] #TODO
-            feedback.force.y = force[1] #TODO
+            feedback.force.x = forces[0][i][0]
+            feedback.force.y = forces[1][i][0]
             feedbacks.append(feedback)
 
         return feedbacks
-        
-
-        #return [calculate_forces(agent) for agent in data.agents]
