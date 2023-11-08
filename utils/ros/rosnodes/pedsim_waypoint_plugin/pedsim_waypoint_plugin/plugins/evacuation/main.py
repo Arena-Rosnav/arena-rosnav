@@ -21,7 +21,7 @@ class Plugin_Evacuation(WaypointPlugin):
         tau = 1                                         # time-step (s), TODO: figure out right value
         num_steps = 2                                   # the number of force-calculation steps the simulation should go through (each callback should be 1 step?)
         room_size = 500                                 # size of square room (m), TODO: has to be deleted or changed
-        room = Room("square", room_size)                # kind of room the simulation runs in, TODO: has to be deleted or changed
+        room = Room("arena", room_size)                # kind of room the simulation runs in, TODO: has to be deleted or changed
         method = leap_frog                              # method used for integration -> leap-frog was the GoTo solution in the original project
         N = len(data.agents)                            # quantity of pedestrians aka the number of agents that are currently in the simulation
         
