@@ -10,7 +10,7 @@
     <arg name="robot_name" />
 
     <group ns="$(arg robot_name)" >
-        <node pkg="intermediate_planner" name="inter_planner" type="intermediate_planner" output="screen">
+        <node pkg="intermediate_planner" name="inter_planner" type="intermediate_planner">
             <!-- <param name="$(arg plan_horizon)/train_mode" value="$(arg train_mode)"/> -->
             <!-- Global plan: flags -->
             <param name="$(arg plan_horizon)/global_planner/use_astar" value="true"/>

@@ -62,7 +62,9 @@ def make_envs(
                 FlatlandEnv(
                     ns=eval_ns,
                     reward_fnc=config["rl_agent"]["reward_fnc"],
-                    max_steps_per_episode=config["max_num_moves_per_eps"],
+                    max_steps_per_episode=config["callbacks"]["periodic_eval"][
+                        "max_num_moves_per_eps"
+                    ],
                     starting_stage=curriculum_config["curr_stage"],
                     curriculum_path=PATHS["curriculum"],
                 ),
