@@ -180,11 +180,13 @@ class ITF_Scenario(ITF_Base):
         scenario_file = json.loads(scenario_file_content)
 
         static_obstacles = [
-            Obstacle.parse(obs, model=self.PROPS.model_loader.bind(obs["model"]))
+            Obstacle.parse(
+                obs, model=self.PROPS.model_loader.bind(obs["model"]))
             for obs in scenario_file["obstacles"]["static"]
         ]
         interactive_obstacles = [
-            Obstacle.parse(obs, model=self.PROPS.model_loader.bind(obs["model"]))
+            Obstacle.parse(
+                obs, model=self.PROPS.model_loader.bind(obs["model"]))
             for obs in scenario_file["obstacles"]["interactive"]
         ]
         dynamic_obstacles = [
@@ -253,7 +255,8 @@ class ITF_Scenario(ITF_Base):
             self.PROPS.robot_managers = self.PROPS.robot_managers[
                 :scenario_robots_length
             ]
-            rospy.logwarn("Roboto setup contains more robots than the scenario file.")
+            rospy.logwarn(
+                "Roboto setup contains more robots than the scenario file.")
 
         if scenario_robots_length > setup_robot_length:
             scenario.robots = scenario.robots[:setup_robot_length]
@@ -264,8 +267,10 @@ class ITF_Scenario(ITF_Base):
     def setup_scenario(self, scenario: Scenario):
         self.PROPS.obstacle_manager.spawn_map_obstacles(scenario.map.xml)
         self.PROPS.obstacle_manager.spawn_obstacles(scenario.obstacles.static)
-        self.PROPS.obstacle_manager.spawn_obstacles(scenario.obstacles.interactive)
-        self.PROPS.obstacle_manager.spawn_dynamic_obstacles(scenario.obstacles.dynamic)
+        self.PROPS.obstacle_manager.spawn_obstacles(
+            scenario.obstacles.interactive)
+        self.PROPS.obstacle_manager.spawn_dynamic_obstacles(
+            scenario.obstacles.dynamic)
 
         for index, robot in enumerate(scenario.robots):
             if index >= len(self.PROPS.robot_managers):
@@ -432,7 +437,8 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
             self.PROPS.obstacle_manager.spawn_obstacles(
                 [
                     ITF_Obstacle.create_obstacle(
-                        self, name=model, model=self.PROPS.model_loader.bind(model)
+                        self, name=model, model=self.PROPS.model_loader.bind(
+                            model)
                     )
                     for model in random.choices(
                         population=list(static_obstacles.keys()),
@@ -447,7 +453,8 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
             self.PROPS.obstacle_manager.spawn_obstacles(
                 [
                     ITF_Obstacle.create_obstacle(
-                        self, name=model, model=self.PROPS.model_loader.bind(model)
+                        self, name=model, model=self.PROPS.model_loader.bind(
+                            model)
                     )
                     for model in random.choices(
                         population=list(interactive_obstacles.keys()),
@@ -554,7 +561,8 @@ class ITF_Staged(ITF_Obstacle, ITF_Base):
                 self.__training_config_path
             ), f"Found no 'training_config.yaml' at {self.__training_config_path}"
 
-            self.__config_lock = FileLock(f"{self.__training_config_path}.lock")
+            self.__config_lock = FileLock(
+                f"{self.__training_config_path}.lock")
 
         self.on_change_stage = lambda stage: None
 
@@ -636,13 +644,15 @@ class ITF_Staged(ITF_Obstacle, ITF_Base):
         # publish goal radius
         goal_radius = self.stage.goal_radius
         if goal_radius is None:
-            goal_radius = rosparam_get(float, ITF_Staged.PARAM_GOAL_RADIUS, 0.3)
+            goal_radius = rosparam_get(
+                float, ITF_Staged.PARAM_GOAL_RADIUS, 0.3)
         rospy.set_param(ITF_Staged.PARAM_GOAL_RADIUS, goal_radius)
 
         # publish stage state
         if True or self.IS_EVAL_SIM:  # TODO reconsider if this check is needed
             rospy.set_param(ITF_Staged.PARAM_CURR_STAGE, val)
-            rospy.set_param(ITF_Staged.PARAM_LAST_STAGE_REACHED, val == self.MAX_STAGE)
+            rospy.set_param(ITF_Staged.PARAM_LAST_STAGE_REACHED,
+                            val == self.MAX_STAGE)
 
         # The current stage is stored inside the config file for when the training is stopped and later continued, the correct stage can be restored.
         if self.__training_config_path is not None:
