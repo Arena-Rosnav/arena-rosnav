@@ -5,7 +5,7 @@
 
 
     <!--  ************** task generator  ***************  -->
-    <node pkg="task_generator" name="task_generator_node" type="task_generator_node.py" output="screen">
+    <node pkg="task_generator" name="task_generator_node" type="main.py" output="screen">
         <param name="scenario_json_path" value="$(arg scenario_json_path)"/>
         <param name="auto_reset" value="$(arg auto_reset)" />
         

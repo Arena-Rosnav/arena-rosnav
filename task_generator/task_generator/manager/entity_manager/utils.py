@@ -5,14 +5,14 @@ from typing import Any, Dict, List, Optional, Union
 import xml.etree.ElementTree as ET
 
 import yaml
+import rospy
 from task_generator.constants import Constants
 
-from task_generator.shared import ObstacleProps
+from task_generator.shared import Namespace, ObstacleProps
 from task_generator.utils import Utils
 
 
 class SDFUtil:
-
     @staticmethod
     def parse(sdf: str) -> ET.ElementTree:
         file = StringIO(sdf)
@@ -122,7 +122,7 @@ class KnownObstacles:
         Clear internal dict.
         """
         return self._known_obstacles.clear()
-    
+
     def __contains__(self, item: str) -> bool:
         return item in self._known_obstacles
 
@@ -152,21 +152,44 @@ class YAMLUtil:
     def serialize(obj: Any):
         return yaml.dump(obj)
 
+    PLUGIN_PROPS_TO_CHANGE = {
+        "DiffDrive": {"odom_frame_id": lambda ns, robot_name: f"odom"}
+    }
+
     PLUGIN_PROPS_TO_EXTEND: Dict[str, List[str]] = {
-        "DiffDrive": ["odom_pub", "twist_sub"],
+        "DiffDrive": ["odom_pub", "twist_sub", "ground_truth_pub"],
         "Laser": ["topic"],
     }
 
+    PLUGIN_PROPS_DEFAULT_VAL = {
+        "DiffDrive": {"ground_truth_pub": "odometry/ground_truth"}
+    }
+
     @staticmethod
-    def update_plugins(namespace: str, description: Any) -> Any:
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            return description
-        
+    def update_plugins(namespace: Namespace, description: Any) -> Any:
         plugins: List[Dict] = description.get("plugins", [])
+
+        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+            if rospy.get_param("laser/full_range_laser", False):
+                plugins.append(Constants.PLUGIN_FULL_RANGE_LASER.copy())
+
+            for plugin in plugins:
+                for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
+                    plugin[prop] = os.path.join(
+                        namespace.robot_ns,
+                        plugin.get(prop)
+                        if prop in plugin
+                        else YAMLUtil.PLUGIN_PROPS_DEFAULT_VAL[plugin["type"]][prop],
+                    )
+
+                # for prop in YAMLUtil.PLUGIN_PROPS_TO_CHANGE.get(plugin["type"], []):
+                #     plugin[prop] = YAMLUtil.PLUGIN_PROPS_TO_CHANGE[plugin["type"]][
+                #         prop
+                #     ](ns=namespace.simulation_ns, robot_name=namespace.robot_ns)
+
+            return description
 
         for plugin in plugins:
             for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
                 plugin[prop] = os.path.join(namespace, plugin.get(prop, ""))
-
         return description
-    

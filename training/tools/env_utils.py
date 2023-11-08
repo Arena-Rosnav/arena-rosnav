@@ -2,6 +2,7 @@ from typing import Union, Tuple
 
 import gym
 import os
+import rospy
 
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import set_random_seed
@@ -13,9 +14,10 @@ from stable_baselines3.common.vec_env import (
 )
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 
-from rl_utils.envs.flatland_gym_env import (
-    FlatlandEnv,
-)
+# from rl_utils.envs.flatland_gym_env import (
+#     FlatlandEnv,
+# )
+from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
 
 
 def make_envs(
@@ -40,34 +42,31 @@ def make_envs(
     """
 
     def _init() -> Union[gym.Env, gym.Wrapper]:
-        train_ns = f"sim_{rank + 1}" if with_ns else ""
-        eval_ns = "eval_sim" if with_ns else ""
+        robot_model = rospy.get_param("model")
+        train_ns = f"sim_{rank + 1}/{robot_model}" if with_ns else ""
+        eval_ns = f"eval_sim/{robot_model}" if with_ns else ""
 
         curriculum_config = config["callbacks"]["training_curriculum"]
         if train:
             # train env
             env = FlatlandEnv(
-                train_ns,
-                config["rl_agent"]["reward_fnc"],
-                config["rl_agent"]["action_space"]["discrete"],
-                goal_radius=config["goal_radius"],
+                ns=train_ns,
+                reward_fnc=config["rl_agent"]["reward_fnc"],
                 max_steps_per_episode=config["max_num_moves_per_eps"],
-                task_mode=config["task_mode"],
-                curr_stage=curriculum_config["curr_stage"],
-                PATHS=PATHS,
+                starting_stage=curriculum_config["curr_stage"],
+                curriculum_path=PATHS["curriculum"],
             )
         else:
             # eval env
             env = Monitor(
                 FlatlandEnv(
-                    eval_ns,
-                    config["rl_agent"]["reward_fnc"],
-                    config["rl_agent"]["action_space"]["discrete"],
-                    goal_radius=config["goal_radius"],
-                    max_steps_per_episode=config["max_num_moves_per_eps"],
-                    task_mode=config["task_mode"],
-                    curr_stage=curriculum_config["curr_stage"],
-                    PATHS=PATHS,
+                    ns=eval_ns,
+                    reward_fnc=config["rl_agent"]["reward_fnc"],
+                    max_steps_per_episode=config["callbacks"]["periodic_eval"][
+                        "max_num_moves_per_eps"
+                    ],
+                    starting_stage=curriculum_config["curr_stage"],
+                    curriculum_path=PATHS["curriculum"],
                 ),
                 PATHS["eval"],
                 info_keywords=("done_reason", "is_success"),
