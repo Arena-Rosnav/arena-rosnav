@@ -372,6 +372,11 @@ class PedsimManager(EntityManager):
             self._known_obstacles.forget(name=obstacle_id)
 
     def _interactive_actor_poses_callback(self, actors: Waypoints):
+        # TODO unclean
+        if isinstance(self._simulator, FlatlandSimulator):
+            return
+        
+        
         waypoints: List[Waypoint] = actors.waypoints or []
 
         # only once

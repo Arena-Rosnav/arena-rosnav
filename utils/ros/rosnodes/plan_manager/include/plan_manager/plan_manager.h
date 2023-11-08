@@ -80,7 +80,6 @@ private:
     ros::Publisher subgoal_pub_;
 
     ros::Publisher robot_state_pub_;
-    
 
 
     /* helper functions */

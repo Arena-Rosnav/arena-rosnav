@@ -1,4 +1,3 @@
-
 import rospy
 from flatland_msgs.srv import (
     MoveModelRequest,
@@ -8,6 +7,7 @@ from flatland_msgs.srv import (
     DeleteModel,
     DeleteModelRequest,
     DeleteModelResponse,
+    DeleteModelsRequest,
     DeleteModels,
     SpawnModelRequest,
 )
@@ -70,7 +70,7 @@ class FlatlandSimulator(BaseSimulator):
             self._namespace("move_model"), MoveModel, persistent=True
         )
         self._spawn_model_srv = rospy.ServiceProxy(
-            self._namespace("spawn_model"), SpawnModel
+            self._namespace("spawn_model_from_string"), SpawnModel
         )
         self._spawn_model[ModelType.YAML] = rospy.ServiceProxy(
             self._namespace("spawn_model_from_string"), SpawnModel
@@ -92,11 +92,21 @@ class FlatlandSimulator(BaseSimulator):
         pass
 
     def delete_entity(self, name):
-        res: DeleteModelResponse = self._delete_model_srv(DeleteModelRequest(name=name))
+        req = DeleteModelRequest()
+        req.name = name
+
+        res: DeleteModelResponse = self._delete_model_srv(req)
+        return bool(res.success)
+
+    def delete_all_entities(self, names: list):
+        request = DeleteModelsRequest()
+        request.name = names
+
+        res = self._delete_models_srv(request)
+
         return bool(res.success)
 
     def spawn_entity(self, entity):
-
         model = entity.model.get(self.MODEL_TYPES)
 
         request = SpawnModelRequest()
@@ -105,9 +115,7 @@ class FlatlandSimulator(BaseSimulator):
         request.name = entity.name
         request.ns = self._namespace(entity.name)
         request.pose = Pose2D(
-            x=entity.position[0],
-            y=entity.position[1],
-            theta=entity.position[2]
+            x=entity.position[0], y=entity.position[1], theta=entity.position[2]
         )
 
         res = self.spawn_model(model.type, request)
@@ -146,5 +154,3 @@ class FlatlandSimulator(BaseSimulator):
     #     request.models = models
 
     #     self._spawn_models_from_string_srv(request)
-
-

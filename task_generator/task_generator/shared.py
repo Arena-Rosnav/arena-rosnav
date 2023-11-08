@@ -2,20 +2,36 @@ from __future__ import annotations
 
 import dataclasses
 import os
-from typing import Callable, Collection, Dict, Iterable, List, Optional, Sequence, Tuple, overload
+from typing import (
+    Callable,
+    Collection,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    overload,
+)
 
 import enum
 
+
 class Namespace(str):
-    def __call__(self, *args: str) -> "Namespace":
+    def __call__(self, *args: str) -> Namespace:
         return Namespace(os.path.join(self, *args))
+
+    @property
+    def simulation_ns(self) -> Namespace:
+        return Namespace(self.split("/")[0])
+
+    @property
+    def robot_ns(self) -> Namespace:
+        return Namespace(self.split("/")[1])
 
 
 EMPTY_LOADER = lambda *_, **__: Model(
-    type=ModelType.UNKNOWN,
-    name="",
-    description="",
-    path=""
+    type=ModelType.UNKNOWN, name="", description="", path=""
 )
 
 
@@ -56,7 +72,6 @@ Position = Tuple[float, float]
 
 
 class ModelWrapper:
-
     _get: Callable[[Collection[ModelType]], Model]
     _name: str
     _override: Dict[ModelType, Tuple[bool, Callable[..., Model]]]
@@ -78,7 +93,13 @@ class ModelWrapper:
         clone._override = self._override
         return clone
 
-    def override(self, model_type: ModelType, override: Callable[[Model], Model], noload: bool = False, name: Optional[str] = None) -> ModelWrapper:
+    def override(
+        self,
+        model_type: ModelType,
+        override: Callable[[Model], Model],
+        noload: bool = False,
+        name: Optional[str] = None,
+    ) -> ModelWrapper:
         """
         Create new ModelWrapper with an overridden ModelType callback
         @model_type: Which ModelType to override
@@ -95,27 +116,34 @@ class ModelWrapper:
         return clone
 
     @overload
-    def get(self, only: ModelType, **kwargs) -> Model: ...
+    def get(self, only: ModelType, **kwargs) -> Model:
+        ...
+
     """
         load specific model
         @only: single accepted ModelType
     """
 
     @overload
-    def get(self, only: Collection[ModelType], **kwargs) -> Model: ...
+    def get(self, only: Collection[ModelType], **kwargs) -> Model:
+        ...
+
     """
         load specific model from collection
         @only: collection of acceptable ModelTypes
     """
 
     @overload
-    def get(self, **kwargs) -> Model: ...
+    def get(self, **kwargs) -> Model:
+        ...
+
     """
         load any available model
     """
 
-    def get(self, only: ModelType | Collection[ModelType] | None = None, **kwargs) -> Model:
-
+    def get(
+        self, only: ModelType | Collection[ModelType] | None = None, **kwargs
+    ) -> Model:
         if only is None:
             only = self._override.keys()
 
@@ -141,7 +169,9 @@ class ModelWrapper:
         return self._name
 
     @staticmethod
-    def bind(name: str, callback: Callable[[Collection[ModelType]], Model]) -> ModelWrapper:
+    def bind(
+        name: str, callback: Callable[[Collection[ModelType]], Model]
+    ) -> ModelWrapper:
         """
         Create new ModelWrapper with bound callback method
         """
@@ -166,7 +196,8 @@ class ModelWrapper:
                     return models[model_type]
             else:
                 raise LookupError(
-                    f"no matching model found for {name} (available: {list(models.keys())}, requested: {list(only)})")
+                    f"no matching model found for {name} (available: {list(models.keys())}, requested: {list(only)})"
+                )
 
         return ModelWrapper.bind(name, get)
 
@@ -186,9 +217,11 @@ class EntityProps:
     model: ModelWrapper
     extra: Dict
 
+
 @dataclasses.dataclass(frozen=True)
 class ObstacleProps(EntityProps):
     ...
+
 
 @dataclasses.dataclass(frozen=True)
 class DynamicObstacleProps(ObstacleProps):
@@ -202,11 +235,11 @@ class RobotProps(EntityProps):
     record_data: bool
 
 
-def parse_Point3D(obj: Sequence, fill: float = 0.) -> Tuple[float, float, float]:
+def parse_Point3D(obj: Sequence, fill: float = 0.0) -> Tuple[float, float, float]:
     position: Tuple[float, ...] = tuple([float(v) for v in obj[:3]])
 
     if len(position) < 3:
-        position = (*position, *((3-len(position)) * [fill]))
+        position = (*position, *((3 - len(position)) * [fill]))
 
     return (position[0], position[1], position[2])
 
@@ -215,16 +248,10 @@ def parse_Point3D(obj: Sequence, fill: float = 0.) -> Tuple[float, float, float]
 class Obstacle(ObstacleProps):
     @staticmethod
     def parse(obj: Dict, model: ModelWrapper) -> "Obstacle":
-
         name = str(obj.get("name", ""))
         position = parse_Point3D(obj.get("pos", (0, 0, 0)))
 
-        return Obstacle(
-            name=name,
-            position=position,
-            model=model,
-            extra=obj
-        )
+        return Obstacle(name=name, position=position, model=model, extra=obj)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -233,18 +260,12 @@ class DynamicObstacle(DynamicObstacleProps):
 
     @staticmethod
     def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
-
         name = str(obj.get("name", ""))
         position = parse_Point3D(obj.get("pos", (0, 0, 0)))
-        waypoints = [parse_Point3D(waypoint)
-                     for waypoint in obj.get("waypoints", [])]
+        waypoints = [parse_Point3D(waypoint) for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
-            name=name,
-            position=position,
-            model=model,
-            waypoints=waypoints,
-            extra=obj
+            name=name, position=position, model=model, waypoints=waypoints, extra=obj
         )
 
 
@@ -252,12 +273,11 @@ class DynamicObstacle(DynamicObstacleProps):
 class Robot(RobotProps):
     @staticmethod
     def parse(obj: Dict, model: ModelWrapper) -> "Robot":
-
         name = str(obj.get("name", ""))
         position = parse_Point3D(obj.get("pos", (-1, -1, 0)))
-        planner = str(obj.get("planner",""))
-        agent = str(obj.get("agent",""))
-        record_data = bool(obj.get("record_data",False))
+        planner = str(obj.get("planner", ""))
+        agent = str(obj.get("agent", ""))
+        record_data = bool(obj.get("record_data", False))
 
         return Robot(
             name=name,
@@ -266,5 +286,5 @@ class Robot(RobotProps):
             model=model,
             agent=agent,
             record_data=record_data,
-            extra=obj
+            extra=obj,
         )

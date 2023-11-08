@@ -2,6 +2,7 @@
 import time
 import math
 import gym
+import gymnasium
 import os
 from stable_baselines3.common.env_checker import check_env
 
