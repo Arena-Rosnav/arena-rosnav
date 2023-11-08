@@ -8,6 +8,7 @@ from task_generator.shared import (
     ModelWrapper,
     Namespace,
     Obstacle,
+    ObstacleProps,
     PositionOrientation,
     Robot,
 )
@@ -25,6 +26,7 @@ DYNAMIC_OBS_BASENAME = "dynamic_obs_"
 
 
 class FlatlandManager(EntityManager):
+
     def __init__(self, namespace: Namespace, simulator: FlatlandSimulator):
         super().__init__(namespace, simulator)
         if not isinstance(simulator, FlatlandSimulator):
@@ -34,7 +36,7 @@ class FlatlandManager(EntityManager):
         self._static_obs_count = 0
         self._dynamic_obs_count = 0
 
-    def spawn_obstacle(self, obstacle: Obstacle):
+    def spawn_obstacle(self, obstacle: ObstacleProps):
         if not self._simulator.spawn_entity(obstacle):
             rospy.logwarn(f"Couldn't spawn obstacle '{obstacle.name}'")
 
@@ -96,7 +98,7 @@ class FlatlandManager(EntityManager):
         #         FlatlandManager._generate_name(is_dynamic=True, count=i)
         #     )
 
-        if not self._simulator.delete_all_entities(self._spawned_obstacles):
+        if not FlatlandSimulator.delete_all_entities(self._simulator, self._spawned_obstacles): # type: ignore #TODO change all spawns/moves/deletes in base sim to multi-requests 
             rospy.logwarn("Couldn't remove obstacles")
 
         self._spawned_obstacles = []

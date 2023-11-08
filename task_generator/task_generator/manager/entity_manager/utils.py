@@ -177,9 +177,7 @@ class YAMLUtil:
                 for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
                     plugin[prop] = os.path.join(
                         namespace.robot_ns,
-                        plugin.get(prop)
-                        if prop in plugin
-                        else YAMLUtil.PLUGIN_PROPS_DEFAULT_VAL[plugin["type"]][prop],
+                        plugin.get(prop, YAMLUtil.PLUGIN_PROPS_DEFAULT_VAL[plugin["type"]][prop])
                     )
 
                 # for prop in YAMLUtil.PLUGIN_PROPS_TO_CHANGE.get(plugin["type"], []):
