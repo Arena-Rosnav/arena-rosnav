@@ -12,22 +12,23 @@ class Room:
         # DIEGO: created this room for our scenario 
         if room == "arena":
             self.wallshere = False                # Diego: not sure what exactly to put here, False if there are no static obstacles I suppose
-            self.door_size = 1                    # size of the door is proportional to the size of the room
+            self.door_size = 1                    # old variable used in original project, but we don't have an "exit" door
             self.room_len = room_size
             self.room_with = room_size
             self.destination = np.array([0,0])   # destination the agents want to go to, Diego: set it to [0,0] for now but we need to change it (if this is possible)
             self.num_walls = 4
-            self.walls = np.array([[[0, 0], [0, room_size]], # Simulator Edge Wall 1
-                          [[0,room_size], [room_size, room_size]],  # Simulator Edge Wall 2
-                          [[room_size, room_size], [room_size, 0]],  # Simulator Edge Wall 3
-                          [[room_size, 0], [0, 0]] #Simulator Edge Wall 4
-                          #[[self.room_len, self.room_with/2-self.door_size/2], [self.room_len, 0]],  # Shelf 1
-                          #[[self.room_len, 0], [0, 0]],
-                          #[[..., ...], [..., ...]]
-                          ])                            # Shelf 2
+            self.walls = np.array([
+                        [[0, 0], [0, room_size]], # Simulator Edge Wall 1
+                        [[0,room_size], [room_size, room_size]],  # Simulator Edge Wall 2
+                        [[room_size, room_size], [room_size, 0]],  # Simulator Edge Wall 3
+                        [[room_size, 0], [0, 0]]    #Simulator Edge Wall 4
+                        #[[x, y], [x, y]],  # Shelf 1 
+                        #[[x, y], [x, y]], # Shelf 2
+                        #[[..., ...], [..., ...]] # Shelf n
+                        ])                            
             
             # agents spawn with x and y position between 1 and (room_size-1)
-            self.spawn_zone = np.array([[1, self.room_len-1], [1, self.room_with-1]])
+            self.spawn_zone = np.array([[0, self.room_len-1], [0, self.room_with-1]]) 
             
         if room == "square":
             self.wallshere = False
