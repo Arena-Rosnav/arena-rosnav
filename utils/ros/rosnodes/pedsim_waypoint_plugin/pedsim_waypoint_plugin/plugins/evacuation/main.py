@@ -19,13 +19,13 @@ class Plugin_Evacuation(WaypointPlugin):
         since more relaible methods of integration like ode45 and monto carlo take a lot a computational power.
         '''
         tau = 1                                         # time-step (s), TODO: figure out right value
-        num_steps = 1                                   # the number of force-calculation steps the simulation should go through (each callback should be 1 step?)
+        num_steps = 2                                   # the number of force-calculation steps the simulation should go through (each callback should be 1 step?)
         room_size = 500                                 # size of square room (m), TODO: has to be deleted or changed
         room = Room("square", room_size)                # kind of room the simulation runs in, TODO: has to be deleted or changed
         method = leap_frog                              # method used for integration -> leap-frog was the GoTo solution in the original project
         N = len(data.agents)                            # quantity of pedestrians aka the number of agents that are currently in the simulation
         
-        v = np.zeros((2, N, num_steps))                 # Three dimensional array of velocity, TODO: figure out right value
+        v = np.zeros((2, N, num_steps))                 # Three dimensional array of velocity, not used in leap frog strangely
         y = np.zeros((2, N, num_steps))                 # Three dimensional array of place: x = coordinates, y = Agent, z=Time, TODO: figure out right value
         for i in range(N):
             pos_x = data.agents[i].pose.position.x
