@@ -18,6 +18,7 @@ class Plugin_PySocialForce(WaypointPlugin):
         self.simulator = None
         self.groups = dict()
         self.group_count = 0
+        self.factor = 0.6
 
     def assign_groups(self,
                    agents: dict,
@@ -106,8 +107,8 @@ class Plugin_PySocialForce(WaypointPlugin):
         state, agent_idx = self.get_state_data(data.agents, data.groups, reset_velocity=self.first_call)
         groups = self.assign_groups(agent_idx, data.groups)
         state = self.overwrite_group_dest(state, groups)
-        print(state[:,4:6])
-        print(groups)
+
+        print("Groups:", groups)
 
         if self.first_call:
             # instantiate sim
@@ -124,6 +125,6 @@ class Plugin_PySocialForce(WaypointPlugin):
             # update sim
             self.simulator.peds.update(state, groups)
 
-        forces = self.simulator.compute_forces()
+        forces = self.factor * self.simulator.compute_forces()
 
         return self.map_force_to_feedback(data.agents, forces)
