@@ -5,6 +5,7 @@ import rospy
 import roslaunch
 import os
 import time
+import scipy.spatial.transform
 
 from nav_msgs.msg import Odometry
 import os
@@ -39,7 +40,8 @@ class RobotManager:
     _position: PositionOrientation
 
     _robot_radius: float
-    _goal_radius: float
+    _goal_tolerance_distance: float
+    _goal_tolerance_angle: float
 
     _robot: Robot
 
@@ -58,7 +60,10 @@ class RobotManager:
         self._start_pos = (0, 0, 0)
         self._goal_pos = (0, 0, 0)
 
-        self._goal_radius = rosparam_get(float, "goal_radius", 0.5)  # + 1
+        self._goal_tolerance_distance = rosparam_get(
+            float, "goal_radius", 0.5)  # + self._robot_radius
+        self._goal_tolerance_angle = rosparam_get(
+            float, "goal_tolerance_angle", 30 * np.pi / 180)
 
         self._robot = robot
 
@@ -168,9 +173,15 @@ class RobotManager:
         goal = self._goal_pos
 
         distance_to_goal: float = np.linalg.norm(
-            np.array(goal) - np.array(start))
+            np.array(goal[:2]) - np.array(start[:2]))
 
-        return distance_to_goal < self._goal_radius
+        angle_to_goal: float = np.pi - \
+            np.abs(np.abs(goal[2] - start[2]) - np.pi)
+
+        target_distance = self._goal_tolerance_distance
+        target_angle = self._goal_tolerance_angle
+
+        return distance_to_goal < target_distance and angle_to_goal < target_angle
 
     def _publish_goal_periodically(self, *args, **kwargs):
         if self._goal_pos is not None:
@@ -240,10 +251,21 @@ class RobotManager:
         )
 
     def _robot_pos_callback(self, data: Odometry):
+
         current_position = data.pose.pose
+        quat = current_position.orientation
+
+        rot = scipy.spatial.transform.Rotation.from_quat(
+            [
+                quat.x,
+                quat.y,
+                quat.z,
+                quat.w
+            ]
+        )
 
         self._position = (
             current_position.position.x,
             current_position.position.y,
-            current_position.orientation.z,
+            rot.as_euler("xyz")[2],
         )
