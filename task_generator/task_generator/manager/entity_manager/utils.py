@@ -146,7 +146,8 @@ class YAMLUtil:
                 return YAMLUtil.parse_yaml(file.read())
 
         else:
-            raise ValueError(f"can't process yaml descriptor of type {type(yaml)}")
+            raise ValueError(
+                f"can't process yaml descriptor of type {type(yaml)}")
 
     @staticmethod
     def serialize(obj: Any):
@@ -177,7 +178,8 @@ class YAMLUtil:
                 for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
                     plugin[prop] = os.path.join(
                         namespace.robot_ns,
-                        plugin.get(prop, YAMLUtil.PLUGIN_PROPS_DEFAULT_VAL[plugin["type"]][prop])
+                        plugin.get(
+                            prop, YAMLUtil.PLUGIN_PROPS_DEFAULT_VAL[plugin["type"]][prop])
                     )
 
                 # for prop in YAMLUtil.PLUGIN_PROPS_TO_CHANGE.get(plugin["type"], []):

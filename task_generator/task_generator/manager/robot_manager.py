@@ -99,14 +99,16 @@ class RobotManager:
             rospy.Duration(nsecs=int(0.25e9)), self._publish_goal_periodically
         )
 
-        rospy.Subscriber(self.namespace("odom"), Odometry, self._robot_pos_callback)
+        rospy.Subscriber(self.namespace("odom"), Odometry,
+                         self._robot_pos_callback)
 
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             return
 
         self._launch_robot()
 
-        self._robot_radius = rosparam_get(float, self.namespace("robot_radius"))
+        self._robot_radius = rosparam_get(
+            float, self.namespace("robot_radius"))
 
         # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
         self._clear_costmaps_srv = rospy.ServiceProxy(
@@ -134,7 +136,8 @@ class RobotManager:
         return self._is_goal_reached
 
     def move_robot_to_pos(self, position: PositionOrientation):
-        self._entity_manager.move_robot(name=self._robot.name, position=position)
+        self._entity_manager.move_robot(
+            name=self._robot.name, position=position)
 
     def reset(self, start_pos: PositionOrientation, goal_pos: PositionOrientation):
         """
@@ -144,7 +147,8 @@ class RobotManager:
 
         if self._robot.record_data:
             rospy.set_param(self.namespace("goal"), str(list(self._goal_pos)))
-            rospy.set_param(self.namespace("start"), str(list(self._start_pos)))
+            rospy.set_param(self.namespace("start"),
+                            str(list(self._start_pos)))
 
         self._publish_goal(self._goal_pos)
         self.move_robot_to_pos(self._start_pos)
@@ -163,7 +167,8 @@ class RobotManager:
         start = self._position
         goal = self._goal_pos
 
-        distance_to_goal: float = np.linalg.norm(np.array(goal) - np.array(start))
+        distance_to_goal: float = np.linalg.norm(
+            np.array(goal) - np.array(start))
 
         return distance_to_goal < self._goal_radius
 
@@ -212,7 +217,8 @@ class RobotManager:
 
         # Overwrite default move base params
         base_frame: str = rosparam_get(str, self.namespace("robot_base_frame"))
-        sensor_frame: str = rosparam_get(str, self.namespace("robot_sensor_frame"))
+        sensor_frame: str = rosparam_get(
+            str, self.namespace("robot_sensor_frame"))
 
         rospy.set_param(
             self.namespace("move_base", "global_costmap", "robot_base_frame"),
@@ -223,11 +229,13 @@ class RobotManager:
             os.path.join(self.name, base_frame),
         )
         rospy.set_param(
-            self.namespace("move_base", "local_costmap", "scan", "sensor_frame"),
+            self.namespace("move_base", "local_costmap",
+                           "scan", "sensor_frame"),
             os.path.join(self.name, sensor_frame),
         )
         rospy.set_param(
-            self.namespace("move_base", "global_costmap", "scan", "sensor_frame"),
+            self.namespace("move_base", "global_costmap",
+                           "scan", "sensor_frame"),
             os.path.join(self.name, base_frame),
         )
 

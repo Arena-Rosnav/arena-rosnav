@@ -71,7 +71,8 @@ class FlatlandManager(EntityManager):
             obstacle = dataclasses.replace(
                 obstacle,
                 model=ModelWrapper.from_model(
-                    FlatlandManager._generate_YAML_model(name=obs_name, is_dynamic=True)
+                    FlatlandManager._generate_YAML_model(
+                        name=obs_name, is_dynamic=True)
                 ),
             )
             obstacle = dataclasses.replace(
@@ -98,7 +99,8 @@ class FlatlandManager(EntityManager):
         #         FlatlandManager._generate_name(is_dynamic=True, count=i)
         #     )
 
-        if not FlatlandSimulator.delete_all_entities(self._simulator, self._spawned_obstacles): # type: ignore #TODO change all spawns/moves/deletes in base sim to multi-requests 
+        # TODO change all spawns/moves/deletes in base sim to multi-requests
+        if not FlatlandSimulator.delete_all_entities(self._simulator, self._spawned_obstacles):  # type: ignore # nopep8
             rospy.logwarn("Couldn't remove obstacles")
 
         self._spawned_obstacles = []
