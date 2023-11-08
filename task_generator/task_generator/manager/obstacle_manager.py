@@ -1,14 +1,10 @@
-import random
 from typing import Any, Callable, Collection, Iterator
 
-import numpy as np
-import yaml
 import xml.etree.ElementTree as ET
 
-from task_generator.constants import FlatlandRandomModel
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.map_manager import MapManager
-from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle
+from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.simulators.base_simulator import BaseSimulator
 
 from geometry_msgs.msg import Point
