@@ -34,7 +34,7 @@ class Utils:
         n_freespace_cells = len(free_space_indices[0])
         border_vertex = np.array([]).reshape(0, 2)
         border_vertices = np.array([]).reshape(0, 2)
-        for idx in [0, n_freespace_cells-4]:
+        for idx in [0, n_freespace_cells - 4]:
             y_in_cells, x_in_cells = free_space_indices[0][idx], free_space_indices[1][idx]
             y_in_meters = y_in_cells * map_.info.resolution + map_.info.origin.position.y
             x_in_meters = x_in_cells * map_.info.resolution + map_.info.origin.position.x
@@ -73,12 +73,12 @@ class Utils:
                                    [6.85, 7.05, 5.0, 16.4]])
         size = wall_occupancy.shape[0]
         for ranges in wall_occupancy:
-            height_low = int(ranges[0]/map_.info.resolution)
-            height_high = int(ranges[1]/map_.info.resolution)
-            width_low = int(ranges[2]/map_.info.resolution)
-            width_high = int(ranges[3]/map_.info.resolution)
-            height_grid = height_high-height_low
-            width_grid = width_high-width_low
+            height_low = int(ranges[0] / map_.info.resolution)
+            height_high = int(ranges[1] / map_.info.resolution)
+            width_low = int(ranges[2] / map_.info.resolution)
+            width_high = int(ranges[3] / map_.info.resolution)
+            height_grid = height_high - height_low
+            width_grid = width_high - width_low
             for i in range(height_grid):
                 y = height_low + i
                 for j in range(width_grid):
@@ -256,7 +256,8 @@ class _ModelLoader_URDF(_ModelLoader):
             ]).decode("utf-8")
 
         except subprocess.CalledProcessError as e:
-            rospy.logerr_once(f"error processing model {model} URDF file {model_path}. refusing to load.\n{e}\n{e.output.decode('utf-8')}")
+            rospy.logerr_once(
+                f"error processing model {model} URDF file {model_path}. refusing to load.\n{e}\n{e.output.decode('utf-8')}")
             return None
 
         else:
@@ -268,18 +269,22 @@ class _ModelLoader_URDF(_ModelLoader):
             )
             return model_obj
 
+
 T = TypeVar("T")
 _unspecified = rospy.client._Unspecified()
-def rosparam_get(cast:Type[T], param_name:str, default=_unspecified, strict: bool = False) -> T:
+
+
+def rosparam_get(cast: Type[T], param_name: str, default=_unspecified, strict: bool = False) -> T:
     val = rospy.get_param(param_name=param_name, default=default)
 
     if strict:
         if not isinstance(val, cast):
-            raise ValueError(f"param {param_name} is not of type {cast} but {type(val)} with val {val}")
+            raise ValueError(
+                f"param {param_name} is not of type {cast} but {type(val)} with val {val}")
     else:
         try:
             val = cast(val)
         except ValueError as e:
             raise ValueError(f"could not cast {val} to {cast}", e)
-    
+
     return val

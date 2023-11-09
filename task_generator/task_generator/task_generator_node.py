@@ -3,7 +3,7 @@
 import dataclasses
 import os
 import traceback
-from typing import Any, Dict, List
+from typing import Dict, List
 from rospkg import RosPack
 import rospkg
 import yaml
@@ -89,7 +89,8 @@ class TaskGenerator:
 
         # ParamsW
         self._task_mode = Constants.TaskMode(rosparam_get(str, "task_mode"))
-        self._entity_mode = Constants.EntityManager(rosparam_get(str, "entity_manager"))
+        self._entity_mode = Constants.EntityManager(
+            rosparam_get(str, "entity_manager"))
         self._auto_reset = rosparam_get(bool, "~auto_reset", True)
         self._train_mode = rosparam_get(bool, "train_mode", False)
 
@@ -155,7 +156,8 @@ class TaskGenerator:
             # self.reset_task()
 
             # Timers
-            rospy.Timer(rospy.Duration(nsecs=int(0.5e9)), self._check_task_status)
+            rospy.Timer(rospy.Duration(nsecs=int(0.5e9)),
+                        self._check_task_status)
 
         # SETUP
 
@@ -170,7 +172,8 @@ class TaskGenerator:
 
         rospy.wait_for_service("/distance_map")
 
-        service_client_get_map = rospy.ServiceProxy("/distance_map", GetDistanceMap)
+        service_client_get_map = rospy.ServiceProxy(
+            "/distance_map", GetDistanceMap)
 
         map_response = service_client_get_map()
         map_manager = MapManager(map_response)

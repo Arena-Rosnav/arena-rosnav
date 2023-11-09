@@ -114,7 +114,6 @@ class GuidedTask(BaseTask):
     def is_done(self) -> bool:
 
         for robot in self.robot_managers:
-            print(robot.name, robot.is_done)
             if robot.is_done:
                 self._waypoint_states[robot.name] += 1
                 self._waypoint_states[robot.name] %= len(self._waypoints)

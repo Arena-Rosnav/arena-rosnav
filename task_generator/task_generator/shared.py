@@ -262,7 +262,8 @@ class DynamicObstacle(DynamicObstacleProps):
     def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
         name = str(obj.get("name", ""))
         position = parse_Point3D(obj.get("pos", (0, 0, 0)))
-        waypoints = [parse_Point3D(waypoint) for waypoint in obj.get("waypoints", [])]
+        waypoints = [parse_Point3D(waypoint)
+                     for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
             name=name, position=position, model=model, waypoints=waypoints, extra=obj
