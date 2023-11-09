@@ -149,7 +149,11 @@ class ModelLoader:
     @property
     def models(self) -> Set[str]:
         if not len(self._models):
-            self._models = set(next(os.walk(self._model_dir))[1])
+            if os.path.isdir(self._model_dir):
+                self._models = set(next(os.walk(self._model_dir))[1])
+            else:
+                rospy.logwarn(f"Model directory {self._model_dir} does not exist. No models are provided.")
+                self._models = set()
 
         return self._models
 
@@ -256,7 +260,8 @@ class _ModelLoader_URDF(_ModelLoader):
             ]).decode("utf-8")
 
         except subprocess.CalledProcessError as e:
-            rospy.logerr_once(f"error processing model {model} URDF file {model_path}. refusing to load.\n{e}\n{e.output.decode('utf-8')}")
+            rospy.logerr_once(
+                f"error processing model {model} URDF file {model_path}. refusing to load.\n{e}\n{e.output.decode('utf-8')}")
             return None
 
         else:
@@ -268,18 +273,22 @@ class _ModelLoader_URDF(_ModelLoader):
             )
             return model_obj
 
+
 T = TypeVar("T")
 _unspecified = rospy.client._Unspecified()
-def rosparam_get(cast:Type[T], param_name:str, default=_unspecified, strict: bool = False) -> T:
+
+
+def rosparam_get(cast: Type[T], param_name: str, default=_unspecified, strict: bool = False) -> T:
     val = rospy.get_param(param_name=param_name, default=default)
 
     if strict:
         if not isinstance(val, cast):
-            raise ValueError(f"param {param_name} is not of type {cast} but {type(val)} with val {val}")
+            raise ValueError(
+                f"param {param_name} is not of type {cast} but {type(val)} with val {val}")
     else:
         try:
             val = cast(val)
         except ValueError as e:
             raise ValueError(f"could not cast {val} to {cast}", e)
-    
+
     return val

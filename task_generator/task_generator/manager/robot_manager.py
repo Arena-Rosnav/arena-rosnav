@@ -23,6 +23,7 @@ from task_generator.utils import Utils, rosparam_get
 
 from tf.transformations import quaternion_from_euler
 
+
 class RobotManager:
     """
     The robot manager manages the goal and start
@@ -52,8 +53,8 @@ class RobotManager:
 
         self._entity_manager = entity_manager
 
-        self._start_pos = (0, 0, 0)
-        self._goal_pos = (0, 0, 0)
+        self._start_pos = PositionOrientation(0, 0, 0)
+        self._goal_pos = PositionOrientation(0, 0, 0)
 
         self._goal_radius = rosparam_get(float, "goal_radius", 0.7) + 1
 
@@ -66,7 +67,7 @@ class RobotManager:
             self._robot_radius = rosparam_get(float, "robot_radius")
 
         self._robot = dataclasses.replace(
-            self._robot, 
+            self._robot,
             model=self._robot.model.override(
                 model_type=ModelType.YAML,
                 override=lambda model: model.replace(
@@ -87,7 +88,7 @@ class RobotManager:
             PoseStamped,
             queue_size=10
         )
-        
+
         self._pub_goal_timer = rospy.Timer(
             rospy.Duration(nsecs=int(0.25e9)),
             self._publish_goal_periodically
@@ -104,7 +105,8 @@ class RobotManager:
 
         self._launch_robot()
 
-        self._robot_radius = rosparam_get(float, self.namespace("robot_radius"))
+        self._robot_radius = rosparam_get(
+            float, self.namespace("robot_radius"))
 
         # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
         self._clear_costmaps_srv = rospy.ServiceProxy(
@@ -115,6 +117,10 @@ class RobotManager:
     @property
     def safe_distance(self) -> float:
         return self._robot_radius + Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST
+
+    @property
+    def model_name(self) -> str:
+        return self._robot.model.name
 
     @property
     def name(self) -> str:
@@ -143,7 +149,8 @@ class RobotManager:
 
         if self._robot.record_data:
             rospy.set_param(self.namespace("goal"), str(list(self._goal_pos)))
-            rospy.set_param(self.namespace("start"), str(list(self._start_pos)))
+            rospy.set_param(self.namespace("start"),
+                            str(list(self._start_pos)))
 
         self._publish_goal(self._goal_pos)
         self.move_robot_to_pos(self._start_pos)
@@ -163,8 +170,8 @@ class RobotManager:
         start = self._position
         goal = self._goal_pos
 
-        distance_to_goal: float = np.linalg.norm(
-            np.array(goal) - np.array(start))
+        distance_to_goal: float = float(
+            np.linalg.norm(np.array(goal) - np.array(start)))
 
         return distance_to_goal < self._goal_radius
 
@@ -181,7 +188,8 @@ class RobotManager:
         goal_msg.pose.position.y = goal[1]
         goal_msg.pose.position.z = 0
 
-        goal_msg.pose.orientation = Quaternion(*quaternion_from_euler(0.0, 0.0, goal[2], axes="sxyz"))
+        goal_msg.pose.orientation = Quaternion(
+            *quaternion_from_euler(0.0, 0.0, goal[2], axes="sxyz"))
 
         self._move_base_goal_pub.publish(goal_msg)
 
@@ -193,6 +201,7 @@ class RobotManager:
         rospy.loginfo(f"START WITH MODEL {self.namespace}")
 
         args = [
+            f"model:={self.model_name}",
             f"name:={self.name}",
             f"local_planner:={self._robot.planner}",
             f"namespace:={self.namespace}",
@@ -209,7 +218,8 @@ class RobotManager:
 
         # Overwrite default move base params
         base_frame: str = rosparam_get(str, self.namespace("robot_base_frame"))
-        sensor_frame: str = rosparam_get(str, self.namespace("robot_sensor_frame"))
+        sensor_frame: str = rosparam_get(
+            str, self.namespace("robot_sensor_frame"))
 
         rospy.set_param(
             self.namespace("move_base", "global_costmap", "robot_base_frame"),
@@ -220,15 +230,18 @@ class RobotManager:
             os.path.join(self.name, base_frame)
         )
         rospy.set_param(
-            self.namespace("move_base", "local_costmap", "scan", "sensor_frame"),
+            self.namespace("move_base", "local_costmap",
+                           "scan", "sensor_frame"),
             os.path.join(self.name, sensor_frame)
         )
         rospy.set_param(
-            self.namespace("move_base", "global_costmap", "scan", "sensor_frame"),
+            self.namespace("move_base", "global_costmap",
+                           "scan", "sensor_frame"),
             os.path.join(self.name, base_frame)
         )
 
     def _robot_pos_callback(self, data: Odometry):
         current_position = data.pose.pose
 
-        self._position = (current_position.position.x, current_position.position.y, current_position.orientation.z)
+        self._position = PositionOrientation(
+            current_position.position.x, current_position.position.y, current_position.orientation.z)

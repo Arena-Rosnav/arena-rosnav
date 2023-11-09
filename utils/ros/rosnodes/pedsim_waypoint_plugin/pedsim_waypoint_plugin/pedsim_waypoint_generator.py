@@ -16,9 +16,13 @@ class WaypointPluginName(Enum):
     PASSTHROUGH = "passthrough"
     SPINNY = "spinny"
     PYSOCIAL1 = "pysocial1"
+    PYSOCIAL2 = "pysocial2"
+    DEEPSOCIALFORCE = "deepsocialforce"
+    EVACUATION = "evacuation"
 
 
 InputMsg = pedsim_msgs.msg.WaypointPluginDataframe
+
 
 @dataclasses.dataclass
 class InputData:
@@ -34,14 +38,18 @@ OutputData = List[pedsim_msgs.msg.AgentFeedback]
 
 OutputMsg = pedsim_msgs.msg.AgentFeedbacks
 
+
 class WaypointPlugin:
     def callback(self, data: InputData) -> OutputData:
         raise NotImplementedError()
 
 
 T = TypeVar("T")
+
+
 def NList(l: Optional[List[T]]) -> List[T]:
     return [] if l is None else l
+
 
 class PedsimWaypointGenerator:
 
@@ -62,9 +70,12 @@ class PedsimWaypointGenerator:
         plugin_class = self.__registry.get(plugin_name)
 
         if plugin_class is None:
-            raise RuntimeError(f"plugin {plugin_name.value} not registered")
+            raise RuntimeError(f"Plugin {plugin_name.value} has no registered implementation.\nImplemented plugins: {[name.value for name in self.__registry.keys()]}")
 
-        plugin = plugin_class()
+        try:
+            plugin = plugin_class()
+        except Exception as e:
+            raise RuntimeError(f"Could not initialize plugin {plugin_name.value}. Aborting.") from e
 
         rospy.loginfo(
             f"starting pedsim_waypoint_generator with plugin {type(plugin).__name__}")
@@ -73,27 +84,29 @@ class PedsimWaypointGenerator:
             name=Constants.TOPIC_PUBLISH,
             data_class=OutputMsg,
             queue_size=1
-        )        
+        )
 
         def callback(dataframe: InputMsg):
 
+            if dataframe.agent_states is None or len(dataframe.agent_states) == 0:
+                return
+
             dataframe_data = InputData(
-                header = dataframe.header,
-                agents = NList(dataframe.agent_states),
-                robots = NList(dataframe.robot_states),
-                groups = NList(dataframe.simulated_groups),
-                waypoints = NList(dataframe.simulated_waypoints),
-                line_obstacles = NList(dataframe.line_obstacles)
+                header=dataframe.header,
+                agents=NList(dataframe.agent_states),
+                robots=NList(dataframe.robot_states),
+                groups=NList(dataframe.simulated_groups),
+                waypoints=NList(dataframe.simulated_waypoints),
+                line_obstacles=NList(dataframe.line_obstacles)
             )
 
             agent_states_data = plugin.callback(dataframe_data)
 
             publisher.publish(
                 OutputMsg(
-                    agents = agent_states_data
+                    agents=agent_states_data
                 )
             )
-            
 
         rospy.Subscriber(
             name=Constants.TOPIC_SUBSCRIBE,

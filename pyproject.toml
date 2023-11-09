@@ -27,6 +27,11 @@ mpi4py = "^3.1.4"
 gputil = "^1.4.0"
 tensorboardx = "^2.6"
 gym = "^0.22"
+opencv-python = "^4.8"
+
+# pedsim-waypoint-plugin deps
+pysocialforce = "^1.1.2"
+socialforce = "^0.2.3"
 
 [tool.poetry.dev-dependencies]
 

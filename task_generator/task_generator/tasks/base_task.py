@@ -6,7 +6,7 @@ import rospy
 
 from rosgraph_msgs.msg import Clock
 from task_generator.constants import Constants
-from task_generator.manager.map_manager import MapManager
+from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.utils import ModelLoader
@@ -15,7 +15,7 @@ from task_generator.utils import ModelLoader
 class Props_Manager:
     obstacle_manager: ObstacleManager
     robot_managers: List[RobotManager]
-    map_manager: MapManager
+    world_manager: WorldManager
 
 
 class Props_Modelloader:
@@ -44,16 +44,17 @@ class BaseTask(Props_):
         self,
         obstacle_manager: ObstacleManager,
         robot_managers: List[RobotManager],
-        map_manager: MapManager,
+        world_manager: WorldManager,
         namespace: str = "",
         *args, **kwargs
     ):
         self.namespace = namespace
-        self.namespace_prefix = f"/{namespace}/" if os.path.basename(namespace) else ""
+        self.namespace_prefix = f"/{namespace}/" if os.path.basename(
+            namespace) else ""
 
         self.obstacle_manager = obstacle_manager
         self.robot_managers = robot_managers
-        self.map_manager = map_manager
+        self.world_manager = world_manager
 
         rospy.Subscriber("/clock", Clock, self._clock_callback)
         self.last_reset_time = 0
