@@ -115,7 +115,7 @@ class Plugin_PySocialForce(WaypointPlugin):
             y_min = min(obs.start.y, obs.end.y)
             y_max = max(obs.start.y, obs.end.y)
 
-            obs_list.append(x_min, x_max, y_min, y_max)
+            obs_list.append([x_min, x_max, y_min, y_max])
 
         return obs_list
 
