@@ -4,6 +4,7 @@ import dataclasses
 import os
 import traceback
 from typing import Any, Dict, List
+import numpy as np
 from rospkg import RosPack
 import rospkg
 import yaml
@@ -163,6 +164,7 @@ class TaskGenerator:
         )
 
         map_response: GetDistanceMapResponse = service_client_get_map()
+        np.save("/home/vova/distmap.npz", np.array(map_response.data).reshape((map_response.info.height, map_response.info.width)))
         world_manager = WorldManager(world_map=WorldMap.from_distmap(distmap=map_response))
 
         if self._entity_mode == Constants.EntityManager.PEDSIM:

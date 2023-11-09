@@ -404,7 +404,7 @@ class PedsimManager(EntityManager):
         for obstacle_id, obstacle in self._known_obstacles.items():
             if purge >= obstacle.layer:
 
-                print(f"deleting {obstacle_id} in purge {purge}")
+                # print(f"deleting {obstacle_id} in purge {purge}")
 
                 # TODO remove this once actors can be deleted properly
                 if isinstance(self._simulator, GazeboSimulator) and isinstance(obstacle.obstacle, DynamicObstacle):

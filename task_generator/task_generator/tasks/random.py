@@ -1,4 +1,3 @@
-import time
 from typing import Generator, Optional
 
 
@@ -85,7 +84,7 @@ class RandomTask(BaseTask):
                 interactive_obstacles=interactive_obstacles,
                 dynamic_obstacles=dynamic_obstacles
             ))
-            time.sleep(1)
+            
             self.iters += 1
 
             return False

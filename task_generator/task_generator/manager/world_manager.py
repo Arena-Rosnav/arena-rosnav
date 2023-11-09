@@ -1,11 +1,9 @@
 from typing import Collection, List, Optional, Tuple
 import numpy as np
-import random
-import math
 import scipy.signal
 
 from task_generator.manager.utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls
-from task_generator.shared import Position, Waypoint
+from task_generator.shared import Position, PositionRadius
 
 
 class WorldManager:
@@ -16,34 +14,29 @@ class WorldManager:
     """
 
     _world: World
-    _walls: WorldWalls
-    _forbidden_zones: List[Waypoint]
-
-    _occupancy: np.ndarray
 
     def __init__(self, world_map: WorldMap, world_obstacles: Optional[Collection[WorldObstacleConfiguration]] = None):
         self.update_world(world_map=world_map, world_obstacles=world_obstacles)
-        self.init_forbidden_zones()
 
     @property
     def world(self) -> World:
         return self._world
+    
+    @property
+    def _shape(self) -> Tuple[int, int]:
+        return self._world.map.shape[0], self._world.map.shape[1]
 
     @property
     def _origin(self) -> Position:
-        return self.world.map.origin
+        return self._world.map.origin
 
     @property
     def _resolution(self) -> float:
-        return self.world.map.resolution
+        return self._world.map.resolution
 
     @property
     def walls(self) -> WorldWalls:
-        return self._walls
-
-    def update_map(self, map: WorldMap):
-        # TODO deprecate in favor of direct call to update_world
-        self.update_world(world_map=map)
+        return self._world.entities.walls
 
     def update_world(
         self,
@@ -56,9 +49,8 @@ class WorldManager:
             world_obstacles = list()
 
         walls = occupancy_to_walls(
-            occupancy_grid=world_map.occupancy.walls.grid,
-            transform=lambda p: Position(p[0] * world_map.resolution + world_map.origin[0],
-                                         (world_map.shape[0] - p[1]) * world_map.resolution + world_map.origin[1])
+            occupancy_grid=world_map.occupancy._walls.grid,
+            transform=world_map.tf_grid2pos
         )
 
         obstacles = configurations_to_obstacles(
@@ -76,26 +68,17 @@ class WorldManager:
         )
 
         for obstacle in self.world.entities.obstacles:
-            self.world.map.occupancy.obstacles.occupy(
-                Position(obstacle.position.x, obstacle.position.y), 1)
+            self.world.map.occupancy.obstacle_occupy(Position(obstacle.position.x, obstacle.position.y), 1)
 
-        self.init_forbidden_zones(
-            [obstacle.position for obstacle in self.world.entities.obstacles])
 
-    def init_forbidden_zones(self, init: Optional[List[Waypoint]] = None):
-        if init is None:
-            init = list()
-
-        self._forbidden_zones = init
-
-    def forbid(self, forbidden_zones: List[Waypoint]):
-        self._forbidden_zones += forbidden_zones
-
+    def forbid(self, forbidden_zones: List[Position]):
         for zone in forbidden_zones:
-            self.world.map.occupancy.forbidden.occupy(
-                Position(zone.x, zone.y), 1)
+            self.world.map.occupancy.forbidden_occupy(zone, 1)
 
-    def get_random_pos_on_map(self, safe_dist: float, forbid: bool = True, forbidden_zones: Optional[List[Waypoint]] = None) -> Waypoint:
+    def forbid_clear(self):
+        self._world.map.occupancy.forbidden_clear()
+
+    def get_positions_on_map(self, n: int, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> List[Position]:
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both
@@ -120,84 +103,81 @@ class WorldManager:
         # safe_dist is in meters so at first calc safe dist to distance on
         # map -> resolution of map is m / cell -> safe_dist in cells is
         # safe_dist / resolution
-        safe_dist_in_cells = math.ceil(
-            safe_dist / self._resolution) + 1
+
+        max_depth = 10
 
         if forbidden_zones is None:
             forbidden_zones = []
 
-        forbidden_zones_in_cells: List[Waypoint] = [
-            Waypoint(
-                math.ceil(point[0] / self._resolution),
-                math.ceil(point[1] / self._resolution),
-                math.ceil(point[2] / self._resolution)
-            )
-            for point in self._forbidden_zones + forbidden_zones
-        ]
+        fork = self._world.map.occupancy.fork()
 
-        # Now get index of all cells were dist is > safe_dist_in_cells
-        possible_cells: List[Tuple[np.intp, np.intp]] = np.array(
-            np.where(self._occupancy > safe_dist_in_cells)).transpose().tolist()
+        for zone in forbidden_zones:
+            fork.occupy(Position(zone.x, zone.y), zone.radius / self._resolution)
 
-        # return (random.randint(1,6), random.randint(1, 9), 0)
-        assert len(possible_cells) > 0, "No cells available"
+        available_positions = self._occupancy_to_available(occupancy=fork.grid, safe_dist=safe_dist / self._resolution)
 
-        # The position should not lie in the forbidden zones and keep the safe
-        # dist to these zones as well. We could remove all cells here but since
-        # we only need one position and the amount of cells can get very high
-        # we just pick positions at random and check if the distance to all
-        # forbidden zones is high enough
+        if not len(available_positions):
+            return [Position(x=0, y=0) for i in range(n)]
 
-        while len(possible_cells) > 0:
+        banned: np.ndarray = np.array([[]])
 
-            # Select a random cell
-            x, y = possible_cells.pop(random.randrange(len(possible_cells)))
+        min_dist: float = safe_dist / self._resolution
 
-            # Check if valid
-            if self._is_pos_valid(float(x), float(y), safe_dist_in_cells, forbidden_zones_in_cells):
-                break
+        def sample(target: int) -> Collection[Position]:
 
-        else:
-            raise Exception("can't find any non-occupied spaces")
+            result: List[Position] = list()
+            depth: int = 0
 
-        theta = random.uniform(-math.pi, math.pi)
+            to_produce = target
 
-        point: Waypoint = Waypoint(
-            float(
-                np.round(y * self._resolution + self._origin[0], 3)),
-            float(
-                np.round(x * self._resolution + self._origin[1], 3)),
-            theta
-        )
+            while depth < max_depth:
+
+                candidates = available_positions[np.random.choice(len(available_positions), to_produce, replace=False), :]
+
+                for candidate in candidates:
+                    if banned.size and np.any(np.linalg.norm(banned.T - candidate, axis=0) <= min_dist):
+                        continue;
+
+                    np.append(banned, candidate)
+                    result.append(self._world.map.tf_grid2pos((candidate[0], candidate[1])))
+
+                to_produce = target - len(result)
+                if to_produce <= 0:
+                    break;
+
+            else:
+                raise RuntimeError(f"Failed to find free position after {depth} tries")
+
+            return result
+
+        points = sample(n)
 
         if forbid:
-            self._forbidden_zones.append(point)
+            fork.commit()
 
-        return point
+        return list(points)
+    
+    def get_position_on_map(self, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> Position:
+        return self.get_positions_on_map(n=1, safe_dist=safe_dist, forbidden_zones=forbidden_zones)[0]
 
-    def _is_pos_valid(self, x: float, y: float, safe_dist: float, forbidden_zones: List[Waypoint]):
-        """
-        @safe_dist: minimal distance to the next obstacles for calculated positions
-        """
-        for p in forbidden_zones:
-            f_x, f_y, radius = p
+    def _occupancy_to_available(self, occupancy: np.ndarray, safe_dist: float) -> np.ndarray:
 
-            # euklidian distance to the forbidden zone
-            dist = math.floor(np.linalg.norm(
-                np.array([x, y]) - np.array([f_x, f_y]))) - radius
+        filt_size = int(2*safe_dist + 1)
+        filt = np.full((filt_size, filt_size), 1) / (filt_size ** 2)
 
-            if dist <= safe_dist:
-                return False
+        np.save("/home/vova/occupancy.npz", occupancy)
+        np.save("/home/vova/filter.npz", filt)
 
-        return True
-
-    def get_available_positions(self, safe_dist: float) -> Collection[np.ndarray]:
-        filt = np.full((int(2*safe_dist + 1), int(2*safe_dist + 1)), 1)
         spread = scipy.signal.convolve2d(
-            self._occupancy,
-            filt
+            WorldOccupancy.is_empty(occupancy).astype(np.float64),
+            filt,
+            mode="full",
+            boundary="fill",
+            fillvalue=False
         )
-        return np.where(spread == WorldOccupancy.EMPTY)
 
-    def get_random_available_position(self, safe_dist: float):
-        return np.random.choice(list(self.get_available_positions(safe_dist=safe_dist)))
+        np.save("/home/vova/spread.npz", spread)
+
+        return np.transpose(np.where(spread))
+
+    

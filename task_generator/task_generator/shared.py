@@ -61,9 +61,11 @@ PositionOrientation = collections.namedtuple(
     ("x", "y", "orientation")
 )
 
+PositionRadius = collections.namedtuple(
+    "PositionRadius",
+    ("x", "y", "radius")
+)
 
-Waypoint = PositionOrientation
-ForbiddenZone = PositionOrientation
 
 
 class ModelWrapper:
@@ -211,7 +213,7 @@ class ObstacleProps(EntityProps):
 
 @dataclasses.dataclass(frozen=True)
 class DynamicObstacleProps(ObstacleProps):
-    waypoints: List[Waypoint]
+    waypoints: List[PositionRadius]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -239,14 +241,14 @@ class Obstacle(ObstacleProps):
 
 @dataclasses.dataclass(frozen=True)
 class DynamicObstacle(DynamicObstacleProps):
-    waypoints: Iterable[Waypoint]
+    waypoints: Iterable[PositionRadius]
 
     @staticmethod
     def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
 
         name = str(obj.get("name", ""))
         position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
-        waypoints = [Waypoint(*waypoint)
+        waypoints = [PositionRadius(*waypoint)
                      for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(

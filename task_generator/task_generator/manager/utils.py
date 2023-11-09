@@ -7,6 +7,7 @@ import itertools
 import os
 import numpy as np
 from typing import Callable, Collection, Optional, Tuple, Dict, List
+import scipy.interpolate
 
 from rospkg import RosPack
 
@@ -19,8 +20,8 @@ from task_generator.utils import ModelLoader
 # TYPES
 
 
-WorldWall = Tuple[Position, Position]
-WorldWalls = Collection[WorldWall]
+_WorldWall = Tuple[Tuple[int, int], Tuple[int, int]]
+WorldWalls = Collection[_WorldWall]
 WorldObstacles = Collection[Obstacle]
 
 
@@ -46,15 +47,26 @@ class WorldOccupancy:
 
     _grid: np.ndarray
 
+    def __init__(self, grid: np.ndarray):
+        self._grid = grid
+
+    @staticmethod
+    def from_map(input_map: np.ndarray) -> "WorldOccupancy":
+        np.save("/home/vova/input_map.npz", input_map)
+        remap = scipy.interpolate.interp1d([input_map.max(),input_map.min()],[WorldOccupancy.EMPTY, WorldOccupancy.FULL])
+        np.save("/home/vova/output_map.npz", remap(input_map))
+        return WorldOccupancy(remap(input_map))
+
+    @staticmethod
+    def is_empty(grid: np.ndarray) -> np.ndarray:
+        return grid != WorldOccupancy.FULL
+
     @property
     def grid(self) -> np.ndarray:
         return self._grid
 
-    def __init__(self, grid: np.ndarray):
-        self._grid = grid
-
     def clear(self):
-        self.grid.fill(WorldOccupancy.FULL)
+        self.grid.fill(WorldOccupancy.EMPTY)
 
     def occupy(self, zone: Position, radius: float):
         self._grid[
@@ -64,25 +76,83 @@ class WorldOccupancy:
 
 
 class WorldLayers:
-    walls: WorldOccupancy      # walls
-    obstacles: WorldOccupancy  # intrinsic obstcales
-    forbidden: WorldOccupancy  # task obstacles
+    _walls: WorldOccupancy      # walls
+    _obstacle: WorldOccupancy  # intrinsic obstcales
+    _forbidden: WorldOccupancy  # task obstacles
 
     def __init__(self, walls: WorldOccupancy):
-        self.walls = walls
-        self.obstacles = WorldOccupancy(
+        self._walls = walls
+        self._obstacle = WorldOccupancy(
             np.full(walls.grid.shape, WorldOccupancy.EMPTY))
-        self.forbidden = WorldOccupancy(
+        self._forbidden = WorldOccupancy(
             np.full(walls.grid.shape, WorldOccupancy.EMPTY))
+        
+        self._combined_cache = None
+
+
+    _combined_cache: Optional[WorldOccupancy]
+
+    def _invalidate_combined_cache(self):
+        self._combined_cache = None
 
     @property
-    def combined_occupancy(self) -> WorldOccupancy:
-        return np.minimum.reduce([
-            self.walls.grid,
-            self.obstacles.grid,
-            self.forbidden.grid
-        ])
+    def _combined(self) -> WorldOccupancy:
+        if self._combined_cache is None:
+            self._combined_cache = WorldOccupancy(np.minimum.reduce([
+                self._walls.grid,
+                self._obstacle.grid,
+                self._forbidden.grid
+            ]))
 
+            np.save("/home/vova/occupancy_walls.npz", self._walls.grid)
+            np.save("/home/vova/occupancy_obstacle.npz", self._obstacle.grid)
+            np.save("/home/vova/occupancy_forbidden.npz", self._forbidden.grid)
+
+        return self._combined_cache
+
+    @property
+    def grid(self) -> np.ndarray:
+        return self._combined.grid
+
+    # obstacle interface
+    def obstacle_occupy(self, zone: Position, radius: float):
+        self._obstacle.occupy(zone=zone, radius=radius)
+        self._combined.occupy(zone=zone, radius=radius)
+
+    def obstacle_clear(self):
+        self._obstacle.clear()
+        self._invalidate_combined_cache()
+
+    # forbidden interface
+    def forbidden_occupy(self, zone: Position, radius: float):
+        self._forbidden.occupy(zone=zone, radius=radius)
+        self._combined.occupy(zone=zone, radius=radius)
+
+    def forbidden_clear(self):
+        self._forbidden.clear()
+        self._invalidate_combined_cache()
+
+    class WorldLayersFork:
+
+        _base: "WorldLayers"
+        _grid: WorldOccupancy
+
+        def __init__(self, base: "WorldLayers"):
+            self._base = base
+            self._grid = WorldOccupancy(self._base.grid.copy())
+
+        def commit(self):
+            self._base._forbidden = self._grid
+
+        def occupy(self, zone: Position, radius: float):
+            self._grid.occupy(zone=zone, radius=radius)
+
+        @property
+        def grid(self):
+            return self._grid.grid
+
+    def fork(self):
+        return WorldLayers.WorldLayersFork(self)
 
 @dataclasses.dataclass
 class WorldMap:
@@ -95,7 +165,7 @@ class WorldMap:
     def from_distmap(distmap: GetDistanceMapResponse) -> "WorldMap":
         return WorldMap(
             occupancy=WorldLayers(
-                walls=WorldOccupancy(
+                walls=WorldOccupancy.from_map(
                     np.array(distmap.data).reshape((distmap.info.height, distmap.info.width))
                 )
             ),
@@ -109,7 +179,13 @@ class WorldMap:
 
     @property
     def shape(self) -> Tuple[int, ...]:
-        return self.occupancy.walls.grid.shape
+        return self.occupancy._walls.grid.shape
+    
+    def tf_pos2grid(self, position: Position) -> Tuple[int, int]:
+        return np.round((position.y - self.origin[1]) / self.resolution), np.round(self.shape[1] - (position.x  - self.origin[0]) / self.resolution)
+
+    def tf_grid2pos(self, grid_pos: Tuple[int, int]) -> Position:
+        return Position(x=grid_pos[1] * self.resolution  + self.origin[1], y= (grid_pos[0]) * self.resolution + self.origin[0])
 
 
 @dataclasses.dataclass
@@ -175,9 +251,8 @@ class _WallLines(Dict[float, List[Tuple[float, float]]]):
         """
         get WorldWalls object
         """
-        if self._inverted:
+        if not self._inverted:
             return set([(Position(start, major), Position(end, major)) for major, segment in self.items() for start, end in segment])
-
         else:
             return set([(Position(major, start), Position(major, end)) for major, segment in self.items() for start, end in segment])
 
@@ -205,12 +280,11 @@ def RLE_2D(grid: np.ndarray) -> WorldWalls:
     return set().union(walls_x.lines, walls_y.lines)
 
 
-def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[[Position], Position]] = None) -> WorldWalls:
-    binary_grid = (occupancy_grid > occupancy_grid.mean()).astype(np.bool_)
-    walls = RLE_2D(grid=binary_grid)
+def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[[Tuple[int,int]], Position]] = None) -> WorldWalls:
+    walls = RLE_2D(grid=WorldOccupancy.is_empty(occupancy_grid))
 
     if transform is None:
-        transform = lambda p: p
+        transform = lambda p: Position(x=p[0], y=p[1])
 
     return [(transform(wall[0]), transform(wall[1])) for wall in walls]
 

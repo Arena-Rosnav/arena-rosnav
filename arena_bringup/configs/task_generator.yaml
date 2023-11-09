@@ -3,7 +3,7 @@ auto_reset: true
 
 task_mode:
   scenario:
-    scenario_file: map7.json
+    scenario_file: default.json
 
   parametrized:
     file: default.xml 

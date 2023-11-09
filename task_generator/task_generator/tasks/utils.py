@@ -9,14 +9,13 @@ from filelock import FileLock
 
 import numpy as np
 import yaml
-import genpy
 
 import rospy
 import rospkg
 import rospy
 from task_generator.constants import Constants
-from task_generator.manager.utils import WorldMap, WorldLayers, WorldOccupancy
-from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, Position, PositionOrientation, Waypoint
+from task_generator.manager.utils import WorldMap
+from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, Position, PositionOrientation, PositionRadius
 
 from task_generator.tasks.base_task import Props_
 from task_generator.utils import rosparam_get
@@ -46,7 +45,7 @@ class ITF_Obstacle(ITF_Base):
     def __init__(self, TASK: Props_):
         ITF_Base.__init__(self, TASK=TASK)
 
-    def create_dynamic_obstacle(self, waypoints: Optional[List[Waypoint]] = None, **kwargs) -> DynamicObstacle:
+    def create_dynamic_obstacle(self, waypoints: Optional[List[PositionRadius]] = None, n_waypoints: int = 2, **kwargs) -> DynamicObstacle:
         """
             Create dynamic obstacle from partial params.
             @name: Name of the obstacle
@@ -60,19 +59,13 @@ class ITF_Obstacle(ITF_Base):
 
         if waypoints is None:
 
-            safe_distance = 0.5
-            # the first waypoint
-            waypoints = [Waypoint(setup.position.x, setup.position.y, safe_distance)]
+            waypoints = [PositionRadius(setup.position.x, setup.position.y, 1)]
             safe_distance = 0.1  # the other waypoints don't need to avoid robot
-            for j in range(1):
-                dist = 0
-                x2, y2 = 0, 0
-                while dist < 8:
-                    [x2, y2, *
-                        _] = self.PROPS.world_manager.get_random_pos_on_map(safe_distance)
-                    dist = np.linalg.norm(
-                        [waypoints[-1][0] - x2, waypoints[-1][1] - y2])
-                waypoints.append(Waypoint(x2, y2, 1))
+
+            free_points = self.PROPS.world_manager.get_positions_on_map(n=n_waypoints, safe_dist=safe_distance)
+
+            for point in free_points:
+                waypoints.append(PositionRadius(point.x, point.y, safe_distance))
 
         return DynamicObstacle(**{
             **dataclasses.asdict(setup),
@@ -88,13 +81,12 @@ class ITF_Obstacle(ITF_Base):
         @extra: (optional) Extra properties to store
         """
 
-        safe_distance = 0.5
+        safe_distance = 1
 
         if position is None:
-            point: Waypoint = self.PROPS.world_manager.get_random_pos_on_map(
-                safe_distance)
+            point: Position = self.PROPS.world_manager.get_position_on_map(safe_distance)
             position = PositionOrientation(
-                point[0], point[1], np.pi * np.random.random())
+                point[0], point[1], safe_distance)
 
         if extra is None:
             extra = dict()
@@ -229,15 +221,15 @@ class ITF_Scenario(ITF_Base):
 
     def setup_scenario(self, scenario: Scenario):
 
-        self.PROPS.world_manager.update_world(
-            world_map=WorldMap(
-                occupancy=WorldLayers(
-                    walls=WorldOccupancy(scenario.map.occupancy)),
-                origin=Position(*scenario.map.yaml.get("origin", (0, 0, 0))[:2]),
-                resolution=float(scenario.map.yaml.get("resolution", 1.0)),
-                time=genpy.Time(0)
-            )
-        )
+        # self.PROPS.world_manager.update_world(
+        #     world_map=WorldMap(
+        #         occupancy=WorldLayers(
+        #             walls=WorldOccupancy.from_map(scenario.map.occupancy)),
+        #         origin=Position(*scenario.map.yaml.get("origin", (0, 0, 0))[:2]),
+        #         resolution=float(scenario.map.yaml.get("resolution", 1.0)),
+        #         time=genpy.Time(0)
+        #     )
+        # )
 
         self.PROPS.obstacle_manager.spawn_world_obstacles(
             self.PROPS.world_manager.world)
@@ -334,22 +326,25 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
         dynamic_obstacles: RandomList
     ):
 
-        robot_positions: List[Waypoint] = []  # may be needed in the future idk
+        robot_positions: List[PositionOrientation] = []  # may be needed in the future idk
+
+        self.PROPS.world_manager.forbid_clear()
 
         for manager in self.PROPS.robot_managers:
 
-            start_pos = self.PROPS.world_manager.get_random_pos_on_map(
-                manager.safe_distance)
-            goal_pos = self.PROPS.world_manager.get_random_pos_on_map(
-                manager.safe_distance, forbidden_zones=[start_pos])
+            start_pos = self.PROPS.world_manager.get_position_on_map(manager.safe_distance)
+            goal_pos = self.PROPS.world_manager.get_position_on_map(manager.safe_distance, forbidden_zones=[PositionRadius(start_pos.x, start_pos.y, 0.1)])
 
-            manager.reset(start_pos=start_pos, goal_pos=goal_pos)
+            start_poso = PositionOrientation(start_pos.x, start_pos.y, 0)
+            goal_poso = PositionOrientation(goal_pos.x, goal_pos.y, 0)
 
-            robot_positions.append(start_pos)
-            robot_positions.append(goal_pos)
+            manager.reset(start_pos=start_poso, goal_pos=goal_poso)
+
+            robot_positions.append(start_poso)
+            robot_positions.append(goal_poso)
 
         self.PROPS.obstacle_manager.reset()
-        self.PROPS.world_manager.init_forbidden_zones()
+        self.PROPS.obstacle_manager.spawn_world_obstacles(self.PROPS.world_manager.world)
 
         # Create static obstacles
         if n_static_obstacles:

@@ -10,7 +10,7 @@ import rospkg
 
 import yaml
 from task_generator.constants import Constants
-from task_generator.manager.utils import WorldMap
+from task_generator.manager.utils import WorldMap, WorldOccupancy
 
 from task_generator.shared import Model, ModelType, ModelWrapper, Obstacle, ObstacleProps, PositionOrientation
 from task_generator.utils import Utils
@@ -191,7 +191,7 @@ os.makedirs(tmp_dir, exist_ok=True)
 def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
 
     model_name = "__WALLS"
-    heightmap = world_map.occupancy.walls.grid
+    heightmap = np.logical_not(WorldOccupancy.is_empty(world_map.occupancy._walls.grid))[::-1,:]
 
     dtype = np.uint8
 
@@ -209,10 +209,10 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
         constant_values=0
     )
 
-    img_uri = os.path.join(tmp_dir, f"__WALLS_{np.random.randint(0,65515)}.png")
+    img_uri = os.path.join(tmp_dir, f"__WALLS.png")
     cv2.imwrite(
         img_uri,
-        np.iinfo(dtype).max - padded_heightmap.astype(dtype)
+        np.iinfo(dtype).max * padded_heightmap
     )
 
     z_offset = -0.1
@@ -244,6 +244,12 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
                             {mesh}
                         </geometry>
                     </visual>
+                    <!--<collision name="collision">
+                        <pose>0 0 0 0 0 0</pose>
+                        <geometry>
+                            {mesh}
+                        </geometry>
+                    </collision>-->
                 </link>
             </model>
         </sdf>
