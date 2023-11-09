@@ -125,6 +125,10 @@ class RobotManager:
         return self._robot_radius + Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST
 
     @property
+    def model_name(self) -> str:
+        return self._robot.model.name
+
+    @property
     def name(self) -> str:
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             return ""
@@ -210,8 +214,8 @@ class RobotManager:
         rospy.loginfo(f"START WITH MODEL {self.namespace}")
 
         args = [
+            f"model:={self.model_name}",
             f"name:={self.name}",
-            f"model:={self._robot.model.name}",
             f"namespace:={self.namespace}",
             f"frame:={self.name+'/' if self.name != '' else ''}",
             f"local_planner:={self._robot.planner}",

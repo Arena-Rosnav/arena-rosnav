@@ -28,6 +28,98 @@ class Config:
         "Value": True,
     }
 
+    TRACKED_PERSONS = {
+        "Alpha": 1,
+        "Class": "spencer_tracking_rviz_plugin/TrackedPersons",
+        "Color": "130; 130; 130",
+        "Color map offset": 0,
+        "Color transform": "SRL Tracking Colors",
+        "Delete after no. cycles": 100,
+        "Enabled": True,
+        "Excluded person IDs": "",
+        "Font color": "255; 255; 255",
+        "Font color style": "Same color",
+        "Font scale": 2,
+        "History as line": {
+            "Line width": 0.05000000074505806,
+            "Value": False
+        },
+        "History size": 100,
+        "Included person IDs": "",
+        "Min. history point distance": 0.4000000059604645,
+        "Missed alpha": 1,
+        "Name": "TrackedPersons",
+        "Occlusion alpha": 0.30000001192092896,
+        "Queue Size": 10,
+        "Render covariances": {
+            "Line width": 0.10000000149011612,
+            "Value": True
+        },
+        "Render detection IDs": False,
+        "Render history": True,
+        "Render person visual": True,
+        "Render track IDs": False,
+        "Render track state": False,
+        "Render velocities": True,
+        "Show DELETED tracks": False,
+        "Show MATCHED tracks": True,
+        "Show MISSED tracks": True,
+        "Show OCCLUDED tracks": True,
+        "Style": {
+            "Line width": 0.05,
+            "Scaling factor": 1,
+            "Value": "Cylinders"
+        },
+        "Topic": "/pedsim_visualizer/tracked_persons",
+        "Unreliable": False,
+        "Value": True,
+        "Z offset": {
+            "Use Z position from message": False,
+            "Value": 0
+        }
+    }
+
+    TRACKED_GROUPS = {
+        "Alpha": 1,
+        "Class": "spencer_tracking_rviz_plugin/TrackedGroups",
+        "Color": "130; 130; 130",
+        "Color map offset": 0,
+        "Color transform": "SRL Tracking Colors",
+        "Connect group members": True,
+        "Enabled": True,
+        "Excluded group IDs": "",
+        "Excluded person IDs": "",
+        "Font color": "255; 255; 255",
+        "Font color style": "Same color",
+        "Font scale": 2,
+        "Global history size": 1000,
+        "Group ID Z offset": 2,
+        "Included group IDs": "",
+        "Included person IDs": "",
+        "Name": "TrackedGroups",
+        "Occlusion alpha": 0.5,
+        "Queue Size": 10,
+        "Render group IDs": {
+            "Hide IDs of single-person groups": False,
+            "Value": True
+        },
+        "Render history": False,
+        "Single-person groups in constant color": True,
+        "Style": {
+            "Line width": 0.05,
+            "Scaling factor": 1,
+            "Value": "Cylinders"
+        },
+        "Topic": "/pedsim_visualizer/tracked_groups",
+        "Tracked persons topic": "",
+        "Unreliable": False,
+        "Value": True,
+        "Z offset": {
+            "Use Z position from message": False,
+            "Value": 0
+        }
+    }
+
     def create_model_display(robot_name, topic, color):
         return {
             "Class": "rviz/MarkerArray",
