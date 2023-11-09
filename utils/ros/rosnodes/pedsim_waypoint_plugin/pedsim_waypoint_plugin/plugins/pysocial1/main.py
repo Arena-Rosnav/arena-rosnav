@@ -13,12 +13,15 @@ import pysocialforce as psf
 
 @PedsimWaypointGenerator.register(WaypointPluginName.PYSOCIAL1)
 class Plugin_PySocialForce(WaypointPlugin):
+    FACTOR = 0.6
+    GROUP_DEST_DIST = 0.5
+
     def __init__(self):
         self.first_call = True
         self.simulator = None
+
         self.groups = dict()
         self.group_count = 0
-        self.factor = 0.6
 
     def assign_groups(self,
                    agents: dict,
@@ -48,20 +51,23 @@ class Plugin_PySocialForce(WaypointPlugin):
                         state: np.ndarray,
                         groups: List,
                         ) -> np.ndarray:
-        # TODO
+
         for group in groups:
             leader = group[0]
-
+            
             for i in range(1, len(group)):
                 member = group[i]
-                state[member, 4] = state[leader, 4]
-                state[member, 5] = state[leader, 5]
+                
+                row = (i // 8) + 1
+                x_off = (1 if (i + 1) % 8 < 3 else (-1 if 3 < (i + 1) % 8 < 7 else 0)) * row * self.GROUP_DEST_DIST
+                y_off = (1 if i % 8 > 4 else (-1 if 0 < i % 8 < 4 else 0)) * row * self.GROUP_DEST_DIST
+                state[member, 4] = state[leader, 4] + x_off
+                state[member, 5] = state[leader, 5] + y_off
 
         return state
 
-    @classmethod
-    def get_state_data(cls, 
-                       agents: List[pedsim_msgs.msg.AgentState], 
+    @staticmethod
+    def get_state_data(agents: List[pedsim_msgs.msg.AgentState], 
                        groups: List[pedsim_msgs.msg.AgentGroup],
                        reset_velocity: bool = False
                        ) -> np.ndarray:
@@ -83,9 +89,8 @@ class Plugin_PySocialForce(WaypointPlugin):
         
         return state, idx_assignment
     
-    @classmethod
-    def map_force_to_feedback(cls,
-                              agents: List[pedsim_msgs.msg.AgentState],
+    @staticmethod
+    def map_force_to_feedback(agents: List[pedsim_msgs.msg.AgentState],
                               force: np.ndarray
                               ) -> List[pedsim_msgs.msg.AgentFeedback]:
         feedbacks = list()
@@ -98,6 +103,21 @@ class Plugin_PySocialForce(WaypointPlugin):
             feedbacks.append(feedback)
         
         return feedbacks
+    
+    @staticmethod
+    def extract_obstacles(obstacles: List[pedsim_msgs.msg.LineObstacle]
+                          ) -> List[List[int]]:
+        obs_list = list()
+
+        for obs in obstacles:
+            x_min = min(obs.start.x, obs.end.x)
+            x_max = max(obs.start.x, obs.end.x)
+            y_min = min(obs.start.y, obs.end.y)
+            y_max = max(obs.start.y, obs.end.y)
+
+            obs_list.append(x_min, x_max, y_min, y_max)
+
+        return obs_list
 
 
     def callback(self, data: InputData) -> OutputData:
@@ -109,12 +129,15 @@ class Plugin_PySocialForce(WaypointPlugin):
         state = self.overwrite_group_dest(state, groups)
 
         print("Groups:", groups)
+        print(state[:, 4:6])
 
         if self.first_call:
             # instantiate sim
             self.first_call = False
             # TODO: hard-coded -> remove once map edges are in line obstacles
-            obs = [[0.0, 25.0, 0.5, 0.5], [0.0, 25.0, 20.5, 20.5], [0.5, 0.5, 0.0, 21.0], [24.5, 24.5, 0.0, 21.0]]
+            # obs = [[0.0, 25.0, 0.5, 0.5], [0.0, 25.0, 20.5, 20.5], [0.5, 0.5, 0.0, 21.0], [24.5, 24.5, 0.0, 21.0]]
+            obs = self.extract_obstacles(data.line_obstacles)
+            print(obs)
             self.simulator = psf.Simulator(
                 state=state,
                 groups=groups,
@@ -125,6 +148,6 @@ class Plugin_PySocialForce(WaypointPlugin):
             # update sim
             self.simulator.peds.update(state, groups)
 
-        forces = self.factor * self.simulator.compute_forces()
+        forces = self.FACTOR * self.simulator.compute_forces()
 
         return self.map_force_to_feedback(data.agents, forces)
