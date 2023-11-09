@@ -92,7 +92,8 @@ class FlatlandSimulator(BaseSimulator):
         pass
 
     def delete_entity(self, name):
-        res: DeleteModelResponse = self._delete_model_srv(DeleteModelRequest(name=name))
+        res: DeleteModelResponse = self._delete_model_srv(
+            DeleteModelRequest(name=name))
         return bool(res.success)
 
     def spawn_entity(self, entity):
@@ -105,9 +106,9 @@ class FlatlandSimulator(BaseSimulator):
         request.name = entity.name
         request.ns = self._namespace(entity.name)
         request.pose = Pose2D(
-            x=entity.position[0],
-            y=entity.position[1],
-            theta=entity.position[2]
+            x=entity.position.x,
+            y=entity.position.y,
+            theta=entity.position.orientation
         )
 
         res = self.spawn_model(model.type, request)
@@ -146,5 +147,3 @@ class FlatlandSimulator(BaseSimulator):
     #     request.models = models
 
     #     self._spawn_models_from_string_srv(request)
-
-

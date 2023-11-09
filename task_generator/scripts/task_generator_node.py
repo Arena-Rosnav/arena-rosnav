@@ -4,6 +4,7 @@ import dataclasses
 import os
 import traceback
 from typing import Any, Dict, List
+import numpy as np
 from rospkg import RosPack
 import rospkg
 import yaml
@@ -12,6 +13,7 @@ import rospy
 from std_msgs.msg import Int16, Empty as EmptyMsg
 from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
 from task_generator.manager.robot_manager import RobotManager
+from task_generator.manager.utils import WorldMap
 from task_generator.shared import ModelWrapper, Namespace, Robot, gen_init_pos
 from task_generator.simulators.base_simulator import BaseSimulator
 
@@ -25,12 +27,12 @@ from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
 from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
 from task_generator.simulators.simulator_factory import SimulatorFactory
 
-from task_generator.manager.map_manager import MapManager
+from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
 
-from map_distance_server.srv import GetDistanceMap
+from map_distance_server.srv import GetDistanceMap, GetDistanceMapResponse
 
 
 def create_default_robot_list(robot_model: ModelWrapper, name: str, planner: str, agent: str) -> List[Robot]:
@@ -161,15 +163,15 @@ class TaskGenerator:
             GetDistanceMap
         )
 
-        map_response = service_client_get_map()
-        map_manager = MapManager(map_response)
+        map_response: GetDistanceMapResponse = service_client_get_map()
+        world_manager = WorldManager(world_map=WorldMap.from_distmap(distmap=map_response))
 
         if self._entity_mode == Constants.EntityManager.PEDSIM:
             self._entity_manager = PedsimManager(namespace=self._namespace, simulator=self._env_wrapper)
         else:
             self._entity_manager = EntityManager(namespace=self._namespace, simulator=self._env_wrapper)
 
-        obstacle_manager = ObstacleManager(namespace=self._namespace, map_manager=map_manager, simulator=self._env_wrapper, dynamic_manager=self._entity_manager)
+        obstacle_manager = ObstacleManager(namespace=self._namespace, world_manager=world_manager, simulator=self._env_wrapper, entity_manager=self._entity_manager)
 
         robot_managers = self._create_robot_managers()
 
@@ -182,7 +184,7 @@ class TaskGenerator:
         task = TaskFactory.instantiate(self._task_mode)(
             obstacle_manager=obstacle_manager,
             robot_managers=robot_managers,
-            map_manager=map_manager,
+            world_manager=world_manager,
             namespace=self._namespace,
             **kwargs
         )
