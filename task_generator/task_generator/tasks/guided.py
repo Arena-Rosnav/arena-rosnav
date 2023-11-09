@@ -1,0 +1,143 @@
+from typing import Dict, Generator, List, Optional
+import rospy
+
+
+from task_generator.constants import Constants
+from task_generator.shared import PositionOrientation
+from task_generator.tasks.task_factory import TaskFactory
+from task_generator.tasks.base_task import BaseTask
+from task_generator.tasks.utils import ITF_Random, RandomList
+
+from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
+from tf.transformations import euler_from_quaternion
+
+@TaskFactory.register(Constants.TaskMode.GUIDED)
+class GuidedTask(BaseTask):
+    """
+        The random task spawns static and dynamic
+        obstacles on every reset and will create
+        a new robot start and goal position for
+        each task.
+    """
+
+    itf_random: ITF_Random
+
+    _gen_static: Generator[int, None, None]
+    _gen_interactive: Generator[int, None, None]
+    _gen_dynamic: Generator[int, None, None]
+
+    _static_obstacles: RandomList
+    _interactive_obstacles: RandomList
+    _dynamic_obstacles: RandomList
+
+    _is_done: bool
+    TOPIC_ADD_WAYPOINT = "/goalpose"
+    TOPIC_RESET = "/initialpose"
+    _waypoints: List[PositionOrientation]
+    _waypoint_states: Dict[str, int]
+
+    def __init__(self, **kwargs):
+        BaseTask.__init__(self, **kwargs)
+
+        self.itf_random = ITF_Random(self)
+
+        obstacle_ranges = self.itf_random.load_obstacle_ranges()
+        self._gen_static = ITF_Random.randrange_generator(
+            obstacle_ranges.static)
+        self._gen_interactive = ITF_Random.randrange_generator(
+            obstacle_ranges.interactive)
+        self._gen_dynamic = ITF_Random.randrange_generator(
+            obstacle_ranges.dynamic)
+
+        self._static_obstacles,\
+            self._interactive_obstacles,\
+            self._dynamic_obstacles = self.itf_random.load_obstacle_list()
+
+        self.iters = 0
+        self._is_done = False
+
+        self._waypoints = [(self.map_manager._origin.x, self.map_manager._origin.y, 0)]
+        self._waypoint_states = {robot.name:0 for robot in self.robot_managers}
+        self._reset_waypoints()
+
+        rospy.Subscriber(self.TOPIC_ADD_WAYPOINT, PoseStamped, self._add_waypoint)
+        rospy.Subscriber(self.TOPIC_RESET, PoseWithCovarianceStamped, self._reset_waypoints)
+
+    @BaseTask.reset_helper(parent=BaseTask)
+    def reset(
+            self,
+            n_static_obstacles: Optional[int] = None,
+            n_interactive_obstacles: Optional[int] = None,
+            n_dynamic_obstacles: Optional[int] = None,
+            static_obstacles: Optional[RandomList] = None,
+            interactive_obstacles: Optional[RandomList] = None,
+            dynamic_obstacles: Optional[RandomList] = None,
+            **kwargs):
+
+        if n_static_obstacles is None:
+            n_static_obstacles = next(self._gen_static)
+
+        if n_interactive_obstacles is None:
+            n_interactive_obstacles = next(self._gen_interactive)
+
+        if n_dynamic_obstacles is None:
+            n_dynamic_obstacles = next(self._gen_dynamic)
+
+        if static_obstacles is None:
+            static_obstacles = self._static_obstacles
+
+        if interactive_obstacles is None:
+            interactive_obstacles = self._interactive_obstacles
+
+        if dynamic_obstacles is None:
+            dynamic_obstacles = self._dynamic_obstacles
+
+        def callback():
+
+            self.obstacle_manager.respawn(callback=lambda: self.itf_random.setup_random(
+                n_static_obstacles=n_static_obstacles,
+                n_interactive_obstacles=n_interactive_obstacles,
+                n_dynamic_obstacles=n_dynamic_obstacles,
+                static_obstacles=static_obstacles,
+                interactive_obstacles=interactive_obstacles,
+                dynamic_obstacles=dynamic_obstacles
+            ))
+            
+            self.iters += 1
+
+            return False
+
+        return {}, callback
+
+
+    @property
+    def is_done(self) -> bool:
+
+        for robot in self.robot_managers:
+            print(robot.name, robot.is_done)
+            if robot.is_done:
+                self._waypoint_states[robot.name] += 1
+                self._waypoint_states[robot.name] %= len(self._waypoints)
+                robot.reset(start_pos=None, goal_pos=self._waypoints[self._waypoint_states[robot.name]])
+
+        if self._is_done:
+            self._is_done = False
+            return True
+        return False
+    
+    def _add_waypoint(self, pos: PoseStamped):
+        print("added waypoint")
+        self._waypoints.append(
+            (
+                pos.pose.position.x,
+                pos.pose.position.y,
+                pos.pose.orientation.z
+            )
+        )
+
+    def _reset_waypoints(self, *args, **kwargs):
+        print("reset waypoints")
+        for robot in self._waypoint_states:
+            self._waypoint_states[robot] = 0
+        self._waypoints = self._waypoints[:1]
+        self.reset(lambda:None)

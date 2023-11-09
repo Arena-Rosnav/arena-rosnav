@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Optional
 
 import numpy as np
 import rospy
@@ -140,10 +141,16 @@ class RobotManager:
     def move_robot_to_pos(self, position: PositionOrientation):
         self._entity_manager.move_robot(name=self._robot.name, position=position)
 
-    def reset(self, start_pos: PositionOrientation, goal_pos: PositionOrientation):
+    def reset(self, start_pos: Optional[PositionOrientation], goal_pos: PositionOrientation):
         """
         Publishes start and goal to data_recorder, publishes goal to move_base
         """
+
+        if start_pos is None:
+            start_pos = self._start_pos
+        else:
+            self.move_robot_to_pos(start_pos)
+
         self._start_pos, self._goal_pos = start_pos, goal_pos
 
         if self._robot.record_data:
@@ -151,7 +158,6 @@ class RobotManager:
             rospy.set_param(self.namespace("start"), str(list(self._start_pos)))
 
         self._publish_goal(self._goal_pos)
-        self.move_robot_to_pos(self._start_pos)
 
         time.sleep(0.1)
 
@@ -167,7 +173,7 @@ class RobotManager:
         start = self._position
         goal = self._goal_pos
 
-        distance_to_goal: float = np.linalg.norm(np.array(goal) - np.array(start))
+        distance_to_goal: float = np.linalg.norm(np.array(goal[:2]) - np.array(start[:2]))
 
         return distance_to_goal < self._goal_radius
 
