@@ -116,9 +116,6 @@ class WorldManager:
 
         available_positions = self._occupancy_to_available(occupancy=fork.grid, safe_dist=safe_dist / self._resolution)
 
-        if not len(available_positions):
-            return [Position(x=0, y=0) for i in range(n)]
-
         banned: np.ndarray = np.array([[]])
 
         min_dist: float = safe_dist / self._resolution
@@ -165,19 +162,14 @@ class WorldManager:
         filt_size = int(2*safe_dist + 1)
         filt = np.full((filt_size, filt_size), 1) / (filt_size ** 2)
 
-        np.save("/home/vova/occupancy.npz", occupancy)
-        np.save("/home/vova/filter.npz", filt)
-
         spread = scipy.signal.convolve2d(
-            WorldOccupancy.is_empty(occupancy).astype(np.float64),
+            WorldOccupancy.not_full(occupancy).astype(np.uint8) * np.iinfo(np.uint8).max,
             filt,
             mode="full",
             boundary="fill",
-            fillvalue=False
+            fillvalue=int(WorldOccupancy.FULL)
         )
 
-        np.save("/home/vova/spread.npz", spread)
-
-        return np.transpose(np.where(spread))
+        return np.transpose(np.where(WorldOccupancy.empty(spread)))
 
     

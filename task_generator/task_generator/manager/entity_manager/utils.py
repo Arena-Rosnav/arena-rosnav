@@ -191,7 +191,7 @@ os.makedirs(tmp_dir, exist_ok=True)
 def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
 
     model_name = "__WALLS"
-    heightmap = np.logical_not(WorldOccupancy.is_empty(world_map.occupancy._walls.grid))[::-1,:]
+    heightmap = np.logical_not(WorldOccupancy.not_full(world_map.occupancy._walls.grid))[::-1,:]
 
     dtype = np.uint8
 

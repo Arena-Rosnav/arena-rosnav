@@ -52,14 +52,24 @@ class WorldOccupancy:
 
     @staticmethod
     def from_map(input_map: np.ndarray) -> "WorldOccupancy":
-        np.save("/home/vova/input_map.npz", input_map)
         remap = scipy.interpolate.interp1d([input_map.max(),input_map.min()],[WorldOccupancy.EMPTY, WorldOccupancy.FULL])
-        np.save("/home/vova/output_map.npz", remap(input_map))
         return WorldOccupancy(remap(input_map))
 
     @staticmethod
-    def is_empty(grid: np.ndarray) -> np.ndarray:
-        return grid != WorldOccupancy.FULL
+    def empty(grid: np.ndarray) -> np.ndarray:
+        return grid >= (WorldOccupancy.FULL + WorldOccupancy.EMPTY) / 2
+    
+    @staticmethod
+    def not_empty(grid: np.ndarray) -> np.ndarray:
+        return grid < WorldOccupancy.EMPTY
+    
+    @staticmethod
+    def full(grid: np.ndarray) -> np.ndarray:
+        return grid <= (WorldOccupancy.FULL + WorldOccupancy.EMPTY) / 2
+    
+    @staticmethod
+    def not_full(grid: np.ndarray) -> np.ndarray:
+        return grid > WorldOccupancy.FULL
 
     @property
     def grid(self) -> np.ndarray:
@@ -103,10 +113,6 @@ class WorldLayers:
                 self._obstacle.grid,
                 self._forbidden.grid
             ]))
-
-            np.save("/home/vova/occupancy_walls.npz", self._walls.grid)
-            np.save("/home/vova/occupancy_obstacle.npz", self._obstacle.grid)
-            np.save("/home/vova/occupancy_forbidden.npz", self._forbidden.grid)
 
         return self._combined_cache
 
@@ -281,7 +287,7 @@ def RLE_2D(grid: np.ndarray) -> WorldWalls:
 
 
 def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[[Tuple[int,int]], Position]] = None) -> WorldWalls:
-    walls = RLE_2D(grid=WorldOccupancy.is_empty(occupancy_grid))
+    walls = RLE_2D(grid=WorldOccupancy.not_full(occupancy_grid))
 
     if transform is None:
         transform = lambda p: Position(x=p[0], y=p[1])

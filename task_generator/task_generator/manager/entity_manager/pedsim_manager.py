@@ -424,16 +424,15 @@ class PedsimManager(EntityManager):
     def _interactive_actor_poses_callback(self, actors: Waypoints):
         waypoints: List[Waypoint] = actors.waypoints or []
 
-        # only once
-        if rosparam_get(bool, "respawn_interactive", False):
-            for actor in filter(lambda x: "interactive" in x.name, waypoints):
-                self._respawn_obstacle(actor)
-            rospy.set_param("respawn_interactive", False)
+        # TODO unclean
+        if isinstance(self._simulator, FlatlandSimulator):
+            return
 
-        if rosparam_get(bool, "respawn_static", False):
-            for actor in filter(lambda x: "static" in x.name, waypoints):
-                self._respawn_obstacle(actor)
-            rospy.set_param("respawn_static", False)
+        for actor in filter(lambda x: "interactive" in x.name, waypoints):
+            self._respawn_obstacle(actor)
+
+        for actor in filter(lambda x: "static" in x.name, waypoints):
+            self._respawn_obstacle(actor)
 
     def _dynamic_actor_poses_callback(self, actors: AgentStates):
         # TODO unclean
