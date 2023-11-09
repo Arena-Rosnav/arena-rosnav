@@ -38,6 +38,11 @@ class RobotManager:
 
     _start_pos: PositionOrientation
     _goal_pos: PositionOrientation
+
+    @property
+    def goal_pos(self) -> PositionOrientation:
+        return self._goal_pos
+    
     _position: PositionOrientation
 
     _robot_radius: float

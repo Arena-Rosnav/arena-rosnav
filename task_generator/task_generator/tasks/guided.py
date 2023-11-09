@@ -56,7 +56,7 @@ class GuidedTask(BaseTask):
         self.iters = 0
         self._is_done = False
 
-        self._waypoints = [(self.map_manager._origin.x, self.map_manager._origin.y, 0)]
+        self._waypoints = []
         self._waypoint_states = {robot.name:0 for robot in self.robot_managers}
         self._reset_waypoints()
 
@@ -115,9 +115,10 @@ class GuidedTask(BaseTask):
 
         for robot in self.robot_managers:
             if robot.is_done:
+                waypoints = self._waypoints or [robot.goal_pos]
                 self._waypoint_states[robot.name] += 1
-                self._waypoint_states[robot.name] %= len(self._waypoints)
-                robot.reset(start_pos=None, goal_pos=self._waypoints[self._waypoint_states[robot.name]])
+                self._waypoint_states[robot.name] %= len(waypoints)
+                robot.reset(start_pos=None, goal_pos=waypoints[self._waypoint_states[robot.name]])
 
         if self._is_done:
             self._is_done = False
