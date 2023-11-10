@@ -167,7 +167,7 @@ class RobotManager:
         start = self._position
         goal = self._goal_pos
 
-        distance_to_goal: float = float(np.linalg.norm(np.array(goal) - np.array(start)))
+        distance_to_goal: float = float(np.linalg.norm(np.array(goal[:2]) - np.array(start[:2])))
 
         return distance_to_goal < self._goal_radius
 

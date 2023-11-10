@@ -29,10 +29,10 @@
     </include>
   </group>
 
-  <arg name="odom_topic" value="/$(arg namespace)/odom" />
+  <arg name="odom_topic" value="$(arg namespace)/odom" />
 
-  <remap from="$(arg odom_topic)" to="/odom" if="$(eval arg('complexity') == 1)" />
-  <remap from="$(arg odom_topic)" to="/$(arg namespace)/odom_amcl"
+  <remap from="$(arg odom_topic)" to="$(arg namespace)/odom" if="$(eval arg('complexity') == 1)" />
+  <remap from="$(arg odom_topic)" to="$(arg namespace)/odom_amcl"
     if="$(eval arg('complexity') > 1)" />
 
   <group ns="$(arg namespace)">
