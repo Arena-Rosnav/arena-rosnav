@@ -59,14 +59,14 @@ class EntityManager:
         Prepares obstacles for reuse or removal.
         """
         raise NotImplementedError()
-    
+
     def remove_obstacles(self, purge: bool = True):
         """
         Removes obstacles from simulator.
         @purge: if False, only remove unused obstacles
         """
         raise NotImplementedError()
-    
+
     def spawn_robot(self, robot: Robot):
         """
         Spawns a robot.

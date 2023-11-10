@@ -16,7 +16,7 @@ from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
 
-from task_generator.shared import ModelType
+from task_generator.shared import ModelType, RobotProps
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -74,7 +74,7 @@ class GazeboSimulator(BaseSimulator):
     def after_reset_task(self):
         try:
             self._unpause()
-        except rospy.service.ServiceException as e: # gazebo isn't the most reliable
+        except rospy.service.ServiceException as e:  # gazebo isn't the most reliable
             rospy.logwarn(e)
 
     # ROBOT
@@ -111,20 +111,24 @@ class GazeboSimulator(BaseSimulator):
                 z=0
             ),
             orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz")
-        )
+                                   )
         )
         request.robot_namespace = self._namespace(entity.name)
         request.reference_frame = "world"
 
-        rospy.set_param(request.robot_namespace("robot_description"), model.description)
-        rospy.set_param(request.robot_namespace("tf_prefix"), str(request.robot_namespace))
+        if isinstance(entity, RobotProps):
+            rospy.set_param(request.robot_namespace(
+                "robot_description"), model.description)
+            rospy.set_param(request.robot_namespace(
+                "tf_prefix"), str(request.robot_namespace))
 
         res = self.spawn_model(model.type, request)
 
         return res.success
 
     def delete_entity(self, name):
-        res: DeleteModelResponse = self._remove_model_srv(DeleteModelRequest(model_name=name))
+        res: DeleteModelResponse = self._remove_model_srv(
+            DeleteModelRequest(model_name=name))
         return bool(res.success)
 
     def _publish_goal(self, goal):
