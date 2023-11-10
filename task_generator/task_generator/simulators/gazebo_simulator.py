@@ -16,7 +16,7 @@ from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
 
-from task_generator.shared import ModelType
+from task_generator.shared import ModelType, RobotProps
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -116,10 +116,11 @@ class GazeboSimulator(BaseSimulator):
         request.robot_namespace = self._namespace(entity.name)
         request.reference_frame = "world"
 
-        rospy.set_param(request.robot_namespace(
-            "robot_description"), model.description)
-        rospy.set_param(request.robot_namespace(
-            "tf_prefix"), str(request.robot_namespace))
+        if isinstance(entity, RobotProps):
+            rospy.set_param(request.robot_namespace(
+                "robot_description"), model.description)
+            rospy.set_param(request.robot_namespace(
+                "tf_prefix"), str(request.robot_namespace))
 
         res = self.spawn_model(model.type, request)
 
