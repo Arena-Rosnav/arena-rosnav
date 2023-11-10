@@ -1,4 +1,5 @@
 import dataclasses
+import itertools
 import json
 import os
 import random
@@ -413,21 +414,29 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
         static_obstacles: RandomList,
         interactive_obstacles: RandomList,
         dynamic_obstacles: RandomList,
+        robot_positions: Optional[List[Tuple[Waypoint, Waypoint]]] = None
     ):
-        robot_positions: List[Waypoint] = []  # may be needed in the future idk
+        if robot_positions is None:
+            robot_positions = []
 
-        for manager in self.PROPS.robot_managers:
-            start_pos = self.PROPS.map_manager.get_random_pos_on_map(
-                manager.safe_distance
-            )
-            goal_pos = self.PROPS.map_manager.get_random_pos_on_map(
-                manager.safe_distance, forbidden_zones=[start_pos]
-            )
+        for manager, pos in itertools.zip_longest(self.PROPS.robot_managers, robot_positions, fillvalue=None):
+            
+            if manager is None:
+                continue;
+            
+            if pos is None:
+                start_pos = self.PROPS.map_manager.get_random_pos_on_map(
+                    manager.safe_distance
+                )
+                goal_pos = self.PROPS.map_manager.get_random_pos_on_map(
+                    manager.safe_distance, forbidden_zones=[start_pos]
+                )
+
+                robot_positions.append((start_pos, goal_pos))
+            else:
+                start_pos, goal_pos = pos
 
             manager.reset(start_pos=start_pos, goal_pos=goal_pos)
-
-            robot_positions.append(start_pos)
-            robot_positions.append(goal_pos)
 
         self.PROPS.obstacle_manager.reset()
         self.PROPS.map_manager.init_forbidden_zones()

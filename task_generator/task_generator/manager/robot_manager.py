@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Optional
 
 import numpy as np
 import rospy
@@ -37,6 +38,15 @@ class RobotManager:
 
     _start_pos: PositionOrientation
     _goal_pos: PositionOrientation
+
+    @property
+    def start_pos(self) -> PositionOrientation:
+        return self._start_pos
+
+    @property
+    def goal_pos(self) -> PositionOrientation:
+        return self._goal_pos
+    
     _position: PositionOrientation
 
     _robot_radius: float
@@ -148,19 +158,24 @@ class RobotManager:
         self._entity_manager.move_robot(
             name=self._robot.name, position=position)
 
-    def reset(self, start_pos: PositionOrientation, goal_pos: PositionOrientation):
+    def reset(self, start_pos: Optional[PositionOrientation], goal_pos: Optional[PositionOrientation]):
         """
         Publishes start and goal to data_recorder, publishes goal to move_base
         """
-        self._start_pos, self._goal_pos = start_pos, goal_pos
 
-        if self._robot.record_data:
-            rospy.set_param(self.namespace("goal"), str(list(self._goal_pos)))
-            rospy.set_param(self.namespace("start"),
-                            str(list(self._start_pos)))
+        if start_pos is not None:
+            self._start_pos = start_pos
+            self.move_robot_to_pos(start_pos)
 
-        self._publish_goal(self._goal_pos)
-        self.move_robot_to_pos(self._start_pos)
+            if self._robot.record_data:
+                rospy.set_param(self.namespace("goal"), list(self._goal_pos))
+
+        if goal_pos is not None:
+            self._goal_pos = goal_pos
+            self._publish_goal(self._goal_pos)
+
+            if self._robot.record_data:
+                rospy.set_param(self.namespace("start"), list(self._start_pos))
 
         time.sleep(0.1)
 
