@@ -129,9 +129,8 @@ class Plugin_PySocialForce(WaypointPlugin):
         state = self.overwrite_group_dest(state, groups)
         obs = self.extract_obstacles(data.line_obstacles)
 
-        #print("Groups:", groups)
-        #print(state[:, 4:6])
-        print(len(obs))
+        print("Groups:", groups)
+
 
         simulator = psf.Simulator(
             state=state,
