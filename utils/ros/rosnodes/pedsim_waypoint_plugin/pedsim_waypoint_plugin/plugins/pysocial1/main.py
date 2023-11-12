@@ -18,7 +18,6 @@ class Plugin_PySocialForce(WaypointPlugin):
 
     def __init__(self):
         self.first_call = True
-        self.simulator = None
 
         self.groups = dict()
         self.group_count = 0
@@ -125,12 +124,12 @@ class Plugin_PySocialForce(WaypointPlugin):
             return list()
         
         state, agent_idx = self.get_state_data(data.agents, data.groups, reset_velocity=self.first_call)
+        self.first_call = False
         groups = self.assign_groups(agent_idx, data.groups)
         state = self.overwrite_group_dest(state, groups)
         obs = self.extract_obstacles(data.line_obstacles)
 
         print("Assigned Groups:", groups)
-
 
         simulator = psf.Simulator(
             state=state,
