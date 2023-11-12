@@ -52,9 +52,9 @@ class InitiateNewTrainStage(BaseCallback):
         assert (
             self.upper_threshold > self.lower_threshold
         ), "upper threshold has to be bigger than lower threshold"
-        assert (
-            self.upper_threshold >= 0 and self.lower_threshold >= 0
-        ), "upper/lower threshold have to be positive numbers"
+        # assert (
+        #     self.upper_threshold >= 0 and self.lower_threshold >= 0
+        # ), "upper/lower threshold have to be positive numbers"
         if self.threshhold_type == "succ":
             assert (
                 self.upper_threshold <= 1 and self.lower_threshold >= 0

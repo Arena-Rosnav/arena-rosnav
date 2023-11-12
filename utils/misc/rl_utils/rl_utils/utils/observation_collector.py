@@ -10,21 +10,24 @@ from typing import Tuple
 import message_filters
 import numpy as np
 import rospy
+
 # services
 from flatland_msgs.msg import StepWorld
-from geometry_msgs.msg import (Pose2D, PoseStamped, PoseWithCovarianceStamped,
-                               Twist)
+from geometry_msgs.msg import Pose2D, PoseStamped, PoseWithCovarianceStamped, Twist
 from nav_msgs.msg import Odometry, Path
 from numpy.core.numeric import normalize_axis_tuple
 from rosgraph_msgs.msg import Clock
+
 # observation msgs
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Bool
+
 # for transformations
 from tf.transformations import *
 
 from .debug import timeit
 from .utils import remove_double_slash
+
 
 class ObservationCollector:
     def __init__(

@@ -12,7 +12,7 @@
   goal_radius: 1.0
   map_generator:
     barn:
-      fill_pct: 5.0
+      fill_pct: 0.0
       smooth_iter: 1
     rosnav:
       map_type: indoor
@@ -25,10 +25,10 @@
   static: 0
   dynamic: 0
 - #1
-  goal_radius: 0.33
+  goal_radius: 0.5
   map_generator:
     barn:
-      fill_pct: 0.0
+      fill_pct: 0.05
       smooth_iter: 1
     rosnav:
       map_type: indoor
@@ -38,12 +38,13 @@
       outdoor:
         obstacle_num: 5
         obstacle_extra_radius: 1
-  static: 1
-  dynamic: 1
+  static: 0
+  dynamic: 0
 - #2
+  goal_radius: 0.3
   map_generator:
     barn:
-      fill_pct: 0.05
+      fill_pct: 0.1
       smooth_iter: 10
     rosnav:
       map_type: indoor
@@ -53,8 +54,8 @@
       outdoor:
         obstacle_num: 5
         obstacle_extra_radius: 1
-  static: 2
-  dynamic: 2
+  static: 0
+  dynamic: 0
 - #3
   map_generator:
     barn:
@@ -68,8 +69,8 @@
       outdoor:
         obstacle_num: 5
         obstacle_extra_radius: 1
-  static: 3
-  dynamic: 3
+  static: 0
+  dynamic: 0
 - #4
   map_generator:
     barn:
@@ -83,8 +84,8 @@
         outdoor:
           obstacle_num: 5
           obstacle_extra_radius: 1
-  static: 4
-  dynamic: 4
+  static: 0
+  dynamic: 0
 - #5
   map_generator:
     barn:
@@ -98,8 +99,8 @@
         outdoor:
           obstacle_num: 5
           obstacle_extra_radius: 1
-  static: 5
-  dynamic: 5
+  static: 0
+  dynamic: 0
 - #6
   map_generator:
     barn:
@@ -113,5 +114,5 @@
         outdoor:
           obstacle_num: 5
           obstacle_extra_radius: 1
-  static: 6
-  dynamic: 6
+  static: 0
+  dynamic: 0
