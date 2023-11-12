@@ -127,27 +127,19 @@ class Plugin_PySocialForce(WaypointPlugin):
         state, agent_idx = self.get_state_data(data.agents, data.groups, reset_velocity=self.first_call)
         groups = self.assign_groups(agent_idx, data.groups)
         state = self.overwrite_group_dest(state, groups)
+        obs = self.extract_obstacles(data.line_obstacles)
 
-        print("Groups:", groups)
-        print(state[:, 4:6])
+        #print("Groups:", groups)
+        #print(state[:, 4:6])
+        print(len(obs))
 
-        if self.first_call:
-            # instantiate sim
-            self.first_call = False
-            # TODO: hard-coded -> remove once map edges are in line obstacles
-            # obs = [[0.0, 25.0, 0.5, 0.5], [0.0, 25.0, 20.5, 20.5], [0.5, 0.5, 0.0, 21.0], [24.5, 24.5, 0.0, 21.0]]
-            obs = self.extract_obstacles(data.line_obstacles)
-            print(obs)
-            self.simulator = psf.Simulator(
-                state=state,
-                groups=groups,
-                obstacles=obs,
-                config_file=Path(__file__).resolve().parent.joinpath("pysocialforce/config/default.toml")
-            )
-        else:
-            # update sim
-            self.simulator.peds.update(state, groups)
+        simulator = psf.Simulator(
+            state=state,
+            groups=groups,
+            obstacles=obs,
+            config_file=Path(__file__).resolve().parent.joinpath("pysocialforce/config/default.toml")
+        )
 
-        forces = self.FACTOR * self.simulator.compute_forces()
+        forces = self.FACTOR * simulator.compute_forces()
 
         return self.map_force_to_feedback(data.agents, forces)
