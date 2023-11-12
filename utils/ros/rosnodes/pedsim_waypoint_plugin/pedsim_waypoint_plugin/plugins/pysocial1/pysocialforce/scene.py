@@ -142,7 +142,7 @@ class EnvState:
         else:
             self._obstacles = []
             for startx, endx, starty, endy in obstacles:
-                samples = int(np.linalg.norm((startx - endx, starty - endy)) * self.resolution)
+                samples = max(int(np.linalg.norm((startx - endx, starty - endy)) * self.resolution), 1)
                 line = np.array(
                     list(
                         zip(np.linspace(startx, endx, samples), np.linspace(starty, endy, samples))
