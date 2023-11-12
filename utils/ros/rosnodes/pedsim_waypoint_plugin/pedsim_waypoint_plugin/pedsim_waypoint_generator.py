@@ -9,7 +9,6 @@ import rospy
 class Constants:
     TOPIC_SUBSCRIBE = "pedsim_waypoint_plugin/input"
     TOPIC_PUBLISH = "pedsim_waypoint_plugin/output"
-    TOPIC_DEVNULL = "pedsim_waypoint_plugin/devnull"
 
 
 class WaypointPluginName(Enum):
@@ -72,45 +71,63 @@ class PedsimWaypointGenerator:
         if plugin_class is None:
             raise RuntimeError(f"Plugin {plugin_name.value} has no registered implementation.\nImplemented plugins: {[name.value for name in self.__registry.keys()]}")
 
-        try:
-            plugin = plugin_class()
-        except Exception as e:
-            raise RuntimeError(f"Could not initialize plugin {plugin_name.value}. Aborting.") from e
-
-        rospy.loginfo(
-            f"starting pedsim_waypoint_generator with plugin {type(plugin).__name__}")
-
         publisher = rospy.Publisher(
             name=Constants.TOPIC_PUBLISH,
             data_class=OutputMsg,
             queue_size=1
         )
 
-        def callback(dataframe: InputMsg):
 
-            if dataframe.agent_states is None or len(dataframe.agent_states) == 0:
-                return
+        while True:
 
-            dataframe_data = InputData(
-                header=dataframe.header,
-                agents=NList(dataframe.agent_states),
-                robots=NList(dataframe.robot_states),
-                groups=NList(dataframe.simulated_groups),
-                waypoints=NList(dataframe.simulated_waypoints),
-                line_obstacles=NList(dataframe.line_obstacles)
-            )
+            running: bool = False
 
-            agent_states_data = plugin.callback(dataframe_data)
+            if rospy.get_param("/resetting", True) == True:
+                rospy.wait_for_message("/reset_end", std_msgs.msg.Empty)
 
-            publisher.publish(
-                OutputMsg(
-                    agents=agent_states_data
+            try:
+                plugin: WaypointPlugin = plugin_class()
+            except Exception as e:
+                rospy.signal_shutdown(f"Could not initialize plugin {plugin_name.value}. Aborting.")
+                raise RuntimeError(f"Could not initialize plugin {plugin_name.value}. Aborting.") from e
+
+
+            def callback(dataframe: InputMsg):
+
+                if not running or dataframe.agent_states is None or len(dataframe.agent_states) == 0:
+                    return
+
+                dataframe_data = InputData(
+                    header=dataframe.header,
+                    agents=NList(dataframe.agent_states),
+                    robots=NList(dataframe.robot_states),
+                    groups=NList(dataframe.simulated_groups),
+                    waypoints=NList(dataframe.simulated_waypoints),
+                    line_obstacles=NList(dataframe.line_obstacles)
                 )
+
+                agent_states_data = plugin.callback(dataframe_data)
+
+                publisher.publish(
+                    OutputMsg(
+                        agents=agent_states_data
+                    )
+                )
+
+            sub = rospy.Subscriber(
+                name=Constants.TOPIC_SUBSCRIBE,
+                data_class=InputMsg,
+                callback=callback,
+                queue_size=1
             )
 
-        rospy.Subscriber(
-            name=Constants.TOPIC_SUBSCRIBE,
-            data_class=InputMsg,
-            callback=callback,
-            queue_size=1
-        )
+            running = True
+
+            rospy.loginfo(
+                f"starting pedsim_waypoint_generator with plugin {type(plugin).__name__}")
+            
+            rospy.wait_for_message("/reset_start", std_msgs.msg.Empty)
+
+            running = False
+            sub.unregister()
+            del plugin
