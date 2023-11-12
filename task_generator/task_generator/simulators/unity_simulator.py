@@ -8,8 +8,10 @@ from task_generator.simulators.base_simulator import BaseSimulator
 
 from task_generator.shared import EntityProps, ModelType, Robot, ObstacleProps, PositionOrientation
 
+# Message Types
+from gazebo_msgs.msg import ModelState
+from gazebo_msgs.srv import SetModelState, SetModelStateRequest, DeleteModel, SpawnModel, SpawnModelRequest, DeleteModelRequest, DeleteModelResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
-
 from std_msgs.msg import Empty
 from std_srvs.srv import Empty, EmptyRequest
 
@@ -35,14 +37,17 @@ class UnitySimulator(BaseSimulator):
             "unity", "set_model_state"), timeout=T)
 
         # TODO: Proper Message Types
-        self._spawn_model = rospy.ServiceProxy(
-            self._namespace("unity", "spawn_model"), Empty
+        self._spawn_model[ModelType.SDF] = rospy.ServiceProxy(
+            self._namespace("unity", "spawn_model"), SpawnModel
+        )
+        self._spawn_model[ModelType.URDF] = rospy.ServiceProxy(
+            self._namespace("unity", "spawn_model"), SpawnModel
         )
         self._remove_model_srv = rospy.ServiceProxy(
-            self._namespace("unity", "delete_model"), Empty
+            self._namespace("unity", "delete_model"), DeleteModel
         )
         self._move_model_srv = rospy.ServiceProxy(
-            self._namespace("unity", "set_model_state"), Empty, persistent=True
+            self._namespace("unity", "set_model_state"), SetModelState, persistent=True
         )
         self._goal_pub = rospy.Publisher(
             self._namespace("unity", "set_goal"), PoseStamped, queue_size=1, latch=True
@@ -56,25 +61,72 @@ class UnitySimulator(BaseSimulator):
     def after_reset_task(self):
         pass
 
-    def spawn_entity(self, entity: EntityProps) -> bool:
-        req = EmptyRequest()
-        self._spawn_model(req)
+    def spawn_entity(self, entity):
+        rospy.loginfo("[Unity Simulator] Spawn Request for " + entity.name)
+        request = SpawnModelRequest()
 
-    def spawn_robot(self, robot: Robot) -> str:
-        """
-        Spawn a robot in the simulator.
-        """
-        req = EmptyRequest()
-        self._spawn_model(req)
+        model = entity.model.get(self.MODEL_TYPES)
 
-    def move_entity(self, name: str, pos: PositionOrientation):
-        """
-        Move the robot to the given position.
-        """
-        raise NotImplementedError()
+        request.model_name = entity.name
+        request.model_xml = model.description
+        request.robot_namespace = self._namespace(entity.name)
+        request.reference_frame = "world"
+        request.initial_pose = Pose(
+            position=Point(
+                x=entity.position[0],
+                y=entity.position[1],
+                z=0
+            ),
+            orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz")
+                                   )
+        )
 
-    def delete_entity(self, name: str) -> bool:
-        raise NotImplementedError()
+        rospy.set_param(request.robot_namespace(
+            "robot_description"), model.description)
+        rospy.set_param(request.robot_namespace(
+            "tf_prefix"), str(request.robot_namespace))
+
+        res = self.spawn_model(model.type, request)
+        return res.success
+
+    def move_entity(self, name, pos):
+        rospy.loginfo("[Unity Simulator] Move Request for " + name)
+
+        request = SetModelStateRequest()
+        request.model_state = ModelState()
+
+        request.model_state.model_name = name
+        pose = Pose()
+        pose.position.x = pos[0]
+        pose.position.y = pos[1]
+        pose.position.z = 0.35
+        pose.orientation = Quaternion(
+            *quaternion_from_euler(0.0, 0.0, pos[2], axes="sxyz")
+        )
+        request.model_state.pose = pose
+        request.model_state.reference_frame = "world"
+
+        self._move_model_srv(request)
+
+    def delete_entity(self, name):
+        rospy.loginfo("[Unity Simulator] Delete Request for " + name)
+        res: DeleteModelResponse = self._remove_model_srv(
+            DeleteModelRequest(model_name=name))
+        return bool(res.success)
 
     def _publish_goal(self, goal):
-        raise NotImplementedError()
+        rospy.loginfo("[Unity Simulator] Goal Request")
+
+        goal_msg = PoseStamped()
+        goal_msg.header.seq = 0
+        goal_msg.header.stamp = rospy.get_rostime()
+        goal_msg.header.frame_id = "map"
+        goal_msg.pose.position.x = goal[0]
+        goal_msg.pose.position.y = goal[1]
+
+        goal_msg.pose.orientation.w = 0
+        goal_msg.pose.orientation.x = 0
+        goal_msg.pose.orientation.y = 0
+        goal_msg.pose.orientation.z = 1
+
+        self._goal_pub.publish(goal_msg)

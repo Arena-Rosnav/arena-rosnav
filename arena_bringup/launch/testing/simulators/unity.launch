@@ -19,10 +19,10 @@
   <include file="$(find arena_bringup)/launch/utils/rviz.launch">
     <arg name="show_rviz" value="$(arg show_rviz)" />
   </include>
-  <node 
+  <!-- <node 
         pkg="unity_utils" 
         name="load_world_service" 
         type="load_world_service.py" 
         output="screen"
-    />
+    /> -->
 </launch>
