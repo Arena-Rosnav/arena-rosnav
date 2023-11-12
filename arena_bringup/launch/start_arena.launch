@@ -150,6 +150,8 @@
 
   <!-- Fake localization-->
   <include file="$(find arena_bringup)/launch/utils/fake_localization.launch">
+    <arg name="ns" value="" />
+    <arg name="robot_name" value="$(arg model)" />
     <arg name="global_frame_id" value="$(arg global_frame_id)" />
     <arg name="odom_frame_id" value="$(arg odom_frame_id)" />
   </include>
@@ -170,16 +172,15 @@
     </group>
 
     <group>
-      <remap from="pedsim_simulator/waypoint_plugin_data" to="pedsim_waypoint_plugin/input" if="$(arg has_pedsim_waypoint_plugin)"/>
-      <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(arg pedsim)">
+      <remap from="pedsim_simulator/waypoint_plugin_data" to="pedsim_waypoint_plugin/input" if="$(eval arg('has_pedsim_waypoint_plugin'))"/>
+      <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(eval arg('pedsim'))">
         <param name="simulation_factor" value="1" type="double"/>
         <param name="pedsim_update_rate" value="30.0" type="double"/>
         <param name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" type="string"/>
       </node>
     </group>
-  </group>
 
-  <group if="$(eval arg('pedsim'))">
+    <!-- <node name="pedsim_agent" pkg="pedsim_gazebo_plugin" type="spawn_pedsim_agents.py"></node> -->
     <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/>
   </group>
 
@@ -190,4 +191,5 @@
   <node type="create_config_file.py" pkg="rviz_utils" name="rviz_config_file_creator" />
   
   <node type="visualize_robot_model.py" pkg="rviz_utils" name="visualize_robot_model" output="screen" />
+
 </launch>

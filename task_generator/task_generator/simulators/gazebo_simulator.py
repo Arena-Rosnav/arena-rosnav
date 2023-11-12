@@ -15,7 +15,7 @@ from tf.transformations import quaternion_from_euler
 from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 
-from task_generator.shared import ModelType
+from task_generator.shared import ModelType, RobotProps
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -43,15 +43,19 @@ class GazeboSimulator(BaseSimulator):
         self._robot_name = rosparam_get(str, "robot_model", "")
 
         rospy.loginfo("Waiting for gazebo services...")
-        rospy.wait_for_service(self._namespace("gazebo", "spawn_urdf_model"), timeout=T)
-        rospy.wait_for_service(self._namespace("gazebo", "spawn_sdf_model"), timeout=T)
-        rospy.wait_for_service(self._namespace("gazebo", "set_model_state"), timeout=20)
-        rospy.wait_for_service(self._namespace("gazebo", "delete_model"), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            "gazebo", "spawn_urdf_model"), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            "gazebo", "spawn_sdf_model"), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            "gazebo", "set_model_state"), timeout=20)
+        rospy.wait_for_service(self._namespace(
+            "gazebo", "delete_model"), timeout=T)
 
         self._spawn_model[ModelType.URDF] = rospy.ServiceProxy(
             self._namespace("gazebo", "spawn_urdf_model"), SpawnModel
         )
-        self._spawn_model[ModelType.SDF] = rospy.ServiceProxy( 
+        self._spawn_model[ModelType.SDF] = rospy.ServiceProxy(
             self._namespace("gazebo", "spawn_sdf_model"), SpawnModel
         )
         self._move_model_srv = rospy.ServiceProxy(
@@ -73,7 +77,7 @@ class GazeboSimulator(BaseSimulator):
     def after_reset_task(self):
         try:
             self._unpause()
-        except rospy.service.ServiceException as e:  # gazebo isn't the most reliable
+        except rospy.service.ServiceException as e:   # gazebo isn't the most reliable
             rospy.logwarn(e)
 
     # ROBOT

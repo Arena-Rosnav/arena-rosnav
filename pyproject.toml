@@ -27,6 +27,7 @@ mpi4py = "^3.1.4"
 gputil = "^1.4.0"
 tensorboardx = "^2.6"
 gym = "^0.22"
+sb3-contrib = "^2.1.0"
 
 [tool.poetry.dev-dependencies]
 
