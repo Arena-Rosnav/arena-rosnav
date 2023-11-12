@@ -5,7 +5,7 @@ import pedsim_msgs.msg
 @PedsimWaypointGenerator.register(WaypointPluginName.SPINNY)
 class Plugin_Spinny(WaypointPlugin):
 
-    offset = 30
+    offset = 45
 
     def __init__(self):
         ...
@@ -22,6 +22,8 @@ class Plugin_Spinny(WaypointPlugin):
             feedback.id = agent.id
             feedback.force.x = np.cos(angle + self.offset * np.pi/180) * velocity
             feedback.force.y = np.sin(angle + self.offset * np.pi/180) * velocity
+            
+            
 
             return feedback
 
