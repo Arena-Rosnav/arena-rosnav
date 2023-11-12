@@ -10,8 +10,10 @@
     <arg name="namespace" />
     <arg name="frame" default="" />
 
-    <include file="$(find arena_bringup)/launch/testing/move_base/mbf_$(arg local_planner).launch" ns="move_base_flex">
+    <include file="$(find arena_bringup)/launch/testing/move_base/mbf_$(arg local_planner).launch">
         
+        <param name="base_global_planner" value="NavfnROS" />
+
         <arg name="model" value="$(arg model)" />
         <arg name="speed" value="$(arg speed)" />
 
@@ -20,51 +22,7 @@
 
         <arg name="namespace" value="$(arg namespace)" />
         <arg name="frame" value="$(arg frame)" />
+
     </include>
-
-    <!-- move_base -->
-    <node pkg="mbf_costmap_nav" type="mbf_costmap_nav" respawn="false" name="move_base_flex" output="log">
-
-        <!-- system defaults -->
-        <rosparam file="$(find arena_bringup)/params/mbf/move_base_params.yaml"
-            command="load" subst_value="True" />
-        <rosparam
-            file="$(find arena_bringup)/params/costmaps/costmap_common_params.yaml"
-            command="load" ns="global_costmap" subst_value="True" />
-        <rosparam
-            file="$(find arena_bringup)/params/costmaps/costmap_common_params.yaml"
-            command="load" ns="local_costmap" subst_value="True" />
-        <rosparam
-            file="$(find arena_bringup)/params/costmaps/global_costmap_params.yaml"
-            command="load" ns="global_costmap" subst_value="True" />
-        <rosparam
-            file="$(find arena_bringup)/params/costmaps/local_costmap_params.yaml"
-            command="load" ns="local_costmap" subst_value="True" />
-
-        <!-- robot overrides -->
-        <rosparam
-            file="$(find arena-simulation-setup)/robot/$(arg model)/configs/mbf/move_base_params.yaml"
-            command="load" subst_value="True" />
-        <rosparam
-            file="$(find arena-simulation-setup)/robot/$(arg model)/configs/costmaps/costmap_common_params.yaml"
-            command="load" ns="global_costmap" subst_value="True" />
-        <rosparam
-            file="$(find arena-simulation-setup)/robot/$(arg model)/configs/costmaps/costmap_common_params.yaml"
-            command="load" ns="local_costmap" subst_value="True" />
-        <rosparam
-            file="$(find arena-simulation-setup)/robot/$(arg model)/configs/costmaps/global_costmap_params.yaml"
-            command="load" ns="global_costmap" subst_value="True" />
-        <rosparam
-            file="$(find arena-simulation-setup)/robot/$(arg model)/configs/costmaps/local_costmap_params.yaml"
-            command="load" ns="local_costmap" subst_value="True" />
-    </node>
-
-    <param name="move_base_flex/base_global_planner" value="NavfnROS" />
-
-    <node name="move_base_legacy_relay" pkg="mbf_costmap_nav" type="move_base_legacy_relay.py">
-        <remap from="~base_global_planner" to="move_base_flex/base_global_planner" />
-        <remap from="~base_local_planner" to="move_base_flex/base_local_planner" />
-    </node>
-
     
 </launch>
