@@ -1,7 +1,6 @@
 import os
 from typing import Optional
 
-
 import rospy
 from task_generator.constants import Constants
 from task_generator.tasks.base_task import BaseTask
@@ -29,7 +28,7 @@ class DynamicMapStagedTask(RandomTask):
         debug_mode: Optional[bool] = None,
         **kwargs,
     ):
-        
+
         if curriculum_path is None:
             curriculum_path = os.path.join(
                 ITF_DynamicMap.CONFIG_PATH,
@@ -40,7 +39,7 @@ class DynamicMapStagedTask(RandomTask):
             self,
             **kwargs
         )
-        
+
         self.itf_staged = ITF_Staged(
             self,
             stages=ITF_Staged.read_file(curriculum_path),
@@ -49,7 +48,8 @@ class DynamicMapStagedTask(RandomTask):
             debug_mode=debug_mode,
         )
 
-        self.itf_staged.on_change_stage = lambda stage: self.on_change_stage(stage=stage)
+        self.itf_staged.on_change_stage = lambda stage: self.on_change_stage(
+            stage=stage)
 
         self.itf_dynamicmap = ITF_DynamicMap(
             self,
@@ -72,7 +72,7 @@ class DynamicMapStagedTask(RandomTask):
     def on_change_stage(self, stage: StageIndex):
         self.itf_dynamicmap.update_config(arg=stage)
         self.itf_dynamicmap.request_new_map()
-        self.reset(callback=lambda:None, stage=stage)
+        self.reset(callback=lambda: None, stage=stage)
 
     @BaseTask.reset_helper(parent=RandomTask)
     def reset(
@@ -110,4 +110,4 @@ class DynamicMapStagedTask(RandomTask):
         # task reset for all taskmanagers when one resets
         # update map manager
         self.itf_dynamicmap.update_map()
-        self.reset(callback=lambda:None, reset_after_new_map=True)
+        self.reset(callback=lambda: None, reset_after_new_map=True)

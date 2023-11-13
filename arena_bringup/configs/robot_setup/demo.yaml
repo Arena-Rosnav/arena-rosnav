@@ -1,0 +1,5 @@
+robots:
+  - model: jackal
+    planner: teb
+    amount: 3
+    agent: jackal

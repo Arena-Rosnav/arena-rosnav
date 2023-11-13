@@ -6,14 +6,14 @@ import rospy
 import re
 
 
-from pedsim_msgs.msg import Ped, InteractiveObstacle, AgentState, AgentStates, Waypoints, Waypoint, Ped
+from pedsim_msgs.msg import Ped, InteractiveObstacle, LineObstacle, LineObstacles, AgentState, AgentStates, Waypoint, Waypoints
 from geometry_msgs.msg import Point, Pose, Quaternion
-from pedsim_srvs.srv import SpawnInteractiveObstacles, SpawnObstacle, SpawnPeds, RegisterRobot, RegisterRobotRequest
+from pedsim_srvs.srv import SpawnInteractiveObstacles, SpawnInteractiveObstaclesRequest, SpawnObstacle, SpawnObstacleRequest, SpawnPeds, SpawnPedsRequest, RegisterRobot, RegisterRobotRequest
 from std_srvs.srv import SetBool, Trigger
 
 
 from task_generator.manager.entity_manager.entity_manager import EntityManager
-from task_generator.manager.entity_manager.utils import KnownObstacles, SDFUtil, YAMLUtil
+from task_generator.manager.entity_manager.utils import KnownObstacles, ObstacleLayer, SDFUtil, YAMLUtil, walls_to_obstacle
 from task_generator.constants import Constants, Pedsim
 from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle, PositionOrientation, Robot
 from task_generator.simulators.flatland_simulator import FlatlandSimulator
@@ -26,7 +26,9 @@ from task_generator.utils import rosparam_get
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
-#TODO structure these together
+# TODO structure these together
+
+
 def process_SDF(name: str, base_model: Model) -> Model:
     base_desc = SDFUtil.parse(sdf=base_model.description)
     SDFUtil.set_name(sdf=base_desc, name=name, tag="actor")
@@ -64,6 +66,7 @@ def process_SDF(name: str, base_model: Model) -> Model:
     new_model = base_model.replace(description=new_desc)
 
     return new_model
+
 
 class PedsimManager(EntityManager):
 
@@ -123,7 +126,7 @@ class PedsimManager(EntityManager):
 
         self._add_obstacle_srv = rospy.ServiceProxy(
             "pedsim_simulator/add_obstacle", SpawnObstacle, persistent=True)
-        
+
         self._register_robot_srv = rospy.ServiceProxy(
             "pedsim_simulator/register_robot", RegisterRobot, persistent=True
         )
@@ -135,23 +138,25 @@ class PedsimManager(EntityManager):
                          Waypoints, self._interactive_actor_poses_callback)
         rospy.Subscriber("/pedsim_simulator/simulated_agents",
                          AgentStates, self._dynamic_actor_poses_callback)
-        
-        #temp
-        def gen_JAIL_POS(steps:int, x:int=1, y:int=0):
-            steps = max(steps,1)
+        rospy.Subscriber("/pedsim_simulator/simulated_walls",
+                         LineObstacles, self._walls_callback)
+
+        # temp
+        def gen_JAIL_POS(steps: int, x: int = 1, y: int = 0):
+            steps = max(steps, 1)
             while True:
-                x += y==steps
+                x += y == steps
                 y %= steps
-                yield (-x,y,0)
+                yield PositionOrientation(-x, y, 0)
                 y += 1
         self.JAIL_POS = gen_JAIL_POS(10)
         self._id_gen = itertools.count(20)
-        #end temp
+        # end temp
 
     def spawn_obstacles(self, obstacles):
 
-        srv = SpawnInteractiveObstacles()
-        srv.InteractiveObstacles = []  # type: ignore
+        srv = SpawnInteractiveObstaclesRequest()
+        srv.obstacles = []
 
         self.agent_topic_str = ''
 
@@ -164,8 +169,8 @@ class PedsimManager(EntityManager):
             # TODO create a global helper function for this kind of use case
             msg.pose = Pose(
                 position=Point(
-                    x=obstacle.position[0], y=obstacle.position[1], z=0),
-                orientation=Quaternion(x=0, y=0, z=obstacle.position[2], w=1)
+                    x=obstacle.position.x, y=obstacle.position.y, z=0),
+                orientation=Quaternion(x=0, y=0, z=obstacle.position.orientation, w=1)
             )
 
             interaction_radius: float = obstacle.extra.get(
@@ -187,27 +192,27 @@ class PedsimManager(EntityManager):
 
             msg.yaml_path = obstacle.model.get(ModelType.YAML).path
 
-            srv.InteractiveObstacles.append(msg)  # type: ignore
+            srv.obstacles.append(msg)
 
             known = self._known_obstacles.get(pedsim_name)
             if known is not None:
                 if known.obstacle.name != obstacle.name:
-                    raise RuntimeError(f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {pedsim_name} (did you forget to call remove_obstacles?)")
-
-                known.used = True
+                    raise RuntimeError(
+                        f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {pedsim_name} (did you forget to call remove_obstacles?)")
 
                 # TODO static obstacles don't have collisions if not re-spawned but moved instead, remove this once it works without respawning
                 self._simulator.delete_entity(pedsim_name)
                 known.pedsim_spawned = False
-                #end 
+                # end
 
             else:
                 known = self._known_obstacles.create_or_get(
                     name=pedsim_name,
                     obstacle=obstacle,
-                    pedsim_spawned=False,
-                    used=True
+                    pedsim_spawned=False
                 )
+
+            known.layer = ObstacleLayer.INUSE
 
         max_num_try = 1
         i_curr_try = 0
@@ -215,8 +220,7 @@ class PedsimManager(EntityManager):
 
         while i_curr_try < max_num_try:
             # try to call service
-            response = self._spawn_interactive_obstacles_srv.call(
-                srv.InteractiveObstacles)  # type: ignore
+            response = self._spawn_interactive_obstacles_srv(srv)
 
             if not response.success:  # if service not succeeds, do something and redo service
                 # rospy.logwarn(
@@ -232,8 +236,8 @@ class PedsimManager(EntityManager):
 
     def spawn_dynamic_obstacles(self, obstacles):
 
-        srv = SpawnPeds()
-        srv.peds = []  # type: ignore
+        srv = SpawnPedsRequest()
+        srv.peds = []
 
         self.agent_topic_str = ''
 
@@ -253,29 +257,52 @@ class PedsimManager(EntityManager):
             msg.type = "adult"
             msg.number_of_peds = 1
             msg.vmax = Pedsim.VMAX(obstacle.extra.get("vmax", None))
-            msg.start_up_mode = Pedsim.START_UP_MODE(obstacle.extra.get("start_up_mode", None))
-            msg.wait_time = Pedsim.WAIT_TIME(obstacle.extra.get("wait_time", None))
-            msg.trigger_zone_radius = Pedsim.TRIGGER_ZONE_RADIUS(obstacle.extra.get("trigger_zone_radius", None))
-            msg.chatting_probability = Pedsim.CHATTING_PROBABILITY(obstacle.extra.get("chatting_probability", None))
-            msg.tell_story_probability = Pedsim.TELL_STORY_PROBABILITY(obstacle.extra.get("tell_story_probability", None))
-            msg.group_talking_probability = Pedsim.GROUP_TALKING_PROBABILITY(obstacle.extra.get("group_talking_probability", None))
-            msg.talking_and_walking_probability = Pedsim.TALKING_AND_WALKING_PROBABILITY(obstacle.extra.get("talking_and_walking_probability", None))
-            msg.requesting_service_probability = Pedsim.REQUESTING_SERVICE_PROBABILITY(obstacle.extra.get("requesting_service_probability", None))
-            msg.requesting_guide_probability = Pedsim.REQUESTING_GUIDE_PROBABILITY(obstacle.extra.get("requesting_guide_probability", None))
-            msg.requesting_follower_probability = Pedsim.REQUESTING_FOLLOWER_PROBABILITY(obstacle.extra.get("requesting_follower_probability", None))
-            msg.max_talking_distance = Pedsim.MAX_TALKING_DISTANCE(obstacle.extra.get("max_talking_distance", None))
-            msg.max_servicing_radius = Pedsim.MAX_SERVICING_RADIUS(obstacle.extra.get("max_servicing_radius", None))
-            msg.talking_base_time = Pedsim.TALKING_BASE_TIME(obstacle.extra.get("talking_base_time", None))
-            msg.tell_story_base_time = Pedsim.TELL_STORY_BASE_TIME(obstacle.extra.get("tell_story_base_time", None))
-            msg.group_talking_base_time = Pedsim.GROUP_TALKING_BASE_TIME(obstacle.extra.get("group_talking_base_time", None))
-            msg.talking_and_walking_base_time = Pedsim.TALKING_AND_WALKING_BASE_TIME(obstacle.extra.get("talking_and_walking_base_time", None))
-            msg.receiving_service_base_time = Pedsim.RECEIVING_SERVICE_BASE_TIME(obstacle.extra.get("receiving_service_base_time", None))
-            msg.requesting_service_base_time = Pedsim.REQUESTING_SERVICE_BASE_TIME(obstacle.extra.get("requesting_service_base_time", None))
-            msg.force_factor_desired = Pedsim.FORCE_FACTOR_DESIRED(obstacle.extra.get("force_factor_desired", None))
-            msg.force_factor_obstacle = Pedsim.FORCE_FACTOR_OBSTACLE(obstacle.extra.get("force_factor_obstacle", None))
-            msg.force_factor_social = Pedsim.FORCE_FACTOR_SOCIAL(obstacle.extra.get("force_factor_social", None))
-            msg.force_factor_robot = Pedsim.FORCE_FACTOR_ROBOT(obstacle.extra.get("force_factor_robot", None))
-            msg.waypoint_mode = Pedsim.WAYPOINT_MODE(obstacle.extra.get("waypoint_mode", None))
+            msg.start_up_mode = Pedsim.START_UP_MODE(
+                obstacle.extra.get("start_up_mode", None))
+            msg.wait_time = Pedsim.WAIT_TIME(
+                obstacle.extra.get("wait_time", None))
+            msg.trigger_zone_radius = Pedsim.TRIGGER_ZONE_RADIUS(
+                obstacle.extra.get("trigger_zone_radius", None))
+            msg.chatting_probability = Pedsim.CHATTING_PROBABILITY(
+                obstacle.extra.get("chatting_probability", None))
+            msg.tell_story_probability = Pedsim.TELL_STORY_PROBABILITY(
+                obstacle.extra.get("tell_story_probability", None))
+            msg.group_talking_probability = Pedsim.GROUP_TALKING_PROBABILITY(
+                obstacle.extra.get("group_talking_probability", None))
+            msg.talking_and_walking_probability = Pedsim.TALKING_AND_WALKING_PROBABILITY(
+                obstacle.extra.get("talking_and_walking_probability", None))
+            msg.requesting_service_probability = Pedsim.REQUESTING_SERVICE_PROBABILITY(
+                obstacle.extra.get("requesting_service_probability", None))
+            msg.requesting_guide_probability = Pedsim.REQUESTING_GUIDE_PROBABILITY(
+                obstacle.extra.get("requesting_guide_probability", None))
+            msg.requesting_follower_probability = Pedsim.REQUESTING_FOLLOWER_PROBABILITY(
+                obstacle.extra.get("requesting_follower_probability", None))
+            msg.max_talking_distance = Pedsim.MAX_TALKING_DISTANCE(
+                obstacle.extra.get("max_talking_distance", None))
+            msg.max_servicing_radius = Pedsim.MAX_SERVICING_RADIUS(
+                obstacle.extra.get("max_servicing_radius", None))
+            msg.talking_base_time = Pedsim.TALKING_BASE_TIME(
+                obstacle.extra.get("talking_base_time", None))
+            msg.tell_story_base_time = Pedsim.TELL_STORY_BASE_TIME(
+                obstacle.extra.get("tell_story_base_time", None))
+            msg.group_talking_base_time = Pedsim.GROUP_TALKING_BASE_TIME(
+                obstacle.extra.get("group_talking_base_time", None))
+            msg.talking_and_walking_base_time = Pedsim.TALKING_AND_WALKING_BASE_TIME(
+                obstacle.extra.get("talking_and_walking_base_time", None))
+            msg.receiving_service_base_time = Pedsim.RECEIVING_SERVICE_BASE_TIME(
+                obstacle.extra.get("receiving_service_base_time", None))
+            msg.requesting_service_base_time = Pedsim.REQUESTING_SERVICE_BASE_TIME(
+                obstacle.extra.get("requesting_service_base_time", None))
+            msg.force_factor_desired = Pedsim.FORCE_FACTOR_DESIRED(
+                obstacle.extra.get("force_factor_desired", None))
+            msg.force_factor_obstacle = Pedsim.FORCE_FACTOR_OBSTACLE(
+                obstacle.extra.get("force_factor_obstacle", None))
+            msg.force_factor_social = Pedsim.FORCE_FACTOR_SOCIAL(
+                obstacle.extra.get("force_factor_social", None))
+            msg.force_factor_robot = Pedsim.FORCE_FACTOR_ROBOT(
+                obstacle.extra.get("force_factor_robot", None))
+            msg.waypoint_mode = Pedsim.WAYPOINT_MODE(
+                obstacle.extra.get("waypoint_mode", None))
 
             msg.waypoints = []
 
@@ -283,50 +310,54 @@ class PedsimManager(EntityManager):
                 p = Point(*waypoint)
                 msg.waypoints.append(p)
 
-            srv.peds.append(msg)  # type: ignore
+            srv.peds.append(msg)
 
             obstacle = dataclasses.replace(
                 obstacle,
                 model=obstacle.model
-                    .override(
-                        model_type=ModelType.SDF,
-                        override=functools.partial(process_SDF, str(pedsim_name)),
-                        name=pedsim_name
-                    )
-                    .override(
-                        model_type=ModelType.YAML,
-                        override=lambda model: model.replace(
-                            description=YAMLUtil.serialize(
-                                YAMLUtil.update_plugins(
-                                    namespace=self._simulator._namespace(str(pedsim_name)),
-                                    description=YAMLUtil.parse_yaml(model.description)
-                                )
+                .override(
+                    model_type=ModelType.SDF,
+                    override=functools.partial(
+                        process_SDF, str(pedsim_name)),
+                    name=pedsim_name
+                )
+                .override(
+                    model_type=ModelType.YAML,
+                    override=lambda model: model.replace(
+                        description=YAMLUtil.serialize(
+                            YAMLUtil.update_plugins(
+                                namespace=self._simulator._namespace(
+                                    str(pedsim_name)),
+                                description=YAMLUtil.parse_yaml(
+                                    model.description)
                             )
-                        ),
-                        name=pedsim_name
-                    )
+                        )
+                    ),
+                    name=pedsim_name
+                )
             )
 
             known = self._known_obstacles.get(pedsim_name)
             if known is not None:
-                #TODO temp
+                # TODO temp
                 if False and known.obstacle.name != obstacle.name:
-                    raise RuntimeError(f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {pedsim_name} (did you forget to call remove_obstacles?)")
+                    raise RuntimeError(
+                        f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {pedsim_name} (did you forget to call remove_obstacles?)")
 
-                known.used = True
             else:
                 known = self._known_obstacles.create_or_get(
                     name=pedsim_name,
                     obstacle=obstacle,
-                    pedsim_spawned=False,
-                    used=True
+                    pedsim_spawned=False
                 )
+
+            known.layer = ObstacleLayer.INUSE
 
         max_num_try = 1
         i_curr_try = 0
         while i_curr_try < max_num_try:
             # try to call service
-            response = self._respawn_peds_srv.call(srv.peds)  # type: ignore
+            response = self._respawn_peds_srv(srv)
 
             if not response.success:  # if service not succeeds, do something and redo service
                 # rospy.logwarn(
@@ -339,33 +370,52 @@ class PedsimManager(EntityManager):
             "agent_topic_string"), self.agent_topic_str)
         rospy.set_param("respawn_dynamic", True)
 
-    def spawn_line_obstacle(self, name, _from, _to):
-        return
+    def spawn_line_obstacles(self, walls, heightmap):
+        msg = SpawnObstacleRequest()
+        msg.staticObstacles.obstacles = list()
+
+        for wall in walls:
+            obs = LineObstacle()
+            obs.start.x, obs.start.y = wall[0]
+            obs.end.x, obs.end.y = wall[1]
+            msg.staticObstacles.obstacles.append(obs)
+
+        self._add_obstacle_srv(msg)
+
+        self._known_obstacles.create_or_get(
+            name="__WALLS",
+            obstacle=walls_to_obstacle(heightmap),
+            layer=ObstacleLayer.WORLD,
+            pedsim_spawned=False
+        )
 
     def unuse_obstacles(self):
         self._remove_all_interactive_obstacles_srv.call()
         self._remove_peds_srv.call()
         self._id_gen = itertools.count(20)
-        
-        for obstacle in self._known_obstacles.values():
-            obstacle.used = False
+
+        for obstacle_id, obstacle in self._known_obstacles.items():
+            if obstacle.layer == ObstacleLayer.INUSE:
+                obstacle.layer = ObstacleLayer.UNUSED        
 
     def remove_obstacles(self, purge):
         to_forget: List[str] = list()
 
-        for obstacle_id, obstacle in list(self._known_obstacles.items()):
-            if purge or not obstacle.used:
+        for obstacle_id, obstacle in self._known_obstacles.items():
+            if purge >= obstacle.layer:
 
-                # TODO remove this once actors can be deleted properly 
+                # print(f"deleting {obstacle_id} in purge {purge}")
+
+                # TODO remove this once actors can be deleted properly
                 if isinstance(self._simulator, GazeboSimulator) and isinstance(obstacle.obstacle, DynamicObstacle):
                     jail = next(self.JAIL_POS)
                     self._simulator.move_entity(name=obstacle_id, pos=jail)
-                    continue;
+                    continue
                 # end
 
                 self._simulator.delete_entity(name=obstacle_id)
                 obstacle.pedsim_spawned = False
-                obstacle.used = False
+                obstacle.layer = ObstacleLayer.UNUSED
                 to_forget.append(obstacle_id)
 
         for obstacle_id in to_forget:
@@ -374,16 +424,15 @@ class PedsimManager(EntityManager):
     def _interactive_actor_poses_callback(self, actors: Waypoints):
         waypoints: List[Waypoint] = actors.waypoints or []
 
-        # only once
-        if rosparam_get(bool, "respawn_interactive", False):
-            for actor in filter(lambda x: "interactive" in x.name, waypoints):
-                self._respawn_obstacle(actor)
-            rospy.set_param("respawn_interactive", False)
+        # TODO unclean
+        if isinstance(self._simulator, FlatlandSimulator):
+            return
 
-        if rosparam_get(bool, "respawn_static", False):
-            for actor in filter(lambda x: "static" in x.name, waypoints):
-                self._respawn_obstacle(actor)
-            rospy.set_param("respawn_static", False)
+        for actor in filter(lambda x: "interactive" in x.name, waypoints):
+            self._respawn_obstacle(actor)
+
+        for actor in filter(lambda x: "static" in x.name, waypoints):
+            self._respawn_obstacle(actor)
 
     def _dynamic_actor_poses_callback(self, actors: AgentStates):
         # TODO unclean
@@ -406,7 +455,7 @@ class PedsimManager(EntityManager):
             actor_pose = actor.pose
 
             if obstacle.pedsim_spawned:
-                pass;# handled by pedsim
+                pass  # handled by pedsim
                 # self._simulator.move_entity(
                 #     name=actor_id,
                 #     pos=(
@@ -423,7 +472,7 @@ class PedsimManager(EntityManager):
                 self._simulator.spawn_entity(
                     entity=Obstacle(
                         name=actor_id,
-                        position=(
+                        position=PositionOrientation(
                             actor_pose.position.x,
                             actor_pose.position.y,
                             actor_pose.orientation.z
@@ -470,7 +519,7 @@ class PedsimManager(EntityManager):
 
         if obstacle.pedsim_spawned:
             self._simulator.move_entity(
-                pos=(
+                pos=PositionOrientation(
                     obstacle_position.x,
                     obstacle_position.y,
                     orientation
@@ -484,7 +533,7 @@ class PedsimManager(EntityManager):
             self._simulator.spawn_entity(
                 Obstacle(
                     name=obstacle_name,
-                    position=(
+                    position=PositionOrientation(
                         obstacle_position.x,
                         obstacle_position.y,
                         orientation
@@ -496,6 +545,17 @@ class PedsimManager(EntityManager):
 
             obstacle.pedsim_spawned = True
 
+    def _walls_callback(self, walls: LineObstacles):
+
+        if isinstance(self._simulator, FlatlandSimulator):
+            return
+
+        entity = self._known_obstacles.get("__WALLS")
+
+        if entity is not None and not entity.pedsim_spawned:
+            self._simulator.spawn_entity(entity=entity.obstacle)
+            entity.pedsim_spawned = True
+
     def spawn_robot(self, robot: Robot):
         self._simulator.spawn_entity(robot)
 
@@ -506,6 +566,5 @@ class PedsimManager(EntityManager):
 
         self._register_robot_srv(request)
 
-    
     def move_robot(self, name: str, position: PositionOrientation):
         self._simulator.move_entity(name=name, pos=position)

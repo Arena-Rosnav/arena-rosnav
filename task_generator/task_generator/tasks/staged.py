@@ -51,7 +51,8 @@ class StagedTask(RandomTask):
             debug_mode=debug_mode,
         )
 
-        self.itf_staged.on_change_stage = lambda stage: self.reset(callback=lambda:None, stage=stage, **kwargs)
+        self.itf_staged.on_change_stage = lambda stage: self.reset(
+            callback=lambda: None, stage=stage, **kwargs)
 
     @BaseTask.reset_helper(parent=RandomTask)
     def reset(

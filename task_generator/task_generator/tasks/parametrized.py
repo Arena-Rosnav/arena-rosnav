@@ -1,14 +1,14 @@
 import os
 import random
-import time
 from typing import List, Optional
+import numpy as np
 
 from rospkg import RosPack
 
 from task_generator.constants import Constants
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.tasks.base_task import BaseTask
-from task_generator.shared import DynamicObstacle, Obstacle, Waypoint
+from task_generator.shared import DynamicObstacle, Obstacle, PositionOrientation
 
 import xml.etree.ElementTree as ET
 
@@ -61,7 +61,6 @@ class ParametrizedTask(BaseTask):
 
             self.obstacle_manager.respawn(
                 lambda: self.itf_scenario.setup_scenario(self._generate_scenario()))
-            time.sleep(1)
 
             return False
 
@@ -73,21 +72,22 @@ class ParametrizedTask(BaseTask):
         dynamic_obstacles: Optional[int] = None
     ) -> Scenario:
 
-        robot_positions: List[Waypoint] = []  # may be needed in the future idk
+        robot_positions: List[PositionOrientation] = []  # may be needed in the future idk
+
+        self.world_manager.forbid_clear()
 
         for manager in self.robot_managers:
 
-            start_pos = self.map_manager.get_random_pos_on_map(
-                manager.safe_distance)
-            goal_pos = self.map_manager.get_random_pos_on_map(
-                manager.safe_distance, forbidden_zones=[start_pos])
+            start_pos = self.world_manager.get_position_on_map(manager.safe_distance)
+            goal_pos = self.world_manager.get_position_on_map(manager.safe_distance)
 
-            manager.reset(start_pos=start_pos, goal_pos=goal_pos)
+            start_poso = PositionOrientation(start_pos.x, start_pos.y, 2*np.pi * np.random.random())
+            goal_poso = PositionOrientation(goal_pos.x, goal_pos.y, 2*np.pi * np.random.random())
 
-            robot_positions.append(start_pos)
-            robot_positions.append(goal_pos)
+            manager.reset(start_pos=start_poso, goal_pos=goal_poso)
 
-        self.map_manager.init_forbidden_zones()
+            robot_positions.append(start_poso)
+            robot_positions.append(goal_poso)
 
         obstacle_ranges = self.itf_random.load_obstacle_ranges()
 
@@ -168,8 +168,7 @@ class ParametrizedTask(BaseTask):
             ),
             map=ScenarioMap(
                 yaml=dict(),
-                xml=ET.ElementTree(
-                    ET.Element("dummy")),
+                occupancy=np.zeros((10, 10)),
                 path=""
             ),
             robots=[]
