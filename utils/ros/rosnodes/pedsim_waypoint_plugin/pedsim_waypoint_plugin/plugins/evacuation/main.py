@@ -20,12 +20,12 @@ class Plugin_Evacuation(WaypointPlugin):
         '''
         N = len(data.agents)                            # quantity of pedestrians aka the number of agents that are currently in the simulation
         
-        tau = 0.5                                         # time-step (s), doesn't seem to affect calculation in our case
+        tau = 1                                         # time-step (s), doesn't seem to affect calculation in our case
         num_steps = 2                                   # the number of force-calculation steps the simulation should go through, "2" equals one step
         room_size = 40                                 # size of square room (m), TODO: integrate real value
         method = leap_frog                              # method used for integration -> leap-frog was the GoTo solution in the original project
         radii = 0.3 * np.ones(N)                        # radii of pedestrians (m) -> was "0.4 * (np.ones(self.N)*variation).squeeze()" before
-        m = 80 * np.ones(N)                             # mass of pedestrians (kg) -> was "80 * (np.ones(self.N)*variation).squeeze()" before
+        m = 180 * np.ones(N)                             # mass of pedestrians (kg) -> was "80 * (np.ones(self.N)*variation).squeeze()" before
 
         v = np.zeros((2, N, num_steps))                 # Three dimensional array of velocity, not used in leap frog strangely
         y = np.zeros((2, N, num_steps))                 # Three dimensional array of place: x = coordinates(2 dims), y = Agent (N dims), z=Time (2 dims)
