@@ -51,6 +51,9 @@
             if="$(eval arg('model') != '')"
         />
 
+
+        <param name="base_global_planner" value="NavfnROS" />
+
     </node>
 
     <node name="move_base_legacy_relay" pkg="mbf_costmap_nav" type="move_base_legacy_relay.py">

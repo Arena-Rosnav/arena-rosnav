@@ -11,8 +11,6 @@
     <arg name="frame" default="" />
 
     <include file="$(find arena_bringup)/launch/testing/move_base/mbf_$(arg local_planner).launch">
-        
-        <param name="base_global_planner" value="NavfnROS" />
 
         <arg name="model" value="$(arg model)" />
         <arg name="speed" value="$(arg speed)" />
