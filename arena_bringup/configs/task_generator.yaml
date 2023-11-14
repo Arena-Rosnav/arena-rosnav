@@ -3,7 +3,7 @@ auto_reset: true
 
 task_mode:
   scenario:
-    scenario_file: highly_social.json
+    scenario_file: default.json
 
   parametrized:
     file: default.xml 
@@ -20,11 +20,11 @@ task_mode:
       max: 5
       models: ["shelf"]
     interactive:
-      min: 0
-      max: 0
+      min: 1
+      max: 5
       models: ["shelf"]
     dynamic:
-      min: 3
+      min: 1
       max: 5
       models: ["actor1"]
 

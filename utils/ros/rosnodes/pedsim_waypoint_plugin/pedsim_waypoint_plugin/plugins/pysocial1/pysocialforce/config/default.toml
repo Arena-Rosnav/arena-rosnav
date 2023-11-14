@@ -25,7 +25,7 @@ u0 = 10
 r = 0.2
 
 [group_coherence_force]
-factor = 2.0
+factor = 3.0
 
 [group_coherence_force_alt]
 factor = 3.0
@@ -45,12 +45,12 @@ factor = 4.0
 fov_phi = 90.0
 
 [desired_force]
-factor = 2.0
+factor = 2.5
 relaxation_time = 0.5
 goal_threshold = 0.2
 
 [social_force]
-factor = 5.1
+factor = 10.1
 lambda_importance = 2.0
 gamma = 0.35
 n = 2
