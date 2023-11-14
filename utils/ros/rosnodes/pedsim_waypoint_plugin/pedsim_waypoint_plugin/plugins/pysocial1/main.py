@@ -14,12 +14,10 @@ import pysocialforce as psf
 
 @PedsimWaypointGenerator.register(WaypointPluginName.PYSOCIAL1)
 class Plugin_PySocialForce(WaypointPlugin):
-    FACTOR = 0.6
+    FACTOR = 0.3
     GROUP_DEST_DIST = 0.5
 
     def __init__(self):
-        self.first_call = True
-
         self.groups = dict()
         self.group_count = 0
 
@@ -68,8 +66,7 @@ class Plugin_PySocialForce(WaypointPlugin):
 
     @staticmethod
     def get_state_data(agents: List[pedsim_msgs.msg.AgentState], 
-                       groups: List[pedsim_msgs.msg.AgentGroup],
-                       reset_velocity: bool = False
+                       groups: List[pedsim_msgs.msg.AgentGroup]
                        ) -> np.ndarray:
         
         idx_assignment = dict()
@@ -79,8 +76,8 @@ class Plugin_PySocialForce(WaypointPlugin):
 
             p_x = agent.pose.position.x
             p_y = agent.pose.position.y
-            v_x = agent.twist.linear.x if not reset_velocity else 1.0
-            v_y = agent.twist.linear.y if not reset_velocity else 1.0
+            v_x = agent.twist.linear.x
+            v_y = agent.twist.linear.y
             d_x = agent.destination.x
             d_y = agent.destination.y
             state_data.append([p_x, p_y, v_x, v_y, d_x, d_y])
@@ -124,8 +121,7 @@ class Plugin_PySocialForce(WaypointPlugin):
         if len(data.agents) < 1:
             return list()
         
-        state, agent_idx = self.get_state_data(data.agents, data.groups, reset_velocity=self.first_call)
-        self.first_call = False
+        state, agent_idx = self.get_state_data(data.agents, data.groups)
         groups = self.assign_groups(agent_idx, data.groups)
         state = self.overwrite_group_dest(state, groups)
         obs = self.extract_obstacles(data.line_obstacles)

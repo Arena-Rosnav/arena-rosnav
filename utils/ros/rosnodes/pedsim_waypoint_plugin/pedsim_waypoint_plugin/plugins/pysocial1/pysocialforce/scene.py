@@ -40,7 +40,9 @@ class PedState:
             self._state = state
         if self.initial_speeds is None:
             self.initial_speeds = self.speeds()
-        self.max_speeds = self.max_speed_multiplier * self.initial_speeds
+        # Note: This computation of max_speeds doens't work with our use case (aren-rosnav)
+        # self.max_speeds = self.max_speed_multiplier * self.initial_speeds
+        self.max_speeds = self.max_speed_multiplier * np.ones((state.shape[0]))
         self.ped_states.append(self._state.copy())
 
     def get_states(self):
