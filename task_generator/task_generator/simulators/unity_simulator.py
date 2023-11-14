@@ -71,13 +71,14 @@ class UnitySimulator(BaseSimulator):
         request.model_xml = model.description
         request.robot_namespace = self._namespace(entity.name)
         request.reference_frame = "world"
+        # Keep in mind that y axis is up
         request.initial_pose = Pose(
             position=Point(
                 x=entity.position[0],
-                y=entity.position[1],
-                z=0
+                y=0,
+                z=entity.position[1]
             ),
-            orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz")
+            orientation=Quaternion(*quaternion_from_euler(0.0, entity.position[2], 0.0, axes="sxyz")
                                    )
         )
 
@@ -97,11 +98,12 @@ class UnitySimulator(BaseSimulator):
 
         request.model_state.model_name = name
         pose = Pose()
+        # Keep in mind that y axis is up
         pose.position.x = pos[0]
-        pose.position.y = pos[1]
-        pose.position.z = 0.35
+        pose.position.y = 0.35
+        pose.position.z = pos[1]
         pose.orientation = Quaternion(
-            *quaternion_from_euler(0.0, 0.0, pos[2], axes="sxyz")
+            *quaternion_from_euler(0.0, pos[2], 0.0, axes="sxyz")
         )
         request.model_state.pose = pose
         request.model_state.reference_frame = "world"
@@ -122,7 +124,7 @@ class UnitySimulator(BaseSimulator):
         goal_msg.header.stamp = rospy.get_rostime()
         goal_msg.header.frame_id = "map"
         goal_msg.pose.position.x = goal[0]
-        goal_msg.pose.position.y = goal[1]
+        goal_msg.pose.position.z = goal[1]
 
         goal_msg.pose.orientation.w = 0
         goal_msg.pose.orientation.x = 0
