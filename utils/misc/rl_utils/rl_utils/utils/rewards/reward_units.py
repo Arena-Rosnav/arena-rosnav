@@ -1,77 +1,43 @@
-from typing import Any
-
-from scipy.spatial import cKDTree
-from tools.general import load_rew_fnc
-
-from abc import ABC, abstractmethod
-import numpy as np
+from typing import Any, Callable, Dict
 from warnings import warn
 
-from .constants import REWARD_CONSTANTS
+import numpy as np
+
+from .constants import REWARD_CONSTANTS, DEFAULTS
 from .reward_function import RewardFunction
+from .base_reward_units import RewardUnit, GlobalplanRewardUnit
+from .reward_unit_factory import RewardUnitFactory
+from .utils import check_params
+
+# UPDATE WHEN ADDING A NEW UNIT
+__all__ = [
+    "RewardGoalReached",
+    "RewardSafeDistance",
+    "RewardNoMovement",
+    "RewardApproachGoal",
+    "RewardCollision",
+    "RewardDistanceTravelled",
+    "RewardApproachGlobalplan",
+    "RewardFollowGlobalplan",
+    "RewardReverseDrive",
+    "RewardAbruptVelocityChange",
+]
 
 
-class RewardUnit(ABC):
-    def __init__(self, reward_function: RewardFunction, *args, **kwargs) -> None:
-        self._reward_function = reward_function
-        self.check_parameters(*args, **kwargs)
-
-    def add_reward(self, value: float):
-        self._reward_function.add_reward(value=value)
-
-    def add_info(self, info: dict):
-        self._reward_function.add_info(info=info)
-
-    def check_parameters(self, *args, **kwargs):
-        pass
-
-    def reset(self):
-        pass
-
-    @property
-    def robot_radius(self):
-        return self._reward_function.robot_radius
-
-    @abstractmethod
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        raise NotImplementedError()
-
-
-class RewardUnitGlobalplan(RewardUnit, ABC):
-    def __init__(self, reward_function: RewardFunction, *args, **kwargs) -> None:
-        super().__init__(reward_function, *args, **kwargs)
-        self._kdtree = None
-
-    @property
-    def curr_dist_to_path(self) -> float:
-        return self._reward_function.curr_dist_to_path
-
-    @curr_dist_to_path.setter
-    def curr_dist_to_path(self, value: float) -> None:
-        self._reward_function.curr_dist_to_path = value
-
-    @property
-    def safe_dist_breached(self) -> bool:
-        return self._reward_function.safe_dist_breached
-
-    def get_dist_to_globalplan(self, global_plan: np.ndarray, robot_pose):
-        if self._kdtree is None:
-            self._kdtree = cKDTree(global_plan)
-
-        dist, _ = self._kdtree.query([robot_pose.x, robot_pose.y])
-        return dist
-
-    def reset(self):
-        self._kdtree = None
-
-
+@RewardUnitFactory.register("goal_reached")
 class RewardGoalReached(RewardUnit):
+    @check_params
     def __init__(
-        self, reward_function: RewardFunction, reward: float = 15.0, *args, **kwargs
+        self,
+        reward_function: RewardFunction,
+        reward: float = DEFAULTS.GOAL_REACHED.REWARD,
+        _on_safe_dist_violation: bool = DEFAULTS.GOAL_REACHED._ON_SAFE_DIST_VIOLATION,
+        *args,
+        **kwargs,
     ):
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._reward = reward
         self._goal_radius = self._reward_function.goal_radius
-        super().__init__(reward_function, *args, **kwargs)
 
     def check_parameters(self, *args, **kwargs):
         if self._reward < 0.0:
@@ -93,13 +59,19 @@ class RewardGoalReached(RewardUnit):
         self._goal_radius = self._reward_function.goal_radius
 
 
+@RewardUnitFactory.register("safe_distance")
 class RewardSafeDistance(RewardUnit):
+    @check_params
     def __init__(
-        self, reward_function: RewardFunction, reward: float = 0.15, *args, **kwargs
+        self,
+        reward_function: RewardFunction,
+        reward: float = DEFAULTS.SAFE_DISTANCE.REWARD,
+        *args,
+        **kwargs,
     ):
+        super().__init__(reward_function, True, *args, **kwargs)
         self._reward = reward
         self._safe_dist = self._reward_function._safe_dist
-        super().__init__(reward_function, *args, **kwargs)
 
     def check_parameters(self, *args, **kwargs):
         if self._reward > 0.0:
@@ -120,12 +92,19 @@ class RewardSafeDistance(RewardUnit):
             self.add_info({"safe_dist_violation": True})
 
 
+@RewardUnitFactory.register("no_movement")
 class RewardNoMovement(RewardUnit):
+    @check_params
     def __init__(
-        self, reward_function: RewardFunction, reward: float = -0.01, *args, **kwargs
+        self,
+        reward_function: RewardFunction,
+        reward: float = DEFAULTS.NO_MOVEMENT.REWARD,
+        _on_safe_dist_violation: bool = DEFAULTS.NO_MOVEMENT._ON_SAFE_DIST_VIOLATION,
+        *args,
+        **kwargs,
     ):
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._reward = reward
-        super().__init__(reward_function, *args, **kwargs)
 
     def check_parameters(self, *args, **kwargs):
         if self._reward > 0.0:
@@ -144,24 +123,25 @@ class RewardNoMovement(RewardUnit):
             self.add_reward(self._reward)
 
 
-class RewardGoalApproach(RewardUnit):
+@RewardUnitFactory.register("approach_goal")
+class RewardApproachGoal(RewardUnit):
+    @check_params
     def __init__(
         self,
         reward_function: RewardFunction,
-        pos_factor: float = 0.3,
-        neg_factor: float = 0.5,
+        pos_factor: float = DEFAULTS.APPROACH_GOAL.POS_FACTOR,
+        neg_factor: float = DEFAULTS.APPROACH_GOAL.NEG_FACTOR,
+        _on_safe_dist_violation: bool = DEFAULTS.APPROACH_GOAL._ON_SAFE_DIST_VIOLATION,
         *args,
         **kwargs,
     ):
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._pos_factor = pos_factor
         self._neg_factor = neg_factor
-
-        super().__init__(reward_function, *args, **kwargs)
-
         self.last_goal_dist = None
 
     def check_parameters(self, *args, **kwargs):
-        if self._pos_factor < 0 or self._neg_factor:
+        if self._pos_factor < 0 or self._neg_factor < 0:
             warn_msg = (
                 f"[{self.__class__.__name__}] Both factors should be positive. "
                 f"Current values: [pos_factor={self._pos_factor}], [neg_factor={self._neg_factor}]"
@@ -184,13 +164,22 @@ class RewardGoalApproach(RewardUnit):
             self.add_reward(w * (self.last_goal_dist - distance_to_goal))
         self.last_goal_dist = distance_to_goal
 
+    def reset(self):
+        self.last_goal_dist = None
 
+
+@RewardUnitFactory.register("collision")
 class RewardCollision(RewardUnit):
+    @check_params
     def __init__(
-        self, reward_function: RewardFunction, reward: float = -10.0, *args, **kwargs
+        self,
+        reward_function: RewardFunction,
+        reward: float = DEFAULTS.COLLISION.REWARD,
+        *args,
+        **kwargs,
     ):
+        super().__init__(reward_function, True, *args, **kwargs)
         self._reward = reward
-        super().__init__(reward_function, *args, **kwargs)
 
     def check_parameters(self, *args, **kwargs):
         if self._reward > 0.0:
@@ -211,53 +200,55 @@ class RewardCollision(RewardUnit):
             self.add_info({"is_done": True, "done_reason": 1, "is_success": False})
 
 
+@RewardUnitFactory.register("distance_travelled")
 class RewardDistanceTravelled(RewardUnit):
     def __init__(
         self,
         reward_function: RewardFunction,
-        consumption_factor: float = 0.005,
-        lin_vel_scalar: float = 1.0,
-        ang_vel_scalar: float = 0.001,
+        consumption_factor: float = DEFAULTS.DISTANCE_TRAVELLED.CONSUMPTION_FACTOR,
+        lin_vel_scalar: float = DEFAULTS.DISTANCE_TRAVELLED.LIN_VEL_SCALAR,
+        ang_vel_scalar: float = DEFAULTS.DISTANCE_TRAVELLED.ANG_VEL_SCALAR,
+        _on_safe_dist_violation: bool = DEFAULTS.DISTANCE_TRAVELLED._ON_SAFE_DIST_VIOLATION,
         *args,
         **kwargs,
     ):
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._factor = consumption_factor
         self._lin_vel_scalar = lin_vel_scalar
         self._ang_vel_scalar = ang_vel_scalar
-        super().__init__(reward_function, *args, **kwargs)
 
     def __call__(self, action: np.ndarray, *args: Any, **kwargs: Any) -> Any:
         if action is None:
-            pass
-        else:
-            lin_vel, ang_vel = action[0], action[-1]
-            reward = (
-                (lin_vel * self._lin_vel_scalar) + (ang_vel * self._ang_vel_scalar)
-            ) * -self._factor
-            self.add_reward(reward)
+            return
+        lin_vel, ang_vel = action[0], action[-1]
+        reward = (
+            (lin_vel * self._lin_vel_scalar) + (ang_vel * self._ang_vel_scalar)
+        ) * -self._factor
+        self.add_reward(reward)
 
 
-class RewardApproachGlobalplan(RewardUnitGlobalplan):
+@RewardUnitFactory.register("approach_globalplan")
+class RewardApproachGlobalplan(GlobalplanRewardUnit):
+    @check_params
     def __init__(
         self,
         reward_function: RewardFunction,
-        pos_factor: float = 0.3,
-        neg_factor: float = 0.5,
-        on_safe_dist_violation: bool = False,
+        pos_factor: float = DEFAULTS.APPROACH_GLOBALPLAN.POS_FACTOR,
+        neg_factor: float = DEFAULTS.APPROACH_GLOBALPLAN.NEG_FACTOR,
+        _on_safe_dist_violation: bool = DEFAULTS.APPROACH_GLOBALPLAN._ON_SAFE_DIST_VIOLATION,
         *args,
         **kwargs,
     ):
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+
         self._pos_factor = pos_factor
         self._neg_factor = neg_factor
-        self._on_safe_dist_violation = on_safe_dist_violation
-
-        super().__init__(reward_function, *args, **kwargs)
 
         self.last_dist_to_path = None
         self._kdtree = None
 
     def check_parameters(self, *args, **kwargs):
-        if self._pos_factor < 0 or self._neg_factor:
+        if self._pos_factor < 0 or self._neg_factor < 0:
             warn_msg = (
                 f"[{self.__class__.__name__}] Both factors should be positive. "
                 f"Current values: [pos_factor={self._pos_factor}], [neg_factor={self._neg_factor}]"
@@ -273,21 +264,17 @@ class RewardApproachGlobalplan(RewardUnitGlobalplan):
     def __call__(
         self, global_plan: np.ndarray, robot_pose, *args: Any, **kwargs: Any
     ) -> Any:
-        if not self.curr_dist_to_path and global_plan and len(global_plan) > 0:
+        if (
+            not self.curr_dist_to_path
+            and type(global_plan) is not None
+            and len(global_plan) > 0
+        ):
             self.curr_dist_to_path = self.get_dist_to_globalplan(
                 global_plan, robot_pose
             )
 
-        if self._on_safe_dist_violation:
-            if self.curr_dist_to_path and self.last_dist_to_path is not None:
-                self.add_reward(self._calc_reward())
-        else:
-            if (
-                not self.safe_dist_breached
-                and self.curr_dist_to_path
-                and self.last_dist_to_path is not None
-            ):
-                self.add_reward(self._calc_reward())
+        if self.curr_dist_to_path and self.last_dist_to_path:
+            self.add_reward(self._calc_reward())
 
         self.last_dist_to_path = self.curr_dist_to_path
 
@@ -305,18 +292,21 @@ class RewardApproachGlobalplan(RewardUnitGlobalplan):
         self.curr_dist_to_path = None
 
 
-class RewardFollowGlobalplan(RewardUnitGlobalplan):
+@RewardUnitFactory.register("follow_globalplan")
+class RewardFollowGlobalplan(GlobalplanRewardUnit):
     def __init__(
         self,
         reward_function: RewardFunction,
-        min_dist_to_path: float = 0.5,
-        reward_factor: float = 0.1,
+        min_dist_to_path: float = DEFAULTS.FOLLOW_GLOBALPLAN.MIN_DIST_TO_PATH,
+        reward_factor: float = DEFAULTS.FOLLOW_GLOBALPLAN.REWARD_FACTOR,
+        _on_safe_dist_violation: bool = DEFAULTS.FOLLOW_GLOBALPLAN._ON_SAFE_DIST_VIOLATION,
         *args,
         **kwargs,
     ) -> None:
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+
         self._min_dist_to_path = min_dist_to_path
         self._reward_factor = reward_factor
-        super().__init__(reward_function, *args, **kwargs)
 
     def __call__(
         self,
@@ -326,7 +316,11 @@ class RewardFollowGlobalplan(RewardUnitGlobalplan):
         *args: Any,
         **kwargs: Any,
     ) -> Any:
-        if not self.curr_dist_to_path and global_plan and len(global_plan) > 0:
+        if (
+            not self.curr_dist_to_path
+            and type(global_plan) is not None
+            and len(global_plan) > 0
+        ):
             self.curr_dist_to_path = self.get_dist_to_globalplan(
                 global_plan, robot_pose
             )
@@ -334,22 +328,82 @@ class RewardFollowGlobalplan(RewardUnitGlobalplan):
         if (
             self.curr_dist_to_path
             and action is not None
-            and self.curr_dist_to_path <= self.curr_dist_to_path
+            and self.curr_dist_to_path <= self._min_dist_to_path
         ):
             self.add_reward(self._reward_factor * action[0])
 
+    def reset(self):
+        self._kdtree = None
+        self.curr_dist_to_path = None
 
+
+@RewardUnitFactory.register("reverse_drive")
 class RewardReverseDrive(RewardUnit):
+    @check_params
     def __init__(
-        self, reward_function: RewardFunction, reward: float = 0.01, *args, **kwargs
+        self,
+        reward_function: RewardFunction,
+        reward: float = DEFAULTS.REVERSE_DRIVE.REWARD,
+        _on_safe_dist_violation: bool = DEFAULTS.REVERSE_DRIVE._ON_SAFE_DIST_VIOLATION,
+        *args,
+        **kwargs,
     ) -> None:
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+
         self._reward = reward
-        super().__init__(reward_function, *args, **kwargs)
+
+    def check_parameters(self, *args, **kwargs):
+        if self._reward > 0.0:
+            warn_msg = (
+                f"[{self.__class__.__name__}] Reconsider this reward. "
+                f"Positive rewards may lead to unfavorable behaviors. "
+                f"Current value: {self._reward}"
+            )
+            warn(warn_msg)
 
     def __call__(self, action: np.ndarray, *args, **kwargs):
         if action is not None and action[0] < 0:
-            self.add_reward(-self._reward)
+            self.add_reward(self._reward)
 
 
-class RewardActionAbruptVelocityChange(RewardUnit):
-    pass
+@RewardUnitFactory.register("abrupt_velocity_change")
+class RewardAbruptVelocityChange(RewardUnit):
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        vel_factors: Dict[str, float] = DEFAULTS.ABRUPT_VEL_CHANGE.VEL_FACTORS,
+        _on_safe_dist_violation: bool = DEFAULTS.ABRUPT_VEL_CHANGE._ON_SAFE_DIST_VIOLATION,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+
+        self._vel_factors = vel_factors
+        self.last_action = None
+
+        self._vel_change_fcts = self._get_vel_change_fcts()
+
+    def _get_vel_change_fcts(self):
+        return [
+            self._prepare_reward_function(int(idx), factor)
+            for idx, factor in self._vel_factors.items()
+        ]
+
+    def _prepare_reward_function(
+        self, idx: int, factor: float
+    ) -> Callable[[np.ndarray], None]:
+        def vel_change_fct(action: np.ndarray):
+            assert type(self.last_action) is not None
+            vel_diff = abs(action[idx] - self.last_action[idx])
+            self.add_reward(-((vel_diff**4 / 100) * factor))
+
+        return vel_change_fct
+
+    def __call__(self, action: np.ndarray, *args, **kwargs):
+        if self.last_action is not None:
+            for rew_fct in self._vel_change_fcts:
+                rew_fct(action)
+        self.last_action = action
+
+    def reset(self):
+        self.last_action = None
