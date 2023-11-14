@@ -167,13 +167,6 @@ def load_config(config_name: str) -> dict:
     return config
 
 
-def load_rew_fnc(config_name: str) -> dict:
-    config_location = TRAINING_CONSTANTS.PATHS.REWARD_FUNCTIONS(config_name)
-    with open(config_location, "r", encoding="utf-8") as target:
-        config = yaml.load(target, Loader=yaml.FullLoader)
-    return config
-
-
 def generate_agent_name(config: dict) -> str:
     """Function to get agent name to save to/load from file system
 
