@@ -1,0 +1,7 @@
+controllers:
+  - name: HATebLocalPlannerROS
+    type: hateb_local_planner/HATebLocalPlannerROS
+
+HATebLocalPlannerROS:
+  odom_topic: odom
+  max_vel_x: $(arg speed)
