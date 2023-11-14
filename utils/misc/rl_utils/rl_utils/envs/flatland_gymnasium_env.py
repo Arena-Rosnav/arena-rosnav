@@ -18,7 +18,8 @@ from task_generator.tasks.base_task import BaseTask
 from task_generator.utils import rosparam_get
 
 from ..utils.observation_collector import ObservationCollector
-from ..utils.reward import RewardCalculator
+from rl_utils.utils.rewards.reward_function import RewardFunction
+
 
 NUM_EPS = 20
 
@@ -92,12 +93,12 @@ class FlatlandEnv(gymnasium.Env):
         self.task: BaseTask = task_generator._get_predefined_task(**kwargs)
 
         # reward calculator
-        self.reward_calculator = RewardCalculator(
+        self.reward_calculator = RewardFunction(
+            rew_func_name=reward_fnc,
             holonomic=self.model_space_encoder._is_holonomic,
             robot_radius=self.task.robot_managers[0]._robot_radius,
             safe_dist=self.task.robot_managers[0].safe_distance,
             goal_radius=rosparam_get(float, "goal_radius", 0.3),
-            rule=reward_fnc,
         )
 
         # action agent publisher
@@ -260,7 +261,7 @@ class FlatlandEnv(gymnasium.Env):
         diff = round(mean_reward - self.last_mean_reward, 5)
 
         print(
-            f"[{self.ns}] Last 10 Episodes:\t"
+            f"[{self.ns}] Last {NUM_EPS} Episodes:\t"
             f"{self._done_reasons[str(0)]}: {self._done_hist[0]}\t"
             f"{self._done_reasons[str(1)]}: {self._done_hist[1]}\t"
             f"{self._done_reasons[str(2)]}: {self._done_hist[2]}\t"
