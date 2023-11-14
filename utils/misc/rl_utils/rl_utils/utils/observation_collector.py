@@ -166,6 +166,7 @@ class ObservationCollector:
         obs_dict = {
             "laser_scan": scan,
             "goal_in_robot_frame": [rho, theta],
+            "distance_to_goal": rho,
             "global_plan": self._globalplan,
             "robot_pose": self._robot_pose,
             "last_action": kwargs.get("last_action", np.array([0, 0, 0])),
