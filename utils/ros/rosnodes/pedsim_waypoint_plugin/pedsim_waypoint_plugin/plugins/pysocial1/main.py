@@ -5,6 +5,7 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, List, Optional, Type, TypeVar
 import random
+import rospy
 
 import sys
 sys.path.append(str(Path(__file__).resolve().parent))
@@ -129,7 +130,7 @@ class Plugin_PySocialForce(WaypointPlugin):
         state = self.overwrite_group_dest(state, groups)
         obs = self.extract_obstacles(data.line_obstacles)
 
-        print("Assigned Groups:", groups)
+        rospy.logdebug("Assigned Groups: " + groups.__str__())
 
         simulator = psf.Simulator(
             state=state,
