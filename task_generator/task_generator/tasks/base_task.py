@@ -5,6 +5,8 @@ from rospkg import RosPack
 import rospy
 
 from rosgraph_msgs.msg import Clock
+from std_msgs.msg import Empty
+
 from task_generator.constants import Constants
 from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.robot_manager import RobotManager
@@ -37,8 +39,15 @@ class BaseTask(Props_):
     Base Task as parent class for all other tasks.
     """
 
+    TOPIC_RESET_START = "reset_start"
+    TOPIC_RESET_END = "reset_end"
+    PARAM_RESETTING = "resetting"
+
     clock: Clock
     last_reset_time: int
+
+    __reset_start: rospy.Publisher
+    __reset_end: rospy.Publisher
 
     def __init__(
         self,
@@ -55,6 +64,9 @@ class BaseTask(Props_):
         self.obstacle_manager = obstacle_manager
         self.robot_managers = robot_managers
         self.world_manager = world_manager
+
+        self.__reset_start = rospy.Publisher(self.TOPIC_RESET_START, Empty, queue_size=1)
+        self.__reset_end = rospy.Publisher(self.TOPIC_RESET_END, Empty, queue_size=1)
 
         rospy.Subscriber("/clock", Clock, self._clock_callback)
         self.last_reset_time = 0
@@ -99,7 +111,11 @@ class BaseTask(Props_):
 
         while fails < Constants.MAX_RESET_FAIL_TIMES:
             try:
+                rospy.set_param(self.PARAM_RESETTING, True)
+                self.__reset_start.publish()
                 return_val = callback()
+                rospy.set_param(self.PARAM_RESETTING, False)
+                self.__reset_end.publish()
                 break
 
             except rospy.ServiceException as e:
