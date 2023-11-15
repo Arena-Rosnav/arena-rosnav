@@ -8,7 +8,7 @@ class RewardUnitFactory:
 
     @classmethod
     def register(cls, name: str):
-        def inner_wrapper(wrapped_class):
+        def inner_wrapper(wrapped_class: RewardUnit):
             assert name not in cls.registry, f"RewardUnit '{name}' already exists!"
             assert issubclass(wrapped_class, RewardUnit)
 

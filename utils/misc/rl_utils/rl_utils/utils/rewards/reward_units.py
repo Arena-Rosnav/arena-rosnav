@@ -26,6 +26,9 @@ __all__ = [
 
 @RewardUnitFactory.register("goal_reached")
 class RewardGoalReached(RewardUnit):
+    DONE_INFO = {"is_done": True, "done_reason": 2, "is_success": True}
+    NOT_DONE_INFO = {"is_done": False}
+
     @check_params
     def __init__(
         self,
@@ -51,9 +54,9 @@ class RewardGoalReached(RewardUnit):
     def __call__(self, distance_to_goal: float, *args: Any, **kwargs: Any) -> Any:
         if distance_to_goal < self._reward_function.goal_radius:
             self.add_reward(self._reward)
-            self.add_info({"is_done": True, "done_reason": 2, "is_success": True})
+            self.add_info(RewardGoalReached.DONE_INFO)
         else:
-            self.add_info({"is_done": False})
+            self.add_info(RewardGoalReached.NOT_DONE_INFO)
 
     def reset(self):
         self._goal_radius = self._reward_function.goal_radius
@@ -170,6 +173,8 @@ class RewardApproachGoal(RewardUnit):
 
 @RewardUnitFactory.register("collision")
 class RewardCollision(RewardUnit):
+    DONE_INFO = {"is_done": True, "done_reason": 1, "is_success": False}
+
     @check_params
     def __init__(
         self,
@@ -197,7 +202,7 @@ class RewardCollision(RewardUnit):
 
         if laser_scan.min() <= self.robot_radius or coll_in_blind_spots:
             self.add_reward(self._reward)
-            self.add_info({"is_done": True, "done_reason": 1, "is_success": False})
+            self.add_info(RewardCollision.DONE_INFO)
 
 
 @RewardUnitFactory.register("distance_travelled")
@@ -393,7 +398,7 @@ class RewardAbruptVelocityChange(RewardUnit):
         self, idx: int, factor: float
     ) -> Callable[[np.ndarray], None]:
         def vel_change_fct(action: np.ndarray):
-            assert type(self.last_action) is not None
+            assert isinstance(self.last_action)
             vel_diff = abs(action[idx] - self.last_action[idx])
             self.add_reward(-((vel_diff**4 / 100) * factor))
 
