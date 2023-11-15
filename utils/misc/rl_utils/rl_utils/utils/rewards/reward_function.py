@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Tuple
 
 import numpy as np
 import rospy
@@ -11,13 +11,13 @@ class RewardFunction:
     def __init__(
         self,
         rew_func_name: str,
-        holonomic: bool,
         robot_radius: float,
         goal_radius: float,
         safe_dist: float,
+        *args,
+        **kwargs,
     ):
         self._rew_func_name = rew_func_name
-        self._holonomic = holonomic
         self._robot_radius = robot_radius
         self._safe_dist = safe_dist
         self._goal_radius = goal_radius
@@ -32,16 +32,15 @@ class RewardFunction:
             Callable[[Dict[str, Any]], None]
         ] = RewardFunction._setup_reward_function(self, self._rew_func_name)
 
-    @staticmethod
     def _setup_reward_function(
-        rew_fnc_cls: "RewardFunction", rew_fnc_name: str
+        self, rew_fnc_name: str
     ) -> List[Callable[[Dict[str, Any]], None]]:
         import rl_utils.utils.rewards as rew_pkg
 
         rew_fnc_dict = load_rew_fnc(rew_fnc_name)
         return [
             rew_pkg.RewardUnitFactory.instantiate(unit_name)(
-                reward_function=rew_fnc_cls, **kwargs
+                reward_function=self, **kwargs
             )
             for unit_name, kwargs in rew_fnc_dict.items()
         ]
@@ -63,22 +62,18 @@ class RewardFunction:
         for reward_unit in self._reward_units:
             reward_unit.reset()
 
-    def calculate_reward(self, *args, **kwargs):
+    def calculate_reward(self, laser_scan: np.ndarray, *args, **kwargs) -> None:
         self._reset()
-        self.set_safe_dist_breached(kwargs["laser_scan"])
+        self.set_safe_dist_breached(laser_scan)
 
         for reward_unit in self._reward_units:
             if self.safe_dist_breached and not reward_unit.on_safe_dist_violation:
                 continue
             reward_unit(**kwargs)
 
-    def get_reward(self, *args, **kwargs):
+    def get_reward(self, *args, **kwargs) -> Tuple[float, Dict[str, Any]]:
         self.calculate_reward(**kwargs)
         return self._curr_reward, self._info
-
-    @property
-    def holonomic(self) -> float:
-        return self._holonomic
 
     @property
     def robot_radius(self) -> float:
