@@ -55,8 +55,8 @@
     # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../arena-simulation-setup
-    uri: https://github.com/voshch/arena-simulation-setup.git
-    version: dev
+    uri: https://github.com/TheZomb/arena-simulation-setup.git
+    version: unity-params
 
 - git:
     local-name: ../arena-evaluation
