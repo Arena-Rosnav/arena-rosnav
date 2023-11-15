@@ -56,7 +56,7 @@
 - git:
     local-name: ../arena-simulation-setup
     uri: https://github.com/TheZomb/arena-simulation-setup.git
-    version: unity-params
+    version: dev
 
 - git:
     local-name: ../arena-evaluation
