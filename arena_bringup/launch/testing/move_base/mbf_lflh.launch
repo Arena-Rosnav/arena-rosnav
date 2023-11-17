@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- Arguments -->
+  <arg name="model" default="burger"/>
+  <arg name="cmd_vel_topic" default="/cmd_vel" />
+  <arg name="odom_topic" default="odom" />
+  <arg name="move_forward_only" default="false"/>
+  <arg name="namespace" default="" />
+
+  <!-- move_base -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <param name="base_global_planner" type="string" value="navfn/NavfnROS" />
+    <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS"/>
+    <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/costmaps/global_costmap_params.yaml" command="load" />
+    <remap from="cmd_vel" to="foo"/>
+    <remap from="odom" to="$(arg odom_topic)"/>
+    <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
+    <param name="controller_frequency" value="5.0" />
+    <param name="planner_frequency" value="0.0" />
+  </node>
+
+  <node pkg="LfH" name="hallucination" type="run_policy.py" output="screen" required="true"/> 
+</launch>
