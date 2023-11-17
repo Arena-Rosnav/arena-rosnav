@@ -327,7 +327,7 @@ class RewardApproachGlobalplan(GlobalplanRewardUnit):
     ) -> Any:
         if (
             not self.curr_dist_to_path
-            and type(global_plan) is not None
+            and isinstance(global_plan, np.ndarray)
             and len(global_plan) > 0
         ):
             self.curr_dist_to_path = self.get_dist_to_globalplan(
@@ -387,7 +387,7 @@ class RewardFollowGlobalplan(GlobalplanRewardUnit):
     ) -> Any:
         if (
             not self.curr_dist_to_path
-            and type(global_plan) is not None
+            and isinstance(global_plan, np.ndarray)
             and len(global_plan) > 0
         ):
             self.curr_dist_to_path = self.get_dist_to_globalplan(
