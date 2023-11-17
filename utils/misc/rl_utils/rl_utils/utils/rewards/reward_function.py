@@ -89,14 +89,14 @@ class RewardFunction:
         for reward_unit in self._reward_units:
             reward_unit.reset()
 
-    def calculate_reward(self, *args, **kwargs) -> None:
+    def calculate_reward(self, laser_scan: np.ndarray, *args, **kwargs) -> None:
         self._reset()
-        self.set_safe_dist_breached(kwargs["laser_scan"])
+        self.set_safe_dist_breached(laser_scan)
 
         for reward_unit in self._reward_units:
             if self.safe_dist_breached and not reward_unit.on_safe_dist_violation:
                 continue
-            reward_unit(**kwargs)
+            reward_unit(laser_scan=laser_scan, **kwargs)
 
     def get_reward(self, *args, **kwargs) -> Tuple[float, Dict[str, Any]]:
         self.calculate_reward(**kwargs)
