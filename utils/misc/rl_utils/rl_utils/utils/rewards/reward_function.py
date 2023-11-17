@@ -9,6 +9,20 @@ from .utils import load_rew_fnc
 
 
 class RewardFunction:
+    _rew_func_name: str
+    _robot_radius: float
+    _safe_dist: float
+    _goal_radius: float
+
+    _curr_dist_to_path: float
+    _safe_dist_breached: bool
+
+    _curr_reward: float
+    _info: Dict[str, Any]
+
+    _rew_fnc_dict: Dict[str, Dict[str, Any]]
+    _reward_units: List[RewardUnit]
+
     def __init__(
         self,
         rew_func_name: str,
@@ -44,7 +58,7 @@ class RewardFunction:
         """Sets up the reward function.
 
         Returns:
-            List[RewardUnit]: List of RewardUnits.
+            List[RewardUnit]: List of reward units for calculating the reward.
         """
         import rl_utils.utils.rewards as rew_pkg
 
