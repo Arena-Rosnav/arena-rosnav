@@ -17,6 +17,14 @@ class RewardFunction:
         *args,
         **kwargs,
     ):
+        """_summary_
+
+        Args:
+            rew_func_name (str): _description_
+            robot_radius (float): _description_
+            goal_radius (float): _description_
+            safe_dist (float): _description_
+        """
         self._rew_func_name = rew_func_name
         self._robot_radius = robot_radius
         self._safe_dist = safe_dist
@@ -35,6 +43,14 @@ class RewardFunction:
     def _setup_reward_function(
         self, rew_fnc_name: str
     ) -> List[Callable[[Dict[str, Any]], None]]:
+        """_summary_
+
+        Args:
+            rew_fnc_name (str): _description_
+
+        Returns:
+            List[Callable[[Dict[str, Any]], None]]: _description_
+        """
         import rl_utils.utils.rewards as rew_pkg
 
         rew_fnc_dict = load_rew_fnc(rew_fnc_name)
@@ -45,13 +61,24 @@ class RewardFunction:
             for unit_name, kwargs in rew_fnc_dict.items()
         ]
 
-    def add_reward(self, value: float):
+    def add_reward(self, value: float) -> None:
+        """_summary_
+
+        Args:
+            value (float): _description_
+        """
         self._curr_reward += value
 
-    def add_info(self, info: dict):
+    def add_info(self, info: dict) -> None:
+        """_summary_
+
+        Args:
+            info (dict): _description_
+        """
         self._info.update(info)
 
     def _reset(self):
+        """_summary_"""
         self._curr_reward = 0
         self._info = {}
 
@@ -62,9 +89,9 @@ class RewardFunction:
         for reward_unit in self._reward_units:
             reward_unit.reset()
 
-    def calculate_reward(self, laser_scan: np.ndarray, *args, **kwargs) -> None:
+    def calculate_reward(self, *args, **kwargs) -> None:
         self._reset()
-        self.set_safe_dist_breached(laser_scan)
+        self.set_safe_dist_breached(kwargs["laser_scan"])
 
         for reward_unit in self._reward_units:
             if self.safe_dist_breached and not reward_unit.on_safe_dist_violation:
