@@ -325,14 +325,7 @@ class RewardApproachGlobalplan(GlobalplanRewardUnit):
     def __call__(
         self, global_plan: np.ndarray, robot_pose, *args: Any, **kwargs: Any
     ) -> Any:
-        if (
-            not self.curr_dist_to_path
-            and isinstance(global_plan, np.ndarray)
-            and len(global_plan) > 0
-        ):
-            self.curr_dist_to_path = self.get_dist_to_globalplan(
-                global_plan, robot_pose
-            )
+        super().__call__(global_plan=global_plan, robot_pose=robot_pose)
 
         if self.curr_dist_to_path and self.last_dist_to_path:
             self.add_reward(self._calc_reward())
@@ -348,9 +341,8 @@ class RewardApproachGlobalplan(GlobalplanRewardUnit):
         return w * (self.last_dist_to_path - self.curr_dist_to_path)
 
     def reset(self):
-        self._kdtree = None
+        super().reset()
         self.last_dist_to_path = None
-        self.curr_dist_to_path = None
 
 
 @RewardUnitFactory.register("follow_globalplan")
@@ -385,14 +377,7 @@ class RewardFollowGlobalplan(GlobalplanRewardUnit):
         *args: Any,
         **kwargs: Any,
     ) -> Any:
-        if (
-            not self.curr_dist_to_path
-            and isinstance(global_plan, np.ndarray)
-            and len(global_plan) > 0
-        ):
-            self.curr_dist_to_path = self.get_dist_to_globalplan(
-                global_plan, robot_pose
-            )
+        super().__call__(global_plan=global_plan, robot_pose=robot_pose)
 
         if (
             self.curr_dist_to_path
@@ -400,10 +385,6 @@ class RewardFollowGlobalplan(GlobalplanRewardUnit):
             and self.curr_dist_to_path <= self._min_dist_to_path
         ):
             self.add_reward(self._reward_factor * action[0])
-
-    def reset(self):
-        self._kdtree = None
-        self.curr_dist_to_path = None
 
 
 @RewardUnitFactory.register("reverse_drive")
