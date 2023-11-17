@@ -2,6 +2,7 @@ from typing import Any, Callable, Dict, List, Tuple
 
 import numpy as np
 import rospy
+from rl_utils.utils.rewards.base_reward_units import RewardUnit
 
 from .constants import REWARD_CONSTANTS
 from .utils import load_rew_fnc
@@ -17,6 +18,14 @@ class RewardFunction:
         *args,
         **kwargs,
     ):
+        """This class represents a reward function for a reinforcement learning environment.
+
+        Args:
+            rew_func_name (str): Name of the yaml file that contains the reward function specifications.
+            robot_radius (float): Radius of the robot.
+            goal_radius (float): Radius of the goal.
+            safe_dist (float): Safe distance of the agent.
+        """
         self._rew_func_name = rew_func_name
         self._robot_radius = robot_radius
         self._safe_dist = safe_dist
@@ -28,34 +37,47 @@ class RewardFunction:
         self._curr_reward = 0
         self._info = {}
 
-        self._reward_units: List[
-            Callable[[Dict[str, Any]], None]
-        ] = RewardFunction._setup_reward_function(self, self._rew_func_name)
+        self._rew_fnc_dict = load_rew_fnc(self._rew_func_name)
+        self._reward_units: List[RewardUnit] = self._setup_reward_function()
 
-    def _setup_reward_function(
-        self, rew_fnc_name: str
-    ) -> List[Callable[[Dict[str, Any]], None]]:
+    def _setup_reward_function(self) -> List[RewardUnit]:
+        """Sets up the reward function.
+
+        Returns:
+            List[RewardUnit]: List of RewardUnits.
+        """
         import rl_utils.utils.rewards as rew_pkg
 
-        rew_fnc_dict = load_rew_fnc(rew_fnc_name)
         return [
             rew_pkg.RewardUnitFactory.instantiate(unit_name)(
                 reward_function=self, **kwargs
             )
-            for unit_name, kwargs in rew_fnc_dict.items()
+            for unit_name, kwargs in self._rew_fnc_dict.items()
         ]
 
     def add_reward(self, value: float):
+        """Adds the specified value to the current reward.
+
+        Args:
+            value (float): Reward to be added. Typically called by the RewardUnit.
+        """
         self._curr_reward += value
 
-    def add_info(self, info: dict):
+    def add_info(self, info: Dict[str, Any]):
+        """Adds the specified information to the reward function's info dictionary.
+
+        Args:
+            info (Dict[str, Any]): RewardUnits information to be added.
+        """
         self._info.update(info)
 
     def _reset(self):
+        """Reset on every environment step."""
         self._curr_reward = 0
         self._info = {}
 
     def reset(self):
+        """Reset before each episode."""
         self.goal_radius = rospy.get_param("/goal_radius", 0.3)
         self._curr_dist_to_path = None
 
@@ -63,6 +85,11 @@ class RewardFunction:
             reward_unit.reset()
 
     def calculate_reward(self, laser_scan: np.ndarray, *args, **kwargs) -> None:
+        """Calculates the reward based on several observations.
+
+        Args:
+            laser_scan (np.ndarray): Array containing the laser data.
+        """
         self._reset()
         self.set_safe_dist_breached(laser_scan)
 
@@ -72,6 +99,11 @@ class RewardFunction:
             reward_unit(**kwargs)
 
     def get_reward(self, *args, **kwargs) -> Tuple[float, Dict[str, Any]]:
+        """Retrieves the current reward and info dictionary.
+
+        Returns:
+            Tuple[float, Dict[str, Any]]: Tuple of the current timesteps reward and info.
+        """
         self.calculate_reward(**kwargs)
         return self._curr_reward, self._info
 
@@ -108,8 +140,8 @@ class RewardFunction:
 
     def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
-        for t in self._reward_units:
+        for name, params in self._rew_fnc_dict.items():
             format_string += "\n"
-            format_string += f"    {t}"
+            format_string += f"{name}: {params}"
         format_string += "\n)"
         return format_string
