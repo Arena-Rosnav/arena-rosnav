@@ -47,10 +47,9 @@
 
 ### ARENA INFRASTRUCTURE
 
-    # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../arena-simulation-setup
-    uri: https://github.com/voshch/arena-simulation-setup.git
+    uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
     version: dev
 
 - git:
