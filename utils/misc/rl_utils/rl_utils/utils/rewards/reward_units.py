@@ -398,7 +398,7 @@ class RewardAbruptVelocityChange(RewardUnit):
         self, idx: int, factor: float
     ) -> Callable[[np.ndarray], None]:
         def vel_change_fct(action: np.ndarray):
-            assert isinstance(self.last_action)
+            assert isinstance(self.last_action, np.ndarray)
             vel_diff = abs(action[idx] - self.last_action[idx])
             self.add_reward(-((vel_diff**4 / 100) * factor))
 
