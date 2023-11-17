@@ -49,6 +49,7 @@
     <group if="$(eval env('SIMULATOR') == 'gazebo')">
       <include file="$(find arena-simulation-setup)/robot/$(arg model)/launch/control.launch">
         <arg name="robot_namespace" value="$(arg namespace)" />
+        <arg name="frame" value="$(arg frame)" />
       </include>
       <node pkg="robot_state_publisher" type="robot_state_publisher" name="rob_st_pub">
         <remap from="/joint_states" to="$(arg namespace)/joint_states" />
