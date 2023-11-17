@@ -305,13 +305,6 @@ class TaskGenerator:
 
         rospy.loginfo("Shutting down. All tasks completed")
 
-        # Send Task finished to Backend
-        if rosparam_get(bool, self._namespace("is_webapp_docker"), False):
-            while self._pub_scenario_finished.get_num_connections() <= 0:
-                pass
-
-            self._pub_scenario_finished.publish(EmptyMsg())
-
         rospy.signal_shutdown("Finished all episodes of the current scenario")
 
 
