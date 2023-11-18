@@ -38,6 +38,13 @@ class RewardGoalReached(RewardUnit):
         *args,
         **kwargs,
     ):
+        """Class for calculating the reward when the goal is reached.
+
+        Args:
+            reward_function (RewardFunction): The reward function object holding this unit.
+            reward (float, optional): The reward value for reaching the goal. Defaults to DEFAULTS.GOAL_REACHED.REWARD.
+            _on_safe_dist_violation (bool, optional): Flag to indicate if there is a violation of safe distance. Defaults to DEFAULTS.GOAL_REACHED._ON_SAFE_DIST_VIOLATION.
+        """
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._reward = reward
         self._goal_radius = self._reward_function.goal_radius
@@ -51,7 +58,12 @@ class RewardGoalReached(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, distance_to_goal: float, *args: Any, **kwargs: Any) -> Any:
+    def __call__(self, distance_to_goal: float, *args: Any, **kwargs: Any) -> None:
+        """Calculates the reward and updates the information when the goal is reached.
+
+        Args:
+            distance_to_goal (float): Distance to the goal in m.
+        """
         if distance_to_goal < self._reward_function.goal_radius:
             self.add_reward(self._reward)
             self.add_info(RewardGoalReached.DONE_INFO)
@@ -72,6 +84,12 @@ class RewardSafeDistance(RewardUnit):
         *args,
         **kwargs,
     ):
+        """Class for calculating the reward when violating the safe distance.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            reward (float, optional): The reward value for violating the safe distance. Defaults to DEFAULTS.SAFE_DISTANCE.REWARD.
+        """
         super().__init__(reward_function, True, *args, **kwargs)
         self._reward = reward
         self._safe_dist = self._reward_function._safe_dist
@@ -106,6 +124,13 @@ class RewardNoMovement(RewardUnit):
         *args,
         **kwargs,
     ):
+        """Class for calculating the reward when there is no movement.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            reward (float, optional): The reward value for no movement. Defaults to DEFAULTS.NO_MOVEMENT.REWARD.
+            _on_safe_dist_violation (bool, optional): Flag to indicate if there is a violation of safe distance. Defaults to DEFAULTS.NO_MOVEMENT._ON_SAFE_DIST_VIOLATION.
+        """
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._reward = reward
 
@@ -138,6 +163,14 @@ class RewardApproachGoal(RewardUnit):
         *args,
         **kwargs,
     ):
+        """Class for calculating the reward when approaching the goal.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            pos_factor (float, optional): Positive factor for approaching the goal. Defaults to DEFAULTS.APPROACH_GOAL.POS_FACTOR.
+            neg_factor (float, optional): Negative factor for distancing from the goal. Defaults to DEFAULTS.APPROACH_GOAL.NEG_FACTOR.
+            _on_safe_dist_violation (bool, optional): Flag to indicate if there is a violation of safe distance. Defaults to DEFAULTS.APPROACH_GOAL._ON_SAFE_DIST_VIOLATION.
+        """
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._pos_factor = pos_factor
         self._neg_factor = neg_factor
@@ -183,6 +216,12 @@ class RewardCollision(RewardUnit):
         *args,
         **kwargs,
     ):
+        """Class for calculating the reward when a collision is detected.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            reward (float, optional): The reward value for reaching the goal. Defaults to DEFAULTS.COLLISION.REWARD.
+        """
         super().__init__(reward_function, True, *args, **kwargs)
         self._reward = reward
 
@@ -217,6 +256,15 @@ class RewardDistanceTravelled(RewardUnit):
         *args,
         **kwargs,
     ):
+        """Class for calculating the reward for the distance travelled.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            consumption_factor (float, optional): Negative consumption factor. Defaults to DEFAULTS.DISTANCE_TRAVELLED.CONSUMPTION_FACTOR.
+            lin_vel_scalar (float, optional): Scalar for the linear velocity. Defaults to DEFAULTS.DISTANCE_TRAVELLED.LIN_VEL_SCALAR.
+            ang_vel_scalar (float, optional): Scalar for the angular velocity. Defaults to DEFAULTS.DISTANCE_TRAVELLED.ANG_VEL_SCALAR.
+            _on_safe_dist_violation (bool, optional): Flag to indicate if there is a violation of safe distance. Defaults to DEFAULTS.DISTANCE_TRAVELLED._ON_SAFE_DIST_VIOLATION.
+        """
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._factor = consumption_factor
         self._lin_vel_scalar = lin_vel_scalar
@@ -244,6 +292,14 @@ class RewardApproachGlobalplan(GlobalplanRewardUnit):
         *args,
         **kwargs,
     ):
+        """Class for calculating the reward for approaching the global plan.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            pos_factor (float, optional): Positive factor for approaching the goal. Defaults to DEFAULTS.APPROACH_GLOBALPLAN.POS_FACTOR.
+            neg_factor (float, optional): Negative factor for distancing from the goal. Defaults to DEFAULTS.APPROACH_GLOBALPLAN.NEG_FACTOR.
+            _on_safe_dist_violation (bool, optional): Flag to indicate if there is a violation of safe distance. Defaults to DEFAULTS.APPROACH_GLOBALPLAN._ON_SAFE_DIST_VIOLATION.
+        """
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
 
         self._pos_factor = pos_factor
@@ -269,14 +325,7 @@ class RewardApproachGlobalplan(GlobalplanRewardUnit):
     def __call__(
         self, global_plan: np.ndarray, robot_pose, *args: Any, **kwargs: Any
     ) -> Any:
-        if (
-            not self.curr_dist_to_path
-            and type(global_plan) is not None
-            and len(global_plan) > 0
-        ):
-            self.curr_dist_to_path = self.get_dist_to_globalplan(
-                global_plan, robot_pose
-            )
+        super().__call__(global_plan=global_plan, robot_pose=robot_pose)
 
         if self.curr_dist_to_path and self.last_dist_to_path:
             self.add_reward(self._calc_reward())
@@ -292,9 +341,8 @@ class RewardApproachGlobalplan(GlobalplanRewardUnit):
         return w * (self.last_dist_to_path - self.curr_dist_to_path)
 
     def reset(self):
-        self._kdtree = None
+        super().reset()
         self.last_dist_to_path = None
-        self.curr_dist_to_path = None
 
 
 @RewardUnitFactory.register("follow_globalplan")
@@ -308,6 +356,14 @@ class RewardFollowGlobalplan(GlobalplanRewardUnit):
         *args,
         **kwargs,
     ) -> None:
+        """Class for calculating the reward for following the global plan.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            min_dist_to_path (float, optional): Minimum distance for reward application. Defaults to DEFAULTS.FOLLOW_GLOBALPLAN.MIN_DIST_TO_PATH.
+            reward_factor (float, optional): Reward factor to be multiplied with the linear velocity. Defaults to DEFAULTS.FOLLOW_GLOBALPLAN.REWARD_FACTOR.
+            _on_safe_dist_violation (bool, optional): Flag to indicate if there is a violation of safe distance. Defaults to DEFAULTS.FOLLOW_GLOBALPLAN._ON_SAFE_DIST_VIOLATION.
+        """
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
 
         self._min_dist_to_path = min_dist_to_path
@@ -321,14 +377,7 @@ class RewardFollowGlobalplan(GlobalplanRewardUnit):
         *args: Any,
         **kwargs: Any,
     ) -> Any:
-        if (
-            not self.curr_dist_to_path
-            and type(global_plan) is not None
-            and len(global_plan) > 0
-        ):
-            self.curr_dist_to_path = self.get_dist_to_globalplan(
-                global_plan, robot_pose
-            )
+        super().__call__(global_plan=global_plan, robot_pose=robot_pose)
 
         if (
             self.curr_dist_to_path
@@ -336,10 +385,6 @@ class RewardFollowGlobalplan(GlobalplanRewardUnit):
             and self.curr_dist_to_path <= self._min_dist_to_path
         ):
             self.add_reward(self._reward_factor * action[0])
-
-    def reset(self):
-        self._kdtree = None
-        self.curr_dist_to_path = None
 
 
 @RewardUnitFactory.register("reverse_drive")
@@ -353,6 +398,13 @@ class RewardReverseDrive(RewardUnit):
         *args,
         **kwargs,
     ) -> None:
+        """Class for calculating the reward when reversing.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            reward (float, optional): The reward value for reversing. Defaults to DEFAULTS.REVERSE_DRIVE.REWARD.
+            _on_safe_dist_violation (bool, optional): Flag to indicate if there is a violation of safe distance. Defaults to DEFAULTS.REVERSE_DRIVE._ON_SAFE_DIST_VIOLATION.
+        """
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
 
         self._reward = reward
@@ -381,6 +433,13 @@ class RewardAbruptVelocityChange(RewardUnit):
         *args,
         **kwargs,
     ) -> None:
+        """Class for calculating the reward for abrupt velocity change.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            vel_factors (Dict[str, float], optional): Dictionary containing the reward scalars for each action dimension. Defaults to DEFAULTS.ABRUPT_VEL_CHANGE.VEL_FACTORS.
+            _on_safe_dist_violation (bool, optional): Flag to indicate if there is a violation of safe distance. Defaults to DEFAULTS.ABRUPT_VEL_CHANGE._ON_SAFE_DIST_VIOLATION.
+        """
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
 
         self._vel_factors = vel_factors

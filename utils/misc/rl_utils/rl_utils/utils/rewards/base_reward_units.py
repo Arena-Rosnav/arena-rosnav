@@ -66,6 +66,18 @@ class GlobalplanRewardUnit(RewardUnit, ABC):
     def safe_dist_breached(self) -> bool:
         return self._reward_function.safe_dist_breached
 
+    def __call__(
+        self, global_plan: np.ndarray, robot_pose, *args: Any, **kwargs: Any
+    ) -> Any:
+        if (
+            not self.curr_dist_to_path
+            and isinstance(global_plan, np.ndarray)
+            and len(global_plan) > 0
+        ):
+            self.curr_dist_to_path = self.get_dist_to_globalplan(
+                global_plan, robot_pose
+            )
+
     def get_dist_to_globalplan(self, global_plan: np.ndarray, robot_pose):
         if self._kdtree is None:
             self._kdtree = cKDTree(global_plan)
@@ -75,3 +87,4 @@ class GlobalplanRewardUnit(RewardUnit, ABC):
 
     def reset(self):
         self._kdtree = None
+        self.curr_dist_to_path = None
