@@ -271,6 +271,10 @@ class DynamicObstacle(DynamicObstacleProps):
 
 def _gen_init_pos(steps:int, x:int=1, y:int=0):
     steps = max(steps,1)
+
+    while True:
+        yield (1,1,0)
+        
     while True:
         x += y==steps
         y %= steps
