@@ -82,9 +82,6 @@ class PedsimManager(EntityManager):
 
     _known_obstacles: KnownObstacles
 
-    # TODO temporary
-    _id_gen: Iterator[int]
-    # end
 
     def __init__(self, namespace, simulator):
 
@@ -131,9 +128,6 @@ class PedsimManager(EntityManager):
             "pedsim_simulator/register_robot", RegisterRobot, persistent=True
         )
 
-        rospy.set_param("respawn_dynamic", True)
-        rospy.set_param("respawn_static", True)
-        rospy.set_param("respawn_interactive", True)
         rospy.Subscriber("/pedsim_simulator/simulated_waypoints",
                          Waypoints, self._interactive_actor_poses_callback)
         rospy.Subscriber("/pedsim_simulator/simulated_agents",
@@ -148,7 +142,6 @@ class PedsimManager(EntityManager):
                 yield (-x, y, 0)
                 y += 1
         self.JAIL_POS = gen_JAIL_POS(10)
-        self._id_gen = itertools.count(20)
         # end temp
 
     def spawn_obstacles(self, obstacles):
@@ -158,11 +151,10 @@ class PedsimManager(EntityManager):
 
         self.agent_topic_str = ''
 
-        n_static_obstacles: int = 0
-        n_interactive_obstacles: int = 0
-
         for obstacle in obstacles:
             msg = InteractiveObstacle()
+
+            msg.name = obstacle.name
 
             # TODO create a global helper function for this kind of use case
             msg.pose = Pose(
@@ -174,16 +166,7 @@ class PedsimManager(EntityManager):
             interaction_radius: float = obstacle.extra.get(
                 "interaction_radius", 0.)
 
-            if interaction_radius > 0.1:
-                n_interactive_obstacles += 1
-                pedsim_name = self._namespace(
-                    f"interactive_obstacle_{n_interactive_obstacles}")
-            else:
-                n_static_obstacles += 1
-                pedsim_name = self._namespace(
-                    f"static_obstacle_{n_static_obstacles}")
-
-            self.agent_topic_str += f',{pedsim_name}/0'
+            self.agent_topic_str += f',{obstacle.name}/0'
 
             msg.type = obstacle.extra.get("type", "")
             msg.interaction_radius = interaction_radius
@@ -192,22 +175,22 @@ class PedsimManager(EntityManager):
 
             srv.InteractiveObstacles.append(msg)  # type: ignore
 
-            known = self._known_obstacles.get(pedsim_name)
+            known = self._known_obstacles.get(obstacle.name)
             if known is not None:
                 if known.obstacle.name != obstacle.name:
                     raise RuntimeError(
-                        f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {pedsim_name} (did you forget to call remove_obstacles?)")
+                        f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {obstacle.name} (did you forget to call remove_obstacles?)")
 
                 known.used = True
 
                 # TODO static obstacles don't have collisions if not re-spawned but moved instead, remove this once it works without respawning
-                self._simulator.delete_entity(pedsim_name)
+                self._simulator.delete_entity(obstacle.name)
                 known.pedsim_spawned = False
                 # end
 
             else:
                 known = self._known_obstacles.create_or_get(
-                    name=pedsim_name,
+                    name=obstacle.name,
                     obstacle=obstacle,
                     pedsim_spawned=False,
                     used=True
@@ -230,8 +213,6 @@ class PedsimManager(EntityManager):
                 break
         rospy.set_param(self._namespace(
             "agent_topic_string"), self.agent_topic_str)
-        rospy.set_param("respawn_static", True)
-        rospy.set_param("respawn_interactive", True)
         return
 
     def spawn_dynamic_obstacles(self, obstacles):
@@ -244,13 +225,11 @@ class PedsimManager(EntityManager):
         for obstacle in obstacles:
             msg = Ped()
 
-            msg.id = next(self._id_gen)
-
-            pedsim_name = str(msg.id)
+            msg.id = obstacle.name
 
             msg.pos = Point(*obstacle.position)
 
-            self.agent_topic_str += f',pedsim_agent_{obstacle.name}/0'
+            self.agent_topic_str += f',{obstacle.name}/0'
             msg.type = obstacle.extra.get("type")
             msg.yaml_file = obstacle.model.get(ModelType.YAML).path
 
@@ -318,8 +297,8 @@ class PedsimManager(EntityManager):
                 .override(
                     model_type=ModelType.SDF,
                     override=functools.partial(
-                        process_SDF, str(pedsim_name)),
-                    name=pedsim_name
+                        process_SDF, str(msg.id)),
+                    name=msg.id
                 )
                 .override(
                     model_type=ModelType.YAML,
@@ -327,27 +306,26 @@ class PedsimManager(EntityManager):
                         description=YAMLUtil.serialize(
                             YAMLUtil.update_plugins(
                                 namespace=self._simulator._namespace(
-                                    str(pedsim_name)),
+                                    str(msg.id)),
                                 description=YAMLUtil.parse_yaml(
                                     model.description)
                             )
                         )
                     ),
-                    name=pedsim_name
+                    name=msg.id
                 )
             )
 
-            known = self._known_obstacles.get(pedsim_name)
+            known = self._known_obstacles.get(msg.id)
             if known is not None:
-                # TODO temp
-                if False and known.obstacle.name != obstacle.name:
+                if known.obstacle.name != obstacle.name:
                     raise RuntimeError(
-                        f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {pedsim_name} (did you forget to call remove_obstacles?)")
+                        f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {msg.id} (did you forget to call remove_obstacles?)")
 
                 known.used = True
             else:
                 known = self._known_obstacles.create_or_get(
-                    name=pedsim_name,
+                    name=msg.id,
                     obstacle=obstacle,
                     pedsim_spawned=False,
                     used=True
@@ -409,16 +387,8 @@ class PedsimManager(EntityManager):
 
         waypoints: List[Waypoint] = actors.waypoints or []
 
-        # only once
-        if rosparam_get(bool, "respawn_interactive", False):
-            for actor in filter(lambda x: "interactive" in x.name, waypoints):
-                self._respawn_obstacle(actor)
-            rospy.set_param("respawn_interactive", False)
-
-        if rosparam_get(bool, "respawn_static", False):
-            for actor in filter(lambda x: "static" in x.name, waypoints):
-                self._respawn_obstacle(actor)
-            rospy.set_param("respawn_static", False)
+        for actor in waypoints:
+            self._respawn_obstacle(actor)
 
     def _dynamic_actor_poses_callback(self, actors: AgentStates):
         # TODO unclean
@@ -472,30 +442,22 @@ class PedsimManager(EntityManager):
 
     def _respawn_obstacle(self, actor: Waypoint):
 
-        obstacle_name = self._namespace(str(actor.name).split("(")[0])
+        obstacle_name = actor.name
 
         obstacle = self._known_obstacles.get(obstacle_name)
 
         if obstacle is None:
-            rospy.logwarn(
-                f"obstacle {obstacle_name} not known by {type(self).__name__}")
+            # rospy.logwarn(
+            #     f"obstacle {obstacle_name} not known by {type(self).__name__} (known: {list(self._known_obstacles.keys())})")
+            return
+
+        if obstacle.pedsim_spawned == True:
             return
 
         orientation = 0.
         direction_x = 0.
         direction_y = 0.
         ob_type = ""
-
-        # TODO unclean
-        if not isinstance(self._simulator, FlatlandSimulator):
-            orientation = float(re.findall(
-                r'\(.*?\)', str(actor.name))[0].replace("(", "").replace(")", "").replace(",", "."))
-            direction_x = float(actor.name[actor.name.index(
-                "{")+1: actor.name.index("}")].replace(",", "."))
-            direction_y = float(actor.name[actor.name.index(
-                "[")+1: actor.name.index("]")].replace(",", "."))
-            ob_type = actor.name[actor.name.index(
-                "&")+1: actor.name.index("!")]
 
         obstacle_position = Point(
             x=actor.position.x-direction_x,

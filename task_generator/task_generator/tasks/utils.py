@@ -9,6 +9,7 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Iterator,
     List,
     NamedTuple,
     Optional,
@@ -441,13 +442,24 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
         self.PROPS.obstacle_manager.reset()
         self.PROPS.map_manager.init_forbidden_zones()
 
+        def indexer() -> Callable[..., int]:
+            indices: Dict[str, Iterator[int]] = dict()
+            def index(model: str):
+                if model not in indices:
+                    indices[model] = itertools.count(1)
+                return next(indices[model])
+            return index
+
         # Create static obstacles
         if n_static_obstacles:
+            index = indexer()
+
             self.PROPS.obstacle_manager.spawn_obstacles(
                 [
                     ITF_Obstacle.create_obstacle(
-                        self, name=model, model=self.PROPS.model_loader.bind(
-                            model)
+                        self,
+                        name=f"S_{model}_{index(model)}",
+                        model=self.PROPS.model_loader.bind(model)
                     )
                     for model in random.choices(
                         population=list(static_obstacles.keys()),
@@ -459,11 +471,14 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
 
         # Create interactive obstacles
         if n_interactive_obstacles:
+            index = indexer()
+
             self.PROPS.obstacle_manager.spawn_obstacles(
                 [
                     ITF_Obstacle.create_obstacle(
-                        self, name=model, model=self.PROPS.model_loader.bind(
-                            model)
+                        self,
+                        name=f"I_{model}_{index(model)}",
+                        model=self.PROPS.model_loader.bind(model)
                     )
                     for model in random.choices(
                         population=list(interactive_obstacles.keys()),
@@ -475,11 +490,13 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
 
         # Create dynamic obstacles
         if n_dynamic_obstacles:
+            index = indexer()
+
             self.PROPS.obstacle_manager.spawn_dynamic_obstacles(
                 [
                     ITF_Obstacle.create_dynamic_obstacle(
                         self,
-                        name=model,
+                        name=f"D_{model}_{index(model)}",
                         model=self.PROPS.dynamic_model_loader.bind(model),
                     )
                     for model in random.choices(
