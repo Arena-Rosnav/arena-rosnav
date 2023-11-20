@@ -85,7 +85,7 @@ def make_envs(
 
 
 def load_vec_normalize(config: dict, PATHS: dict, env: VecEnv, eval_env: VecEnv):
-    if config["rl_agent"]["normalize"]:
+    if config["rl_agent"]["normalize"]["enabled"]:
         load_path = os.path.join(PATHS["model"], "vec_normalize.pkl")
         if os.path.isfile(load_path):
             env = VecNormalize.load(load_path=load_path, venv=env)
@@ -93,20 +93,9 @@ def load_vec_normalize(config: dict, PATHS: dict, env: VecEnv, eval_env: VecEnv)
             print("Succesfully loaded VecNormalize object from pickle file..")
         elif not config["rl_agent"]["resume"]:
             # New agent so init new VecNormalize object
-            env = VecNormalize(
-                env,
-                training=True,
-                norm_obs=True,
-                norm_reward=True,
-                clip_reward=17.5,
-            )
-            eval_env = VecNormalize(
-                eval_env,
-                training=False,
-                norm_obs=True,
-                norm_reward=False,
-                clip_reward=17.5,
-            )
+            normalization_conf = config["rl_agent"]["normalize"]["settings"]
+            env = VecNormalize(env, training=True, **normalization_conf)
+            eval_env = VecNormalize(eval_env, training=False, **normalization_conf)
         else:
             raise ValueError("No VecNormalize object found..")
     return env, eval_env
