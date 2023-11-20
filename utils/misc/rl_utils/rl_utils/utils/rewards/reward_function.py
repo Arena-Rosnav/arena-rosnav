@@ -45,6 +45,7 @@ class RewardFunction:
         self._safe_dist = safe_dist
         self._goal_radius = goal_radius
 
+        # globally accessible and required information for RewardUnits
         self._curr_dist_to_path: float = None
         self._safe_dist_breached: bool = None
 
