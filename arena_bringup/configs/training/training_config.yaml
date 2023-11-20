@@ -17,6 +17,14 @@ goal_radius: 0.2
 
 ### Training Monitoring
 monitoring:
+  cmd_line_logging:
+    # display training metrics
+    training_metrics:
+      enabled: true
+    # display episode statistics (avg. success rate, reward, eps length..)
+    episode_statistics:
+      enabled: true
+      last_n_eps: 20
   # weights and biases logging
   use_wandb: false
   # save evaluation stats during training in log file
