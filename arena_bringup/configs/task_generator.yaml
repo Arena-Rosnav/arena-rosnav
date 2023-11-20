@@ -16,15 +16,15 @@ task_mode:
 
   random:
     static:
-      min: 1
-      max: 5
+      min: 0
+      max: 0
       models: ["shelf"]
     interactive:
-      min: 1
-      max: 5
+      min: 0
+      max: 0
       models: ["shelf"]
     dynamic:
-      min: 1
+      min: 3
       max: 5
       models: ["actor1"]
 

@@ -111,7 +111,7 @@ class RewardFunction:
         for reward_unit in self._reward_units:
             if self.safe_dist_breached and not reward_unit.on_safe_dist_violation:
                 continue
-            reward_unit(**kwargs)
+            reward_unit(laser_scan=laser_scan, **kwargs)
 
     def get_reward(self, *args, **kwargs) -> Tuple[float, Dict[str, Any]]:
         """Retrieves the current reward and info dictionary.
