@@ -17,7 +17,8 @@ from task_generator.task_generator_node import TaskGenerator
 from task_generator.tasks.base_task import BaseTask
 from task_generator.utils import rosparam_get
 
-from ..utils.observation_collector import ObservationCollector
+# from ..utils.old_observation_collector import ObservationCollector
+from rl_utils.utils.observation_collector.observation_manager import ObservationManager
 from rl_utils.utils.rewards.reward_function import RewardFunction
 
 
@@ -76,11 +77,7 @@ class FlatlandEnv(gymnasium.Env):
         self.model_space_encoder = RosnavSpaceManager()
 
         # observation collector
-        self.observation_collector = ObservationCollector(
-            self.ns,
-            self.model_space_encoder._laser_num_beams,
-            external_time_sync=False,
-        )
+        self.observation_collector = ObservationManager(self.ns)
 
         self.action_space = self.model_space_encoder.get_action_space()
         self.observation_space = self.model_space_encoder.get_observation_space()
