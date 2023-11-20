@@ -4,53 +4,57 @@ import dataclasses
 import os
 import traceback
 from typing import Dict, List
-from rospkg import RosPack
-import rospkg
-import yaml
-import rospy
 
-from std_msgs.msg import Int16, Empty as EmptyMsg
+import rospkg
+import rospy
+import yaml
+from map_distance_server.srv import GetDistanceMap
+from rospkg import RosPack
+from std_msgs.msg import Empty as EmptyMsg
+from std_msgs.msg import Int16
 from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
+from task_generator.constants import Constants, Defaults
+from task_generator.manager.entity_manager.entity_manager import EntityManager
+from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
+from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
+from task_generator.manager.map_manager import MapManager
+from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.shared import ModelWrapper, Namespace, Robot, gen_init_pos
 from task_generator.simulators.base_simulator import BaseSimulator
-
-from task_generator.tasks import TaskFactory, BaseTask
-
-from task_generator.utils import ModelLoader, Utils, rosparam_get
-from task_generator.constants import Constants, Defaults
-
-from task_generator.simulators.simulator_factory import SimulatorFactory
-from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
 from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
+from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
 from task_generator.simulators.simulator_factory import SimulatorFactory
-
-from task_generator.manager.map_manager import MapManager
-from task_generator.manager.obstacle_manager import ObstacleManager
-from task_generator.manager.entity_manager.entity_manager import EntityManager
-from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
-from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
-
-from map_distance_server.srv import GetDistanceMap
+from task_generator.tasks import BaseTask, TaskFactory
+from task_generator.utils import ModelLoader, Utils, rosparam_get
 
 
-def create_default_robot_list(robot_model: ModelWrapper, name: str, planner: str, agent: str) -> List[Robot]:
-    return [Robot(
-        model=robot_model,
-        planner=planner,
-        agent=agent,
-        position=next(gen_init_pos),
-        name=name,
-        record_data=False,
-        extra=dict()
-    )]
+def create_default_robot_list(
+    robot_model: ModelWrapper, name: str, planner: str, agent: str
+) -> List[Robot]:
+    return [
+        Robot(
+            model=robot_model,
+            planner=planner,
+            agent=agent,
+            position=next(gen_init_pos),
+            name=name,
+            record_data=False,
+            extra=dict(),
+        )
+    ]
+
 
 def read_robot_setup_file(setup_file: str) -> List[Dict]:
     try:
         with open(
-            os.path.join(rospkg.RosPack().get_path(
-                "arena_bringup"), "configs", "robot_setup", setup_file),
-            "r"
+            os.path.join(
+                rospkg.RosPack().get_path("arena_bringup"),
+                "configs",
+                "robot_setup",
+                setup_file,
+            ),
+            "r",
         ) as f:
             robots: List[Dict] = yaml.safe_load(f)["robots"]
 
@@ -89,8 +93,7 @@ class TaskGenerator:
 
         # ParamsW
         self._task_mode = Constants.TaskMode(rosparam_get(str, "task_mode"))
-        self._entity_mode = Constants.EntityManager(
-            rosparam_get(str, "entity_manager"))
+        self._entity_mode = Constants.EntityManager(rosparam_get(str, "entity_manager"))
         self._auto_reset = rosparam_get(bool, "~auto_reset", True)
         self._train_mode = rosparam_get(bool, "train_mode", False)
 
@@ -156,8 +159,7 @@ class TaskGenerator:
             # self.reset_task()
 
             # Timers
-            rospy.Timer(rospy.Duration(nsecs=int(0.5e9)),
-                        self._check_task_status)
+            rospy.Timer(rospy.Duration(nsecs=int(0.5e9)), self._check_task_status)
 
         # SETUP
 
@@ -172,8 +174,7 @@ class TaskGenerator:
 
         rospy.wait_for_service("/distance_map")
 
-        service_client_get_map = rospy.ServiceProxy(
-            "/distance_map", GetDistanceMap)
+        service_client_get_map = rospy.ServiceProxy("/distance_map", GetDistanceMap)
 
         map_response = service_client_get_map()
         map_manager = MapManager(map_response)
@@ -236,7 +237,7 @@ class TaskGenerator:
                         robot,
                         model=self._robot_loader.bind(robot["model"]),
                     ),
-                    name=f'{robot["model"]}_{i}_{robot.get("amount", 1)-1}'
+                    name=f'{robot["model"]}_{i}_{robot.get("amount", 1)-1}',
                 )
                 for robot in read_robot_setup_file(robot_setup_file)
                 for i in range(robot.get("amount", 1))
