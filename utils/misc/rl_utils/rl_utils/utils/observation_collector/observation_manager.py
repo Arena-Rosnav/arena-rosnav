@@ -4,16 +4,19 @@ from task_generator.shared import Namespace
 from .observation_units.collector_unit import CollectorUnit
 from .observation_units.base_collector_unit import BaseCollectorUnit
 from .observation_units.globalplan_collector_unit import GlobalplanCollectorUnit
+from .observation_units.pedsim_collector_unit import PedsimStateCollectorUnit
 
 
 class ObservationManager:
     def __init__(self, ns: Namespace, obs_struct: List[CollectorUnit] = None) -> None:
         self._ns = ns
-        self._obs_structur = [BaseCollectorUnit, GlobalplanCollectorUnit] or obs_struct
+        self._obs_structur = [
+            BaseCollectorUnit,
+            GlobalplanCollectorUnit,
+            PedsimStateCollectorUnit,
+        ] or obs_struct
         self._observation_units = self._instantiate_units()
         self._init_units()
-
-        self._empty_dict = {}
 
     def _instantiate_units(self) -> List[CollectorUnit]:
         return [

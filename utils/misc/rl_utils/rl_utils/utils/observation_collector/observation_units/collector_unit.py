@@ -25,4 +25,9 @@ class CollectorUnit(ABC):
     def get_observations(
         self, obs_dict: Dict[str, Any], *args, **kwargs
     ) -> Dict[str, Any]:
-        raise NotImplementedError()
+        if not obs_dict:
+            obs_dict = {}
+
+        self.wait()
+
+        return obs_dict
