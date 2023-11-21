@@ -4,7 +4,7 @@ import numpy as np
 import rospy
 import scipy.spatial
 from geometry_msgs.msg import Pose2D
-from tools.general import load_rew_fnc
+from rl_utils.utils.rewards.utils import load_rew_fnc
 
 
 class RewardCalculator:

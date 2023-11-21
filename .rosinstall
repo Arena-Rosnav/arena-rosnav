@@ -26,7 +26,7 @@
 - git:
     local-name: ../utils-extern/ros/pedsim_ros
     uri: https://github.com/voshch/pedsim_ros.git
-    version: waypoint_plugin
+    version: master
 
 - git:
     local-name: ../utils-extern/ros/ros_tcp_endpoint
@@ -35,7 +35,7 @@
 
 - git:
     local-name: ../utils-extern/misc/robots
-    uri: https://github.com/Arena-Rosnav/3rd-party-robot-packages
+    uri: https://github.com/voshch/3rd-party-robot-packages
 
 - git:
     local-name: ../utils-extern/misc/jackal
@@ -52,10 +52,9 @@
 
 ### ARENA INFRASTRUCTURE
 
-    # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../arena-simulation-setup
-    uri: https://github.com/TheZomb/arena-simulation-setup.git
+    uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
     version: dev
 
 - git:

@@ -25,7 +25,7 @@ class Constants:
         OBSTACLE_MAX_RADIUS = 0.6
 
     class RobotManager:
-        SPAWN_ROBOT_SAFE_DIST = 0.1
+        SPAWN_ROBOT_SAFE_DIST = 0.25
 
     class Simulator(Enum):
         FLATLAND = "flatland"
@@ -69,7 +69,7 @@ class Constants:
         "name": "full_static_laser",
         "frame": "full_laser",
         "topic": "full_scan",
-        "body": "base_link",
+        "body": "link_base",
         "broadcast_tf": "true",
         "origin": [0, 0, 0],
         "range": 2.0,
@@ -105,8 +105,7 @@ class FlatlandRandomModel:
 
 
 # no ~configuration possible because node is not fully initialized at this point
-pedsim_ns = Namespace(
-    "task_generator_node/configuration/pedsim/default_actor_config")
+pedsim_ns = Namespace("task_generator_node/configuration/pedsim/default_actor_config")
 
 
 def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
@@ -137,12 +136,10 @@ class Pedsim:
     CHATTING_PROBABILITY = lp("CHATTING_PROBABILITY", 0.0)
     TELL_STORY_PROBABILITY = lp("TELL_STORY_PROBABILITY", 0.0)
     GROUP_TALKING_PROBABILITY = lp("GROUP_TALKING_PROBABILITY", 0.0)
-    TALKING_AND_WALKING_PROBABILITY = lp(
-        "TALKING_AND_WALKING_PROBABILITY", 0.0)
+    TALKING_AND_WALKING_PROBABILITY = lp("TALKING_AND_WALKING_PROBABILITY", 0.0)
     REQUESTING_SERVICE_PROBABILITY = lp("REQUESTING_SERVICE_PROBABILITY", 0.0)
     REQUESTING_GUIDE_PROBABILITY = lp("REQUESTING_GUIDE_PROBABILITY", 0.0)
-    REQUESTING_FOLLOWER_PROBABILITY = lp(
-        "REQUESTING_FOLLOWER_PROBABILITY", 0.0)
+    REQUESTING_FOLLOWER_PROBABILITY = lp("REQUESTING_FOLLOWER_PROBABILITY", 0.0)
     MAX_TALKING_DISTANCE = lp("MAX_TALKING_DISTANCE", 5.0)
     MAX_SERVICING_RADIUS = lp("MAX_SERVICING_RADIUS", 5.0)
     TALKING_BASE_TIME = lp("TALKING_BASE_TIME", 10.0)
