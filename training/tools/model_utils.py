@@ -152,7 +152,9 @@ def instantiate_new_model(
         "clip_range": ppo_config["clip_range"],
         "tensorboard_log": PATHS["tb"],
         # "use_wandb": False if config["debug_mode"] else config["monitoring"]["use_wandb"],
-        "verbose": 1,
+        "verbose": config["monitoring"]["cmd_line_logging"]["training_metrics"][
+            "enabled"
+        ],
     }
 
     if isinstance(agent, BaseAgent):

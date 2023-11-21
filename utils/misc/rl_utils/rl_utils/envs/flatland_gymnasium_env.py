@@ -21,9 +21,6 @@ from ..utils.observation_collector import ObservationCollector
 from rl_utils.utils.rewards.reward_function import RewardFunction
 
 
-NUM_EPS = 20
-
-
 def delay_node_init(ns):
     try:
         # given every environment enough time to initialize, if we dont put sleep,
@@ -50,6 +47,7 @@ class FlatlandEnv(gymnasium.Env):
         reward_fnc: str,
         max_steps_per_episode=100,
         verbose: bool = True,
+        log_last_n_eps: int = 20,
         *args,
         **kwargs,
     ):
@@ -68,7 +66,6 @@ class FlatlandEnv(gymnasium.Env):
         super(FlatlandEnv, self).__init__()
 
         self.ns = Namespace(ns)
-        self._verbose = verbose
 
         delay_node_init(ns=self.ns.simulation_ns)
 
@@ -122,6 +119,9 @@ class FlatlandEnv(gymnasium.Env):
                 self._service_name_step, Empty, persistent=True
             )
 
+        self._verbose = verbose
+        self._log_last_n_eps = log_last_n_eps
+
         self._steps_curr_episode = 0
         self._episode = 0
         self._max_steps_per_episode = max_steps_per_episode
@@ -137,7 +137,7 @@ class FlatlandEnv(gymnasium.Env):
 
         self.last_mean_reward = 0
         self.mean_reward = [0, 0]
-        self.step_count_hist = [0] * NUM_EPS
+        self.step_count_hist = [0] * self._log_last_n_eps
         self.step_time = [0, 0]
 
         self._done_reasons = {
@@ -193,9 +193,11 @@ class FlatlandEnv(gymnasium.Env):
         )
 
         if done and self._verbose:
-            self.step_count_hist[self._episode % NUM_EPS] = self._steps_curr_episode
+            self.step_count_hist[
+                self._episode % self._log_last_n_eps
+            ] = self._steps_curr_episode
             self._done_hist[int(info["done_reason"])] += 1
-            if sum(self._done_hist) >= NUM_EPS:
+            if sum(self._done_hist) >= self._log_last_n_eps:
                 self.print_statistics()
 
         self.step_time[0] += time.time() - start_time
@@ -257,23 +259,23 @@ class FlatlandEnv(gymnasium.Env):
         self._steps_curr_episode += 1
 
     def print_statistics(self):
-        mean_reward = self.mean_reward[0] / NUM_EPS
+        mean_reward = self.mean_reward[0] / self._log_last_n_eps
         diff = round(mean_reward - self.last_mean_reward, 5)
 
         print(
-            f"[{self.ns}] Last {NUM_EPS} Episodes:\t"
+            f"[{self.ns}] Last {self._log_last_n_eps} Episodes:\t"
             f"{self._done_reasons[str(0)]}: {self._done_hist[0]}\t"
             f"{self._done_reasons[str(1)]}: {self._done_hist[1]}\t"
             f"{self._done_reasons[str(2)]}: {self._done_hist[2]}\t"
             f"Mean step time: {round(self.step_time[0] / self.step_time[1] * 100, 2)}\t"
             f"Mean cum. reward: {round(mean_reward, 5)} ({'+' if diff >= 0 else ''}{diff})\t"
-            f"Mean steps: {sum(self.step_count_hist) / NUM_EPS}\t"
+            f"Mean steps: {sum(self.step_count_hist) / self._log_last_n_eps}\t"
         )
         self._done_hist = [0] * 3
         self.step_time = [0, 0]
         self.last_mean_reward = mean_reward
         self.mean_reward = [0, 0]
-        self.step_count_hist = [0] * NUM_EPS
+        self.step_count_hist = [0] * self._log_last_n_eps
 
     @staticmethod
     def determine_termination(

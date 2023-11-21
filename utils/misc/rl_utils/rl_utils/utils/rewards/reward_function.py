@@ -2,7 +2,6 @@ from typing import Any, Callable, Dict, List, Tuple
 
 import numpy as np
 import rospy
-from rl_utils.utils.rewards.base_reward_units import RewardUnit
 
 from .constants import REWARD_CONSTANTS
 from .utils import load_rew_fnc
@@ -21,7 +20,7 @@ class RewardFunction:
     _info: Dict[str, Any]
 
     _rew_fnc_dict: Dict[str, Dict[str, Any]]
-    _reward_units: List[RewardUnit]
+    _reward_units: List["RewardUnit"]
 
     def __init__(
         self,
@@ -45,6 +44,7 @@ class RewardFunction:
         self._safe_dist = safe_dist
         self._goal_radius = goal_radius
 
+        # globally accessible and required information for RewardUnits
         self._curr_dist_to_path: float = None
         self._safe_dist_breached: bool = None
 
@@ -52,9 +52,9 @@ class RewardFunction:
         self._info = {}
 
         self._rew_fnc_dict = load_rew_fnc(self._rew_func_name)
-        self._reward_units: List[RewardUnit] = self._setup_reward_function()
+        self._reward_units: List["RewardUnit"] = self._setup_reward_function()
 
-    def _setup_reward_function(self) -> List[RewardUnit]:
+    def _setup_reward_function(self) -> List["RewardUnit"]:
         """Sets up the reward function.
 
         Returns:

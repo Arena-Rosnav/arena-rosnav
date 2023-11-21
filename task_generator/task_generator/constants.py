@@ -68,7 +68,7 @@ class Constants:
         "name": "full_static_laser",
         "frame": "full_laser",
         "topic": "full_scan",
-        "body": "base_link",
+        "body": "link_base",
         "broadcast_tf": "true",
         "origin": [0, 0, 0],
         "range": 2.0,
