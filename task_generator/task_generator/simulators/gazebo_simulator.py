@@ -119,10 +119,11 @@ class GazeboSimulator(BaseSimulator):
         request.robot_namespace = self._namespace(entity.name)
         request.reference_frame = "world"
 
-        rospy.set_param(request.robot_namespace(
-            "robot_description"), model.description)
-        rospy.set_param(request.robot_namespace(
-            "tf_prefix"), str(request.robot_namespace))
+        if isinstance(entity, RobotProps):
+            rospy.set_param(request.robot_namespace(
+                "robot_description"), model.description)
+            rospy.set_param(request.robot_namespace(
+                "tf_prefix"), str(request.robot_namespace))
 
         res = self.spawn_model(model.type, request)
 
