@@ -14,6 +14,28 @@ from .collector_unit import CollectorUnit
 
 
 class BaseCollectorUnit(CollectorUnit):
+    """
+    A class for collecting basic navigation information such as robot state, sensor data, subgoal.
+
+    Attributes:
+        _robot_state (Odometry): Current robot state.
+        _robot_pose (Pose2D): Current robot pose.
+        _laser (np.ndarray): Current laser scan data.
+        _full_range_laser (np.ndarray): Current full range laser scan data. (For detecting collision in blind spot)
+        _subgoal (Pose2D): Episode's subgoal pose.
+
+        _scan_sub (rospy.Subscriber): Subscriber for laser scan data.
+        _full_scan_sub (rospy.Subscriber): Subscriber for full range laser scan data.
+        _robot_state_sub (rospy.Subscriber): Subscriber for robot state data.
+        _subgoal_sub (rospy.Subscriber): Subscriber for subgoal data.
+
+        _received_odom (bool): Flag indicating if robot state data has been received.
+        _received_scan (bool): Flag indicating if laser scan data has been received.
+        _received_subgoal (bool): Flag indicating if subgoal data has been received.
+
+        _first_reset (bool): Flag indicating if it is the first reset.
+    """
+
     # Retrieved information
     _robot_state: Odometry
     _robot_pose: Pose2D
@@ -35,6 +57,13 @@ class BaseCollectorUnit(CollectorUnit):
     _first_reset: bool
 
     def __init__(self, ns: Namespace, observation_manager) -> None:
+        """
+        Initialize the BaseCollectorUnit.
+
+        Args:
+            ns (Namespace): Namespace for the collector unit.
+            observation_manager: Observation manager holding this collector unit.
+        """
         super().__init__(ns, observation_manager)
         self._laser_num_beams = rospy.get_param("laser/num_beams")
         self._enable_full_range_laser = rospy.get_param("laser/full_range_laser", False)
@@ -57,6 +86,9 @@ class BaseCollectorUnit(CollectorUnit):
         self._first_reset = True
 
     def init_subs(self):
+        """
+        Initialize the subscribers for robot state and sensor data.
+        """
         self._scan_sub = rospy.Subscriber(
             self._ns(TOPICS.LASER),
             LaserScan,
@@ -84,6 +116,9 @@ class BaseCollectorUnit(CollectorUnit):
         )
 
     def wait(self):
+        """
+        Wait for the required data to be received.
+        """
         if self._first_reset:
             self._first_reset = False
             return
@@ -101,6 +136,15 @@ class BaseCollectorUnit(CollectorUnit):
     def get_observations(
         self, obs_dict: Dict[str, Any], *args, **kwargs
     ) -> Dict[str, Any]:
+        """
+        Get the observations from the collected data.
+
+        Args:
+            obs_dict (Dict[str, Any]): Dictionary to store the observations.
+
+        Returns:
+            Dict[str, Any]: Updated dictionary with observations.
+        """
         obs_dict = super().get_observations(obs_dict)
 
         dist_to_goal, angle_to_goal = get_goal_pose_in_robot_frame(
@@ -125,28 +169,62 @@ class BaseCollectorUnit(CollectorUnit):
         return obs_dict
 
     def _cb_laser(self, laser_msg: LaserScan):
+        """
+        Callback function for receiving laser scan data.
+
+        Args:
+            laser_msg (LaserScan): Laser scan message.
+        """
         self._received_scan = True
         self._laser = BaseCollectorUnit.process_laser_msg(
             laser_msg=laser_msg, laser_num_beams=self._laser_num_beams
         )
 
     def _cb_full_range_laser(self, laser_msg: LaserScan):
+        """
+        Callback function for receiving full range laser scan data.
+
+        Args:
+            laser_msg (LaserScan): Full range laser scan message.
+        """
         self._full_range_laser = BaseCollectorUnit.process_laser_msg(
             laser_msg=laser_msg,
             laser_num_beams=self._laser_num_beams,
         )
 
     def _cb_robot_state(self, robot_state_msg: Odometry):
+        """
+        Callback function for receiving robot state data.
+
+        Args:
+            robot_state_msg (Odometry): Robot state message.
+        """
         self._received_odom = True
         self._robot_state = robot_state_msg
         self._robot_pose = pose3d_to_pose2d(self._robot_state.pose.pose)
 
     def _cb_subgoal(self, subgoal_msg: PoseStamped):
+        """
+        Callback function for receiving subgoal data.
+
+        Args:
+            subgoal_msg (PoseStamped): Subgoal message.
+        """
         self._received_subgoal = True
         self._subgoal = pose3d_to_pose2d(subgoal_msg.pose)
 
     @staticmethod
     def process_laser_msg(laser_msg: LaserScan, laser_num_beams: int) -> np.ndarray:
+        """
+        Process the received laser scan message.
+
+        Args:
+            laser_msg (LaserScan): Laser scan message.
+            laser_num_beams (int): Number of laser beams.
+
+        Returns:
+            np.ndarray: Processed laser scan data.
+        """
         if len(laser_msg.ranges) == 0:
             return np.zeros(laser_num_beams, dtype=float)
 
@@ -156,4 +234,13 @@ class BaseCollectorUnit(CollectorUnit):
 
     @staticmethod
     def process_robot_state_msg(pose: Pose) -> Pose2D:
+        """
+        Process the received robot state message.
+
+        Args:
+            pose (Pose): Robot pose message.
+
+        Returns:
+            Pose2D: Processed robot pose data.
+        """
         return pose3d_to_pose2d(pose)
