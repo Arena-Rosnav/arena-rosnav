@@ -8,17 +8,31 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from task_generator.shared import Namespace
 
-from ..constants import OBS_DICT_KEYS, TOPICS, MAX_WAIT, SLEEP
+from ..constants import MAX_WAIT, OBS_DICT_KEYS, SLEEP, TOPICS
 from ..utils import false_params, get_goal_pose_in_robot_frame, pose3d_to_pose2d
 from .collector_unit import CollectorUnit
 
 
 class BaseCollectorUnit(CollectorUnit):
+    # Retrieved information
     _robot_state: Odometry
     _robot_pose: Pose2D
     _laser: np.ndarray
     _full_range_laser: np.ndarray
     _subgoal: Pose2D
+
+    # Subscriptions
+    _scan_sub: rospy.Subscriber
+    _full_scan_sub: rospy.Subscriber
+    _robot_state_sub: rospy.Subscriber
+    _subgoal_sub: rospy.Subscriber
+
+    # Received Flags
+    _received_odom: bool
+    _received_scan: bool
+    _received_subgoal: bool
+
+    _first_reset: bool
 
     def __init__(self, ns: Namespace, observation_manager) -> None:
         super().__init__(ns, observation_manager)
@@ -70,15 +84,15 @@ class BaseCollectorUnit(CollectorUnit):
         )
 
     def wait(self):
+        if self._first_reset:
+            self._first_reset = False
+            return
+
         for _ in range(int(MAX_WAIT / SLEEP)):
             if self._received_odom and self._received_scan and self._received_subgoal:
                 return
 
             sleep(SLEEP)
-
-        if self._first_reset:
-            self._first_reset = False
-            return
 
         raise TimeoutError(
             f"Couldn't retrieve data for: {false_params(odom=self._received_odom, laser=self._received_scan, subgoal=self._received_subgoal)}"
@@ -87,12 +101,11 @@ class BaseCollectorUnit(CollectorUnit):
     def get_observations(
         self, obs_dict: Dict[str, Any], *args, **kwargs
     ) -> Dict[str, Any]:
-        if not obs_dict:
-            obs_dict = {}
+        obs_dict = super().get_observations(obs_dict)
 
-        self.wait()
-
-        dist_to_goal, angle_to_goal = self._process_observations()
+        dist_to_goal, angle_to_goal = get_goal_pose_in_robot_frame(
+            goal_pos=self._subgoal, robot_pos=self._robot_pose
+        )
 
         obs_dict.update(
             {
@@ -110,15 +123,6 @@ class BaseCollectorUnit(CollectorUnit):
             obs_dict.update({"full_laser_scan": self._full_range_laser})
 
         return obs_dict
-
-    def _process_observations(self):
-        dist_to_goal, angle_to_goal = get_goal_pose_in_robot_frame(
-            goal_pos=self._subgoal, robot_pos=self._robot_pose
-        )
-        return (
-            dist_to_goal,
-            angle_to_goal,
-        )
 
     def _cb_laser(self, laser_msg: LaserScan):
         self._received_scan = True

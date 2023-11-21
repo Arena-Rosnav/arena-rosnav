@@ -12,6 +12,7 @@ from .collector_unit import CollectorUnit
 
 class GlobalplanCollectorUnit(CollectorUnit):
     _globalplan: np.ndarray
+    _globalplan_sub: rospy.Subscriber
 
     def __init__(
         self, ns: Namespace, observation_manager: "ObservationCollector"
@@ -28,6 +29,7 @@ class GlobalplanCollectorUnit(CollectorUnit):
     def get_observations(
         self, obs_dict: Dict[str, Any], *args, **kwargs
     ) -> Dict[str, Any]:
+        obs_dict = super().get_observations(obs_dict=obs_dict)
         obs_dict.update({OBS_DICT_KEYS.GLOBAL_PLAN: self._globalplan})
         return obs_dict
 
