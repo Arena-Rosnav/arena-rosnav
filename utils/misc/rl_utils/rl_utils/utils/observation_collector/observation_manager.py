@@ -13,9 +13,10 @@ class ObservationManager:
     Class to manage observation units and collect observations.
     Each unit is responsible for a dedicated observation type.
 
-    Args:
-        ns (Namespace): The namespace object.
-        obs_structur (List[CollectorUnit], optional): The list of observation unit types. Defaults to None.
+    Attributes:
+        _ns (Namespace): The namespace object.
+        _obs_structur (List[Type[CollectorUnit]]): The list of observation unit types.
+        _observation_units (List[CollectorUnit]): The list of observation unit instances to retrieve information.
     """
 
     _ns: Namespace
