@@ -22,8 +22,7 @@
     <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
   </group>
 
-  <node pkg="LfH" name="hallucination" type="run_policy.py" output="screen" required="true"/> 
-
+  <node pkg="LfH" name="hallucination" type="run_policy.py" output="screen" required="true"/>
 
   <include file="$(find arena_bringup)/launch/testing/move_base/mbf_nav/costmap_nav.launch">
     <arg name="model" value="$(arg model)" />
