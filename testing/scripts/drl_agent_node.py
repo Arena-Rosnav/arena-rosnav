@@ -32,7 +32,7 @@ class DeploymentDRLAgent:
         self.ns = ns.remove_double_slash()
         self.observation_collector = ObservationManager(self.ns)
 
-        self._max_laser_range = self.ns("laser", "range")
+        self._max_laser_range = rospy.get_param(self.ns("laser", "range"))
 
         self._action_pub = rospy.Publisher(f"{ns}/cmd_vel", Twist, queue_size=1)
         self._reset_stacked_obs_pub = rospy.Publisher(
