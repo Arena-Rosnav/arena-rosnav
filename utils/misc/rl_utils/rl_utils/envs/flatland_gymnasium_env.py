@@ -20,6 +20,7 @@ from task_generator.utils import rosparam_get
 # from ..utils.old_observation_collector import ObservationCollector
 from rl_utils.utils.observation_collector.observation_manager import ObservationManager
 from rl_utils.utils.rewards.reward_function import RewardFunction
+from rl_utils.utils.observation_collector.constants import OBS_DICT_KEYS
 
 
 def delay_node_init(ns):
@@ -201,7 +202,8 @@ class FlatlandEnv(gymnasium.Env):
 
         return (
             self.model_space_encoder.encode_observation(
-                obs_dict, ["laser_scan", "goal_in_robot_frame", "last_action"]
+                obs_dict,
+                [OBS_DICT_KEYS.LASER, OBS_DICT_KEYS.GOAL, OBS_DICT_KEYS.LAST_ACTION],
             ),
             reward,
             done,

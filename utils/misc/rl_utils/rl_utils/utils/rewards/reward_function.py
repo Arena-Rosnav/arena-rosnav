@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import rospy
@@ -8,6 +8,21 @@ from .utils import load_rew_fnc
 
 
 class RewardFunction:
+    """Represents a reward function for a reinforcement learning environment.
+
+    Attributes:
+        _rew_func_name (str): Name of the yaml file that contains the reward function specifications.
+        _robot_radius (float): Radius of the robot.
+        _safe_dist (float): Safe distance of the agent.
+        _goal_radius (float): Radius of the goal.
+        _curr_dist_to_path (float): Current distance to the path.
+        _safe_dist_breached (bool): Flag indicating if safe distance is breached.
+        _curr_reward (float): Current reward value.
+        _info (Dict[str, Any]): Dictionary containing reward function information.
+        _rew_fnc_dict (Dict[str, Dict[str, Any]]): Dictionary containing reward function specifications.
+        _reward_units (List[RewardUnit]): List of reward units for calculating the reward.
+    """
+
     _rew_func_name: str
     _robot_radius: float
     _safe_dist: float
@@ -45,7 +60,7 @@ class RewardFunction:
         self._goal_radius = goal_radius
 
         # globally accessible and required information for RewardUnits
-        self._curr_dist_to_path: float = None
+        self._global_state_info: Dict[str, Any] = {}
         self._safe_dist_breached: bool = None
 
         self._curr_reward = 0
@@ -85,15 +100,40 @@ class RewardFunction:
         """
         self._info.update(info)
 
+    def add_global_state_info(self, key: str, value: Any):
+        """Adds global state information to the reward function.
+
+        Args:
+            key (str): Key for the global state information.
+            value (Any): Value of the global state information.
+        """
+        self._global_state_info[key] = value
+
+    def get_global_state_info(self, key: str) -> Any:
+        """Retrieves global state information based on the specified key.
+
+        Args:
+            key (str): Key for the global state information.
+
+        Returns:
+            Any: Value of the global state information.
+        """
+        return self._global_state_info[key]
+
+    def reset_global_state_info(self):
+        """Resets all global state information (after each environment step)."""
+        for key in self._global_state_info.keys():
+            self._global_state_info[key] = None
+
     def _reset(self):
         """Reset on every environment step."""
         self._curr_reward = 0
         self._info = {}
+        self.reset_global_state_info()
 
     def reset(self):
         """Reset before each episode."""
         self.goal_radius = rospy.get_param("/goal_radius", 0.3)
-        self._curr_dist_to_path = None
 
         for reward_unit in self._reward_units:
             reward_unit.reset()
@@ -104,21 +144,23 @@ class RewardFunction:
         Args:
             laser_scan (np.ndarray): Array containing the laser data.
         """
-        self._reset()
-        self.set_safe_dist_breached(laser_scan)
-
         for reward_unit in self._reward_units:
             if self.safe_dist_breached and not reward_unit.on_safe_dist_violation:
                 continue
             reward_unit(laser_scan=laser_scan, **kwargs)
 
-    def get_reward(self, *args, **kwargs) -> Tuple[float, Dict[str, Any]]:
+    def get_reward(
+        self, laser_scan: np.ndarray, *args, **kwargs
+    ) -> Tuple[float, Dict[str, Any]]:
         """Retrieves the current reward and info dictionary.
 
         Returns:
+            laser_scan (np.ndarray): Array containing the laser data.
             Tuple[float, Dict[str, Any]]: Tuple of the current timesteps reward and info.
         """
-        self.calculate_reward(**kwargs)
+        self._reset()
+        self.set_safe_dist_breached(laser_scan)
+        self.calculate_reward(laser_scan=laser_scan, **kwargs)
         return self._curr_reward, self._info
 
     @property
@@ -136,14 +178,6 @@ class RewardFunction:
                 f"Goal radius smaller than {REWARD_CONSTANTS.MIN_GOAL_RADIUS}"
             )
         self._goal_radius = value
-
-    @property
-    def curr_dist_to_path(self) -> float:
-        return self._curr_dist_to_path
-
-    @curr_dist_to_path.setter
-    def curr_dist_to_path(self, value: float) -> None:
-        self._curr_dist_to_path = value
 
     @property
     def safe_dist_breached(self) -> bool:

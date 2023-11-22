@@ -29,6 +29,9 @@ class Namespace(str):
     def robot_ns(self) -> Namespace:
         return Namespace(self.split("/")[1])
 
+    def remove_double_slash(self) -> Namespace:
+        return self.replace("//", "/")
+
 
 EMPTY_LOADER = lambda *_, **__: Model(
     type=ModelType.UNKNOWN, name="", description="", path=""
@@ -262,26 +265,28 @@ class DynamicObstacle(DynamicObstacleProps):
     def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
         name = str(obj.get("name", ""))
         position = parse_Point3D(obj.get("pos", (0, 0, 0)))
-        waypoints = [parse_Point3D(waypoint)
-                     for waypoint in obj.get("waypoints", [])]
+        waypoints = [parse_Point3D(waypoint) for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
             name=name, position=position, model=model, waypoints=waypoints, extra=obj
         )
 
-def _gen_init_pos(steps:int, x:int=1, y:int=0):
-    steps = max(steps,1)
+
+def _gen_init_pos(steps: int, x: int = 1, y: int = 0):
+    steps = max(steps, 1)
 
     while True:
-        yield (1,1,0)
-        
+        yield (1, 1, 0)
+
     while True:
-        x += y==steps
+        x += y == steps
         y %= steps
-        yield (-x,y,0)
+        yield (-x, y, 0)
         y += 1
 
+
 gen_init_pos = _gen_init_pos(10)
+
 
 @dataclasses.dataclass(frozen=True)
 class Robot(RobotProps):
@@ -289,9 +294,9 @@ class Robot(RobotProps):
     def parse(obj: Dict, model: ModelWrapper) -> "Robot":
         name = str(obj.get("name", ""))
         position = parse_Point3D(obj.get("pos", next(gen_init_pos)))
-        planner = str(obj.get("planner",""))
-        agent = str(obj.get("agent",""))
-        record_data = bool(obj.get("record_data",False))
+        planner = str(obj.get("planner", ""))
+        agent = str(obj.get("agent", ""))
+        record_data = bool(obj.get("record_data", False))
 
         return Robot(
             name=name,

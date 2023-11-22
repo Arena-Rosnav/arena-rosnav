@@ -3,11 +3,11 @@ from warnings import warn
 
 import numpy as np
 
-from .constants import REWARD_CONSTANTS, DEFAULTS
-from .reward_function import RewardFunction
+from ..constants import REWARD_CONSTANTS, DEFAULTS
+from ..reward_function import RewardFunction
 from .base_reward_units import RewardUnit, GlobalplanRewardUnit
 from .reward_unit_factory import RewardUnitFactory
-from .utils import check_params
+from ..utils import check_params
 
 # UPDATE WHEN ADDING A NEW UNIT
 __all__ = [
