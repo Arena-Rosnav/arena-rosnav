@@ -29,6 +29,7 @@ poetry run poetry install
 # Missing Deps
 echo "Installing Missing Deps...:"
 cd ../..
+sudo apt update && sudo apt install -y libopencv-dev liblua5.2-dev libarmadillo-dev ros-noetic-nlopt liblcm-dev
 rosdep update && rosdep install --from-paths src --ignore-src -r -y
 
 # Project Install
