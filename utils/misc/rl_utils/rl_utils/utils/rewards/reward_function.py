@@ -15,10 +15,14 @@ class RewardFunction:
         _robot_radius (float): Radius of the robot.
         _safe_dist (float): Safe distance of the agent.
         _goal_radius (float): Radius of the goal.
-        _curr_dist_to_path (float): Current distance to the path.
+
+        _internal_state_info (Dict[str, Any]): Centralized internal state info for the reward units.
+            E.g. to avoid computing same parameter in a single step multiple times.
         _safe_dist_breached (bool): Flag indicating if safe distance is breached.
+
         _curr_reward (float): Current reward value.
         _info (Dict[str, Any]): Dictionary containing reward function information.
+
         _rew_fnc_dict (Dict[str, Dict[str, Any]]): Dictionary containing reward function specifications.
         _reward_units (List[RewardUnit]): List of reward units for calculating the reward.
     """
@@ -28,7 +32,7 @@ class RewardFunction:
     _safe_dist: float
     _goal_radius: float
 
-    _curr_dist_to_path: float
+    _internal_state_info: Dict[str, Any]
     _safe_dist_breached: bool
 
     _curr_reward: float
@@ -60,7 +64,7 @@ class RewardFunction:
         self._goal_radius = goal_radius
 
         # globally accessible and required information for RewardUnits
-        self._global_state_info: Dict[str, Any] = {}
+        self._internal_state_info: Dict[str, Any] = {}
         self._safe_dist_breached: bool = None
 
         self._curr_reward = 0
@@ -100,36 +104,36 @@ class RewardFunction:
         """
         self._info.update(info)
 
-    def add_global_state_info(self, key: str, value: Any):
-        """Adds global state information to the reward function.
+    def add_internal_state_info(self, key: str, value: Any):
+        """Adds internal state information to the reward function.
 
         Args:
-            key (str): Key for the global state information.
-            value (Any): Value of the global state information.
+            key (str): Key for the internal state information.
+            value (Any): Value of the internal state information.
         """
-        self._global_state_info[key] = value
+        self._internal_state_info[key] = value
 
-    def get_global_state_info(self, key: str) -> Any:
-        """Retrieves global state information based on the specified key.
+    def get_internal_state_info(self, key: str) -> Any:
+        """Retrieves internal state information based on the specified key.
 
         Args:
-            key (str): Key for the global state information.
+            key (str): Key for the internal state information.
 
         Returns:
-            Any: Value of the global state information.
+            Any: Value of the internal state information.
         """
-        return self._global_state_info[key]
+        return self._internal_state_info[key]
 
-    def reset_global_state_info(self):
+    def reset_internal_state_info(self):
         """Resets all global state information (after each environment step)."""
-        for key in self._global_state_info.keys():
-            self._global_state_info[key] = None
+        for key in self._internal_state_info.keys():
+            self._internal_state_info[key] = None
 
     def _reset(self):
         """Reset on every environment step."""
         self._curr_reward = 0
         self._info = {}
-        self.reset_global_state_info()
+        self.reset_internal_state_info()
 
     def reset(self):
         """Reset before each episode."""

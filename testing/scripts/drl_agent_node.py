@@ -29,7 +29,7 @@ class DeploymentDRLAgent:
             ns (str, optional):
                 Simulation specific ROS namespace. Defaults to None.
         """
-        self.ns = ns.remove_double_slash()
+        self.ns = Namespace(ns)
         self.observation_collector = ObservationManager(self.ns)
 
         self._max_laser_range = rospy.get_param(self.ns("laser", "range"))

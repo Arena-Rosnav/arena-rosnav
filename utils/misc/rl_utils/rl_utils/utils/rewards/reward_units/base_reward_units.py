@@ -83,15 +83,15 @@ class GlobalplanRewardUnit(RewardUnit, ABC):
     ) -> None:
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._kdtree = None
-        self._reward_function.add_global_state_info("curr_dist_to_path", None)
+        self._reward_function.add_internal_state_info("curr_dist_to_path", None)
 
     @property
     def curr_dist_to_path(self) -> float:
-        return self._reward_function.get_global_state_info("curr_dist_to_path")
+        return self._reward_function.get_internal_state_info("curr_dist_to_path")
 
     @curr_dist_to_path.setter
     def curr_dist_to_path(self, value: float) -> None:
-        self._reward_function.add_global_state_info("curr_dist_to_path", value)
+        self._reward_function.add_internal_state_info("curr_dist_to_path", value)
 
     def __call__(
         self, global_plan: np.ndarray, robot_pose, *args: Any, **kwargs: Any
