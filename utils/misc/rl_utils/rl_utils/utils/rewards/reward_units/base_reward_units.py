@@ -27,11 +27,11 @@ class RewardUnit(ABC):
         *args,
         **kwargs
     ) -> None:
-        """_summary_
+        """Initializes the RewardUnit.
 
         Args:
-            reward_function (RewardFunction): _description_
-            _on_safe_dist_violation (bool, optional): _description_. Defaults to True.
+            reward_function (RewardFunction): The RewardFunction instance holding this unit.
+            _on_safe_dist_violation (bool, optional): Whether the unit is applied on safe distance violation. Defaults to True.
         """
         self._reward_function = reward_function
         self._on_safe_dist_violation = _on_safe_dist_violation
@@ -41,15 +41,27 @@ class RewardUnit(ABC):
         return self._on_safe_dist_violation
 
     def add_reward(self, value: float):
+        """Adds the given value to the episode's reward.
+
+        Args:
+            value (float): _description_
+        """
         self._reward_function.add_reward(value=value)
 
     def add_info(self, info: dict):
+        """Adds the given information to the episode's info dict.
+
+        Args:
+            info (dict): _description_
+        """
         self._reward_function.add_info(info=info)
 
     def check_parameters(self, *args, **kwargs):
+        """Method to check the parsed unit parameters. Send warning if params were chosen inappropriately."""
         pass
 
     def reset(self):
+        """Method to reset the unit state after each episode."""
         pass
 
     @property
