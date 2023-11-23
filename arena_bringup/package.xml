@@ -50,6 +50,17 @@
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
 
+  <depend>mbf_costmap_nav</depend>
+  <depend>navigation</depend>
+  <depend>teb_local_planner</depend>
+  <depend>mpc_local_planner</depend>
+  <!-- <depend>nlopt</depend> -->
+  <depend>turtlebot3_description</depend>
+  <depend>turtlebot3_navigation</depend>
+  <depend>lms1xx</depend>
+  <depend>velodyne_description</depend>
+  <depend>hector_gazebo</depend>
+  <depend>ira_laser_tools</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
