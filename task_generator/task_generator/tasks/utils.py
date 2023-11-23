@@ -274,14 +274,13 @@ class ITF_Scenario(ITF_Base):
         self.PROPS.obstacle_manager.spawn_dynamic_obstacles(
             scenario.obstacles.dynamic)
 
-        for index, robot in enumerate(scenario.robots):
+        for index, scenario_robot in enumerate(scenario.robots):
             if index >= len(self.PROPS.robot_managers):
                 break
 
-            manager = self.PROPS.robot_managers[index]
+            robot = self.PROPS.robot_managers[index]
 
-            manager.reset(start_pos=robot.start, goal_pos=robot.goal)
-            manager.move_robot_to_pos(position=robot.start)
+            robot.reset(start_pos=scenario_robot.start, goal_pos=scenario_robot.goal)
 
 
 # RandomInterface
@@ -420,26 +419,25 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
         if robot_positions is None:
             robot_positions = []
 
-        for manager, pos in itertools.zip_longest(self.PROPS.robot_managers, robot_positions, fillvalue=None):
+        for robot, pos in itertools.zip_longest(self.PROPS.robot_managers, robot_positions, fillvalue=None):
             
-            if manager is None:
+            if robot is None:
                 continue;
             
             if pos is None:
                 start_pos = self.PROPS.map_manager.get_random_pos_on_map(
-                    manager.safe_distance
+                    robot.safe_distance
                 )
                 goal_pos = self.PROPS.map_manager.get_random_pos_on_map(
-                    manager.safe_distance, forbidden_zones=[start_pos]
+                    robot.safe_distance, forbidden_zones=[start_pos]
                 )
 
                 robot_positions.append((start_pos, goal_pos))
             else:
                 start_pos, goal_pos = pos
 
-            manager.reset(start_pos=start_pos, goal_pos=goal_pos)
+            robot.reset(start_pos=start_pos, goal_pos=goal_pos)
 
-        self.PROPS.obstacle_manager.reset()
         self.PROPS.map_manager.init_forbidden_zones()
 
         def indexer() -> Callable[..., int]:

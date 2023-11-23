@@ -190,11 +190,6 @@ class PedsimManager(EntityManager):
 
                 known.used = True
 
-                # TODO static obstacles don't have collisions if not re-spawned but moved instead, remove this once it works without respawning
-                # self._simulator.delete_entity(obstacle.name)
-                # known.pedsim_spawned = False
-                # end
-
             else:
                 known = self._known_obstacles.create_or_get(
                     name=obstacle.name,
