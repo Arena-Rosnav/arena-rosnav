@@ -122,11 +122,11 @@ class FlatlandSimulator(BaseSimulator):
 
         return res.success
 
-    def move_entity(self, name, pos):
+    def move_entity(self, name, position):
         pose = Pose2D()
-        pose.x = pos[0]
-        pose.y = pos[1]
-        pose.theta = pos[2]
+        pose.x = position[0]
+        pose.y = position[1]
+        pose.theta = position[2]
 
         move_model_request = MoveModelRequest()
         move_model_request.name = name
