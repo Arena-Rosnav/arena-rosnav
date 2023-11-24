@@ -611,7 +611,7 @@ class PedsimManager(EntityManager):
         request = RegisterRobotRequest()
 
         request.name = robot.name
-        request.odom_topic = self._namespace(robot.name, "odom")
+        request.odom_topic = Namespace(robot.name)("odom")
 
         self._register_robot_srv(request)
 
