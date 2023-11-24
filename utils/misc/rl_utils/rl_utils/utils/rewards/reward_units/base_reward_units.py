@@ -4,10 +4,22 @@ from typing import Any
 import numpy as np
 from scipy.spatial import cKDTree
 
-from .reward_function import RewardFunction
+from ..reward_function import RewardFunction
 
 
 class RewardUnit(ABC):
+    """
+    Reward Unit Base Class
+
+    This class represents a reward unit and is an abstract base class (ABC).
+    It provides methods for adding rewards and information, checking parameters, and resetting the reward unit.
+    It also contains an abstract method for calculating the reward.
+
+    Attributes:
+        _reward_function (RewardFunction): The RewardFunction instance holding this unit.
+        _on_safe_dist_violation (bool): Whether the unit is applied on safe distance violation.
+    """
+
     def __init__(
         self,
         reward_function: RewardFunction,
@@ -15,6 +27,12 @@ class RewardUnit(ABC):
         *args,
         **kwargs
     ) -> None:
+        """_summary_
+
+        Args:
+            reward_function (RewardFunction): _description_
+            _on_safe_dist_violation (bool, optional): _description_. Defaults to True.
+        """
         self._reward_function = reward_function
         self._on_safe_dist_violation = _on_safe_dist_violation
 
@@ -44,6 +62,18 @@ class RewardUnit(ABC):
 
 
 class GlobalplanRewardUnit(RewardUnit, ABC):
+    """
+    Base Globalplan Reward Unit
+
+    This class represents a globalplan reward unit and is a subclass of RewardUnit.
+    It provides methods for calculating the distance to a global plan and resetting the unit.
+
+    Attributes:
+        _kdtree: cKDTree
+    """
+
+    _kdtree: cKDTree
+
     def __init__(
         self,
         reward_function: "RewardFunction",
@@ -53,18 +83,15 @@ class GlobalplanRewardUnit(RewardUnit, ABC):
     ) -> None:
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._kdtree = None
+        self._reward_function.add_global_state_info("curr_dist_to_path", None)
 
     @property
     def curr_dist_to_path(self) -> float:
-        return self._reward_function.curr_dist_to_path
+        return self._reward_function.get_global_state_info("curr_dist_to_path")
 
     @curr_dist_to_path.setter
     def curr_dist_to_path(self, value: float) -> None:
-        self._reward_function.curr_dist_to_path = value
-
-    @property
-    def safe_dist_breached(self) -> bool:
-        return self._reward_function.safe_dist_breached
+        self._reward_function.add_global_state_info("curr_dist_to_path", value)
 
     def __call__(
         self, global_plan: np.ndarray, robot_pose, *args: Any, **kwargs: Any
