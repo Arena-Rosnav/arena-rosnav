@@ -7,7 +7,6 @@
 
     <!-- move_base -->
     <node pkg="mbf_costmap_nav" type="mbf_costmap_nav" respawn="false" name="move_base_flex" output="log">
-
         <!-- system defaults -->
         <rosparam file="$(find arena_bringup)/params/mbf/move_base_params.yaml"
             command="load" subst_value="True" />
@@ -57,7 +56,17 @@
     </node>
 
     <node name="move_base_legacy_relay" pkg="mbf_costmap_nav" type="move_base_legacy_relay.py">
+
         <remap from="~base_global_planner" to="move_base_flex/base_global_planner" />
         <remap from="~base_local_planner" to="move_base_flex/base_local_planner" />
+        
+        <!-- TODO rewrite relay to not overwrite existing params -->
+        <rosparam file="$(find arena_bringup)/params/mbf/move_base_params.yaml"
+            command="load" subst_value="True" />
+        <rosparam
+            file="$(find arena-simulation-setup)/robot/$(arg model)/configs/mbf/move_base_params.yaml"
+            command="load" subst_value="True"
+            if="$(eval arg('model') != '')"
+        />
     </node>
 </launch>
