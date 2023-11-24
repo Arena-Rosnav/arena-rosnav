@@ -82,6 +82,9 @@ class GlobalplanRewardUnit(RewardUnit, ABC):
 
     Attributes:
         _kdtree: cKDTree
+
+    Internal State Information:
+        curr_dist_to_path (float): Current distance to path.
     """
 
     _kdtree: cKDTree
