@@ -33,4 +33,7 @@
   <include file="$(find arena_bringup)/launch/utils/rviz.launch">
     <arg name="show_rviz" value="$(eval arg('visualization') == 'rviz' and arg('show_rviz') == true)" />
   </include>
+
+  <!-- synchronize -->
+  <param name="synchronous" value="true"/>
 </launch>
