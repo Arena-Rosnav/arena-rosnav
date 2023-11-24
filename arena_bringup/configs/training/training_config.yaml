@@ -9,10 +9,10 @@ no_gpu: false
 
 ### General Training
 # navigation task mode, chose from "random" or "staged"
-task_mode: "random"
+task_mode: "dynamic_map_random"
 # number of simulation timesteps
 n_timesteps: 20000000
-max_num_moves_per_eps: 500
+max_num_moves_per_eps: 100
 goal_radius: 0.2
 
 ### Training Monitoring
