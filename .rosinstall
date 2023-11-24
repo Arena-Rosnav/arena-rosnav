@@ -107,10 +107,10 @@
 #   local-name: ../planners/lflh
 #   uri: https://github.com/Arena-Rosnav/lflh
 #   version: master
-#- git:
-#   local-name: ../planners/dragon
-#   uri: https://github.com/Arena-Rosnav/dragon
-#   version: master
+- git:
+   local-name: ../planners/dragon
+   uri: https://github.com/Arena-Rosnav/dragon
+   version: master
 #- git:
 #   local-name: ../planners/trail
 #   uri: https://github.com/Arena-Rosnav/trail
