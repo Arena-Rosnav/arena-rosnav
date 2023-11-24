@@ -7,13 +7,13 @@ from urllib import parse
 import numpy as np
 import rospy
 from geometry_msgs.msg import Twist
-from rl_utils.utils.observation_collector import ObservationCollector
+from rl_utils.utils.observation_collector.observation_manager import ObservationManager
 from rosgraph_msgs.msg import Clock
 from rosnav import *
 from rosnav.msg import ResetStackedObs
 from rosnav.srv import GetAction, GetActionRequest
 from std_msgs.msg import Int16
-from rl_utils.utils.utils import remove_double_slash
+from task_generator.shared import Namespace
 
 sys.modules["rl_agent"] = sys.modules["rosnav"]
 
@@ -22,26 +22,22 @@ ACTION_FREQUENCY = 4  # in Hz
 
 
 class DeploymentDRLAgent:
-    def __init__(self, ns=None):
+    def __init__(self, ns: Namespace = None):
         """Initialization procedure for the DRL agent node.
 
         Args:
             ns (str, optional):
                 Simulation specific ROS namespace. Defaults to None.
         """
-        ns = remove_double_slash(ns)
-        self.observation_collector = ObservationCollector(
-            ns, rospy.get_param("laser/num_beams"), external_time_sync=False
-        )
+        self.ns = ns.remove_double_slash()
+        self.observation_collector = ObservationManager(self.ns)
 
-        self._max_laser_range = rospy.get_param(os.path.join(ns, "laser", "range"))
+        self._max_laser_range = rospy.get_param(self.ns("laser", "range"))
 
         self._action_pub = rospy.Publisher(f"{ns}/cmd_vel", Twist, queue_size=1)
         self._reset_stacked_obs_pub = rospy.Publisher(
             f"{ns}/rosnav/reset_stacked_obs", ResetStackedObs, queue_size=1
         )
-
-        self.ns = ns
 
         self._action_period_time = DeploymentDRLAgent._get_action_frequency_in_nsecs()
         self.last_action = [0, 0, 0]

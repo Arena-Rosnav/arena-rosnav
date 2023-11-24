@@ -24,7 +24,7 @@ task_mode:
       max: 5
       models: ["shelf"]
     dynamic:
-      min: 1
+      min: 3
       max: 5
       models: ["actor1"]
 

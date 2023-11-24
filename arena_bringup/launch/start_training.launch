@@ -29,7 +29,7 @@
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" />
-
+  <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load" ns="~configuration"/>
 
   <!--  PARAMS DON'T CHANGE THEM  -->
   <arg name="reset_remove_all" default="false" />

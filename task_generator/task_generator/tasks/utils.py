@@ -268,9 +268,8 @@ class ITF_Scenario(ITF_Base):
 
     def setup_scenario(self, scenario: Scenario):
         self.PROPS.obstacle_manager.spawn_map_obstacles(scenario.map.xml)
-        self.PROPS.obstacle_manager.spawn_obstacles(scenario.obstacles.static)
         self.PROPS.obstacle_manager.spawn_obstacles(
-            scenario.obstacles.interactive)
+            scenario.obstacles.static + scenario.obstacles.interactive)
         self.PROPS.obstacle_manager.spawn_dynamic_obstacles(
             scenario.obstacles.dynamic)
 
@@ -280,7 +279,8 @@ class ITF_Scenario(ITF_Base):
 
             robot = self.PROPS.robot_managers[index]
 
-            robot.reset(start_pos=scenario_robot.start, goal_pos=scenario_robot.goal)
+            robot.reset(start_pos=scenario_robot.start,
+                        goal_pos=scenario_robot.goal)
 
 
 # RandomInterface
@@ -414,16 +414,16 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
         static_obstacles: RandomList,
         interactive_obstacles: RandomList,
         dynamic_obstacles: RandomList,
-        robot_positions: Optional[List[Tuple[Waypoint, Waypoint]]] = None
+        robot_positions: Optional[List[Tuple[Waypoint, Waypoint]]] = None,
     ):
         if robot_positions is None:
             robot_positions = []
 
         for robot, pos in itertools.zip_longest(self.PROPS.robot_managers, robot_positions, fillvalue=None):
-            
+
             if robot is None:
-                continue;
-            
+                continue
+
             if pos is None:
                 start_pos = self.PROPS.map_manager.get_random_pos_on_map(
                     robot.safe_distance
@@ -442,49 +442,50 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
 
         def indexer() -> Callable[..., int]:
             indices: Dict[str, Iterator[int]] = dict()
+
             def index(model: str):
                 if model not in indices:
                     indices[model] = itertools.count(1)
                 return next(indices[model])
             return index
 
+        obstacles = []
+
         # Create static obstacles
         if n_static_obstacles:
             index = indexer()
 
-            self.PROPS.obstacle_manager.spawn_obstacles(
-                [
-                    ITF_Obstacle.create_obstacle(
-                        self,
-                        name=f"S_{model}_{index(model)}",
-                        model=self.PROPS.model_loader.bind(model)
-                    )
-                    for model in random.choices(
-                        population=list(static_obstacles.keys()),
-                        weights=list(static_obstacles.values()),
-                        k=n_static_obstacles,
-                    )
-                ]
-            )
+            obstacles += [
+                ITF_Obstacle.create_obstacle(
+                    self,
+                    name=f"S_{model}_{index(model)}",
+                    model=self.PROPS.model_loader.bind(model)
+                )
+                for model in random.choices(
+                    population=list(static_obstacles.keys()),
+                    weights=list(static_obstacles.values()),
+                    k=n_static_obstacles,
+                )
+            ]
 
         # Create interactive obstacles
         if n_interactive_obstacles:
             index = indexer()
 
-            self.PROPS.obstacle_manager.spawn_obstacles(
-                [
-                    ITF_Obstacle.create_obstacle(
-                        self,
-                        name=f"I_{model}_{index(model)}",
-                        model=self.PROPS.model_loader.bind(model)
-                    )
-                    for model in random.choices(
-                        population=list(interactive_obstacles.keys()),
-                        weights=list(interactive_obstacles.values()),
-                        k=n_interactive_obstacles,
-                    )
-                ]
-            )
+            obstacles += [
+                ITF_Obstacle.create_obstacle(
+                    self,
+                    name=f"I_{model}_{index(model)}",
+                    model=self.PROPS.model_loader.bind(model)
+                )
+                for model in random.choices(
+                    population=list(interactive_obstacles.keys()),
+                    weights=list(interactive_obstacles.values()),
+                    k=n_interactive_obstacles,
+                )
+            ]
+
+        self.PROPS.obstacle_manager.spawn_obstacles(obstacles)
 
         # Create dynamic obstacles
         if n_dynamic_obstacles:

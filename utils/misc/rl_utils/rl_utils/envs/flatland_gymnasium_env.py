@@ -17,10 +17,10 @@ from task_generator.task_generator_node import TaskGenerator
 from task_generator.tasks.base_task import BaseTask
 from task_generator.utils import rosparam_get
 
-from ..utils.observation_collector import ObservationCollector
-from ..utils.reward import RewardCalculator
-
-NUM_EPS = 20
+# from ..utils.old_observation_collector import ObservationCollector
+from rl_utils.utils.observation_collector.observation_manager import ObservationManager
+from rl_utils.utils.rewards.reward_function import RewardFunction
+from rl_utils.utils.observation_collector.constants import OBS_DICT_KEYS
 
 
 def delay_node_init(ns):
@@ -49,6 +49,7 @@ class FlatlandEnv(gymnasium.Env):
         reward_fnc: str,
         max_steps_per_episode=100,
         verbose: bool = True,
+        log_last_n_eps: int = 20,
         *args,
         **kwargs,
     ):
@@ -67,7 +68,6 @@ class FlatlandEnv(gymnasium.Env):
         super(FlatlandEnv, self).__init__()
 
         self.ns = Namespace(ns)
-        self._verbose = verbose
 
         delay_node_init(ns=self.ns.simulation_ns)
 
@@ -78,11 +78,7 @@ class FlatlandEnv(gymnasium.Env):
         self.model_space_encoder = RosnavSpaceManager()
 
         # observation collector
-        self.observation_collector = ObservationCollector(
-            self.ns,
-            self.model_space_encoder._laser_num_beams,
-            external_time_sync=False,
-        )
+        self.observation_collector = ObservationManager(self.ns)
 
         self.action_space = self.model_space_encoder.get_action_space()
         self.observation_space = self.model_space_encoder.get_observation_space()
@@ -92,12 +88,12 @@ class FlatlandEnv(gymnasium.Env):
         self.task: BaseTask = task_generator._get_predefined_task(**kwargs)
 
         # reward calculator
-        self.reward_calculator = RewardCalculator(
+        self.reward_calculator = RewardFunction(
+            rew_func_name=reward_fnc,
             holonomic=self.model_space_encoder._is_holonomic,
             robot_radius=self.task.robot_managers[0]._robot_radius,
             safe_dist=self.task.robot_managers[0].safe_distance,
             goal_radius=rosparam_get(float, "goal_radius", 0.3),
-            rule=reward_fnc,
         )
 
         # action agent publisher
@@ -121,6 +117,9 @@ class FlatlandEnv(gymnasium.Env):
                 self._service_name_step, Empty, persistent=True
             )
 
+        self._verbose = verbose
+        self._log_last_n_eps = log_last_n_eps
+
         self._steps_curr_episode = 0
         self._episode = 0
         self._max_steps_per_episode = max_steps_per_episode
@@ -136,7 +135,7 @@ class FlatlandEnv(gymnasium.Env):
 
         self.last_mean_reward = 0
         self.mean_reward = [0, 0]
-        self.step_count_hist = [0] * NUM_EPS
+        self.step_count_hist = [0] * self._log_last_n_eps
         self.step_time = [0, 0]
 
         self._done_reasons = {
@@ -192,16 +191,19 @@ class FlatlandEnv(gymnasium.Env):
         )
 
         if done and self._verbose:
-            self.step_count_hist[self._episode % NUM_EPS] = self._steps_curr_episode
+            self.step_count_hist[
+                self._episode % self._log_last_n_eps
+            ] = self._steps_curr_episode
             self._done_hist[int(info["done_reason"])] += 1
-            if sum(self._done_hist) >= NUM_EPS:
+            if sum(self._done_hist) >= self._log_last_n_eps:
                 self.print_statistics()
 
         self.step_time[0] += time.time() - start_time
 
         return (
             self.model_space_encoder.encode_observation(
-                obs_dict, ["laser_scan", "goal_in_robot_frame", "last_action"]
+                obs_dict,
+                [OBS_DICT_KEYS.LASER, OBS_DICT_KEYS.GOAL, OBS_DICT_KEYS.LAST_ACTION],
             ),
             reward,
             done,
@@ -256,23 +258,23 @@ class FlatlandEnv(gymnasium.Env):
         self._steps_curr_episode += 1
 
     def print_statistics(self):
-        mean_reward = self.mean_reward[0] / NUM_EPS
+        mean_reward = self.mean_reward[0] / self._log_last_n_eps
         diff = round(mean_reward - self.last_mean_reward, 5)
 
         print(
-            f"[{self.ns}] Last 10 Episodes:\t"
+            f"[{self.ns}] Last {self._log_last_n_eps} Episodes:\t"
             f"{self._done_reasons[str(0)]}: {self._done_hist[0]}\t"
             f"{self._done_reasons[str(1)]}: {self._done_hist[1]}\t"
             f"{self._done_reasons[str(2)]}: {self._done_hist[2]}\t"
             f"Mean step time: {round(self.step_time[0] / self.step_time[1] * 100, 2)}\t"
             f"Mean cum. reward: {round(mean_reward, 5)} ({'+' if diff >= 0 else ''}{diff})\t"
-            f"Mean steps: {sum(self.step_count_hist) / NUM_EPS}\t"
+            f"Mean steps: {sum(self.step_count_hist) / self._log_last_n_eps}\t"
         )
         self._done_hist = [0] * 3
         self.step_time = [0, 0]
         self.last_mean_reward = mean_reward
         self.mean_reward = [0, 0]
-        self.step_count_hist = [0] * NUM_EPS
+        self.step_count_hist = [0] * self._log_last_n_eps
 
     @staticmethod
     def determine_termination(

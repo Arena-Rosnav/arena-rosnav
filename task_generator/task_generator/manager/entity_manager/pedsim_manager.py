@@ -8,18 +8,26 @@ import pedsim_msgs.msg as pedsim_msgs
 from geometry_msgs.msg import Point, Pose, Quaternion
 import pedsim_srvs.srv as pedsim_srvs
 from std_srvs.srv import SetBool, Trigger
-
-
-from task_generator.manager.entity_manager.entity_manager import EntityManager
-from task_generator.manager.entity_manager.utils import KnownObstacles, SDFUtil, YAMLUtil
 from task_generator.constants import Constants, Pedsim
-from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle, PositionOrientation, Robot
+from task_generator.manager.entity_manager.entity_manager import EntityManager
+from task_generator.manager.entity_manager.utils import (
+    KnownObstacles,
+    SDFUtil,
+    YAMLUtil,
+)
+from task_generator.shared import (
+    DynamicObstacle,
+    Model,
+    ModelType,
+    Obstacle,
+    PositionOrientation,
+    Robot,
+)
 from task_generator.simulators.flatland_simulator import FlatlandSimulator
 
 from typing import List
 
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
-
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
@@ -66,7 +74,6 @@ def process_SDF(name: str, base_model: Model) -> Model:
 
 
 class PedsimManager(EntityManager):
-
     _spawn_peds_srv: rospy.ServiceProxy
     _remove_peds_srv: rospy.ServiceProxy
     _reset_peds_srv: rospy.ServiceProxy
@@ -81,11 +88,11 @@ class PedsimManager(EntityManager):
 
     SERVICE_RESET = ""
 
-    SERVICE_SPAWN_PEDS = "/pedsim_simulator/spawn_peds"
+    SERVICE_SPAWN_PEDS = "pedsim_simulator/spawn_peds"
     SERVICE_MOVE_PEDS = "pedsim_simulator/move_peds"
-    SERVICE_RESPAWN_PEDS = "/pedsim_simulator/respawn_peds"
-    SERVICE_RESET_ALL_PEDS = "/pedsim_simulator/reset_all_peds"
-    SERVICE_REMOVE_ALL_PEDS = "/pedsim_simulator/remove_all_peds"
+    SERVICE_RESPAWN_PEDS = "pedsim_simulator/respawn_peds"
+    SERVICE_RESET_ALL_PEDS = "pedsim_simulator/reset_all_peds"
+    SERVICE_REMOVE_ALL_PEDS = "pedsim_simulator/remove_all_peds"
 
     SERVICE_ADD_WALLS = "pedsim_simulator/add_walls"
     SERVICE_CLEAR_WALLS = "pedsim_simulator/clear_walls"
@@ -96,56 +103,65 @@ class PedsimManager(EntityManager):
 
     SERVICE_REGISTER_ROBOT = "pedsim_simulator/register_robot"
 
-    TOPIC_SIMULATED_OBSTACLES = "/pedsim_simulator/simulated_obstacles"
-    TOPIC_SIMULATED_PEDS = "/pedsim_simulator/simulated_agents"
+    TOPIC_SIMULATED_OBSTACLES = "pedsim_simulator/simulated_obstacles"
+    TOPIC_SIMULATED_PEDS = "pedsim_simulator/simulated_agents"
 
     def __init__(self, namespace, simulator):
-
         EntityManager.__init__(self, namespace=namespace, simulator=simulator)
 
         self._known_obstacles = KnownObstacles()
 
-        rospy.wait_for_service(self.SERVICE_SPAWN_PEDS, timeout=T)
-        rospy.wait_for_service(self.SERVICE_RESPAWN_PEDS, timeout=T)
-        rospy.wait_for_service(self.SERVICE_RESET_ALL_PEDS, timeout=T)
-        rospy.wait_for_service(self.SERVICE_REMOVE_ALL_PEDS, timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_SPAWN_PEDS), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_RESPAWN_PEDS), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_RESET_ALL_PEDS), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_REMOVE_ALL_PEDS), timeout=T)
 
-        rospy.wait_for_service(self.SERVICE_ADD_WALLS, timeout=T)
-        rospy.wait_for_service(self.SERVICE_CLEAR_WALLS, timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_ADD_WALLS), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_CLEAR_WALLS), timeout=T)
 
-        rospy.wait_for_service(self.SERVICE_SPAWN_OBSTACLES, timeout=T)
-        rospy.wait_for_service(self.SERVICE_RESPAWN_OBSTACLES, timeout=T)
-        rospy.wait_for_service(self.SERVICE_REMOVE_ALL_OBSTACLES, timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_SPAWN_OBSTACLES), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_RESPAWN_OBSTACLES), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_REMOVE_ALL_OBSTACLES), timeout=T)
 
-        rospy.wait_for_service(self.SERVICE_REGISTER_ROBOT, timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_REGISTER_ROBOT), timeout=T)
 
         self._spawn_peds_srv = rospy.ServiceProxy(
-            self.SERVICE_SPAWN_PEDS, pedsim_srvs.SpawnPeds, persistent=True)
+            self._namespace(self.SERVICE_SPAWN_PEDS), pedsim_srvs.SpawnPeds, persistent=True)
         self._respawn_peds_srv = rospy.ServiceProxy(
-            self.SERVICE_RESPAWN_PEDS, pedsim_srvs.SpawnPeds, persistent=True)
+            self._namespace(self.SERVICE_RESPAWN_PEDS), pedsim_srvs.SpawnPeds, persistent=True)
         self._remove_peds_srv = rospy.ServiceProxy(
-            self.SERVICE_REMOVE_ALL_PEDS, SetBool, persistent=True)
+            self._namespace(self.SERVICE_REMOVE_ALL_PEDS), SetBool, persistent=True)
         self._reset_peds_srv = rospy.ServiceProxy(
-            self.SERVICE_RESET_ALL_PEDS, Trigger, persistent=True)
+            self._namespace(self.SERVICE_RESET_ALL_PEDS), Trigger, persistent=True)
 
         self._spawn_obstacles_srv = rospy.ServiceProxy(
-            self.SERVICE_SPAWN_OBSTACLES, pedsim_srvs.SpawnObstacles, persistent=True)
+            self._namespace(self.SERVICE_SPAWN_OBSTACLES), pedsim_srvs.SpawnObstacles, persistent=True)
         self._respawn_obstacles_srv = rospy.ServiceProxy(
-            self.SERVICE_RESPAWN_OBSTACLES, pedsim_srvs.SpawnObstacles, persistent=True)
+            self._namespace(self.SERVICE_RESPAWN_OBSTACLES), pedsim_srvs.SpawnObstacles, persistent=True)
         self._remove_obstacles_srv = rospy.ServiceProxy(
-            self.SERVICE_REMOVE_ALL_OBSTACLES, Trigger, persistent=True)
+            self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES), Trigger, persistent=True)
 
         self._add_walls_srv = rospy.ServiceProxy(
-            self.SERVICE_ADD_WALLS, pedsim_srvs.SpawnWalls, persistent=True)
+            self._namespace(self.SERVICE_ADD_WALLS), pedsim_srvs.SpawnWalls, persistent=True)
         self._clear_walls_srv = rospy.ServiceProxy(
-            self.SERVICE_CLEAR_WALLS, Trigger, persistent=True)
+            self._namespace(self.SERVICE_CLEAR_WALLS), Trigger, persistent=True)
 
         self._register_robot_srv = rospy.ServiceProxy(
-            self.SERVICE_REGISTER_ROBOT, pedsim_srvs.RegisterRobot, persistent=True)
+            self._namespace(self.SERVICE_REGISTER_ROBOT), pedsim_srvs.RegisterRobot, persistent=True)
 
-        rospy.Subscriber(self.TOPIC_SIMULATED_OBSTACLES,
+        rospy.Subscriber(self._namespace(self.TOPIC_SIMULATED_OBSTACLES),
                          pedsim_msgs.Obstacles, self._obstacle_callback)
-        rospy.Subscriber(self.TOPIC_SIMULATED_PEDS,
+        rospy.Subscriber(self._namespace(self.TOPIC_SIMULATED_PEDS),
                          pedsim_msgs.AgentStates, self._ped_callback)
 
         # temp
@@ -156,18 +172,19 @@ class PedsimManager(EntityManager):
                 y %= steps
                 yield (-x, y, 0)
                 y += 1
+
         self.JAIL_POS = gen_JAIL_POS(10)
         # end temp
 
     def spawn_obstacles(self, obstacles):
 
-        srv = pedsim_srvs.SpawnObstacles()
-        srv.InteractiveObstacles = []  # type: ignore
+        srv = pedsim_srvs.SpawnObstaclesRequest()
+        srv.obstacles = []
 
-        self.agent_topic_str = ''
+        self.agent_topic_str = ""
 
         for obstacle in obstacles:
-            msg = pedsim_msgs.InteractiveObstacle()
+            msg = pedsim_msgs.Obstacle()
 
             msg.name = obstacle.name
 
@@ -175,11 +192,11 @@ class PedsimManager(EntityManager):
             msg.pose = Pose(
                 position=Point(
                     x=obstacle.position[0], y=obstacle.position[1], z=0),
-                orientation=Quaternion(x=0, y=0, z=obstacle.position[2], w=1)
+                orientation=Quaternion(x=0, y=0, z=obstacle.position[2], w=1),
             )
 
             interaction_radius: float = obstacle.extra.get(
-                "interaction_radius", 0.)
+                "interaction_radius", 0.0)
 
             self.agent_topic_str += f',{obstacle.name}/0'
 
@@ -188,7 +205,7 @@ class PedsimManager(EntityManager):
 
             msg.yaml_path = obstacle.model.get(ModelType.YAML).path
 
-            srv.InteractiveObstacles.append(msg)  # type: ignore
+            srv.obstacles.append(msg)  # type: ignore
 
             known = self._known_obstacles.get(obstacle.name)
             if known is not None:
@@ -206,31 +223,18 @@ class PedsimManager(EntityManager):
                     used=True
                 )
 
-        max_num_try = 1
-        i_curr_try = 0
-        rospy.logdebug("trying to call service with interactive obstacles: ")
+        if not self._respawn_obstacles_srv.call(srv).success:
+            rospy.logwarn(f"spawn static obstacle failed!")
 
-        while i_curr_try < max_num_try:
-            # try to call service
-            response = self._respawn_obstacles_srv.call(
-                srv.InteractiveObstacles)  # type: ignore
-
-            if not response.success:  # if service not succeeds, do something and redo service
-                rospy.logwarn(
-                    f"spawn static obstacle failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
-                i_curr_try += 1
-            else:
-                break
-        rospy.set_param(self._namespace(
-            "agent_topic_string"), self.agent_topic_str)
+        rospy.set_param(self._namespace("agent_topic_string"), self.agent_topic_str)
         return
 
     def spawn_dynamic_obstacles(self, obstacles):
 
-        srv = pedsim_srvs.SpawnPeds()
-        srv.peds = []  # type: ignore
+        srv = pedsim_srvs.SpawnPedsRequest()
+        srv.peds = [] 
 
-        self.agent_topic_str = ''
+        self.agent_topic_str = ""
 
         for obstacle in obstacles:
             msg = pedsim_msgs.Ped()
@@ -247,51 +251,77 @@ class PedsimManager(EntityManager):
             msg.number_of_peds = 1
             msg.vmax = Pedsim.VMAX(obstacle.extra.get("vmax", None))
             msg.start_up_mode = Pedsim.START_UP_MODE(
-                obstacle.extra.get("start_up_mode", None))
+                obstacle.extra.get("start_up_mode", None)
+            )
             msg.wait_time = Pedsim.WAIT_TIME(
                 obstacle.extra.get("wait_time", None))
             msg.trigger_zone_radius = Pedsim.TRIGGER_ZONE_RADIUS(
-                obstacle.extra.get("trigger_zone_radius", None))
+                obstacle.extra.get("trigger_zone_radius", None)
+            )
             msg.chatting_probability = Pedsim.CHATTING_PROBABILITY(
-                obstacle.extra.get("chatting_probability", None))
+                obstacle.extra.get("chatting_probability", None)
+            )
             msg.tell_story_probability = Pedsim.TELL_STORY_PROBABILITY(
-                obstacle.extra.get("tell_story_probability", None))
+                obstacle.extra.get("tell_story_probability", None)
+            )
             msg.group_talking_probability = Pedsim.GROUP_TALKING_PROBABILITY(
-                obstacle.extra.get("group_talking_probability", None))
-            msg.talking_and_walking_probability = Pedsim.TALKING_AND_WALKING_PROBABILITY(
-                obstacle.extra.get("talking_and_walking_probability", None))
+                obstacle.extra.get("group_talking_probability", None)
+            )
+            msg.talking_and_walking_probability = (
+                Pedsim.TALKING_AND_WALKING_PROBABILITY(
+                    obstacle.extra.get("talking_and_walking_probability", None)
+                )
+            )
             msg.requesting_service_probability = Pedsim.REQUESTING_SERVICE_PROBABILITY(
-                obstacle.extra.get("requesting_service_probability", None))
+                obstacle.extra.get("requesting_service_probability", None)
+            )
             msg.requesting_guide_probability = Pedsim.REQUESTING_GUIDE_PROBABILITY(
-                obstacle.extra.get("requesting_guide_probability", None))
-            msg.requesting_follower_probability = Pedsim.REQUESTING_FOLLOWER_PROBABILITY(
-                obstacle.extra.get("requesting_follower_probability", None))
+                obstacle.extra.get("requesting_guide_probability", None)
+            )
+            msg.requesting_follower_probability = (
+                Pedsim.REQUESTING_FOLLOWER_PROBABILITY(
+                    obstacle.extra.get("requesting_follower_probability", None)
+                )
+            )
             msg.max_talking_distance = Pedsim.MAX_TALKING_DISTANCE(
-                obstacle.extra.get("max_talking_distance", None))
+                obstacle.extra.get("max_talking_distance", None)
+            )
             msg.max_servicing_radius = Pedsim.MAX_SERVICING_RADIUS(
-                obstacle.extra.get("max_servicing_radius", None))
+                obstacle.extra.get("max_servicing_radius", None)
+            )
             msg.talking_base_time = Pedsim.TALKING_BASE_TIME(
-                obstacle.extra.get("talking_base_time", None))
+                obstacle.extra.get("talking_base_time", None)
+            )
             msg.tell_story_base_time = Pedsim.TELL_STORY_BASE_TIME(
-                obstacle.extra.get("tell_story_base_time", None))
+                obstacle.extra.get("tell_story_base_time", None)
+            )
             msg.group_talking_base_time = Pedsim.GROUP_TALKING_BASE_TIME(
-                obstacle.extra.get("group_talking_base_time", None))
+                obstacle.extra.get("group_talking_base_time", None)
+            )
             msg.talking_and_walking_base_time = Pedsim.TALKING_AND_WALKING_BASE_TIME(
-                obstacle.extra.get("talking_and_walking_base_time", None))
+                obstacle.extra.get("talking_and_walking_base_time", None)
+            )
             msg.receiving_service_base_time = Pedsim.RECEIVING_SERVICE_BASE_TIME(
-                obstacle.extra.get("receiving_service_base_time", None))
+                obstacle.extra.get("receiving_service_base_time", None)
+            )
             msg.requesting_service_base_time = Pedsim.REQUESTING_SERVICE_BASE_TIME(
-                obstacle.extra.get("requesting_service_base_time", None))
+                obstacle.extra.get("requesting_service_base_time", None)
+            )
             msg.force_factor_desired = Pedsim.FORCE_FACTOR_DESIRED(
-                obstacle.extra.get("force_factor_desired", None))
+                obstacle.extra.get("force_factor_desired", None)
+            )
             msg.force_factor_obstacle = Pedsim.FORCE_FACTOR_OBSTACLE(
-                obstacle.extra.get("force_factor_obstacle", None))
+                obstacle.extra.get("force_factor_obstacle", None)
+            )
             msg.force_factor_social = Pedsim.FORCE_FACTOR_SOCIAL(
-                obstacle.extra.get("force_factor_social", None))
+                obstacle.extra.get("force_factor_social", None)
+            )
             msg.force_factor_robot = Pedsim.FORCE_FACTOR_ROBOT(
-                obstacle.extra.get("force_factor_robot", None))
+                obstacle.extra.get("force_factor_robot", None)
+            )
             msg.waypoint_mode = Pedsim.WAYPOINT_MODE(
-                obstacle.extra.get("waypoint_mode", None))
+                obstacle.extra.get("waypoint_mode", None)
+            )
 
             msg.waypoints = [Point(*waypoint)
                              for waypoint in obstacle.waypoints]
@@ -300,8 +330,7 @@ class PedsimManager(EntityManager):
 
             obstacle = dataclasses.replace(
                 obstacle,
-                model=obstacle.model
-                .override(
+                model=obstacle.model.override(
                     model_type=ModelType.SDF,
                     override=functools.partial(
                         process_SDF, str(msg.id)),
@@ -338,18 +367,9 @@ class PedsimManager(EntityManager):
                     used=True
                 )
 
-        max_num_try = 1
-        i_curr_try = 0
-        while i_curr_try < max_num_try:
-            # try to call service
-            response = self._respawn_peds_srv.call(srv.peds)  # type: ignore
 
-            if not response.success:  # if service not succeeds, do something and redo service
-                rospy.logwarn(
-                    f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
-                i_curr_try += 1
-            else:
-                break
+        if not self._respawn_peds_srv.call(srv).success:
+            rospy.logwarn(f"spawn dynamic obstacles failed!")
 
         rospy.set_param(self._namespace(
             "agent_topic_string"), self.agent_topic_str)
@@ -399,14 +419,14 @@ class PedsimManager(EntityManager):
         agent_states: List[pedsim_msgs.AgentState] = actors.agent_states or []
 
         for actor in agent_states:
-
             actor_id = str(actor.id)
 
             obstacle = self._known_obstacles.get(actor_id)
 
             if obstacle is None:
                 rospy.logwarn(
-                    f"dynamic obstacle {actor_id} not known by {type(self).__name__}")
+                    f"dynamic obstacle {actor_id} not known by {type(self).__name__}"
+                )
                 continue
 
             actor_pose = actor.pose
@@ -432,10 +452,10 @@ class PedsimManager(EntityManager):
                         position=(
                             actor_pose.position.x,
                             actor_pose.position.y,
-                            actor_pose.orientation.z
+                            actor_pose.orientation.z,
                         ),
                         model=obstacle.obstacle.model,
-                        extra=obstacle.obstacle.extra
+                        extra=obstacle.obstacle.extra,
                     )
                 )
 
