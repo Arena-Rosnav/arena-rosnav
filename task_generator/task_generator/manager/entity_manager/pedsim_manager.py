@@ -204,12 +204,11 @@ class PedsimManager(EntityManager):
 
         while i_curr_try < max_num_try:
             # try to call service
-            response = self._spawn_obstacles_srv.call(
+            response = self._respawn_obstacles_srv.call(
                 srv.InteractiveObstacles)  # type: ignore
 
             if not response.success:  # if service not succeeds, do something and redo service
-                # rospy.logwarn(
-                #     f"spawn static obstacle failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+                rospy.logwarn(f"spawn static obstacle failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
                 i_curr_try += 1
             else:
                 break
@@ -285,11 +284,7 @@ class PedsimManager(EntityManager):
             msg.waypoint_mode = Pedsim.WAYPOINT_MODE(
                 obstacle.extra.get("waypoint_mode", None))
 
-            msg.waypoints = []
-
-            for waypoint in obstacle.waypoints:
-                p = Point(*waypoint)
-                msg.waypoints.append(p)
+            msg.waypoints = [Point(*waypoint) for waypoint in obstacle.waypoints]
 
             srv.peds.append(msg)  # type: ignore
 
@@ -340,8 +335,7 @@ class PedsimManager(EntityManager):
             response = self._respawn_peds_srv.call(srv.peds)  # type: ignore
 
             if not response.success:  # if service not succeeds, do something and redo service
-                # rospy.logwarn(
-                #     f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+                rospy.logwarn(f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
                 i_curr_try += 1
             else:
                 break
@@ -354,27 +348,24 @@ class PedsimManager(EntityManager):
         return
 
     def unuse_obstacles(self):
-        self._remove_obstacles_srv.call()
-        self._remove_peds_srv.call()
-        self._id_gen = itertools.count(20)
-
         for obstacle in self._known_obstacles.values():
             obstacle.used = False
 
     def remove_obstacles(self, purge):
         to_forget: List[str] = list()
 
-        for obstacle_id, obstacle in list(self._known_obstacles.items()):
+        for obstacle_id, obstacle in self._known_obstacles.items():
             if purge or not obstacle.used:
 
-                # TODO remove this once actors can be deleted properly
-                if isinstance(self._simulator, GazeboSimulator) and isinstance(obstacle.obstacle, DynamicObstacle):
-                    jail = next(self.JAIL_POS)
-                    self._simulator.move_entity(name=obstacle_id, position=jail)
-                    continue
-                # end
+                if isinstance(self._simulator, GazeboSimulator):
+                    # TODO remove this once actors can be deleted properly
+                    if isinstance(obstacle.obstacle, DynamicObstacle):
+                        jail = next(self.JAIL_POS)
+                        self._simulator.move_entity(name=obstacle_id, position=jail)
+                    else:
+                    # end
+                        self._simulator.delete_entity(name=obstacle_id)
 
-                self._simulator.delete_entity(name=obstacle_id)
                 obstacle.pedsim_spawned = False
                 obstacle.used = False
                 to_forget.append(obstacle_id)
@@ -382,14 +373,13 @@ class PedsimManager(EntityManager):
         for obstacle_id in to_forget:
             self._known_obstacles.forget(name=obstacle_id)
 
+
     def _obstacle_callback(self, obstacles: pedsim_msgs.Obstacles):
         if isinstance(self._simulator, FlatlandSimulator):
             return # already taken care of by pedsim
 
-        waypoints: List[pedsim_msgs.Obstacle] = obstacles.obstacles or []
-
-        for actor in waypoints:
-            self._respawn_obstacle(actor)
+        for obstacle in (obstacles.obstacles or []):
+            self._respawn_obstacle(obstacle)
 
     def _ped_callback(self, actors: pedsim_msgs.AgentStates):
         if isinstance(self._simulator, FlatlandSimulator):
