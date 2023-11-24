@@ -99,10 +99,10 @@
 #   local-name: ../planners/all_in_one
 #   uri: https://github.com/Arena-Rosnav/all_in_one
 #   version: master
-#- git:
-#   local-name: ../planners/applr
-#   uri: https://github.com/Arena-Rosnav/applr
-#   version: master
+- git:
+   local-name: ../planners/applr
+   uri: https://github.com/Arena-Rosnav/applr
+   version: master
 #- git:
 #   local-name: ../planners/lflh
 #   uri: https://github.com/Arena-Rosnav/lflh
