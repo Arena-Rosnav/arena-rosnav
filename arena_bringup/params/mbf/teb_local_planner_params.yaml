@@ -2,6 +2,10 @@ controllers:
   - name: TebLocalPlannerROS
     type: teb_local_planner/TebLocalPlannerROS
 
+controller_frequency: 5.0
+controller_patience: 15.0
+planner_frequency: 0.0
+
 TebLocalPlannerROS:
   xy_goal_tolerance: 0.2
   yaw_goal_tolerance: 0.1
