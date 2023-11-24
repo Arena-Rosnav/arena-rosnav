@@ -115,7 +115,7 @@
 #   local-name: ../planners/trail
 #   uri: https://github.com/Arena-Rosnav/trail
 #   version: master
-#- git:
-#    local-name: ../planners/cohan
-#    uri: https://github.com/Arena-Rosnav/cohan_planner_multi
-#    version: master
+- git:
+    local-name: ../planners/cohan
+    uri: https://github.com/Arena-Rosnav/cohan_planner_multi
+    version: master
