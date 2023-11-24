@@ -239,7 +239,6 @@ class FlatlandEnv(gymnasium.Env):
 
         if self._is_train_mode:
             self.call_service_takeSimStep()
-            self.call_service_takeSimStep()
 
         obs_dict = self.observation_collector.get_observations()
         info_dict = {}
