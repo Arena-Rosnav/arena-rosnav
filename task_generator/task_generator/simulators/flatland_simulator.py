@@ -98,7 +98,8 @@ class FlatlandSimulator(BaseSimulator):
             self._namespace("resume"), std_srvs.Empty
         )
 
-        self._synchronous = rosparam_get(bool, self._namespace("synchronous"), False)
+        self._synchronous = rosparam_get(
+            bool, self._namespace("synchronous"), False)
 
     def before_reset_task(self):
         self._pause()
@@ -173,7 +174,7 @@ class FlatlandSimulator(BaseSimulator):
     def _pause(self):
         if self._synchronous:
             return self._pause_srv()
-    
+
     def _resume(self):
         if self._synchronous:
             return self._resume_srv()

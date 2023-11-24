@@ -1,9 +1,7 @@
 import dataclasses
 import functools
-import itertools
 
 import rospy
-import re
 
 
 import pedsim_msgs.msg as pedsim_msgs
@@ -18,10 +16,9 @@ from task_generator.constants import Constants, Pedsim
 from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle, PositionOrientation, Robot
 from task_generator.simulators.flatland_simulator import FlatlandSimulator
 
-from typing import Iterator, List
+from typing import List
 
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
-from task_generator.utils import rosparam_get
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -83,7 +80,7 @@ class PedsimManager(EntityManager):
     _known_obstacles: KnownObstacles
 
     SERVICE_RESET = ""
-    
+
     SERVICE_SPAWN_PEDS = "/pedsim_simulator/spawn_peds"
     SERVICE_MOVE_PEDS = "pedsim_simulator/move_peds"
     SERVICE_RESPAWN_PEDS = "/pedsim_simulator/respawn_peds"
@@ -92,16 +89,15 @@ class PedsimManager(EntityManager):
 
     SERVICE_ADD_WALLS = "pedsim_simulator/add_walls"
     SERVICE_CLEAR_WALLS = "pedsim_simulator/clear_walls"
-    
+
     SERVICE_SPAWN_OBSTACLES = "pedsim_simulator/spawn_obstacles"
     SERVICE_RESPAWN_OBSTACLES = "pedsim_simulator/respawn_obstacles"
     SERVICE_REMOVE_ALL_OBSTACLES = "pedsim_simulator/remove_all_obstacles"
-    
+
     SERVICE_REGISTER_ROBOT = "pedsim_simulator/register_robot"
 
     TOPIC_SIMULATED_OBSTACLES = "/pedsim_simulator/simulated_obstacles"
     TOPIC_SIMULATED_PEDS = "/pedsim_simulator/simulated_agents"
-    
 
     def __init__(self, namespace, simulator):
 
@@ -123,22 +119,34 @@ class PedsimManager(EntityManager):
 
         rospy.wait_for_service(self.SERVICE_REGISTER_ROBOT, timeout=T)
 
-        self._spawn_peds_srv = rospy.ServiceProxy(self.SERVICE_SPAWN_PEDS, pedsim_srvs.SpawnPeds, persistent=True)
-        self._respawn_peds_srv = rospy.ServiceProxy(self.SERVICE_RESPAWN_PEDS, pedsim_srvs.SpawnPeds, persistent=True)
-        self._remove_peds_srv = rospy.ServiceProxy(self.SERVICE_REMOVE_ALL_PEDS, SetBool, persistent=True)
-        self._reset_peds_srv = rospy.ServiceProxy(self.SERVICE_RESET_ALL_PEDS, Trigger, persistent=True)
-        
-        self._spawn_obstacles_srv = rospy.ServiceProxy(self.SERVICE_SPAWN_OBSTACLES, pedsim_srvs.SpawnObstacles, persistent=True)
-        self._respawn_obstacles_srv = rospy.ServiceProxy(self.SERVICE_RESPAWN_OBSTACLES, pedsim_srvs.SpawnObstacles, persistent=True)
-        self._remove_obstacles_srv = rospy.ServiceProxy(self.SERVICE_REMOVE_ALL_OBSTACLES, Trigger, persistent=True)
+        self._spawn_peds_srv = rospy.ServiceProxy(
+            self.SERVICE_SPAWN_PEDS, pedsim_srvs.SpawnPeds, persistent=True)
+        self._respawn_peds_srv = rospy.ServiceProxy(
+            self.SERVICE_RESPAWN_PEDS, pedsim_srvs.SpawnPeds, persistent=True)
+        self._remove_peds_srv = rospy.ServiceProxy(
+            self.SERVICE_REMOVE_ALL_PEDS, SetBool, persistent=True)
+        self._reset_peds_srv = rospy.ServiceProxy(
+            self.SERVICE_RESET_ALL_PEDS, Trigger, persistent=True)
 
-        self._add_walls_srv = rospy.ServiceProxy(self.SERVICE_ADD_WALLS, pedsim_srvs.SpawnWalls, persistent=True)
-        self._clear_walls_srv = rospy.ServiceProxy(self.SERVICE_CLEAR_WALLS, Trigger, persistent=True)
+        self._spawn_obstacles_srv = rospy.ServiceProxy(
+            self.SERVICE_SPAWN_OBSTACLES, pedsim_srvs.SpawnObstacles, persistent=True)
+        self._respawn_obstacles_srv = rospy.ServiceProxy(
+            self.SERVICE_RESPAWN_OBSTACLES, pedsim_srvs.SpawnObstacles, persistent=True)
+        self._remove_obstacles_srv = rospy.ServiceProxy(
+            self.SERVICE_REMOVE_ALL_OBSTACLES, Trigger, persistent=True)
 
-        self._register_robot_srv = rospy.ServiceProxy(self.SERVICE_REGISTER_ROBOT, pedsim_srvs.RegisterRobot, persistent=True)
+        self._add_walls_srv = rospy.ServiceProxy(
+            self.SERVICE_ADD_WALLS, pedsim_srvs.SpawnWalls, persistent=True)
+        self._clear_walls_srv = rospy.ServiceProxy(
+            self.SERVICE_CLEAR_WALLS, Trigger, persistent=True)
 
-        rospy.Subscriber(self.TOPIC_SIMULATED_OBSTACLES, pedsim_msgs.Obstacles, self._obstacle_callback)
-        rospy.Subscriber(self.TOPIC_SIMULATED_PEDS, pedsim_msgs.AgentStates, self._ped_callback)
+        self._register_robot_srv = rospy.ServiceProxy(
+            self.SERVICE_REGISTER_ROBOT, pedsim_srvs.RegisterRobot, persistent=True)
+
+        rospy.Subscriber(self.TOPIC_SIMULATED_OBSTACLES,
+                         pedsim_msgs.Obstacles, self._obstacle_callback)
+        rospy.Subscriber(self.TOPIC_SIMULATED_PEDS,
+                         pedsim_msgs.AgentStates, self._ped_callback)
 
         # temp
         def gen_JAIL_POS(steps: int, x: int = 1, y: int = 0):
@@ -208,7 +216,8 @@ class PedsimManager(EntityManager):
                 srv.InteractiveObstacles)  # type: ignore
 
             if not response.success:  # if service not succeeds, do something and redo service
-                rospy.logwarn(f"spawn static obstacle failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+                rospy.logwarn(
+                    f"spawn static obstacle failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
                 i_curr_try += 1
             else:
                 break
@@ -284,7 +293,8 @@ class PedsimManager(EntityManager):
             msg.waypoint_mode = Pedsim.WAYPOINT_MODE(
                 obstacle.extra.get("waypoint_mode", None))
 
-            msg.waypoints = [Point(*waypoint) for waypoint in obstacle.waypoints]
+            msg.waypoints = [Point(*waypoint)
+                             for waypoint in obstacle.waypoints]
 
             srv.peds.append(msg)  # type: ignore
 
@@ -335,7 +345,8 @@ class PedsimManager(EntityManager):
             response = self._respawn_peds_srv.call(srv.peds)  # type: ignore
 
             if not response.success:  # if service not succeeds, do something and redo service
-                rospy.logwarn(f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
+                rospy.logwarn(
+                    f"spawn human failed! trying again... [{i_curr_try+1}/{max_num_try} tried]")
                 i_curr_try += 1
             else:
                 break
@@ -361,9 +372,10 @@ class PedsimManager(EntityManager):
                     # TODO remove this once actors can be deleted properly
                     if isinstance(obstacle.obstacle, DynamicObstacle):
                         jail = next(self.JAIL_POS)
-                        self._simulator.move_entity(name=obstacle_id, position=jail)
+                        self._simulator.move_entity(
+                            name=obstacle_id, position=jail)
                     else:
-                    # end
+                        # end
                         self._simulator.delete_entity(name=obstacle_id)
 
                 obstacle.pedsim_spawned = False
@@ -373,17 +385,16 @@ class PedsimManager(EntityManager):
         for obstacle_id in to_forget:
             self._known_obstacles.forget(name=obstacle_id)
 
-
     def _obstacle_callback(self, obstacles: pedsim_msgs.Obstacles):
         if isinstance(self._simulator, FlatlandSimulator):
-            return # already taken care of by pedsim
+            return  # already taken care of by pedsim
 
         for obstacle in (obstacles.obstacles or []):
             self._respawn_obstacle(obstacle)
 
     def _ped_callback(self, actors: pedsim_msgs.AgentStates):
         if isinstance(self._simulator, FlatlandSimulator):
-            return # already taken care of by pedsim
+            return  # already taken care of by pedsim
 
         agent_states: List[pedsim_msgs.AgentState] = actors.agent_states or []
 
