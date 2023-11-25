@@ -196,7 +196,7 @@ class TaskGenerator:
             namespace=self._namespace.simulation_ns,
             map_manager=map_manager,
             simulator=self._env_wrapper,
-            dynamic_manager=self._entity_manager,
+            entity_manager=self._entity_manager,
         )
 
         robot_managers = self._create_robot_managers()
