@@ -120,7 +120,10 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     if isinstance(val, list):
         lo, hi = val[:2]
         gen = lambda: min(
-            hi, max(lo, random.normalvariate((hi + lo) / 2, (hi + lo) / 6))
+            hi,
+            max(lo,
+                random.normalvariate((hi + lo) / 2, (hi - lo) / 6)
+            )
         )
         # gen = lambda: random.uniform(lo, hi)
 
