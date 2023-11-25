@@ -86,7 +86,7 @@ class ITF_Obstacle(ITF_Base):
             waypoints = [PositionRadius(setup.position.x, setup.position.y, 1)]
             safe_distance = 0.1  # the other waypoints don't need to avoid robot
 
-            free_points = self.PROPS.world_manager.get_positions_on_map(n=n_waypoints, safe_dist=safe_distance)
+            waypoints += [PositionRadius(*pos, 1) for pos in self.PROPS.world_manager.get_positions_on_map(n=n_waypoints, safe_dist=safe_distance)]
 
         return DynamicObstacle(**{
             **dataclasses.asdict(setup),
