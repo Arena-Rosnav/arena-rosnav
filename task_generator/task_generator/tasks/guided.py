@@ -101,8 +101,14 @@ class GuidedTask(BaseTask):
 
         def callback():
 
-            robot_positions = (PositionOrientation(position.x, position.y, random.random() * np.pi)
-                for position in (self.world_manager.get_position_on_map(safe_dist=robot.safe_distance) for robot in self.robot_managers)
+            robot_positions = (
+                PositionOrientation(position.x, position.y, random.random() * 2*np.pi)
+                for position in (
+                    self.world_manager.get_positions_on_map(
+                        n=len(self.robot_managers),
+                        safe_dist=max(robot.safe_distance for robot in self.robot_managers)
+                    )
+                )
             )
 
             self.obstacle_manager.respawn(callback=lambda: self.itf_random.setup_random(

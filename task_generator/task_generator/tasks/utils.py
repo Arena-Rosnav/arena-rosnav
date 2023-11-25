@@ -427,19 +427,20 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
 
         self.PROPS.world_manager.forbid_clear()
 
-        for robot, pos in itertools.zip_longest(self.PROPS.robot_managers, robot_positions, fillvalue=None):
+        if len(robot_positions) < len(self.PROPS.robot_managers):
+            generated_positions = [
+                PositionOrientation(position.x, position.y, random.random() * 2*np.pi)
+                for position in (
+                    self.PROPS.world_manager.get_positions_on_map(
+                        n=2*(len(self.PROPS.robot_managers) - len(robot_positions)),
+                        safe_dist=max(robot.safe_distance for robot in self.PROPS.robot_managers)
+                    )
+                )
+            ]
 
-            if robot is None:
-                continue
+            robot_positions += list(zip(generated_positions[::2], generated_positions[1::2]))
 
-            if pos is None:
-                start_pos = self.PROPS.world_manager.get_position_on_map(robot.safe_distance)
-                goal_pos = self.PROPS.world_manager.get_position_on_map(robot.safe_distance, forbidden_zones=[PositionRadius(start_pos.x, start_pos.y, 0.1)])
-
-                pos = PositionOrientation(start_pos.x, start_pos.y, 0), PositionOrientation(goal_pos.x, goal_pos.y, 0)
-
-                robot_positions.append(pos)
-
+        for robot, pos in zip(self.PROPS.robot_managers, robot_positions):
             robot.reset(start_pos=pos[0], goal_pos=pos[1])
 
         # self.PROPS.obstacle_manager.reset()
@@ -454,6 +455,13 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                 return next(indices[model])
             return index
 
+        waypoints_per_ped = 2
+        offset: int = 0
+        points = self.PROPS.world_manager.get_positions_on_map(n=n_static_obstacles + n_dynamic_obstacles + n_dynamic_obstacles*(1+waypoints_per_ped), safe_dist=0.1)
+
+        positions = (PositionOrientation(*pos, 2*np.pi * random.random()) for pos in points[:(n_static_obstacles + n_dynamic_obstacles + n_dynamic_obstacles)])
+        waypoints = (PositionRadius(*pos, 1) for pos in points[(n_static_obstacles + n_dynamic_obstacles + n_dynamic_obstacles):])
+
         obstacles = []
 
         # Create static obstacles
@@ -464,7 +472,8 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                 ITF_Obstacle.create_obstacle(
                     self,
                     name=f"S_{model}_{index(model)}",
-                    model=self.PROPS.model_loader.bind(model)
+                    model=self.PROPS.model_loader.bind(model),
+                    position=next(positions)
                 )
                 for model in random.choices(
                     population=list(static_obstacles.keys()),
@@ -481,7 +490,8 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                 ITF_Obstacle.create_obstacle(
                     self,
                     name=f"I_{model}_{index(model)}",
-                    model=self.PROPS.model_loader.bind(model)
+                    model=self.PROPS.model_loader.bind(model),
+                    position=next(positions)
                 )
                 for model in random.choices(
                     population=list(interactive_obstacles.keys()),
@@ -496,12 +506,15 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
         if n_dynamic_obstacles:
             index = indexer()
 
+
             self.PROPS.obstacle_manager.spawn_dynamic_obstacles(
                 [
                     ITF_Obstacle.create_dynamic_obstacle(
                         self,
                         name=f"D_{model}_{index(model)}",
                         model=self.PROPS.dynamic_model_loader.bind(model),
+                        waypoints=list(itertools.islice(waypoints, waypoints_per_ped)),
+                        position=next(positions),
                     )
                     for model in random.choices(
                         population=list(dynamic_obstacles.keys()),

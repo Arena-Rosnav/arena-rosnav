@@ -68,22 +68,21 @@ class ParametrizedTask(BaseTask):
         dynamic_obstacles: Optional[int] = None
     ) -> Scenario:
 
-        robot_positions: List[PositionOrientation] = []  # may be needed in the future idk
 
         self.world_manager.forbid_clear()
 
+        robot_positions = (
+                PositionOrientation(position.x, position.y, random.random() * 2*np.pi)
+                for position in (
+                    self.world_manager.get_positions_on_map(
+                        n=2*len(self.robot_managers),
+                        safe_dist=max(robot.safe_distance for robot in self.robot_managers)
+                    )
+                )
+            )
+
         for manager in self.robot_managers:
-
-            start_pos = self.world_manager.get_position_on_map(manager.safe_distance)
-            goal_pos = self.world_manager.get_position_on_map(manager.safe_distance)
-
-            start_poso = PositionOrientation(start_pos.x, start_pos.y, 2*np.pi * np.random.random())
-            goal_poso = PositionOrientation(goal_pos.x, goal_pos.y, 2*np.pi * np.random.random())
-
-            manager.reset(start_pos=start_poso, goal_pos=goal_poso)
-
-            robot_positions.append(start_poso)
-            robot_positions.append(goal_poso)
+            manager.reset(start_pos=next(robot_positions), goal_pos=next(robot_positions))
 
         obstacle_ranges = self.itf_random.load_obstacle_ranges()
 
