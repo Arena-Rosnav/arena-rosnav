@@ -22,14 +22,14 @@ from map_generator.utils.general import (
 
 class MapGeneratorNode:
     def __init__(self, map_generator: BaseMapGenerator):
-        """MapGenerator Node 
+        """MapGenerator Node
 
         Args:
             map_generator (BaseMapGenerator): Object encapsulating the map generation algorithm.
 
         Raises:
             AttributeError: Raised when the parsed object is not of type 'BaseMapGenerator'.
-        """        
+        """
         if not issubclass(type(map_generator), BaseMapGenerator):
             raise AttributeError(
                 "'map_generator' must be a subclass of BaseMapGenerator"
@@ -55,12 +55,12 @@ class MapGeneratorNode:
 
         Args:
             occgrid_msg (OccupancyGrid): Message containing an the current occupancy grid.
-        """        
+        """
         self.occupancy_grid = occgrid_msg
 
     def callback_new_map(self, msg: String):
         """Procedure to publish a new map.
-        
+
         Steps on receiving a message on "/request_new_map":
             1. Generates a grid map with the dedicated algorithm.
             2. Saves the grid map as a png to be loaded by Flatland.
@@ -68,7 +68,7 @@ class MapGeneratorNode:
 
         Args:
             msg (String): Empty message as the message is not used.
-        """        
+        """
         grid_map = self.map_generator.generate_grid_map()
         MapGeneratorNode.save_map(grid_map, ROSNAV_MAP_FOLDER, MAP_FOLDER_NAME)
 

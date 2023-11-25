@@ -1,34 +1,40 @@
 ### General
 # in debug_mode no agent directories will be created and no models will be saved
 # further no wandb logging and fake (simulated) multiprocessing for traceback
-debug_mode: false
+debug_mode: true
 # number of parallel environments
-n_envs: 16
+n_envs: 1
 # gpu yes or no
 no_gpu: false
 
-### Training Monitoring
-monitoring:
-  # weights and biases logging
-  use_wandb: true
-  # save evaluation stats during training in log file
-  eval_log: false
-
 ### General Training
 # navigation task mode, chose from "random" or "staged"
-task_mode: "dynamic_map_staged"
+task_mode: "random"
 # number of simulation timesteps
 n_timesteps: 20000000
-max_num_moves_per_eps: 150
-
+max_num_moves_per_eps: 500
 goal_radius: 0.2
 
+### Training Monitoring
+monitoring:
+  cmd_line_logging:
+    # display training metrics
+    training_metrics:
+      enabled: true
+    # display episode statistics (avg. success rate, reward, eps length..)
+    episode_statistics:
+      enabled: true
+      last_n_eps: 20
+  # weights and biases logging
+  use_wandb: false
+  # save evaluation stats during training in log file
+  eval_log: false
 
 callbacks:
   ### Periodic Eval
   periodic_eval:
     # max number of steps per episode
-    max_num_moves_per_eps: 250
+    max_num_moves_per_eps: 500
     # number of evaluation episodes
     n_eval_episodes: 50
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
@@ -40,9 +46,9 @@ callbacks:
   training_curriculum:
     # file for the robot's learning curriculum
     training_curriculum_file: "default.yaml"
-    curr_stage: 2
+    curr_stage: 0
     threshold_type: "succ"
-    upper_threshold: 0.95
+    upper_threshold: 0.90
     lower_threshold: 0.65
 
   ### Stop Training on Threshold
@@ -62,7 +68,16 @@ rl_agent:
     enabled: true
     stack_size: 8
 
-  normalize: false
+  normalize: 
+    enabled: true
+    settings:
+      norm_obs: true
+      norm_reward: true # Whether to normalize rewards or not
+      clip_obs: 30.0 # Max absolute value for observation 
+      clip_reward: 20.0 # Max value absolute for discounted reward
+      gamma: 0.99 # discount factor
+    
+
   laser:
     full_range_laser: true  # additional laser covering 360° covering blind spots -> additional collision check
     reduce_num_beams:
@@ -72,7 +87,7 @@ rl_agent:
   reward_fnc: "rule_13"
 
   action_space:
-    discrete: true
+    discrete: false
     custom_discretization: # only used if discrete is true, otherwise ignored
       enabled: true
       # number of buckets for each action dimension

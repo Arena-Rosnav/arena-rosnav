@@ -24,8 +24,7 @@ class DynamicMapRandomTask(RandomTask):
         RandomTask.__init__(self, **kwargs)
 
         self.itf_dynamicmap = ITF_DynamicMap(
-            self,
-            configurations=ITF_DynamicMap.const_config({})  # TODO
+            self, configurations=ITF_DynamicMap.const_config({})  # TODO
         )
         self.itf_dynamicmap.subscribe_reset(callback=self._cb_task_reset)
 
@@ -34,11 +33,11 @@ class DynamicMapRandomTask(RandomTask):
         # if num_envs = 2, then 1 / 2 = 0.5
         # in sum we need 4 resets to get to the next map -> 4 * 0.5 = 2
         # eps_per_map = sum_resets * 1 / num_envs
-        self._eps_per_map = rosparam_get(float, "episode_per_map", 1.)
+        self._eps_per_map = rosparam_get(float, "episode_per_map", 1.0)
         denominator: float = (
-            rosparam_get(float, "num_envs", 1.)
-            if self.robot_managers[0].namespace != "eval_sim"
-            else 1.
+            rosparam_get(float, "num_envs", 1.0)
+            if "eval_sim" not in self.robot_managers[0].namespace
+            else 1.0
         )
         self._iterator = 1 / denominator
 
@@ -46,12 +45,8 @@ class DynamicMapRandomTask(RandomTask):
 
     @BaseTask.reset_helper(parent=RandomTask)
     def reset(
-        self,
-        reset_after_new_map: bool = False,
-        first_map: bool = False,
-        **kwargs
+        self, reset_after_new_map: bool = False, first_map: bool = False, **kwargs
     ):
-
         if first_map or self.itf_dynamicmap.episodes >= self._eps_per_map:
             self.itf_dynamicmap.request_new_map(first_map=first_map)
 

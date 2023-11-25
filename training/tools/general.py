@@ -3,16 +3,15 @@ import random
 import string
 import time
 import warnings
-from datetime import datetime as dt
 from typing import Tuple
 
 import numpy as np
 import rosnode
-import rospkg
 import rospy
 import yaml
 
 from .model_utils import check_batch_size
+from .constants import TRAINING_CONSTANTS
 
 
 def initialize_config(
@@ -78,36 +77,17 @@ def get_paths(config: dict) -> dict:
 
     :param config (dict): Dictionary containing the training configuration
     """
-    training_dir = rospkg.RosPack().get_path("training")
-    robot_model = rospy.get_param("robot_model")
-    simulation_setup = rospkg.RosPack().get_path("arena-simulation-setup")
     agent_name = config["agent_name"]
 
+    BASE_PATHS = TRAINING_CONSTANTS.PATHS
     PATHS = {
-        "model": os.path.join(
-            rospkg.RosPack().get_path("rosnav"), "agents", agent_name
-        ),
-        "tb": os.path.join(training_dir, "training_logs", "tensorboard", agent_name),
-        "eval": os.path.join(
-            training_dir, "training_logs", "train_eval_log", agent_name
-        ),
-        "robot_setting": os.path.join(
-            simulation_setup,
-            "robot",
-            robot_model,
-            f"{robot_model}.model.yaml",
-        ),
-        "config": os.path.join(
-            rospkg.RosPack().get_path("rosnav"),
-            "agents",
-            agent_name,
-            "training_config.yaml",
-        ),
-        "curriculum": os.path.join(
-            training_dir,
-            "configs",
-            "training_curriculums",
-            config["callbacks"]["training_curriculum"]["training_curriculum_file"],
+        "model": BASE_PATHS.MODEL(agent_name),
+        "tb": BASE_PATHS.TENSORBOARD(agent_name),
+        "eval": BASE_PATHS.EVAL(agent_name),
+        "robot_setting": BASE_PATHS.ROBOT_SETTING(rospy.get_param("robot_model")),
+        "config": BASE_PATHS.AGENT_CONFIG(agent_name),
+        "curriculum": BASE_PATHS.CURRICULUM(
+            config["callbacks"]["training_curriculum"]["training_curriculum_file"]
         ),
     }
     # check for mode
@@ -180,24 +160,10 @@ def load_config(config_name: str) -> dict:
     """
     Load config parameters from config file
     """
-    config_location = os.path.join(
-        rospkg.RosPack().get_path("training"), "configs", config_name
-    )
+    config_location = TRAINING_CONSTANTS.PATHS.TRAINING_CONFIGS(config_name)
     with open(config_location, "r", encoding="utf-8") as target:
         config = yaml.load(target, Loader=yaml.FullLoader)
 
-    return config
-
-
-def load_rew_fnc(config_name: str) -> dict:
-    config_location = os.path.join(
-        rospkg.RosPack().get_path("training"),
-        "configs",
-        "reward_functions",
-        f"{config_name}.yaml",
-    )
-    with open(config_location, "r", encoding="utf-8") as target:
-        config = yaml.load(target, Loader=yaml.FullLoader)
     return config
 
 
@@ -211,12 +177,9 @@ def generate_agent_name(config: dict) -> str:
     :param config (dict): Dict containing the program arguments
     """
     if config["rl_agent"]["resume"] is None:
-        START_TIME = dt.now().strftime("%Y_%m_%d__%H_%M_%S")
-        robot_model = rospy.get_param("robot_model")
-        architecture_name, encoder_name = config["rl_agent"][
-            "architecture_name"
-        ], rospy.get_param("space_encoder", "RobotSpecificEncoder")
-        agent_name = f"{robot_model}_{architecture_name}_{encoder_name}_{START_TIME}"
+        agent_name = TRAINING_CONSTANTS.generate_agent_name(
+            architecture_name=config["rl_agent"]["architecture_name"]
+        )
         config["agent_name"] = agent_name
         return agent_name
     else:

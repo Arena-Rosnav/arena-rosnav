@@ -4,7 +4,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 from rospkg import RosPack
 import rospy
 
-from rosgraph_msgs.msg import Clock
+import rosgraph_msgs.msg as rosgraph_msgs
+
 from task_generator.constants import Constants
 from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.robot_manager import RobotManager
@@ -37,7 +38,7 @@ class BaseTask(Props_):
     Base Task as parent class for all other tasks.
     """
 
-    clock: Clock
+    clock: rosgraph_msgs.Clock
     last_reset_time: int
 
     def __init__(
@@ -56,9 +57,9 @@ class BaseTask(Props_):
         self.robot_managers = robot_managers
         self.world_manager = world_manager
 
-        rospy.Subscriber("/clock", Clock, self._clock_callback)
+        rospy.Subscriber("/clock", rosgraph_msgs.Clock, self._clock_callback)
         self.last_reset_time = 0
-        self.clock = Clock()
+        self.clock = rosgraph_msgs.Clock()
 
         self.set_up_robot_managers()
 
@@ -131,5 +132,5 @@ class BaseTask(Props_):
         for manager in self.robot_managers:
             manager.set_up_robot()
 
-    def _clock_callback(self, clock: Clock):
+    def _clock_callback(self, clock: rosgraph_msgs.Clock):
         self.clock = clock

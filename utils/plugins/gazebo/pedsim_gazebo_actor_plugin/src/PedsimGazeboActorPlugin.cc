@@ -4,6 +4,8 @@ Created on Mon Dec  2
 @author: mahmoud
 */
 
+#include <pedsim/types.h>
+
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/physics/physics.hh>
 #include <gazebo/util/system.hh>
@@ -34,14 +36,19 @@ namespace gazebo
 
             this->model = _model;
 
-            if(!_sdf->GetAttribute("name")->Get<unsigned long>(this->id))
+            if(!_sdf->GetAttribute("name")->Get<std::string>(this->id))
                 ROS_FATAL("PedsimGazeboActorPlugin: could not parse id");
+                        
             
+
             this->animationFactor = _sdf->Get<double>("animation_factor", 1.0).first;
 
             this->modelHeight = _sdf->Get<double>("model_height", 2.0).first / 2.0;
 
-            this->rosNode.reset(new ros::NodeHandle("PEDSIM_ACTOR_" + std::to_string(this->id)));
+            std::string node_id = this->id;
+            node_id.erase(remove_if(node_id.begin(),node_id.end(), [](char c){return !(c>=0 && c <128);}), node_id.end());
+            this->rosNode.reset(new ros::NodeHandle("PEDSIM_ACTOR_" + node_id));
+
             ros::SubscribeOptions so = ros::SubscribeOptions::create<pedsim_msgs::AgentStates>("/pedsim_simulator/simulated_agents", 1, boost::bind(&PedsimGazeboActorPlugin::OnRosMsg, this, _1), ros::VoidPtr(), &this->rosQueue);
             this->rosSub = this->rosNode->subscribe(so);
             this->rosQueueThread = std::thread(std::bind(&PedsimGazeboActorPlugin::QueueThread, this));
@@ -122,7 +129,7 @@ namespace gazebo
         event::ConnectionPtr updateConnection_;
 
         physics::ModelPtr model;
-        long unsigned int id;
+        pedsim::id id;
         double animationFactor;
         double modelHeight;
 

@@ -106,7 +106,7 @@ class sensor:
                         0.35,
                         v,
                         agent.header.stamp,
-                        label + len(self.obst_topics),
+                        label,
                     ]
 
 
