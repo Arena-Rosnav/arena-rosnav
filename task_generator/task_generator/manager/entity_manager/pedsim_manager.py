@@ -7,7 +7,7 @@ import rospy
 import pedsim_msgs.msg as pedsim_msgs
 from geometry_msgs.msg import Point, Pose, Quaternion
 import pedsim_srvs.srv as pedsim_srvs
-from std_srvs.srv import SetBool, Trigger
+import std_srvs.srv as std_srvs
 from task_generator.constants import Constants, Pedsim
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import (
@@ -140,21 +140,21 @@ class PedsimManager(EntityManager):
         self._respawn_peds_srv = rospy.ServiceProxy(
             self._namespace(self.SERVICE_RESPAWN_PEDS), pedsim_srvs.SpawnPeds, persistent=True)
         self._remove_peds_srv = rospy.ServiceProxy(
-            self._namespace(self.SERVICE_REMOVE_ALL_PEDS), SetBool, persistent=True)
+            self._namespace(self.SERVICE_REMOVE_ALL_PEDS), std_srvs.SetBool, persistent=True)
         self._reset_peds_srv = rospy.ServiceProxy(
-            self._namespace(self.SERVICE_RESET_ALL_PEDS), Trigger, persistent=True)
+            self._namespace(self.SERVICE_RESET_ALL_PEDS), std_srvs.Trigger, persistent=True)
 
         self._spawn_obstacles_srv = rospy.ServiceProxy(
             self._namespace(self.SERVICE_SPAWN_OBSTACLES), pedsim_srvs.SpawnObstacles, persistent=True)
         self._respawn_obstacles_srv = rospy.ServiceProxy(
             self._namespace(self.SERVICE_RESPAWN_OBSTACLES), pedsim_srvs.SpawnObstacles, persistent=True)
         self._remove_obstacles_srv = rospy.ServiceProxy(
-            self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES), Trigger, persistent=True)
+            self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES), std_srvs.Trigger, persistent=True)
 
         self._add_walls_srv = rospy.ServiceProxy(
             self._namespace(self.SERVICE_ADD_WALLS), pedsim_srvs.SpawnWalls, persistent=True)
         self._clear_walls_srv = rospy.ServiceProxy(
-            self._namespace(self.SERVICE_CLEAR_WALLS), Trigger, persistent=True)
+            self._namespace(self.SERVICE_CLEAR_WALLS), std_srvs.Trigger, persistent=True)
 
         self._register_robot_srv = rospy.ServiceProxy(
             self._namespace(self.SERVICE_REGISTER_ROBOT), pedsim_srvs.RegisterRobot, persistent=True)
@@ -256,7 +256,7 @@ class PedsimManager(EntityManager):
             msg.wait_time = Pedsim.WAIT_TIME(
                 obstacle.extra.get("wait_time", None))
             msg.trigger_zone_radius = Pedsim.TRIGGER_ZONE_RADIUS(
-                obstacle.extra.get("trigger_zone_radius", None)
+                obstacle.extra.get("std_srvs.Trigger_zone_radius", None)
             )
             msg.chatting_probability = Pedsim.CHATTING_PROBABILITY(
                 obstacle.extra.get("chatting_probability", None)
@@ -375,7 +375,17 @@ class PedsimManager(EntityManager):
             "agent_topic_string"), self.agent_topic_str)
         rospy.set_param("respawn_dynamic", True)
 
-    def spawn_line_obstacle(self, name, _from, _to):
+    def spawn_walls(self, walls):
+
+        srv = pedsim_srvs.SpawnWallsRequest()
+        srv.walls = []
+
+        for wall in walls:
+            srv.walls.append(pedsim_msgs.Wall(name=wall.name, start=wall.start, end=wall.end))
+
+        if not self._add_walls_srv.call(srv).success:
+            rospy.logwarn("spawn walls failed!")
+
         return
 
     def unuse_obstacles(self):
@@ -384,6 +394,11 @@ class PedsimManager(EntityManager):
 
     def remove_obstacles(self, purge):
         to_forget: List[str] = list()
+
+        # # preparation for world
+        # if condition_to_delete_world_walls:
+        #     srv = std_srvs.TriggerRequest()
+        #     self._clear_walls_srv.call(srv)
 
         for obstacle_id, obstacle in self._known_obstacles.items():
             if purge or not obstacle.used:

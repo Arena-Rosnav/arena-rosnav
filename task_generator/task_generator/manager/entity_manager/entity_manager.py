@@ -1,5 +1,5 @@
 import rospy
-from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot
+from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot, WallObstacle
 from task_generator.simulators.base_simulator import BaseSimulator
 from typing import Collection
 from geometry_msgs.msg import Point, PoseStamped
@@ -48,9 +48,9 @@ class EntityManager:
         then reaplacing the static values by dynamic ones 
         """
 
-    def spawn_line_obstacle(self, name: str, _from: Point, _to: Point):
+    def spawn_walls(self, walls: Collection[WallObstacle]):
         """
-        Creates a line obstacle.
+        Adds walls to the simulator.
         """
         raise NotImplementedError()
 

@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.map_manager import MapManager
-from task_generator.shared import DynamicObstacle, Obstacle
+from task_generator.shared import DynamicObstacle, Obstacle, WallObstacle
 from task_generator.simulators.base_simulator import BaseSimulator
 
 from geometry_msgs.msg import Point
@@ -43,15 +43,14 @@ class ObstacleManager:
 
         root = map.getroot()
 
-        for child in root:
-            _from = Point(float(child.attrib["x1"]), float(child.attrib["y1"]), 0)
-            _to = Point(float(child.attrib["x2"]), float(child.attrib["y2"]), 0)
-
-            identifier = str(next(self.id_generator))
-
-            self._dynamic_manager.spawn_line_obstacle(
-                name=f"wall{identifier}", _from=_from, _to=_to
-            )
+        self._dynamic_manager.spawn_walls([
+                WallObstacle(
+                    name=f"wall{next(self.id_generator)}",
+                    start=(float(child.attrib["x1"]), float(child.attrib["y1"])),
+                    end=(float(child.attrib["x2"]), float(child.attrib["y2"]))
+                ) for child in root
+            ])
+            
 
     def spawn_dynamic_obstacles(self, setups: Collection[DynamicObstacle]):
         """
