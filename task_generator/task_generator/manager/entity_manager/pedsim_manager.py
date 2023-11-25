@@ -88,6 +88,8 @@ class PedsimManager(EntityManager):
     _respawn_peds_srv: rospy.ServiceProxy
     _add_walls_srv: rospy.ServiceProxy
     _register_robot_srv: rospy.ServiceProxy
+    _pause_simulation_srv: rospy.ServiceProxy
+    _unpause_simulation_srv: rospy.ServiceProxy
 
     _known_obstacles: KnownObstacles
 
@@ -107,6 +109,9 @@ class PedsimManager(EntityManager):
     SERVICE_REMOVE_ALL_OBSTACLES = "pedsim_simulator/remove_all_obstacles"
 
     SERVICE_REGISTER_ROBOT = "pedsim_simulator/register_robot"
+
+    SERVICE_PAUSE_SIMULATION = "pedsim_simulator/pause_simulation"
+    SERVICE_UNPAUSE_SIMULATION = "pedsim_simulator/unpause_simulation"
 
     TOPIC_SIMULATED_OBSTACLES = "pedsim_simulator/simulated_obstacles"
     TOPIC_SIMULATED_PEDS = "pedsim_simulator/simulated_agents"
@@ -167,6 +172,10 @@ class PedsimManager(EntityManager):
 
         self._register_robot_srv = rospy.ServiceProxy(
             self._namespace(self.SERVICE_REGISTER_ROBOT), pedsim_srvs.RegisterRobot, persistent=True)
+
+        self._pause_simulation_srv = rospy.ServiceProxy(self._namespace(self.SERVICE_PAUSE_SIMULATION), std_srvs.Empty, persistent=True)
+        self._unpause_simulation_srv = rospy.ServiceProxy(self._namespace(self.SERVICE_UNPAUSE_SIMULATION), std_srvs.Empty, persistent=True)
+        
 
         rospy.Subscriber(self._namespace(self.TOPIC_SIMULATED_OBSTACLES),
                         pedsim_msgs.Obstacles, self._obstacle_callback)
@@ -419,11 +428,15 @@ class PedsimManager(EntityManager):
         
 
     def unuse_obstacles(self):
+
         for obstacle_id, obstacle in self._known_obstacles.items():
             if obstacle.layer == ObstacleLayer.INUSE:
                 obstacle.layer = ObstacleLayer.UNUSED
 
     def remove_obstacles(self, purge):
+
+        self._pause_simulation_srv.call(std_srvs.EmptyRequest())
+
         to_forget: List[str] = list()
 
         if purge >= ObstacleLayer.WORLD:
@@ -447,12 +460,13 @@ class PedsimManager(EntityManager):
                 else:
 
                     obstacle.pedsim_spawned = False
-                    to_forget.append(obstacle_id)
-
-                
+                    to_forget.append(obstacle_id)       
 
         for obstacle_id in to_forget:
             self._known_obstacles.forget(name=obstacle_id)
+
+        self._unpause_simulation_srv.call(std_srvs.EmptyRequest())
+        
 
     def spawn_robot(self, robot: Robot):
         self._simulator.spawn_entity(robot)
