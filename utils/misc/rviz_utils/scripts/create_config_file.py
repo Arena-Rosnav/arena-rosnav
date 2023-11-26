@@ -46,6 +46,8 @@ class ConfigFileGenerator:
         if rospy.get_param("pedsim", False):
             displays.append(Config.TRACKED_PERSONS)
             displays.append(Config.TRACKED_GROUPS)
+            displays.append(Config.WALLS)
+            displays.append(Config.WAYPOINTS)
 
         default_file["Visualization Manager"]["Displays"] = displays
 

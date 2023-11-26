@@ -79,18 +79,18 @@ class GazeboSimulator(BaseSimulator):
 
     # ROBOT
 
-    def move_entity(self, name, pos):
+    def move_entity(self, name, position):
 
         request = SetModelStateRequest()
         request.model_state = ModelState()
 
         request.model_state.model_name = name
         pose = Pose()
-        pose.position.x = pos[0]
-        pose.position.y = pos[1]
+        pose.position.x = position[0]
+        pose.position.y = position[1]
         pose.position.z = 0.35
         pose.orientation = Quaternion(
-            *quaternion_from_euler(0.0, 0.0, pos[2], axes="sxyz")
+            *quaternion_from_euler(0.0, 0.0, position[2], axes="sxyz")
         )
         request.model_state.pose = pose
         request.model_state.reference_frame = "world"

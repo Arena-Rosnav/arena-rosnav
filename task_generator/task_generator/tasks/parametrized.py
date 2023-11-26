@@ -55,10 +55,6 @@ class ParametrizedTask(BaseTask):
 
         def callback():
 
-            # TODO temp
-            self.obstacle_manager.reset()
-            # end
-
             self.obstacle_manager.respawn(
                 lambda: self.itf_scenario.setup_scenario(self._generate_scenario()))
             time.sleep(1)
@@ -123,7 +119,7 @@ class ParametrizedTask(BaseTask):
                 )
             ):
                 obstacle = self.itf_obstacle.create_obstacle(
-                    name=f'{get_attrib(config, "name")}_static_{i+1}',
+                    name=f'S_{get_attrib(config, "name")}_{i+1}',
                     model=self.model_loader.bind(get_attrib(config, "model"))
                 )
                 obstacle.extra["type"] = get_attrib(config, "type", "")
@@ -138,7 +134,7 @@ class ParametrizedTask(BaseTask):
                 )
             ):
                 obstacle = self.itf_obstacle.create_obstacle(
-                    name=f'{get_attrib(config, "name")}_interactive_{i+1}',
+                    name=f'I_{get_attrib(config, "name")}_{i+1}',
                     model=self.model_loader.bind(get_attrib(config, "model"))
                 )
                 obstacle.extra["type"] = get_attrib(config, "type", "")
@@ -153,7 +149,7 @@ class ParametrizedTask(BaseTask):
                 )
             ):
                 obstacle = self.itf_obstacle.create_dynamic_obstacle(
-                    name=f'{get_attrib(config, "name")}_dynamic_{i+1}',
+                    name=f'D_{get_attrib(config, "name")}_{i+1}',
                     model=self.dynamic_model_loader.bind(
                         get_attrib(config, "model"))
                 )

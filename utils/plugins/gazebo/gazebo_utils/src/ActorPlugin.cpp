@@ -46,27 +46,24 @@ namespace gazebo
       // ROS_ERROR(msg);
       double distanceTraveled;
       bool actorFound = false;
-      ROS_WARN("49");
-      for (uint actor = 0; actor < msg->agent_states.size(); actor++)
+      for (auto& actor : msg->agent_states)
       {
-        if (this->actor->GetName() == "person_" + std::to_string(msg->agent_states[actor].id))
+        if (this->actor->GetName() == actor.id)
         {
-          ROS_WARN("53");
           actorFound = true;
           ignition::math::Pose3d pose = this->actor->WorldPose();
           ignition::math::Pose3d gzb_pose;
           // Getting the direction angle of the agent
-          ignition::math::Quaterniond quat(msg->agent_states[actor].pose.orientation.w, msg->agent_states[actor].pose.orientation.x, msg->agent_states[actor].pose.orientation.y, msg->agent_states[actor].pose.orientation.z);
+          ignition::math::Quaterniond quat(actor.pose.orientation.w, actor.pose.orientation.x, actor.pose.orientation.y, actor.pose.orientation.z);
           ignition::math::Angle yaw = quat.Yaw();
-          gzb_pose.Pos().Set(msg->agent_states[actor].pose.position.x,
-                             msg->agent_states[actor].pose.position.y,
-                             msg->agent_states[actor].pose.position.z + actor_height);
+          gzb_pose.Pos().Set(actor.pose.position.x,
+                             actor.pose.position.y,
+                             actor.pose.position.z + actor_height);
 
           // Rotating the actor in the correct direction -> yaw, keeping in mind that the actor is oriented Y-up and Z-front
           gzb_pose.Rot() = ignition::math::Quaterniond(1.5707, 0.0, yaw.Radian() + 1.5707);
           try
           {
-            ROS_WARN("69");
             distanceTraveled = (gzb_pose.Pos() -
                                 pose.Pos())
                                    .Length();

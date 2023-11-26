@@ -30,7 +30,7 @@ class Namespace(str):
         return Namespace(self.split("/")[1])
 
     def remove_double_slash(self) -> Namespace:
-        return self.replace("//", "/")
+        return Namespace(self.replace("//", "/"))
 
 
 EMPTY_LOADER = lambda *_, **__: Model(
@@ -271,6 +271,11 @@ class DynamicObstacle(DynamicObstacleProps):
             name=name, position=position, model=model, waypoints=waypoints, extra=obj
         )
 
+@dataclasses.dataclass(frozen=True)
+class WallObstacle:
+    name: str
+    start: Position
+    end: Position
 
 def _gen_init_pos(steps: int, x: int = 1, y: int = 0):
     steps = max(steps, 1)
