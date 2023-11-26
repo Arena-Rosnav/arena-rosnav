@@ -1,6 +1,7 @@
 import dataclasses
 import functools
 import itertools
+import math
 
 import rospy
 
@@ -537,7 +538,7 @@ class PedsimManager(EntityManager):
                         position=PositionOrientation(
                             obstacle.pose.position.x,
                             obstacle.pose.position.y,
-                            obstacle.pose.orientation.z
+                            obstacle.pose.orientation.z + math.pi/2
                         ),
                         model=entity.obstacle.model,
                         extra=entity.obstacle.extra
@@ -592,7 +593,7 @@ class PedsimManager(EntityManager):
                         position=PositionOrientation(
                             actor_pose.position.x,
                             actor_pose.position.y,
-                            actor_pose.orientation.z,
+                            actor_pose.orientation.z + math.pi/2,
                         ),
                         model=entity.obstacle.model,
                         extra=entity.obstacle.extra,
