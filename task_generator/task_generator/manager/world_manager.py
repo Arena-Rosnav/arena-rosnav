@@ -32,11 +32,11 @@ class WorldManager:
         return self._world.map.shape[0], self._world.map.shape[1]
 
     @property
-    def _origin(self) -> Position:
+    def origin(self) -> Position:
         return self._world.map.origin
 
     @property
-    def _resolution(self) -> float:
+    def resolution(self) -> float:
         return self._world.map.resolution
 
     @property
@@ -220,9 +220,9 @@ class WorldManager:
 
             for zone in forbidden_zones:
                 fork.occupy(PositionRadius(zone.x, zone.y,
-                            zone.radius / self._resolution))
+                            zone.radius / self.resolution))
 
-            min_dist: float = safe_dist / self._resolution
+            min_dist: float = safe_dist / self.resolution
             available_positions = self._occupancy_to_available(
                 occupancy=fork.grid, safe_dist=min_dist)
 
