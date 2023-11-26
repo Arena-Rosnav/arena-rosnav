@@ -55,10 +55,6 @@ class ParametrizedTask(BaseTask):
 
         def callback():
 
-            # TODO temp
-            self.obstacle_manager.reset()
-            # end
-
             self.obstacle_manager.respawn(
                 lambda: self.itf_scenario.setup_scenario(self._generate_scenario()))
 
@@ -72,22 +68,21 @@ class ParametrizedTask(BaseTask):
         dynamic_obstacles: Optional[int] = None
     ) -> Scenario:
 
-        robot_positions: List[PositionOrientation] = []  # may be needed in the future idk
 
         self.world_manager.forbid_clear()
 
+        robot_positions = (
+                PositionOrientation(position.x, position.y, random.random() * 2*np.pi)
+                for position in (
+                    self.world_manager.get_positions_on_map(
+                        n=2*len(self.robot_managers),
+                        safe_dist=max(robot.safe_distance for robot in self.robot_managers)
+                    )
+                )
+            )
+
         for manager in self.robot_managers:
-
-            start_pos = self.world_manager.get_position_on_map(manager.safe_distance)
-            goal_pos = self.world_manager.get_position_on_map(manager.safe_distance)
-
-            start_poso = PositionOrientation(start_pos.x, start_pos.y, 2*np.pi * np.random.random())
-            goal_poso = PositionOrientation(goal_pos.x, goal_pos.y, 2*np.pi * np.random.random())
-
-            manager.reset(start_pos=start_poso, goal_pos=goal_poso)
-
-            robot_positions.append(start_poso)
-            robot_positions.append(goal_poso)
+            manager.reset(start_pos=next(robot_positions), goal_pos=next(robot_positions))
 
         obstacle_ranges = self.itf_random.load_obstacle_ranges()
 
@@ -123,7 +118,7 @@ class ParametrizedTask(BaseTask):
                 )
             ):
                 obstacle = self.itf_obstacle.create_obstacle(
-                    name=f'{get_attrib(config, "name")}_static_{i+1}',
+                    name=f'S_{get_attrib(config, "name")}_{i+1}',
                     model=self.model_loader.bind(get_attrib(config, "model"))
                 )
                 obstacle.extra["type"] = get_attrib(config, "type", "")
@@ -138,7 +133,7 @@ class ParametrizedTask(BaseTask):
                 )
             ):
                 obstacle = self.itf_obstacle.create_obstacle(
-                    name=f'{get_attrib(config, "name")}_interactive_{i+1}',
+                    name=f'I_{get_attrib(config, "name")}_{i+1}',
                     model=self.model_loader.bind(get_attrib(config, "model"))
                 )
                 obstacle.extra["type"] = get_attrib(config, "type", "")
@@ -153,7 +148,7 @@ class ParametrizedTask(BaseTask):
                 )
             ):
                 obstacle = self.itf_obstacle.create_dynamic_obstacle(
-                    name=f'{get_attrib(config, "name")}_dynamic_{i+1}',
+                    name=f'D_{get_attrib(config, "name")}_{i+1}',
                     model=self.dynamic_model_loader.bind(
                         get_attrib(config, "model"))
                 )

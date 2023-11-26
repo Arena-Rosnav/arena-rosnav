@@ -11,16 +11,17 @@ import scipy.interpolate
 
 from rospkg import RosPack
 
-from map_distance_server.srv import GetDistanceMapResponse
 from task_generator.shared import Obstacle, Position, PositionOrientation
 
 from genpy.rostime import Time
 from task_generator.utils import ModelLoader
 
+import map_distance_server.srv as map_distance_server_srvs
+
 # TYPES
 
 
-_WorldWall = Tuple[Tuple[int, int], Tuple[int, int]]
+_WorldWall = Tuple[Position, Position]
 WorldWalls = Collection[_WorldWall]
 WorldObstacles = Collection[Obstacle]
 
@@ -80,8 +81,8 @@ class WorldOccupancy:
 
     def occupy(self, zone: Position, radius: float):
         self._grid[
-            int(zone[1]-radius):int(zone[1]+radius),
-            int(zone[0]-radius):int(zone[0]+radius)
+            int(zone.y-radius):int(zone.y+radius),
+            int(zone.x-radius):int(zone.x+radius)
         ] = WorldOccupancy.FULL
 
 
@@ -168,7 +169,7 @@ class WorldMap:
     time: Time
 
     @staticmethod
-    def from_distmap(distmap: GetDistanceMapResponse) -> "WorldMap":
+    def from_distmap(distmap: map_distance_server_srvs.GetDistanceMapResponse) -> "WorldMap":
         return WorldMap(
             occupancy=WorldLayers(
                 walls=WorldOccupancy.from_map(
@@ -188,10 +189,10 @@ class WorldMap:
         return self.occupancy._walls.grid.shape
     
     def tf_pos2grid(self, position: Position) -> Tuple[int, int]:
-        return np.round((position.y - self.origin[1]) / self.resolution), np.round(self.shape[1] - (position.x  - self.origin[0]) / self.resolution)
+        return np.round((position.y - self.origin.y) / self.resolution), np.round(self.shape[1] - (position.x  - self.origin.x) / self.resolution)
 
     def tf_grid2pos(self, grid_pos: Tuple[int, int]) -> Position:
-        return Position(x=grid_pos[1] * self.resolution  + self.origin[1], y= (grid_pos[0]) * self.resolution + self.origin[0])
+        return Position(x=grid_pos[1] * self.resolution  + self.origin.y, y= (grid_pos[0]) * self.resolution + self.origin.x)
 
 
 @dataclasses.dataclass

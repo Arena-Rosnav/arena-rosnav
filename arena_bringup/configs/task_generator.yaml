@@ -20,8 +20,8 @@ task_mode:
       max: 5
       models: ["shelf"]
     interactive:
-      min: 0
-      max: 0
+      min: 1
+      max: 5
       models: ["shelf"]
     dynamic:
       min: 3
@@ -34,10 +34,10 @@ pedsim:
     VMAX: [0.3, 0.5]
     MAX_TALKING_DISTANCE: 1
     TALKING_BASE_TIME: 5
-    CHATTING_PROBABILITY: [0.10, 0.25]
-    TELL_STORY_PROBABILITY: [0.05, 0.15]
-    GROUP_TALKING_PROBABILITY: [0.15, 0.25]
-    TALKING_AND_WALKING_PROBABILITY: [0.10, 0.50]
+    CHATTING_PROBABILITY: 0
+    TELL_STORY_PROBABILITY: 0
+    GROUP_TALKING_PROBABILITY: 0
+    TALKING_AND_WALKING_PROBABILITY: 0
     TELL_STORY_BASE_TIME: 5
     FORCE_FACTOR_DESIRED: [1, 5]
     FORCE_FACTOR_OBSTACLE: [1, 7]

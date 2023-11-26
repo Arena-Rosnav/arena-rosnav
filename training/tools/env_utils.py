@@ -2,6 +2,7 @@ from typing import Union, Tuple
 
 import gym
 import os
+import rospy
 
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import set_random_seed
@@ -13,9 +14,10 @@ from stable_baselines3.common.vec_env import (
 )
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 
-from rl_utils.envs.flatland_gym_env import (
-    FlatlandEnv,
-)
+# from rl_utils.envs.flatland_gym_env import (
+#     FlatlandEnv,
+# )
+from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
 
 
 def make_envs(
@@ -40,34 +42,37 @@ def make_envs(
     """
 
     def _init() -> Union[gym.Env, gym.Wrapper]:
-        train_ns = f"sim_{rank + 1}" if with_ns else ""
-        eval_ns = "eval_sim" if with_ns else ""
+        robot_model = rospy.get_param("model")
+        train_ns = f"sim_{rank + 1}/{robot_model}" if with_ns else ""
+        eval_ns = f"eval_sim/{robot_model}" if with_ns else ""
 
         curriculum_config = config["callbacks"]["training_curriculum"]
+        log_config = config["monitoring"]["cmd_line_logging"]
+
         if train:
             # train env
             env = FlatlandEnv(
-                train_ns,
-                config["rl_agent"]["reward_fnc"],
-                config["rl_agent"]["action_space"]["discrete"],
-                goal_radius=config["goal_radius"],
+                ns=train_ns,
+                reward_fnc=config["rl_agent"]["reward_fnc"],
                 max_steps_per_episode=config["max_num_moves_per_eps"],
-                task_mode=config["task_mode"],
-                curr_stage=curriculum_config["curr_stage"],
-                PATHS=PATHS,
+                verbose=log_config["episode_statistics"]["enabled"],
+                log_last_n_eps=log_config["episode_statistics"]["last_n_eps"],
+                starting_stage=curriculum_config["curr_stage"],
+                curriculum_path=PATHS["curriculum"],
             )
         else:
             # eval env
             env = Monitor(
                 FlatlandEnv(
-                    eval_ns,
-                    config["rl_agent"]["reward_fnc"],
-                    config["rl_agent"]["action_space"]["discrete"],
-                    goal_radius=config["goal_radius"],
-                    max_steps_per_episode=config["max_num_moves_per_eps"],
-                    task_mode=config["task_mode"],
-                    curr_stage=curriculum_config["curr_stage"],
-                    PATHS=PATHS,
+                    ns=eval_ns,
+                    reward_fnc=config["rl_agent"]["reward_fnc"],
+                    max_steps_per_episode=config["callbacks"]["periodic_eval"][
+                        "max_num_moves_per_eps"
+                    ],
+                    verbose=log_config["episode_statistics"]["enabled"],
+                    log_last_n_eps=log_config["episode_statistics"]["last_n_eps"],
+                    starting_stage=curriculum_config["curr_stage"],
+                    curriculum_path=PATHS["curriculum"],
                 ),
                 PATHS["eval"],
                 info_keywords=("done_reason", "is_success"),
@@ -80,7 +85,7 @@ def make_envs(
 
 
 def load_vec_normalize(config: dict, PATHS: dict, env: VecEnv, eval_env: VecEnv):
-    if config["rl_agent"]["normalize"]:
+    if config["rl_agent"]["normalize"]["enabled"]:
         load_path = os.path.join(PATHS["model"], "vec_normalize.pkl")
         if os.path.isfile(load_path):
             env = VecNormalize.load(load_path=load_path, venv=env)
@@ -88,20 +93,9 @@ def load_vec_normalize(config: dict, PATHS: dict, env: VecEnv, eval_env: VecEnv)
             print("Succesfully loaded VecNormalize object from pickle file..")
         elif not config["rl_agent"]["resume"]:
             # New agent so init new VecNormalize object
-            env = VecNormalize(
-                env,
-                training=True,
-                norm_obs=True,
-                norm_reward=True,
-                clip_reward=17.5,
-            )
-            eval_env = VecNormalize(
-                eval_env,
-                training=False,
-                norm_obs=True,
-                norm_reward=False,
-                clip_reward=17.5,
-            )
+            normalization_conf = config["rl_agent"]["normalize"]["settings"]
+            env = VecNormalize(env, training=True, **normalization_conf)
+            eval_env = VecNormalize(eval_env, training=False, **normalization_conf)
         else:
             raise ValueError("No VecNormalize object found..")
     return env, eval_env

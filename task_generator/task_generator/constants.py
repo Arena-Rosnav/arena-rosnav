@@ -5,6 +5,7 @@ from typing import Any, Callable, Optional
 import rospy
 from task_generator.shared import Namespace
 
+
 class Defaults:
     class task_config:
         no_of_episodes = 5
@@ -24,7 +25,7 @@ class Constants:
         OBSTACLE_MAX_RADIUS = 0.6
 
     class RobotManager:
-        SPAWN_ROBOT_SAFE_DIST = 0.1
+        SPAWN_ROBOT_SAFE_DIST = 0.25
 
     class Simulator(Enum):
         FLATLAND = "flatland"
@@ -36,6 +37,7 @@ class Constants:
 
     class EntityManager(Enum):
         PEDSIM = "pedsim"
+        FLATLAND = "flatland"
 
     class TaskMode(Enum):
         RANDOM = "random"
@@ -44,17 +46,29 @@ class Constants:
         PARAMETRIZED = "parametrized"
         DYNAMIC_MAP_RANDOM = "dynamic_map_random"
         DYNAMIC_MAP_STAGED = "dynamic_map_staged"
+        GUIDED = "guided"
 
     class MapGenerator:
         NODE_NAME = "map_generator"
         MAP_FOLDER_NAME = "dynamic_map"
+
+    class Random:
+        MIN_DYNAMIC_OBS = 0
+        MAX_DYNAMIC_OBS = 0
+        MIN_STATIC_OBS = 0
+        MAX_STATIC_OBS = 0
+        MIN_INTERACTIVE_OBS = 0
+        MAX_INTERACTIVE_OBS = 0
+
+    class Scenario:
+        RESETS_DEFAULT = 5
 
     PLUGIN_FULL_RANGE_LASER = {
         "type": "Laser",
         "name": "full_static_laser",
         "frame": "full_laser",
         "topic": "full_scan",
-        "body": "base_link",
+        "body": "link_base",
         "broadcast_tf": "true",
         "origin": [0, 0, 0],
         "range": 2.0,
@@ -62,17 +76,6 @@ class Constants:
         "noise_std_dev": 0.0,
         "update_rate": 10,
     }
-
-    class Random:
-        MIN_DYNAMIC_OBS = 0
-        MAX_DYNAMIC_OBS = 0
-        MIN_STATIC_OBS = 0
-        MAX_STATIC_OBS = 0
-        MIN_INTERACTIVE_OBS = 1
-        MAX_INTERACTIVE_OBS = 10
-
-    class Scenario:
-        RESETS_DEFAULT = 5
 
 
 class FlatlandRandomModel:
@@ -99,8 +102,11 @@ class FlatlandRandomModel:
     LINEAR_VEL = 0.2
     ANGLUAR_VEL_MAX = 0.2
 
+
 # no ~configuration possible because node is not fully initialized at this point
 pedsim_ns = Namespace("task_generator_node/configuration/pedsim/default_actor_config")
+
+
 def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     """
     load pedsim param
@@ -110,15 +116,21 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     val = rospy.get_param(pedsim_ns(parameter), fallback)
 
     gen = lambda: val
+
     if isinstance(val, list):
         lo, hi = val[:2]
-        gen = lambda: min(hi, max(lo, random.normalvariate((hi+lo)/2, (hi+lo)/6)))
+        gen = lambda: min(
+            hi,
+            max(lo,
+                random.normalvariate((hi + lo) / 2, (hi - lo) / 6)
+            )
+        )
         # gen = lambda: random.uniform(lo, hi)
-    
+
     return lambda x: x if x is not None else gen()
 
-class Pedsim:
 
+class Pedsim:
     VMAX = lp("VMAX", 0.3)
     START_UP_MODE = lp("START_UP_MODE", "default")
     WAIT_TIME = lp("WAIT_TIME", 0.0)

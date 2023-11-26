@@ -1,0 +1,88 @@
+controllers:
+  - name: MpcLocalPlannerROS
+    type: mpc_local_planner/MpcLocalPlannerROS
+
+controller_frequency: 5.0
+controller_patience: 15.0
+planner_frequency: 1.0
+
+MpcLocalPlannerROS:
+  odom_topic: odom
+  grid:
+    grid_size_ref: 20
+    dt_ref: 0.3
+    xf_fixed:
+    - false
+    - false
+    - false
+    warm_start: true
+    collocation_method: forward_differences
+    cost_integration_method: left_sum
+    variable_grid:
+      enable: true
+      min_dt: 0.0;
+      max_dt: 10.0;
+      grid_adaptation:
+        enable: true
+        dt_hyst_ratio: 0.1
+        min_grid_size: 2
+        max_grid_size: 50
+  planning:
+    objective:
+      quadratic_form:
+        state_weights:
+        - 2.0
+        - 2.0
+        - 0.25
+        control_weights:
+        - 0.1
+        - 0.05
+        integral_form: false
+      minimum_time_via_points: {}
+    terminal_cost:
+      quadratic:
+        final_state_weights:
+        - 10.0
+        - 10.0
+        - 0.5
+    terminal_constraint:
+      l2_ball:
+        weight_matrix:
+        - 1.0
+        - 1.0
+        - 1.0
+        radius: 5
+  controller:
+    outer_ocp_iterations: 1
+    xy_goal_tolerance: 0.2
+    yaw_goal_tolerance: 0.1
+    global_plan_overwrite_orientation: true
+    global_plan_prune_distance: 1.0
+    allow_init_with_backward_motion: true
+    max_global_plan_lookahead_dist: 1.0
+    force_reinit_new_goal_dist: 1.0
+    force_reinit_new_goal_angular: 1.57
+    force_reinit_num_steps: 0
+    prefer_x_feedback: false
+    publish_ocp_results: false
+  solver:
+    ipopt:
+      iterations: 100
+      max_cpu_time: -1.0
+      ipopt_numeric_options:
+        tol: 1e-4
+      ipopt_string_options:
+        linear_solver: mumps
+        hessian_approximation: exact
+    lsq_lm:
+      iterations: 100
+      weight_init_eq: 2
+      weight_init_ineq: 2
+      weight_init_bounds: 2
+      weight_adapt_factor_eq: 1.5
+      weight_adapt_factor_ineq: 1.5
+      weight_adapt_factor_bounds: 1.5
+      weight_adapt_max_eq: 500
+      weight_adapt_max_ineq: 500
+      weight_adapt_max_bounds: 500
+  collision_avoidance: {}

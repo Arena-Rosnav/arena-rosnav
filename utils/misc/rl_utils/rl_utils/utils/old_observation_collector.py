@@ -10,26 +10,30 @@ from typing import Tuple
 import message_filters
 import numpy as np
 import rospy
+
 # services
 from flatland_msgs.msg import StepWorld
-from geometry_msgs.msg import (Pose2D, PoseStamped, PoseWithCovarianceStamped,
-                               Twist)
+from geometry_msgs.msg import Pose2D, PoseStamped, PoseWithCovarianceStamped, Twist
 from nav_msgs.msg import Odometry, Path
 from numpy.core.numeric import normalize_axis_tuple
 from rosgraph_msgs.msg import Clock
+
 # observation msgs
 from sensor_msgs.msg import LaserScan
+from task_generator.shared import Namespace
 from std_msgs.msg import Bool
+
 # for transformations
 from tf.transformations import *
 
 from .debug import timeit
 from .utils import remove_double_slash
 
+
 class ObservationCollector:
     def __init__(
         self,
-        ns: str,
+        ns: Namespace,
         num_lidar_beams: int,
         external_time_sync: bool = False,
     ):
@@ -39,12 +43,9 @@ class ObservationCollector:
             num_lidar_beams (int): [description]
             lidar_range (float): [description]
         """
-        self.ns = remove_double_slash(ns)
-        self.ns_prefix = lambda topic: os.path.join(self.ns, topic)
+        self.ns = ns
 
         self._laser_num_beams = num_lidar_beams
-        # for frequency controlling
-        self._action_frequency = 1 / rospy.get_param("/robot_action_rate")
 
         self._clock = Clock()
         self._scan = LaserScan()
@@ -53,9 +54,6 @@ class ObservationCollector:
         self._robot_vel = Twist()
         self._subgoal = Pose2D()
         self._globalplan = np.array([])
-
-        # train mode?
-        self._is_train_mode = rospy.get_param("/train_mode")
 
         # additional full range laser to cover blind spots
         self._full_range_laser = rospy.get_param("laser/full_range_laser", False)
@@ -72,21 +70,22 @@ class ObservationCollector:
         self.received_scan = False
         self.received_odom = False
 
+        self._init_subs()
+
+    def _init_subs(self):
         # subscriptions
         # ApproximateTimeSynchronizer appears to be slow for training, but with real robot, own sync method doesn't accept almost any messages as synced
         # need to evaulate each possibility
         if self._ext_time_sync:
-            self._scan_sub = message_filters.Subscriber(
-                self.ns_prefix("scan"), LaserScan
-            )
+            self._scan_sub = message_filters.Subscriber(self.ns("scan"), LaserScan)
             self._robot_state_sub = message_filters.Subscriber(
-                self.ns_prefix("odom"), Odometry
+                self.ns("odom"), Odometry
             )
             fs = [self._scan_sub, self._robot_state_sub]
 
             if self._full_range_laser:
                 self._full_scan_sub = message_filters.Subscriber(
-                    self.ns_prefix("full_scan"), LaserScan
+                    self.ns("full_scan"), LaserScan
                 )
                 fs.append(self._full_scan_sub)
 
@@ -99,35 +98,35 @@ class ObservationCollector:
             self.ts.registerCallback(self.callback_odom_scan)
         else:
             self._scan_sub = rospy.Subscriber(
-                self.ns_prefix("scan"),
+                self.ns("scan"),
                 LaserScan,
                 self.callback_scan,
                 tcp_nodelay=True,
             )
 
             self._full_scan_sub = rospy.Subscriber(
-                self.ns_prefix("full_scan"),
+                self.ns("full_scan"),
                 LaserScan,
                 self.callback_full_scan,
                 tcp_nodelay=True,
             )
 
             self._robot_state_sub = rospy.Subscriber(
-                self.ns_prefix("odom"),
+                self.ns("odom"),
                 Odometry,
                 self.callback_robot_state,
                 tcp_nodelay=True,
             )
 
         # self._clock_sub = rospy.Subscriber(
-        #     f'{self.ns_prefix}clock', Clock, self.callback_clock, tcp_nodelay=True)
+        #     f'{self.ns}clock', Clock, self.callback_clock, tcp_nodelay=True)
 
         self._subgoal_sub = rospy.Subscriber(
-            self.ns_prefix("subgoal"), PoseStamped, self.callback_subgoal
+            self.ns("subgoal"), PoseStamped, self.callback_subgoal
         )
 
         self._globalplan_sub = rospy.Subscriber(
-            self.ns_prefix("global_plan"), Path, self.callback_global_plan
+            self.ns("global_plan"), Path, self.callback_global_plan
         )
 
     def wait_for_scan_and_odom(self):
@@ -163,6 +162,7 @@ class ObservationCollector:
         obs_dict = {
             "laser_scan": scan,
             "goal_in_robot_frame": [rho, theta],
+            "distance_to_goal": rho,
             "global_plan": self._globalplan,
             "robot_pose": self._robot_pose,
             "last_action": kwargs.get("last_action", np.array([0, 0, 0])),
@@ -304,7 +304,7 @@ class ObservationCollector:
         return self.pose3D_to_pose2D(msg_Subgoal.pose)
 
     @staticmethod
-    def process_global_plan_msg(globalplan):
+    def process_global_plan_msg(globalplan) -> np.ndarray:
         global_plan_2d = list(
             map(
                 lambda p: ObservationCollector.pose3D_to_pose2D(p.pose),
