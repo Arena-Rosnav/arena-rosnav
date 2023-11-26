@@ -5,6 +5,7 @@ from rospkg import RosPack
 import rospy
 
 import rosgraph_msgs.msg as rosgraph_msgs
+import std_msgs.msg as std_msgs
 
 from task_generator.constants import Constants
 from task_generator.manager.world_manager import WorldManager
@@ -67,7 +68,7 @@ class BaseTask(Props_):
         self.__reset_start = rospy.Publisher(self.TOPIC_RESET_START, std_msgs.Empty, queue_size=1)
         self.__reset_end = rospy.Publisher(self.TOPIC_RESET_END, std_msgs.Empty, queue_size=1)
 
-        rospy.Subscriber("/clock", Clock, self._clock_callback)
+        rospy.Subscriber("/clock", rosgraph_msgs.Clock, self._clock_callback)
         self.last_reset_time = 0
         self.clock = rosgraph_msgs.Clock()
 
