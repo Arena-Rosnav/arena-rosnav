@@ -98,7 +98,7 @@ class GazeboSimulator(BaseSimulator):
         request.model_state.pose = pose
         request.model_state.reference_frame = "world"
 
-        self._move_model_srv(request)
+        return bool(self._move_model_srv(request).success)
 
     def spawn_entity(self, entity):
         request = gazebo_srvs.SpawnModelRequest()
@@ -114,7 +114,8 @@ class GazeboSimulator(BaseSimulator):
                 z=0
             ),
             orientation=geometry_msgs.Quaternion(
-                *quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="sxyz"))
+                *quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="sxyz")
+            )
         )
         request.robot_namespace = self._namespace(entity.name)
         request.reference_frame = "world"
@@ -126,8 +127,7 @@ class GazeboSimulator(BaseSimulator):
                 "tf_prefix"), str(request.robot_namespace))
 
         res = self.spawn_model(model.type, request)
-
-        return res.success
+        return bool(res.success)
 
     def delete_entity(self, name):
         res: gazebo_srvs.DeleteModelResponse = self._remove_model_srv(
