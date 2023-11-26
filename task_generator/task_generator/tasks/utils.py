@@ -1,7 +1,6 @@
 import dataclasses
 import itertools
 import json
-import math
 import os
 import random
 import sys
@@ -427,13 +426,21 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
 
         self.PROPS.world_manager.forbid_clear()
 
+        biggest_robot = max(robot.safe_distance for robot in self.PROPS.robot_managers)
+
+        for robot_start, robot_goal in robot_positions:
+            self.PROPS.world_manager.forbid([
+                PositionRadius(robot_start.x, robot_start.y, biggest_robot),
+                PositionRadius(robot_goal.x, robot_goal.y, biggest_robot),
+            ])
+
         if len(robot_positions) < len(self.PROPS.robot_managers):
             generated_positions = [
                 PositionOrientation(position.x, position.y, random.random() * 2*np.pi)
                 for position in (
                     self.PROPS.world_manager.get_positions_on_map(
                         n=2*(len(self.PROPS.robot_managers) - len(robot_positions)),
-                        safe_dist=max(robot.safe_distance for robot in self.PROPS.robot_managers)
+                        safe_dist=biggest_robot
                     )
                 )
             ]
@@ -456,10 +463,13 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
             return index
 
         waypoints_per_ped = 2
-        points = self.PROPS.world_manager.get_positions_on_map(n=n_static_obstacles + n_dynamic_obstacles + n_dynamic_obstacles*(1+waypoints_per_ped), safe_dist=0.1)
+        points = self.PROPS.world_manager.get_positions_on_map(n=n_static_obstacles + n_interactive_obstacles + n_dynamic_obstacles*(1+waypoints_per_ped), safe_dist=1)
 
-        positions = itertools.cycle(PositionOrientation(*pos, 2*np.pi * random.random()) for pos in points[:(n_static_obstacles + n_dynamic_obstacles + n_dynamic_obstacles)])
-        waypoints = itertools.cycle(PositionRadius(*pos, 1) for pos in points[(n_static_obstacles + n_dynamic_obstacles + n_dynamic_obstacles):])
+        _positions = [PositionOrientation(*pos, 2*np.pi * random.random()) for pos in points[:(n_static_obstacles + n_interactive_obstacles + n_dynamic_obstacles)]]
+        positions = iter(_positions)
+
+        _waypoints = [PositionRadius(*pos, 1) for pos in points[(n_static_obstacles + n_interactive_obstacles + n_dynamic_obstacles):]]
+        waypoints = iter(_waypoints)
 
         obstacles = []
 

@@ -5,11 +5,9 @@ import numpy as np
 import rospy
 import roslaunch
 import os
-import time
 import scipy.spatial.transform
 
 import os
-import time
 
 import roslaunch
 import rospy

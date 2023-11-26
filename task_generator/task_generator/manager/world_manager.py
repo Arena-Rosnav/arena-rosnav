@@ -1,3 +1,4 @@
+import itertools
 from typing import Collection, List, Optional, Tuple
 import numpy as np
 import scipy.signal
@@ -70,12 +71,12 @@ class WorldManager:
         )
 
         for obstacle in self.world.entities.obstacles:
-            self.world.map.occupancy.obstacle_occupy(Position(obstacle.position.x, obstacle.position.y), 1)
+            self.world.map.occupancy.obstacle_occupy(PositionRadius(obstacle.position.x, obstacle.position.y, 1)) #TODO actual radius
 
 
-    def forbid(self, forbidden_zones: List[Position]):
+    def forbid(self, forbidden_zones: List[PositionRadius]):
         for zone in forbidden_zones:
-            self.world.map.occupancy.forbidden_occupy(zone, 1)
+            self.world.map.occupancy.forbidden_occupy(zone)
 
     def forbid_clear(self):
         self._world.map.occupancy.forbidden_clear()
@@ -195,61 +196,78 @@ class WorldManager:
         # map -> resolution of map is m / cell -> safe_dist in cells is
         # safe_dist / resolution
 
-        if n < 0: #TODO profile when this is faster
-            return [self._classic_get_random_pos_on_map(safe_dist = safe_dist, forbidden_zones=forbidden_zones) for _ in range(n)]
-
-        max_depth = 10
-
         if forbidden_zones is None:
             forbidden_zones = []
 
         fork = self._world.map.occupancy.fork()
 
-        for zone in forbidden_zones:
-            fork.occupy(Position(zone.x, zone.y), zone.radius / self._resolution)
+        points: List[Position] = []
 
-        available_positions = self._occupancy_to_available(occupancy=fork.grid, safe_dist=safe_dist / self._resolution)
+        if n < 0: #TODO profile when this is faster
+            for _ in range(n):
+                pos = self._classic_get_random_pos_on_map(safe_dist = safe_dist, forbidden_zones=forbidden_zones)
+                posr = PositionRadius(*pos, safe_dist)
+                fork.occupy(posr)
+                forbidden_zones.append(posr)
 
-        banned: np.ndarray = np.array([[]])
+        else:
+            max_depth = 10
 
-        min_dist: float = safe_dist / self._resolution
+            for zone in forbidden_zones:
+                fork.occupy(PositionRadius(zone.x, zone.y, zone.radius / self._resolution))
 
-        def sample(target: int) -> Collection[Position]:
+            min_dist: float = safe_dist / self._resolution
+            available_positions = self._occupancy_to_available(occupancy=fork.grid, safe_dist=min_dist)
 
-            result: List[Position] = list()
-            depth: int = 0
+            def sample(target: int) -> Collection[Position]:
 
-            to_produce = target
+                all_banned: np.ndarray = np.zeros((target, 2))
+                banned_index: int = 0
 
-            while depth < max_depth:
+                result: List[Position] = list()
+                depth: int = 0
 
-                candidates = available_positions[np.random.choice(len(available_positions), to_produce, replace=False), :]
+                to_produce = target
 
-                for candidate in candidates:
-                    if banned.size and np.any(np.linalg.norm(banned.T - candidate, axis=0) <= min_dist):
-                        continue;
+                while depth < max_depth:
 
-                    np.append(banned, candidate)
-                    result.append(self._world.map.tf_grid2pos((candidate[0], candidate[1])))
+                    candidates = available_positions[np.random.choice(len(available_positions), to_produce, replace=False), :]
 
-                to_produce = target - len(result)
-                if to_produce <= 0:
-                    break;
+                    for candidate in candidates:
 
-            else:
-                raise RuntimeError(f"Failed to find free position after {depth} tries")
+                        banned = all_banned[:banned_index,:]
 
-            return result
+                        if np.any(np.linalg.norm(banned - candidate, axis=1) < min_dist):
+                            continue;
 
-        points = sample(n)
+                        all_banned[banned_index] = candidate
+                        banned_index += 1
+
+                        fork.occupy(PositionRadius(candidate[0], candidate[1], min_dist))
+                        result.append(self._world.map.tf_grid2pos((candidate[0], candidate[1])))
+
+                    to_produce = target - len(result)
+                    if to_produce <= 0:
+                        break;
+                
+                    depth += 1
+
+                else:
+                    raise RuntimeError(f"Failed to find free position after {depth} tries")
+
+                return result
+
+            points = list(sample(n))
 
         if forbid:
             fork.commit()
 
-        return list(points)
+        return points
     
     def get_position_on_map(self, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> Position:
         return self.get_positions_on_map(n=1, safe_dist=safe_dist, forbidden_zones=forbidden_zones)[0]
+
+    id_gen = itertools.count()
 
     def _occupancy_to_available(self, occupancy: np.ndarray, safe_dist: float) -> np.ndarray:
 
@@ -264,6 +282,6 @@ class WorldManager:
             fillvalue=int(WorldOccupancy.FULL)
         )
 
-        return np.transpose(np.where(WorldOccupancy.empty(spread)))
+        return np.transpose(np.where(np.invert(WorldOccupancy.not_empty(spread))))
 
     

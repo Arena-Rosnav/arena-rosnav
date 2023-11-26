@@ -11,7 +11,7 @@ import scipy.interpolate
 
 from rospkg import RosPack
 
-from task_generator.shared import Obstacle, Position, PositionOrientation
+from task_generator.shared import Obstacle, Position, PositionOrientation, PositionRadius
 
 from genpy.rostime import Time
 from task_generator.utils import ModelLoader
@@ -79,12 +79,14 @@ class WorldOccupancy:
     def clear(self):
         self.grid.fill(WorldOccupancy.EMPTY)
 
-    def occupy(self, zone: Position, radius: float):
+    def occupy(self, zone: PositionRadius):
+        radius = np.array([-zone.radius, zone.radius+1])
+        ly, hy = np.clip(zone.y + radius, 0, self._grid.shape[0]-1)
+        lx, hx = np.clip(zone.x + radius, 0, self._grid.shape[1]-1)
         self._grid[
-            int(zone.y-radius):int(zone.y+radius),
-            int(zone.x-radius):int(zone.x+radius)
+            int(ly):int(hy),
+            int(lx):int(hx)
         ] = WorldOccupancy.FULL
-
 
 class WorldLayers:
     _walls: WorldOccupancy      # walls
@@ -122,18 +124,18 @@ class WorldLayers:
         return self._combined.grid
 
     # obstacle interface
-    def obstacle_occupy(self, zone: Position, radius: float):
-        self._obstacle.occupy(zone=zone, radius=radius)
-        self._combined.occupy(zone=zone, radius=radius)
+    def obstacle_occupy(self, zone: PositionRadius):
+        self._obstacle.occupy(zone=zone)
+        self._combined.occupy(zone=zone)
 
     def obstacle_clear(self):
         self._obstacle.clear()
         self._invalidate_combined_cache()
 
     # forbidden interface
-    def forbidden_occupy(self, zone: Position, radius: float):
-        self._forbidden.occupy(zone=zone, radius=radius)
-        self._combined.occupy(zone=zone, radius=radius)
+    def forbidden_occupy(self, zone: PositionRadius):
+        self._forbidden.occupy(zone=zone)
+        self._combined.occupy(zone=zone)
 
     def forbidden_clear(self):
         self._forbidden.clear()
@@ -150,9 +152,10 @@ class WorldLayers:
 
         def commit(self):
             self._base._forbidden = self._grid
+            self._base._invalidate_combined_cache()
 
-        def occupy(self, zone: Position, radius: float):
-            self._grid.occupy(zone=zone, radius=radius)
+        def occupy(self, zone: PositionRadius):
+            self._grid.occupy(zone=zone)
 
         @property
         def grid(self):

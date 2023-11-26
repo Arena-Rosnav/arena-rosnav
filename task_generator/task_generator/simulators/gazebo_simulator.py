@@ -5,7 +5,6 @@ import gazebo_msgs.srv as gazebo_srvs
 
 import geometry_msgs.msg as geometry_msgs
 
-import std_msgs.msg as std_msgs
 import std_srvs.srv as std_srvs
 
 
