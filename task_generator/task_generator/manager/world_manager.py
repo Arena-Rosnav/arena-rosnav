@@ -1,7 +1,9 @@
 import itertools
+from math import floor
 from typing import Collection, List, Optional, Tuple
 import numpy as np
 import scipy.signal
+import rospy
 
 from task_generator.manager.utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls
 from task_generator.shared import Position, PositionRadius
@@ -235,6 +237,17 @@ class WorldManager:
                 to_produce = target
 
                 while depth < max_depth:
+
+                    if to_produce > len(available_positions):
+                        result += [
+                            self._world.map.tf_grid2pos(
+                                (
+                                    (-1-floor(i/5)) * int(self._shape[1]/5),
+                                    int((i % 5) * self._shape[0]/5)
+                                )
+                            ) for i in range(to_produce)]
+                        rospy.logerr(f"couldn't find enough empty cells for {to_produce} requests")
+                        break;
 
                     candidates = available_positions[np.random.choice(
                         len(available_positions), to_produce, replace=False), :]
