@@ -17,13 +17,13 @@ from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.utils import WorldMap
-from task_generator.shared import ModelWrapper, Namespace, Robot, gen_init_pos
+from task_generator.shared import ModelWrapper, Namespace, Robot, gen_init_pos, rosparam_get
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
 from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.tasks import BaseTask, TaskFactory
-from task_generator.utils import ModelLoader, Utils, rosparam_get
+from task_generator.utils import ModelLoader, Utils
 
 from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager

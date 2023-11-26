@@ -11,10 +11,33 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Type,
+    TypeVar,
     overload,
 )
 
 import enum
+
+import rospy
+
+T = TypeVar("T")
+_unspecified = rospy.client._Unspecified()
+
+def rosparam_get(cast: Type[T], param_name: str, default=_unspecified, strict: bool = False) -> T:
+    val = rospy.get_param(param_name=param_name, default=default)
+
+    if strict:
+        if not isinstance(val, cast):
+            raise ValueError(
+                f"param {param_name} is not of type {cast} but {type(val)} with val {val}")
+    else:
+        try:
+            val = cast(val)
+        except ValueError as e:
+            raise ValueError(f"could not cast {val} to {cast}", e)
+
+    return val
+
 
 
 class Namespace(str):

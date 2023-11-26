@@ -7,8 +7,6 @@ import roslaunch
 import os
 import scipy.spatial.transform
 
-import os
-
 import roslaunch
 import rospy
 from task_generator.constants import Constants
@@ -44,7 +42,7 @@ class RobotManager:
     @property
     def goal_pos(self) -> PositionOrientation:
         return self._goal_pos
-
+    
     _position: PositionOrientation
 
     _robot_radius: float
@@ -67,9 +65,11 @@ class RobotManager:
         self._goal_pos = PositionOrientation(0, 0, 0)
 
         self._goal_tolerance_distance = rosparam_get(
-            float, "goal_radius", 0.5)  # + self._robot_radius
+            float, "goal_radius", Constants.GOAL_TOLERANCE_RADIUS
+        )  # + self._robot_radius
         self._goal_tolerance_angle = rosparam_get(
-            float, "goal_tolerance_angle", 30 * np.pi / 180)
+            float, "goal_tolerance_angle", Constants.GOAL_TOLERANCE_ANGLE
+        )
 
         self._robot = robot
 
@@ -171,6 +171,7 @@ class RobotManager:
 
             if self._robot.record_data:
                 rospy.set_param(self.namespace("start"), list(self._start_pos))
+
 
         try:
             self._clear_costmaps_srv()

@@ -1,9 +1,10 @@
 from enum import Enum
+import math
 import random
 from typing import Any, Callable, Optional
 
 import rospy
-from task_generator.shared import Namespace
+from task_generator.shared import Namespace, rosparam_get
 
 
 class Defaults:
@@ -12,10 +13,11 @@ class Defaults:
 
 
 class Constants:
-    GOAL_REACHED_TOLERANCE = 1.0
-    TIMEOUT = 3.0 * 60  # 3 min
-    WAIT_FOR_SERVICE_TIMEOUT = 60  # 5 secs
-    MAX_RESET_FAIL_TIMES = 10
+    GOAL_TOLERANCE_RADIUS = rosparam_get(float, "goal_radius", 1.0)
+    GOAL_TOLERANCE_ANGLE = rosparam_get(float, "goal_tolerance_angle", 30 * math.pi / 180)
+    TIMEOUT = rosparam_get(float, "timeout", 10)  # 3 min
+    WAIT_FOR_SERVICE_TIMEOUT = rosparam_get(float, "timeout_wait_for_service", 60)  # 5 secs
+    MAX_RESET_FAIL_TIMES = rosparam_get(int, "max_reset_fail_times", 10)
 
     class ObstacleManager:
         DYNAMIC_OBSTACLES = 15
