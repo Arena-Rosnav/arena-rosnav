@@ -6,8 +6,32 @@ and is represented in the code by the
 tupel of its endpoints.'''
 
 class Room:
-    def __init__(self, room, room_size):
+    def __init__(self, room, room_size, line_obstacles):
         self.room_size = room_size
+        
+        # DIEGO: created this room for our scenario 
+        if room == "arena":
+            self.wallshere = False                # Diego: not sure what exactly to put here, False if there are no static obstacles I suppose
+            self.door_size = 1                    # old variable used in original project, but we don't have an "exit" door
+            self.room_len = room_size
+            self.room_with = room_size
+            self.destination = np.array([0,0])   # destination the agents want to go to, Diego: set it to [0,0] for now but we need to change it (if this is possible)
+            self.num_walls = 4
+            self.walls = np.array([
+                        [[0, 0], [0, room_size]], # Simulator Edge Wall 1
+                        [[0,room_size], [room_size, room_size]],  # Simulator Edge Wall 2
+                        [[room_size, room_size], [room_size, 0]],  # Simulator Edge Wall 3
+                        [[room_size, 0], [0, 0]]    #Simulator Edge Wall 4
+                        ])
+            # add line obstacles to our walls of room
+            for obstacle in line_obstacles:
+                new1 = np.array([[[obstacle.start.x, obstacle.start.y],[obstacle.end.x, obstacle.end.y]]])
+                self.walls = np.append(self.walls, new1, 0)
+                self.num_walls += 1                         
+        
+            # agents spawn with x and y position between 1 and (room_size-1)
+            self.spawn_zone = np.array([[0, self.room_len-1], [0, self.room_with-1]]) 
+            
         if room == "square":
             self.wallshere = False
             self.door_size = room_size/15                    # size of the door is proportional to the size of the room

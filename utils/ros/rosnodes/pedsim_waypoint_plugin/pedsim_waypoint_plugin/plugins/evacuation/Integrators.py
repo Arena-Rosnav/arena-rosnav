@@ -19,7 +19,7 @@ def exp_midpoint(y0, v0, f, N_steps, dt, room):
         v[:,:,k+1] = (v[:,:,k] + dt*f(y[:,:,k] + 0.5*dt*v[:,:,k], v[:,:,k] 
           + 0.5*dt*a[:,:,k]))
         y[:,:,k+1] = y[:,:,k] + dt*v[:,:,k+1]
-
+        
         for i in range(y.shape[1]):
             # checks if there are two destination and calculates the distance to the closets destination
             destination = np.zeros(len(room.get_destination()))
@@ -34,7 +34,7 @@ def exp_midpoint(y0, v0, f, N_steps, dt, room):
                 tmp += 1             
                   
         agents_escaped[k+1] = tmp
-
+        
     return y, agents_escaped, a
 
 def exp_euler(y0, v0, f, N_steps, dt, room):
@@ -89,7 +89,7 @@ def leap_frog(y0, v0, f, N_steps, dt, room):
         y[:,:,k+1] = y[:,:,k] + dt*v[:,:,k]
         a[:,:,k] = f(y[:,:,k], v[:,:,k])
         v[:,:,k+1] = v[:,:,k] + dt*f(y[:,:,k+1], v[:,:,k] + dt*a[:,:,k])
-
+        """
         for i in range(y.shape[1]):
             # checks if there are two destination and calculates the distance to the closets destination
             destination = np.zeros(len(room.get_destination()))
@@ -102,9 +102,10 @@ def leap_frog(y0, v0, f, N_steps, dt, room):
                 y[:,i,k+1] = 10**6 * np.random.rand(2)             
                 #as well we have to change the  to some c*radii
                 tmp += 1             
+        
 
         agents_escaped[k+1] = tmp
-
+        """
     return y, agents_escaped, a
 
 def leap_frog_v2(y0, v0, f, N_steps, dt, room, it=100):

@@ -136,6 +136,7 @@ class Diff_Equ:
            parameters: ``i``,``j``: integers (agent i and wall j)
                        ``r``: 2D-array, (position of all agents)
         """
+        # e_0 = Desired direction normalized for one agent
         wall = self.walls[j,:,:]
         wall_norm = (wall[0,:]-wall[1,:])/np.linalg.norm(wall[0,:]-wall[1,:])
         point = self.seg_intersect(r[:,i],self.r_D,wall[0,:],wall[1,:])
@@ -271,6 +272,8 @@ class Diff_Equ:
         e_temp = np.zeros((2, self.N))
         #If there are additional walls the desired direction doesn't have to...
         #...be the direction of a door.
+        # nearest_wall = Finding the nearest wall that ubstruct one person
+        # e_0 = Desired direction normalized for one agent
         if self.wallshere == False: 
             for i in range(self.N):
                 e_temp[:, i] = self.e_0(r[:,i], i)
@@ -312,6 +315,9 @@ class Diff_Equ:
         """ returns a 2D-array 
         v = the velocity at time t
         r = the position at time t"""
+        # e_t = Desired direction normalized for all agents
+        # f_wa = The force of each wall acting on each agents
+        # f_ag = The interacting force of the agents to each other  
         e_temp = self.e_t(r)
         acc = (self.v_0 * e_temp - v) / self.tau + self.f_ag(r, v) / self.m + self.f_wa(r, v) / self.m
         return acc
