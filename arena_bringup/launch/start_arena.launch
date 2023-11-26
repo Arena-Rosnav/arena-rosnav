@@ -138,7 +138,7 @@
 
     <group if="$(arg has_pedsim_waypoint_plugin)">
       <remap from="pedsim_waypoint_plugin/output" to="pedsim_simulator/waypoint_plugin_feedback" />
-      <node name="pedsim_waypoint_plugin" pkg="pedsim_waypoint_plugin" type="main.py" output="screen">
+      <node name="pedsim_waypoint_plugin" pkg="pedsim_waypoint_plugin" type="main.py" output="log">
         <param name="plugin_name" value="$(arg pedsim_waypoint_plugin)" />
       </node>
     </group>
