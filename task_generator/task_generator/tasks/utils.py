@@ -27,6 +27,7 @@ import rospy
 import rospkg
 import rospy
 from task_generator.constants import Constants
+from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import WorldMap
 from task_generator.shared import (
     DynamicObstacle,
@@ -823,6 +824,10 @@ class ITF_DynamicMap(ITF_Base):
         if isinstance(dist_map, map_distance_server_srvs.GetDistanceMapResponse):
             self.PROPS.world_manager.update_world(
                 world_map=WorldMap.from_distmap(distmap=dist_map))
+            
+            self.PROPS.obstacle_manager.reset(purge=ObstacleLayer.WORLD)
+            self.PROPS.obstacle_manager.spawn_world_obstacles(
+                self.PROPS.world_manager.world)
 
     def subscribe_reset(self, callback: Callable) -> rospy.Subscriber:
         return rospy.Subscriber(ITF_DynamicMap.TOPIC_RESET, std_msgs.String, callback)
