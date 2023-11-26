@@ -44,7 +44,7 @@ class RobotManager:
     @property
     def goal_pos(self) -> PositionOrientation:
         return self._goal_pos
-    
+
     _position: PositionOrientation
 
     _robot_radius: float
@@ -171,7 +171,6 @@ class RobotManager:
 
             if self._robot.record_data:
                 rospy.set_param(self.namespace("start"), list(self._start_pos))
-
 
         try:
             self._clear_costmaps_srv()

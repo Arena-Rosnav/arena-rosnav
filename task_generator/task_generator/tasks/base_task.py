@@ -65,8 +65,10 @@ class BaseTask(Props_):
         self.robot_managers = robot_managers
         self.world_manager = world_manager
 
-        self.__reset_start = rospy.Publisher(self.TOPIC_RESET_START, std_msgs.Empty, queue_size=1)
-        self.__reset_end = rospy.Publisher(self.TOPIC_RESET_END, std_msgs.Empty, queue_size=1)
+        self.__reset_start = rospy.Publisher(
+            self.TOPIC_RESET_START, std_msgs.Empty, queue_size=1)
+        self.__reset_end = rospy.Publisher(
+            self.TOPIC_RESET_END, std_msgs.Empty, queue_size=1)
 
         rospy.Subscriber("/clock", rosgraph_msgs.Clock, self._clock_callback)
         self.last_reset_time = 0

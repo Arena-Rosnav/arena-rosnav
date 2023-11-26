@@ -32,11 +32,13 @@ class RandomTask(BaseTask):
         self.itf_random = ITF_Random(self)
 
         obstacle_ranges = self.itf_random.load_obstacle_ranges()
-        self._gen_static = ITF_Random.randrange_generator(obstacle_ranges.static)
+        self._gen_static = ITF_Random.randrange_generator(
+            obstacle_ranges.static)
         self._gen_interactive = ITF_Random.randrange_generator(
             obstacle_ranges.interactive
         )
-        self._gen_dynamic = ITF_Random.randrange_generator(obstacle_ranges.dynamic)
+        self._gen_dynamic = ITF_Random.randrange_generator(
+            obstacle_ranges.dynamic)
 
         (
             self._static_obstacles,

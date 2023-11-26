@@ -24,7 +24,7 @@ class WorldManager:
     @property
     def world(self) -> World:
         return self._world
-    
+
     @property
     def _shape(self) -> Tuple[int, int]:
         return self._world.map.shape[0], self._world.map.shape[1]
@@ -71,8 +71,8 @@ class WorldManager:
         )
 
         for obstacle in self.world.entities.obstacles:
-            self.world.map.occupancy.obstacle_occupy(PositionRadius(obstacle.position.x, obstacle.position.y, 1)) #TODO actual radius
-
+            self.world.map.occupancy.obstacle_occupy(PositionRadius(
+                obstacle.position.x, obstacle.position.y, 1))  # TODO actual radius
 
     def forbid(self, forbidden_zones: List[PositionRadius]):
         for zone in forbidden_zones:
@@ -162,8 +162,10 @@ class WorldManager:
             raise Exception("can't find any non-occupied spaces")
 
         point = PositionRadius(
-            float(np.round(x * self.world.map.resolution + self.world.map.origin.x, 3)),
-            float(np.round(y * self.world.map.resolution + self.world.map.origin.y, 3)),
+            float(np.round(x * self.world.map.resolution +
+                  self.world.map.origin.x, 3)),
+            float(np.round(y * self.world.map.resolution +
+                  self.world.map.origin.y, 3)),
             safe_dist
         )
 
@@ -203,9 +205,10 @@ class WorldManager:
 
         points: List[Position] = []
 
-        if n < 0: #TODO profile when this is faster
+        if n < 0:  # TODO profile when this is faster
             for _ in range(n):
-                pos = self._classic_get_random_pos_on_map(safe_dist = safe_dist, forbidden_zones=forbidden_zones)
+                pos = self._classic_get_random_pos_on_map(
+                    safe_dist=safe_dist, forbidden_zones=forbidden_zones)
                 posr = PositionRadius(*pos, safe_dist)
                 fork.occupy(posr)
                 forbidden_zones.append(posr)
@@ -214,10 +217,12 @@ class WorldManager:
             max_depth = 10
 
             for zone in forbidden_zones:
-                fork.occupy(PositionRadius(zone.x, zone.y, zone.radius / self._resolution))
+                fork.occupy(PositionRadius(zone.x, zone.y,
+                            zone.radius / self._resolution))
 
             min_dist: float = safe_dist / self._resolution
-            available_positions = self._occupancy_to_available(occupancy=fork.grid, safe_dist=min_dist)
+            available_positions = self._occupancy_to_available(
+                occupancy=fork.grid, safe_dist=min_dist)
 
             def sample(target: int) -> Collection[Position]:
 
@@ -231,29 +236,33 @@ class WorldManager:
 
                 while depth < max_depth:
 
-                    candidates = available_positions[np.random.choice(len(available_positions), to_produce, replace=False), :]
+                    candidates = available_positions[np.random.choice(
+                        len(available_positions), to_produce, replace=False), :]
 
                     for candidate in candidates:
 
-                        banned = all_banned[:banned_index,:]
+                        banned = all_banned[:banned_index, :]
 
                         if np.any(np.linalg.norm(banned - candidate, axis=1) < min_dist):
-                            continue;
+                            continue
 
                         all_banned[banned_index] = candidate
                         banned_index += 1
 
-                        fork.occupy(PositionRadius(candidate[0], candidate[1], min_dist))
-                        result.append(self._world.map.tf_grid2pos((candidate[0], candidate[1])))
+                        fork.occupy(PositionRadius(
+                            candidate[0], candidate[1], min_dist))
+                        result.append(self._world.map.tf_grid2pos(
+                            (candidate[0], candidate[1])))
 
                     to_produce = target - len(result)
                     if to_produce <= 0:
-                        break;
-                
+                        break
+
                     depth += 1
 
                 else:
-                    raise RuntimeError(f"Failed to find free position after {depth} tries")
+                    raise RuntimeError(
+                        f"Failed to find free position after {depth} tries")
 
                 return result
 
@@ -263,7 +272,7 @@ class WorldManager:
             fork.commit()
 
         return points
-    
+
     def get_position_on_map(self, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> Position:
         return self.get_positions_on_map(n=1, safe_dist=safe_dist, forbidden_zones=forbidden_zones)[0]
 
@@ -271,11 +280,12 @@ class WorldManager:
 
     def _occupancy_to_available(self, occupancy: np.ndarray, safe_dist: float) -> np.ndarray:
 
-        filt_size = int(2*safe_dist + 1)
+        filt_size = int(2 * safe_dist + 1)
         filt = np.full((filt_size, filt_size), 1) / (filt_size ** 2)
 
         spread = scipy.signal.convolve2d(
-            WorldOccupancy.not_full(occupancy).astype(np.uint8) * np.iinfo(np.uint8).max,
+            WorldOccupancy.not_full(occupancy).astype(
+                np.uint8) * np.iinfo(np.uint8).max,
             filt,
             mode="full",
             boundary="fill",
@@ -283,5 +293,3 @@ class WorldManager:
         )
 
         return np.transpose(np.where(np.invert(WorldOccupancy.not_empty(spread))))
-
-    

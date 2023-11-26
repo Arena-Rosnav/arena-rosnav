@@ -16,6 +16,7 @@ from typing import (
 
 import enum
 
+
 class Namespace(str):
     def __call__(self, *args: str) -> Namespace:
         return Namespace(os.path.join(self, *args))
@@ -81,7 +82,6 @@ PositionRadius = collections.namedtuple(
     "PositionRadius",
     ("x", "y", "radius")
 )
-
 
 
 class ModelWrapper:
@@ -284,11 +284,13 @@ class DynamicObstacle(DynamicObstacleProps):
             name=name, position=position, model=model, waypoints=waypoints, extra=obj
         )
 
+
 @dataclasses.dataclass(frozen=True)
 class WallObstacle:
     name: str
     start: Position
     end: Position
+
 
 def _gen_init_pos(steps: int, x: int = 1, y: int = 0):
     steps = max(steps, 1)

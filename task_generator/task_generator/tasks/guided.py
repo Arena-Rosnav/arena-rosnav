@@ -15,6 +15,7 @@ import geometry_msgs.msg as geometry_msgs
 
 from tf.transformations import euler_from_quaternion
 
+
 @TaskFactory.register(Constants.TaskMode.GUIDED)
 class GuidedTask(BaseTask):
     """
@@ -35,7 +36,7 @@ class GuidedTask(BaseTask):
     _dynamic_obstacles: RandomList
 
     _is_done: bool
-    
+
     TOPIC_ADD_WAYPOINT = "/goalpose"
     TOPIC_RESET = "/clicked_point"
     PARAM_WAYPOINTS = "guided_waypoints"
@@ -56,19 +57,22 @@ class GuidedTask(BaseTask):
         self._gen_dynamic = ITF_Random.randrange_generator(
             obstacle_ranges.dynamic)
 
-        self._static_obstacles,\
-            self._interactive_obstacles,\
+        self._static_obstacles, \
+            self._interactive_obstacles, \
             self._dynamic_obstacles = self.itf_random.load_obstacle_list()
 
         self.iters = 0
         self._is_done = False
 
         self._waypoints = []
-        self._waypoint_states = {robot.name:0 for robot in self.robot_managers}
+        self._waypoint_states = {
+            robot.name: 0 for robot in self.robot_managers}
         self._reset_waypoints()
 
-        rospy.Subscriber(self.TOPIC_ADD_WAYPOINT, geometry_msgs.PoseStamped, self._add_waypoint)
-        rospy.Subscriber(self.TOPIC_RESET, geometry_msgs.PointStamped, self._reset_waypoints)
+        rospy.Subscriber(self.TOPIC_ADD_WAYPOINT,
+                         geometry_msgs.PoseStamped, self._add_waypoint)
+        rospy.Subscriber(self.TOPIC_RESET,
+                         geometry_msgs.PointStamped, self._reset_waypoints)
 
     @BaseTask.reset_helper(parent=BaseTask)
     def reset(
@@ -102,11 +106,13 @@ class GuidedTask(BaseTask):
         def callback():
 
             robot_positions = (
-                PositionOrientation(position.x, position.y, random.random() * 2*np.pi)
+                PositionOrientation(position.x, position.y,
+                                    random.random() * 2 * np.pi)
                 for position in (
                     self.world_manager.get_positions_on_map(
                         n=len(self.robot_managers),
-                        safe_dist=max(robot.safe_distance for robot in self.robot_managers)
+                        safe_dist=max(
+                            robot.safe_distance for robot in self.robot_managers)
                     )
                 )
             )
@@ -120,13 +126,12 @@ class GuidedTask(BaseTask):
                 dynamic_obstacles=dynamic_obstacles,
                 robot_positions=[(pos, pos) for pos in robot_positions]
             ))
-            
+
             self.iters += 1
 
             return False
 
         return {}, callback
-
 
     @property
     def is_done(self) -> bool:
@@ -136,20 +141,21 @@ class GuidedTask(BaseTask):
                 waypoints = self._waypoints or [None]
                 self._waypoint_states[robot.name] += 1
                 self._waypoint_states[robot.name] %= len(waypoints)
-                robot.reset(start_pos=None, goal_pos=waypoints[self._waypoint_states[robot.name]])
+                robot.reset(
+                    start_pos=None, goal_pos=waypoints[self._waypoint_states[robot.name]])
 
         if self._is_done:
             self._is_done = False
             return True
         return False
-    
+
     def _add_waypoint(self, pos: geometry_msgs.PoseStamped):
         waypoint = PositionOrientation(
             pos.pose.position.x,
             pos.pose.position.y,
             euler_from_quaternion(
                 [
-                    pos.pose.orientation.x, 
+                    pos.pose.orientation.x,
                     pos.pose.orientation.y,
                     pos.pose.orientation.z,
                     pos.pose.orientation.w
@@ -171,4 +177,4 @@ class GuidedTask(BaseTask):
         self._waypoints = []
         rospy.set_param(self.PARAM_WAYPOINTS, self._waypoints)
 
-        self.reset(lambda:None)
+        self.reset(lambda: None)

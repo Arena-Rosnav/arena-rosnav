@@ -53,21 +53,22 @@ class WorldOccupancy:
 
     @staticmethod
     def from_map(input_map: np.ndarray) -> "WorldOccupancy":
-        remap = scipy.interpolate.interp1d([input_map.max(),input_map.min()],[WorldOccupancy.EMPTY, WorldOccupancy.FULL])
+        remap = scipy.interpolate.interp1d([input_map.max(), input_map.min()], [
+                                           WorldOccupancy.EMPTY, WorldOccupancy.FULL])
         return WorldOccupancy(remap(input_map))
 
     @staticmethod
     def empty(grid: np.ndarray) -> np.ndarray:
         return grid >= (WorldOccupancy.FULL + WorldOccupancy.EMPTY) / 2
-    
+
     @staticmethod
     def not_empty(grid: np.ndarray) -> np.ndarray:
         return grid < WorldOccupancy.EMPTY
-    
+
     @staticmethod
     def full(grid: np.ndarray) -> np.ndarray:
         return grid <= (WorldOccupancy.FULL + WorldOccupancy.EMPTY) / 2
-    
+
     @staticmethod
     def not_full(grid: np.ndarray) -> np.ndarray:
         return grid > WorldOccupancy.FULL
@@ -80,13 +81,14 @@ class WorldOccupancy:
         self.grid.fill(WorldOccupancy.EMPTY)
 
     def occupy(self, zone: PositionRadius):
-        radius = np.array([-zone.radius, zone.radius+1])
-        ly, hy = np.clip(zone.y + radius, 0, self._grid.shape[0]-1)
-        lx, hx = np.clip(zone.x + radius, 0, self._grid.shape[1]-1)
+        radius = np.array([-zone.radius, zone.radius + 1])
+        ly, hy = np.clip(zone.y + radius, 0, self._grid.shape[0] - 1)
+        lx, hx = np.clip(zone.x + radius, 0, self._grid.shape[1] - 1)
         self._grid[
             int(ly):int(hy),
             int(lx):int(hx)
         ] = WorldOccupancy.FULL
+
 
 class WorldLayers:
     _walls: WorldOccupancy      # walls
@@ -99,9 +101,8 @@ class WorldLayers:
             np.full(walls.grid.shape, WorldOccupancy.EMPTY))
         self._forbidden = WorldOccupancy(
             np.full(walls.grid.shape, WorldOccupancy.EMPTY))
-        
-        self._combined_cache = None
 
+        self._combined_cache = None
 
     _combined_cache: Optional[WorldOccupancy]
 
@@ -164,6 +165,7 @@ class WorldLayers:
     def fork(self):
         return WorldLayers.WorldLayersFork(self)
 
+
 @dataclasses.dataclass
 class WorldMap:
     occupancy: WorldLayers
@@ -176,7 +178,8 @@ class WorldMap:
         return WorldMap(
             occupancy=WorldLayers(
                 walls=WorldOccupancy.from_map(
-                    np.array(distmap.data).reshape((distmap.info.height, distmap.info.width))
+                    np.array(distmap.data).reshape(
+                        (distmap.info.height, distmap.info.width))
                 )
             ),
             origin=Position(
@@ -190,12 +193,12 @@ class WorldMap:
     @property
     def shape(self) -> Tuple[int, ...]:
         return self.occupancy._walls.grid.shape
-    
+
     def tf_pos2grid(self, position: Position) -> Tuple[int, int]:
-        return np.round((position.y - self.origin.y) / self.resolution), np.round(self.shape[1] - (position.x  - self.origin.x) / self.resolution)
+        return np.round((position.y - self.origin.y) / self.resolution), np.round(self.shape[1] - (position.x - self.origin.x) / self.resolution)
 
     def tf_grid2pos(self, grid_pos: Tuple[int, int]) -> Position:
-        return Position(x=grid_pos[1] * self.resolution  + self.origin.y, y= (grid_pos[0]) * self.resolution + self.origin.x)
+        return Position(x=grid_pos[1] * self.resolution + self.origin.y, y=(grid_pos[0]) * self.resolution + self.origin.x)
 
 
 @dataclasses.dataclass
@@ -246,15 +249,15 @@ class _WallLines(Dict[float, List[Tuple[float, float]]]):
         add a wall segment in row <major> at position <minor> with length <length> and merge with previous line segment if their endpoints touch
         """
         if major not in self:
-            self[major] = [(minor, minor+length)]
+            self[major] = [(minor, minor + length)]
             return
 
         last = self[major][-1]
 
         if minor == last[1]:
-            self[major][-1] = (last[0], minor+length)
+            self[major][-1] = (last[0], minor + length)
         else:
-            self[major].append((minor, minor+length))
+            self[major].append((minor, minor + length))
 
     @property
     def lines(self) -> WorldWalls:
@@ -290,7 +293,7 @@ def RLE_2D(grid: np.ndarray) -> WorldWalls:
     return set().union(walls_x.lines, walls_y.lines)
 
 
-def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[[Tuple[int,int]], Position]] = None) -> WorldWalls:
+def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[[Tuple[int, int]], Position]] = None) -> WorldWalls:
     walls = RLE_2D(grid=WorldOccupancy.not_full(occupancy_grid))
 
     if transform is None:

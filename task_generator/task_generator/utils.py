@@ -15,6 +15,7 @@ from task_generator.shared import ModelWrapper, Model, ModelType
 
 import nav_msgs.msg as nav_msgs
 
+
 class Utils:
     @staticmethod
     def get_simulator() -> Constants.Simulator:
@@ -152,7 +153,8 @@ class ModelLoader:
             if os.path.isdir(self._model_dir):
                 self._models = set(next(os.walk(self._model_dir))[1])
             else:
-                rospy.logwarn(f"Model directory {self._model_dir} does not exist. No models are provided.")
+                rospy.logwarn(
+                    f"Model directory {self._model_dir} does not exist. No models are provided.")
                 self._models = set()
 
         return self._models
