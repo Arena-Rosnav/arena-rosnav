@@ -56,7 +56,7 @@ class Config:
             "Value": True
         },
         "Render detection IDs": False,
-        "Render history": True,
+        "Render history": False,
         "Render person visual": True,
         "Render track IDs": False,
         "Render track state": False,
@@ -86,7 +86,7 @@ class Config:
         "Color map offset": 0,
         "Color transform": "SRL Tracking Colors",
         "Connect group members": True,
-        "Enabled": True,
+        "Enabled": False,
         "Excluded group IDs": "",
         "Excluded person IDs": "",
         "Font color": "255; 255; 255",
@@ -126,7 +126,7 @@ class Config:
         "Marker Topic": "/pedsim_visualizer/walls",
         "Name": "PedsimWalls",
         "Namespaces": {
-            "": True
+            "walls": True
         },
         "Queue Size": 100,
         "Value": True

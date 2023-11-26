@@ -1,12 +1,12 @@
 import rospy
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import WorldMap, WorldWalls
-from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot
+from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot, WallObstacle
 from task_generator.simulators.base_simulator import BaseSimulator
 from typing import Collection
-from geometry_msgs.msg import PoseStamped
 from task_generator.utils import rosparam_get
 
+import geometry_msgs.msg as geometry_msgs
 
 class EntityManager:
 
@@ -28,7 +28,7 @@ class EntityManager:
         self._namespace = namespace
 
         self._goal_pub = rospy.Publisher(self._namespace(
-            "/goal"), PoseStamped, queue_size=1, latch=True)
+            "/goal"), geometry_msgs.PoseStamped, queue_size=1, latch=True)
 
         self._robot_name = rosparam_get(str, "robot_model", "")
 
@@ -49,11 +49,10 @@ class EntityManager:
         Currently by loading a existing sdf file, 
         then reaplacing the static values by dynamic ones 
         """
-        raise NotImplementedError()
 
-    def spawn_line_obstacles(self, walls: WorldWalls, heightmap: WorldMap):
+    def spawn_walls(self, walls: WorldWalls, heightmap: WorldMap):
         """
-        Creates walls.
+        Adds walls to the simulator.
         """
         raise NotImplementedError()
 

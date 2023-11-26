@@ -28,11 +28,13 @@ poetry run poetry install
 
 # Missing Deps
 echo "Installing Missing Deps...:"
-sudo apt update && sudo apt install -y libopencv-dev liblua5.2-dev ros-noetic-navigation ros-noetic-teb-local-planner ros-noetic-mpc-local-planner libarmadillo-dev ros-noetic-nlopt ros-noetic-turtlebot3-description ros-noetic-turtlebot3-navigation ros-noetic-lms1xx ros-noetic-velodyne-description ros-noetic-hector-gazebo ros-noetic-ira-laser-tools liblcm-dev
+cd ../..
+sudo apt update && sudo apt install -y libopencv-dev liblua5.2-dev libarmadillo-dev ros-noetic-nlopt liblcm-dev
+rosdep update && rosdep install --from-paths src --ignore-src -r -y
 
 # Project Install
 echo "Installing Project...:"
-cd ../.. && catkin_make
+catkin_make
 if ! grep -q 'source $HOME/arena_ws/devel/setup.bash' ~/.bashrc; then
   echo 'source $HOME/arena_ws/devel/setup.bash' >> ~/.bashrc
 fi

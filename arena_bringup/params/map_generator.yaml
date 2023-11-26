@@ -8,8 +8,8 @@ map_properties:
 
 generator_configs:
   barn:
-    fill_pct: 0.20 # initial fill percentage
-    smooth_iter: 2 # smoothing iterations
+    fill_pct: 0.1 # initial fill percentage
+    smooth_iter: 5 # smoothing iterations
     # seed: 0 # for reproducing maps
 
   rosnav:

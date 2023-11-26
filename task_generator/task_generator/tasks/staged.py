@@ -40,7 +40,7 @@ class StagedTask(RandomTask):
         if curriculum_path is None:
             curriculum_path = os.path.join(
                 ITF_Staged.CONFIG_PATH,
-                rosparam_get(str, "~configuration/task_mode/staged/curriculum")
+                rosparam_get(str, "configuration/task_mode/staged/curriculum"),
             )
 
         self.itf_staged = ITF_Staged(
@@ -55,25 +55,24 @@ class StagedTask(RandomTask):
             callback=lambda: None, stage=stage, **kwargs)
 
     @BaseTask.reset_helper(parent=RandomTask)
-    def reset(
-        self,
-        stage: Optional[StageIndex] = None,
-        **kwargs
-    ):
-
+    def reset(self, stage: Optional[StageIndex] = None, **kwargs):
         if stage is None:
             stage = self.itf_staged.stage_index
 
-        def callback():
+        return (
+            dict(
+                n_static_obstacles=self.itf_staged.stage.static,
+                n_interactive_obstacles=self.itf_staged.stage.interactive,
+                n_dynamic_obstacles=self.itf_staged.stage.dynamic,
+            ),
+            lambda: False,
+        )
 
+    def on_change_stage(self, *args, **kwargs):
+        def callback():
             rospy.loginfo(
                 f"({self.namespace}) Stage {self.itf_staged.stage_index}: Spawning {self.itf_staged.stage.static + self.itf_staged.stage.interactive} static and {self.itf_staged.stage.dynamic} dynamic obstacles!"
             )
-
             return False
 
-        return dict(
-            n_static_obstacles=self.itf_staged.stage.static,
-            n_interactive_obstacles=self.itf_staged.stage.interactive,
-            n_dynamic_obstacles=self.itf_staged.stage.dynamic,
-        ), callback
+        callback()

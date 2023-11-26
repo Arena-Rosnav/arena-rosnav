@@ -4,7 +4,7 @@
 - git:
     local-name: ../utils-extern/plugins/flatland
     uri: https://github.com/voshch/flatland.git
-    version: master
+    version: pedsim-string
 
 # - git:
 #     local-name: ../utils/arena-tools
@@ -26,11 +26,11 @@
 - git:
     local-name: ../utils-extern/ros/pedsim_ros
     uri: https://github.com/voshch/pedsim_ros.git
-    version: waypoint_plugin
+    version: pedsim-string
 
 - git:
     local-name: ../utils-extern/misc/robots
-    uri: https://github.com/Arena-Rosnav/3rd-party-robot-packages
+    uri: https://github.com/voshch/3rd-party-robot-packages
 
 - git:
     local-name: ../utils-extern/misc/jackal
@@ -47,10 +47,9 @@
 
 ### ARENA INFRASTRUCTURE
 
-    # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../arena-simulation-setup
-    uri: https://github.com/voshch/arena-simulation-setup.git
+    uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
     version: dev
 
 - git:

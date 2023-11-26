@@ -28,6 +28,7 @@ gputil = "^1.4.0"
 tensorboardx = "^2.6"
 gym = "^0.22"
 opencv-python = "^4.8"
+sb3-contrib = "^2.1.0"
 
 # pedsim-waypoint-plugin deps
 pysocialforce = "^1.1.2"

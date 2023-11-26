@@ -9,15 +9,15 @@ import numpy as np
 import rospkg
 
 import yaml
+import rospy
 from task_generator.constants import Constants
 from task_generator.manager.utils import WorldMap, WorldOccupancy
 
-from task_generator.shared import Model, ModelType, ModelWrapper, Obstacle, ObstacleProps, PositionOrientation
+from task_generator.shared import Model, ModelType, ModelWrapper, Namespace, Obstacle, ObstacleProps, PositionOrientation
 from task_generator.utils import Utils
 
 
 class SDFUtil:
-
     @staticmethod
     def parse(sdf: str) -> ET.ElementTree:
         file = StringIO(sdf)
@@ -157,29 +157,56 @@ class YAMLUtil:
                 return YAMLUtil.parse_yaml(file.read())
 
         else:
-            raise ValueError(
-                f"can't process yaml descriptor of type {type(yaml)}")
+            raise ValueError(f"can't process yaml descriptor of type {type(yaml)}")
 
     @staticmethod
     def serialize(obj: Any):
         return yaml.dump(obj)
 
+    PLUGIN_PROPS_TO_CHANGE = {
+        "DiffDrive": {"odom_frame_id": lambda ns, robot_name: f"odom"}
+    }
+
     PLUGIN_PROPS_TO_EXTEND: Dict[str, List[str]] = {
-        "DiffDrive": ["odom_pub", "twist_sub"],
+        "DiffDrive": ["odom_pub", "twist_sub", "ground_truth_pub"],
         "Laser": ["topic"],
     }
 
-    @staticmethod
-    def update_plugins(namespace: str, description: Any) -> Any:
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            return description
+    PLUGIN_PROPS_DEFAULT_VAL = {
+        "DiffDrive": {"ground_truth_pub": "odometry/ground_truth"}
+    }
 
+    @staticmethod
+    def update_plugins(namespace: Namespace, description: Any) -> Any:
         plugins: List[Dict] = description.get("plugins", [])
+
+        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+            if rospy.get_param("laser/full_range_laser", False):
+                plugins.append(Constants.PLUGIN_FULL_RANGE_LASER.copy())
+
+            for plugin in plugins:
+                for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
+                    default_val = None
+                    if prop not in plugin:
+                        default_val = YAMLUtil.PLUGIN_PROPS_DEFAULT_VAL[plugin["type"]][
+                            prop
+                        ]
+                    plugin[prop] = namespace(
+                        plugin.get(prop, "")
+                        if not default_val
+                        else plugin.get(prop, default_val),
+                    )
+
+                # for prop in YAMLUtil.PLUGIN_PROPS_TO_CHANGE.get(plugin["type"], []):
+                #     plugin[prop] = YAMLUtil.PLUGIN_PROPS_TO_CHANGE[plugin["type"]][
+                #         prop
+                #     ](ns=namespace.simulation_ns, robot_name=namespace.robot_ns)
+
+            return description
 
         for plugin in plugins:
             for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
                 plugin[prop] = os.path.join(namespace, plugin.get(prop, ""))
-
         return description
 
 
@@ -222,7 +249,7 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
         <heightmap>
             <uri>{img_uri}</uri>
             <size>{padded_heightmap.shape[1] * world_map.resolution} {padded_heightmap.shape[0] * world_map.resolution} {height - z_offset}</size>
-            <pos>{heightmap.shape[1] * .5  * world_map.resolution + world_map.origin[0]} {heightmap.shape[0] * .5 * world_map.resolution + world_map.origin[1]} {z_offset}</pos>
+            <pos>{heightmap.shape[1] * .5  * world_map.resolution + world_map.origin.x} {heightmap.shape[0] * .5 * world_map.resolution + world_map.origin.y} {z_offset}</pos>
             <blend></blend>
             <use_terrain_paging>false</use_terrain_paging>
         </heightmap>

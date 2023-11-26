@@ -30,7 +30,8 @@ class InputData:
     robots: List[pedsim_msgs.msg.RobotState]
     groups: List[pedsim_msgs.msg.AgentGroup]
     waypoints: List[pedsim_msgs.msg.Waypoint]
-    line_obstacles: List[pedsim_msgs.msg.LineObstacle]
+    line_obstacles: List[pedsim_msgs.msg.Wall] #TODO rename to walls
+    obstacles: List[pedsim_msgs.msg.Obstacle]
 
 
 OutputData = List[pedsim_msgs.msg.AgentFeedback]
@@ -103,7 +104,8 @@ class PedsimWaypointGenerator:
                     robots=NList(dataframe.robot_states),
                     groups=NList(dataframe.simulated_groups),
                     waypoints=NList(dataframe.simulated_waypoints),
-                    line_obstacles=NList(dataframe.line_obstacles)
+                    line_obstacles=NList(dataframe.walls),
+                    obstacles=NList(dataframe.obstacles)
                 )
 
                 agent_states_data = plugin.callback(dataframe_data)
