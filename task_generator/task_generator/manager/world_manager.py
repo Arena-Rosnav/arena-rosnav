@@ -1,7 +1,6 @@
 import itertools
 from math import floor
 from typing import Collection, List, Optional, Tuple
-import cv2
 import numpy as np
 import scipy.signal
 import rospy
@@ -316,7 +315,7 @@ class WorldManager:
         filt = np.full((filt_size, filt_size), 1) / (filt_size ** 2)
 
         spread = scipy.signal.convolve2d(
-            WorldOccupancy.not_full(occupancy).astype(
+            WorldOccupancy.fullish(occupancy).astype(
                 np.uint8) * np.iinfo(np.uint8).max,
             filt,
             mode="full",
