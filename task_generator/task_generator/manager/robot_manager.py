@@ -188,13 +188,9 @@ class RobotManager:
         distance_to_goal: float = np.linalg.norm(
             np.array(goal[:2]) - np.array(start[:2]))
 
-        angle_to_goal: float = np.pi - \
-            np.abs(np.abs(goal[2] - start[2]) - np.pi)
+        angle_to_goal: float = np.abs(np.fmod(goal[2] - start[2], 2*np.pi))
 
-        target_distance = self._goal_tolerance_distance
-        target_angle = self._goal_tolerance_angle
-
-        return distance_to_goal < target_distance and angle_to_goal < target_angle
+        return distance_to_goal < self._goal_tolerance_distance and angle_to_goal < self._goal_tolerance_angle
 
     def _publish_goal_periodically(self, *args, **kwargs):
         if self._goal_pos is not None:
