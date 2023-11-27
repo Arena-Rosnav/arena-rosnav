@@ -188,7 +188,8 @@ class RobotManager:
         distance_to_goal: float = np.linalg.norm(
             np.array(goal[:2]) - np.array(start[:2]))
 
-        angle_to_goal: float = np.abs(np.fmod(goal[2] - start[2], 2*np.pi))
+        # https://gamedev.stackexchange.com/a/4472
+        angle_to_goal: float = np.pi - np.abs(np.abs(goal[2] - start[2]) - np.pi)
 
         return distance_to_goal < self._goal_tolerance_distance and angle_to_goal < self._goal_tolerance_angle
 

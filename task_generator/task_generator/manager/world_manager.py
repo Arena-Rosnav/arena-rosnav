@@ -1,6 +1,7 @@
 import itertools
 from math import floor
 from typing import Collection, List, Optional, Tuple
+import cv2
 import numpy as np
 import scipy.signal
 import rospy
@@ -73,12 +74,19 @@ class WorldManager:
         )
 
         for obstacle in self.world.entities.obstacles:
-            self.world.map.occupancy.obstacle_occupy(PositionRadius(
-                obstacle.position.x, obstacle.position.y, 1))  # TODO actual radius
+            self.world.map.occupancy.obstacle_occupy(
+                *self.world.map.tf_posr2rect(
+                    PositionRadius(
+                        obstacle.position.x,
+                        obstacle.position.y,
+                        1   # TODO actual radius
+                    )
+                )
+            )  
 
     def forbid(self, forbidden_zones: List[PositionRadius]):
         for zone in forbidden_zones:
-            self.world.map.occupancy.forbidden_occupy(zone)
+            self.world.map.occupancy.forbidden_occupy(*self.world.map.tf_posr2rect(zone))
 
     def forbid_clear(self):
         self._world.map.occupancy.forbidden_clear()
@@ -212,15 +220,22 @@ class WorldManager:
                 pos = self._classic_get_random_pos_on_map(
                     safe_dist=safe_dist, forbidden_zones=forbidden_zones)
                 posr = PositionRadius(*pos, safe_dist)
-                fork.occupy(posr)
+                fork.occupy(*self.world.map.tf_posr2rect(posr))
                 forbidden_zones.append(posr)
 
         else:
             max_depth = 10
 
             for zone in forbidden_zones:
-                fork.occupy(PositionRadius(zone.x, zone.y,
-                            zone.radius / self.resolution))
+                fork.occupy(
+                    *self.world.map.tf_posr2rect(
+                        PositionRadius(
+                            zone.x,
+                            zone.y,
+                            zone.radius / self.resolution
+                        )
+                    )
+                )
 
             min_dist: float = safe_dist / self.resolution
             available_positions = self._occupancy_to_available(
@@ -247,6 +262,7 @@ class WorldManager:
                                 )
                             ) for i in range(to_produce)]
                         rospy.logerr(f"couldn't find enough empty cells for {to_produce} requests")
+                        raise ValueError()
                         break;
 
                     candidates = available_positions[np.random.choice(
@@ -262,8 +278,11 @@ class WorldManager:
                         all_banned[banned_index] = candidate
                         banned_index += 1
 
-                        fork.occupy(PositionRadius(
-                            candidate[0], candidate[1], min_dist))
+                        fork.occupy(
+                            (candidate-min_dist),
+                            (candidate+min_dist)
+                        )
+                        
                         result.append(self._world.map.tf_grid2pos(
                             (candidate[0], candidate[1])))
 
@@ -305,4 +324,4 @@ class WorldManager:
             fillvalue=int(WorldOccupancy.FULL)
         )
 
-        return np.transpose(np.where(np.invert(WorldOccupancy.not_empty(spread))))
+        return np.transpose(np.where(WorldOccupancy.empty(spread)))

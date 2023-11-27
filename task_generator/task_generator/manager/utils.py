@@ -59,19 +59,29 @@ class WorldOccupancy:
 
     @staticmethod
     def empty(grid: np.ndarray) -> np.ndarray:
-        return grid >= (WorldOccupancy.FULL + WorldOccupancy.EMPTY) / 2
-
+        return np.isclose(grid, WorldOccupancy.EMPTY)
+    
     @staticmethod
     def not_empty(grid: np.ndarray) -> np.ndarray:
-        return grid < WorldOccupancy.EMPTY
+        return np.invert(WorldOccupancy.full(grid))
+
+    @staticmethod
+    def emptyish(grid: np.ndarray, thresh: Optional[float] = None) -> np.ndarray:
+        if thresh is None:
+            thresh = float((WorldOccupancy.FULL + WorldOccupancy.EMPTY) / 2)
+        return grid >= thresh
 
     @staticmethod
     def full(grid: np.ndarray) -> np.ndarray:
-        return grid <= (WorldOccupancy.FULL + WorldOccupancy.EMPTY) / 2
+        return np.isclose(grid, WorldOccupancy.FULL)
 
     @staticmethod
     def not_full(grid: np.ndarray) -> np.ndarray:
-        return grid > WorldOccupancy.FULL
+        return np.invert(WorldOccupancy.full(grid))
+
+    @staticmethod
+    def fullish(grid: np.ndarray, thresh: Optional[float] = None) -> np.ndarray:
+        return np.invert(WorldOccupancy.emptyish(grid, thresh))
 
     @property
     def grid(self) -> np.ndarray:
@@ -80,10 +90,9 @@ class WorldOccupancy:
     def clear(self):
         self.grid.fill(WorldOccupancy.EMPTY)
 
-    def occupy(self, zone: PositionRadius):
-        radius = np.array([-zone.radius, zone.radius + 1])
-        ly, hy = np.clip(zone.y + radius, 0, self._grid.shape[0] - 1)
-        lx, hx = np.clip(zone.x + radius, 0, self._grid.shape[1] - 1)
+    def occupy(self, lo:Tuple[int, int], hi: Tuple[int, int]):
+        ly, hy = np.clip([lo[1], hi[1]], 0, self._grid.shape[0] - 1)
+        lx, hx = np.clip([lo[0], hi[0]], 0, self._grid.shape[1] - 1)
         self._grid[
             int(ly):int(hy),
             int(lx):int(hx)
@@ -125,18 +134,18 @@ class WorldLayers:
         return self._combined.grid
 
     # obstacle interface
-    def obstacle_occupy(self, zone: PositionRadius):
-        self._obstacle.occupy(zone=zone)
-        self._combined.occupy(zone=zone)
+    def obstacle_occupy(self, lo: Tuple[int, int], hi: Tuple[int, int]):
+        self._obstacle.occupy(lo, hi)
+        self._combined.occupy(lo, hi)
 
     def obstacle_clear(self):
         self._obstacle.clear()
         self._invalidate_combined_cache()
 
     # forbidden interface
-    def forbidden_occupy(self, zone: PositionRadius):
-        self._forbidden.occupy(zone=zone)
-        self._combined.occupy(zone=zone)
+    def forbidden_occupy(self, lo: Tuple[int, int], hi: Tuple[int, int]):
+        self._forbidden.occupy(lo, hi)
+        self._combined.occupy(lo, hi)
 
     def forbidden_clear(self):
         self._forbidden.clear()
@@ -155,8 +164,8 @@ class WorldLayers:
             self._base._forbidden = self._grid
             self._base._invalidate_combined_cache()
 
-        def occupy(self, zone: PositionRadius):
-            self._grid.occupy(zone=zone)
+        def occupy(self, lo:Tuple[int, int], hi: Tuple[int, int]):
+            self._grid.occupy(lo, hi)
 
         @property
         def grid(self):
@@ -199,6 +208,11 @@ class WorldMap:
 
     def tf_grid2pos(self, grid_pos: Tuple[int, int]) -> Position:
         return Position(x=grid_pos[1] * self.resolution + self.origin.y, y=(grid_pos[0]) * self.resolution + self.origin.x)
+
+    def tf_posr2rect(self, posr: PositionRadius) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+        lo = self.tf_pos2grid(Position(posr.x - posr.radius, posr.y - posr.radius))
+        hi = self.tf_pos2grid(Position(posr.x + posr.radius, posr.y + posr.radius))
+        return (lo, hi)
 
 
 @dataclasses.dataclass
