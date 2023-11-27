@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   gazebo_msgs
+  pedsim
   pedsim_msgs
 )
 

@@ -56,7 +56,7 @@ class Config:
             "Value": True
         },
         "Render detection IDs": False,
-        "Render history": True,
+        "Render history": False,
         "Render person visual": True,
         "Render track IDs": False,
         "Render track state": False,
@@ -86,7 +86,7 @@ class Config:
         "Color map offset": 0,
         "Color transform": "SRL Tracking Colors",
         "Connect group members": True,
-        "Enabled": True,
+        "Enabled": False,
         "Excluded group IDs": "",
         "Excluded person IDs": "",
         "Font color": "255; 255; 255",
@@ -118,6 +118,28 @@ class Config:
             "Use Z position from message": False,
             "Value": 0
         }
+    }
+
+    WALLS = {
+        "Class": "rviz/Marker",
+        "Enabled": True,
+        "Marker Topic": "/pedsim_visualizer/walls",
+        "Name": "Marker",
+        "Namespaces": {
+            "walls": True
+        },
+        "Queue Size": 100,
+        "Value": True
+    }
+
+    WAYPOINTS = {
+        "Class": "rviz/MarkerArray",
+        "Enabled": False,
+        "Marker Topic": "/pedsim_visualizer/waypoints",
+        "Name": "MarkerArray",
+        "Namespaces": {},
+        "Queue Size": 100,
+        "Value": True
     }
 
     def create_model_display(robot_name, topic, color):

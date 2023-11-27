@@ -9,6 +9,7 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Iterator,
     List,
     NamedTuple,
     Optional,
@@ -181,11 +182,13 @@ class ITF_Scenario(ITF_Base):
         scenario_file = json.loads(scenario_file_content)
 
         static_obstacles = [
-            Obstacle.parse(obs, model=self.PROPS.model_loader.bind(obs["model"]))
+            Obstacle.parse(
+                obs, model=self.PROPS.model_loader.bind(obs["model"]))
             for obs in scenario_file["obstacles"]["static"]
         ]
         interactive_obstacles = [
-            Obstacle.parse(obs, model=self.PROPS.model_loader.bind(obs["model"]))
+            Obstacle.parse(
+                obs, model=self.PROPS.model_loader.bind(obs["model"]))
             for obs in scenario_file["obstacles"]["interactive"]
         ]
         dynamic_obstacles = [
@@ -254,7 +257,8 @@ class ITF_Scenario(ITF_Base):
             self.PROPS.robot_managers = self.PROPS.robot_managers[
                 :scenario_robots_length
             ]
-            rospy.logwarn("Roboto setup contains more robots than the scenario file.")
+            rospy.logwarn(
+                "Roboto setup contains more robots than the scenario file.")
 
         if scenario_robots_length > setup_robot_length:
             scenario.robots = scenario.robots[:setup_robot_length]
@@ -264,18 +268,19 @@ class ITF_Scenario(ITF_Base):
 
     def setup_scenario(self, scenario: Scenario):
         self.PROPS.obstacle_manager.spawn_map_obstacles(scenario.map.xml)
-        self.PROPS.obstacle_manager.spawn_obstacles(scenario.obstacles.static)
-        self.PROPS.obstacle_manager.spawn_obstacles(scenario.obstacles.interactive)
-        self.PROPS.obstacle_manager.spawn_dynamic_obstacles(scenario.obstacles.dynamic)
+        self.PROPS.obstacle_manager.spawn_obstacles(
+            scenario.obstacles.static + scenario.obstacles.interactive)
+        self.PROPS.obstacle_manager.spawn_dynamic_obstacles(
+            scenario.obstacles.dynamic)
 
-        for index, robot in enumerate(scenario.robots):
+        for index, scenario_robot in enumerate(scenario.robots):
             if index >= len(self.PROPS.robot_managers):
                 break
 
-            manager = self.PROPS.robot_managers[index]
+            robot = self.PROPS.robot_managers[index]
 
-            manager.reset(start_pos=robot.start, goal_pos=robot.goal)
-            manager.move_robot_to_pos(position=robot.start)
+            robot.reset(start_pos=scenario_robot.start,
+                        goal_pos=scenario_robot.goal)
 
 
 # RandomInterface
@@ -310,21 +315,21 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
             static=str_to_RandomList(
                 value=rosparam_get(
                     list,
-                    "configuration/task_mode/random/static/models",
+                    "~configuration/task_mode/random/static/models",
                     self.PROPS.model_loader.models,
                 )
             ),
             interactive=str_to_RandomList(
                 value=rosparam_get(
                     list,
-                    "configuration/task_mode/random/interactive/models",
+                    "~configuration/task_mode/random/interactive/models",
                     self.PROPS.model_loader.models,
                 )
             ),
             dynamic=str_to_RandomList(
                 value=rosparam_get(
                     list,
-                    "configuration/task_mode/random/dynamic/models",
+                    "~configuration/task_mode/random/dynamic/models",
                     self.PROPS.dynamic_model_loader.models,
                 )
             ),
@@ -337,7 +342,7 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                     str(
                         rosparam_get(
                             int,
-                            "configuration/task_mode/random/static/min",
+                            "~configuration/task_mode/random/static/min",
                             Constants.Random.MIN_STATIC_OBS,
                         )
                     )
@@ -346,7 +351,7 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                     str(
                         rosparam_get(
                             int,
-                            "configuration/task_mode/random/static/max",
+                            "~configuration/task_mode/random/static/max",
                             Constants.Random.MAX_STATIC_OBS,
                         )
                     )
@@ -357,7 +362,7 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                     str(
                         rosparam_get(
                             int,
-                            "configuration/task_mode/random/interactive/min",
+                            "~configuration/task_mode/random/interactive/min",
                             Constants.Random.MIN_INTERACTIVE_OBS,
                         )
                     )
@@ -366,7 +371,7 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                     str(
                         rosparam_get(
                             int,
-                            "configuration/task_mode/random/interactive/max",
+                            "~configuration/task_mode/random/interactive/max",
                             Constants.Random.MAX_INTERACTIVE_OBS,
                         )
                     )
@@ -377,7 +382,7 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                     str(
                         rosparam_get(
                             int,
-                            "configuration/task_mode/random/dynamic/min",
+                            "~configuration/task_mode/random/dynamic/min",
                             Constants.Random.MIN_DYNAMIC_OBS,
                         )
                     )
@@ -386,7 +391,7 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                     str(
                         rosparam_get(
                             int,
-                            "configuration/task_mode/random/dynamic/max",
+                            "~configuration/task_mode/random/dynamic/max",
                             Constants.Random.MAX_DYNAMIC_OBS,
                         )
                     )
@@ -414,66 +419,83 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
         if robot_positions is None:
             robot_positions = []
 
-        for manager, pos in itertools.zip_longest(
-            self.PROPS.robot_managers, robot_positions, fillvalue=None
-        ):
-            if manager is None:
+        for robot, pos in itertools.zip_longest(self.PROPS.robot_managers, robot_positions, fillvalue=None):
+
+            if robot is None:
                 continue
 
             if pos is None:
                 start_pos = self.PROPS.map_manager.get_random_pos_on_map(
-                    manager.safe_distance
+                    robot.safe_distance
                 )
                 goal_pos = self.PROPS.map_manager.get_random_pos_on_map(
-                    manager.safe_distance, forbidden_zones=[start_pos]
+                    robot.safe_distance, forbidden_zones=[start_pos]
                 )
 
                 robot_positions.append((start_pos, goal_pos))
             else:
                 start_pos, goal_pos = pos
 
-            manager.reset(start_pos=start_pos, goal_pos=goal_pos)
+            robot.reset(start_pos=start_pos, goal_pos=goal_pos)
 
-        self.PROPS.obstacle_manager.reset()
         self.PROPS.map_manager.init_forbidden_zones()
+
+        def indexer() -> Callable[..., int]:
+            indices: Dict[str, Iterator[int]] = dict()
+
+            def index(model: str):
+                if model not in indices:
+                    indices[model] = itertools.count(1)
+                return next(indices[model])
+            return index
+
+        obstacles = []
 
         # Create static obstacles
         if n_static_obstacles:
-            self.PROPS.obstacle_manager.spawn_obstacles(
-                [
-                    ITF_Obstacle.create_obstacle(
-                        self, name=model, model=self.PROPS.model_loader.bind(model)
-                    )
-                    for model in random.choices(
-                        population=list(static_obstacles.keys()),
-                        weights=list(static_obstacles.values()),
-                        k=n_static_obstacles,
-                    )
-                ]
-            )
+            index = indexer()
+
+            obstacles += [
+                ITF_Obstacle.create_obstacle(
+                    self,
+                    name=f"S_{model}_{index(model)}",
+                    model=self.PROPS.model_loader.bind(model)
+                )
+                for model in random.choices(
+                    population=list(static_obstacles.keys()),
+                    weights=list(static_obstacles.values()),
+                    k=n_static_obstacles,
+                )
+            ]
 
         # Create interactive obstacles
         if n_interactive_obstacles:
-            self.PROPS.obstacle_manager.spawn_obstacles(
-                [
-                    ITF_Obstacle.create_obstacle(
-                        self, name=model, model=self.PROPS.model_loader.bind(model)
-                    )
-                    for model in random.choices(
-                        population=list(interactive_obstacles.keys()),
-                        weights=list(interactive_obstacles.values()),
-                        k=n_interactive_obstacles,
-                    )
-                ]
-            )
+            index = indexer()
+
+            obstacles += [
+                ITF_Obstacle.create_obstacle(
+                    self,
+                    name=f"I_{model}_{index(model)}",
+                    model=self.PROPS.model_loader.bind(model)
+                )
+                for model in random.choices(
+                    population=list(interactive_obstacles.keys()),
+                    weights=list(interactive_obstacles.values()),
+                    k=n_interactive_obstacles,
+                )
+            ]
+
+        self.PROPS.obstacle_manager.spawn_obstacles(obstacles)
 
         # Create dynamic obstacles
         if n_dynamic_obstacles:
+            index = indexer()
+
             self.PROPS.obstacle_manager.spawn_dynamic_obstacles(
                 [
                     ITF_Obstacle.create_dynamic_obstacle(
                         self,
-                        name=model,
+                        name=f"D_{model}_{index(model)}",
                         model=self.PROPS.dynamic_model_loader.bind(model),
                     )
                     for model in random.choices(
@@ -539,7 +561,7 @@ class ITF_Staged(ITF_Obstacle, ITF_Base):
 
         if starting_index is None:
             starting_index = rosparam_get(
-                StageIndex, "configuration/task_mode/staged/starting_index"
+                StageIndex, "~configuration/task_mode/staged/starting_index"
             )
 
         self.__stages = stages
@@ -564,7 +586,8 @@ class ITF_Staged(ITF_Obstacle, ITF_Base):
                 self.__training_config_path
             ), f"Found no 'training_config.yaml' at {self.__training_config_path}"
 
-            self.__config_lock = FileLock(f"{self.__training_config_path}.lock")
+            self.__config_lock = FileLock(
+                f"{self.__training_config_path}.lock")
 
         self.on_change_stage = lambda stage: None
 
@@ -646,13 +669,15 @@ class ITF_Staged(ITF_Obstacle, ITF_Base):
         # publish goal radius
         goal_radius = self.stage.goal_radius
         if goal_radius is None:
-            goal_radius = rosparam_get(float, ITF_Staged.PARAM_GOAL_RADIUS, 0.3)
+            goal_radius = rosparam_get(
+                float, ITF_Staged.PARAM_GOAL_RADIUS, 0.3)
         rospy.set_param(ITF_Staged.PARAM_GOAL_RADIUS, goal_radius)
 
         # publish stage state
         if True or self.IS_EVAL_SIM:  # TODO reconsider if this check is needed
             rospy.set_param(ITF_Staged.PARAM_CURR_STAGE, val)
-            rospy.set_param(ITF_Staged.PARAM_LAST_STAGE_REACHED, val == self.MAX_STAGE)
+            rospy.set_param(ITF_Staged.PARAM_LAST_STAGE_REACHED,
+                            val == self.MAX_STAGE)
 
         # The current stage is stored inside the config file for when the training is stopped and later continued, the correct stage can be restored.
         if self.__training_config_path is not None:

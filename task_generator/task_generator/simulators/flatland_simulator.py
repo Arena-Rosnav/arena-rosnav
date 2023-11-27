@@ -11,6 +11,7 @@ from flatland_msgs.srv import (
     DeleteModels,
     SpawnModelRequest,
 )
+import std_srvs.srv as std_srvs
 
 import flatland_msgs.msg
 
@@ -51,7 +52,11 @@ class FlatlandSimulator(BaseSimulator):
     _delete_model_srv: rospy.ServiceProxy
     _delete_models_srv: rospy.ServiceProxy
 
+    _resume_srv: rospy.ServiceProxy
+    _pause_srv: rospy.ServiceProxy
+
     _tmp_model_path: str
+    _synchronous: bool
 
     def __init__(self, namespace):
         super().__init__(namespace)
@@ -85,11 +90,22 @@ class FlatlandSimulator(BaseSimulator):
             self._namespace("delete_models"), DeleteModels
         )
 
+        self._pause_srv = rospy.ServiceProxy(
+            self._namespace("pause"), std_srvs.Empty
+        )
+
+        self._resume_srv = rospy.ServiceProxy(
+            self._namespace("resume"), std_srvs.Empty
+        )
+
+        self._synchronous = rosparam_get(
+            bool, self._namespace("synchronous"), False)
+
     def before_reset_task(self):
-        pass
+        self._pause()
 
     def after_reset_task(self):
-        pass
+        self._resume()
 
     def delete_entity(self, name):
         req = DeleteModelRequest()
@@ -122,11 +138,11 @@ class FlatlandSimulator(BaseSimulator):
 
         return res.success
 
-    def move_entity(self, name, pos):
+    def move_entity(self, name, position):
         pose = Pose2D()
-        pose.x = pos[0]
-        pose.y = pos[1]
-        pose.theta = pos[2]
+        pose.x = position[0]
+        pose.y = position[1]
+        pose.theta = position[2]
 
         move_model_request = MoveModelRequest()
         move_model_request.name = name
@@ -154,3 +170,11 @@ class FlatlandSimulator(BaseSimulator):
     #     request.models = models
 
     #     self._spawn_models_from_string_srv(request)
+
+    def _pause(self):
+        if self._synchronous:
+            return self._pause_srv()
+
+    def _resume(self):
+        if self._synchronous:
+            return self._resume_srv()

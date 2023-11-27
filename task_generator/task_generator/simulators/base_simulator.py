@@ -49,7 +49,7 @@ class BaseSimulator:
     def spawn_entity(self, entity: EntityProps) -> bool:
         raise NotImplementedError()
 
-    def move_entity(self, name: str, pos: PositionOrientation):
+    def move_entity(self, name: str, position: PositionOrientation):
         """
         Move the robot to the given position.
         """

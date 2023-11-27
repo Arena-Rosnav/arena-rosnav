@@ -12,7 +12,7 @@
 
   <!-- launch flatland server -->
   <node name="flatland_server" pkg="flatland_server" type="flatland_server">
-
+    <param name="~debug/verbosity" value="1" />
   </node>
 
   <!--  _____________ Robot Model _____________  -->
@@ -33,4 +33,7 @@
   <include file="$(find arena_bringup)/launch/utils/rviz.launch">
     <arg name="show_rviz" value="$(eval arg('visualization') == 'rviz' and arg('show_rviz') == true)" />
   </include>
+
+  <!-- synchronize -->
+  <param name="synchronous" value="true"/>
 </launch>
