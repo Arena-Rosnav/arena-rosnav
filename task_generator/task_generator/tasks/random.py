@@ -87,7 +87,7 @@ class RandomTask(BaseTask):
                     dynamic_obstacles=dynamic_obstacles,
                 )
             )
-            time.sleep(1)
+            # time.sleep(1)
             self.iters += 1
 
             return False
