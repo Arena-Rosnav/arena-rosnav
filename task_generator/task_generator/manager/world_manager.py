@@ -315,7 +315,7 @@ class WorldManager:
         filt = np.full((filt_size, filt_size), 1) / (filt_size ** 2)
 
         spread = scipy.signal.convolve2d(
-            WorldOccupancy.fullish(occupancy).astype(
+            WorldOccupancy.not_empty(occupancy).astype(
                 np.uint8) * np.iinfo(np.uint8).max,
             filt,
             mode="full",
