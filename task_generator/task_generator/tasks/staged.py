@@ -40,7 +40,7 @@ class StagedTask(RandomTask):
         if curriculum_path is None:
             curriculum_path = os.path.join(
                 ITF_Staged.CONFIG_PATH,
-                rosparam_get(str, "configuration/task_mode/staged/curriculum"),
+                rosparam_get(str, "~configuration/task_mode/staged/curriculum"),
             )
 
         self.itf_staged = ITF_Staged(
@@ -51,11 +51,8 @@ class StagedTask(RandomTask):
             debug_mode=debug_mode,
         )
 
-        self.itf_staged.on_change_stage = lambda stage: self.on_change_stage()
-
         self.itf_staged.on_change_stage = lambda stage: self.reset(
-            callback=lambda: None, stage=stage, **kwargs
-        )
+            callback=lambda: None, stage=stage, **kwargs)
 
     @BaseTask.reset_helper(parent=RandomTask)
     def reset(self, stage: Optional[StageIndex] = None, **kwargs):

@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 import rospy
-from nav_msgs.srv import GetMap
+import nav_msgs.srv as nav_msgs_srv
 import numpy as np
 
 from matplotlib import pyplot as plt
@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     rospy.wait_for_service("/static_map")
 
-    service_client_get_map = rospy.ServiceProxy("/static_map", GetMap)
+    service_client_get_map = rospy.ServiceProxy("/static_map", nav_msgs_srv.GetMap)
 
     map = service_client_get_map().map
     map.data = np.array(map.data)

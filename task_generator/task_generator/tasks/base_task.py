@@ -4,9 +4,11 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 from rospkg import RosPack
 import rospy
 
-from rosgraph_msgs.msg import Clock
+import rosgraph_msgs.msg as rosgraph_msgs
+import std_msgs.msg as std_msgs
+
 from task_generator.constants import Constants
-from task_generator.manager.map_manager import MapManager
+from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.utils import ModelLoader
@@ -15,7 +17,7 @@ from task_generator.utils import ModelLoader
 class Props_Manager:
     obstacle_manager: ObstacleManager
     robot_managers: List[RobotManager]
-    map_manager: MapManager
+    world_manager: WorldManager
 
 
 class Props_Modelloader:
@@ -37,14 +39,21 @@ class BaseTask(Props_):
     Base Task as parent class for all other tasks.
     """
 
-    clock: Clock
+    clock: rosgraph_msgs.Clock
     last_reset_time: int
+
+    TOPIC_RESET_START = "reset_start"
+    TOPIC_RESET_END = "reset_end"
+    PARAM_RESETTING = "resetting"
+
+    __reset_start: rospy.Publisher
+    __reset_end: rospy.Publisher
 
     def __init__(
         self,
         obstacle_manager: ObstacleManager,
         robot_managers: List[RobotManager],
-        map_manager: MapManager,
+        world_manager: WorldManager,
         namespace: str = "",
         *args, **kwargs
     ):
@@ -54,11 +63,16 @@ class BaseTask(Props_):
 
         self.obstacle_manager = obstacle_manager
         self.robot_managers = robot_managers
-        self.map_manager = map_manager
+        self.world_manager = world_manager
 
-        rospy.Subscriber("/clock", Clock, self._clock_callback)
+        self.__reset_start = rospy.Publisher(
+            self.TOPIC_RESET_START, std_msgs.Empty, queue_size=1)
+        self.__reset_end = rospy.Publisher(
+            self.TOPIC_RESET_END, std_msgs.Empty, queue_size=1)
+
+        rospy.Subscriber("/clock", rosgraph_msgs.Clock, self._clock_callback)
         self.last_reset_time = 0
-        self.clock = Clock()
+        self.clock = rosgraph_msgs.Clock()
 
         self.set_up_robot_managers()
 
@@ -83,6 +97,8 @@ class BaseTask(Props_):
             return _reset
         return outer
 
+    _reset_semaphore: bool = False
+
     def reset(self, callback: Callable[[], bool], **kwargs) -> bool:
         """
         Calls a passed reset function (usually the tasks own reset)
@@ -90,25 +106,27 @@ class BaseTask(Props_):
         again. After MAX_RESET_FAIL_TIMES the reset is considered
         as fail and the simulation is shut down.
         """
-        fails = 0
+
         return_val = False
 
-        self.last_reset_time = self.clock.clock.secs
+        if self._reset_semaphore:
+            return False
+        self._reset_semaphore = True
+    
+        try:
+            rospy.set_param(self.PARAM_RESETTING, True)
+            self.__reset_start.publish()
+            return_val = callback()
+            rospy.set_param(self.PARAM_RESETTING, False)
+            self.__reset_end.publish()
+            self.last_reset_time = self.clock.clock.secs
+            self._reset_semaphore = False
 
-        # TODO wait for previous reset to be done
-
-        while fails < Constants.MAX_RESET_FAIL_TIMES:
-            try:
-                return_val = callback()
-                break
-
-            except rospy.ServiceException as e:
-                rospy.logwarn(repr(e))
-                fails += 1
-
-        else:
+        except rospy.ServiceException as e:
+            rospy.logerr(repr(e))
             rospy.signal_shutdown("Reset error!")
             raise Exception("reset error!")
+            
 
         return return_val
 
@@ -131,5 +149,5 @@ class BaseTask(Props_):
         for manager in self.robot_managers:
             manager.set_up_robot()
 
-    def _clock_callback(self, clock: Clock):
+    def _clock_callback(self, clock: rosgraph_msgs.Clock):
         self.clock = clock

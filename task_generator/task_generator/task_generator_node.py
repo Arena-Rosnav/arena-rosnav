@@ -8,25 +8,29 @@ from typing import Dict, List
 import rospkg
 import rospy
 import yaml
-from map_distance_server.srv import GetDistanceMap
 from rospkg import RosPack
-from std_msgs.msg import Empty as EmptyMsg
-from std_msgs.msg import Int16
-from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
 from task_generator.constants import Constants, Defaults
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
 from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
-from task_generator.manager.map_manager import MapManager
+from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
-from task_generator.shared import ModelWrapper, Namespace, Robot, gen_init_pos
+from task_generator.manager.utils import WorldMap
+from task_generator.shared import ModelWrapper, Namespace, Robot, gen_init_pos, rosparam_get
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
 from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.tasks import BaseTask, TaskFactory
-from task_generator.utils import ModelLoader, Utils, rosparam_get
+from task_generator.utils import ModelLoader, Utils
+
+from task_generator.manager.world_manager import WorldManager
+from task_generator.manager.obstacle_manager import ObstacleManager
+
+import map_distance_server.srv as map_distance_server_srvs
+import std_msgs.msg as std_msgs
+import std_srvs.srv as std_srvs
 
 
 def create_default_robot_list(
@@ -93,21 +97,23 @@ class TaskGenerator:
 
         # ParamsW
         self._task_mode = Constants.TaskMode(rosparam_get(str, "task_mode"))
-        self._entity_mode = Constants.EntityManager(rosparam_get(str, "entity_manager"))
+        self._entity_mode = Constants.EntityManager(
+            rosparam_get(str, "entity_manager"))
         self._auto_reset = rosparam_get(bool, "~auto_reset", True)
         self._train_mode = rosparam_get(bool, "train_mode", False)
 
         # Publishers
         if not self._train_mode:
             self._pub_scenario_reset = rospy.Publisher(
-                "scenario_reset", Int16, queue_size=1
+                "scenario_reset", std_msgs.Int16, queue_size=1
             )
             self._pub_scenario_finished = rospy.Publisher(
-                "scenario_finished", EmptyMsg, queue_size=10
+                "scenario_finished", std_msgs.Empty, queue_size=10
             )
 
             # Services
-            rospy.Service("reset_task", Empty, self._reset_task_srv_callback)
+            rospy.Service("reset_task", std_srvs.Empty,
+                          self._reset_task_srv_callback)
 
         # Vars
         self._env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())(
@@ -134,9 +140,9 @@ class TaskGenerator:
             )
 
             self.srv_start_model_visualization = rospy.ServiceProxy(
-                "start_model_visualization", Empty
+                "start_model_visualization", std_srvs.Empty
             )
-            self.srv_start_model_visualization(EmptyRequest())
+            self.srv_start_model_visualization(std_srvs.EmptyRequest())
 
             rospy.sleep(1)
 
@@ -147,9 +153,9 @@ class TaskGenerator:
             try:
                 rospy.set_param("task_generator_setup_finished", True)
                 self.srv_setup_finished = rospy.ServiceProxy(
-                    "task_generator_setup_finished", Empty
+                    "task_generator_setup_finished", std_srvs.Empty
                 )
-                self.srv_setup_finished(EmptyRequest())
+                self.srv_setup_finished(std_srvs.EmptyRequest())
             except:
                 pass
 
@@ -159,7 +165,8 @@ class TaskGenerator:
             # self.reset_task()
 
             # Timers
-            rospy.Timer(rospy.Duration(nsecs=int(0.5e9)), self._check_task_status)
+            rospy.Timer(rospy.Duration(nsecs=int(0.5e9)),
+                        self._check_task_status)
 
         # SETUP
 
@@ -174,10 +181,12 @@ class TaskGenerator:
 
         rospy.wait_for_service("/distance_map")
 
-        service_client_get_map = rospy.ServiceProxy("/distance_map", GetDistanceMap)
+        service_client_get_map = rospy.ServiceProxy(
+            "/distance_map", map_distance_server_srvs.GetDistanceMap)
 
-        map_response = service_client_get_map()
-        map_manager = MapManager(map_response)
+        map_response: map_distance_server_srvs.GetDistanceMapResponse = service_client_get_map()
+        world_manager = WorldManager(
+            world_map=WorldMap.from_distmap(distmap=map_response))
 
         if self._entity_mode == Constants.EntityManager.PEDSIM:
             self._entity_manager = PedsimManager(
@@ -194,7 +203,7 @@ class TaskGenerator:
 
         obstacle_manager = ObstacleManager(
             namespace=self._namespace.simulation_ns,
-            map_manager=map_manager,
+            world_manager=world_manager,
             simulator=self._env_wrapper,
             entity_manager=self._entity_manager,
         )
@@ -210,7 +219,7 @@ class TaskGenerator:
         task = TaskFactory.instantiate(self._task_mode)(
             obstacle_manager=obstacle_manager,
             robot_managers=robot_managers,
-            map_manager=map_manager,
+            world_manager=world_manager,
             namespace=self._namespace,
             **kwargs,
         )
@@ -293,12 +302,12 @@ class TaskGenerator:
         if self._task.is_done:
             self.reset_task()
 
-    def _reset_task_srv_callback(self, req: Empty):
+    def _reset_task_srv_callback(self, req: std_srvs.EmptyRequest):
         rospy.logdebug("Task Generator received task-reset request!")
 
         self.reset_task()
 
-        return EmptyResponse()
+        return std_srvs.EmptyResponse()
 
     def _send_end_message_on_end(self, is_end: bool):
         if self._number_of_resets < self._desired_resets:

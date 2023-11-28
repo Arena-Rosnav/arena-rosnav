@@ -1,7 +1,6 @@
 import os
 from typing import Optional
 
-
 import rospy
 from task_generator.constants import Constants
 from task_generator.tasks.base_task import BaseTask
@@ -36,7 +35,7 @@ class DynamicMapStagedTask(RandomTask):
         if curriculum_path is None:
             curriculum_path = os.path.join(
                 ITF_DynamicMap.CONFIG_PATH,
-                rosparam_get(str, "configuration/task_mode/staged/curriculum"),
+                rosparam_get(str, "~configuration/task_mode/staged/curriculum"),
             )
 
         RandomTask.__init__(self, **kwargs)
