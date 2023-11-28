@@ -25,12 +25,12 @@
     # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../utils-extern/ros/pedsim_ros
-    uri: https://github.com/voshch/pedsim_ros.git
+    uri: https://github.com/Arena-Rosnav/pedsim_ros.git
     version: pedsim-string
 
 - git:
     local-name: ../utils-extern/misc/robots
-    uri: https://github.com/voshch/3rd-party-robot-packages
+    uri: https://github.com/Arena-Rosnav/3rd-party-robot-packages
 
 - git:
     local-name: ../utils-extern/misc/jackal
@@ -43,7 +43,7 @@
 
 - git:
     local-name: ../utils-extern/misc/unitree_ros
-    uri: https://github.com/voshch/unitree_ros
+    uri: https://github.com/Arena-Rosnav/unitree_ros
 
 ### ARENA INFRASTRUCTURE
 
