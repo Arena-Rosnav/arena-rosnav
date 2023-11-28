@@ -11,7 +11,7 @@ import scipy.interpolate
 
 from rospkg import RosPack
 
-from task_generator.shared import Obstacle, Position, PositionOrientation
+from task_generator.shared import Obstacle, Position, PositionOrientation, PositionRadius
 
 from genpy.rostime import Time
 from task_generator.utils import ModelLoader
@@ -53,24 +53,35 @@ class WorldOccupancy:
 
     @staticmethod
     def from_map(input_map: np.ndarray) -> "WorldOccupancy":
-        remap = scipy.interpolate.interp1d([input_map.max(),input_map.min()],[WorldOccupancy.EMPTY, WorldOccupancy.FULL])
+        remap = scipy.interpolate.interp1d([input_map.max(), input_map.min()], [
+                                           WorldOccupancy.EMPTY, WorldOccupancy.FULL])
         return WorldOccupancy(remap(input_map))
 
     @staticmethod
     def empty(grid: np.ndarray) -> np.ndarray:
-        return grid >= (WorldOccupancy.FULL + WorldOccupancy.EMPTY) / 2
+        return np.isclose(grid, WorldOccupancy.EMPTY)
     
     @staticmethod
     def not_empty(grid: np.ndarray) -> np.ndarray:
-        return grid < WorldOccupancy.EMPTY
-    
+        return np.invert(WorldOccupancy.full(grid))
+
+    @staticmethod
+    def emptyish(grid: np.ndarray, thresh: Optional[float] = None) -> np.ndarray:
+        if thresh is None:
+            thresh = float((WorldOccupancy.FULL + WorldOccupancy.EMPTY) / 2)
+        return grid >= thresh
+
     @staticmethod
     def full(grid: np.ndarray) -> np.ndarray:
-        return grid <= (WorldOccupancy.FULL + WorldOccupancy.EMPTY) / 2
-    
+        return np.isclose(grid, WorldOccupancy.FULL)
+
     @staticmethod
     def not_full(grid: np.ndarray) -> np.ndarray:
-        return grid > WorldOccupancy.FULL
+        return np.invert(WorldOccupancy.full(grid))
+
+    @staticmethod
+    def fullish(grid: np.ndarray, thresh: Optional[float] = None) -> np.ndarray:
+        return np.invert(WorldOccupancy.emptyish(grid, thresh))
 
     @property
     def grid(self) -> np.ndarray:
@@ -79,10 +90,12 @@ class WorldOccupancy:
     def clear(self):
         self.grid.fill(WorldOccupancy.EMPTY)
 
-    def occupy(self, zone: Position, radius: float):
+    def occupy(self, lo:Tuple[int, int], hi: Tuple[int, int]):
+        ly, hy = np.clip([lo[1], hi[1]], 0, self._grid.shape[0] - 1)
+        lx, hx = np.clip([lo[0], hi[0]], 0, self._grid.shape[1] - 1)
         self._grid[
-            int(zone.y-radius):int(zone.y+radius),
-            int(zone.x-radius):int(zone.x+radius)
+            int(ly):int(hy),
+            int(lx):int(hx)
         ] = WorldOccupancy.FULL
 
 
@@ -97,9 +110,8 @@ class WorldLayers:
             np.full(walls.grid.shape, WorldOccupancy.EMPTY))
         self._forbidden = WorldOccupancy(
             np.full(walls.grid.shape, WorldOccupancy.EMPTY))
-        
-        self._combined_cache = None
 
+        self._combined_cache = None
 
     _combined_cache: Optional[WorldOccupancy]
 
@@ -122,18 +134,18 @@ class WorldLayers:
         return self._combined.grid
 
     # obstacle interface
-    def obstacle_occupy(self, zone: Position, radius: float):
-        self._obstacle.occupy(zone=zone, radius=radius)
-        self._combined.occupy(zone=zone, radius=radius)
+    def obstacle_occupy(self, lo: Tuple[int, int], hi: Tuple[int, int]):
+        self._obstacle.occupy(lo, hi)
+        self._combined.occupy(lo, hi)
 
     def obstacle_clear(self):
         self._obstacle.clear()
         self._invalidate_combined_cache()
 
     # forbidden interface
-    def forbidden_occupy(self, zone: Position, radius: float):
-        self._forbidden.occupy(zone=zone, radius=radius)
-        self._combined.occupy(zone=zone, radius=radius)
+    def forbidden_occupy(self, lo: Tuple[int, int], hi: Tuple[int, int]):
+        self._forbidden.occupy(lo, hi)
+        self._combined.occupy(lo, hi)
 
     def forbidden_clear(self):
         self._forbidden.clear()
@@ -150,9 +162,10 @@ class WorldLayers:
 
         def commit(self):
             self._base._forbidden = self._grid
+            self._base._invalidate_combined_cache()
 
-        def occupy(self, zone: Position, radius: float):
-            self._grid.occupy(zone=zone, radius=radius)
+        def occupy(self, lo:Tuple[int, int], hi: Tuple[int, int]):
+            self._grid.occupy(lo, hi)
 
         @property
         def grid(self):
@@ -160,6 +173,7 @@ class WorldLayers:
 
     def fork(self):
         return WorldLayers.WorldLayersFork(self)
+
 
 @dataclasses.dataclass
 class WorldMap:
@@ -173,7 +187,8 @@ class WorldMap:
         return WorldMap(
             occupancy=WorldLayers(
                 walls=WorldOccupancy.from_map(
-                    np.array(distmap.data).reshape((distmap.info.height, distmap.info.width))
+                    np.array(distmap.data).reshape(
+                        (distmap.info.height, distmap.info.width))
                 )
             ),
             origin=Position(
@@ -187,12 +202,17 @@ class WorldMap:
     @property
     def shape(self) -> Tuple[int, ...]:
         return self.occupancy._walls.grid.shape
-    
+
     def tf_pos2grid(self, position: Position) -> Tuple[int, int]:
-        return np.round((position.y - self.origin.y) / self.resolution), np.round(self.shape[1] - (position.x  - self.origin.x) / self.resolution)
+        return np.round((position.y - self.origin.y) / self.resolution), np.round(self.shape[1] - (position.x - self.origin.x) / self.resolution)
 
     def tf_grid2pos(self, grid_pos: Tuple[int, int]) -> Position:
-        return Position(x=grid_pos[1] * self.resolution  + self.origin.y, y= (grid_pos[0]) * self.resolution + self.origin.x)
+        return Position(x=grid_pos[1] * self.resolution + self.origin.y, y=(grid_pos[0]) * self.resolution + self.origin.x)
+
+    def tf_posr2rect(self, posr: PositionRadius) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+        lo = self.tf_pos2grid(Position(posr.x - posr.radius, posr.y - posr.radius))
+        hi = self.tf_pos2grid(Position(posr.x + posr.radius, posr.y + posr.radius))
+        return (lo, hi)
 
 
 @dataclasses.dataclass
@@ -243,15 +263,15 @@ class _WallLines(Dict[float, List[Tuple[float, float]]]):
         add a wall segment in row <major> at position <minor> with length <length> and merge with previous line segment if their endpoints touch
         """
         if major not in self:
-            self[major] = [(minor, minor+length)]
+            self[major] = [(minor, minor + length)]
             return
 
         last = self[major][-1]
 
         if minor == last[1]:
-            self[major][-1] = (last[0], minor+length)
+            self[major][-1] = (last[0], minor + length)
         else:
-            self[major].append((minor, minor+length))
+            self[major].append((minor, minor + length))
 
     @property
     def lines(self) -> WorldWalls:
@@ -287,7 +307,7 @@ def RLE_2D(grid: np.ndarray) -> WorldWalls:
     return set().union(walls_x.lines, walls_y.lines)
 
 
-def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[[Tuple[int,int]], Position]] = None) -> WorldWalls:
+def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[[Tuple[int, int]], Position]] = None) -> WorldWalls:
     walls = RLE_2D(grid=WorldOccupancy.not_full(occupancy_grid))
 
     if transform is None:

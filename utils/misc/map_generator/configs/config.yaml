@@ -3,7 +3,7 @@ generator: barn
 map_properties:
   width: 80
   height: 75
-  resolution: 0.25
+  resolution: 1
 
 generator_configs:
   barn:

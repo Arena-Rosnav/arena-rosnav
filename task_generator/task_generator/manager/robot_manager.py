@@ -5,11 +5,7 @@ import numpy as np
 import rospy
 import roslaunch
 import os
-import time
 import scipy.spatial.transform
-
-import os
-import time
 
 import roslaunch
 import rospy
@@ -69,9 +65,11 @@ class RobotManager:
         self._goal_pos = PositionOrientation(0, 0, 0)
 
         self._goal_tolerance_distance = rosparam_get(
-            float, "goal_radius", 0.5)  # + self._robot_radius
+            float, "goal_radius", Constants.GOAL_TOLERANCE_RADIUS
+        )  # + self._robot_radius
         self._goal_tolerance_angle = rosparam_get(
-            float, "goal_tolerance_angle", 30 * np.pi / 180)
+            float, "goal_tolerance_angle", Constants.GOAL_TOLERANCE_ANGLE
+        )
 
         self._robot = robot
 
@@ -190,13 +188,10 @@ class RobotManager:
         distance_to_goal: float = np.linalg.norm(
             np.array(goal[:2]) - np.array(start[:2]))
 
-        angle_to_goal: float = np.pi - \
-            np.abs(np.abs(goal[2] - start[2]) - np.pi)
+        # https://gamedev.stackexchange.com/a/4472
+        angle_to_goal: float = np.pi - np.abs(np.abs(goal[2] - start[2]) - np.pi)
 
-        target_distance = self._goal_tolerance_distance
-        target_angle = self._goal_tolerance_angle
-
-        return distance_to_goal < target_distance and angle_to_goal < target_angle
+        return distance_to_goal < self._goal_tolerance_distance and angle_to_goal < self._goal_tolerance_angle
 
     def _publish_goal_periodically(self, *args, **kwargs):
         if self._goal_pos is not None:

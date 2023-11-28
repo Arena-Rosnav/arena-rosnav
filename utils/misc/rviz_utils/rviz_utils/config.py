@@ -68,7 +68,7 @@ class Config:
         "Style": {
             "Line width": 0.05,
             "Scaling factor": 1,
-            "Value": "Cylinders"
+            "Value": "Person meshes"
         },
         "Topic": "/pedsim_visualizer/tracked_persons",
         "Unreliable": False,

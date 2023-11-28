@@ -10,12 +10,35 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Sequence,
     Tuple,
+    Type,
+    TypeVar,
     overload,
 )
 
 import enum
+
+import rospy
+
+T = TypeVar("T")
+_unspecified = rospy.client._Unspecified()
+
+def rosparam_get(cast: Type[T], param_name: str, default=_unspecified, strict: bool = False) -> T:
+    val = rospy.get_param(param_name=param_name, default=default)
+
+    if strict:
+        if not isinstance(val, cast):
+            raise ValueError(
+                f"param {param_name} is not of type {cast} but {type(val)} with val {val}")
+    else:
+        try:
+            val = cast(val)
+        except ValueError as e:
+            raise ValueError(f"could not cast {val} to {cast}", e)
+
+    return val
+
+
 
 class Namespace(str):
     def __call__(self, *args: str) -> Namespace:
@@ -82,7 +105,6 @@ PositionRadius = collections.namedtuple(
     "PositionRadius",
     ("x", "y", "radius")
 )
-
 
 
 class ModelWrapper:
@@ -285,11 +307,13 @@ class DynamicObstacle(DynamicObstacleProps):
             name=name, position=position, model=model, waypoints=waypoints, extra=obj
         )
 
+
 @dataclasses.dataclass(frozen=True)
 class WallObstacle:
     name: str
     start: Position
     end: Position
+
 
 def _gen_init_pos(steps: int, x: int = 1, y: int = 0):
     steps = max(steps, 1)

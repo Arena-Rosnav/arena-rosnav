@@ -1,7 +1,5 @@
 from typing import Any, Callable, Collection, Iterator
 
-import numpy as np
-import yaml
 import itertools
 
 
@@ -9,7 +7,7 @@ from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import World
 from task_generator.manager.world_manager import WorldManager
-from task_generator.shared import DynamicObstacle, Model, ModelType, Obstacle
+from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.simulators.base_simulator import BaseSimulator
 
 

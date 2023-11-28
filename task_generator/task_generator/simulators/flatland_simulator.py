@@ -64,13 +64,16 @@ class FlatlandSimulator(BaseSimulator):
             self._namespace("move_model"), flatland_srvs.MoveModel, persistent=True
         )
         self._spawn_model_srv = rospy.ServiceProxy(
-            self._namespace("spawn_model_from_string"), flatland_srvs.SpawnModel
+            self._namespace(
+                "spawn_model_from_string"), flatland_srvs.SpawnModel
         )
         self._spawn_model[ModelType.YAML] = rospy.ServiceProxy(
-            self._namespace("spawn_model_from_string"), flatland_srvs.SpawnModel
+            self._namespace(
+                "spawn_model_from_string"), flatland_srvs.SpawnModel
         )
         self._spawn_models_from_string_srv = rospy.ServiceProxy(
-            self._namespace("spawn_models_from_string"), flatland_srvs.SpawnModels
+            self._namespace(
+                "spawn_models_from_string"), flatland_srvs.SpawnModels
         )
         self._delete_model_srv = rospy.ServiceProxy(
             self._namespace("delete_model"), flatland_srvs.DeleteModel
