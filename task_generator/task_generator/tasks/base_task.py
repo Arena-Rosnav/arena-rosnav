@@ -97,6 +97,8 @@ class BaseTask(Props_):
             return _reset
         return outer
 
+    _reset_semaphore: bool = False
+
     def reset(self, callback: Callable[[], bool], **kwargs) -> bool:
         """
         Calls a passed reset function (usually the tasks own reset)
@@ -104,29 +106,27 @@ class BaseTask(Props_):
         again. After MAX_RESET_FAIL_TIMES the reset is considered
         as fail and the simulation is shut down.
         """
-        fails = 0
+
         return_val = False
 
-        self.last_reset_time = self.clock.clock.secs
+        if self._reset_semaphore:
+            return False
+        self._reset_semaphore = True
+    
+        try:
+            rospy.set_param(self.PARAM_RESETTING, True)
+            self.__reset_start.publish()
+            return_val = callback()
+            rospy.set_param(self.PARAM_RESETTING, False)
+            self.__reset_end.publish()
+            self.last_reset_time = self.clock.clock.secs
+            self._reset_semaphore = False
 
-        # TODO wait for previous reset to be done
-
-        while fails < Constants.MAX_RESET_FAIL_TIMES:
-            try:
-                rospy.set_param(self.PARAM_RESETTING, True)
-                self.__reset_start.publish()
-                return_val = callback()
-                rospy.set_param(self.PARAM_RESETTING, False)
-                self.__reset_end.publish()
-                break
-
-            except rospy.ServiceException as e:
-                rospy.logwarn(repr(e))
-                fails += 1
-
-        else:
+        except rospy.ServiceException as e:
+            rospy.logerr(repr(e))
             rospy.signal_shutdown("Reset error!")
             raise Exception("reset error!")
+            
 
         return return_val
 

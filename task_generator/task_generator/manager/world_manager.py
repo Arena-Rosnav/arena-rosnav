@@ -250,52 +250,55 @@ class WorldManager:
 
                 to_produce = target
 
-                while depth < max_depth:
+                try:
+                    while depth < max_depth:
 
-                    if to_produce > len(available_positions):
-                        result += [
-                            self._world.map.tf_grid2pos(
-                                (
-                                    (-1-floor(i/5)) * int(self._shape[1]/5),
-                                    int((i % 5) * self._shape[0]/5)
-                                )
-                            ) for i in range(to_produce)]
-                        rospy.logerr(f"couldn't find enough empty cells for {to_produce} requests")
-                        raise ValueError()
-                        break;
+                        if to_produce > len(available_positions):
+                            raise RuntimeError()
 
-                    candidates = available_positions[np.random.choice(
-                        len(available_positions), to_produce, replace=False), :]
+                        candidates = available_positions[np.random.choice(
+                            len(available_positions), to_produce, replace=False), :]
 
-                    for candidate in candidates:
+                        for candidate in candidates:
 
-                        banned = all_banned[:banned_index, :]
+                            banned = all_banned[:banned_index, :]
 
-                        if np.any(np.linalg.norm(banned - candidate, axis=1) < min_dist):
-                            continue
+                            if np.any(np.linalg.norm(banned - candidate, axis=1) < min_dist):
+                                continue
 
-                        all_banned[banned_index] = candidate
-                        banned_index += 1
+                            all_banned[banned_index] = candidate
+                            banned_index += 1
 
-                        fork.occupy(
-                            (candidate-min_dist),
-                            (candidate+min_dist)
-                        )
-                        
-                        result.append(self._world.map.tf_grid2pos(
-                            (candidate[0], candidate[1])))
+                            fork.occupy(
+                                (candidate-min_dist),
+                                (candidate+min_dist)
+                            )
+                            
+                            result.append(self._world.map.tf_grid2pos(
+                                (candidate[0], candidate[1])))
 
-                    to_produce = target - len(result)
-                    if to_produce <= 0:
-                        break
+                        to_produce = target - len(result)
+                        if to_produce <= 0:
+                            break
 
-                    depth += 1
+                        depth += 1
 
-                else:
-                    raise RuntimeError(
-                        f"Failed to find free position after {depth} tries")
+                    else:
+                        raise RuntimeError(
+                            f"Failed to find free position after {depth} tries")
 
-                return result
+                except RuntimeError:
+                    result += [
+                        self._world.map.tf_grid2pos(
+                            (
+                                (-1-floor(i/5)) * int(self._shape[1]/5),
+                                int((i % 5) * self._shape[0]/5)
+                            )
+                        ) for i in range(to_produce)]
+                    rospy.logerr(f"couldn't find enough empty cells for {to_produce} requests")
+                
+                finally:
+                    return result
 
             points = list(sample(n))
 

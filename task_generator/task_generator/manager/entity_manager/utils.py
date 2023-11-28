@@ -90,7 +90,8 @@ class KnownObstacles:
         Delete obstacle.
         @name: name of obstacle
         """
-        del self._known_obstacles[name]
+        if name in self._known_obstacles:
+            del self._known_obstacles[name]
 
     def create_or_get(self, name: str, **kwargs) -> KnownObstacle:
         """
