@@ -14,6 +14,9 @@
     <rosparam file="$(find arena_bringup)/params/mbf/trail_local_planner_params.yaml"
       command="load" subst_value="True" />
 
+    <rosparam file="$(find arena-simulation-setup)/robot/$(arg model)/configs/mbf/trail_local_planner_params.yaml"
+      command="load" subst_value="True" />
+
     <param name="base_local_planner" value="TrajectoryPlannerROS"/>
   </group>
    
