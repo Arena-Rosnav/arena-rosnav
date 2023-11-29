@@ -81,10 +81,10 @@
 #   uri: https://github.com/Arena-Rosnav/crowdnav-ros.git
 #   version: master
 
-#- git:
-#   local-name: ../planners/rlca-ros
-#   uri: https://github.com/Arena-Rosnav/rlca-ros.git
-#   version: master
+- git:
+   local-name: ../planners/rlca-ros
+   uri: https://github.com/Arena-Rosnav/rlca-ros.git
+   version: master
 
 #- git:
 #   local-name: ../planners/sarl-star
