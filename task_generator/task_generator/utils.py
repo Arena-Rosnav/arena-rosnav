@@ -6,13 +6,14 @@ from typing import Callable, Collection, Dict, Iterator, List, Optional, Set, Tu
 import rospy
 import os
 import numpy as np
-from nav_msgs.msg import OccupancyGrid
 
 import heapq
 import itertools
-from task_generator.constants import Constants
 
+from task_generator.constants import Constants
 from task_generator.shared import ModelWrapper, Model, ModelType
+
+import nav_msgs.msg as nav_msgs
 
 
 class Utils:
@@ -25,7 +26,7 @@ class Utils:
         return Constants.ArenaType(os.getenv("ARENA_TYPE", "training").lower())
 
     @staticmethod
-    def generate_map_inner_border(free_space_indices, map_: OccupancyGrid):
+    def generate_map_inner_border(free_space_indices, map_: nav_msgs.OccupancyGrid):
         """generate map border (four vertices of the map)
 
         Returns:
@@ -52,7 +53,7 @@ class Utils:
         return border_vertices
 
     @staticmethod
-    def update_freespace_indices_maze(map_: OccupancyGrid):
+    def update_freespace_indices_maze(map_: nav_msgs.OccupancyGrid):
         """update the indices(represented in a tuple) of the freespace based on the map and the static polygons
         ostacles manuelly added 
         param map_ : original occupacy grid
@@ -149,7 +150,12 @@ class ModelLoader:
     @property
     def models(self) -> Set[str]:
         if not len(self._models):
-            self._models = set(next(os.walk(self._model_dir))[1])
+            if os.path.isdir(self._model_dir):
+                self._models = set(next(os.walk(self._model_dir))[1])
+            else:
+                rospy.logwarn(
+                    f"Model directory {self._model_dir} does not exist. No models are provided.")
+                self._models = set()
 
         return self._models
 

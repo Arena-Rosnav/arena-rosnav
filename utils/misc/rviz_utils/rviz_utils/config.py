@@ -68,7 +68,7 @@ class Config:
         "Style": {
             "Line width": 0.05,
             "Scaling factor": 1,
-            "Value": "Cylinders"
+            "Value": "Person meshes"
         },
         "Topic": "/pedsim_visualizer/tracked_persons",
         "Unreliable": False,
@@ -120,11 +120,11 @@ class Config:
         }
     }
 
-    WALLS = {
+    PEDSIM_WALLS = {
         "Class": "rviz/Marker",
         "Enabled": True,
         "Marker Topic": "/pedsim_visualizer/walls",
-        "Name": "Marker",
+        "Name": "PedsimWalls",
         "Namespaces": {
             "walls": True
         },
@@ -132,14 +132,14 @@ class Config:
         "Value": True
     }
 
-    WAYPOINTS = {
+    PEDSIM_WAYPOINTS = {
         "Class": "rviz/MarkerArray",
         "Enabled": False,
         "Marker Topic": "/pedsim_visualizer/waypoints",
-        "Name": "MarkerArray",
+        "Name": "PedsimWaypoints",
         "Namespaces": {},
         "Queue Size": 100,
-        "Value": True
+        "Value": False
     }
 
     def create_model_display(robot_name, topic, color):

@@ -1,24 +1,13 @@
 import rospy
-from flatland_msgs.srv import (
-    MoveModelRequest,
-    MoveModel,
-    SpawnModel,
-    SpawnModels,
-    DeleteModel,
-    DeleteModelRequest,
-    DeleteModelResponse,
-    DeleteModelsRequest,
-    DeleteModels,
-    SpawnModelRequest,
-)
+import flatland_msgs.srv as flatland_srvs
 import std_srvs.srv as std_srvs
 
-import flatland_msgs.msg
+import flatland_msgs.msg as flatland_msgs
+import geometry_msgs.msg as geometry_msgs
 
 from task_generator.shared import ModelType
 
 from task_generator.utils import rosparam_get
-from geometry_msgs.msg import Pose2D
 
 from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
@@ -62,7 +51,7 @@ class FlatlandSimulator(BaseSimulator):
         super().__init__(namespace)
 
         self._move_robot_pub = rospy.Publisher(
-            self._namespace("move_model"), flatland_msgs.msg.MoveModelMsg, queue_size=10
+            self._namespace("move_model"), flatland_msgs.MoveModelMsg, queue_size=10
         )
 
         self._tmp_model_path = str(rosparam_get(str, "tmp_model_path", "/tmp"))
@@ -72,22 +61,25 @@ class FlatlandSimulator(BaseSimulator):
         rospy.wait_for_service(self._namespace("delete_model"), timeout=T)
 
         self._move_model_srv = rospy.ServiceProxy(
-            self._namespace("move_model"), MoveModel, persistent=True
+            self._namespace("move_model"), flatland_srvs.MoveModel, persistent=True
         )
         self._spawn_model_srv = rospy.ServiceProxy(
-            self._namespace("spawn_model_from_string"), SpawnModel
+            self._namespace(
+                "spawn_model_from_string"), flatland_srvs.SpawnModel
         )
         self._spawn_model[ModelType.YAML] = rospy.ServiceProxy(
-            self._namespace("spawn_model_from_string"), SpawnModel
+            self._namespace(
+                "spawn_model_from_string"), flatland_srvs.SpawnModel
         )
         self._spawn_models_from_string_srv = rospy.ServiceProxy(
-            self._namespace("spawn_models_from_string"), SpawnModels
+            self._namespace(
+                "spawn_models_from_string"), flatland_srvs.SpawnModels
         )
         self._delete_model_srv = rospy.ServiceProxy(
-            self._namespace("delete_model"), DeleteModel
+            self._namespace("delete_model"), flatland_srvs.DeleteModel
         )
         self._delete_models_srv = rospy.ServiceProxy(
-            self._namespace("delete_models"), DeleteModels
+            self._namespace("delete_models"), flatland_srvs.DeleteModels
         )
 
         self._pause_srv = rospy.ServiceProxy(
@@ -108,14 +100,14 @@ class FlatlandSimulator(BaseSimulator):
         self._resume()
 
     def delete_entity(self, name):
-        req = DeleteModelRequest()
+        req = flatland_srvs.DeleteModelRequest()
         req.name = name
 
-        res: DeleteModelResponse = self._delete_model_srv(req)
+        res: flatland_srvs.DeleteModelResponse = self._delete_model_srv(req)
         return bool(res.success)
 
     def delete_all_entities(self, names: list):
-        request = DeleteModelsRequest()
+        request = flatland_srvs.DeleteModelsRequest()
         request.name = names
 
         res = self._delete_models_srv(request)
@@ -125,13 +117,13 @@ class FlatlandSimulator(BaseSimulator):
     def spawn_entity(self, entity):
         model = entity.model.get(self.MODEL_TYPES)
 
-        request = SpawnModelRequest()
+        request = flatland_srvs.SpawnModelRequest()
         request.yaml_path = model.description
 
         request.name = entity.name
         request.ns = self._namespace(entity.name)
-        request.pose = Pose2D(
-            x=entity.position[0], y=entity.position[1], theta=entity.position[2]
+        request.pose = geometry_msgs.Pose2D(
+            x=entity.position.x, y=entity.position.y, theta=entity.position.orientation
         )
 
         res = self.spawn_model(model.type, request)
@@ -139,12 +131,12 @@ class FlatlandSimulator(BaseSimulator):
         return res.success
 
     def move_entity(self, name, position):
-        pose = Pose2D()
-        pose.x = position[0]
-        pose.y = position[1]
-        pose.theta = position[2]
+        pose = geometry_msgs.Pose2D()
+        pose.x = position.x
+        pose.y = position.y
+        pose.theta = position.orientation
 
-        move_model_request = MoveModelRequest()
+        move_model_request = flatland_srvs.MoveModelRequest()
         move_model_request.name = name
         move_model_request.pose = pose
 
