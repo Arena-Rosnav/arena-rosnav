@@ -9,7 +9,6 @@ import rospy
 import pedsim_msgs.msg as pedsim_msgs
 import geometry_msgs.msg as geometry_msgs
 import pedsim_srvs.srv as pedsim_srvs
-import rospy
 import std_srvs.srv as std_srvs
 
 import functools
@@ -28,7 +27,6 @@ from task_generator.shared import (
     DynamicObstacle,
     Model,
     ModelType,
-    Namespace,
     Obstacle,
     PositionOrientation,
     Robot,
