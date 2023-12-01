@@ -68,6 +68,8 @@ rl_agent:
     enabled: true
     stack_size: 8
 
+  reward_fnc: "rule_13"
+
   normalize: 
     enabled: true
     settings:
@@ -77,14 +79,11 @@ rl_agent:
       clip_reward: 20.0 # Max value absolute for discounted reward
       gamma: 0.99 # discount factor
     
-
   laser:
     full_range_laser: true  # additional laser covering 360° covering blind spots -> additional collision check
     reduce_num_beams:
       enabled: true
       num_beams: 200
-
-  reward_fnc: "rule_13"
 
   action_space:
     discrete: false
