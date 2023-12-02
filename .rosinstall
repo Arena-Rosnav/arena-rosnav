@@ -26,7 +26,7 @@
 - git:
     local-name: ../utils-extern/ros/pedsim_ros
     uri: https://github.com/Arena-Rosnav/pedsim_ros.git
-    version: master
+    version: semantic
 
 - git:
     local-name: ../utils-extern/misc/robots
