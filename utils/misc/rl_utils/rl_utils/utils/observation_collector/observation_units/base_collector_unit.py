@@ -119,19 +119,20 @@ class BaseCollectorUnit(CollectorUnit):
         """
         Wait for the required data to be received.
         """
-        if self._first_reset:
-            self._first_reset = False
-            return
+        pass
+        # if self._first_reset:
+        #     self._first_reset = False
+        #     return
 
-        for _ in range(int(MAX_WAIT / SLEEP)):
-            if self._received_odom and self._received_scan and self._received_subgoal:
-                return
+        # for _ in range(int(MAX_WAIT / SLEEP)):
+        #     if self._received_odom and self._received_scan and self._received_subgoal:
+        #         return
 
-            sleep(SLEEP)
+        #     sleep(SLEEP)
 
-        raise TimeoutError(
-            f"Couldn't retrieve data for: {false_params(odom=self._received_odom, laser=self._received_scan, subgoal=self._received_subgoal)}"
-        )
+        # raise TimeoutError(
+        #     f"Couldn't retrieve data for: {false_params(odom=self._received_odom, laser=self._received_scan, subgoal=self._received_subgoal)}"
+        # )
 
     def get_observations(
         self, obs_dict: Dict[str, Any], *args, **kwargs
