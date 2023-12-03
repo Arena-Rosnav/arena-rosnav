@@ -18,7 +18,7 @@
   <arg name="entity_manager" default="pedsim" doc="[pedsim]" />
   <arg name="pedsim" value="$(eval entity_manager == 'pedsim')" />
   <env name="PEDSIM" value="$(arg pedsim)" />
-  <arg name="sfm" default="" doc="sfm for pedsim [passthrough, moonwalk]"/>
+  <arg name="sfm" default="passthrough" doc="sfm for pedsim [passthrough, moonwalk]"/>
 
   <arg name="complexity" default="1" doc="1 = Map known, Position known; 2 = Map known, Position unknown (AMCL); 3 = Map unknown, Position unknown (SLAM)" />
   
