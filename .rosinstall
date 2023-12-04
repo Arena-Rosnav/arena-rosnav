@@ -18,13 +18,13 @@
     version: update
 
 - git:
-    local-name: ../utils-extern/ros/navigation/msgs/ford
+    local-name: ../utils-extern/ros/ford_msgs
     uri: https://bitbucket.org/acl-swarm/ford_msgs/src/master/
     version: master
 
 - git:
     local-name: ../utils-extern/ros/pedsim_ros
-    uri: https://github.com/Arena-Rosnav/pedsim_ros.git
+    uri: https://github.com/voshch/pedsim_ros.git
     version: semantic
 
 - git:
