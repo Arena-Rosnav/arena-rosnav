@@ -35,9 +35,8 @@ class ObstacleManager:
         the map file is retrieved from launch parameter "map_file"
         """
 
-        if rosparam_get(str, "world_file", "") == "generated_world":
-            self._entity_manager.spawn_walls(
-                walls=world.entities.walls, heightmap=world.map)
+        self._entity_manager.spawn_walls(
+            walls=world.entities.walls, heightmap=world.map)
         self._entity_manager.spawn_obstacles(
             obstacles=world.entities.obstacles)
 
