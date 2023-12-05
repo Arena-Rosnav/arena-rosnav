@@ -164,7 +164,7 @@ class GuidedTask(BaseTask):
         )
 
         self._waypoints.append(waypoint)
-        rospy.set_param(self.PARAM_WAYPOINTS, self._waypoints)
+        rospy.set_param(self.PARAM_WAYPOINTS, [tuple(wp) for wp in self._waypoints])
 
         if len(self._waypoints) == 1:
             for robot in self.robot_managers:
