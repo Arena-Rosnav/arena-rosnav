@@ -2,6 +2,7 @@
 
 import dataclasses
 import os
+import numpy as np
 import traceback
 from typing import Dict, List
 
@@ -13,7 +14,6 @@ from task_generator.constants import Constants, Defaults
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
 from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
-from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.utils import WorldMap
