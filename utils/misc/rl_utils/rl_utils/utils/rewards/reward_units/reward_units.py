@@ -76,6 +76,8 @@ class RewardGoalReached(RewardUnit):
 
 @RewardUnitFactory.register("safe_distance")
 class RewardSafeDistance(RewardUnit):
+    SAFE_DIST_VIOLATION_INFO = {"safe_dist_violation": True}
+
     @check_params
     def __init__(
         self,
@@ -103,14 +105,17 @@ class RewardSafeDistance(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, laser_scan: np.ndarray, *args: Any, **kwargs: Any):
+    def __call__(self, *args: Any, **kwargs: Any):
         violation_in_blind_spot = False
         if "full_laser_scan" in kwargs:
             violation_in_blind_spot = kwargs["full_laser_scan"].min() <= self._safe_dist
 
-        if laser_scan.min() < self._safe_dist or violation_in_blind_spot:
+        if (
+            self._reward_function.get_internal_state_info("safe_dist_breached")
+            or violation_in_blind_spot
+        ):
             self.add_reward(self._reward)
-            self.add_info({"safe_dist_violation": True})
+            self.add_info(RewardSafeDistance.SAFE_DIST_VIOLATION_INFO)
 
 
 @RewardUnitFactory.register("no_movement")
@@ -234,12 +239,13 @@ class RewardCollision(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, laser_scan: np.ndarray, *args: Any, **kwargs: Any) -> Any:
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         coll_in_blind_spots = False
         if "full_laser_scan" in kwargs:
             coll_in_blind_spots = kwargs["full_laser_scan"].min() <= self.robot_radius
 
-        if laser_scan.min() <= self.robot_radius or coll_in_blind_spots:
+        laser_min = self._reward_function.get_internal_state_info("min_dist_laser")
+        if laser_min <= self.robot_radius or coll_in_blind_spots:
             self.add_reward(self._reward)
             self.add_info(RewardCollision.DONE_INFO)
 
