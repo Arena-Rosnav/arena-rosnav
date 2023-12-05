@@ -32,11 +32,11 @@ class ObservationManager:
             obs_structur (List[CollectorUnit], optional): The list of observation unit types. Defaults to None.
         """
         self._ns = ns
-        self._obs_structur = [
+        self._obs_structur = obs_structur or [
             BaseCollectorUnit,
             GlobalplanCollectorUnit,
             PedsimStateCollectorUnit,
-        ] or obs_structur
+        ]
         self._observation_units = self._instantiate_units()
         self._init_units()
 
