@@ -1,6 +1,7 @@
 import functools
 import yaml
 from tools.constants import TRAINING_CONSTANTS
+import numpy as np
 
 
 def check_params(fn):
@@ -18,3 +19,13 @@ def load_rew_fnc(config_name: str) -> dict:
     with open(config_location, "r", encoding="utf-8") as target:
         config = yaml.load(target, Loader=yaml.FullLoader)
     return config
+
+
+def min_distance_from_pointcloud(point_cloud: np.ndarray):
+    # Compute the Euclidean distance between each point and the origin
+    distances = np.sqrt(
+        point_cloud["x"] ** 2 + point_cloud["y"] ** 2 + point_cloud["z"] ** 2
+    )
+
+    # Find the minimum distance
+    return np.min(distances)
