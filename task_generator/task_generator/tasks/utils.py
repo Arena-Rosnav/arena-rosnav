@@ -824,6 +824,7 @@ class ITF_DynamicMap(ITF_Base):
         if isinstance(dist_map, map_distance_server_srvs.GetDistanceMapResponse):
             self.PROPS.world_manager.update_world(
                 world_map=WorldMap.from_distmap(distmap=dist_map))
+            # TODO Halid: add request of World Obstacles here
             
             self.PROPS.obstacle_manager.reset(purge=ObstacleLayer.WORLD)
             self.PROPS.obstacle_manager.spawn_world_obstacles(
@@ -842,6 +843,9 @@ class ITF_DynamicMap(ITF_Base):
 
         rospy.wait_for_message(ITF_DynamicMap.TOPIC_MAP, nav_msgs.OccupancyGrid)
         rospy.wait_for_message(ITF_DynamicMap.TOPIC_SIGNAL_MAP, std_msgs.String)
+
+        # TODO @Halid: Call world generator here and transform the map 
+        # then call wait_for_message again and continue 
 
         self.__task_reset_pub.publish("")
 
