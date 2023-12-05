@@ -22,7 +22,6 @@ from task_generator.manager.entity_manager.utils import (
     YAMLUtil,
     walls_to_obstacle,
 )
-from task_generator.manager.utils import WorldMap
 from task_generator.shared import (
     DynamicObstacle,
     Model,

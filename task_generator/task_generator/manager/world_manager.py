@@ -6,7 +6,7 @@ import scipy.signal
 import rospy
 
 from task_generator.manager.utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls
-from task_generator.shared import Position, PositionRadius, rosparam_get
+from task_generator.shared import Position, PositionRadius
 
 
 class WorldManager:
