@@ -49,6 +49,7 @@ class Constants:
         DYNAMIC_MAP_RANDOM = "dynamic_map_random"
         DYNAMIC_MAP_STAGED = "dynamic_map_staged"
         GUIDED = "guided"
+        EXPLORE = "explore"
 
     class MapGenerator:
         NODE_NAME = "map_generator"

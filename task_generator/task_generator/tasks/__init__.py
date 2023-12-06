@@ -10,3 +10,4 @@ from .parametrized import ParametrizedTask  # noqa
 from .dynamic_map_random import DynamicMapRandomTask  # noqa
 from .dynamic_map_staged import DynamicMapStagedTask  # noqa
 from .guided import GuidedTask # noqa
+from .explore import ExploreTask # noqa
