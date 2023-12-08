@@ -3,7 +3,10 @@ auto_reset: true
 
 task_mode:
   scenario:
-    scenario_file: default.json
+    # scenario_file: default.json
+    scenario_file: arena_hospital_large_1.json
+    # scenario_file: arena_hospital_small_1.json
+    # scenario_file: arena_hawker_centre_1.json
 
   parametrized:
     file: default.xml 
@@ -16,12 +19,12 @@ task_mode:
 
   random:
     static:
-      min: 1
-      max: 5
+      min: 0
+      max: 0
       models: ["shelf"]
     interactive:
-      min: 1
-      max: 5
+      min: 0
+      max: 0
       models: ["shelf"]
     dynamic:
       min: 1
