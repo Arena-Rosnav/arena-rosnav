@@ -6,18 +6,32 @@ from typing import Any, Callable, Optional
 import rospy
 from task_generator.shared import Namespace, rosparam_get
 
-
 class Defaults:
     class task_config:
         no_of_episodes = 5
 
 
-class Constants:
-    GOAL_TOLERANCE_RADIUS = rosparam_get(float, "goal_radius", 1.0)
-    GOAL_TOLERANCE_ANGLE = rosparam_get(float, "goal_tolerance_angle", 30 * math.pi / 180)
-    TIMEOUT = rosparam_get(float, "timeout", 3*60)  # 3 min
-    WAIT_FOR_SERVICE_TIMEOUT = rosparam_get(float, "timeout_wait_for_service", 60)  # 5 secs
-    MAX_RESET_FAIL_TIMES = rosparam_get(int, "max_reset_fail_times", 10)
+class _Constants:
+
+    @property
+    def GOAL_TOLERANCE_RADIUS(self):
+        return rosparam_get(float, "goal_radius", 1.0)
+    
+    @property
+    def GOAL_TOLERANCE_ANGLE(self):
+        return rosparam_get(float, "goal_tolerance_angle", 30 * math.pi / 180)
+    
+    @property
+    def TIMEOUT(self):
+        return rosparam_get(float, "timeout", 3*60)  # 3 min
+    
+    @property
+    def WAIT_FOR_SERVICE_TIMEOUT(self):
+        return rosparam_get(float, "timeout_wait_for_service", 60)  # 60 secs
+    
+    @property
+    def MAX_RESET_FAIL_TIMES(self):
+        return rosparam_get(int, "max_reset_fail_times", 10)
 
     class ObstacleManager:
         DYNAMIC_OBSTACLES = 15
@@ -80,6 +94,9 @@ class Constants:
         "update_rate": 10,
     }
 
+#TODO make everything dynamic_reconfigure
+Constants = _Constants()
+
 
 class FlatlandRandomModel:
     BODY = {
@@ -109,7 +126,7 @@ class FlatlandRandomModel:
 # no ~configuration possible because node is not fully initialized at this point
 pedsim_ns = Namespace("task_generator_node/configuration/pedsim/default_actor_config")
 
-
+#TODO make everything dynamic_reconfigure
 def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     """
     load pedsim param
