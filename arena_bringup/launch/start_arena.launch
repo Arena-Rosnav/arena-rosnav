@@ -52,7 +52,7 @@
   <arg name="map_file" default="map_empty" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]" />
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_file)/map.yaml" />
 
-  <arg name="world_file" default="$(arg map_file)" />
+  <arg name="world_file" default="$(arg map_file)" doc="set to generated_world to replace occupancy map with obstacles and walls (NOT IMPLEMENTED YET)"/>
 
   <!-- ___________ PARAMS ___________ -->
   <param name="use_sim_time" value="true"/>
@@ -109,7 +109,7 @@
     <arg name="show_rviz" default="$(arg show_rviz)" />
     <arg name="headless" default="false" />
     <arg name="gui" default="true" />
-    <arg name="world" default="$(arg world_file)" />
+    <arg name="world" value="$(arg world_file)"/>
     <arg name="pedsim" value="$(arg pedsim)"/>
   </include>
 
