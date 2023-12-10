@@ -1,7 +1,7 @@
 from enum import Enum
 import math
 import random
-from typing import Any, Callable, Optional
+from typing import Any, Callable, List, Optional, TypeVar, TypedDict
 
 import rospy
 from task_generator.shared import Namespace, rosparam_get
@@ -11,38 +11,7 @@ class Defaults:
         no_of_episodes = 5
 
 
-class _Constants:
-
-    @property
-    def GOAL_TOLERANCE_RADIUS(self):
-        return rosparam_get(float, "goal_radius", 1.0)
-    
-    @property
-    def GOAL_TOLERANCE_ANGLE(self):
-        return rosparam_get(float, "goal_tolerance_angle", 30 * math.pi / 180)
-    
-    @property
-    def TIMEOUT(self):
-        return rosparam_get(float, "timeout", 3*60)  # 3 min
-    
-    @property
-    def WAIT_FOR_SERVICE_TIMEOUT(self):
-        return rosparam_get(float, "timeout_wait_for_service", 60)  # 60 secs
-    
-    @property
-    def MAX_RESET_FAIL_TIMES(self):
-        return rosparam_get(int, "max_reset_fail_times", 10)
-
-    class ObstacleManager:
-        DYNAMIC_OBSTACLES = 15
-        STATIC_OBSTACLES = 15
-        INTERACTIVE_OBSTACLES = 15
-
-        OBSTACLE_MAX_RADIUS = 0.6
-
-    class RobotManager:
-        SPAWN_ROBOT_SAFE_DIST = 0.25
-
+class Constants:
     class Simulator(Enum):
         FLATLAND = "flatland"
         GAZEBO = "gazebo"
@@ -65,37 +34,59 @@ class _Constants:
         GUIDED = "guided"
         EXPLORE = "explore"
 
-    class MapGenerator:
-        NODE_NAME = "map_generator"
-        MAP_FOLDER_NAME = "dynamic_map"
 
-    class Random:
-        MIN_DYNAMIC_OBS = 1
-        MAX_DYNAMIC_OBS = 4
-        MIN_STATIC_OBS = 0
-        MAX_STATIC_OBS = 0
-        MIN_INTERACTIVE_OBS = 0
-        MAX_INTERACTIVE_OBS = 0
+def reconfigure():
+    class Config:
+        class General:
+            WAIT_FOR_SERVICE_TIMEOUT = rosparam_get(float, "timeout_wait_for_service", 60)  # 60 secs
+            
+        class Robot:
+            GOAL_TOLERANCE_RADIUS = rosparam_get(float, "goal_radius", 1.0)
+            GOAL_TOLERANCE_ANGLE = rosparam_get(float, "goal_tolerance_angle", 30 * math.pi / 180)
+            TIMEOUT = rosparam_get(float, "timeout", 3*60)  # 3 min
+            MAX_RESET_FAIL_TIMES = rosparam_get(int, "max_reset_fail_times", 10)
+            SPAWN_ROBOT_SAFE_DIST = 0.25
 
-    class Scenario:
-        RESETS_DEFAULT = 5
+        class Obstacles:
+            MIN_DYNAMIC_OBS = rosparam_get(int, "~configuration/task_mode/random/interactive/min", 0)
+            MAX_DYNAMIC_OBS = rosparam_get(int, "~configuration/task_mode/random/interactive/max", 0)
 
-    PLUGIN_FULL_RANGE_LASER = {
-        "type": "Laser",
-        "name": "full_static_laser",
-        "frame": "full_laser",
-        "topic": "full_scan",
-        "body": "link_base",
-        "broadcast_tf": "true",
-        "origin": [0, 0, 0],
-        "range": 2.0,
-        "angle": {"min": -3.14, "max": 3.14, "increment": 0.01745},
-        "noise_std_dev": 0.0,
-        "update_rate": 10,
-    }
+            MIN_STATIC_OBS = rosparam_get(int, "~configuration/task_mode/random/static/min", 0)
+            MAX_STATIC_OBS = rosparam_get(int, "~configuration/task_mode/random/static/max", 0)
 
-#TODO make everything dynamic_reconfigure
-Constants = _Constants()
+            MIN_INTERACTIVE_OBS = rosparam_get(int, "~configuration/task_mode/random/interactive/min", 0)
+            MAX_INTERACTIVE_OBS = rosparam_get(int, "~configuration/task_mode/random/interactive/max", 0)
+
+            MODELS_DYNAMIC_OBSTACLES: List[str] = rosparam_get(list, "~configuration/task_mode/random/dynamic/models", [])
+            MODELS_INTERACTIVE_OBSTACLES: List[str] = rosparam_get(list, "~configuration/task_mode/random/interactive/models", [])
+            MODELS_STATIC_OBSTACLES: List[str] = rosparam_get(list, "~configuration/task_mode/random/static/models", [])
+
+            OBSTACLE_MAX_RADIUS = 15
+
+        class MapGenerator:
+            NODE_NAME = "map_generator"
+            MAP_FOLDER_NAME = "dynamic_map"
+            
+        class Scenario:
+            RESETS_DEFAULT = 5
+
+        PLUGIN_FULL_RANGE_LASER = {
+            "type": "Laser",
+            "name": "full_static_laser",
+            "frame": "full_laser",
+            "topic": "full_scan",
+            "body": "link_base",
+            "broadcast_tf": "true",
+            "origin": [0, 0, 0],
+            "range": 2.0,
+            "angle": {"min": -3.14, "max": 3.14, "increment": 0.01745},
+            "noise_std_dev": 0.0,
+            "update_rate": 10,
+        }
+
+    return Config
+
+Config = reconfigure()
 
 
 class FlatlandRandomModel:

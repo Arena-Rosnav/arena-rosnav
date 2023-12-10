@@ -1,7 +1,7 @@
 from typing import Generator, Optional
 
 
-from task_generator.constants import Constants
+from task_generator.constants import Config, Constants
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.tasks.base_task import BaseTask
 from task_generator.tasks.utils import ITF_Random, RandomList

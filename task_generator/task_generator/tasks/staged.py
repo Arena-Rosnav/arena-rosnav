@@ -2,12 +2,12 @@ from typing import Optional
 
 import rospy
 import os
-from task_generator.constants import Constants
+from task_generator.constants import Config, Constants
 from task_generator.tasks.base_task import BaseTask
 from task_generator.tasks.random import RandomTask
 from task_generator.tasks.task_factory import TaskFactory
 
-from task_generator.constants import Constants
+from task_generator.constants import Config
 from task_generator.tasks.utils import StageIndex, ITF_Staged
 from task_generator.utils import rosparam_get
 

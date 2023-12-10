@@ -9,7 +9,7 @@ import rospkg
 import rospy
 import yaml
 from rospkg import RosPack
-from task_generator.constants import Constants, Defaults
+from task_generator.constants import Config, Constants, Defaults
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
 from task_generator.manager.entity_manager.pedsim_manager import PedsimManager

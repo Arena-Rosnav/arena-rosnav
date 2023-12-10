@@ -7,7 +7,7 @@ import rospy
 import rosgraph_msgs.msg as rosgraph_msgs
 import std_msgs.msg as std_msgs
 
-from task_generator.constants import Constants
+from task_generator.constants import Config
 from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.obstacle_manager import ObstacleManager
@@ -134,7 +134,7 @@ class BaseTask(Props_):
 
     @property
     def is_done(self) -> bool:
-        if self.clock.clock.secs - self.last_reset_time > Constants.TIMEOUT:
+        if self.clock.clock.secs - self.last_reset_time > Config.Robot.TIMEOUT:
             return True
 
         for manager in self.robot_managers:

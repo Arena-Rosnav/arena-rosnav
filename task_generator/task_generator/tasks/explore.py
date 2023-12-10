@@ -6,7 +6,7 @@ import genpy
 import rospy
 
 
-from task_generator.constants import Constants
+from task_generator.constants import Config, Constants
 from task_generator.shared import PositionOrientation
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.tasks.base_task import BaseTask
@@ -138,7 +138,7 @@ class ExploreTask(BaseTask):
                 waypoint = self.world_manager.get_position_on_map(safe_dist=robot._robot_radius, forbid=False)
                 self._set_goal(i, PositionOrientation(*waypoint, random.random()*2*np.pi))
             
-            if (self.clock.clock - self._timeouts[i]).secs > Constants.TIMEOUT:
+            if (self.clock.clock - self._timeouts[i]).secs > Config.Robot.TIMEOUT:
                 waypoint = self.world_manager.get_position_on_map(safe_dist=robot._robot_radius, forbid=False)
                 self._set_position(i, PositionOrientation(*waypoint, random.random()*2*np.pi))
 

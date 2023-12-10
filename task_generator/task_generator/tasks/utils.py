@@ -26,7 +26,7 @@ import yaml
 import rospy
 import rospkg
 import rospy
-from task_generator.constants import Constants
+from task_generator.constants import Config
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import WorldMap
 from task_generator.shared import (
@@ -313,32 +313,14 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
         ITF_Base.__init__(self, TASK=TASK)
 
     def load_obstacle_list(self) -> RandomObstacleList:
-        def str_to_RandomList(value: list) -> RandomList:
+        def str_to_RandomList(value: List[str]) -> RandomList:
             # TODO optional probability weighting of models in config
             return dict.fromkeys(value, 1)
 
         return RandomObstacleList(
-            static=str_to_RandomList(
-                value=rosparam_get(
-                    list,
-                    "~configuration/task_mode/random/static/models",
-                    self.PROPS.model_loader.models,
-                )
-            ),
-            interactive=str_to_RandomList(
-                value=rosparam_get(
-                    list,
-                    "~configuration/task_mode/random/interactive/models",
-                    self.PROPS.model_loader.models,
-                )
-            ),
-            dynamic=str_to_RandomList(
-                value=rosparam_get(
-                    list,
-                    "~configuration/task_mode/random/dynamic/models",
-                    self.PROPS.dynamic_model_loader.models,
-                )
-            ),
+            static=str_to_RandomList(Config.Obstacles.MODELS_STATIC_OBSTACLES or self.PROPS.model_loader.models),
+            interactive=str_to_RandomList(Config.Obstacles.MODELS_INTERACTIVE_OBSTACLES or self.PROPS.model_loader.models),
+            dynamic=str_to_RandomList(Config.Obstacles.MODELS_DYNAMIC_OBSTACLES or self.PROPS.dynamic_model_loader.models),
         )
 
     def load_obstacle_ranges(self) -> RandomObstacleRanges:
@@ -349,7 +331,7 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                         rosparam_get(
                             int,
                             "~configuration/task_mode/random/static/min",
-                            Constants.Random.MIN_STATIC_OBS,
+                            Config.Obstacles.MIN_STATIC_OBS,
                         )
                     )
                 ),
@@ -358,7 +340,7 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                         rosparam_get(
                             int,
                             "~configuration/task_mode/random/static/max",
-                            Constants.Random.MAX_STATIC_OBS,
+                            Config.Obstacles.MAX_STATIC_OBS,
                         )
                     )
                 ),
@@ -369,7 +351,7 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                         rosparam_get(
                             int,
                             "~configuration/task_mode/random/interactive/min",
-                            Constants.Random.MIN_INTERACTIVE_OBS,
+                            Config.Obstacles.MIN_INTERACTIVE_OBS,
                         )
                     )
                 ),
@@ -378,7 +360,7 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                         rosparam_get(
                             int,
                             "~configuration/task_mode/random/interactive/max",
-                            Constants.Random.MAX_INTERACTIVE_OBS,
+                            Config.Obstacles.MAX_INTERACTIVE_OBS,
                         )
                     )
                 ),
@@ -389,7 +371,7 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                         rosparam_get(
                             int,
                             "~configuration/task_mode/random/dynamic/min",
-                            Constants.Random.MIN_DYNAMIC_OBS,
+                            Config.Obstacles.MIN_DYNAMIC_OBS,
                         )
                     )
                 ),
@@ -398,7 +380,7 @@ class ITF_Random(ITF_Obstacle, ITF_Base):
                         rosparam_get(
                             int,
                             "~configuration/task_mode/random/dynamic/max",
-                            Constants.Random.MAX_DYNAMIC_OBS,
+                            Config.Obstacles.MAX_DYNAMIC_OBS,
                         )
                     )
                 ),
@@ -812,9 +794,9 @@ class ITF_DynamicMap(ITF_Base):
 
     def __check_dynamic_map(self):
         map_name = rosparam_get(str, ITF_DynamicMap.PARAM_MAP_FILE, "")
-        if map_name != Constants.MapGenerator.MAP_FOLDER_NAME:
+        if map_name != Config.MapGenerator.MAP_FOLDER_NAME:
             raise ValueError(
-                f"'DYNAMIC_MAP_RANDOM' task can only be used with dynamic map, otherwise the MapGenerator isn't used. (expected: {Constants.MapGenerator.MAP_FOLDER_NAME}, got: {map_name})"
+                f"'DYNAMIC_MAP_RANDOM' task can only be used with dynamic map, otherwise the MapGenerator isn't used. (expected: {Config.MapGenerator.MAP_FOLDER_NAME}, got: {map_name})"
             )
 
     def update_map(self, dist_map: Optional[map_distance_server_srvs.GetDistanceMapResponse] = None):
