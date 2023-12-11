@@ -10,6 +10,7 @@
     <arg name="namespace" />
     <arg name="frame" default="" />
 
+    <arg name="train_mode" if="$(eval arg('local_planner') == 'rosnav')" />
     <arg name="agent_name" if="$(eval arg('local_planner') == 'rosnav')" />
 
     <include file="$(find arena_bringup)/launch/testing/move_base/mbf_$(arg local_planner).launch">
@@ -18,6 +19,8 @@
         <arg name="speed" value="$(arg speed)" />
 
         <arg name="agent_name" value="$(arg agent_name)"
+            if="$(eval arg('local_planner') == 'rosnav')" />
+        <arg name="train_mode" value="$(arg train_mode)"
             if="$(eval arg('local_planner') == 'rosnav')" />
 
         <arg name="namespace" value="$(arg namespace)" />

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+  <!-- CONSTANTS -->
+  <param name="SIMULATOR" value="flatland" />
+  <param name="local_planner" value="rosnav" />
+
+
   <arg name="model" default="burger"      doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real]"/>
 
   <!-- Here are the argument that may be frequently changed -->
@@ -57,6 +62,7 @@
   <env name="ROSCONSOLE_FORMAT" value="[${severity} ${time} ${logger}]: ${message}" />
   <include file="$(find arena_bringup)/launch/training/single_env_training.launch">
     <arg name="ns" value="eval_sim" />
+    <arg name="model" value="$(arg model)" />
   </include>
 
   <include file="$(find arena_bringup)/launch/training/start_envs.launch">
