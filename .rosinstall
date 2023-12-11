@@ -18,14 +18,18 @@
     version: update
 
 - git:
-    local-name: ../utils-extern/ros/navigation/msgs/ford
+    local-name: ../utils-extern/ros/ford_msgs
     uri: https://bitbucket.org/acl-swarm/ford_msgs/src/master/
     version: master
 
-    # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../utils-extern/ros/pedsim_ros
-    uri: https://github.com/Arena-Rosnav/pedsim_ros.git
+    uri: https://github.com/arena-rosnav/pedsim_ros.git
+    version: master
+
+- git:
+    local-name: ../utils-extern/ros/navigation
+    uri: https://github.com/arena-rosnav/navigation.git
     version: master
 
 - git:
@@ -49,8 +53,8 @@
 
 - git:
     local-name: ../arena-simulation-setup
-    uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: dev
+    uri: https://github.com/arena-rosnav/arena-simulation-setup.git
+    version: master
 
 - git:
     local-name: ../arena-evaluation
