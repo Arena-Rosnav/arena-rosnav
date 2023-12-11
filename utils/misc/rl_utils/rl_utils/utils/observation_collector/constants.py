@@ -11,6 +11,7 @@ class TOPICS:
     GLOBALPLAN = "global_plan"
 
     PEDSIM_STATES = "pedsim_simulator/simulated_agents"
+    PEDSIM_SEMANTIC = "pedsim_agents/semantic"
 
 
 class OBS_DICT_KEYS:
