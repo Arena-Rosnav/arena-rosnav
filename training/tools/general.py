@@ -118,7 +118,7 @@ def get_paths(config: dict) -> dict:
 
 
 def wait_for_nodes(
-    with_ns: bool, n_envs: int, timeout: int = 30, nodes_per_ns: int = 3
+    with_ns: bool, n_envs: int, timeout: int = 30, nodes_per_ns: int = 2
 ) -> None:
     """
     Checks for timeout seconds if all nodes to corresponding namespace are online.
