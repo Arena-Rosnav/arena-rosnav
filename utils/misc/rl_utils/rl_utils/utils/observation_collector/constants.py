@@ -1,5 +1,4 @@
-MAX_WAIT = 2  # in seconds
-SLEEP = 0.2  # in seconds
+from pedsim_agents.utils import SemanticAttribute
 
 
 class TOPICS:
@@ -22,6 +21,8 @@ class OBS_DICT_KEYS:
     LAST_ACTION = "last_action"
     GLOBAL_PLAN = "global_plan"
 
-    PEDSIM_POSES = "pedsim_poses"
-    PEDSIM_TWISTS = "pedsim_twists"
-    PEDSIM_TYPES = "pedsim_types"
+    PEDESTRIAN_LOCATION = SemanticAttribute.PEDESTRIAN_LOCATION.value
+    PEDESTRIAN_TYPE = SemanticAttribute.PEDESTRIAN_TYPE.value
+    PEDESTRIAN_MOVING = SemanticAttribute.PEDESTRIAN_MOVING.value
+    PEDESTRIAN_VEL_X = SemanticAttribute.PEDESTRIAN_VEL_X.value
+    PEDESTRIAN_VEL_Y = SemanticAttribute.PEDESTRIAN_VEL_Y.value
