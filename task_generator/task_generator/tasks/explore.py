@@ -2,6 +2,7 @@ import random
 from typing import Dict, Generator, List, Optional
 
 import numpy as np
+import genpy
 import rospy
 
 
@@ -16,8 +17,8 @@ import geometry_msgs.msg as geometry_msgs
 from tf.transformations import euler_from_quaternion
 
 
-@TaskFactory.register(Constants.TaskMode.GUIDED)
-class GuidedTask(BaseTask):
+@TaskFactory.register(Constants.TaskMode.EXPLORE)
+class ExploreTask(BaseTask):
     """
         The random task spawns static and dynamic
         obstacles on every reset and will create
@@ -35,14 +36,12 @@ class GuidedTask(BaseTask):
     _interactive_obstacles: RandomList
     _dynamic_obstacles: RandomList
 
-    _is_done: bool
+    _timeouts: Dict[int, genpy.Time]
 
-    TOPIC_ADD_WAYPOINT = "/goalpose"
-    TOPIC_RESET = "/clicked_point"
+    TOPIC_SET_POSITION = "/initialpose"
+    TOPIC_SET_GOAL = "/goalpose"
+    TOPIC_NEW_SCENARIO = "/clicked_point"
     PARAM_WAYPOINTS = "guided_waypoints"
-
-    _waypoints: List[PositionOrientation]
-    _waypoint_states: Dict[str, int]
 
     def __init__(self, **kwargs):
         BaseTask.__init__(self, **kwargs)
@@ -61,18 +60,16 @@ class GuidedTask(BaseTask):
             self._interactive_obstacles, \
             self._dynamic_obstacles = self.itf_random.load_obstacle_list()
 
-        self.iters = 0
-        self._is_done = False
+        self._timeouts = dict()
 
-        self._waypoints = []
-        self._waypoint_states = {
-            robot.name: 0 for robot in self.robot_managers}
-        self._reset_waypoints()
+        self._cb_new_scenario()
 
-        rospy.Subscriber(self.TOPIC_ADD_WAYPOINT,
-                         geometry_msgs.PoseStamped, self._add_waypoint)
-        rospy.Subscriber(self.TOPIC_RESET,
-                         geometry_msgs.PointStamped, self._reset_waypoints)
+        rospy.Subscriber(self.TOPIC_SET_POSITION,
+                         geometry_msgs.PoseWithCovarianceStamped, self._cb_set_position)
+        rospy.Subscriber(self.TOPIC_SET_GOAL,
+                         geometry_msgs.PoseStamped, self._cb_set_goal)
+        rospy.Subscriber(self.TOPIC_NEW_SCENARIO,
+                         geometry_msgs.PointStamped, self._cb_new_scenario)
 
     @BaseTask.reset_helper(parent=BaseTask)
     def reset(
@@ -127,7 +124,8 @@ class GuidedTask(BaseTask):
                 robot_positions=[(pos, pos) for pos in robot_positions]
             ))
 
-            self.iters += 1
+            for i in range(len(self.robot_managers)):
+                self._reset_timeout(i)
 
             return False
 
@@ -135,22 +133,47 @@ class GuidedTask(BaseTask):
 
     @property
     def is_done(self) -> bool:
-
-        for robot in self.robot_managers:
+        for i, robot in enumerate(self.robot_managers):
             if robot.is_done:
-                waypoints = self._waypoints or [None]
-                self._waypoint_states[robot.name] += 1
-                self._waypoint_states[robot.name] %= len(waypoints)
-                robot.reset(
-                    start_pos=None, goal_pos=waypoints[self._waypoint_states[robot.name]])
+                waypoint = self.world_manager.get_position_on_map(safe_dist=robot._robot_radius, forbid=False)
+                self._set_goal(i, PositionOrientation(*waypoint, random.random()*2*np.pi))
+            
+            if (self.clock.clock - self._timeouts[i]).secs > Constants.TIMEOUT:
+                waypoint = self.world_manager.get_position_on_map(safe_dist=robot._robot_radius, forbid=False)
+                self._set_position(i, PositionOrientation(*waypoint, random.random()*2*np.pi))
 
-        if self._is_done:
-            self._is_done = False
-            return True
         return False
+    
+    def _reset_timeout(self, index: int):
+        self._timeouts[index] = self.clock.clock
 
-    def _add_waypoint(self, pos: geometry_msgs.PoseStamped):
-        waypoint = PositionOrientation(
+    def _set_position(self, index: int, position: PositionOrientation):
+        self._reset_timeout(index)
+        self.robot_managers[index].reset(position, None)
+
+    def _set_goal(self, index: int, position: PositionOrientation):
+        self._reset_timeout(index)
+        self.robot_managers[index].reset(None, position)
+
+    def _cb_set_position(self, pos: geometry_msgs.PoseWithCovarianceStamped):
+        poso = PositionOrientation(
+            pos.pose.pose.position.x,
+            pos.pose.pose.position.y,
+            euler_from_quaternion(
+                [
+                    pos.pose.pose.orientation.x,
+                    pos.pose.pose.orientation.y,
+                    pos.pose.pose.orientation.z,
+                    pos.pose.pose.orientation.w
+                ]
+            )[2]
+        )
+
+        for i in range(len(self.robot_managers)):
+            self._set_position(i, poso)
+
+    def _cb_set_goal(self, pos: geometry_msgs.PoseStamped):
+        poso = PositionOrientation(
             pos.pose.position.x,
             pos.pose.position.y,
             euler_from_quaternion(
@@ -163,18 +186,8 @@ class GuidedTask(BaseTask):
             )[2]
         )
 
-        self._waypoints.append(waypoint)
-        rospy.set_param(self.PARAM_WAYPOINTS, [tuple(wp) for wp in self._waypoints])
+        for i in range(len(self.robot_managers)):
+            self._set_goal(i, poso)
 
-        if len(self._waypoints) == 1:
-            for robot in self.robot_managers:
-                robot.reset(None, waypoint)
-
-    def _reset_waypoints(self, *args, **kwargs):
-        for robot in self._waypoint_states:
-            self._waypoint_states[robot] = 0
-
-        self._waypoints = []
-        rospy.set_param(self.PARAM_WAYPOINTS, self._waypoints)
-
+    def _cb_new_scenario(self, *args, **kwargs):
         self.reset(lambda: None)

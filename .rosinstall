@@ -24,13 +24,13 @@
 
 - git:
     local-name: ../utils-extern/ros/pedsim_ros
-    uri: https://github.com/voshch/pedsim_ros.git
-    version: semantic
+    uri: https://github.com/arena-rosnav/pedsim_ros.git
+    version: master
 
 - git:
     local-name: ../utils-extern/ros/navigation
-    uri: https://github.com/voshch/navigation.git
-    version: semantic
+    uri: https://github.com/arena-rosnav/navigation.git
+    version: master
 
 - git:
     local-name: ../utils-extern/misc/robots
@@ -53,8 +53,8 @@
 
 - git:
     local-name: ../arena-simulation-setup
-    uri: https://github.com/voshch/arena-simulation-setup.git
-    version: semantic
+    uri: https://github.com/arena-rosnav/arena-simulation-setup.git
+    version: master
 
 - git:
     local-name: ../arena-evaluation

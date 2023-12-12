@@ -22,7 +22,6 @@ from task_generator.manager.entity_manager.utils import (
     YAMLUtil,
     walls_to_obstacle,
 )
-from task_generator.manager.utils import WorldMap
 from task_generator.shared import (
     DynamicObstacle,
     Model,
@@ -299,7 +298,8 @@ class PedsimManager(EntityManager):
         else:
             rospy.logwarn("spawn walls failed!")
 
-        rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), True)
+        if rosparam_get(str, "world_file", "") == "generated_world":
+            rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), True)
         return
 
     def spawn_obstacles(self, obstacles):
