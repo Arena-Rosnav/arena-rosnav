@@ -6,6 +6,7 @@ from .observation_units.base_collector_unit import BaseCollectorUnit
 from .observation_units.collector_unit import CollectorUnit
 from .observation_units.globalplan_collector_unit import GlobalplanCollectorUnit
 from .observation_units.pedsim_collector_unit import PedsimStateCollectorUnit
+from .observation_units.aggregate_collector_unit import AggregateCollectorUnit
 
 
 class ObservationManager:
@@ -35,7 +36,7 @@ class ObservationManager:
         self._obs_structur = obs_structur or [
             BaseCollectorUnit,
             GlobalplanCollectorUnit,
-            PedsimStateCollectorUnit,
+            AggregateCollectorUnit,
         ]
         self._observation_units = self._instantiate_units()
         self._init_units()
