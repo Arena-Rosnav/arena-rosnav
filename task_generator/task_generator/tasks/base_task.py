@@ -120,12 +120,14 @@ class BaseTask(Props_):
             rospy.set_param(self.PARAM_RESETTING, False)
             self.__reset_end.publish()
             self.last_reset_time = self.clock.clock.secs
-            self._reset_semaphore = False
 
         except rospy.ServiceException as e:
             rospy.logerr(repr(e))
             rospy.signal_shutdown("Reset error!")
             raise Exception("reset error!")
+        
+        finally:
+            self._reset_semaphore = False
             
 
         return return_val
