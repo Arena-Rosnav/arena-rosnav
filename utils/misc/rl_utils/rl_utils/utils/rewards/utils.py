@@ -22,10 +22,10 @@ def load_rew_fnc(config_name: str) -> dict:
 
 
 def min_distance_from_pointcloud(point_cloud: np.ndarray):
-    # Compute the Euclidean distance between each point and the origin
-    distances = np.sqrt(
+    return np.min(distances_from_pointcloud(point_cloud))
+
+
+def distances_from_pointcloud(point_cloud: np.ndarray):
+    return np.sqrt(
         point_cloud["x"] ** 2 + point_cloud["y"] ** 2 + point_cloud["z"] ** 2
     )
-
-    # Find the minimum distance
-    return np.min(distances)

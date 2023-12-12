@@ -4,6 +4,7 @@ import numpy as np
 import rospy
 from costmap_2d.srv import GetDump
 from pedsim_agents.utils import SemanticAttribute
+from rl_utils.utils.rewards.utils import distances_from_pointcloud
 from task_generator.shared import Namespace
 
 from .collector_unit import CollectorUnit
@@ -34,15 +35,23 @@ class AggregateCollectorUnit(CollectorUnit):
         semantic_layers = response.semantic_layers[0].layers
         semantic_info = {layer.type: layer.points for layer in semantic_layers}
 
+        point_cloud = AggregateCollectorUnit.cloudpoint_msg_to_numpy(
+            response.obstacle_layers[0].scans[0]
+        )
         obs_dict.update(
             {
-                "point_cloud": AggregateCollectorUnit.cloudpoint_msg_to_numpy(
-                    response.obstacle_layers[0].scans[0]
-                ),
+                # "laser_scan": AggregateCollectorUnit.cloudpoint_to_laser_scan(
+                #     point_cloud
+                # ),
+                "point_cloud": point_cloud,
                 **semantic_info,
             }
         )
         return obs_dict
+
+    @staticmethod
+    def cloudpoint_to_laser_scan(cloud_point: np.ndarray) -> np.ndarray:
+        return distances_from_pointcloud(cloud_point)
 
     @staticmethod
     def cloudpoint_msg_to_numpy(msg) -> np.ndarray:
