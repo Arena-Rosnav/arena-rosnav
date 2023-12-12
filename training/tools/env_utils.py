@@ -43,8 +43,8 @@ def make_envs(
 
     def _init() -> Union[gym.Env, gym.Wrapper]:
         robot_model = rospy.get_param("model")
-        train_ns = f"sim_{rank + 1}/{robot_model}" if with_ns else ""
-        eval_ns = f"eval_sim/{robot_model}" if with_ns else ""
+        train_ns = f"/sim_{rank + 1}" if with_ns else ""
+        eval_ns = f"/eval_sim" if with_ns else ""
 
         curriculum_config = config["callbacks"]["training_curriculum"]
         log_config = config["monitoring"]["cmd_line_logging"]

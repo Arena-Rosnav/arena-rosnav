@@ -138,9 +138,6 @@ class RobotManager:
 
     @property
     def name(self) -> str:
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            return ""
-
         return self._robot.name
 
     @property
