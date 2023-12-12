@@ -97,14 +97,8 @@ class FlatlandEnv(gymnasium.Env):
                 goal_radius=rosparam_get(float, "goal_radius", 0.3),
             )
 
-        # action agent publisher
-        if self._is_train_mode:
             self.agent_action_pub = rospy.Publisher(
                 self.ns("cmd_vel"), Twist, queue_size=1
-            )
-        else:
-            self.agent_action_pub = rospy.Publisher(
-                self.ns("cmd_vel_pub"), Twist, queue_size=1
             )
 
         # service clients
@@ -127,13 +121,6 @@ class FlatlandEnv(gymnasium.Env):
         self._last_action = np.array([0, 0, 0])  # linear x, linear y, angular z
 
         # for extended eval
-        self._action_frequency = 1 / rospy.get_param("/robot_action_rate", 10)
-        self._last_robot_pose = None
-        self._distance_travelled = 0
-        self._safe_dist_counter = 0
-        self._collisions = 0
-        self._in_crash = False
-
         self.last_mean_reward = 0
         self.mean_reward = [0, 0]
         self.step_count_hist = [0] * self._log_last_n_eps
@@ -239,6 +226,7 @@ class FlatlandEnv(gymnasium.Env):
 
         if self._is_train_mode:
             self.call_service_takeSimStep()
+            # self.call_service_takeSimStep()
 
         obs_dict = self.observation_collector.get_observations()
         info_dict = {}
