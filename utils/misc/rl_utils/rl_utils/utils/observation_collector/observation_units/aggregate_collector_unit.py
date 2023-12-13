@@ -3,7 +3,6 @@ from typing import Any, Dict
 import numpy as np
 import rospy
 from costmap_2d.srv import GetDump
-from pedsim_agents.utils import SemanticAttribute
 from rl_utils.utils.rewards.utils import distances_from_pointcloud
 from task_generator.shared import Namespace
 
