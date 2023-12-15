@@ -17,11 +17,12 @@ from typing import (
 )
 
 import enum
-
+import yaml
 import rospy
 
 T = TypeVar("T")
 _unspecified = rospy.client._Unspecified()
+
 
 def rosparam_get(cast: Type[T], param_name: str, default=_unspecified, strict: bool = False) -> T:
     val = rospy.get_param(param_name=param_name, default=default)
@@ -39,7 +40,6 @@ def rosparam_get(cast: Type[T], param_name: str, default=_unspecified, strict: b
     return val
 
 
-
 class Namespace(str):
     def __call__(self, *args: str) -> Namespace:
         return Namespace(os.path.join(self, *args))
@@ -54,6 +54,9 @@ class Namespace(str):
 
     def remove_double_slash(self) -> Namespace:
         return Namespace(self.replace("//", "/"))
+
+
+yaml.add_representer(Namespace, str) #type: ignore
 
 
 # TODO deprecate this in favor of Model.EMPTY

@@ -3,7 +3,7 @@ from typing import Optional
 import rospy
 import os
 from task_generator.constants import Config, Constants
-from task_generator.tasks.base_task import BaseTask
+from task_generator.tasks.task import Task
 from task_generator.tasks.random import RandomTask
 from task_generator.tasks.task_factory import TaskFactory
 
@@ -54,7 +54,7 @@ class StagedTask(RandomTask):
         self.itf_staged.on_change_stage = lambda stage: self.reset(
             callback=lambda: None, stage=stage, **kwargs)
 
-    @BaseTask.reset_helper(parent=RandomTask)
+    @RandomTask.reset_chain()
     def reset(self, stage: Optional[StageIndex] = None, **kwargs):
         if stage is None:
             stage = self.itf_staged.stage_index

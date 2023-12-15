@@ -295,7 +295,7 @@ class WorldManager:
                                 int((i % 5) * self._shape[0]/5)
                             )
                         ) for i in range(to_produce)]
-                    rospy.logerr(f"couldn't find enough empty cells for {to_produce} requests")
+                    rospy.logerr(f"Couldn't find enough empty cells for {to_produce} requests")
                 
                 finally:
                     return result

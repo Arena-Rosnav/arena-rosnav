@@ -7,7 +7,7 @@ from rospkg import RosPack
 
 from task_generator.constants import Constants
 from task_generator.tasks.task_factory import TaskFactory
-from task_generator.tasks.base_task import BaseTask
+from task_generator.tasks.task import Task
 from task_generator.shared import DynamicObstacle, Obstacle, PositionOrientation
 
 import xml.etree.ElementTree as ET
@@ -32,7 +32,7 @@ def get_attrib(element: ET.Element, attribute: str, default: Optional[str] = Non
 
 
 @TaskFactory.register(Constants.TaskMode.PARAMETRIZED)
-class ParametrizedTask(BaseTask):
+class ParametrizedTask(Task):
     """
         The random task spawns static and dynamic
         obstacles on every reset and will create
@@ -45,12 +45,12 @@ class ParametrizedTask(BaseTask):
     itf_obstacle: ITF_Obstacle
 
     def __init__(self, **kwargs):
-        BaseTask.__init__(self, **kwargs)
+        Task.__init__(self, **kwargs)
         self.itf_scenario = ITF_Scenario(self)
         self.itf_random = ITF_Random(self)
         self.itf_obstacle = ITF_Obstacle(self)
 
-    @BaseTask.reset_helper(parent=BaseTask)
+    @Task.reset_chain()
     def reset(self, **kwargs):
 
         def callback():
@@ -120,7 +120,7 @@ class ParametrizedTask(BaseTask):
                     int(get_attrib(config, "max"))
                 )
             ):
-                obstacle = self.itf_obstacle.create_obstacle(
+                obstacle = self.create_obstacle(
                     name=f'S_{get_attrib(config, "name")}_{i+1}',
                     model=self.model_loader.bind(get_attrib(config, "model"))
                 )

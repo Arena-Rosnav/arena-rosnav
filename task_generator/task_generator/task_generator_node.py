@@ -22,7 +22,8 @@ from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
 from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
 from task_generator.simulators.simulator_factory import SimulatorFactory
-from task_generator.tasks import BaseTask, TaskFactory
+from task_generator.tasks import Task
+from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils import ModelLoader, Utils
 
 from task_generator.manager.world_manager import WorldManager
@@ -76,14 +77,13 @@ class TaskGenerator:
     Will initialize and reset all tasks. The task to use is read from the `/task_mode` param.
     """
 
-    _task_mode: Constants.TaskMode
     _entity_mode: Constants.EntityManager
     _auto_reset: bool
 
     _namespace: Namespace
     _env_wrapper: BaseSimulator
     _entity_manager: EntityManager
-    _task: BaseTask
+    _task: Task
 
     _pub_scenario_reset: rospy.Publisher
     _pub_scenario_finished: rospy.Publisher
@@ -95,8 +95,8 @@ class TaskGenerator:
     def __init__(self, namespace: str = "/") -> None:
         self._namespace = Namespace(namespace)
 
-        # ParamsW
-        self._task_mode = Constants.TaskMode(rosparam_get(str, "task_mode"))
+        # Params
+
         self._entity_mode = Constants.EntityManager(
             rosparam_get(str, "entity_manager"))
         self._auto_reset = rosparam_get(bool, "~auto_reset", True)
@@ -119,8 +119,6 @@ class TaskGenerator:
         self._env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())(
             namespace=self._namespace.simulation_ns
         )
-
-        rospy.loginfo(f"Launching task mode: {self._task_mode}")
 
         # Loaders
         self._robot_loader = ModelLoader(
@@ -215,8 +213,22 @@ class TaskGenerator:
         # - Create a robot manager
         # - Launch the robot.launch file
 
+        tm_robots = Constants.TaskMode.TM_Robots(rosparam_get(str, "tm_robots"))
+        tm_obstacles = Constants.TaskMode.TM_Obstacles(rosparam_get(str, "tm_obstacles"))
+        tm_modules = rosparam_get(list, "tm_modules", [])
+
+        tm_modules.append(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES.value)
+        tm_modules.append(Constants.TaskMode.TM_Module.RVIZ_UI.value)
+
+        if rosparam_get(str, "map_file", "") == "dynamic_map":
+            tm_modules.append(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
+
         rospy.logdebug("utils calls task factory")
-        task = TaskFactory.instantiate(self._task_mode)(
+        task = TaskFactory.combine(
+                robots=tm_robots,
+                obstacles=tm_obstacles,
+                modules=[Constants.TaskMode.TM_Module(module) for module in tm_modules]
+            )(
             obstacle_manager=obstacle_manager,
             robot_managers=robot_managers,
             world_manager=world_manager,
@@ -288,12 +300,12 @@ class TaskGenerator:
         is_end = self._task.reset(callback=lambda: False, **kwargs)
 
         self._pub_scenario_reset.publish(self._number_of_resets)
-        self._send_end_message_on_end(is_end)
+        #self._send_end_message_on_end(is_end)
 
         self._env_wrapper.after_reset_task()
 
         rospy.loginfo("=============")
-        rospy.loginfo("Task Reseted!")
+        rospy.loginfo("Task Reset!")
         rospy.loginfo("=============")
 
         self._number_of_resets += 1
