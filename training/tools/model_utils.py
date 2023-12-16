@@ -159,7 +159,11 @@ def instantiate_new_model(
 
     if isinstance(agent, BaseAgent):
         ppo_kwargs["policy"] = agent.type.value
-        ppo_kwargs["policy_kwargs"] = agent.get_kwargs()
+        policy_kwargs = agent.get_kwargs()
+        policy_kwargs["features_extractor_kwargs"][
+            "observation_manager"
+        ] = train_env.venv.envs[0].model_space_encoder.observation_space_manager
+        ppo_kwargs["policy_kwargs"] = policy_kwargs
     elif issubclass(agent, ActorCriticPolicy):
         ppo_kwargs["policy"] = agent
     else:

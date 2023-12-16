@@ -20,6 +20,7 @@ class OBS_DICT_KEYS:
     DISTANCE_TO_GOAL = "distance_to_goal"
     LAST_ACTION = "last_action"
     GLOBAL_PLAN = "global_plan"
+    DONE = "is_done"
 
     PEDESTRIAN_LOCATION = SemanticAttribute.PEDESTRIAN_LOCATION.value
     PEDESTRIAN_TYPE = SemanticAttribute.PEDESTRIAN_TYPE.value

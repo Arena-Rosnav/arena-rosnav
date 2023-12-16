@@ -189,10 +189,7 @@ class FlatlandEnv(gymnasium.Env):
         self.step_time[0] += time.time() - start_time
 
         return (
-            self.model_space_encoder.encode_observation(
-                obs_dict,
-                [OBS_DICT_KEYS.LASER, OBS_DICT_KEYS.GOAL, OBS_DICT_KEYS.LAST_ACTION],
-            ),
+            self.model_space_encoder.encode_observation(obs_dict),
             reward,
             done,
             False,
