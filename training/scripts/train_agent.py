@@ -12,30 +12,6 @@ from tools.general import *
 from tools.model_utils import get_ppo_instance, init_callbacks
 from tools.ros_param_distributor import *
 
-"""
-1. X Deploy LSTM and FrameStacking Agents
-2. Barn Maps testing
-3. Metrics for LSTM and FrameStacking Agents
-4. X Collision detection form behind
-5. X More Maps on Barn like Specs (smaller res, smaller maps)
-6. Reward Shaping
-7. LSTM testing
-8. X Reduce observation space
-9. X Discrete Action Space
-10. X Update Observation Space on loading RPPO
-11. ---> Log training episode metrics
-12. See approaches of other teams
-13. ---> Check if Env are paused when Map Generator is running a new map
-"""
-"""
-TODO:
-- X deploy reduced laser encoder
-- X test full map
-- X finish: Discrete Action Space (also deployment)
-- Check saving VecNorm on StackedObs
-6. Reward Shaping
-"""
-
 
 def on_shutdown(model):
     model.env.close()
