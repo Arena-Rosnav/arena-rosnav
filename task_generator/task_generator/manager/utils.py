@@ -63,7 +63,7 @@ class WorldOccupancy:
     
     @staticmethod
     def not_empty(grid: np.ndarray) -> np.ndarray:
-        return np.invert(WorldOccupancy.full(grid))
+        return np.invert(WorldOccupancy.empty(grid))
 
     @staticmethod
     def emptyish(grid: np.ndarray, thresh: Optional[float] = None) -> np.ndarray:
