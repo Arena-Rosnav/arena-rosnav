@@ -80,37 +80,8 @@ class FlatlandEnv(gymnasium.Env):
         # observation collector
         self.observation_collector = ObservationManager(self.ns)
 
-        self.action_space = self.model_space_encoder.get_action_space()
-        self.observation_space = self.model_space_encoder.get_observation_space()
-
         if self._is_train_mode:
-            # instantiate task manager
-            task_generator = TaskGenerator(self.ns)
-            self.task: BaseTask = task_generator._get_predefined_task(**kwargs)
-
-            # reward calculator
-            self.reward_calculator = RewardFunction(
-                rew_func_name=reward_fnc,
-                holonomic=self.model_space_encoder._is_holonomic,
-                robot_radius=self.task.robot_managers[0]._robot_radius,
-                safe_dist=self.task.robot_managers[0].safe_distance,
-                goal_radius=rosparam_get(float, "goal_radius", 0.3),
-            )
-
-            self.agent_action_pub = rospy.Publisher(
-                self.ns("cmd_vel"), Twist, queue_size=1
-            )
-
-        # service clients
-        if self._is_train_mode:
-            self._service_name_step = self.ns.simulation_ns("step_world")
-            # self._sim_step_client = rospy.ServiceProxy(self._service_name_step, StepWorld)
-            self._step_world_publisher = rospy.Publisher(
-                self._service_name_step, StepWorld, queue_size=10
-            )
-            self._step_world_srv = rospy.ServiceProxy(
-                self._service_name_step, Empty, persistent=True
-            )
+            self._setup_env_for_training(reward_fnc, **kwargs)
 
         self._verbose = verbose
         self._log_last_n_eps = log_last_n_eps
@@ -133,6 +104,36 @@ class FlatlandEnv(gymnasium.Env):
         }
         self._done_hist = 3 * [0]
 
+    @property
+    def action_space(self):
+        return self.model_space_encoder.get_action_space()
+
+    @property
+    def observation_space(self):
+        return self.model_space_encoder.get_observation_space()
+
+    def _setup_env_for_training(self, reward_fnc: str, **kwargs):
+        # instantiate task manager
+        task_generator = TaskGenerator(self.ns)
+        self.task: BaseTask = task_generator._get_predefined_task(**kwargs)
+
+        # reward calculator
+        self.reward_calculator = RewardFunction(
+            rew_func_name=reward_fnc,
+            holonomic=self.model_space_encoder._is_holonomic,
+            robot_radius=self.task.robot_managers[0]._robot_radius,
+            safe_dist=self.task.robot_managers[0].safe_distance,
+            goal_radius=rosparam_get(float, "goal_radius", 0.3),
+        )
+
+        self.agent_action_pub = rospy.Publisher(self.ns("cmd_vel"), Twist, queue_size=1)
+
+        # service clients
+        self._service_name_step = self.ns.simulation_ns("step_world")
+        self._step_world_srv = rospy.ServiceProxy(
+            self._service_name_step, Empty, persistent=True
+        )
+
     def _pub_action(self, action: np.ndarray) -> Twist:
         assert len(action) == 3
 
@@ -143,6 +144,12 @@ class FlatlandEnv(gymnasium.Env):
 
         self.agent_action_pub.publish(action_msg)
 
+    def decode_action(self, action: np.ndarray) -> np.ndarray:
+        return self.model_space_encoder.decode_action(action)
+
+    def encode_observation(self, observation, structure=None):
+        return self.model_space_encoder.encode_observation(observation, structure)
+
     def step(self, action: np.ndarray):
         """
         done_reasons:   0   -   exceeded max steps
@@ -152,7 +159,7 @@ class FlatlandEnv(gymnasium.Env):
 
         start_time = time.time()
 
-        decoded_action = self.model_space_encoder.decode_action(action)
+        decoded_action = self.decode_action(action)
         self._pub_action(decoded_action)
 
         if self._is_train_mode:
@@ -189,7 +196,7 @@ class FlatlandEnv(gymnasium.Env):
         self.step_time[0] += time.time() - start_time
 
         return (
-            self.model_space_encoder.encode_observation(obs_dict),
+            self.encode_observation(obs_dict),
             reward,
             done,
             False,
@@ -284,27 +291,3 @@ class FlatlandEnv(gymnasium.Env):
             info["is_success"] = 0
 
         return info, terminated
-
-
-if __name__ == "__main__":
-    rospy.init_node("flatland_gym_env", anonymous=True, disable_signals=False)
-    print("start")
-
-    flatland_env = FlatlandEnv()
-    rospy.loginfo("======================================================")
-    rospy.loginfo("CSVWriter initialized.")
-    rospy.loginfo("======================================================")
-    check_env(flatland_env, warn=True)
-
-    # init env
-    obs = flatland_env.reset()
-
-    # run model
-    n_steps = 200
-    for _ in range(n_steps):
-        # action, _states = model.predict(obs)
-        action = flatland_env.action_space.sample()
-
-        obs, rewards, done, info = flatland_env.step(action)
-
-        time.sleep(0.1)
