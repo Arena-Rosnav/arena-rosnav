@@ -9,10 +9,10 @@ no_gpu: false
 
 ### General Training
 # navigation task mode, chose from "random" or "staged"
-task_mode: "random"
+task_mode: "dynamic_map_random"
 # number of simulation timesteps
 n_timesteps: 20000000
-max_num_moves_per_eps: 500
+max_num_moves_per_eps: 100
 goal_radius: 0.2
 
 ### Training Monitoring
@@ -68,6 +68,8 @@ rl_agent:
     enabled: true
     stack_size: 8
 
+  reward_fnc: "rule_13"
+
   normalize: 
     enabled: true
     settings:
@@ -77,14 +79,11 @@ rl_agent:
       clip_reward: 20.0 # Max value absolute for discounted reward
       gamma: 0.99 # discount factor
     
-
   laser:
     full_range_laser: true  # additional laser covering 360° covering blind spots -> additional collision check
     reduce_num_beams:
       enabled: true
       num_beams: 200
-
-  reward_fnc: "rule_13"
 
   action_space:
     discrete: false

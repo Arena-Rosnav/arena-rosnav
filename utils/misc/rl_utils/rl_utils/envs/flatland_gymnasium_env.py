@@ -83,18 +83,19 @@ class FlatlandEnv(gymnasium.Env):
         self.action_space = self.model_space_encoder.get_action_space()
         self.observation_space = self.model_space_encoder.get_observation_space()
 
-        # instantiate task manager
-        task_generator = TaskGenerator(self.ns)
-        self.task: BaseTask = task_generator._get_predefined_task(**kwargs)
+        if self._is_train_mode:
+            # instantiate task manager
+            task_generator = TaskGenerator(self.ns)
+            self.task: BaseTask = task_generator._get_predefined_task(**kwargs)
 
-        # reward calculator
-        self.reward_calculator = RewardFunction(
-            rew_func_name=reward_fnc,
-            holonomic=self.model_space_encoder._is_holonomic,
-            robot_radius=self.task.robot_managers[0]._robot_radius,
-            safe_dist=self.task.robot_managers[0].safe_distance,
-            goal_radius=rosparam_get(float, "goal_radius", 0.3),
-        )
+            # reward calculator
+            self.reward_calculator = RewardFunction(
+                rew_func_name=reward_fnc,
+                holonomic=self.model_space_encoder._is_holonomic,
+                robot_radius=self.task.robot_managers[0]._robot_radius,
+                safe_dist=self.task.robot_managers[0].safe_distance,
+                goal_radius=rosparam_get(float, "goal_radius", 0.3),
+            )
 
         # action agent publisher
         if self._is_train_mode:
@@ -243,7 +244,8 @@ class FlatlandEnv(gymnasium.Env):
         info_dict = {}
         return (
             self.model_space_encoder.encode_observation(
-                obs_dict, ["laser_scan", "goal_in_robot_frame", "last_action"]
+                obs_dict,
+                [OBS_DICT_KEYS.LASER, OBS_DICT_KEYS.GOAL, OBS_DICT_KEYS.LAST_ACTION],
             ),
             info_dict,
         )

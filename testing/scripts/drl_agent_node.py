@@ -22,29 +22,31 @@ ACTION_FREQUENCY = 4  # in Hz
 
 
 class DeploymentDRLAgent:
-    def __init__(self, ns: Namespace = None):
+    def __init__(self, ns: Namespace = ""):
         """Initialization procedure for the DRL agent node.
 
         Args:
             ns (str, optional):
                 Simulation specific ROS namespace. Defaults to None.
         """
-        self.ns = ns.remove_double_slash()
+        self.ns = Namespace(ns)
         self.observation_collector = ObservationManager(self.ns)
 
-        self._max_laser_range = rospy.get_param(self.ns("laser", "range"))
+        self._max_laser_range = rospy.get_param("laser/range")
 
-        self._action_pub = rospy.Publisher(f"{ns}/cmd_vel", Twist, queue_size=1)
+        self._action_pub = rospy.Publisher(f"{self.ns}/cmd_vel", Twist, queue_size=1)
         self._reset_stacked_obs_pub = rospy.Publisher(
-            f"{ns}/rosnav/reset_stacked_obs", ResetStackedObs, queue_size=1
+            f"{self.ns}/rosnav/reset_stacked_obs", ResetStackedObs, queue_size=1
         )
 
         self._action_period_time = DeploymentDRLAgent._get_action_frequency_in_nsecs()
         self.last_action = [0, 0, 0]
         self.last_time = 0
 
-        rospy.wait_for_service(f"{ns}/rosnav/get_action")
-        self._get_action_srv = rospy.ServiceProxy(f"{ns}/rosnav/get_action", GetAction)
+        rospy.wait_for_service(f"{self.ns}/rosnav/get_action")
+        self._get_action_srv = rospy.ServiceProxy(
+            f"{self.ns}/rosnav/get_action", GetAction
+        )
 
         rospy.Subscriber("/scenario_reset", Int16, self._episode_reset_callback)
         rospy.Subscriber("/clock", Clock, callback=self._clock_callback)

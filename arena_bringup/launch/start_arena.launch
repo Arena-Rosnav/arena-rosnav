@@ -16,10 +16,9 @@
   <env name="SIMULATOR" value="$(arg simulator)" />
 
   <arg name="entity_manager" default="pedsim" doc="[pedsim]" />
-  <arg name="pedsim_waypoint_plugin" default="" doc="[passthrough, moonwalk]"/>
   <arg name="pedsim" value="$(eval entity_manager == 'pedsim')" />
   <env name="PEDSIM" value="$(arg pedsim)" />
-  <param name="pedsim" value="$(arg pedsim)" />
+  <arg name="sfm" default="passthrough" doc="sfm for pedsim [passthrough, moonwalk]"/>
 
   <arg name="complexity" default="1" doc="1 = Map known, Position known; 2 = Map known, Position unknown (AMCL); 3 = Map unknown, Position unknown (SLAM)" />
   
@@ -53,7 +52,7 @@
   <arg name="map_file" default="map_empty" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]" />
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_file)/map.yaml" />
 
-  <arg name="world_file" default="$(arg map_file)" />
+  <arg name="world_file" default="$(arg map_file)" doc="set to generated_world to replace occupancy map with obstacles and walls (NOT IMPLEMENTED YET)"/>
 
   <!-- ___________ PARAMS ___________ -->
   <param name="use_sim_time" value="true"/>
@@ -110,7 +109,7 @@
     <arg name="show_rviz" default="$(arg show_rviz)" />
     <arg name="headless" default="false" />
     <arg name="gui" default="true" />
-    <arg name="world" default="$(arg world_file)" />
+    <arg name="world" value="$(arg world_file)"/>
     <arg name="pedsim" value="$(arg pedsim)"/>
   </include>
 
@@ -135,34 +134,12 @@
 
   <include file="$(find arena_bringup)/launch/testing/task_generator.launch">
   </include>
-  
+
   <!-- Launch pedsim agent spawner  -->
-  <group if="$(eval arg('pedsim'))">
-
-    <arg name="has_pedsim_waypoint_plugin" value="$(eval arg('pedsim_waypoint_plugin') != '')" />
-
-    <group if="$(arg has_pedsim_waypoint_plugin)">
-      <remap from="pedsim_waypoint_plugin/output" to="pedsim_simulator/waypoint_plugin_feedback" />
-      <node name="pedsim_waypoint_plugin" pkg="pedsim_waypoint_plugin" type="main.py" output="screen">
-        <param name="plugin_name" value="$(arg pedsim_waypoint_plugin)" />
-      </node>
-    </group>
-
-    <group>
-      <remap from="pedsim_simulator/waypoint_plugin_data" to="pedsim_waypoint_plugin/input" if="$(eval arg('has_pedsim_waypoint_plugin'))"/>
-      <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(eval arg('pedsim'))">
-        <param name="simulation_factor" value="1" type="double"/>
-        <param name="pedsim_update_rate" value="30.0" type="double"/>
-        <param name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" type="string"/>
-      </node>
-    </group>
-
-    <!-- <node name="pedsim_agent" pkg="pedsim_gazebo_plugin" type="spawn_pedsim_agents.py"></node> -->
-    <node name="pedsim_visualizer" type="pedsim_visualizer_node" pkg="pedsim_visualizer"/>
-  </group>
-
-  <include file="$(find arena_bringup)/launch/testing/sensor_sim.launch">
-
+  
+  <include file="$(find pedsim_ros)/launch/pedsim.launch" if="$(eval arg('pedsim'))">
+    <arg name="sfm" value="$(arg sfm)"/>
+    <arg name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" />
   </include>
 
   <node type="create_config_file.py" pkg="rviz_utils" name="rviz_config_file_creator" />

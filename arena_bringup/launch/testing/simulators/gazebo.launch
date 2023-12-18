@@ -21,7 +21,7 @@
 
   <!-- start World (Scenario) file in Gazebo -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find arena-simulation-setup)/worlds/$(arg world)/worlds/$(arg world).world"/>
+    <arg name="world_name" value="$(find arena-simulation-setup)/worlds/$(arg world)/worlds/$(arg world).world" if="$(eval arg('world') != 'generated_world')"/>
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/>
     <arg name="debug" value="false"/>

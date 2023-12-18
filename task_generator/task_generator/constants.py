@@ -1,21 +1,37 @@
 from enum import Enum
+import math
 import random
 from typing import Any, Callable, Optional
 
 import rospy
-from task_generator.shared import Namespace
-
+from task_generator.shared import Namespace, rosparam_get
 
 class Defaults:
     class task_config:
         no_of_episodes = 5
 
 
-class Constants:
-    GOAL_REACHED_TOLERANCE = 1.0
-    TIMEOUT = 3.0 * 60  # 3 min
-    WAIT_FOR_SERVICE_TIMEOUT = 60  # 5 secs
-    MAX_RESET_FAIL_TIMES = 10
+class _Constants:
+
+    @property
+    def GOAL_TOLERANCE_RADIUS(self):
+        return rosparam_get(float, "goal_radius", 1.0)
+    
+    @property
+    def GOAL_TOLERANCE_ANGLE(self):
+        return rosparam_get(float, "goal_tolerance_angle", 30 * math.pi / 180)
+    
+    @property
+    def TIMEOUT(self):
+        return rosparam_get(float, "timeout", 3*60)  # 3 min
+    
+    @property
+    def WAIT_FOR_SERVICE_TIMEOUT(self):
+        return rosparam_get(float, "timeout_wait_for_service", 60)  # 60 secs
+    
+    @property
+    def MAX_RESET_FAIL_TIMES(self):
+        return rosparam_get(int, "max_reset_fail_times", 10)
 
     class ObstacleManager:
         DYNAMIC_OBSTACLES = 15
@@ -48,14 +64,15 @@ class Constants:
         DYNAMIC_MAP_RANDOM = "dynamic_map_random"
         DYNAMIC_MAP_STAGED = "dynamic_map_staged"
         GUIDED = "guided"
+        EXPLORE = "explore"
 
     class MapGenerator:
         NODE_NAME = "map_generator"
         MAP_FOLDER_NAME = "dynamic_map"
 
     class Random:
-        MIN_DYNAMIC_OBS = 0
-        MAX_DYNAMIC_OBS = 0
+        MIN_DYNAMIC_OBS = 1
+        MAX_DYNAMIC_OBS = 4
         MIN_STATIC_OBS = 0
         MAX_STATIC_OBS = 0
         MIN_INTERACTIVE_OBS = 0
@@ -77,6 +94,9 @@ class Constants:
         "noise_std_dev": 0.0,
         "update_rate": 10,
     }
+
+#TODO make everything dynamic_reconfigure
+Constants = _Constants()
 
 
 class FlatlandRandomModel:
@@ -107,7 +127,7 @@ class FlatlandRandomModel:
 # no ~configuration possible because node is not fully initialized at this point
 pedsim_ns = Namespace("task_generator_node/configuration/pedsim/default_actor_config")
 
-
+#TODO make everything dynamic_reconfigure
 def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     """
     load pedsim param
@@ -121,7 +141,10 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     if isinstance(val, list):
         lo, hi = val[:2]
         gen = lambda: min(
-            hi, max(lo, random.normalvariate((hi + lo) / 2, (hi + lo) / 6))
+            hi,
+            max(lo,
+                random.normalvariate((hi + lo) / 2, (hi - lo) / 6)
+            )
         )
         # gen = lambda: random.uniform(lo, hi)
 
