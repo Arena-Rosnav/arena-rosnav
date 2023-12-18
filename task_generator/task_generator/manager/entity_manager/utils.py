@@ -229,10 +229,10 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
 
     padded_heightmap = np.pad(
         heightmap,
-        [
+        np.array([
             (pad_y, pad_y + 1 - heightmap.shape[0] % 2),
             (pad_x, pad_x + 1 - heightmap.shape[1] % 2)
-        ],
+        ]),
         mode="constant",
         constant_values=0
     )

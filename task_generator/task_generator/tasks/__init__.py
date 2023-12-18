@@ -1,15 +1,18 @@
 
-from typing import List
+import dataclasses
+import os
+from typing import Any, List, Type
 import rospy
 
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.world_manager import WorldManager
-from task_generator.shared import PositionOrientation
+from task_generator.shared import Namespace, PositionOrientation
 
 from task_generator.utils import ModelLoader
 
 import rosgraph_msgs.msg as rosgraph_msgs
+import std_msgs.msg as std_msgs
 
 class Props_Manager:
     obstacle_manager: ObstacleManager
@@ -28,14 +31,40 @@ class Props_Namespace:
 class Props_(Props_Manager, Props_Modelloader, Props_Namespace):
     clock: rosgraph_msgs.Clock
 
-class TaskMode:
+class Reconfigurable:
+
+    # TOPIC_RECONFIGURE = "RECONFIGURE"
+
+    # def reconfigure(self, config):
+    #     ...
+
+    NODE_CONFIGURATION = Namespace(os.path.join(rospy.get_namespace(), "task_generator_server"))
+
+    @classmethod
+    def prefix(cls, *args) -> Namespace:
+        return Namespace("~configuration", *args)
+
+    def __init__(self):
+        # rospy.Subscriber(
+        #     name=self.prefix(self.TOPIC_RECONFIGURE),
+        #     data_class=std_msgs.Empty,
+        #     callback=self.reconfigure
+        # )
+        ...
+
+    
+
+class TaskMode(Reconfigurable):
 
     _PROPS: Props_
 
     def __init__(self, props: Props_, **kwargs):
+        Reconfigurable.__init__(self)
         self._PROPS = props
 
+
 class Task(Props_):
+
     last_reset_time: int
 
     TOPIC_RESET_START = "reset_start"

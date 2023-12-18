@@ -171,9 +171,9 @@ class WorldManager:
             raise Exception("can't find any non-occupied spaces")
 
         point = PositionRadius(
-            float(np.round(x * self.world.map.resolution +
+            float(np.round(float(x) * self.world.map.resolution +
                   self.world.map.origin.x, 3)),
-            float(np.round(y * self.world.map.resolution +
+            float(np.round(float(y) * self.world.map.resolution +
                   self.world.map.origin.y, 3)),
             safe_dist
         )

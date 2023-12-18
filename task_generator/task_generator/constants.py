@@ -34,6 +34,10 @@ class Constants:
             RANDOM = "random"
             SCENARIO = "scenario"
 
+            @classmethod
+            def prefix(cls, *args):
+                return Namespace("tm_obstacles")(*args)
+
         @enum.unique
         class TM_Robots(enum.Enum):
             GUIDED = "guided"
@@ -41,12 +45,20 @@ class Constants:
             RANDOM = "random"
             SCENARIO = "scenario"
 
+            @classmethod
+            def prefix(cls, *args):
+                return Namespace("tm_robots")(*args)
+
         @enum.unique
         class TM_Module(enum.Enum):
             STAGED = "staged"
             DYNAMIC_MAP = "dynamic_map"
             CLEAR_FORBIDDEN_ZONES = "clear_forbidden_zones"
             RVIZ_UI = "rviz_ui"
+
+            @classmethod
+            def prefix(cls, *args):
+                return Namespace("tm_module")(*args)
 
     class MapGenerator:
         NODE_NAME = "map_generator"
