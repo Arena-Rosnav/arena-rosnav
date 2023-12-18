@@ -2,6 +2,10 @@ planners:
   - name: NavfnROS
     type: navfn/NavfnROS
 
+inters:
+  - name: BypassInter
+    type: bypass_inter/BypassInter
+
 shutdown_costmaps: false
 controller_frequency: 10.0
 planner_frequency: 5.0
