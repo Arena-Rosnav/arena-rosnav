@@ -161,8 +161,11 @@ def instantiate_new_model(
         ppo_kwargs["policy"] = agent.type.value
         policy_kwargs = agent.get_kwargs()
         policy_kwargs["features_extractor_kwargs"][
-            "observation_manager"
+            "observation_space_manager"
         ] = train_env.venv.envs[0].model_space_encoder.observation_space_manager
+        policy_kwargs["features_extractor_kwargs"]["stacked_obs"] = config["rl_agent"][
+            "frame_stacking"
+        ]["enabled"]
         ppo_kwargs["policy_kwargs"] = policy_kwargs
     elif issubclass(agent, ActorCriticPolicy):
         ppo_kwargs["policy"] = agent
