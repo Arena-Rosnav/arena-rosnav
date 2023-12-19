@@ -75,11 +75,10 @@ class UnitySimulator(BaseSimulator):
         request.initial_pose = Pose(
             position=Point(
                 x=entity.position[0],
-                y=0,
-                z=entity.position[1]
+                y=entity.position[1],
+                z=0.35
             ),
-            orientation=Quaternion(*quaternion_from_euler(0.0, entity.position[2], 0.0, axes="sxyz")
-                                   )
+            orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz"))
         )
 
         rospy.set_param(request.robot_namespace(
@@ -97,13 +96,15 @@ class UnitySimulator(BaseSimulator):
         request.model_state = ModelState()
 
         request.model_state.model_name = name
-        pose = Pose()
-        # Keep in mind that y axis is up
-        pose.position.x = pos[0]
-        pose.position.y = 0.35
-        pose.position.z = pos[1]
-        pose.orientation = Quaternion(
-            *quaternion_from_euler(0.0, pos[2], 0.0, axes="sxyz")
+        pose = Pose(
+            position=Point(
+                x = pos[0],
+                y = pos[1],
+                z = 0.35
+            ),
+            orientation=Quaternion(
+                *quaternion_from_euler(0.0, 0.0, pos[2], axes="sxyz")
+            )
         )
         request.model_state.pose = pose
         request.model_state.reference_frame = "world"
