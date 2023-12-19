@@ -593,3 +593,43 @@ class RewardRootVelocityDifference(RewardUnit):
 
     def reset(self):
         self.last_action = None
+
+
+@RewardUnitFactory.register("two_factor_velocity_difference")
+class RewardTwoFactorVelocityDifference(RewardUnit):
+    """
+    A reward unit that calculates the difference in velocity between consecutive actions
+    and penalizes the agent based on the squared difference.
+
+    Args:
+        reward_function (RewardFunction): The reward function to be used.
+        alpha (float, optional): The weight for the squared difference in the first dimension of the action. Defaults to DEFAULTS.ROOT_VEL_DIFF.K.
+        beta (float, optional): The weight for the squared difference in the last dimension of the action. Defaults to DEFAULTS.ROOT_VEL_DIFF.K.
+        _on_safe_dist_violation (bool, optional): Flag indicating whether to penalize the agent on safe distance violation. Defaults to DEFAULTS.ROOT_VEL_DIFF._ON_SAFE_DIST_VIOLATION.
+        *args: Variable length argument list.
+        **kwargs: Arbitrary keyword arguments.
+    """
+
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        alpha: float = DEFAULTS.TWO_FACTOR_VEL_DIFF.ALPHA,
+        beta: float = DEFAULTS.TWO_FACTOR_VEL_DIFF.BETA,
+        _on_safe_dist_violation: bool = DEFAULTS.ROOT_VEL_DIFF._ON_SAFE_DIST_VIOLATION,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+
+        self._alpha = alpha
+        self._beta = beta
+        self.last_action = None
+
+    def __call__(self, action: np.ndarray, *args, **kwargs):
+        if self.last_action is not None:
+            diff = (action - self.last_action) ** 2
+            self.add_reward(-(diff[0] * self._alpha + diff[-1] * self._beta))
+        self.last_action = action
+
+    def reset(self):
+        self.last_action = None
