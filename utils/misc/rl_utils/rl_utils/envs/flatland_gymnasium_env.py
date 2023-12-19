@@ -6,6 +6,7 @@ from typing import Tuple
 
 import gymnasium
 import numpy as np
+from rosnav.model.base_agent import BaseAgent
 import rospy
 from flatland_msgs.msg import StepWorld
 from geometry_msgs.msg import Twist
@@ -39,13 +40,65 @@ def delay_node_init(ns):
 
 
 class FlatlandEnv(gymnasium.Env):
-    """Custom Environment that follows gym interface"""
+    """
+    FlatlandEnv is an environment class that represents a Flatland environment for reinforcement learning.
+
+    Args:
+        ns (str): The namespace of the environment.
+        reward_fnc (str): The name of the reward function.
+        max_steps_per_episode (int): The maximum number of steps per episode.
+        verbose (bool): Whether to print verbose information.
+        log_last_n_eps (int): The number of episodes to log statistics for.
+
+    Attributes:
+        metadata (dict): Metadata for the environment.
+        ns (Namespace): The namespace of the environment.
+        _is_train_mode (bool): Whether the environment is in training mode.
+        model_space_encoder (RosnavSpaceManager): The space encoder for the model.
+        observation_collector (ObservationManager): The observation collector.
+        task (BaseTask): The task manager.
+        reward_calculator (RewardFunction): The reward calculator.
+        agent_action_pub (Publisher): The publisher for agent actions.
+        _service_name_step (str): The name of the step world service.
+        _step_world_srv (ServiceProxy): The service proxy for the step world service.
+        _verbose (bool): Whether to print verbose information.
+        _log_last_n_eps (int): The number of episodes to log statistics for.
+        _steps_curr_episode (int): The current number of steps in the episode.
+        _episode (int): The current episode number.
+        _max_steps_per_episode (int): The maximum number of steps per episode.
+        _last_action (np.ndarray): The last action taken by the agent.
+        last_mean_reward (float): The mean reward of the last logged episodes.
+        mean_reward (list): The cumulative reward and count of episodes.
+        step_count_hist (list): The history of step counts for the last logged episodes.
+        step_time (list): The cumulative step time and count of steps.
+        _done_reasons (dict): The reasons for episode termination.
+        _done_hist (list): The history of episode terminations.
+
+    Properties:
+        action_space: The action space of the environment.
+        observation_space: The observation space of the environment.
+
+    Methods:
+        _setup_env_for_training: Set up the environment for training.
+        _pub_action: Publish an action to the agent.
+        decode_action: Decode an action from the model space.
+        encode_observation: Encode an observation into the model space.
+        step: Take a step in the environment.
+        call_service_takeSimStep: Call the step world service.
+        reset: Reset the environment.
+        close: Close the environment.
+        update_statistics: Update the statistics of the environment.
+        print_statistics: Print the statistics of the environment.
+        determine_termination: Determine if the episode is terminated.
+
+    """
 
     metadata = {"render_modes": ["human"]}
 
     def __init__(
         self,
         ns: str,
+        agent_description: BaseAgent,
         reward_fnc: str,
         max_steps_per_episode=100,
         verbose: bool = True,
@@ -53,21 +106,10 @@ class FlatlandEnv(gymnasium.Env):
         *args,
         **kwargs,
     ):
-        """Default env
-        Flatland yaml node check the entries in the yaml file, therefore other robot related parameters cound only be saved in an other file.
-
-
-        Args:
-            task (ABSTask): [description]
-            reward_fnc (str): [description]
-            train_mode (bool): bool to differ between train and eval env during training
-            safe_dist (float, optional): [description]. Defaults to None.
-            goal_radius (float, optional): [description]. Defaults to 0.1.
-            extended_eval (bool): more episode info provided, no reset when crashing
-        """
         super(FlatlandEnv, self).__init__()
 
         self.ns = Namespace(ns)
+        self._agent_description = agent_description
 
         delay_node_init(ns=self.ns.simulation_ns)
 
@@ -75,7 +117,11 @@ class FlatlandEnv(gymnasium.Env):
             rospy.init_node("env_" + self.ns, anonymous=True)
 
         self._is_train_mode = rospy.get_param("/train_mode")
-        self.model_space_encoder = RosnavSpaceManager()
+        self.model_space_encoder = RosnavSpaceManager(
+            space_encoder_class=self._agent_description.space_encoder_class,
+            observation_spaces=self._agent_description.observation_spaces,
+            observation_space_kwargs=self._agent_description.observation_space_kwargs,
+        )
 
         # observation collector
         self.observation_collector = ObservationManager(self.ns)
@@ -114,7 +160,7 @@ class FlatlandEnv(gymnasium.Env):
 
     def _setup_env_for_training(self, reward_fnc: str, **kwargs):
         # instantiate task manager
-        task_generator = TaskGenerator(self.ns)
+        task_generator = TaskGenerator(self.ns.simulation_ns)
         self.task: BaseTask = task_generator._get_predefined_task(**kwargs)
 
         # reward calculator
@@ -152,9 +198,14 @@ class FlatlandEnv(gymnasium.Env):
 
     def step(self, action: np.ndarray):
         """
-        done_reasons:   0   -   exceeded max steps
-                        1   -   collision with obstacle
-                        2   -   goal reached
+        Take a step in the environment.
+
+        Args:
+            action (np.ndarray): The action to take.
+
+        Returns:
+            tuple: A tuple containing the encoded observation, reward, done flag, info dictionary, and False flag.
+
         """
 
         start_time = time.time()
@@ -212,6 +263,18 @@ class FlatlandEnv(gymnasium.Env):
         # self._step_world_publisher.publish(request)
 
     def reset(self, seed=None, options=None):
+        """
+        Reset the environment.
+
+        Args:
+            seed: The random seed for the environment.
+            options: Additional options for resetting the environment.
+
+        Returns:
+            tuple: A tuple containing the encoded observation and an empty info dictionary.
+
+        """
+
         super().reset(seed=seed)
         # set task
         # regenerate start position end goal position of the robot and change the obstacles accordingly
@@ -242,15 +305,33 @@ class FlatlandEnv(gymnasium.Env):
         )
 
     def close(self):
+        """
+        Close the environment.
+
+        """
+
         pass
 
     def update_statistics(self, **kwargs) -> None:
+        """
+        Update the statistics of the environment.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        """
+
         self.step_time[1] += 1
         self.mean_reward[1] += 1
         self.mean_reward[0] += kwargs["reward"]
         self._steps_curr_episode += 1
 
     def print_statistics(self):
+        """
+        Print the statistics of the environment.
+
+        """
+
         mean_reward = self.mean_reward[0] / self._log_last_n_eps
         diff = round(mean_reward - self.last_mean_reward, 5)
 
@@ -276,6 +357,20 @@ class FlatlandEnv(gymnasium.Env):
         max_steps: int,
         info: dict = None,
     ) -> Tuple[dict, bool]:
+        """
+        Determine if the episode should terminate.
+
+        Args:
+            reward_info (dict): The reward information.
+            curr_steps (int): The current number of steps in the episode.
+            max_steps (int): The maximum number of steps per episode.
+            info (dict): Additional information.
+
+        Returns:
+            tuple: A tuple containing the info dictionary and a boolean flag indicating if the episode should terminate.
+
+        """
+
         if info is None:
             info = {}
 
