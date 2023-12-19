@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import functools
+import json
 import os
 from typing import Any, Callable, List, Optional
 
@@ -45,6 +46,13 @@ def recursive_get(obj: Any, property: List[str], fallback: Any = None) -> Any:
         return recursive_get(dict(obj).get(property[0]), property[1:])
     except:
         return fallback
+    
+def encode(var: Any):
+    if isinstance(var, list):
+        return "/".join(var)
+    if isinstance(var, dict):
+        return json.dumps(var)
+    return var
 
 
 def run(namespace: Optional[str] = None):
@@ -73,24 +81,7 @@ def run(namespace: Optional[str] = None):
             with open(FILE_TASK_CONFIG) as f:
                 content = dict(yaml.load(f, yaml.FullLoader))
 
-            rospy.logwarn("SENSING CHANGE OF SCENARIO PARAMS")
-
-            rospy.logwarn(str({
-                    **{
-                        # "no_of_episodes": content.get("no_of_episodes")
-                    },
-                    **{
-                        name: recursive_get(content, name.split("_"))
-                        for name in
-                        (
-                            str(param.get("name", ""))
-                            for group in TaskGeneratorConfig.config_description.get("groups", {})
-                            for param in group.get("parameters", [])
-                        )
-                    }
-                }))
-            
-            #rospy.logwarn(str(TaskGeneratorConfig.config_description))
+            rospy.logdebug("SENSING CHANGE OF TASK_MODE PARAMS")
 
             client.update_configuration(
                 {
@@ -98,7 +89,7 @@ def run(namespace: Optional[str] = None):
                         # "no_of_episodes": content.get("no_of_episodes")
                     },
                     **{
-                        name: recursive_get(content, name.split("_"))
+                        name: encode(recursive_get(content, name.split("_")))
                         for name in
                         (
                             str(param.get("name", ""))

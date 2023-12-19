@@ -39,7 +39,7 @@ class TM_Scenario(TM_Obstacles):
 
     def reconfigure(self, config):
 
-        rospy.logwarn(f"RECONFIGURED SCENARIO TO FILE {rosparam_get(str, self.NODE_CONFIGURATION('SCENARIO_file'))}")
+        rospy.logdebug(f"RECONFIGURED SCENARIO TO FILE {rosparam_get(str, self.NODE_CONFIGURATION('SCENARIO_file'))}")
 
         with open(
             os.path.join(

@@ -2,23 +2,74 @@ import itertools
 import math
 import random
 from typing import Callable, Dict, Iterator, List
+import rospy
 from task_generator.constants import Constants
-from task_generator.shared import DynamicObstacle, Obstacle, PositionOrientation, PositionRadius
+from task_generator.shared import DynamicObstacle, Obstacle, PositionOrientation, PositionRadius, rosparam_get
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 from task_generator.tasks.task_factory import TaskFactory
 
+import dynamic_reconfigure.client
+import dataclasses
+
+@dataclasses.dataclass
+class Config:
+    MIN_STATIC_OBSTACLES: int
+    MIN_INTERACTIVE_OBSTACLES: int
+    MIN_DYNAMIC_OBSTACLES: int
+
+    MAX_STATIC_OBSTACLES: int
+    MAX_INTERACTIVE_OBSTACLES: int
+    MAX_DYNAMIC_OBSTACLES: int
+
+    MODELS_STATIC_OBSTACLES: List[str]
+    MODELS_INTERACTIVE_OBSTACLES: List[str]
+    MODELS_DYNAMIC_OBSTACLES: List[str]
+
 @TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.RANDOM)
 class TM_Random(TM_Obstacles):
+
+    _config: Config
+
+    @classmethod
+    def prefix(cls, *args):
+        return super().prefix("scenario")
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        dynamic_reconfigure.client.Client(
+            name=self.NODE_CONFIGURATION,
+            config_callback=self.reconfigure
+        )
+
+    def reconfigure(self, config):
+        self._config = Config(
+            MIN_STATIC_OBSTACLES = rosparam_get(int, self.NODE_CONFIGURATION('RANDOM_static_min'), 0),
+            MIN_INTERACTIVE_OBSTACLES = rosparam_get(int, self.NODE_CONFIGURATION('RANDOM_interactive_min'), 0),
+            MIN_DYNAMIC_OBSTACLES = rosparam_get(int, self.NODE_CONFIGURATION('RANDOM_dynamic_min'), 0),
+
+            MAX_STATIC_OBSTACLES = rosparam_get(int, self.NODE_CONFIGURATION('RANDOM_static_max'), 0),
+            MAX_INTERACTIVE_OBSTACLES = rosparam_get(int, self.NODE_CONFIGURATION('RANDOM_interactive_max'), 0),
+            MAX_DYNAMIC_OBSTACLES = rosparam_get(int, self.NODE_CONFIGURATION('RANDOM_dynamic_max'), 0),
+
+            MODELS_STATIC_OBSTACLES = rosparam_get(str, self.NODE_CONFIGURATION('RANDOM_static_models'), "").split("/"),
+            MODELS_INTERACTIVE_OBSTACLES = rosparam_get(str, self.NODE_CONFIGURATION('RANDOM_interactive_models'), "").split("/"),
+            MODELS_DYNAMIC_OBSTACLES = rosparam_get(str, self.NODE_CONFIGURATION('RANDOM_dynamic_models'), "").split("/")
+        )
+
+
     def reset(self, **kwargs) -> Obstacles:
 
-        N_STATIC_OBSTACLES: int = kwargs.get("N_STATIC_OBSTACLES", 1)
-        N_INTERACTIVE_OBSTACLES: int = kwargs.get("N_INTERACTIVE_OBSTACLES", 1)
-        N_DYNAMIC_OBSTACLES: int = kwargs.get("N_DYNAMIC_OBSTACLES", 1)
+        N_STATIC_OBSTACLES: int = kwargs.get("N_STATIC_OBSTACLES", random.randint(self._config.MIN_STATIC_OBSTACLES, self._config.MAX_STATIC_OBSTACLES))
+        N_INTERACTIVE_OBSTACLES: int = kwargs.get("N_INTERACTIVE_OBSTACLES", random.randint(self._config.MIN_INTERACTIVE_OBSTACLES, self._config.MAX_INTERACTIVE_OBSTACLES))
+        N_DYNAMIC_OBSTACLES: int = kwargs.get("N_DYNAMIC_OBSTACLES", random.randint(self._config.MIN_DYNAMIC_OBSTACLES, self._config.MAX_DYNAMIC_OBSTACLES))
 
-        MODELS_STATIC_OBSTACLES: Dict[str, float] = dict.fromkeys(kwargs.get("MODELS_STATIC_OBSTACLES", ["shelf"]) or self._PROPS.model_loader.models, 1)
-        MODELS_INTERACTIVE_OBSTACLES: Dict[str, float] = dict.fromkeys(kwargs.get("MODELS_INTERACTIVE_OBSTACLES", ["shelf"]) or self._PROPS.model_loader.models, 1)
-        MODELS_DYNAMIC_OBSTACLES: Dict[str, float] = dict.fromkeys(kwargs.get("MODELS_DYNAMIC_OBSTACLES", ["actor1"]) or self._PROPS.dynamic_model_loader.models, 1)
+        MODELS_STATIC_OBSTACLES: Dict[str, float] = dict.fromkeys(kwargs.get("MODELS_STATIC_OBSTACLES", self._config.MODELS_STATIC_OBSTACLES) or self._PROPS.model_loader.models, 1)
+        MODELS_INTERACTIVE_OBSTACLES: Dict[str, float] = dict.fromkeys(kwargs.get("MODELS_INTERACTIVE_OBSTACLES", self._config.MODELS_INTERACTIVE_OBSTACLES) or self._PROPS.model_loader.models, 1)
+        MODELS_DYNAMIC_OBSTACLES: Dict[str, float] = dict.fromkeys(kwargs.get("MODELS_DYNAMIC_OBSTACLES", self._config.MODELS_DYNAMIC_OBSTACLES) or self._PROPS.dynamic_model_loader.models, 1)
+
+        rospy.logwarn(f"{MODELS_DYNAMIC_OBSTACLES}")
 
         def indexer() -> Callable[..., int]:
             indices: Dict[str, Iterator[int]] = dict()
