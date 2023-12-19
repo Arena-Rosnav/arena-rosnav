@@ -238,6 +238,9 @@ class RobotManager:
             f"agent_name:={self._robot.agent}",
         ]
 
+        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+            args += [f"sim_namespace:={self.namespace.simulation_ns}"]
+
         self.process = roslaunch.parent.ROSLaunchParent(  # type: ignore
             roslaunch.rlutil.get_or_generate_uuid(None, False),  # type: ignore
             [(*roslaunch_file, args)],

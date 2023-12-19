@@ -17,7 +17,13 @@ from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.utils import WorldMap
-from task_generator.shared import ModelWrapper, Namespace, Robot, gen_init_pos, rosparam_get
+from task_generator.shared import (
+    ModelWrapper,
+    Namespace,
+    Robot,
+    gen_init_pos,
+    rosparam_get,
+)
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
 from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
@@ -97,8 +103,7 @@ class TaskGenerator:
 
         # ParamsW
         self._task_mode = Constants.TaskMode(rosparam_get(str, "task_mode"))
-        self._entity_mode = Constants.EntityManager(
-            rosparam_get(str, "entity_manager"))
+        self._entity_mode = Constants.EntityManager(rosparam_get(str, "entity_manager"))
         self._auto_reset = rosparam_get(bool, "~auto_reset", True)
         self._train_mode = rosparam_get(bool, "train_mode", False)
 
@@ -112,8 +117,7 @@ class TaskGenerator:
             )
 
             # Services
-            rospy.Service("reset_task", std_srvs.Empty,
-                          self._reset_task_srv_callback)
+            rospy.Service("reset_task", std_srvs.Empty, self._reset_task_srv_callback)
 
         # Vars
         self._env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())(
@@ -165,8 +169,7 @@ class TaskGenerator:
             # self.reset_task()
 
             # Timers
-            rospy.Timer(rospy.Duration(nsecs=int(0.5e9)),
-                        self._check_task_status)
+            rospy.Timer(rospy.Duration(nsecs=int(0.5e9)), self._check_task_status)
 
         # SETUP
 
@@ -182,11 +185,15 @@ class TaskGenerator:
         rospy.wait_for_service("/distance_map")
 
         service_client_get_map = rospy.ServiceProxy(
-            "/distance_map", map_distance_server_srvs.GetDistanceMap)
+            "/distance_map", map_distance_server_srvs.GetDistanceMap
+        )
 
-        map_response: map_distance_server_srvs.GetDistanceMapResponse = service_client_get_map()
+        map_response: map_distance_server_srvs.GetDistanceMapResponse = (
+            service_client_get_map()
+        )
         world_manager = WorldManager(
-            world_map=WorldMap.from_distmap(distmap=map_response))
+            world_map=WorldMap.from_distmap(distmap=map_response)
+        )
 
         if self._entity_mode == Constants.EntityManager.PEDSIM:
             self._entity_manager = PedsimManager(

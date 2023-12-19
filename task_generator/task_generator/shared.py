@@ -49,17 +49,19 @@ class Namespace(str):
 
     @property
     def simulation_ns(self) -> Namespace:
-        return self
+        ns_components = self.split("/")
+        return Namespace(f"/{ns_components[1]}") if len(ns_components) > 2 else self
 
     @property
     def robot_ns(self) -> Namespace:
-        return self
+        ns_components = self.split("/")
+        return Namespace(f"/{ns_components[2]}") if len(ns_components) > 2 else self
 
     def remove_double_slash(self) -> Namespace:
         return Namespace(self.replace("//", "/"))
 
 
-yaml.add_representer(Namespace, str) #type: ignore
+yaml.add_representer(Namespace, str)  # type: ignore
 
 
 # TODO deprecate this in favor of Model.EMPTY
