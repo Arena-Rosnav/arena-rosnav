@@ -12,7 +12,7 @@
   <!-- You can launch a single robot and his local_planner with arguments -->
   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]" />
   <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]" />
-  <arg name="simulator" default="flatland" doc="[flatland, gazebo]" />
+  <arg name="simulator" default="flatland" doc="[flatland, gazebo, unity]" />
   <env name="SIMULATOR" value="$(arg simulator)" />
 
   <arg name="entity_manager" default="pedsim" doc="[pedsim]" />
@@ -111,6 +111,11 @@
     <arg name="gui" default="true" />
     <arg name="world" value="$(arg world_file)"/>
     <arg name="pedsim" value="$(arg pedsim)"/>
+  </include>
+
+  <!-- Unity -->
+  <include file="$(find arena_bringup)/launch/testing/simulators/unity.launch" if="$(eval arg('simulator') == 'unity')">
+    <arg name="world" default="$(arg world_file)" />
   </include>
 
   <!-- map server-->

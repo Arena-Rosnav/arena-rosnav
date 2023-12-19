@@ -1,11 +1,12 @@
 import rospy
 
-import gazebo_msgs.msg as gazebo_msgs
-import gazebo_msgs.srv as gazebo_srvs
+from gazebo_msgs.msg import ModelState
+from gazebo_msgs.srv import SetModelState, SetModelStateRequest, DeleteModel, SpawnModel, SpawnModelRequest, DeleteModelRequest, DeleteModelResponse
 
-import geometry_msgs.msg as geometry_msgs
+from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 
-import std_srvs.srv as std_srvs
+from std_msgs.msg import Empty
+from std_srvs.srv import Empty
 
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
@@ -13,9 +14,8 @@ from task_generator.utils import rosparam_get
 from tf.transformations import quaternion_from_euler
 from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
-from task_generator.simulators.simulator_factory import SimulatorFactory
 
-from task_generator.shared import ModelType, PositionOrientation, RobotProps
+from task_generator.shared import ModelType, RobotProps
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -36,40 +36,40 @@ class GazeboSimulator(BaseSimulator):
         super().__init__(namespace)
         self._goal_pub = rospy.Publisher(
             self._namespace("/goal"),
-            geometry_msgs.PoseStamped,
+            PoseStamped,
             queue_size=1,
             latch=True
         )
         self._robot_name = rosparam_get(str, "robot_model", "")
 
-        rospy.wait_for_service("/gazebo/spawn_urdf_model")
-        rospy.wait_for_service("/gazebo/spawn_sdf_model")
-        rospy.wait_for_service("/gazebo/set_model_state")
-        rospy.wait_for_service("/gazebo/set_model_state", timeout=20)
+        rospy.loginfo("Waiting for gazebo services...")
+        rospy.wait_for_service(self._namespace(
+            "gazebo", "spawn_urdf_model"), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            "gazebo", "spawn_sdf_model"), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            "gazebo", "set_model_state"), timeout=20)
+        rospy.wait_for_service(self._namespace(
+            "gazebo", "delete_model"), timeout=T)
 
         self._spawn_model[ModelType.URDF] = rospy.ServiceProxy(
-            self._namespace(
-                "gazebo", "spawn_urdf_model"), gazebo_srvs.SpawnModel
+            self._namespace("gazebo", "spawn_urdf_model"), SpawnModel
         )
         self._spawn_model[ModelType.SDF] = rospy.ServiceProxy(
-            self._namespace(
-                "gazebo", "spawn_sdf_model"), gazebo_srvs.SpawnModel
+            self._namespace("gazebo", "spawn_sdf_model"), SpawnModel
         )
         self._move_model_srv = rospy.ServiceProxy(
-            "/gazebo/set_model_state", gazebo_srvs.SetModelState, persistent=True
+            self._namespace("gazebo", "set_model_state"), SetModelState, persistent=True
         )
         self._unpause = rospy.ServiceProxy(
-            "/gazebo/unpause_physics", std_srvs.Empty)
+            self._namespace("gazebo", "unpause_physics"), Empty
+        )
         self._pause = rospy.ServiceProxy(
-            "/gazebo/pause_physics", std_srvs.Empty)
-
-        rospy.loginfo("Waiting for gazebo services...")
-        rospy.wait_for_service("gazebo/spawn_sdf_model")
-        rospy.wait_for_service("gazebo/delete_model")
-
-        rospy.loginfo("service: spawn_sdf_model is available ....")
+            self._namespace("gazebo", "pause_physics"), Empty
+        )
         self._remove_model_srv = rospy.ServiceProxy(
-            "gazebo/delete_model", gazebo_srvs.DeleteModel)
+            self._namespace("gazebo", "delete_model"), DeleteModel
+        )
 
     def before_reset_task(self):
         self._pause()
@@ -77,45 +77,44 @@ class GazeboSimulator(BaseSimulator):
     def after_reset_task(self):
         try:
             self._unpause()
-        except rospy.service.ServiceException as e:  # gazebo isn't the most reliable
+        except rospy.service.ServiceException as e:   # gazebo isn't the most reliable
             rospy.logwarn(e)
 
     # ROBOT
 
-    def move_entity(self, name, position):
+    def move_entity(self, name, pos):
 
-        request = gazebo_srvs.SetModelStateRequest()
-        request.model_state = gazebo_msgs.ModelState()
+        request = SetModelStateRequest()
+        request.model_state = ModelState()
 
         request.model_state.model_name = name
-        pose = geometry_msgs.Pose()
-        pose.position.x = position.x
-        pose.position.y = position.y
-        pose.position.z = 0
-        pose.orientation = geometry_msgs.Quaternion(
-            *quaternion_from_euler(0.0, 0.0, position.orientation, axes="sxyz")
+        pose = Pose()
+        pose.position.x = pos[0]
+        pose.position.y = pos[1]
+        pose.position.z = 0.35
+        pose.orientation = Quaternion(
+            *quaternion_from_euler(0.0, 0.0, pos[2], axes="sxyz")
         )
         request.model_state.pose = pose
         request.model_state.reference_frame = "world"
 
-        return bool(self._move_model_srv(request).success)
+        self._move_model_srv(request)
 
     def spawn_entity(self, entity):
-        request = gazebo_srvs.SpawnModelRequest()
+        request = SpawnModelRequest()
 
         model = entity.model.get(self.MODEL_TYPES)
 
         request.model_name = entity.name
         request.model_xml = model.description
-        request.initial_pose = geometry_msgs.Pose(
-            position=geometry_msgs.Point(
-                x=entity.position.x,
-                y=entity.position.y,
+        request.initial_pose = Pose(
+            position=Point(
+                x=entity.position[0],
+                y=entity.position[1],
                 z=0
             ),
-            orientation=geometry_msgs.Quaternion(
-                *quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="sxyz")
-            )
+            orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz")
+                                   )
         )
         request.robot_namespace = self._namespace(entity.name)
         request.reference_frame = "world"
@@ -127,21 +126,25 @@ class GazeboSimulator(BaseSimulator):
                 "tf_prefix"), str(request.robot_namespace))
 
         res = self.spawn_model(model.type, request)
-        return bool(res.success)
+
+        return res.success
 
     def delete_entity(self, name):
-        res: gazebo_srvs.DeleteModelResponse = self._remove_model_srv(
-            gazebo_srvs.DeleteModelRequest(model_name=name))
+        res: DeleteModelResponse = self._remove_model_srv(
+            DeleteModelRequest(model_name=name))
         return bool(res.success)
 
-    def _publish_goal(self, goal: PositionOrientation):
-        goal_msg = geometry_msgs.PoseStamped()
+    def _publish_goal(self, goal):
+        goal_msg = PoseStamped()
         goal_msg.header.seq = 0
         goal_msg.header.stamp = rospy.get_rostime()
         goal_msg.header.frame_id = "map"
-        goal_msg.pose.position.x = goal.x
-        goal_msg.pose.position.y = goal.y
-        goal_msg.pose.orientation = geometry_msgs.Quaternion(
-            *quaternion_from_euler(0.0, 0.0, goal.orientation, axes="sxyz"))
+        goal_msg.pose.position.x = goal[0]
+        goal_msg.pose.position.y = goal[1]
+
+        goal_msg.pose.orientation.w = 0
+        goal_msg.pose.orientation.x = 0
+        goal_msg.pose.orientation.y = 0
+        goal_msg.pose.orientation.z = 1
 
         self._goal_pub.publish(goal_msg)

@@ -37,6 +37,11 @@
     uri: https://github.com/voshch/move_base_flex.git
 
 - git:
+    local-name: ../utils-extern/ros/ros_tcp_endpoint
+    uri: https://github.com/Unity-Technologies/ROS-TCP-Endpoint.git
+    version: main
+
+- git:
     local-name: ../utils-extern/misc/robots
     uri: https://github.com/Arena-Rosnav/3rd-party-robot-packages
 
