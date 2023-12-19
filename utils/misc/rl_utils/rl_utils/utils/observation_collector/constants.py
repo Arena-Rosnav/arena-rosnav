@@ -14,6 +14,10 @@ class TOPICS:
 
 
 class OBS_DICT_KEYS:
+    """
+    Constants for observation dictionary keys.
+    """
+
     LASER = "laser_scan"
     ROBOT_POSE = "robot_pose"
     GOAL = "goal_in_robot_frame"

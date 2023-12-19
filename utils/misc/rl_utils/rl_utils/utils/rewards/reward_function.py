@@ -221,7 +221,7 @@ class RewardFunction:
 
     @property
     def safe_dist_breached(self) -> bool:
-        return self._safe_dist_breached
+        return self.get_internal_state_info("safe_dist_breached")
 
     def set_min_dist_laser(
         self, laser_scan: np.ndarray, point_cloud: np.ndarray, from_aggregate_obs: bool

@@ -12,6 +12,24 @@ CloudPointDType = [("x", "<f4"), ("y", "<f4"), ("z", "<f4"), ("index", "<f4")]
 
 
 class AggregateCollectorUnit(CollectorUnit):
+    """
+    A class representing an observation collector unit that aggregates various types of observations.
+
+    Args:
+        ns (Namespace): The namespace for the collector unit.
+        observation_manager (ObservationCollector): The observation manager.
+
+    Attributes:
+        _get_dump_srv (rospy.ServiceProxy): The service proxy for getting the dump.
+
+    Methods:
+        init_subs: Initializes the subscribers.
+        wait: Waits for the collector unit.
+        get_observations: Retrieves the observations.
+        cloudpoint_to_laser_scan: Converts a cloud point to a laser scan.
+        cloudpoint_msg_to_numpy: Converts a cloud point message to a numpy array.
+    """
+
     def __init__(self, ns: Namespace, observation_manager: "ObservationCollector"):
         super().__init__(Namespace(ns), observation_manager)
         self._get_dump_srv = rospy.ServiceProxy(
