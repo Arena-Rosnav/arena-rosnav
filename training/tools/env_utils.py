@@ -156,10 +156,11 @@ def init_envs(
         eval_env = DummyVecEnv(
             [
                 make_envs(
-                    ns_for_nodes,
-                    0,
+                    with_ns=ns_for_nodes,
+                    rank=0,
                     config=config,
                     paths=paths,
+                    agent_description=agent_description,
                     train=False,
                 )
             ]
