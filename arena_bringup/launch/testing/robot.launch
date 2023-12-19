@@ -9,6 +9,7 @@
   <arg name="name" default="" />
   <arg name="model" default="" />
   <arg name="namespace" default="" />
+  <arg name="sim_namespace" default="" />
   <arg name="frame" default="" /> <!-- frame name -->
 
   <arg name="train_mode" default="false" doc="If false, start the Rosnav Deployment Nodes"
@@ -75,12 +76,12 @@
       <remap from="odom" to="$(arg namespace)/odom" />
 
       <include file="$(find arena_bringup)/launch/testing/move_base/bootstrap.launch">
-
         <arg name="local_planner" value="$(arg local_planner)" />
 
         <arg name="model" value="$(arg model)" />
         <arg name="train_mode" value="$(arg train_mode)" if="$(eval arg('local_planner') == 'rosnav')" />
         <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
+        <arg name="sim_namespace" value="$(arg sim_namespace)" if="$(eval arg('local_planner') == 'rosnav')" />
 
         <arg name="namespace" value="$(arg namespace)" />
         <arg name="frame" value="$(arg name)/" />
