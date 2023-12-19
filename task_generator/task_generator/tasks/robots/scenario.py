@@ -1,9 +1,16 @@
+import dataclasses
+import json
+import os
 from typing import List, NamedTuple
+
+import rospkg
 import rospy
 from task_generator.constants import Constants
 from task_generator.shared import PositionOrientation, PositionRadius, rosparam_get
 from task_generator.tasks.robots import TM_Robots
 from task_generator.tasks.task_factory import TaskFactory
+
+import dynamic_reconfigure.client
 
 
 class RobotGoal(NamedTuple):
@@ -17,14 +24,48 @@ class RobotGoal(NamedTuple):
             goal = PositionOrientation(*obj.get("goal", []))
         )
 
+@dataclasses.dataclass
+class Config:
+    robots: List[RobotGoal]
+
 @TaskFactory.register_robots(Constants.TaskMode.TM_Robots.SCENARIO)
 class TM_Scenario(TM_Robots):
+
+    _config: Config
+
+    @classmethod
+    def prefix(cls, *args):
+        return super().prefix("scenario")
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        dynamic_reconfigure.client.Client(
+            name=self.NODE_CONFIGURATION,
+            config_callback=self.reconfigure
+        )
+
+    def reconfigure(self, config):
+
+        rospy.logwarn(f"RECONFIGURED SCENARIO TO FILE {rosparam_get(str, self.NODE_CONFIGURATION('SCENARIO_file'))}")
+
+        with open(
+            os.path.join(
+                rospkg.RosPack().get_path("arena_bringup"),
+                "configs",
+                "scenarios",
+                rosparam_get(str, self.NODE_CONFIGURATION("SCENARIO_file"))
+            )
+        ) as f:
+            scenario = json.load(f)
+
+        self._config = Config(
+            robots = [RobotGoal.parse(robot) for robot in scenario.get("robots", [])]
+        )
+
+
     def reset(self, **kwargs):
-        SCENARIO_ROBOTS: List[RobotGoal] = [
-            RobotGoal.parse(robot)
-            for robot
-            in rosparam_get(list, "scenario/robots", [])
-        ]
+        SCENARIO_ROBOTS = self._config.robots
 
         # check robot manager length
         managed_robots = self._PROPS.robot_managers
