@@ -477,3 +477,59 @@ class RewardAbruptVelocityChange(RewardUnit):
 
     def reset(self):
         self.last_action = None
+
+
+@RewardUnitFactory.register("root_velocity_difference")
+class RewardRootVelocityDifference(RewardUnit):
+    """
+    A reward unit that calculates the difference in root velocity between consecutive actions.
+
+    Args:
+        reward_function (RewardFunction): The reward function to be used.
+        k (float, optional): The scaling factor for the velocity difference. Defaults to DEFAULTS.ROOT_VEL_DIFF.K.
+        _on_safe_dist_violation (bool, optional): Flag indicating whether to penalize for violating safe distance.
+            Defaults to DEFAULTS.ROOT_VEL_DIFF._ON_SAFE_DIST_VIOLATION.
+        *args: Variable length argument list.
+        **kwargs: Arbitrary keyword arguments.
+
+    Attributes:
+        _k (float): The scaling factor for the velocity difference.
+        last_action (numpy.ndarray): The last action taken.
+
+    Methods:
+        __call__(self, action: np.ndarray, *args, **kwargs): Calculates the reward based on the velocity difference between
+            the current action and the last action.
+        reset(self): Resets the last action to None.
+    """
+
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        k: float = DEFAULTS.ROOT_VEL_DIFF.K,
+        _on_safe_dist_violation: bool = DEFAULTS.ROOT_VEL_DIFF._ON_SAFE_DIST_VIOLATION,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+
+        self._k = k
+        self.last_action = None
+
+    def __call__(self, action: np.ndarray, *args, **kwargs):
+        """
+        Calculates and adds the reward based on the given action.
+
+        Args:
+            action (np.ndarray): The action taken by the agent.
+
+        Returns:
+            None
+        """
+        if self.last_action is not None:
+            vel_diff = np.linalg.norm((action - self.last_action) ** 2)
+            if vel_diff < self._k:
+                self.add_reward((1 - vel_diff) / self._k)
+        self.last_action = action
+
+    def reset(self):
+        self.last_action = None
