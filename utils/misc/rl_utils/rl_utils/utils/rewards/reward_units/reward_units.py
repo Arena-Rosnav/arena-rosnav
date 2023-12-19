@@ -21,6 +21,8 @@ __all__ = [
     "RewardFollowGlobalplan",
     "RewardReverseDrive",
     "RewardAbruptVelocityChange",
+    "RewardRootVelocityDifference",
+    "RewardTwoFactorVelocityDifference",
 ]
 
 
@@ -626,6 +628,15 @@ class RewardTwoFactorVelocityDifference(RewardUnit):
         self.last_action = None
 
     def __call__(self, action: np.ndarray, *args, **kwargs):
+        """
+        Calculates and adds the reward based on the difference between the current action and the last action.
+
+        Args:
+            action (np.ndarray): The current action.
+
+        Returns:
+            None
+        """
         if self.last_action is not None:
             diff = (action - self.last_action) ** 2
             self.add_reward(-(diff[0] * self._alpha + diff[-1] * self._beta))
