@@ -89,7 +89,7 @@ class UnitySimulator(BaseSimulator):
         res = self.spawn_model(model.type, request)
         return res.success
 
-    def move_entity(self, name, pos):
+    def move_entity(self, name, position):
         rospy.loginfo("[Unity Simulator] Move Request for " + name)
 
         request = SetModelStateRequest()
@@ -98,12 +98,12 @@ class UnitySimulator(BaseSimulator):
         request.model_state.model_name = name
         pose = Pose(
             position=Point(
-                x = pos[0],
-                y = pos[1],
+                x = position[0],
+                y = position[1],
                 z = 0.35
             ),
             orientation=Quaternion(
-                *quaternion_from_euler(0.0, 0.0, pos[2], axes="sxyz")
+                *quaternion_from_euler(0.0, 0.0, position[2], axes="sxyz")
             )
         )
         request.model_state.pose = pose
