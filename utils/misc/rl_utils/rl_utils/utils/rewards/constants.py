@@ -48,5 +48,5 @@ class DEFAULTS:
         _ON_SAFE_DIST_VIOLATION: bool = True
 
     class ROOT_VEL_DIFF:
-        K = 2.0
+        K = 500
         _ON_SAFE_DIST_VIOLATION: bool = False
