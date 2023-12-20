@@ -9,30 +9,33 @@ from task_generator.shared import Namespace
 import sensor_msgs.msg as sensor_msgs
 import pedsim_msgs.msg as pedsim_msgs
 
-from rl_utils.utils.observation_collector.observation_units.collector_unit import CollectorUnit
+from rl_utils.utils.observation_collector.observation_units.collector_unit import (
+    CollectorUnit,
+)
 import rl_utils.utils.observation_collector.constants as Constants
 
 CloudPointDType = [("x", "<f4"), ("y", "<f4"), ("z", "<f4"), ("index", "<f4")]
 
 T = TypeVar("T")
 
+
 class AggregateCollectorUnit(CollectorUnit):
     """
-    A class representing an observation collector unit that aggregates various types of observations.
+    A class that represents an aggregate collector unit for observations.
 
-    Args:
-        ns (Namespace): The namespace for the collector unit.
-        observation_manager (ObservationCollector): The observation manager.
+    This class collects and manages different types of observations, including laser observations and semantic observations.
 
     Attributes:
-        _get_dump_srv (rospy.ServiceProxy): The service proxy for getting the dump.
+        _laser_observations (List[LaserObservation]): A list of laser observations.
+        _semantic_observations (Dict[Constants.OBS_DICT_KEYS.SEMANTIC, SemanticObservation]): A dictionary of semantic observations.
 
     Methods:
-        init_subs: Initializes the subscribers.
-        wait: Waits for the collector unit.
-        get_observations: Retrieves the observations.
-        cloudpoint_to_laser_scan: Converts a cloud point to a laser scan.
-        cloudpoint_msg_to_numpy: Converts a cloud point message to a numpy array.
+        __init__(self, ns: Namespace, observation_manager: "ObservationCollector"): Initializes the AggregateCollectorUnit.
+        init_subs(self): Initializes the subscribers for the observations.
+        get_observations(self, obs_dict: Dict[str, Any], *args, **kwargs) -> Dict[str, Any]: Retrieves the observations.
+        wait(self): Waits for any pending operations to complete.
+        cloudpoint_to_laser_scan(cloud_point: np.ndarray) -> np.ndarray: Converts a cloud point to a laser scan.
+        cloudpoint_msg_to_numpy(msg) -> np.ndarray: Converts a cloud point message to a numpy array.
     """
 
     class Staleable:
@@ -44,12 +47,11 @@ class AggregateCollectorUnit(CollectorUnit):
         @property
         def stale(self) -> bool:
             return self._stale
-        
+
         def invalidate(self):
             self._stale = True
 
     class Observation(Staleable, Generic[T]):
-
         _value: T
 
         def __init__(self, initial_value: T) -> None:
@@ -72,34 +74,33 @@ class AggregateCollectorUnit(CollectorUnit):
 
     def __init__(self, ns: Namespace, observation_manager: "ObservationCollector"):
         super().__init__(Namespace(ns), observation_manager)
-        
+
         self._laser_observations = []
         self._semantic_observations = {
             semantic_type: self.SemanticObservation(pedsim_msgs.SemanticData())
-            for semantic_type
-            in Constants.OBS_DICT_KEYS.SEMANTIC
+            for semantic_type in Constants.OBS_DICT_KEYS.SEMANTIC
         }
 
-
     def init_subs(self):
-        local_costmap_conf = rospy.get_param(self._ns("move_base_flex", "local_costmap"), {})
+        local_costmap_conf = rospy.get_param(
+            self._ns("move_base_flex", "global_costmap"), {}
+        )
 
         def obstacle_layer(config: dict):
-            for observation in config.get("observation_sources", []):
-                observation_config = config.get(observation, {})
-                if observation_config.get("data_type") == "LaserScan":
-                    
-                    observation_container = self.LaserObservation(sensor_msgs.LaserScan())
-                    self._laser_observations.append(observation_container)
+            observation = config.get("observation_sources", None)
+            observation_config = config.get(observation, {})
+            if observation_config.get("data_type", "") == "LaserScan":
+                observation_container = self.LaserObservation(sensor_msgs.LaserScan())
+                self._laser_observations.append(observation_container)
 
-                    rospy.Subscriber(
-                        observation_config.get("topic"),
-                        sensor_msgs.LaserScan,
-                        functools.partialmethod(observation_container.update)
-                    )
+                rospy.Subscriber(
+                    observation_config.get("topic"),
+                    sensor_msgs.LaserScan,
+                    functools.partial(observation_container.update),
+                )
 
         def semantic_layer(config: dict):
-            for observation in config.get("observation_sources", []):
+            for observation in config.get("observation_sources", "").split(" "):
                 try:
                     semantic_attribute = Constants.OBS_DICT_KEYS.SEMANTIC(observation)
                 except ValueError:
@@ -107,13 +108,17 @@ class AggregateCollectorUnit(CollectorUnit):
                 else:
                     observation_config = config.get(observation, {})
 
-                    observation_container = self.SemanticObservation(pedsim_msgs.SemanticData())
-                    self._semantic_observations[semantic_attribute] = observation_container
+                    observation_container = self.SemanticObservation(
+                        pedsim_msgs.SemanticData()
+                    )
+                    self._semantic_observations[
+                        semantic_attribute
+                    ] = observation_container
 
                     rospy.Subscriber(
-                        observation_config.get("topic"),
+                        self._ns.simulation_ns(observation_config.get("topic")),
                         sensor_msgs.LaserScan,
-                        functools.partialmethod(observation_container.update)
+                        functools.partial(observation_container.update),
                     )
 
         for plugin in local_costmap_conf.get("plugins", []):
@@ -127,17 +132,17 @@ class AggregateCollectorUnit(CollectorUnit):
             else:
                 pass
 
-    def get_observations(self, obs_dict: Dict[str, Any], *args, **kwargs) -> Dict[str, Any]:
-        
-        if any(not observation.stale for observation in self._laser_observations):
-            #very basic, won't work with most multi-sensor setups
-            obs_dict[Constants.OBS_DICT_KEYS.LASER] = np.minimum.accumulate([
-                obvervation.value.ranges
-                for obvervation
-                in self._laser_observations
-            ])
+    def get_observations(
+        self, obs_dict: Dict[str, Any], *args, **kwargs
+    ) -> Dict[str, Any]:
+        # if any(not observation.stale for observation in self._laser_observations):
+        #     # very basic, won't work with most multi-sensor setups
+        #     obs_dict[Constants.OBS_DICT_KEYS.LASER] = np.minimum.accumulate(
+        #         [obvervation.value.ranges for obvervation in self._laser_observations]
+        #     )
 
-            for obs in self._laser_observations: obs.invalidate()
+        #     for obs in self._laser_observations:
+        #         obs.invalidate()
 
         for semantic_attribute, observation in self._semantic_observations.items():
             obs_dict[semantic_attribute.value] = observation.value
