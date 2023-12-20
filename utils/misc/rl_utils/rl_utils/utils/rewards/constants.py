@@ -52,5 +52,5 @@ class DEFAULTS:
         _ON_SAFE_DIST_VIOLATION: bool = False
 
     class TWO_FACTOR_VEL_DIFF:
-        ALPHA = 0.2
-        BETA = 0.5
+        ALPHA = 0.002
+        BETA = 0.005

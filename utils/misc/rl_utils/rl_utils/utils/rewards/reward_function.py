@@ -4,7 +4,12 @@ import numpy as np
 import rospy
 
 from .constants import REWARD_CONSTANTS
-from .utils import load_rew_fnc, min_distance_from_pointcloud
+from .utils import (
+    InternalStateInfoUpdate,
+    load_rew_fnc,
+    safe_dist_breached,
+    min_dist_laser,
+)
 
 
 class RewardFunction:
@@ -45,6 +50,7 @@ class RewardFunction:
         robot_radius: float,
         goal_radius: float,
         safe_dist: float,
+        internal_state_updates: List[InternalStateInfoUpdate] = None,
         *args,
         **kwargs,
     ):
@@ -63,6 +69,10 @@ class RewardFunction:
 
         # globally accessible and required information for RewardUnits
         self._internal_state_info: Dict[str, Any] = {}
+        self._internal_state_updates = internal_state_updates or [
+            InternalStateInfoUpdate("min_dist_laser", min_dist_laser),
+            InternalStateInfoUpdate("safe_dist_breached", safe_dist_breached),
+        ]
 
         self._curr_reward = 0
         self._info = {}
@@ -126,9 +136,6 @@ class RewardFunction:
 
     def update_internal_state_info(
         self,
-        laser_scan: np.ndarray = None,
-        point_cloud: np.ndarray = None,
-        from_aggregate_obs: bool = False,
         *args,
         **kwargs,
     ):
@@ -143,8 +150,8 @@ class RewardFunction:
             from_aggregate_obs (bool, optional):  Iff the observation from the aggreation (GetDump.srv) should be considered.
                 Defaults to False.
         """
-        self.set_min_dist_laser(laser_scan, point_cloud, from_aggregate_obs)
-        self.set_safe_dist_breached()
+        for update in self._internal_state_updates:
+            update(reward_function=self, **kwargs)
 
     def reset_internal_state_info(self):
         """Resets all global state information (after each environment step)."""
@@ -200,7 +207,7 @@ class RewardFunction:
             from_aggregate_obs=from_aggregate_obs,
             **kwargs,
         )
-        self.calculate_reward(**kwargs)
+        self.calculate_reward(laser_scan=laser_scan, **kwargs)
         return self._curr_reward, self._info
 
     @property
@@ -220,27 +227,12 @@ class RewardFunction:
         self._goal_radius = value
 
     @property
+    def safe_dist(self) -> float:
+        return self._safe_dist
+
+    @property
     def safe_dist_breached(self) -> bool:
         return self.get_internal_state_info("safe_dist_breached")
-
-    def set_min_dist_laser(
-        self, laser_scan: np.ndarray, point_cloud: np.ndarray, from_aggregate_obs: bool
-    ):
-        if not laser_scan and not point_cloud:
-            raise ValueError("Neither LaserScan nor PointCloud data was provided!")
-
-        if not from_aggregate_obs:
-            self.add_internal_state_info("min_dist_laser", laser_scan.min())
-        else:
-            self.add_internal_state_info(
-                "min_dist_laser", min_distance_from_pointcloud(point_cloud)
-            )
-
-    def set_safe_dist_breached(self) -> None:
-        self.add_internal_state_info(
-            "safe_dist_breached",
-            self.get_internal_state_info("min_dist_laser") <= self._safe_dist,
-        )
 
     def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
