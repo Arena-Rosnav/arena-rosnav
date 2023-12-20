@@ -123,11 +123,11 @@ class FlatlandEnv(gymnasium.Env):
             observation_space_kwargs=self._agent_description.observation_space_kwargs,
         )
 
-        # observation collector
-        self.observation_collector = ObservationManager(self.ns)
-
         if self._is_train_mode:
             self._setup_env_for_training(reward_fnc, **kwargs)
+
+        # observation collector
+        self.observation_collector = ObservationManager(self.ns)
 
         self._verbose = verbose
         self._log_last_n_eps = log_last_n_eps
@@ -293,13 +293,13 @@ class FlatlandEnv(gymnasium.Env):
 
         if self._is_train_mode:
             self.call_service_takeSimStep()
+            # self.call_service_takeSimStep()
 
         obs_dict = self.observation_collector.get_observations()
         info_dict = {}
         return (
             self.model_space_encoder.encode_observation(
                 obs_dict,
-                [OBS_DICT_KEYS.LASER, OBS_DICT_KEYS.GOAL, OBS_DICT_KEYS.LAST_ACTION],
             ),
             info_dict,
         )
