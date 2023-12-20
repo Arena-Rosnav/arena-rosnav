@@ -12,6 +12,6 @@
     <!-- <remap from="/move_model" to="/$(arg ns)/move_model" /> -->
   </node>
   <include file="$(find arena_bringup)/launch/utils/rviz.launch">
-    <arg name="show_rviz" value="true" />
+    <arg name="show_rviz" value="false" />
   </include>
 </launch>
