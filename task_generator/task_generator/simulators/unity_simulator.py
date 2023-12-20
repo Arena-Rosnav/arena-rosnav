@@ -81,10 +81,11 @@ class UnitySimulator(BaseSimulator):
             orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz"))
         )
 
-        rospy.set_param(request.robot_namespace(
-            "robot_description"), model.description)
-        rospy.set_param(request.robot_namespace(
-            "tf_prefix"), str(request.robot_namespace))
+        if isinstance(entity, Robot):
+            rospy.set_param(request.robot_namespace(
+                "robot_description"), model.description)
+            rospy.set_param(request.robot_namespace(
+                "tf_prefix"), str(request.robot_namespace))
 
         res = self.spawn_model(model.type, request)
         return res.success
