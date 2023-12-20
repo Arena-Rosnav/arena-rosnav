@@ -116,7 +116,7 @@ class AggregateCollectorUnit(CollectorUnit):
                     ] = observation_container
 
                     rospy.Subscriber(
-                        self._ns.simulation_ns(observation_config.get("topic")),
+                        self._ns.simulation_ns + observation_config.get("topic"),
                         sensor_msgs.LaserScan,
                         functools.partial(observation_container.update),
                     )
