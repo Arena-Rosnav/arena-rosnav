@@ -3,7 +3,7 @@ planners:
     type: navfn/NavfnROS
 
 inters:
-  - name: bypass
+  - name: BypassInter
     type: bypass_inter/BypassInter
 
 shutdown_costmaps: false
