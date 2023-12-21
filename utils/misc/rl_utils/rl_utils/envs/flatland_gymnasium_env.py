@@ -292,8 +292,8 @@ class FlatlandEnv(gymnasium.Env):
         self._last_action = np.array([0, 0, 0])
 
         if self._is_train_mode:
-            self.call_service_takeSimStep()
-            # self.call_service_takeSimStep()
+            for _ in range(7):
+                self.call_service_takeSimStep()
 
         obs_dict = self.observation_collector.get_observations()
         info_dict = {}
