@@ -1,0 +1,184 @@
+planners:
+  - name: GlobalPlanner
+    type: global_planner/GlobalPlanner
+
+controllers:
+  - name: HATebLocalPlannerROS
+    type: hateb_local_planner/HATebLocalPlannerROS
+
+HATebLocalPlannerROS:
+  odom_topic: odom
+  map_frame: map
+
+  planning_mode: 1
+
+  ## Trajectory
+  teb_autosize: true
+  dt_ref: 0.3
+  dt_hysteresis: 0.1
+  # min_samples: 3
+  # agent_min_samples: 3
+  # max_samples: 500
+  global_plan_overwrite_orientation: true
+  allow_init_with_backwards_motion: false
+  global_plan_viapoint_sep: 0.2
+  # via_points_ordered: false
+  max_global_plan_lookahead_dist: 0.0
+  # global_plan_prune_distance: 1
+  # exact_arc_length: false
+  # force_reinit_new_goal_dist: 1
+  # force_reinit_new_goal_angular: 1.57
+  feasibility_check_no_poses: 5
+  # publish_feedback: false
+  # min_resolution_collision_check_angular: 3.14
+  control_look_ahead_poses: 20
+  # horizon_reduction_amount: 0.5
+  # teb_init_skip_dist: 0.4
+
+  
+
+  ## Robot
+  type: 0
+  max_vel_x: $(arg speed)
+  max_vel_x_backwards: 0.2
+  max_vel_y: 0.0
+  max_vel_theta: 0.3
+  acc_lim_x: 0.5
+  acc_lim_y: 0.5
+  acc_lim_theta: 0.5
+  min_turning_radius: 0
+
+
+  disable_warm_start: True
+  shrink_horizon_backup: True
+
+  # Agents
+  agent_radius: 0.31
+  robot_radius: 0.47
+  min_agent_dist: 0.4
+  max_agent_vel_x: 1.3
+  max_agent_vel_y: 0.4
+  nominal_agent_vel_x: 1.1
+  max_agent_vel_x_backwards: 0.01
+  max_agent_vel_theta: 1.1
+  agent_acc_lim_x: 0.6
+  agent_acc_lim_y: 0.3
+  agent_acc_lim_theta: 0.8
+  use_external_prediction: True
+  predict_agent_behind_robot: True
+  predict_agent_goal: False
+  agent_robot_ttc_scale_alpha: 1.0
+  agent_robot_ttcplus_scale_alpha: 1.0
+  agent_min_samples: 3
+  use_agent_robot_safety_c: True
+  use_agent_robot_rel_vel_c: True
+  use_agent_robot_visi_c: True
+  use_agent_agent_safety_c: True
+  use_agent_robot_ttc_c: False
+  use_agent_robot_ttclosest_c: False
+  use_agent_robot_ttcplus_c: False
+  scale_agent_robot_ttc_c: False
+  scale_agent_robot_ttcplus_c: False
+  add_invisible_humans: True
+  ttc_threshold: 5.0
+  ttclosest_threshold: 1.0
+  ttcplus_threshold: 5.0
+  ttcplus_timer: 1.0
+  rel_vel_cost_threshold: 1.5
+  visibility_cost_threshold: 2.5
+  invisible_human_threshold: 0.8
+  min_agent_robot_dist: 0.6
+
+  # GoalTolerance
+  xy_goal_tolerance: 0.2
+  yaw_goal_tolerance: 0.1
+  free_goal_vel: True
+
+  # Obstacles
+  min_obstacle_dist: 0.2
+  include_costmap_obstacles: True
+  costmap_obstacles_behind_robot_dist: 0.5
+  obstacle_poses_affected: 1
+  costmap_converter_plugin: "costmap_converter::CostmapToLinesDBSRANSAC"
+  costmap_converter_spin_thread: True
+  costmap_converter_rate: 10
+  obstacle_cost_mult: 1.0
+  use_nonlinear_obstacle_penalty: True
+  costmap_converter/CostmapToLinesDBSRANSAC:
+    cluster_max_distance: 0.8
+    cluster_min_pts: 2
+    ransac_inlier_distance: 0.15
+    ransac_min_inliers: 10
+    ransac_no_iterations: 1500
+    ransac_remainig_outliers: 3
+    ransac_convert_outlier_pts: True
+    ransac_filter_remaining_outlier_pts: False
+    convex_hull_min_pt_separation: 0.1
+
+  # Optimization
+  no_inner_iterations: 8
+  no_outer_iterations: 4
+  optimization_activate: True
+  optimization_verbose: False
+  penalty_epsilon: 0.01
+  weight_max_vel_x: 2
+  weight_max_vel_y: 2
+  weight_max_agent_vel_x: 4
+  weight_max_agent_vel_y: 4
+  weight_nominal_agent_vel_x: 2
+  weight_max_vel_theta: 1
+  weight_max_agent_vel_theta: 2
+  weight_acc_lim_x: 1
+  weight_acc_lim_y: 1
+  weight_agent_acc_lim_x: 2
+  weight_agent_acc_lim_y: 2
+  weight_acc_lim_theta: 1
+  weight_agent_acc_lim_theta: 2
+  weight_kinematics_nh: 1.0
+  weight_kinematics_forward_drive: 1.0
+  weight_kinematics_turning_radius: 0
+  weight_optimaltime: 1.0
+  weight_agent_optimaltime: 3.0
+  weight_obstacle: 50.0
+  weight_dynamic_obstacle: 50
+  weight_viapoint: 0.05
+  weight_agent_viapoint: 0.5
+  weight_agent_robot_safety: 2.0
+  weight_agent_agent_safety: 2.0
+  weight_agent_robot_ttc: 1.0
+  weight_agent_robot_rel_vel: 5.0
+  weight_agent_robot_ttcplus: 1.0
+  weight_agent_robot_visibility: 5.0
+  weight_invisible_human: 2.0
+  weight_shortest_path: 0
+  selection_alternative_time_cost: False
+  cap_optimaltime_penalty: True
+
+  # Homotopy Class Planner
+  enable_homotopy_class_planning: False
+  enable_multithreading: True
+  simple_exploration: True
+  max_number_classes: 4
+  roadmap_graph_no_samples: 15
+  roadmap_graph_area_width: 5
+  h_signature_prescaler: 0.5
+  h_signature_threshold: 0.1
+  obstacle_keypoint_offset: 0.1
+  obstacle_heading_threshold: 0.45
+  visualize_hc_graph: True
+
+  # Visualization
+  pose_array_z_scale: 0.5
+  publish_agents_global_plans: true
+  publish_agents_local_plan_fp_poses: true
+  publish_agents_local_plan_poses: true
+  publish_agents_local_plans: true
+  publish_robot_global_plan: true
+  publish_robot_local_plan: true
+  publish_robot_local_plan_fp_poses: true
+  publish_robot_local_plan_poses: true
+
+  # approach
+  approach_id: 1
+  approach_dist: 1.0
+  approach_angle: 3.14
