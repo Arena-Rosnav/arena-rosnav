@@ -6,6 +6,10 @@ inters:
   - name: BypassInter
     type: bypass_inter/BypassInter
 
+controllers:
+  - name: TrajectoryPlannerROS
+    type: base_local_planner/TrajectoryPlannerROS
+
 shutdown_costmaps: false
 controller_frequency: 10.0
 planner_frequency: 5.0

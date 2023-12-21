@@ -52,6 +52,7 @@
 
 
         <param name="base_global_planner" value="NavfnROS" />
+        <param name="base_local_planner" value="TrajectoryPlannerROS" />
 
     </node>
 
