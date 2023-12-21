@@ -118,10 +118,10 @@
    local-name: ../planners/dragon
    uri: https://github.com/Arena-Rosnav/dragon
    version: mbf
-#- git:
-#   local-name: ../planners/trail
-#   uri: https://github.com/Arena-Rosnav/trail
-#   version: master
+- git:
+   local-name: ../planners/trail
+   uri: https://github.com/Arena-Rosnav/trail
+   version: mbf
 - git:
     local-name: ../planners/cohan
     uri: https://github.com/Arena-Rosnav/cohan_planner_multi
