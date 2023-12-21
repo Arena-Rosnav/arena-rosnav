@@ -110,10 +110,10 @@
    local-name: ../planners/applr
    uri: https://github.com/Arena-Rosnav/applr
    version: mbf
-#- git:
-#   local-name: ../planners/lflh
-#   uri: https://github.com/Arena-Rosnav/lflh
-#   version: master
+- git:
+   local-name: ../planners/lflh
+   uri: https://github.com/Arena-Rosnav/lflh
+   version: mbf
 - git:
    local-name: ../planners/dragon
    uri: https://github.com/Arena-Rosnav/dragon
