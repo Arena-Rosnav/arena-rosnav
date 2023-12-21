@@ -5,6 +5,9 @@
   <arg name="entity_manager" default="pedsim"/>
   <arg name="world_file" default=""/>
 
+  <!-- TODO: make non-constant -->
+  <arg name="sfm" value="passthrough" />
+
   <!-- use fake localization-->
   <group ns="$(arg ns)" >
     <!-- use simulator and rviz-->
