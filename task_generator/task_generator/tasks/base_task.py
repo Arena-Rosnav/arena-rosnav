@@ -5,6 +5,7 @@ from rospkg import RosPack
 import rospy
 
 import rosgraph_msgs.msg as rosgraph_msgs
+from task_generator.shared import Namespace
 import std_msgs.msg as std_msgs
 
 from task_generator.constants import Constants
@@ -55,20 +56,22 @@ class BaseTask(Props_):
         robot_managers: List[RobotManager],
         world_manager: WorldManager,
         namespace: str = "",
-        *args, **kwargs
+        *args,
+        **kwargs
     ):
-        self.namespace = namespace
-        self.namespace_prefix = f"/{namespace}/" if os.path.basename(
-            namespace) else ""
+        self.namespace = Namespace(namespace)
+        self.namespace_prefix = self.namespace.simulation_ns
 
         self.obstacle_manager = obstacle_manager
         self.robot_managers = robot_managers
         self.world_manager = world_manager
 
         self.__reset_start = rospy.Publisher(
-            self.TOPIC_RESET_START, std_msgs.Empty, queue_size=1)
+            self.TOPIC_RESET_START, std_msgs.Empty, queue_size=1
+        )
         self.__reset_end = rospy.Publisher(
-            self.TOPIC_RESET_END, std_msgs.Empty, queue_size=1)
+            self.TOPIC_RESET_END, std_msgs.Empty, queue_size=1
+        )
 
         rospy.Subscriber("/clock", rosgraph_msgs.Clock, self._clock_callback)
         self.last_reset_time = 0
@@ -76,10 +79,20 @@ class BaseTask(Props_):
 
         self.set_up_robot_managers()
 
-        self.model_loader = ModelLoader(os.path.join(
-            RosPack().get_path("arena-simulation-setup"), "obstacles", "static_obstacles"))
-        self.dynamic_model_loader = ModelLoader(os.path.join(
-            RosPack().get_path("arena-simulation-setup"), "obstacles", "dynamic_obstacles"))
+        self.model_loader = ModelLoader(
+            os.path.join(
+                RosPack().get_path("arena-simulation-setup"),
+                "obstacles",
+                "static_obstacles",
+            )
+        )
+        self.dynamic_model_loader = ModelLoader(
+            os.path.join(
+                RosPack().get_path("arena-simulation-setup"),
+                "obstacles",
+                "dynamic_obstacles",
+            )
+        )
 
     @staticmethod
     def reset_helper(parent: Type["BaseTask"]) -> Callable[..., Callable[..., bool]]:
@@ -88,13 +101,21 @@ class BaseTask(Props_):
         First the reset body is called, then the chain is traversed up to BaseTask and then back down to the callback returned by reset. Return True from this callback to indicate all tasks are completed and the simulation can be shut down.
         @parent: direct parent class
         """
-        def outer(fn: Callable[..., Tuple[Dict[str, Any], Optional[Callable[[], bool]]]]) -> Callable[..., bool]:
+
+        def outer(
+            fn: Callable[..., Tuple[Dict[str, Any], Optional[Callable[[], bool]]]]
+        ) -> Callable[..., bool]:
             def _reset(self, callback: Callable[[], bool], **kwargs) -> bool:
                 overrides, fn_callback = fn(self, **kwargs)
                 if fn_callback is None:
                     return False
-                return parent.reset(self, callback=callback, **{**overrides, **kwargs}) or fn_callback()
+                return (
+                    parent.reset(self, callback=callback, **{**overrides, **kwargs})
+                    or fn_callback()
+                )
+
             return _reset
+
         return outer
 
     _reset_semaphore: bool = False
@@ -112,7 +133,7 @@ class BaseTask(Props_):
         if self._reset_semaphore:
             return False
         self._reset_semaphore = True
-    
+
         try:
             rospy.set_param(self.PARAM_RESETTING, True)
             self.__reset_start.publish()
@@ -125,10 +146,9 @@ class BaseTask(Props_):
             rospy.logerr(repr(e))
             rospy.signal_shutdown("Reset error!")
             raise Exception("reset error!")
-        
+
         finally:
             self._reset_semaphore = False
-            
 
         return return_val
 

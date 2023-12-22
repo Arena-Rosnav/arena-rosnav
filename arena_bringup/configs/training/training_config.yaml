@@ -60,7 +60,7 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "AGENT_54"
+  architecture_name: "AGENT_57"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
 
@@ -82,11 +82,11 @@ rl_agent:
   laser:
     full_range_laser: true  # additional laser covering 360° covering blind spots -> additional collision check
     reduce_num_beams:
-      enabled: true
+      enabled: false
       num_beams: 200
 
   action_space:
-    discrete: false
+    discrete: true
     custom_discretization: # only used if discrete is true, otherwise ignored
       enabled: true
       # number of buckets for each action dimension

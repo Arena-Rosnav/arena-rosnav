@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+  <!-- CONSTANTS -->
+  <param name="SIMULATOR" value="flatland" />
+  <param name="local_planner" value="rosnav" />
+
+
   <arg name="model" default="burger"      doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real]"/>
 
   <!-- Here are the argument that may be frequently changed -->
@@ -21,11 +26,8 @@
 
   <!-- if it's false flatland server will not publish any debug related infomation and you will not able to visuzalize e.g robot, dynamic obstacles  -->
   <!-- <param name="space_encoder" value="UniformEncoder" /> -->
-
+  <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load" ns="configuration"/>
   <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
-  <param name="robot_yaml_path" value="$(find arena-simulation-setup)/robot/$(arg model)/$(arg model).model.yaml" />
-  <param name="tmp_model_path" value="/tmp" />
-
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" />
@@ -57,6 +59,7 @@
   <env name="ROSCONSOLE_FORMAT" value="[${severity} ${time} ${logger}]: ${message}" />
   <include file="$(find arena_bringup)/launch/training/single_env_training.launch">
     <arg name="ns" value="eval_sim" />
+    <arg name="model" value="$(arg model)" />
   </include>
 
   <include file="$(find arena_bringup)/launch/training/start_envs.launch">
