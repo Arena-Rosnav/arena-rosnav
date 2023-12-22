@@ -6,6 +6,11 @@
     uri: https://github.com/Arena-Rosnav/flatland.git
     version: master
 
+- git:
+    local-name: ../arena-unity
+    uri: https://github.com/Arena-Rosnav/arena-unity.git
+    version: main
+
 # - git:
 #     local-name: ../utils/arena-tools
 #     uri: https://github.com/Arena-Rosnav/arena-tools.git
