@@ -15,7 +15,7 @@ from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
 
-from task_generator.shared import ModelType, PositionOrientation, RobotProps
+from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
 
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
@@ -117,7 +117,7 @@ class GazeboSimulator(BaseSimulator):
                 *quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="sxyz")
             )
         )
-        request.robot_namespace = self._namespace(entity.name)
+        request.robot_namespace = Namespace(entity.name)
         request.reference_frame = "world"
 
         if isinstance(entity, RobotProps):

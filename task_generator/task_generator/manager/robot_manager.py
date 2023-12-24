@@ -42,7 +42,7 @@ class RobotManager:
     @property
     def goal_pos(self) -> PositionOrientation:
         return self._goal_pos
-    
+
     _position: PositionOrientation
 
     _robot_radius: float
@@ -56,7 +56,9 @@ class RobotManager:
     _pub_goal_timer: rospy.Timer
     _clear_costmaps_srv: rospy.ServiceProxy
 
-    def __init__(self, namespace: Namespace, entity_manager: EntityManager, robot: Robot):
+    def __init__(
+        self, namespace: Namespace, entity_manager: EntityManager, robot: Robot
+    ):
         self._namespace = namespace
 
         self._entity_manager = entity_manager
@@ -110,16 +112,16 @@ class RobotManager:
             rospy.Duration(nsecs=int(0.25e9)), self._publish_goal_periodically
         )
 
-        rospy.Subscriber(self.namespace("odom"), nav_msgs.Odometry,
-                         self._robot_pos_callback)
+        rospy.Subscriber(
+            self.namespace("odom"), nav_msgs.Odometry, self._robot_pos_callback
+        )
 
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            return
+        # if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+        #     return
 
         self._launch_robot()
 
-        self._robot_radius = rosparam_get(
-            float, self.namespace("robot_radius"))
+        self._robot_radius = rosparam_get(float, self.namespace("robot_radius"))
 
         # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
         self._clear_costmaps_srv = rospy.ServiceProxy(
@@ -136,9 +138,6 @@ class RobotManager:
 
     @property
     def name(self) -> str:
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            return ""
-
         return self._robot.name
 
     @property
@@ -153,7 +152,11 @@ class RobotManager:
     def move_robot_to_pos(self, position: PositionOrientation):
         self._entity_manager.move_robot(name=self.name, position=position)
 
-    def reset(self, start_pos: Optional[PositionOrientation], goal_pos: Optional[PositionOrientation]):
+    def reset(
+        self,
+        start_pos: Optional[PositionOrientation],
+        goal_pos: Optional[PositionOrientation],
+    ):
         """
         Publishes start and goal to data_recorder, publishes goal to move_base
         """
@@ -172,7 +175,6 @@ class RobotManager:
             if self._robot.record_data:
                 rospy.set_param(self.namespace("start"), list(self._start_pos))
 
-
         try:
             self._clear_costmaps_srv()
         except:
@@ -186,12 +188,16 @@ class RobotManager:
         goal = self._goal_pos
 
         distance_to_goal: float = np.linalg.norm(
-            np.array(goal[:2]) - np.array(start[:2]))
+            np.array(goal[:2]) - np.array(start[:2])
+        )
 
         # https://gamedev.stackexchange.com/a/4472
         angle_to_goal: float = np.pi - np.abs(np.abs(goal[2] - start[2]) - np.pi)
 
-        return distance_to_goal < self._goal_tolerance_distance and angle_to_goal < self._goal_tolerance_angle
+        return (
+            distance_to_goal < self._goal_tolerance_distance
+            and angle_to_goal < self._goal_tolerance_angle
+        )
 
     def _publish_goal_periodically(self, *args, **kwargs):
         if self._goal_pos is not None:
@@ -220,6 +226,7 @@ class RobotManager:
         rospy.loginfo(f"START WITH MODEL {self.namespace}")
 
         args = [
+            f"SIMULATOR:={rosparam_get(str, 'SIMULATOR', 'flatland')}",
             f"model:={self.model_name}",
             f"name:={self.name}",
             f"namespace:={self.namespace}",
@@ -227,8 +234,12 @@ class RobotManager:
             f"local_planner:={self._robot.planner}",
             f"complexity:={rosparam_get(int, 'complexity', 1)}",
             f"record_data:={self._robot.record_data}",
+            f"train_mode:={rosparam_get(bool, 'train_mode', False)}",
             f"agent_name:={self._robot.agent}",
         ]
+
+        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+            args += [f"sim_namespace:={self.namespace.simulation_ns}"]
 
         self.process = roslaunch.parent.ROSLaunchParent(  # type: ignore
             roslaunch.rlutil.get_or_generate_uuid(None, False),  # type: ignore
@@ -238,8 +249,7 @@ class RobotManager:
 
         # Overwrite default move base params
         base_frame: str = rosparam_get(str, self.namespace("robot_base_frame"))
-        sensor_frame: str = rosparam_get(
-            str, self.namespace("robot_sensor_frame"))
+        sensor_frame: str = rosparam_get(str, self.namespace("robot_sensor_frame"))
 
         rospy.set_param(
             self.namespace("move_base", "global_costmap", "robot_base_frame"),
@@ -250,28 +260,20 @@ class RobotManager:
             os.path.join(self.name, base_frame),
         )
         rospy.set_param(
-            self.namespace("move_base", "local_costmap",
-                           "scan", "sensor_frame"),
+            self.namespace("move_base", "local_costmap", "scan", "sensor_frame"),
             os.path.join(self.name, sensor_frame),
         )
         rospy.set_param(
-            self.namespace("move_base", "global_costmap",
-                           "scan", "sensor_frame"),
+            self.namespace("move_base", "global_costmap", "scan", "sensor_frame"),
             os.path.join(self.name, base_frame),
         )
 
     def _robot_pos_callback(self, data: nav_msgs.Odometry):
-
         current_position = data.pose.pose
         quat = current_position.orientation
 
         rot = scipy.spatial.transform.Rotation.from_quat(
-            [
-                quat.x,
-                quat.y,
-                quat.z,
-                quat.w
-            ]
+            [quat.x, quat.y, quat.z, quat.w]
         )
 
         self._position = PositionOrientation(

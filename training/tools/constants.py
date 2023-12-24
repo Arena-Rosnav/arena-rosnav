@@ -56,5 +56,5 @@ class TRAINING_CONSTANTS(object):
         START_TIME = dt.now().strftime("%Y_%m_%d__%H_%M_%S")
         robot_model = rospy.get_param("robot_model")
         encoder_name = rospy.get_param("space_encoder", "RobotSpecificEncoder")
-        agent_name = f"{robot_model}_{architecture_name}_{encoder_name}_{START_TIME}"
+        agent_name = f"{robot_model}_{architecture_name}_{START_TIME}"
         return agent_name

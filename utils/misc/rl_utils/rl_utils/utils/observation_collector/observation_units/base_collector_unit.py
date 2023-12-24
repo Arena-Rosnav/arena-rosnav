@@ -8,8 +8,8 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from task_generator.shared import Namespace
 
-from ..constants import MAX_WAIT, OBS_DICT_KEYS, SLEEP, TOPICS
-from ..utils import false_params, get_goal_pose_in_robot_frame, pose3d_to_pose2d
+from ..constants import OBS_DICT_KEYS, TOPICS
+from ..utils import get_goal_pose_in_robot_frame, pose3d_to_pose2d
 from .collector_unit import CollectorUnit
 
 
