@@ -7,7 +7,7 @@ from tf.transformations import quaternion_from_euler
 from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 
-from task_generator.shared import ModelType
+from task_generator.shared import ModelType, Robot
 
 # Message Types
 from gazebo_msgs.msg import ModelState
