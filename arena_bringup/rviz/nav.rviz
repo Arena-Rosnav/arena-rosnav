@@ -10,6 +10,8 @@ Panels:
         - /my_robot1
         - /my_robot1/Namespaces1
         - /TF1/Frames1
+        - /Goal1
+        - /Pose1
         - /Path6
         - /Path7
         - /Path8
@@ -33,7 +35,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: LaserScan
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -398,21 +400,9 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        eval_sim/jackal/odom:
-          Value: true
-        eval_sim_odom:
+        jackal/odom:
           Value: true
         map:
-          Value: true
-        sim_1/jackal/base_link:
-          Value: true
-        sim_1/jackal/front_laser:
-          Value: true
-        sim_1/jackal/full_laser:
-          Value: true
-        sim_1/jackal/odom:
-          Value: true
-        sim_1_odom:
           Value: true
       Marker Alpha: 1
       Marker Scale: 1
@@ -422,17 +412,7 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          eval_sim/jackal/odom:
-            {}
-          eval_sim_odom:
-            {}
-          sim_1/jackal/odom:
-            sim_1/jackal/base_link:
-              sim_1/jackal/front_laser:
-                {}
-              sim_1/jackal/full_laser:
-                {}
-          sim_1_odom:
+          jackal/odom:
             {}
       Update Interval: 0
       Value: true
@@ -513,7 +493,7 @@ Visualization Manager:
       Marker Topic: /planning_vis/goal
       Name: Goal
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -529,7 +509,7 @@ Visualization Manager:
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Axes
-      Topic: /goal
+      Topic: /sim_1/jackal/goal
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -1297,10 +1277,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 62.195030212402344
+      Scale: -36.97104263305664
       Target Frame: <Fixed Frame>
-      X: 10.555678367614746
-      Y: 5.63629150390625
+      X: 9.729456901550293
+      Y: 8.993311882019043
     Saved: ~
 Window Geometry:
   Displays:

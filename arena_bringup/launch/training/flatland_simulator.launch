@@ -4,13 +4,14 @@
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
 
-  <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster" args="0 0 0 0 0 0 1 map $(arg ns)_odom" />
-  
   <!-- launch flatland server -->
-  <node name="$(anon flatland_server)" pkg="flatland_server" type="flatland_server" output="screen">
+  <node name="flatland_server" pkg="flatland_server" type="flatland_server" output="screen">
     <!-- remapping for namespace -->
     <remap from="/clock" to="/$(arg ns)/clock"/>
     <remap from="/step_world" to="/$(arg ns)/step_world" />
     <!-- <remap from="/move_model" to="/$(arg ns)/move_model" /> -->
   </node>
+  <include file="$(find arena_bringup)/launch/utils/rviz.launch">
+    <arg name="show_rviz" value="false" />
+  </include>
 </launch>

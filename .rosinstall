@@ -38,6 +38,11 @@
     version: master
 
 - git:
+    local-name: ../utils-extern/ros/ros_tcp_endpoint
+    uri: https://github.com/Unity-Technologies/ROS-TCP-Endpoint.git
+    version: main
+
+- git:
     local-name: ../utils-extern/ros/move_base_flex
     uri: https://github.com/voshch/move_base_flex.git
 
@@ -80,8 +85,8 @@
   # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../planners/rosnav
-    uri: https://github.com/tuananhroman/rosnav-rl.git
-    version: master
+    uri: https://github.com/Arena-Rosnav/rosnav-rl.git
+    version: dev
 
 - git:
     local-name: ../planners/arena-ros

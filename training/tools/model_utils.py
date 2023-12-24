@@ -110,16 +110,16 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
 
 
 def get_ppo_instance(
+    agent_description: BaseAgent,
     config: dict,
     train_env: VecEnv,
     PATHS: dict,
-    AgentFactory,
 ) -> PPO:
     new_model: bool = (
         config["rl_agent"]["architecture_name"] and not config["rl_agent"]["resume"]
     )
     model = (
-        instantiate_new_model(config, train_env, PATHS, AgentFactory)
+        instantiate_new_model(agent_description, config, train_env, PATHS)
         if new_model
         else load_model(config, train_env, PATHS)
     )
@@ -131,12 +131,8 @@ def get_ppo_instance(
 
 
 def instantiate_new_model(
-    config: dict, train_env: VecEnv, PATHS: dict, AgentFactory
+    agent_description: BaseAgent, config: dict, train_env: VecEnv, PATHS: dict
 ) -> PPO:
-    agent: Union[Type[BaseAgent], Type[ActorCriticPolicy]] = AgentFactory.instantiate(
-        config["rl_agent"]["architecture_name"]
-    )
-
     ppo_config = config["rl_agent"]["ppo"]
     ppo_kwargs = {
         "env": train_env,
@@ -157,11 +153,19 @@ def instantiate_new_model(
         ],
     }
 
-    if isinstance(agent, BaseAgent):
-        ppo_kwargs["policy"] = agent.type.value
-        ppo_kwargs["policy_kwargs"] = agent.get_kwargs()
-    elif issubclass(agent, ActorCriticPolicy):
-        ppo_kwargs["policy"] = agent
+    if isinstance(agent_description, BaseAgent):
+        ppo_kwargs["policy"] = agent_description.type.value
+        policy_kwargs = agent_description.get_kwargs()
+        policy_kwargs["features_extractor_kwargs"][
+            "observation_space_manager"
+        ] = train_env.venv.envs[0].model_space_encoder.observation_space_manager
+        policy_kwargs["features_extractor_kwargs"]["stacked_obs"] = config["rl_agent"][
+            "frame_stacking"
+        ]["enabled"]
+        ppo_kwargs["policy_kwargs"] = policy_kwargs
+    elif issubclass(agent_description, ActorCriticPolicy):
+        raise NotImplementedError("ActorCriticPolicy not implemented yet!")
+        ppo_kwargs["policy"] = agent_description
     else:
         arch_name = config["rl_agent"]["architecture_name"]
         raise TypeError(
@@ -169,7 +173,7 @@ def instantiate_new_model(
             "'BaseAgent' or 'ActorCriticPolicy'!"
         )
 
-    is_lstm = "LSTM" in agent.type.name
+    is_lstm = "LSTM" in agent_description.type.name
     return RecurrentPPO(**ppo_kwargs) if is_lstm else PPO(**ppo_kwargs)
 
 
