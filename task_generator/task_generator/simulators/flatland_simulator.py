@@ -5,7 +5,7 @@ import std_srvs.srv as std_srvs
 import flatland_msgs.msg as flatland_msgs
 import geometry_msgs.msg as geometry_msgs
 
-from task_generator.shared import ModelType
+from task_generator.shared import ModelType, Namespace
 
 from task_generator.utils import rosparam_get
 
@@ -121,7 +121,7 @@ class FlatlandSimulator(BaseSimulator):
         request.yaml_path = model.description
 
         request.name = entity.name
-        request.ns = self._namespace(entity.name)
+        request.ns = Namespace(entity.name)
         request.pose = geometry_msgs.Pose2D(
             x=entity.position.x, y=entity.position.y, theta=entity.position.orientation
         )
