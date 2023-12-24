@@ -2,18 +2,18 @@ import rospy
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.utils import rosparam_get
+from task_generator.manager.utils import WorldWalls
 from tf.transformations import quaternion_from_euler
 from task_generator.constants import Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 
-from task_generator.shared import EntityProps, ModelType, Robot, ObstacleProps, PositionOrientation
+from task_generator.shared import ModelType
 
 # Message Types
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState, SetModelStateRequest, DeleteModel, SpawnModel, SpawnModelRequest, DeleteModelRequest, DeleteModelResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
-from std_msgs.msg import Empty
-from std_srvs.srv import Empty, EmptyRequest
+from unity_msgs.srv import SpawnWalls, SpawnWallsRequest
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
@@ -30,6 +30,8 @@ class UnitySimulator(BaseSimulator):
         rospy.loginfo("Waiting for Unity services...")
 
         rospy.wait_for_service(self._namespace(
+            "unity", "spawn_walls"), timeout=T)
+        rospy.wait_for_service(self._namespace(
             "unity", "spawn_model"), timeout=T)
         rospy.wait_for_service(self._namespace(
             "unity", "delete_model"), timeout=T)
@@ -37,6 +39,9 @@ class UnitySimulator(BaseSimulator):
             "unity", "set_model_state"), timeout=T)
 
         # TODO: Proper Message Types
+        self._spawn_walls_srv = rospy.ServiceProxy(
+            self._namespace("unity", "spawn_walls"), SpawnWalls
+        )
         self._spawn_model[ModelType.SDF] = rospy.ServiceProxy(
             self._namespace("unity", "spawn_model"), SpawnModel
         )
@@ -90,7 +95,7 @@ class UnitySimulator(BaseSimulator):
         res = self.spawn_model(model.type, request)
         return res.success
 
-    def move_entity(self, name, pos):
+    def move_entity(self, name, position):
         rospy.loginfo("[Unity Simulator] Move Request for " + name)
 
         request = SetModelStateRequest()
@@ -99,11 +104,11 @@ class UnitySimulator(BaseSimulator):
         request.model_state.model_name = name
         pose = Pose()
         # Keep in mind that y axis is up
-        pose.position.x = pos[0]
+        pose.position.x = position[0]
         pose.position.y = 0.35
-        pose.position.z = pos[1]
+        pose.position.z = position[1]
         pose.orientation = Quaternion(
-            *quaternion_from_euler(0.0, pos[2], 0.0, axes="sxyz")
+            *quaternion_from_euler(0.0, position[2], 0.0, axes="sxyz")
         )
         request.model_state.pose = pose
         request.model_state.reference_frame = "world"
@@ -132,3 +137,10 @@ class UnitySimulator(BaseSimulator):
         goal_msg.pose.orientation.z = 1
 
         self._goal_pub.publish(goal_msg)
+
+    def spawn_walls(self, walls: WorldWalls):
+        # send a spawn request to unity for all walls
+        request = SpawnWallsRequest()
+        request.walls_string = "/".join([f"{wall[0].x},{wall[0].y};{wall[1].x},{wall[1].y}" for wall in walls])
+
+        self._spawn_walls_srv(request)
