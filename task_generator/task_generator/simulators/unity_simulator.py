@@ -38,7 +38,7 @@ class UnitySimulator(BaseSimulator):
         rospy.wait_for_service(self._namespace(
             "unity", "set_model_state"), timeout=T)
 
-        # TODO: Proper Message Types
+        # TODO: Custom Message Types
         self._spawn_walls_srv = rospy.ServiceProxy(
             self._namespace("unity", "spawn_walls"), SpawnWalls
         )
@@ -80,17 +80,17 @@ class UnitySimulator(BaseSimulator):
         request.initial_pose = Pose(
             position=Point(
                 x=entity.position[0],
-                y=0,
-                z=entity.position[1]
+                y=entity.position[1],
+                z=0.35
             ),
-            orientation=Quaternion(*quaternion_from_euler(0.0, entity.position[2], 0.0, axes="sxyz")
-                                   )
+            orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz"))
         )
 
-        rospy.set_param(request.robot_namespace(
-            "robot_description"), model.description)
-        rospy.set_param(request.robot_namespace(
-            "tf_prefix"), str(request.robot_namespace))
+        if isinstance(entity, Robot):
+            rospy.set_param(request.robot_namespace(
+                "robot_description"), model.description)
+            rospy.set_param(request.robot_namespace(
+                "tf_prefix"), str(request.robot_namespace))
 
         res = self.spawn_model(model.type, request)
         return res.success
@@ -102,13 +102,15 @@ class UnitySimulator(BaseSimulator):
         request.model_state = ModelState()
 
         request.model_state.model_name = name
-        pose = Pose()
-        # Keep in mind that y axis is up
-        pose.position.x = position[0]
-        pose.position.y = 0.35
-        pose.position.z = position[1]
-        pose.orientation = Quaternion(
-            *quaternion_from_euler(0.0, position[2], 0.0, axes="sxyz")
+        pose = Pose(
+            position=Point(
+                x = position[0],
+                y = position[1],
+                z = 0.35
+            ),
+            orientation=Quaternion(
+                *quaternion_from_euler(0.0, 0.0, position[2], axes="sxyz")
+            )
         )
         request.model_state.pose = pose
         request.model_state.reference_frame = "world"
