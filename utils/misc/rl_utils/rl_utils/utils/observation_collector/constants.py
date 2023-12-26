@@ -2,6 +2,12 @@ import enum
 from pedsim_agents.utils import SemanticAttribute
 
 
+class DONE_REASONS(enum.Enum):
+    STEP_LIMIT = 0
+    COLLISION = 1
+    SUCCESS = 2
+
+
 class TOPICS:
     LASER = "scan"
     FULL_RANGE_LASER = "full_scan"

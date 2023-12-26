@@ -2,12 +2,13 @@ from typing import Any, Callable, Dict
 from warnings import warn
 
 import numpy as np
+from rl_utils.utils.observation_collector.constants import DONE_REASONS
 
-from ..constants import REWARD_CONSTANTS, DEFAULTS
+from ..constants import DEFAULTS, REWARD_CONSTANTS
 from ..reward_function import RewardFunction
-from .base_reward_units import RewardUnit, GlobalplanRewardUnit
-from .reward_unit_factory import RewardUnitFactory
 from ..utils import check_params
+from .base_reward_units import GlobalplanRewardUnit, RewardUnit
+from .reward_unit_factory import RewardUnitFactory
 
 # UPDATE WHEN ADDING A NEW UNIT
 __all__ = [
@@ -28,7 +29,11 @@ __all__ = [
 
 @RewardUnitFactory.register("goal_reached")
 class RewardGoalReached(RewardUnit):
-    DONE_INFO = {"is_done": True, "done_reason": 2, "is_success": True}
+    DONE_INFO = {
+        "is_done": True,
+        "done_reason": DONE_REASONS.SUCCESS.name,
+        "is_success": True,
+    }
     NOT_DONE_INFO = {"is_done": False}
 
     @check_params
@@ -213,7 +218,11 @@ class RewardApproachGoal(RewardUnit):
 
 @RewardUnitFactory.register("collision")
 class RewardCollision(RewardUnit):
-    DONE_INFO = {"is_done": True, "done_reason": 1, "is_success": False}
+    DONE_INFO = {
+        "is_done": True,
+        "done_reason": DONE_REASONS.COLLISION.name,
+        "is_success": False,
+    }
 
     @check_params
     def __init__(
