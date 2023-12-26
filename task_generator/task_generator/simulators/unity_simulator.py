@@ -148,8 +148,9 @@ class UnitySimulator(BaseSimulator):
         request.walls = []
         for wall in walls:
             wall_req = Wall(
-                start=Point(x=wall[0].x, y=0, z=wall[0].y),
-                start=Point(x=wall[1].x, y=UnityConstants.WALL_HEIGHT, z=wall[1].y)
+                start=Point(x=wall[0].x, y=wall[0].y, z=0),
+                end=Point(x=wall[1].x, y=wall[1].y,
+                          z=UnityConstants.WALL_HEIGHT)
             )
             request.walls.append(wall_req)
 
