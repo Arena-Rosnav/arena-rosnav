@@ -63,13 +63,17 @@ class VecStatsRecorder(VecEnvWrapper):
             self.cum_rewards[done_env] = 0.0
 
             self.episode_lengths.append(infos[done_env]["episode_length"])
-            self.done_reasons[DONE_REASONS[infos[done_env]["done_reason"]]] += 1
+            self.done_reasons[infos[done_env]["done_reason"]] += 1
 
             self.num_episodes += 1
 
         self.num_steps += 1
 
-        if self.verbose and self.num_episodes % self.after_x_eps == 0:
+        if (
+            self.verbose
+            and self.num_episodes % self.after_x_eps == 0
+            and self.num_episodes > 0
+        ):
             self.print_stats()
             self.reset_stats()
 
@@ -83,12 +87,12 @@ class VecStatsRecorder(VecEnvWrapper):
             return
         # Use print function to add line separators
         print("-" * 40, sep="", end="\n")  # Print 40 dashes as a line separator
-        print(f"Step {self.num_steps}:")
+        print(f"Episode {self.num_episodes} / Step {self.num_steps}:")
         print(
             f"Average step time: {sum(self.step_times) / self.after_x_eps:.4f} seconds"
         )
         print(
-            f"Average episode return: {sum(self.episode_returns) / self.after_x_eps:.3f}"
+            f"Average episode return: {sum(self.episode_returns) / self.after_x_eps:.3f} pts"
         )
         print(
             f"Mean episode length: {sum(self.episode_lengths) / self.after_x_eps:.1f} steps"
