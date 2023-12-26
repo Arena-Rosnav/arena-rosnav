@@ -1,27 +1,23 @@
 #! /usr/bin/env python3
-import math
-import os
 import time
 from typing import Tuple
 
 import gymnasium
 import numpy as np
-from rosnav.model.base_agent import BaseAgent
 import rospy
 from flatland_msgs.msg import StepWorld
 from geometry_msgs.msg import Twist
+from rl_utils.utils.observation_collector.constants import DONE_REASONS
+
+from rl_utils.utils.observation_collector.observation_manager import ObservationManager
+from rl_utils.utils.rewards.reward_function import RewardFunction
+from rosnav.model.base_agent import BaseAgent
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
-from stable_baselines3.common.env_checker import check_env
 from std_srvs.srv import Empty
 from task_generator.shared import Namespace
 from task_generator.task_generator_node import TaskGenerator
 from task_generator.tasks.base_task import BaseTask
 from task_generator.utils import rosparam_get
-
-# from ..utils.old_observation_collector import ObservationCollector
-from rl_utils.utils.observation_collector.observation_manager import ObservationManager
-from rl_utils.utils.rewards.reward_function import RewardFunction
-from rl_utils.utils.observation_collector.constants import OBS_DICT_KEYS
 
 
 def delay_node_init(ns):
@@ -45,52 +41,28 @@ class FlatlandEnv(gymnasium.Env):
 
     Args:
         ns (str): The namespace of the environment.
+        agent_description (BaseAgent): The agent description.
         reward_fnc (str): The name of the reward function.
         max_steps_per_episode (int): The maximum number of steps per episode.
-        verbose (bool): Whether to print verbose information.
-        log_last_n_eps (int): The number of episodes to log statistics for.
+        *args: Additional positional arguments.
+        **kwargs: Additional keyword arguments.
 
     Attributes:
-        metadata (dict): Metadata for the environment.
+        metadata (dict): The metadata of the environment.
         ns (Namespace): The namespace of the environment.
-        _is_train_mode (bool): Whether the environment is in training mode.
+        _agent_description (BaseAgent): The agent description.
+        _is_train_mode (bool): Flag indicating if the environment is in training mode.
         model_space_encoder (RosnavSpaceManager): The space encoder for the model.
-        observation_collector (ObservationManager): The observation collector.
         task (BaseTask): The task manager.
         reward_calculator (RewardFunction): The reward calculator.
-        agent_action_pub (Publisher): The publisher for agent actions.
+        agent_action_pub (rospy.Publisher): The publisher for agent actions.
         _service_name_step (str): The name of the step world service.
-        _step_world_srv (ServiceProxy): The service proxy for the step world service.
-        _verbose (bool): Whether to print verbose information.
-        _log_last_n_eps (int): The number of episodes to log statistics for.
+        _step_world_srv (rospy.ServiceProxy): The step world service proxy.
+        observation_collector (ObservationManager): The observation collector.
         _steps_curr_episode (int): The current number of steps in the episode.
         _episode (int): The current episode number.
         _max_steps_per_episode (int): The maximum number of steps per episode.
         _last_action (np.ndarray): The last action taken by the agent.
-        last_mean_reward (float): The mean reward of the last logged episodes.
-        mean_reward (list): The cumulative reward and count of episodes.
-        step_count_hist (list): The history of step counts for the last logged episodes.
-        step_time (list): The cumulative step time and count of steps.
-        _done_reasons (dict): The reasons for episode termination.
-        _done_hist (list): The history of episode terminations.
-
-    Properties:
-        action_space: The action space of the environment.
-        observation_space: The observation space of the environment.
-
-    Methods:
-        _setup_env_for_training: Set up the environment for training.
-        _pub_action: Publish an action to the agent.
-        decode_action: Decode an action from the model space.
-        encode_observation: Encode an observation into the model space.
-        step: Take a step in the environment.
-        call_service_takeSimStep: Call the step world service.
-        reset: Reset the environment.
-        close: Close the environment.
-        update_statistics: Update the statistics of the environment.
-        print_statistics: Print the statistics of the environment.
-        determine_termination: Determine if the episode is terminated.
-
     """
 
     metadata = {"render_modes": ["human"]}
@@ -101,8 +73,6 @@ class FlatlandEnv(gymnasium.Env):
         agent_description: BaseAgent,
         reward_fnc: str,
         max_steps_per_episode=100,
-        verbose: bool = True,
-        log_last_n_eps: int = 20,
         *args,
         **kwargs,
     ):
@@ -129,26 +99,10 @@ class FlatlandEnv(gymnasium.Env):
         # observation collector
         self.observation_collector = ObservationManager(self.ns)
 
-        self._verbose = verbose
-        self._log_last_n_eps = log_last_n_eps
-
         self._steps_curr_episode = 0
         self._episode = 0
         self._max_steps_per_episode = max_steps_per_episode
         self._last_action = np.array([0, 0, 0])  # linear x, linear y, angular z
-
-        # for extended eval
-        self.last_mean_reward = 0
-        self.mean_reward = [0, 0]
-        self.step_count_hist = [0] * self._log_last_n_eps
-        self.step_time = [0, 0]
-
-        self._done_reasons = {
-            "0": "Timeout",
-            "1": "Crash",
-            "2": "Success",
-        }
-        self._done_hist = 3 * [0]
 
     @property
     def action_space(self):
@@ -208,8 +162,6 @@ class FlatlandEnv(gymnasium.Env):
 
         """
 
-        start_time = time.time()
-
         decoded_action = self.decode_action(action)
         self._pub_action(decoded_action)
 
@@ -227,24 +179,14 @@ class FlatlandEnv(gymnasium.Env):
             **obs_dict,
         )
 
-        self.update_statistics(reward=reward)
+        self._steps_curr_episode += 1
 
         # info
-        info, done = FlatlandEnv.determine_termination(
+        info, done = self.determine_termination(
             reward_info=reward_info,
             curr_steps=self._steps_curr_episode,
             max_steps=self._max_steps_per_episode,
         )
-
-        if done and self._verbose:
-            self.step_count_hist[
-                self._episode % self._log_last_n_eps
-            ] = self._steps_curr_episode
-            self._done_hist[int(info["done_reason"])] += 1
-            if sum(self._done_hist) >= self._log_last_n_eps:
-                self.print_statistics()
-
-        self.step_time[0] += time.time() - start_time
 
         return (
             self.encode_observation(obs_dict),
@@ -309,49 +251,10 @@ class FlatlandEnv(gymnasium.Env):
         Close the environment.
 
         """
-
         pass
 
-    def update_statistics(self, **kwargs) -> None:
-        """
-        Update the statistics of the environment.
-
-        Args:
-            **kwargs: Additional keyword arguments.
-
-        """
-
-        self.step_time[1] += 1
-        self.mean_reward[1] += 1
-        self.mean_reward[0] += kwargs["reward"]
-        self._steps_curr_episode += 1
-
-    def print_statistics(self):
-        """
-        Print the statistics of the environment.
-
-        """
-
-        mean_reward = self.mean_reward[0] / self._log_last_n_eps
-        diff = round(mean_reward - self.last_mean_reward, 5)
-
-        print(
-            f"[{self.ns}] Last {self._log_last_n_eps} Episodes:\t"
-            f"{self._done_reasons[str(0)]}: {self._done_hist[0]}\t"
-            f"{self._done_reasons[str(1)]}: {self._done_hist[1]}\t"
-            f"{self._done_reasons[str(2)]}: {self._done_hist[2]}\t"
-            f"Mean step time: {round(self.step_time[0] / self.step_time[1] * 100, 2)}\t"
-            f"Mean cum. reward: {round(mean_reward, 5)} ({'+' if diff >= 0 else ''}{diff})\t"
-            f"Mean steps: {sum(self.step_count_hist) / self._log_last_n_eps}\t"
-        )
-        self._done_hist = [0] * 3
-        self.step_time = [0, 0]
-        self.last_mean_reward = mean_reward
-        self.mean_reward = [0, 0]
-        self.step_count_hist = [0] * self._log_last_n_eps
-
-    @staticmethod
     def determine_termination(
+        self,
         reward_info: dict,
         curr_steps: int,
         max_steps: int,
@@ -379,10 +282,12 @@ class FlatlandEnv(gymnasium.Env):
         if terminated:
             info["done_reason"] = reward_info["done_reason"]
             info["is_success"] = reward_info["is_success"]
+            info["episode_length"] = self._steps_curr_episode
 
         if curr_steps >= max_steps:
             terminated = True
-            info["done_reason"] = 0
+            info["done_reason"] = DONE_REASONS.STEP_LIMIT.name
             info["is_success"] = 0
+            info["episode_length"] = self._steps_curr_episode
 
         return info, terminated
