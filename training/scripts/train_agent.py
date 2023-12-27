@@ -3,13 +3,13 @@ import sys
 import time
 
 import rospy
-from rl_utils.envs.vec_stats_wrapper import VecStatsRecorder
+
 from rosnav.model.agent_factory import AgentFactory
 from rosnav.model.base_agent import BaseAgent
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from std_msgs.msg import Empty
 from tools.argsparser import parse_training_args
-from tools.env_utils import init_envs
+from tools.env_utils import make_envs
 from tools.general import *
 from tools.model_utils import get_ppo_instance, init_callbacks
 from tools.ros_param_distributor import *
@@ -38,12 +38,6 @@ def main():
 
     print("________ STARTING TRAINING WITH:  %s ________\n" % config["agent_name"])
 
-    # for training with start_arena_flatland.launch
-    ns_for_nodes = rospy.get_param("/ns_for_nodes", True)
-
-    # check if simulations are booted
-    wait_for_nodes(with_ns=ns_for_nodes, n_envs=config["n_envs"], timeout=5)
-
     # initialize hyperparameters (save to/ load from json)
     config = initialize_config(
         paths=paths,
@@ -58,8 +52,7 @@ def main():
         config["rl_agent"]["architecture_name"]
     )
 
-    train_env, eval_env = init_envs(agent_description, config, paths, ns_for_nodes)
-    train_env = VecStatsRecorder(train_env, verbose=1, after_x_eps=10)
+    train_env, eval_env = make_envs(agent_description, config, paths)
     eval_cb = init_callbacks(config, train_env, eval_env, paths)
     model = get_ppo_instance(agent_description, config, train_env, paths)
 
