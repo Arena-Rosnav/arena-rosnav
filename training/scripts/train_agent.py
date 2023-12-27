@@ -1,18 +1,17 @@
 #!/usr/bin/env python
+import os
 import sys
 import time
 
 import rospy
-
 from rosnav.model.agent_factory import AgentFactory
 from rosnav.model.base_agent import BaseAgent
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
-from std_msgs.msg import Empty
 from tools.argsparser import parse_training_args
 from tools.env_utils import make_envs
-from tools.general import *
+from tools.general import generate_agent_name, get_paths, initialize_config, load_config
 from tools.model_utils import get_ppo_instance, init_callbacks
-from tools.ros_param_distributor import *
+from tools.ros_param_distributor import populate_ros_configs, populate_ros_params
 
 
 def on_shutdown(model):
@@ -76,8 +75,6 @@ def main():
         print("KeyboardInterrupt..")
 
     print(f"Time passed: {time.time()-start}s. \n Training script will be terminated..")
-
-    model.env.close()
 
     sys.exit()
 
