@@ -4,7 +4,7 @@ from typing import Tuple, Union
 import gym
 import rospy
 from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
-from rl_utils.envs.vec_stats_wrapper import VecStatsRecorder
+from rl_utils.utils.vec_wrapper.vec_stats_wrapper import VecStatsRecorder
 from rosnav.model.base_agent import BaseAgent
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import set_random_seed

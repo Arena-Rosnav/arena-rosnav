@@ -113,15 +113,15 @@ def get_ppo_instance(
     agent_description: BaseAgent,
     config: dict,
     train_env: VecEnv,
-    PATHS: dict,
+    paths: dict,
 ) -> PPO:
     new_model: bool = (
         config["rl_agent"]["architecture_name"] and not config["rl_agent"]["resume"]
     )
     model = (
-        instantiate_new_model(agent_description, config, train_env, PATHS)
+        instantiate_new_model(agent_description, config, train_env, paths)
         if new_model
-        else load_model(config, train_env, PATHS)
+        else load_model(config, train_env, paths)
     )
 
     wandb_logging: bool = not config["debug_mode"] and config["monitoring"]["use_wandb"]
