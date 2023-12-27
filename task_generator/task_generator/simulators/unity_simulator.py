@@ -4,7 +4,7 @@ from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.utils import rosparam_get
 from task_generator.manager.utils import WorldWalls
 from tf.transformations import quaternion_from_euler
-from task_generator.constants import Constants
+from task_generator.constants import Constants, UnityConstants
 from task_generator.simulators.base_simulator import BaseSimulator
 
 from task_generator.shared import ModelType, Robot
@@ -14,6 +14,7 @@ from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState, SetModelStateRequest, DeleteModel, SpawnModel, SpawnModelRequest, DeleteModelRequest, DeleteModelResponse
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from unity_msgs.srv import SpawnWalls, SpawnWallsRequest
+from unity_msgs.msg import Wall
 
 T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
@@ -83,7 +84,8 @@ class UnitySimulator(BaseSimulator):
                 y=entity.position[1],
                 z=0.35
             ),
-            orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz"))
+            orientation=Quaternion(
+                *quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz"))
         )
 
         if isinstance(entity, Robot):
@@ -104,9 +106,9 @@ class UnitySimulator(BaseSimulator):
         request.model_state.model_name = name
         pose = Pose(
             position=Point(
-                x = position[0],
-                y = position[1],
-                z = 0.35
+                x=position[0],
+                y=position[1],
+                z=0.35
             ),
             orientation=Quaternion(
                 *quaternion_from_euler(0.0, 0.0, position[2], axes="sxyz")
@@ -143,6 +145,13 @@ class UnitySimulator(BaseSimulator):
     def spawn_walls(self, walls: WorldWalls):
         # send a spawn request to unity for all walls
         request = SpawnWallsRequest()
-        request.walls_string = "/".join([f"{wall[0].x},{wall[0].y};{wall[1].x},{wall[1].y}" for wall in walls])
+        request.walls = []
+        for wall in walls:
+            wall_req = Wall(
+                start=Point(x=wall[0].x, y=wall[0].y, z=0),
+                end=Point(x=wall[1].x, y=wall[1].y,
+                          z=UnityConstants.WALL_HEIGHT)
+            )
+            request.walls.append(wall_req)
 
         self._spawn_walls_srv(request)
