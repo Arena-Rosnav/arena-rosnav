@@ -3,6 +3,7 @@ import sys
 import time
 
 import rospy
+from rl_utils.envs.vec_stats_wrapper import VecStatsRecorder
 from rosnav.model.agent_factory import AgentFactory
 from rosnav.model.base_agent import BaseAgent
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
@@ -58,6 +59,7 @@ def main():
     )
 
     train_env, eval_env = init_envs(agent_description, config, paths, ns_for_nodes)
+    train_env = VecStatsRecorder(train_env, verbose=1, after_x_eps=10)
     eval_cb = init_callbacks(config, train_env, eval_env, paths)
     model = get_ppo_instance(agent_description, config, train_env, paths)
 
