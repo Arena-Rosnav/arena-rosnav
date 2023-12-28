@@ -147,8 +147,8 @@ class FlatlandEnv(gymnasium.Env):
     def decode_action(self, action: np.ndarray) -> np.ndarray:
         return self.model_space_encoder.decode_action(action)
 
-    def encode_observation(self, observation, structure=None):
-        return self.model_space_encoder.encode_observation(observation, structure)
+    def encode_observation(self, observation, *args, **kwargs):
+        return self.model_space_encoder.encode_observation(observation, **kwargs)
 
     def step(self, action: np.ndarray):
         """
@@ -189,7 +189,7 @@ class FlatlandEnv(gymnasium.Env):
         )
 
         return (
-            self.encode_observation(obs_dict),
+            self.encode_observation(obs_dict, is_done=done),
             reward,
             done,
             False,
@@ -234,16 +234,14 @@ class FlatlandEnv(gymnasium.Env):
         self._last_action = np.array([0, 0, 0])
 
         if self._is_train_mode:
-            for _ in range(2):
+            for _ in range(4):
                 self.agent_action_pub.publish(Twist())
                 self.call_service_takeSimStep()
 
         obs_dict = self.observation_collector.get_observations()
         info_dict = {}
         return (
-            self.model_space_encoder.encode_observation(
-                obs_dict,
-            ),
+            self.encode_observation(obs_dict),
             info_dict,
         )
 
