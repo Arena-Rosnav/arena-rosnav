@@ -6,7 +6,6 @@ import time
 import rospy
 from rosnav.model.agent_factory import AgentFactory
 from rosnav.model.base_agent import BaseAgent
-from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from tools.argsparser import parse_training_args
 from tools.env_utils import make_envs
 from tools.general import generate_agent_name, get_paths, initialize_config, load_config
@@ -56,12 +55,6 @@ def main():
     model = get_ppo_instance(agent_description, config, train_env, paths)
 
     rospy.on_shutdown(lambda: on_shutdown(model))
-
-    ## Save model once
-    if not config["debug_mode"]:
-        model.save(os.path.join(paths["model"], "best_model"))
-        if isinstance(train_env, VecNormalize):
-            train_env.save(os.path.join(paths["model"], "vec_normalize.pkl"))
 
     # start training
     start = time.time()

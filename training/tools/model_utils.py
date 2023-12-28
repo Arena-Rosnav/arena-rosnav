@@ -1,8 +1,9 @@
 import os
 import sys
-from typing import Union, Type
+from typing import Type, Union
 
 import wandb
+from rosnav.model.base_agent import BaseAgent
 from sb3_contrib import RecurrentPPO
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import (
@@ -10,10 +11,9 @@ from stable_baselines3.common.callbacks import (
     StopTrainingOnRewardThreshold,
 )
 from stable_baselines3.common.policies import ActorCriticPolicy
-from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from stable_baselines3.common.utils import configure_logger
-
-from rosnav.model.base_agent import BaseAgent
+from stable_baselines3.common.vec_env.base_vec_env import VecEnv
+from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from tools.staged_train_callback import InitiateNewTrainStage
 
 
@@ -125,27 +125,29 @@ def get_ppo_instance(
     )
 
     wandb_logging: bool = not config["debug_mode"] and config["monitoring"]["use_wandb"]
+
     if wandb_logging:
         setup_wandb(config, model)
+
+    ## Save model once
+
+    if not config["debug_mode"]:
+        model.save(os.path.join(paths["model"], "best_model"))
+        if isinstance(train_env, VecNormalize):
+            train_env.save(os.path.join(paths["model"], "vec_normalize.pkl"))
     return model
 
 
 def instantiate_new_model(
     agent_description: BaseAgent, config: dict, train_env: VecEnv, PATHS: dict
 ) -> PPO:
-    ppo_config = config["rl_agent"]["ppo"]
+    ppo_config = config["rl_agent"]["ppo"].copy()
+    ppo_config["batch_size"] = config["m_batch_size"]
+    del ppo_config["m_batch_size"]
+
     ppo_kwargs = {
         "env": train_env,
-        "gamma": ppo_config["gamma"],
-        "n_steps": ppo_config["n_steps"],
-        "ent_coef": ppo_config["ent_coef"],
-        "learning_rate": ppo_config["learning_rate"],
-        "vf_coef": ppo_config["vf_coef"],
-        "max_grad_norm": ppo_config["max_grad_norm"],
-        "gae_lambda": ppo_config["gae_lambda"],
-        "batch_size": ppo_config["m_batch_size"],
-        "n_epochs": ppo_config["n_epochs"],
-        "clip_range": ppo_config["clip_range"],
+        **ppo_config,
         "tensorboard_log": PATHS["tb"],
         # "use_wandb": False if config["debug_mode"] else config["monitoring"]["use_wandb"],
         "verbose": config["monitoring"]["cmd_line_logging"]["training_metrics"][
