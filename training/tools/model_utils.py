@@ -142,7 +142,7 @@ def instantiate_new_model(
     agent_description: BaseAgent, config: dict, train_env: VecEnv, PATHS: dict
 ) -> PPO:
     ppo_config = config["rl_agent"]["ppo"].copy()
-    ppo_config["batch_size"] = config["m_batch_size"]
+    ppo_config["batch_size"] = ppo_config["m_batch_size"]
     del ppo_config["m_batch_size"]
 
     ppo_kwargs = {
