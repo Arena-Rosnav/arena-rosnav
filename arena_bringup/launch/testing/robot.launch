@@ -3,7 +3,6 @@
   <!-- <env name="ROSCONSOLE_CONFIG_FILE" value="$(find arena_bringup)/params/rosconsole.conf"/> -->
 
   <!-- ___________ ARGS ___________ -->
-  <arg name="SIMULATOR" default="gazebo"/>
   <arg name="local_planner" default="" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]" />
 
   <arg name="name" default="" />
@@ -22,7 +21,6 @@
   <!-- TODO: Add data recorder -->
   <arg name="record_data" default="false" />
 
-  <param name="SIMULATOR" value="$(arg SIMULATOR)" />
   <param name="model" value="$(arg model)" />
   <param name="train_mode" value="$(arg train_mode)"
     unless="$(eval arg('local_planner') != 'rosnav')" />
@@ -53,16 +51,14 @@
     <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster"
       args="0 0 0 0 0 0 1 map $(arg name)/odom" />
 
-    <group if="$(eval arg('train_mode') == 'false')" >
-      <group if="$(eval env('SIMULATOR') == 'gazebo')" >
-        <include file="$(find arena-simulation-setup)/robot/$(arg model)/launch/control.launch">
-          <arg name="robot_namespace" value="$(arg namespace)" />
-          <arg name="frame" value="$(arg frame)" />
-        </include>
-        <node pkg="robot_state_publisher" type="robot_state_publisher" name="rob_st_pub">
-          <remap from="/joint_states" to="$(arg namespace)/joint_states" />
-        </node>
-      </group>
+    <group if="$(eval arg('train_mode') != 'true' and env('SIMULATOR') == 'gazebo')">
+      <include file="$(find arena-simulation-setup)/robot/$(arg model)/launch/control.launch">
+        <arg name="robot_namespace" value="$(arg namespace)" />
+        <arg name="frame" value="$(arg frame)" />
+      </include>
+      <node pkg="robot_state_publisher" type="robot_state_publisher" name="rob_st_pub">
+        <remap from="/joint_states" to="$(arg namespace)/joint_states" />
+      </node>
     </group>
 
     <node pkg="arena-evaluation" type="data_recorder_node.py" name="data_recorder_node"

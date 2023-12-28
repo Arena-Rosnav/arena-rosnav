@@ -226,7 +226,6 @@ class RobotManager:
         rospy.loginfo(f"START WITH MODEL {self.namespace}")
 
         args = [
-            f"SIMULATOR:={rosparam_get(str, 'SIMULATOR', 'flatland')}",
             f"model:={self.model_name}",
             f"name:={self.name}",
             f"namespace:={self.namespace}",
@@ -240,6 +239,7 @@ class RobotManager:
 
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             args += [f"sim_namespace:={self.namespace.simulation_ns}"]
+            os.environ["SIMULATOR"] = "flatland"
 
         self.process = roslaunch.parent.ROSLaunchParent(  # type: ignore
             roslaunch.rlutil.get_or_generate_uuid(None, False),  # type: ignore
