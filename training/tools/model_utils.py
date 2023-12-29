@@ -153,6 +153,7 @@ def instantiate_new_model(
         "verbose": config["monitoring"]["cmd_line_logging"]["training_metrics"][
             "enabled"
         ],
+        "device": "cpu" if config["no_gpu"] else "auto"
     }
 
     if isinstance(agent_description, BaseAgent):

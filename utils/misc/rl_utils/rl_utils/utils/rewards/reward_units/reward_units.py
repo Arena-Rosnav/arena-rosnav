@@ -73,9 +73,9 @@ class RewardGoalReached(RewardUnit):
         """
         if distance_to_goal < self._reward_function.goal_radius:
             self.add_reward(self._reward)
-            self.add_info(RewardGoalReached.DONE_INFO)
+            self.add_info(self.DONE_INFO)
         else:
-            self.add_info(RewardGoalReached.NOT_DONE_INFO)
+            self.add_info(self.NOT_DONE_INFO)
 
     def reset(self):
         self._goal_radius = self._reward_function.goal_radius
@@ -122,7 +122,7 @@ class RewardSafeDistance(RewardUnit):
             or violation_in_blind_spot
         ):
             self.add_reward(self._reward)
-            self.add_info(RewardSafeDistance.SAFE_DIST_VIOLATION_INFO)
+            self.add_info(self.SAFE_DIST_VIOLATION_INFO)
 
 
 @RewardUnitFactory.register("no_movement")
@@ -258,7 +258,7 @@ class RewardCollision(RewardUnit):
         laser_min = self._reward_function.get_internal_state_info("min_dist_laser")
         if laser_min <= self.robot_radius or coll_in_blind_spots:
             self.add_reward(self._reward)
-            self.add_info(RewardCollision.DONE_INFO)
+            self.add_info(self.DONE_INFO)
 
 
 @RewardUnitFactory.register("distance_travelled")

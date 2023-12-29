@@ -10,7 +10,7 @@ from tools.argsparser import parse_training_args
 from tools.env_utils import make_envs
 from tools.general import generate_agent_name, get_paths, initialize_config, load_config
 from tools.model_utils import get_ppo_instance, init_callbacks
-from tools.ros_param_distributor import populate_ros_configs, populate_ros_params
+from tools.ros_param_distributor import populate_ros_params
 
 
 def on_shutdown(model):
@@ -22,8 +22,7 @@ def main():
     args, _ = parse_training_args()
 
     config = load_config(args.config)
-
-    populate_ros_configs(config)
+    rospy.set_param("debug_mode", config["debug_mode"])
 
     # in debug mode, we emulate multiprocessing on only one process
     # in order to be better able to locate bugs
