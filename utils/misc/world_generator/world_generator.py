@@ -1,6 +1,7 @@
 import rospy
-import roslaunch
+import random
 
+from map_distance_server.srv import GetDistanceMap, GetDistanceMapResponse
 from nav_msgs.msg import OccupancyGrid
 from nav_msgs.srv import GetMap
 from std_msgs.msg import String
@@ -23,22 +24,21 @@ class WorldGenerator:
     and transforms them into a more realistic world.
     """
     # Class Properties
+    skip_map = False
 
     # Class Methods
     def __init__(self):
-
-        rospy.loginfo(
-            "-=-=-=-=-=-==-=-=-=-=-==-=-=-==-=-=-=-=-==-=-=-=-=-=====-=-=-=-=-==-=-=-=-=")
-        rospy.loginfo(
-            "-=-=-=-=-=-==-=-=-=-=-==-=-=-==-=-=-=-=-==-=-=-=-=-=====-=-=-=-=-==-=-=-=-=")
-        rospy.loginfo(
-            "-=-=-=-=-=-==-=-=-=-=-==-=-=-==-=-=-=-=-==-=-=-=-=-=====-=-=-=-=-==-=-=-=-=")
+        print("World Generator Initialized")
         self.map_sub = rospy.Subscriber(
             TOPIC_MAP, OccupancyGrid, self._map_callback)
-        self.static_map_srv = rospy.ServiceProxy(TOPIC_STATIC_MAP, GetMap)
-        self.new_dist_map_pub = rospy.Publisher(
-            TOPIC_SIGNAL_DIST_MAP, String, queue_size=1
-        )
+        self.map_pub = rospy.Publisher(TOPIC_MAP, OccupancyGrid, queue_size=1)
+        # self.static_map_srv = rospy.ServiceProxy(TOPIC_STATIC_MAP, GetMap)
+        # self.new_dist_map_pub = rospy.Publisher(
+        #     TOPIC_SIGNAL_DIST_MAP_NEW, String, queue_size=1
+        # )
+        # self.distance_map_srv = rospy.Service(
+        #     "/distance_map", GetDistanceMap, self._distance_map_srv_handler
+        # )
 
     def _map_callback(self, msg: OccupancyGrid):
         """Callback for when a new map is generated and published.
@@ -46,40 +46,31 @@ class WorldGenerator:
         Args:
             msg (OccupancyGrid): /map topic message.
         """
-        rospy.loginfo("----------============---------------------")
-        rospy.loginfo(msg)
-        rospy.loginfo("-------------------------------------------")
+        if self.skip_map:
+            self.skip_map = False
+            return
 
+        self.skip_map = True
+        print(f"Skip Map Status: {self.skip_map}")
+        print("Old Map Data:")
+        print(msg)
+        new_map: OccupancyGrid = msg
+        # new_map.data = [random.choice([0,100])] * len(msg.data)
+        new_map.data = [random.choice(13 * [0] + [100]) if d == 0 else d
+                        for d in msg.data]
+        print("New Map Data:")
+        print(new_map)
+        self.map_pub.publish(new_map)
 
-def start():
-    rospy.init_node("world_generator_node", anonymous=False)
-
-    world_gen = WorldGenerator()
-
-    pkg = "world_generator"
-    executable = "world_generator.py"
-    remap_args = (
-        None
-        if rospy.get_param("single_env", True)
-        else [("/clock", "/clock_simulation")]
-    )
-
-    node = roslaunch.core.Node(
-        pkg,
-        executable,
-        remap_args=remap_args,
-    )
-
-    launch = roslaunch.scriptapi.ROSLaunch()
-    launch.start()
-
-    process = launch.launch(node)
-
-    while not rospy.is_shutdown():
-        rospy.spin()
-
-    process.stop()
+    def _distance_map_srv_handler(self, _):
+        msg = GetDistanceMapResponse()
+        return msg
 
 
 if __name__ == "__main__":
-    start()
+    rospy.init_node("world_generator")
+
+    world_gen = WorldGenerator()
+
+    while not rospy.is_shutdown():
+        rospy.spin()

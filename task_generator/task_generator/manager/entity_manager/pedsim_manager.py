@@ -271,6 +271,10 @@ class PedsimManager(EntityManager):
         self.agent_topic_str = ""
 
         for obstacle in obstacles:
+            # Temporary fix to 
+            # world obstacles are overwritten by normal obstacles
+            if "_shelf_" in obstacle.name:
+                return
             msg = pedsim_msgs.Obstacle()
 
             msg.name = obstacle.name
