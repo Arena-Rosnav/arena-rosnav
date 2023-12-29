@@ -4,7 +4,12 @@ import numpy as np
 import rospy
 
 from .constants import REWARD_CONSTANTS
-from .utils import load_rew_fnc
+from .utils import (
+    InternalStateInfoUpdate,
+    load_rew_fnc,
+    safe_dist_breached,
+    min_dist_laser,
+)
 
 
 class RewardFunction:
@@ -15,10 +20,13 @@ class RewardFunction:
         _robot_radius (float): Radius of the robot.
         _safe_dist (float): Safe distance of the agent.
         _goal_radius (float): Radius of the goal.
-        _curr_dist_to_path (float): Current distance to the path.
-        _safe_dist_breached (bool): Flag indicating if safe distance is breached.
+
+        _internal_state_info (Dict[str, Any]): Centralized internal state info for the reward units.
+            E.g. to avoid computing same parameter in a single step multiple times.
+
         _curr_reward (float): Current reward value.
         _info (Dict[str, Any]): Dictionary containing reward function information.
+
         _rew_fnc_dict (Dict[str, Dict[str, Any]]): Dictionary containing reward function specifications.
         _reward_units (List[RewardUnit]): List of reward units for calculating the reward.
     """
@@ -28,8 +36,7 @@ class RewardFunction:
     _safe_dist: float
     _goal_radius: float
 
-    _curr_dist_to_path: float
-    _safe_dist_breached: bool
+    _internal_state_info: Dict[str, Any]
 
     _curr_reward: float
     _info: Dict[str, Any]
@@ -43,6 +50,7 @@ class RewardFunction:
         robot_radius: float,
         goal_radius: float,
         safe_dist: float,
+        internal_state_updates: List[InternalStateInfoUpdate] = None,
         *args,
         **kwargs,
     ):
@@ -60,8 +68,11 @@ class RewardFunction:
         self._goal_radius = goal_radius
 
         # globally accessible and required information for RewardUnits
-        self._global_state_info: Dict[str, Any] = {}
-        self._safe_dist_breached: bool = None
+        self._internal_state_info: Dict[str, Any] = {}
+        self._internal_state_updates = internal_state_updates or [
+            InternalStateInfoUpdate("min_dist_laser", min_dist_laser),
+            InternalStateInfoUpdate("safe_dist_breached", safe_dist_breached),
+        ]
 
         self._curr_reward = 0
         self._info = {}
@@ -100,36 +111,58 @@ class RewardFunction:
         """
         self._info.update(info)
 
-    def add_global_state_info(self, key: str, value: Any):
-        """Adds global state information to the reward function.
+    def add_internal_state_info(self, key: str, value: Any):
+        """Adds internal state information to the reward function.
 
         Args:
-            key (str): Key for the global state information.
-            value (Any): Value of the global state information.
+            key (str): Key for the internal state information.
+            value (Any): Value of the internal state information.
         """
-        self._global_state_info[key] = value
+        self._internal_state_info[key] = value
 
-    def get_global_state_info(self, key: str) -> Any:
-        """Retrieves global state information based on the specified key.
+    def get_internal_state_info(self, key: str, default: Any = None) -> Any:
+        """Retrieves internal state information based on the specified key.
 
         Args:
-            key (str): Key for the global state information.
+            key (str): Key for the internal state information.
 
         Returns:
-            Any: Value of the global state information.
+            Any: Value of the internal state information.
         """
-        return self._global_state_info[key]
+        if self._internal_state_info[key]:
+            return self._internal_state_info[key]
+        else:
+            return default
 
-    def reset_global_state_info(self):
+    def update_internal_state_info(
+        self,
+        *args,
+        **kwargs,
+    ):
+        """Updates the internal state info after each time step.
+
+        The internal state dicitonary saves information globally accessible for every RewardUnit.
+        It is intended for information which needs to be calculated only once.
+
+        Args:
+            laser_scan (np.ndarray, optional): Array containing the laser data. Defaults to None.
+            point_cloud (np.ndarray, optional): Array containing the point cloud data. Defaults to None.
+            from_aggregate_obs (bool, optional):  Iff the observation from the aggreation (GetDump.srv) should be considered.
+                Defaults to False.
+        """
+        for update in self._internal_state_updates:
+            update(reward_function=self, **kwargs)
+
+    def reset_internal_state_info(self):
         """Resets all global state information (after each environment step)."""
-        for key in self._global_state_info.keys():
-            self._global_state_info[key] = None
+        for key in self._internal_state_info.keys():
+            self._internal_state_info[key] = None
 
     def _reset(self):
         """Reset on every environment step."""
         self._curr_reward = 0
         self._info = {}
-        self.reset_global_state_info()
+        self.reset_internal_state_info()
 
     def reset(self):
         """Reset before each episode."""
@@ -150,16 +183,30 @@ class RewardFunction:
             reward_unit(laser_scan=laser_scan, **kwargs)
 
     def get_reward(
-        self, laser_scan: np.ndarray, *args, **kwargs
+        self,
+        laser_scan: np.ndarray = None,
+        point_cloud: np.ndarray = None,
+        from_aggregate_obs: bool = False,
+        *args,
+        **kwargs,
     ) -> Tuple[float, Dict[str, Any]]:
         """Retrieves the current reward and info dictionary.
 
-        Returns:
+        Args:
             laser_scan (np.ndarray): Array containing the laser data.
+            point_cloud (np.ndarray): Array containing the point cloud data.
+            from_aggregate_obs (bool): Iff the observation from the aggreation (GetDump.srv) should be considered.
+
+        Returns:
             Tuple[float, Dict[str, Any]]: Tuple of the current timesteps reward and info.
         """
         self._reset()
-        self.set_safe_dist_breached(laser_scan)
+        self.update_internal_state_info(
+            laser_scan=laser_scan,
+            point_cloud=point_cloud,
+            from_aggregate_obs=from_aggregate_obs,
+            **kwargs,
+        )
         self.calculate_reward(laser_scan=laser_scan, **kwargs)
         return self._curr_reward, self._info
 
@@ -180,11 +227,12 @@ class RewardFunction:
         self._goal_radius = value
 
     @property
-    def safe_dist_breached(self) -> bool:
-        return self._safe_dist_breached
+    def safe_dist(self) -> float:
+        return self._safe_dist
 
-    def set_safe_dist_breached(self, laser_scan: np.ndarray) -> None:
-        self._safe_dist_breached = laser_scan.min() <= self._safe_dist
+    @property
+    def safe_dist_breached(self) -> bool:
+        return self.get_internal_state_info("safe_dist_breached")
 
     def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("

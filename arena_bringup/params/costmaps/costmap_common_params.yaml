@@ -10,3 +10,21 @@ inflation_radius: 1.0
 cost_scaling_factor: 5.0
 
 map_type: costmap
+
+semantic_layer:
+    observation_sources: pedestrian pedestrian_moving pedestrian_type pedestrian_vel_x pedestrian_vel_y
+
+    pedestrian:
+        topic: /pedsim_agents/semantic/pedestrian
+
+    pedestrian_moving:
+        topic: /pedsim_agents/semantic/pedestrian_moving
+
+    pedestrian_type:
+      topic: /pedsim_agents/semantic/pedestrian_type
+
+    pedestrian_vel_x:
+      topic: /pedsim_agents/semantic/pedestrian_vel_x
+    
+    pedestrian_vel_y:
+      topic: /pedsim_agents/semantic/pedestrian_vel_y

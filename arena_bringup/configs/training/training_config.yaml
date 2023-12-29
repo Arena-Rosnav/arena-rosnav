@@ -9,10 +9,10 @@ no_gpu: false
 
 ### General Training
 # navigation task mode, chose from "random" or "staged"
-task_mode: "random"
+task_mode: "dynamic_map_random"
 # number of simulation timesteps
 n_timesteps: 20000000
-max_num_moves_per_eps: 500
+max_num_moves_per_eps: 100
 goal_radius: 0.2
 
 ### Training Monitoring
@@ -60,13 +60,15 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "AGENT_54"
+  architecture_name: "AGENT_57"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
 
   frame_stacking:
     enabled: true
     stack_size: 8
+
+  reward_fnc: "rule_13"
 
   normalize: 
     enabled: true
@@ -77,17 +79,14 @@ rl_agent:
       clip_reward: 20.0 # Max value absolute for discounted reward
       gamma: 0.99 # discount factor
     
-
   laser:
     full_range_laser: true  # additional laser covering 360° covering blind spots -> additional collision check
     reduce_num_beams:
-      enabled: true
+      enabled: false
       num_beams: 200
 
-  reward_fnc: "rule_13"
-
   action_space:
-    discrete: false
+    discrete: true
     custom_discretization: # only used if discrete is true, otherwise ignored
       enabled: true
       # number of buckets for each action dimension

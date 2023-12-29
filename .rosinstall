@@ -3,8 +3,8 @@
   # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../utils-extern/plugins/flatland
-    uri: https://github.com/voshch/flatland.git
-    version: pedsim-string
+    uri: https://github.com/Arena-Rosnav/flatland.git
+    version: master
 
 # - git:
 #     local-name: ../utils/arena-tools
@@ -18,19 +18,27 @@
     version: update
 
 - git:
-    local-name: ../utils-extern/ros/navigation/msgs/ford
+    local-name: ../utils-extern/ros/ford_msgs
     uri: https://bitbucket.org/acl-swarm/ford_msgs/src/master/
     version: master
 
-    # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../utils-extern/ros/pedsim_ros
-    uri: https://github.com/voshch/pedsim_ros.git
-    version: pedsim-string
+    uri: https://github.com/arena-rosnav/pedsim_ros.git
+    version: master
+
+- git:
+    local-name: ../utils-extern/ros/navigation
+    uri: https://github.com/arena-rosnav/navigation.git
+    version: master
+
+- git:
+    local-name: ../utils-extern/ros/move_base_flex
+    uri: https://github.com/voshch/move_base_flex.git
 
 - git:
     local-name: ../utils-extern/misc/robots
-    uri: https://github.com/voshch/3rd-party-robot-packages
+    uri: https://github.com/Arena-Rosnav/3rd-party-robot-packages
 
 - git:
     local-name: ../utils-extern/misc/jackal
@@ -49,8 +57,8 @@
 
 - git:
     local-name: ../arena-simulation-setup
-    uri: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: dev
+    uri: https://github.com/arena-rosnav/arena-simulation-setup.git
+    version: master
 
 - git:
     local-name: ../arena-evaluation
@@ -62,8 +70,8 @@
   # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../planners/rosnav
-    uri: https://github.com/tuananhroman/rosnav-rl.git
-    version: master
+    uri: https://github.com/Arena-Rosnav/rosnav-rl.git
+    version: dev
 
 - git:
     local-name: ../planners/arena-ros

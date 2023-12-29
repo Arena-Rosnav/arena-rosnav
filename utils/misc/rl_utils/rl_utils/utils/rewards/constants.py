@@ -46,3 +46,11 @@ class DEFAULTS:
     class ABRUPT_VEL_CHANGE:
         VEL_FACTORS: dict = {"0": 0.3, "1": 0.07, "2": 0.07}
         _ON_SAFE_DIST_VIOLATION: bool = True
+
+    class ROOT_VEL_DIFF:
+        K = 500
+        _ON_SAFE_DIST_VIOLATION: bool = False
+
+    class TWO_FACTOR_VEL_DIFF:
+        ALPHA = 0.002
+        BETA = 0.005
