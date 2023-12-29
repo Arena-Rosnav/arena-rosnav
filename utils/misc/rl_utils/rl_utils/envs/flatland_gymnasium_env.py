@@ -86,8 +86,10 @@ class FlatlandEnv(gymnasium.Env):
         if not rospy.get_param("/debug_mode", True):
             rospy.init_node("env_" + self.ns, anonymous=True)
 
-        self._is_train_mode = rospy.get_param("/train_mode")
-        self._step_size = rospy.get_param("/step_size")
+        self._is_train_mode = rosparam_get(
+            str, "/train_mode", default=True, strict=True
+        )
+        self._step_size = rosparam_get(float, "/step_size")
 
         self.model_space_encoder = RosnavSpaceManager(
             space_encoder_class=self._agent_description.space_encoder_class,
@@ -149,10 +151,10 @@ class FlatlandEnv(gymnasium.Env):
 
         self.agent_action_pub.publish(action_msg)
 
-    def decode_action(self, action: np.ndarray) -> np.ndarray:
+    def _decode_action(self, action: np.ndarray) -> np.ndarray:
         return self.model_space_encoder.decode_action(action)
 
-    def encode_observation(self, observation, *args, **kwargs):
+    def _encode_observation(self, observation, *args, **kwargs):
         return self.model_space_encoder.encode_observation(observation, **kwargs)
 
     def step(self, action: np.ndarray):
@@ -167,7 +169,7 @@ class FlatlandEnv(gymnasium.Env):
 
         """
 
-        decoded_action = self.decode_action(action)
+        decoded_action = self._decode_action(action)
         self._pub_action(decoded_action)
 
         if self._is_train_mode:
@@ -194,7 +196,7 @@ class FlatlandEnv(gymnasium.Env):
         )
 
         return (
-            self.encode_observation(obs_dict, is_done=done),
+            self._encode_observation(obs_dict, is_done=done),
             reward,
             done,
             False,
@@ -245,7 +247,7 @@ class FlatlandEnv(gymnasium.Env):
         obs_dict = self.observation_collector.get_observations()
         info_dict = {}
         return (
-            self.encode_observation(obs_dict),
+            self._encode_observation(obs_dict),
             info_dict,
         )
 
