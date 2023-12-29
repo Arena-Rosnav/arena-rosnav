@@ -33,8 +33,6 @@
   <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" />
   
   <!--  PARAMS DON'T CHANGE THEM  -->
-  <arg name="reset_remove_all" default="false" />
-  <param name="reset_remove_all" value="$(arg reset_remove_all)" />
   <param name="use_sim_time" value="true" />
   <param name="train_mode" value="$(arg train_mode)" />
   <param name="num_envs" value="$(arg num_envs)" />
