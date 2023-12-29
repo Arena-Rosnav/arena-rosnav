@@ -5,44 +5,20 @@
   <arg name="entity_manager" default="pedsim"/>
   <arg name="world_file" default=""/>
 
+  <!-- TODO: make non-constant -->
+  <arg name="sfm" value="passthrough" />
+
   <!-- use fake localization-->
   <group ns="$(arg ns)" >
-    <include file="$(find arena_bringup)/launch/utils/fake_localization.launch">
-      <arg name="ns" value="$(arg ns)" />
-      <arg name="robot_name" value="$(arg model)" />
-
-      <!-- ADJUST ODOM FRAME IN ROBOT MANAGER-->
-      <arg name="odom_frame_id" value="$(arg ns)/$(arg model)/odom" />
-
-      <arg name="global_frame_id" value="map" />
-    </include>
-
-    <include file="$(find arena_bringup)/launch/utils/intermediate_planner.launch">
-      <arg name="ns" value="$(arg ns)" />
-      <arg name="robot_name" value="$(arg model)" />
-    </include>
-
-    <include file="$(find arena_bringup)/launch/utils/plan_manager.launch">
-      <arg name="ns" value="$(arg ns)" />
-      <arg name="robot_name" value="$(arg model)" />
-      <arg name="train_mode" value="true" />
-
-      <arg name="look_ahead_distance" default="2.3" /> <!--meter, double -->
-      <arg name="tolerance_approach" default="0.6" /> <!--meter, double -->
-      <arg name="timeout_goal" default="330." /> <!--sec, double -->
-      <arg name="timeout_subgoal" default="20" /> <!--sec, double -->
-    </include>
-
     <!-- use simulator and rviz-->
     <include file="$(find arena_bringup)/launch/training/flatland_simulator.launch">
       <arg name="ns" value="$(arg ns)" />
     </include>
 
-    <node name="pedsim_simulator" pkg="pedsim_simulator" type="pedsim_simulator" output="screen" if="$(eval arg('entity_manager') == 'pedsim')">
-        <param name="simulation_factor" value="1" type="double"/>
-        <param name="pedsim_update_rate" value="30.0" type="double"/>
-        <param name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" type="string"/>
-      </node>
+    <remap from="/clock" to="/$(arg ns)/clock"/>
+    <include file="$(find pedsim_ros)/launch/pedsim.launch" if="$(eval arg('entity_manager')=='pedsim')">
+      <arg name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world"/>
+    </include>
   </group>
 
 </launch>
