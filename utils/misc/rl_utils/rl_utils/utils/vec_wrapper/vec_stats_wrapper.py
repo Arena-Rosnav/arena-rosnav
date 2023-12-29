@@ -56,16 +56,15 @@ class VecStatsRecorder(VecEnvWrapper):
 
         self.cum_rewards += rewards
 
-        done_envs = np.where(dones)[0]
+        for idx, done in enumerate(dones):
+            if done:
+                self.episode_returns.append(self.cum_rewards[idx])
+                self.cum_rewards[idx] = 0.0
 
-        for done_env in done_envs:
-            self.episode_returns.append(self.cum_rewards[done_env])
-            self.cum_rewards[done_env] = 0.0
+                self.episode_lengths.append(infos[idx]["episode_length"])
+                self.done_reasons[infos[idx]["done_reason"]] += 1
 
-            self.episode_lengths.append(infos[done_env]["episode_length"])
-            self.done_reasons[infos[done_env]["done_reason"]] += 1
-
-            self.num_episodes += 1
+                self.num_episodes += 1
 
         self.num_steps += 1
 
