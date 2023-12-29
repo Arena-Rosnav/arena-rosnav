@@ -87,6 +87,8 @@ class FlatlandEnv(gymnasium.Env):
             rospy.init_node("env_" + self.ns, anonymous=True)
 
         self._is_train_mode = rospy.get_param("/train_mode")
+        self._step_size = rospy.get_param("/step_size")
+
         self.model_space_encoder = RosnavSpaceManager(
             space_encoder_class=self._agent_description.space_encoder_class,
             observation_spaces=self._agent_description.observation_spaces,
@@ -130,6 +132,9 @@ class FlatlandEnv(gymnasium.Env):
 
         # service clients
         self._service_name_step = self.ns.simulation_ns("step_world")
+        self._step_world_publisher = rospy.Publisher(
+            self._service_name_step, StepWorld, queue_size=10
+        )
         self._step_world_srv = rospy.ServiceProxy(
             self._service_name_step, Empty, persistent=True
         )
@@ -182,7 +187,7 @@ class FlatlandEnv(gymnasium.Env):
         self._steps_curr_episode += 1
 
         # info
-        info, done = self.determine_termination(
+        info, done = self._determine_termination(
             reward_info=reward_info,
             curr_steps=self._steps_curr_episode,
             max_steps=self._max_steps_per_episode,
@@ -196,13 +201,13 @@ class FlatlandEnv(gymnasium.Env):
             info,
         )
 
-    def call_service_takeSimStep(self, t=None):
-        # request = StepWorld()
-        # request.required_time = 0 if t == None else t
+    def call_service_takeSimStep(self, t: float = None):
+        request = StepWorld()
+        request.required_time = self._step_size if t is None else t
 
-        self._step_world_srv()
+        # self._step_world_srv()
 
-        # self._step_world_publisher.publish(request)
+        self._step_world_publisher.publish(request)
 
     def reset(self, seed=None, options=None):
         """
@@ -218,8 +223,6 @@ class FlatlandEnv(gymnasium.Env):
         """
 
         super().reset(seed=seed)
-        # set task
-        # regenerate start position end goal position of the robot and change the obstacles accordingly
         self._episode += 1
         self.agent_action_pub.publish(Twist())
 
@@ -234,9 +237,10 @@ class FlatlandEnv(gymnasium.Env):
         self._last_action = np.array([0, 0, 0])
 
         if self._is_train_mode:
-            for _ in range(4):
+            for _ in range(6):
                 self.agent_action_pub.publish(Twist())
-                self.call_service_takeSimStep()
+                self.call_service_takeSimStep(t=0.1)
+                time.sleep(0.1)
 
         obs_dict = self.observation_collector.get_observations()
         info_dict = {}
@@ -252,7 +256,7 @@ class FlatlandEnv(gymnasium.Env):
         """
         pass
 
-    def determine_termination(
+    def _determine_termination(
         self,
         reward_info: dict,
         curr_steps: int,
