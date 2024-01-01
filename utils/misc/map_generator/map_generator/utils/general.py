@@ -30,15 +30,6 @@ def load_config(cfg_location: str) -> dict:
     return config
 
 
-def get_rosnav_configs(cfg: dict) -> dict:
-    rosnav_cfg = cfg["rosnav"]
-    return (
-        rosnav_cfg["indoor"]
-        if rosnav_cfg["map_type"] == "indoor"
-        else rosnav_cfg["outdoor"]
-    )
-
-
 def delete_distance_map():
     # delete the distance map if it exists
     distance_map_path = ROSNAV_MAP_FOLDER / MAP_FOLDER_NAME / "distance_map.png"

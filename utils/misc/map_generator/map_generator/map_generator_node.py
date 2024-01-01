@@ -15,7 +15,6 @@ from map_generator.utils.map import make_image
 from map_generator.utils.general import (
     load_robot_config,
     load_map_generator_config,
-    get_rosnav_configs,
     delete_distance_map,
 )
 
