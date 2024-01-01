@@ -64,6 +64,7 @@
   <param name="simulator" value="$(arg simulator)" />
   <param name="tm_robots" value="$(arg tm_robots)" />
   <param name="tm_obstacles" value="$(arg tm_obstacles)" />
+  <param name="tm_modules" value="$(arg tm_modules)" />
   <param name="pedsim" type="bool" value="$(arg pedsim)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />

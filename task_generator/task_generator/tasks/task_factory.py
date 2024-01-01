@@ -80,8 +80,7 @@ class TaskFactory:
             ):
                 
                 self.namespace = namespace
-                self.namespace_prefix = f"/{namespace}/" if os.path.basename(
-                    namespace) else ""
+                self.namespace_prefix = f"/{namespace}/" if os.path.basename(namespace) else ""
 
                 self.obstacle_manager = obstacle_manager
                 self.robot_managers = robot_managers
@@ -166,3 +165,4 @@ from .robots.scenario import TM_Scenario
 from .modules.clear_forbidden_zones import Mod_ClearForbiddenZones
 from .modules.dynamic_map import Mod_DynamicMap
 from .modules.rviz_ui import Mod_OverrideRobot
+from .modules.staged import Mod_Staged
