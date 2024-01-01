@@ -1,4 +1,5 @@
 import numpy as np
+from ..constants import ROSNAV_PLACEMENT_TRIES
 
 
 def initialize_map(height: int, width: int, type="indoor") -> np.ndarray:
@@ -27,15 +28,23 @@ def insert_new_node(
     tree.append(random_position)
 
 
-def sample(grid_map: np.ndarray, corridor_radius: int) -> list:
+def sample(grid_map: np.ndarray, corridor_radius: int, map_default: int) -> list:
     # sample position from map within boundary and leave tolerance for corridor width
-    random_x = np.random.choice(
-        range(corridor_radius + 2, grid_map.shape[0] - corridor_radius - 1)
-    )
-    random_y = np.random.choice(
-        range(corridor_radius + 2, grid_map.shape[1] - corridor_radius - 1)
-    )
-    return [random_x, random_y]
+    # prevent overlapping obstacles
+    for _ in range(ROSNAV_PLACEMENT_TRIES):
+        random_x = np.random.choice(
+            range(corridor_radius + 2, grid_map.shape[0] - corridor_radius - 1)
+        )
+        random_y = np.random.choice(
+            range(corridor_radius + 2, grid_map.shape[1] - corridor_radius - 1)
+        )
+
+        sub_grid = grid_map[(random_x - corridor_radius):(random_x + corridor_radius + 1),
+                            (random_y - corridor_radius):(random_y + corridor_radius + 1)]
+        if np.all(sub_grid == map_default):
+            return [random_x, random_y]
+
+    return []
 
 
 def find_nearest_node(random_position: int, tree: list) -> list:

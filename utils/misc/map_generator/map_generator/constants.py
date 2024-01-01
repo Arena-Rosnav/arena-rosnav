@@ -23,4 +23,6 @@ DYNAMIC_MAP_YAML = {
 
 ROSNAV_MAP_FOLDER = Path(rospkg.RosPack().get_path("arena-simulation-setup")) / "maps"
 
+ROSNAV_PLACEMENT_TRIES = 20  # how many tries of placing obstacle without overlapping
+
 BARN_MAX_RECURSION_DEPTH = 50

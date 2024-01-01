@@ -1,4 +1,4 @@
-generator: barn
+generator: rosmap
 episode_per_map: 1
 
 map_properties:
@@ -13,7 +13,7 @@ generator_configs:
     # seed: 0 # for reproducing maps
 
   rosnav:
-    map_type: indoor # chose between 'indoor' and 'outdoor'
+    map_type: outdoor # chose between 'indoor' and 'outdoor'
 
     # indoor parameters
     indoor:
@@ -22,5 +22,20 @@ generator_configs:
     
     # outdoor parameters
     outdoor:
-      obstacle_num: 15 # number of outdoor obstacles
-      obstacle_extra_radius: 1 # total obstacle diameter = 1+2*obstacle_extra_radius
+      obstacle_num: 150 # number of outdoor obstacles
+      obstacle_extra_radius: 2 # total obstacle diameter = 1+2*obstacle_extra_radius
+
+  rosmap:
+    map_type: indoor # chose between 'indoor' and 'outdoor'
+
+    # indoor parameters
+    indoor:
+      corridor_radius: 5 # total corridor diameter = 1+2*corridor_radius
+      iterations: 20 # number of nodes for the indoor map algorithm
+    
+    # outdoor parameters
+    outdoor:
+      obstacle_num: 150 # number of outdoor obstacles
+      obstacle_extra_radius: 2 # total obstacle diameter = 1+2*obstacle_extra_radius
+      # Here are rosmap exclusive parameters
+      obstacles_placement_tries: 0

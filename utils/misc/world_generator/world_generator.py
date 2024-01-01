@@ -29,8 +29,8 @@ class WorldGenerator:
     # Class Methods
     def __init__(self):
         print("World Generator Initialized")
-        self.map_sub = rospy.Subscriber(
-            TOPIC_MAP, OccupancyGrid, self._map_callback)
+        # self.map_sub = rospy.Subscriber(
+        #     TOPIC_MAP, OccupancyGrid, self._map_callback)
         self.map_pub = rospy.Publisher(TOPIC_MAP, OccupancyGrid, queue_size=1)
         # self.static_map_srv = rospy.ServiceProxy(TOPIC_STATIC_MAP, GetMap)
         # self.new_dist_map_pub = rospy.Publisher(
