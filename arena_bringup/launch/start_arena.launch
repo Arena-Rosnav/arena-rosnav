@@ -41,6 +41,7 @@
 
   <arg name="tm_robots" default="random"/>
   <arg name="tm_obstacles" default="random"/>
+  <arg name="tm_modules" default="" />
   
   <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
   <arg name="show_rviz" default="true" doc="Enables rviz in gazebo" />

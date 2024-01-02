@@ -215,7 +215,7 @@ class TaskGenerator:
 
         tm_robots = Constants.TaskMode.TM_Robots(rosparam_get(str, "tm_robots"))
         tm_obstacles = Constants.TaskMode.TM_Obstacles(rosparam_get(str, "tm_obstacles"))
-        tm_modules = [Constants.TaskMode.TM_Module(mod) for mod in rosparam_get(str, "tm_modules", "").split(",")]
+        tm_modules = [Constants.TaskMode.TM_Module(mod) for mod in rosparam_get(str, "tm_modules", "").split(",") if mod != ""]
 
         tm_modules.append(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
         tm_modules.append(Constants.TaskMode.TM_Module.RVIZ_UI)
