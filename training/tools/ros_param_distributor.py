@@ -16,7 +16,9 @@ def populate_ros_params(params: dict):
         is_discrete,
     )
 
+    robot_name = rospy.get_param("model")
     rospy.set_param("goal_radius", params["goal_radius"])
+    rospy.set_param(f"{robot_name}/safety_distance", params["safety_distance"])
 
     # discrete actions
     if is_discrete:

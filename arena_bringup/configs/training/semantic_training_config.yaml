@@ -14,6 +14,7 @@ task_mode: "dynamic_map_random"
 n_timesteps: 40000000
 max_num_moves_per_eps: 1000
 goal_radius: 0.25
+safety_distance: 0.5
 
 ### Training Monitoring
 monitoring:

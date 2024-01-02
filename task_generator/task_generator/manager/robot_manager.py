@@ -74,6 +74,11 @@ class RobotManager:
         )
 
         self._robot = robot
+        self._safety_distance = rosparam_get(
+            float,
+            f"{robot.name}/safety_distance",
+            Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST,
+        )
 
         self._position = self._start_pos
 
@@ -130,7 +135,7 @@ class RobotManager:
 
     @property
     def safe_distance(self) -> float:
-        return self._robot_radius + Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST
+        return self._robot_radius + self._safety_distance
 
     @property
     def model_name(self) -> str:

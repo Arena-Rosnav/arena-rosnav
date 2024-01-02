@@ -14,6 +14,7 @@ task_mode: "random"
 n_timesteps: 20000000
 max_num_moves_per_eps: 100
 goal_radius: 0.2
+safety_distance: 0.5
 
 ### Training Monitoring
 monitoring:
