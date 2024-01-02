@@ -87,7 +87,7 @@ class FlatlandEnv(gymnasium.Env):
             rospy.init_node("env_" + self.ns, anonymous=True)
 
         self._is_train_mode = rosparam_get(
-            str, "/train_mode", default=True, strict=True
+            bool, "/train_mode", default=True, strict=True
         )
         self._step_size = rosparam_get(float, "/step_size")
 
@@ -241,8 +241,8 @@ class FlatlandEnv(gymnasium.Env):
         if self._is_train_mode:
             for _ in range(6):
                 self.agent_action_pub.publish(Twist())
-                self.call_service_takeSimStep(t=0.1)
-                time.sleep(0.1)
+                self.call_service_takeSimStep(t=0.25)
+                time.sleep(0.15)
 
         obs_dict = self.observation_collector.get_observations()
         info_dict = {}
