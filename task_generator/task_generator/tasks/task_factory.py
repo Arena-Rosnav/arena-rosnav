@@ -8,7 +8,7 @@ from task_generator.constants import Constants
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.world_manager import WorldManager
-from task_generator.shared import PositionOrientation
+from task_generator.shared import PositionOrientation, rosparam_get
 from task_generator.tasks import Task
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.obstacles import TM_Obstacles
@@ -59,17 +59,22 @@ class TaskFactory:
     @classmethod
     def combine(
         cls,
-        robots: Constants.TaskMode.TM_Robots,
-        obstacles: Constants.TaskMode.TM_Obstacles,
         modules: List[Constants.TaskMode.TM_Module] = []
     ) -> Type[Task]:
         
-        assert obstacles in cls.registry_obstacles, f"TaskMode '{obstacles}' for obstacles is not registered!"
-        assert robots in cls.registry_robots, f"TaskMode '{robots}' for robots is not registered!"
         for module in modules:
             assert module in cls.registry_module, f"Module '{module}' is not registered!"
 
         class CombinedTask(Task):
+
+            PARAM_TM_ROBOTS = "tm_robots"
+            PARAM_TM_OBSTACLES = "tm_obstacles"
+
+            __param_tm_robots: Constants.TaskMode.TM_Robots
+            __param_tm_obstacles: Constants.TaskMode.TM_Obstacles
+
+            __tm_robots: TM_Robots
+            __tm_obstacles: TM_Obstacles
 
             def __init__(self,
                 obstacle_manager: ObstacleManager,
@@ -103,10 +108,21 @@ class TaskFactory:
                 self.dynamic_model_loader = ModelLoader(os.path.join(
                     RosPack().get_path("arena-simulation-setup"), "obstacles", "dynamic_obstacles"))
 
+                self.__param_tm_obstacles = None
+                self.__param_tm_robots = None
                 self.__modules = [cls.registry_module[module](task=self) for module in modules]
 
-                self.__tm_robots = cls.registry_robots[robots](props=self, **kwargs)
-                self.__tm_obstacles = cls.registry_obstacles[obstacles](props=self, **kwargs)
+            def set_tm_robots(self, tm_robots: Constants.TaskMode.TM_Robots):
+                assert tm_robots in cls.registry_robots, f"TaskMode '{tm_robots}' for robots is not registered!"
+                self.__tm_robots = cls.registry_robots[tm_robots](props=self)
+                self.__tm_robots.reconfigure(None)
+                self.__param_tm_robots = tm_robots
+
+            def set_tm_obstacles(self, tm_obstacles: Constants.TaskMode.TM_Obstacles):
+                assert tm_obstacles in cls.registry_obstacles, f"TaskMode '{tm_obstacles}' for obstacles is not registered!"
+                self.__tm_obstacles = cls.registry_obstacles[tm_obstacles](props=self)
+                self.__tm_obstacles.reconfigure(None)
+                self.__param_tm_obstacles = tm_obstacles
 
             def reset(self, **kwargs):
 
@@ -117,6 +133,12 @@ class TaskFactory:
                 try:
                     rospy.set_param(self.PARAM_RESETTING, True)
                     self.__reset_start.publish()
+
+                    if (new_tm_robots := Constants.TaskMode.TM_Robots(rosparam_get(str, "tm_robots"))) != self.__param_tm_robots:
+                        self.set_tm_robots(new_tm_robots)
+
+                    if (new_tm_obstacles := Constants.TaskMode.TM_Obstacles(rosparam_get(str, "tm_obstacles"))) != self.__param_tm_obstacles:
+                        self.set_tm_obstacles(new_tm_obstacles)
 
                     for module in self.__modules:
                         module.before_reset()

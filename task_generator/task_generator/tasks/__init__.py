@@ -35,8 +35,8 @@ class Reconfigurable:
 
     # TOPIC_RECONFIGURE = "RECONFIGURE"
 
-    # def reconfigure(self, config):
-    #     ...
+    def reconfigure(self, config):
+        ...
 
     NODE_CONFIGURATION = Namespace(os.path.join(rospy.get_namespace(), "task_generator_server"))
 
