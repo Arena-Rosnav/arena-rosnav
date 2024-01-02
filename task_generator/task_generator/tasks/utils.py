@@ -16,6 +16,7 @@ from typing import (
     Tuple,
     Union,
     overload,
+    Collection
 )
 import cv2
 from filelock import FileLock
@@ -28,7 +29,7 @@ import rospkg
 import rospy
 from task_generator.constants import Constants
 from task_generator.manager.entity_manager.utils import ObstacleLayer
-from task_generator.manager.utils import WorldMap
+from task_generator.manager.utils import WorldMap, WorldObstacleConfiguration
 from task_generator.shared import (
     DynamicObstacle,
     ModelWrapper,
@@ -817,14 +818,14 @@ class ITF_DynamicMap(ITF_Base):
                 f"'DYNAMIC_MAP_RANDOM' task can only be used with dynamic map, otherwise the MapGenerator isn't used. (expected: {Constants.MapGenerator.MAP_FOLDER_NAME}, got: {map_name})"
             )
 
-    def update_map(self, dist_map: Optional[map_distance_server_srvs.GetDistanceMapResponse] = None):
-        if dist_map is None:
-            dist_map = self.__get_dist_map_service()
+    def update_map(self, dist_map: Optional[map_distance_server_srvs.GetDistanceMapResponse] = None, obstacles: Optional[Collection[WorldObstacleConfiguration]] = None):
+        dist_map = dist_map or self.__get_dist_map_service()
+
+        obstacles = obstacles or []
 
         if isinstance(dist_map, map_distance_server_srvs.GetDistanceMapResponse):
             self.PROPS.world_manager.update_world(
-                world_map=WorldMap.from_distmap(distmap=dist_map))
-            # TODO Halid: add request of World Obstacles here
+                world_map=WorldMap.from_distmap(distmap=dist_map), world_obstacles=obstacles)
             
             self.PROPS.obstacle_manager.reset(purge=ObstacleLayer.WORLD)
             self.PROPS.obstacle_manager.spawn_world_obstacles(

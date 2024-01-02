@@ -6,6 +6,7 @@ import numpy as np
 import rospy
 from nav_msgs.msg import OccupancyGrid
 from std_msgs.msg import String
+from map_generator.msg import MapObstacles
 
 import map_generator
 from map_generator.base_map_gen import BaseMapGenerator
@@ -43,13 +44,15 @@ class MapGeneratorNode:
 
         delete_distance_map()
 
-        rospy.Subscriber("/map", OccupancyGrid, self._get_occupancy_grid)
+        rospy.Subscriber("/map", OccupancyGrid, self._set_occupancy_grid)
         rospy.Subscriber("/request_new_map", String, self.callback_new_map)
         self.map_pub = rospy.Publisher("/map", OccupancyGrid, queue_size=1)
+        self.map_obst_pub = rospy.Publisher(
+            "/map_obstacles", MapObstacles, queue_size=1)
 
         self.robot_namespaces = MapGeneratorNode.get_all_robot_topics()
 
-    def _get_occupancy_grid(self, occgrid_msg: OccupancyGrid):
+    def _set_occupancy_grid(self, occgrid_msg: OccupancyGrid):
         """Saves the most recent occupancy grid.
 
         Args:
@@ -68,11 +71,19 @@ class MapGeneratorNode:
         Args:
             msg (String): Empty message as the message is not used.
         """
-        grid_map = self.map_generator.generate_grid_map()
+        grid_map, obstacle_data = self.map_generator.generate_grid_map()
         MapGeneratorNode.save_map(grid_map, ROSNAV_MAP_FOLDER, MAP_FOLDER_NAME)
 
-        self.occupancy_grid.data = MapGeneratorNode.preprocess_map_data(grid_map)
+        self.occupancy_grid.data = MapGeneratorNode.preprocess_map_data(
+            grid_map)
 
+        obst_msg = MapObstacles()
+        if obstacle_data != {}:
+            obst_msg.data = MapGeneratorNode.preprocess_map_data(
+                obstacle_data["occupancy"])
+            obst_msg.obstacles = obstacle_data["obstacles"]
+            
+        self.map_obst_pub.publish(obst_msg)
         self.map_pub.publish(self.occupancy_grid)
 
         if not self.train_mode:
@@ -111,7 +122,8 @@ def main():
 
     gen_configs = gen_cfg[generator.lower()]
 
-    robot_infl_rad = load_robot_config(rospy.get_param("model"))["robot_radius"]
+    robot_infl_rad = load_robot_config(
+        rospy.get_param("model"))["robot_radius"]
 
     map_gen = MapGeneratorFactory.instantiate(
         name=generator.lower(),

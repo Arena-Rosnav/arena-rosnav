@@ -1,5 +1,8 @@
 import numpy as np
 
+from map_generator.msg import Obstacle
+from geometry_msgs.msg import Pose, Point, Quaternion
+
 from .path import create_path
 from .tree import *
 
@@ -28,7 +31,7 @@ def create_indoor_map(
     for _ in range(iterations):  # create as many paths/nodes as defined in iteration
         random_position = sample(grid_map, corridor_radius, 1)
         if random_position == []:
-            continue 
+            continue
         nearest_node = find_nearest_node(
             random_position, tree
         )  # nearest node must be found before inserting the new node into the tree, else nearest node will be itself
@@ -39,12 +42,29 @@ def create_indoor_map(
 
 def create_outdoor_map(
     height: int, width: int, obstacle_number: int, obstacle_extra_radius: int
-) -> np.ndarray:
+) -> (np.ndarray, dict):
     grid_map = initialize_map(height, width, type="outdoor")
+    obstacles = []
+    obstacle_grid = np.tile(0, [height, width])
     for _ in range(obstacle_number):
         random_position = sample(grid_map, obstacle_extra_radius, 0)
-        if random_position == []:
+        if random_position == []:  # couldn't find free spot
             continue
+
+        obstacles.append(Obstacle(model_name="shelf", position=Pose(position=Point(
+            x=random_position[0], y=random_position[1], z=0), orientation=Quaternion())))
+
+        obstacle_grid[
+            slice(
+                random_position[0] - obstacle_extra_radius,
+                random_position[0] + obstacle_extra_radius + 1,
+            ),  # create 1 pixel obstacles with extra radius if specified
+            slice(
+                random_position[1] - obstacle_extra_radius,
+                random_position[1] + obstacle_extra_radius + 1,
+            ),
+        ] = 1
+
         grid_map[
             slice(
                 random_position[0] - obstacle_extra_radius,
@@ -55,4 +75,6 @@ def create_outdoor_map(
                 random_position[1] + obstacle_extra_radius + 1,
             ),
         ] = 1
-    return grid_map
+
+    obstacle_data = {"obstacles": obstacles, "occupancy": obstacle_grid}
+    return grid_map, obstacle_data

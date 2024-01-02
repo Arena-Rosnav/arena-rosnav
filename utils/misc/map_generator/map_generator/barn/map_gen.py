@@ -59,7 +59,7 @@ class BarnMapGenerator(BaseMapGenerator):
 
         return height, width, fill_pct, smooth_iter, map_res
 
-    def generate_grid_map(self, call_depth: int = 0) -> np.ndarray:
+    def generate_grid_map(self, call_depth: int = 0) -> (np.ndarray, dict):
         if call_depth > BARN_MAX_RECURSION_DEPTH:
             raise RecursionError(
                 "[Barn] Recursion depth exceeded, please check your parameters!"
@@ -91,7 +91,7 @@ class BarnMapGenerator(BaseMapGenerator):
         # add side walls as the map was initially open on both sides for barn
         np_obs_map = np.array(obstacle_map)
         ones_col = np.ones((np_obs_map.shape[0], 1))
-        return np.concatenate((ones_col, np_obs_map, ones_col), axis=1)
+        return np.concatenate((ones_col, np_obs_map, ones_col), axis=1), {}
 
     @staticmethod
     def check_for_paths(

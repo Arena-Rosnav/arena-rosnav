@@ -28,7 +28,8 @@ class RosnavMapGenerator(BaseMapGenerator):
         *args,
         **kwargs,
     ):
-        super().__init__(height, width, map_resolution=kwargs["map_resolution"])
+        super().__init__(height, width,
+                         map_resolution=kwargs["map_resolution"])
 
         self.map_type = MAP_TYPE(map_type.lower())
 
@@ -65,7 +66,8 @@ class RosnavMapGenerator(BaseMapGenerator):
 
     def retrieve_params(self) -> Tuple[int, int, float, MAP_TYPE, int, int, int, int]:
         height, width, map_res = super().retrieve_params()
-        map_type = rospy.get_param("/generator_configs/rosmap/map_type", self.map_type)
+        map_type = rospy.get_param(
+            "/generator_configs/rosmap/map_type", self.map_type)
         if type(map_type) == str:
             map_type = MAP_TYPE(map_type.lower())
 
@@ -97,15 +99,15 @@ class RosnavMapGenerator(BaseMapGenerator):
             obstacle_extra_radius,
         )
 
-    def generate_grid_map(self) -> np.ndarray:
+    def generate_grid_map(self) -> (np.ndarray, dict):
         super().generate_grid_map()
         return (
-            create_indoor_map(
+            (create_indoor_map(
                 height=self.height,
                 width=self.width,
                 corridor_radius=self.corridor_radius,
                 iterations=self.iterations,
-            )
+            ), {})
             if self.map_type in [MAP_TYPE.indoor, "indoor"]
             else create_outdoor_map(
                 height=self.height,

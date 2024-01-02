@@ -97,7 +97,7 @@ class RosnavMapGenerator(BaseMapGenerator):
             obstacle_extra_radius,
         )
 
-    def generate_grid_map(self) -> np.ndarray:
+    def generate_grid_map(self) -> (np.ndarray, dict):
         super().generate_grid_map()
         return (
             create_indoor_map(
@@ -113,7 +113,7 @@ class RosnavMapGenerator(BaseMapGenerator):
                 obstacle_number=self.obstacle_num,
                 obstacle_extra_radius=self.obstacle_extra_radius,
             )
-        )
+        ), {}
 
 
 def test():
