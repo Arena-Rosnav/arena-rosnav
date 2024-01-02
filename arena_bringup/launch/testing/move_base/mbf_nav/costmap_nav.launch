@@ -6,7 +6,7 @@
     <arg name="speed" />
 
     <!-- move_base -->
-    <node pkg="mbf_costmap_nav" type="mbf_costmap_nav" respawn="false" name="move_base_flex" output="log">
+    <node pkg="mbf_costmap_nav" type="mbf_costmap_nav" respawn="false" name="move_base_flex" output="screen">
         <!-- system defaults -->
         <rosparam file="$(find arena_bringup)/params/mbf/move_base_params.yaml"
             command="load" subst_value="True" />
