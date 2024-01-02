@@ -1,0 +1,25 @@
+goal_reached:
+  reward: 15
+
+safe_distance:
+  reward: -0.2
+
+collision:
+  reward: -10
+
+approach_goal:
+  pos_factor: 0.3
+  neg_factor: 0.5
+  _on_safe_dist_violation: true
+
+reverse_drive:
+  reward: -0.0001
+  _on_safe_dist_violation: true
+
+approach_globalplan:
+  pos_factor: 0.1
+  neg_factor: 0.15
+  _on_safe_dist_violation: false
+
+root_velocity_difference:
+  _on_safe_dist_violation: false
