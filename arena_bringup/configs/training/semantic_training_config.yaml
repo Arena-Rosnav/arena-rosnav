@@ -1,19 +1,19 @@
 ### General
 # in debug_mode no agent directories will be created and no models will be saved
 # further no wandb logging and fake (simulated) multiprocessing for traceback
-debug_mode: true
+debug_mode: false
 # number of parallel environments
-n_envs: 1
+n_envs: 12
 # gpu yes or no
 no_gpu: true
 
 ### General Training
 # navigation task mode, chose from "random" or "staged"
-task_mode: "random"
+task_mode: "dynamic_map_random"
 # number of simulation timesteps
-n_timesteps: 20000000
-max_num_moves_per_eps: 100
-goal_radius: 0.2
+n_timesteps: 40000000
+max_num_moves_per_eps: 1000
+goal_radius: 0.25
 
 ### Training Monitoring
 monitoring:
@@ -24,9 +24,9 @@ monitoring:
     # display episode statistics (avg. success rate, reward, eps length..)
     episode_statistics:
       enabled: true
-      last_n_eps: 20
+      last_n_eps: 50
   # weights and biases logging
-  use_wandb: false
+  use_wandb: true
   # save evaluation stats during training in log file
   eval_log: false
 
@@ -34,11 +34,11 @@ callbacks:
   ### Periodic Eval
   periodic_eval:
     # max number of steps per episode
-    max_num_moves_per_eps: 500
+    max_num_moves_per_eps: 1250
     # number of evaluation episodes
     n_eval_episodes: 50
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 20000
+    eval_freq: 25000
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
@@ -68,7 +68,7 @@ rl_agent:
     enabled: true
     stack_size: 8
 
-  reward_fnc: "rule_13"
+  reward_fnc: "base_semantic"
 
   normalize: 
     enabled: true
@@ -104,7 +104,7 @@ rl_agent:
       decay_steps: 20000000
 
   ppo:
-    batch_size: 512
+    batch_size: 20480
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
@@ -114,4 +114,4 @@ rl_agent:
     gae_lambda: 0.95
     m_batch_size: 512
     n_epochs: 3
-    clip_range: 0.22
+    clip_range: 0.25

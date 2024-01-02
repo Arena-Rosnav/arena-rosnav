@@ -207,7 +207,8 @@ def generate_discrete_action_dict(
         for linear_action in linear_actions
         for angular_action in angular_actions
     ]
-    discrete_action_space.append((0, 0))
+    if (0, 0) not in discrete_action_space:
+        discrete_action_space.append((0, 0))
 
     return [
         {

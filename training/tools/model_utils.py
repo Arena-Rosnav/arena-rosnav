@@ -1,8 +1,10 @@
 import os
 import sys
-from typing import Type, Union
+from typing import Callable
 
 import wandb
+from rl_utils.utils.eval_callbacks.staged_train_callback import InitiateNewTrainStage
+from rl_utils.utils.learning_rate_schedules.linear import linear_decay
 from rosnav.model.base_agent import BaseAgent
 from sb3_contrib import RecurrentPPO
 from stable_baselines3 import PPO
@@ -14,7 +16,6 @@ from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.utils import configure_logger
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
-from tools.staged_train_callback import InitiateNewTrainStage
 
 
 def setup_wandb(config: dict, agent: PPO) -> None:
@@ -32,7 +33,7 @@ def setup_wandb(config: dict, agent: PPO) -> None:
 
 def check_batch_size(n_envs: int, batch_size: int, mn_batch_size: int) -> None:
     assert (
-        batch_size > mn_batch_size
+        batch_size >= mn_batch_size
     ), f"Mini batch size {mn_batch_size} is bigger than batch size {batch_size}"
 
     assert (
@@ -109,6 +110,18 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
     print("--------------------------------\n")
 
 
+def load_lr_schedule(config: dict) -> Callable:
+    lr_schedule_cfg = config["rl_agent"]["lr_schedule"]
+    lr_schedule = None
+    if lr_schedule_cfg["type"] == "linear":
+        lr_schedule = linear_decay(**lr_schedule_cfg["settings"])
+    else:
+        raise NotImplementedError(
+            f"Learning rate schedule '{lr_schedule_cfg['type']}' not implemented!"
+        )
+    return lr_schedule
+
+
 def get_ppo_instance(
     agent_description: BaseAgent,
     config: dict,
@@ -145,6 +158,14 @@ def instantiate_new_model(
     ppo_config["batch_size"] = ppo_config["m_batch_size"]
     del ppo_config["m_batch_size"]
 
+    # potentially get learning rate schedule
+    learning_rate = (
+        load_lr_schedule(config)
+        if config["rl_agent"]["lr_schedule"]["enabled"]
+        else ppo_config["learning_rate"]
+    )
+    ppo_config["learning_rate"] = learning_rate
+
     ppo_kwargs = {
         "env": train_env,
         **ppo_config,
@@ -153,7 +174,7 @@ def instantiate_new_model(
         "verbose": config["monitoring"]["cmd_line_logging"]["training_metrics"][
             "enabled"
         ],
-        "device": "cpu" if config["no_gpu"] else "auto"
+        "device": "cpu" if config["no_gpu"] else "auto",
     }
 
     if isinstance(agent_description, BaseAgent):
