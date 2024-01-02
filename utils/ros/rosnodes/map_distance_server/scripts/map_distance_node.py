@@ -122,7 +122,7 @@ class MapDistanceServer:
         # nearest distance + 1 (cell is one more step away from obstacle than
         # neighbor)
         for x, y in free_space_coordinates:
-            dist = float("inf")
+            dist = -1
 
             for j in range(-1, 2):
                 for i in range(-1, 2):
@@ -182,6 +182,7 @@ class MapDistanceServer:
         # return np.reshape(coordinates_with_length, (height_in_cell, width_in_cell))
 
     def _get_index(self, x, y):
+        # print(x,y, x * self.map.info.width + y)
         return x * self.map.info.width + y
 
 

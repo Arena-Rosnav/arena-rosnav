@@ -24,16 +24,13 @@ T = TypeVar("T")
 _unspecified = rospy.client._Unspecified()
 
 
-def rosparam_get(
-    cast: Type[T], param_name: str, default=_unspecified, strict: bool = False
-) -> T:
+def rosparam_get(cast: Type[T], param_name: str, default=_unspecified, strict: bool = False) -> T:
     val = rospy.get_param(param_name=param_name, default=default)
 
     if strict:
         if not isinstance(val, cast):
             raise ValueError(
-                f"param {param_name} is not of type {cast} but {type(val)} with val {val}"
-            )
+                f"param {param_name} is not of type {cast} but {type(val)} with val {val}")
     else:
         try:
             val = cast(val)
@@ -49,19 +46,17 @@ class Namespace(str):
 
     @property
     def simulation_ns(self) -> Namespace:
-        ns_components = self.split("/")
-        return Namespace(f"/{ns_components[1]}") if len(ns_components) > 2 else self
+        return Namespace(self.split("/")[0])
 
     @property
     def robot_ns(self) -> Namespace:
-        ns_components = self.split("/")
-        return Namespace(f"/{ns_components[2]}") if len(ns_components) > 2 else self
+        return Namespace(self.split("/")[1])
 
     def remove_double_slash(self) -> Namespace:
         return Namespace(self.replace("//", "/"))
 
 
-yaml.add_representer(Namespace, str)  # type: ignore
+yaml.add_representer(Namespace, str) #type: ignore
 
 
 # TODO deprecate this in favor of Model.EMPTY
@@ -99,13 +94,20 @@ class Model:
         return dataclasses.replace(self, **kwargs)
 
 
-Position = collections.namedtuple("Position", ("x", "y"))
-
-PositionOrientation = collections.namedtuple(
-    "PositionOrientation", ("x", "y", "orientation")
+Position = collections.namedtuple(
+    "Position",
+    ("x", "y")
 )
 
-PositionRadius = collections.namedtuple("PositionRadius", ("x", "y", "radius"))
+PositionOrientation = collections.namedtuple(
+    "PositionOrientation",
+    ("x", "y", "orientation")
+)
+
+PositionRadius = collections.namedtuple(
+    "PositionRadius",
+    ("x", "y", "radius")
+)
 
 
 class ModelWrapper:
@@ -301,7 +303,8 @@ class DynamicObstacle(DynamicObstacleProps):
     def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
         name = str(obj.get("name", ""))
         position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
-        waypoints = [PositionRadius(*waypoint) for waypoint in obj.get("waypoints", [])]
+        waypoints = [PositionRadius(*waypoint)
+                     for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
             name=name, position=position, model=model, waypoints=waypoints, extra=obj
