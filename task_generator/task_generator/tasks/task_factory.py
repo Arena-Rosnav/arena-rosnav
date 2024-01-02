@@ -156,6 +156,7 @@ class TaskFactory:
     
 from .obstacles.random import TM_Random
 from .obstacles.scenario import TM_Scenario
+from .obstacles.parametrized import TM_Parametrized
 
 from .robots.random import TM_Random
 from .robots.guided import TM_Guided
