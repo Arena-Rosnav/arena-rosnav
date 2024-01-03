@@ -84,6 +84,8 @@ class TaskFactory:
             __tm_robots: TM_Robots
             __tm_obstacles: TM_Obstacles
 
+            n_dynamic_obstacles: int
+
             def __init__(
                 self,
                 obstacle_manager: ObstacleManager,
@@ -147,6 +149,8 @@ class TaskFactory:
                 self.__modules = [
                     cls.registry_module[module](task=self) for module in modules
                 ]
+
+                self.n_dynamic_obstacles = 0
 
             def set_tm_robots(self, tm_robots: Constants.TaskMode.TM_Robots):
                 """
@@ -213,6 +217,8 @@ class TaskFactory:
 
                     self.obstacle_manager.spawn_obstacles(obstacles)
                     self.obstacle_manager.spawn_dynamic_obstacles(dynamic_obstacles)
+
+                    self.n_dynamic_obstacles = len(dynamic_obstacles)
 
                     for module in self.__modules:
                         module.after_reset()
