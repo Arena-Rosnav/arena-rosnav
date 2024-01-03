@@ -14,57 +14,98 @@ import dynamic_reconfigure.client
 
 
 class RobotGoal(NamedTuple):
+    """
+    Represents the start and goal positions for a robot.
+    """
+
     start: PositionOrientation
     goal: PositionOrientation
 
     @staticmethod
     def parse(obj: dict) -> "RobotGoal":
+        """
+        Parses a dictionary object and returns a RobotGoal instance.
+
+        Args:
+            obj (dict): The dictionary object containing the start and goal positions.
+
+        Returns:
+            RobotGoal: The parsed RobotGoal instance.
+        """
         return RobotGoal(
-            start = PositionOrientation(*obj.get("start", [])),
-            goal = PositionOrientation(*obj.get("goal", []))
+            start=PositionOrientation(*obj.get("start", [])),
+            goal=PositionOrientation(*obj.get("goal", [])),
         )
+
 
 @dataclasses.dataclass
 class Config:
     robots: List[RobotGoal]
 
+
 @TaskFactory.register_robots(Constants.TaskMode.TM_Robots.SCENARIO)
 class TM_Scenario(TM_Robots):
+    """
+    This class represents a scenario for robots in the task generator.
+    It inherits from TM_Robots class.
+
+    Attributes:
+        _config (Config): The configuration object for the scenario.
+    """
 
     _config: Config
 
     @classmethod
     def prefix(cls, *args):
         return super().prefix("scenario")
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         dynamic_reconfigure.client.Client(
-            name=self.NODE_CONFIGURATION,
-            config_callback=self.reconfigure
+            name=self.NODE_CONFIGURATION, config_callback=self.reconfigure
         )
 
     def reconfigure(self, config):
+        """
+        Reconfigures the scenario based on the provided configuration.
 
-        rospy.logdebug(f"RECONFIGURED SCENARIO TO FILE {rosparam_get(str, self.NODE_CONFIGURATION('SCENARIO_file'))}")
+        Args:
+            config: The configuration object.
+
+        Returns:
+            None
+        """
+
+        rospy.logdebug(
+            f"RECONFIGURED SCENARIO TO FILE {rosparam_get(str, self.NODE_CONFIGURATION('SCENARIO_file'))}"
+        )
 
         with open(
             os.path.join(
                 rospkg.RosPack().get_path("arena_bringup"),
                 "configs",
                 "scenarios",
-                rosparam_get(str, self.NODE_CONFIGURATION("SCENARIO_file"))
+                rosparam_get(str, self.NODE_CONFIGURATION("SCENARIO_file")),
             )
         ) as f:
             scenario = json.load(f)
 
         self._config = Config(
-            robots = [RobotGoal.parse(robot) for robot in scenario.get("robots", [])]
+            robots=[RobotGoal.parse(robot) for robot in scenario.get("robots", [])]
         )
 
-
     def reset(self, **kwargs):
+        """
+        Resets the scenario.
+
+        Args:
+            kwargs: Additional keyword arguments.
+
+        Returns:
+            None
+        """
+
         SCENARIO_ROBOTS = self._config.robots
 
         # check robot manager length
@@ -75,26 +116,23 @@ class TM_Scenario(TM_Robots):
 
         if setup_robot_length > scenario_robots_length:
             managed_robots = managed_robots[:scenario_robots_length]
-            rospy.logwarn_once("Roboto setup contains more robots than the scenario file.")
+            rospy.logwarn_once(
+                "Roboto setup contains more robots than the scenario file."
+            )
 
         if scenario_robots_length > setup_robot_length:
             SCENARIO_ROBOTS = SCENARIO_ROBOTS[:setup_robot_length]
             rospy.logwarn_once("Scenario file contains more robots than setup.")
 
-        for (robot, config) in zip(managed_robots, SCENARIO_ROBOTS):
-            robot.reset(
-                start_pos=config.start,
-                goal_pos=config.goal
+        for robot, config in zip(managed_robots, SCENARIO_ROBOTS):
+            robot.reset(start_pos=config.start, goal_pos=config.goal)
+            self._PROPS.world_manager.forbid(
+                [
+                    PositionRadius(
+                        x=config.start.x, y=config.start.y, radius=robot.safe_distance
+                    ),
+                    PositionRadius(
+                        x=config.goal.x, y=config.goal.y, radius=robot.safe_distance
+                    ),
+                ]
             )
-            self._PROPS.world_manager.forbid([
-                PositionRadius(
-                    x=config.start.x,
-                    y=config.start.y,
-                    radius=robot.safe_distance
-                ),
-                PositionRadius(
-                    x=config.goal.x,
-                    y=config.goal.y,
-                    radius=robot.safe_distance
-                ),
-            ])

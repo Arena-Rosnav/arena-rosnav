@@ -15,6 +15,7 @@ import std_msgs.msg as std_msgs
 
 import dynamic_reconfigure.client
 
+
 class Stage(NamedTuple):
     static: int
     interactive: int
@@ -24,17 +25,45 @@ class Stage(NamedTuple):
     def serialize(self) -> Dict:
         return self._asdict()
 
+
 StageIndex = int
 Stages = Dict[StageIndex, Stage]
+
 
 @dataclasses.dataclass
 class Config:
     stages: Stages
     starting_index: StageIndex
 
+
 # StagedInterface
 @TaskFactory.register_module(Constants.TaskMode.TM_Module.STAGED)
 class Mod_Staged(TM_Module):
+    """
+    A module for managing staged tasks in a task generator.
+
+    Attributes:
+        __config (Config): The configuration object for the staged tasks.
+        __target_stage (StageIndex): The target stage index.
+        __current_stage (StageIndex): The current stage index.
+        __training_config_path (Optional[Namespace]): The path to the training configuration.
+        __debug_mode (bool): Flag indicating whether debug mode is enabled.
+        __config_lock (FileLock): The lock for the training configuration file.
+
+        PARAM_CURR_STAGE (str): The parameter for the current stage index.
+        PARAM_LAST_STAGE_REACHED (str): The parameter for the last stage reached flag.
+        PARAM_GOAL_RADIUS (str): The parameter for the goal radius.
+        PARAM_DEBUG_MODE (str): The parameter for the debug mode flag.
+
+        PARAM_CURRICULUM (str): The parameter for the staged curriculum.
+        PARAM_INDEX (str): The parameter for the staged index.
+
+        TOPIC_PREVIOUS_STAGE (str): The topic for the previous stage.
+        TOPIC_NEXT_STAGE (str): The topic for the next stage.
+
+        CONFIG_PATH (Namespace): The path to the configuration files.
+        CURRICULUM_PATH (Namespace): The path to the curriculum files.
+    """
 
     __config: Config
     __target_stage: StageIndex
@@ -63,9 +92,7 @@ class Mod_Staged(TM_Module):
 
         self.CONFIG_PATH = Namespace(
             os.path.join(
-                rospkg.RosPack().get_path("arena_bringup"),
-                "configs",
-                "training"
+                rospkg.RosPack().get_path("arena_bringup"), "configs", "training"
             )
         )
 
@@ -105,17 +132,20 @@ class Mod_Staged(TM_Module):
                 self.__training_config_path
             ), f"Found no 'training_config.yaml' at {self.__training_config_path}"
 
-            self.__config_lock = FileLock(
-                f"{self.__training_config_path}.lock")
+            self.__config_lock = FileLock(f"{self.__training_config_path}.lock")
 
         dynamic_reconfigure.client.Client(
-            name=self.NODE_CONFIGURATION,
-            config_callback=self.reconfigure
+            name=self.NODE_CONFIGURATION, config_callback=self.reconfigure
         )
 
         self.__current_stage = None
 
     def before_reset(self):
+        """
+        Method called before resetting the module.
+
+        This method updates the current stage and performs necessary actions before resetting the module.
+        """
 
         if self.__current_stage != self.__target_stage:
             self.__current_stage = self.__target_stage
@@ -130,7 +160,10 @@ class Mod_Staged(TM_Module):
             # publish stage state
             if self.IS_EVAL_SIM:  # TODO reconsider if this check is needed
                 rospy.set_param(self.PARAM_CURR_STAGE, self.__current_stage)
-                rospy.set_param(self.PARAM_LAST_STAGE_REACHED, self.__current_stage == self.MAX_STAGE)
+                rospy.set_param(
+                    self.PARAM_LAST_STAGE_REACHED,
+                    self.__current_stage == self.MAX_STAGE,
+                )
 
             # The current stage is stored inside the config file for when the training is stopped and later continued, the correct stage can be restored.
             if self.__training_config_path is not None:
@@ -138,50 +171,70 @@ class Mod_Staged(TM_Module):
 
                 with open(self.__training_config_path, "r", encoding="utf-8") as target:
                     config = yaml.load(target, Loader=yaml.FullLoader)
-                    config["callbacks"]["training_curriculum"]["curr_stage"] = self.stage.serialize()
+                    config["callbacks"]["training_curriculum"][
+                        "curr_stage"
+                    ] = self.stage.serialize()
 
                 with open(self.__training_config_path, "w", encoding="utf-8") as target:
                     yaml.dump(config, target, allow_unicode=True, indent=4)
 
                 self.__config_lock.release()
 
-
     def reconfigure(self, config):
+        """
+        Method called when the configuration is updated.
 
-        curriculum_file = str(self.CURRICULUM_PATH(rosparam_get(str, self.NODE_CONFIGURATION(self.PARAM_CURRICULUM))))
+        This method updates the configuration based on the new values.
+
+        Args:
+            config: The new configuration values.
+        """
+
+        curriculum_file = str(
+            self.CURRICULUM_PATH(
+                rosparam_get(str, self.NODE_CONFIGURATION(self.PARAM_CURRICULUM))
+            )
+        )
         assert os.path.isfile(curriculum_file), f"{curriculum_file} is not a file"
 
         with open(curriculum_file) as f:
             stages = {
-            i: Stage(
-                static=stage.get("static", 0),
-                interactive=stage.get("interactive", 0),
-                dynamic=stage.get("dynamic", 0),
-                goal_radius=stage.get("goal_radius", None),
-            )
-            for i, stage in enumerate(yaml.load(f, Loader=yaml.FullLoader))
-        }
+                i: Stage(
+                    static=stage.get("static", 0),
+                    interactive=stage.get("interactive", 0),
+                    dynamic=stage.get("dynamic", 0),
+                    goal_radius=stage.get("goal_radius", None),
+                )
+                for i, stage in enumerate(yaml.load(f, Loader=yaml.FullLoader))
+            }
 
-        starting_index = rosparam_get(StageIndex, self.NODE_CONFIGURATION(self.PARAM_INDEX))
-
-        self.__config = Config(
-            stages = stages,
-            starting_index = starting_index
+        starting_index = rosparam_get(
+            StageIndex, self.NODE_CONFIGURATION(self.PARAM_INDEX)
         )
 
+        self.__config = Config(stages=stages, starting_index=starting_index)
+
         self.stage_index = starting_index
-        
 
     @property
     def IS_EVAL_SIM(self) -> bool:
+        """
+        Flag indicating whether the module is running in evaluation simulation mode.
+        """
         return self._TASK.namespace == "eval_sim"
 
     @property
     def MIN_STAGE(self) -> StageIndex:
+        """
+        The minimum stage index.
+        """
         return 0
 
     @property
     def MAX_STAGE(self) -> StageIndex:
+        """
+        The maximum stage index.
+        """
         return len(self.__config.stages) - 1
 
     @property
@@ -193,6 +246,12 @@ class Mod_Staged(TM_Module):
 
     @stage_index.setter
     def stage_index(self, val: StageIndex):
+        """
+        Setter for the stage index.
+
+        Args:
+            val (StageIndex): The new stage index.
+        """
 
         val = val if val is not None else self.MIN_STAGE
 

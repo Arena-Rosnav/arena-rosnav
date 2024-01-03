@@ -18,7 +18,7 @@ catkin_install_python(PROGRAMS
   scripts/main.py
   scripts/scenario_helper.py
   scripts/server.py
-  script/filewatcher.py
+  scripts/filewatcher.py
 
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

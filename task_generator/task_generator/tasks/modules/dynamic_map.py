@@ -17,13 +17,18 @@ from task_generator.utils import rosparam_get
 
 DynamicMapConfiguration = Dict[str, Dict]
 
+
 @TaskFactory.register_module(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
 class Mod_DynamicMap(TM_Module):
+    """
+    This class represents a module for generating and managing dynamic maps in the task generator.
+    It provides functionality for requesting new maps, resetting tasks, and updating the map based on distance information.
+    """
 
     __map_request_pub: rospy.Publisher
     __task_reset_pub: rospy.Publisher
     __get_dist_map_service: rospy.ServiceProxy
-    
+
     PARAM_MAP_FILE = "map_file"
     PARAM_EPISODES = "/dynamic_map/curr_eps"
     PARAM_GENERATOR = "generator"
@@ -37,14 +42,25 @@ class Mod_DynamicMap(TM_Module):
     SERVICE_DISTANCE_MAP = "/distance_map"
 
     def before_reset(self, **kwargs):
+        """
+        This method is called before resetting the task.
+        It increments the number of episodes and requests a new map if the episode count exceeds the threshold.
+        """
         self._episodes += 1
 
-        num_envs: int = rosparam_get(int, "num_envs", 1) if "eval_sim" not in self._TASK.robot_managers[0].namespace else 1
+        num_envs: int = (
+            rosparam_get(int, "num_envs", 1)
+            if "eval_sim" not in self._TASK.robot_managers[0].namespace
+            else 1
+        )
 
         if self._episodes >= rosparam_get(int, "episode_per_map", 1) * num_envs:
             self.request_new_map()
 
     def __init__(self, **kwargs):
+        """
+        Initializes the Mod_DynamicMap module.
+        """
         TM_Module.__init__(self, **kwargs)
 
         rospy.Subscriber(self.TOPIC_RESET, std_msgs.String, self._cb_task_reset)
@@ -61,9 +77,11 @@ class Mod_DynamicMap(TM_Module):
         self.__get_dist_map_service = rospy.ServiceProxy(
             self.SERVICE_DISTANCE_MAP, map_distance_server_srvs.GetDistanceMap
         )
-        
-    def _set_config(self, config: DynamicMapConfiguration):
 
+    def _set_config(self, config: DynamicMapConfiguration):
+        """
+        Sets the configuration for the map generator based on the provided DynamicMapConfiguration object.
+        """
         generator = rosparam_get(str, self.PARAM_GENERATOR)
 
         log = f"Setting [Map Generator: {generator}] parameters"
@@ -79,23 +97,36 @@ class Mod_DynamicMap(TM_Module):
         rospy.loginfo(log)
 
     def _cb_task_reset(self, *args, **kwargs):
+        """
+        Callback function for task reset.
+        Updates the map manager and triggers map update.
+        """
         # task reset for all taskmanagers when one resets
         # update map manager
 
         self._update_map()
 
-
     def _update_map(self):
-            
-        dist_map: map_distance_server_srvs.GetDistanceMapResponse = self.__get_dist_map_service()
+        """
+        Updates the map based on the distance information received from the service.
+        """
+        dist_map: map_distance_server_srvs.GetDistanceMapResponse = (
+            self.__get_dist_map_service()
+        )
 
         if isinstance(dist_map, map_distance_server_srvs.GetDistanceMapResponse):
-            self._TASK.world_manager.update_world(world_map=WorldMap.from_distmap(distmap=dist_map))
+            self._TASK.world_manager.update_world(
+                world_map=WorldMap.from_distmap(distmap=dist_map)
+            )
             self._TASK.obstacle_manager.reset(purge=ObstacleLayer.WORLD)
-            self._TASK.obstacle_manager.spawn_world_obstacles(self._TASK.world_manager.world)
-
+            self._TASK.obstacle_manager.spawn_world_obstacles(
+                self._TASK.world_manager.world
+            )
 
     def request_new_map(self):
+        """
+        Requests a new map from the map generator.
+        """
         # set current eps immediately to 0 so that only one task
         # requests a new map
         self._episodes = 0
@@ -113,8 +144,14 @@ class Mod_DynamicMap(TM_Module):
 
     @property
     def _episodes(self) -> float:
+        """
+        Property representing the current number of episodes.
+        """
         return rosparam_get(float, self.PARAM_EPISODES, float("inf"))
 
     @_episodes.setter
     def _episodes(self, value: float):
+        """
+        Setter for the _episodes property.
+        """
         rospy.set_param(self.PARAM_EPISODES, value)

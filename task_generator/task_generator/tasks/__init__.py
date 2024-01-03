@@ -1,4 +1,3 @@
-
 import dataclasses
 import os
 from typing import Any, List, Type
@@ -14,14 +13,17 @@ from task_generator.utils import ModelLoader
 import rosgraph_msgs.msg as rosgraph_msgs
 import std_msgs.msg as std_msgs
 
+
 class Props_Manager:
     obstacle_manager: ObstacleManager
     robot_managers: List[RobotManager]
     world_manager: WorldManager
 
+
 class Props_Modelloader:
     model_loader: ModelLoader
     dynamic_model_loader: ModelLoader
+
 
 class Props_Namespace:
     namespace: str
@@ -31,17 +33,35 @@ class Props_Namespace:
 class Props_(Props_Manager, Props_Modelloader, Props_Namespace):
     clock: rosgraph_msgs.Clock
 
+
 class Reconfigurable:
+    """
+    A class representing a reconfigurable object.
+
+    Attributes:
+        NODE_CONFIGURATION (Namespace): The namespace for the task generator server.
+    """
 
     # TOPIC_RECONFIGURE = "RECONFIGURE"
 
     def reconfigure(self, config):
         ...
 
-    NODE_CONFIGURATION = Namespace(os.path.join(rospy.get_namespace(), "task_generator_server"))
+    NODE_CONFIGURATION = Namespace(
+        os.path.join(rospy.get_namespace(), "task_generator_server")
+    )
 
     @classmethod
     def prefix(cls, *args) -> Namespace:
+        """
+        Returns a Namespace object with the given arguments as the suffix.
+
+        Args:
+            *args: Variable length argument list.
+
+        Returns:
+            Namespace: A Namespace object with the given arguments as the suffix.
+        """
         return Namespace("~configuration", *args)
 
     def __init__(self):
@@ -52,10 +72,8 @@ class Reconfigurable:
         # )
         ...
 
-    
 
 class TaskMode(Reconfigurable):
-
     _PROPS: Props_
 
     def __init__(self, props: Props_, **kwargs):
@@ -64,6 +82,40 @@ class TaskMode(Reconfigurable):
 
 
 class Task(Props_):
+    """
+    Base class for defining tasks in the task generator module.
+
+    Attributes:
+        last_reset_time (int): The time of the last reset.
+
+    Constants:
+        TOPIC_RESET_START (str): The topic for the reset start event.
+        TOPIC_RESET_END (str): The topic for the reset end event.
+        PARAM_RESETTING (str): The parameter for resetting.
+
+    Private Attributes:
+        __reset_start (rospy.Publisher): The publisher for the reset start event.
+        __reset_end (rospy.Publisher): The publisher for the reset end event.
+        __reset_mutex (bool): The mutex for resetting.
+
+    Args:
+        obstacle_manager (ObstacleManager): The obstacle manager.
+        robot_managers (List[RobotManager]): The list of robot managers.
+        world_manager (WorldManager): The world manager.
+        namespace (str, optional): The namespace for the task. Defaults to "".
+
+    Raises:
+        NotImplementedError: This class is meant to be subclassed and not instantiated directly.
+
+    Methods:
+        reset(**kwargs): Reset the task.
+        is_done() -> bool: Check if the task is done.
+        robot_names() -> List[str]: Get the names of the robots in the task.
+        set_up_robot_managers(): Set up the robot managers.
+        _clock_callback(clock: rosgraph_msgs.Clock): Callback function for the clock message.
+        set_robot_position(position: PositionOrientation): Set the position of the robot.
+        set_robot_goal(position: PositionOrientation): Set the goal position of the robot.
+    """
 
     last_reset_time: int
 
@@ -75,12 +127,14 @@ class Task(Props_):
     __reset_end: rospy.Publisher
     __reset_mutex: bool
 
-    def __init__(self,
+    def __init__(
+        self,
         obstacle_manager: ObstacleManager,
         robot_managers: List[RobotManager],
         world_manager: WorldManager,
         namespace: str = "",
-        *args, **kwargs
+        *args,
+        **kwargs
     ):
         raise NotImplementedError()
 
@@ -109,6 +163,6 @@ class Task(Props_):
         ...
 
 
-import task_generator.tasks.modules # noqa
-import task_generator.tasks.robots # noqa
-import task_generator.tasks.obstacles # noqa
+import task_generator.tasks.modules  # noqa
+import task_generator.tasks.robots  # noqa
+import task_generator.tasks.obstacles  # noqa
