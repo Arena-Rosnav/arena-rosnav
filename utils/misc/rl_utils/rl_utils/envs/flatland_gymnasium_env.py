@@ -239,7 +239,7 @@ class FlatlandEnv(gymnasium.Env):
         self._last_action = np.array([0, 0, 0])
 
         if self._is_train_mode:
-            for _ in range(6):
+            for _ in range(2):
                 self.agent_action_pub.publish(Twist())
                 self.call_service_takeSimStep(t=0.25)
                 time.sleep(0.15)
