@@ -41,7 +41,6 @@ if ! grep -q "source /opt/ros/noetic/setup.bash" ~/.bashrc; then
   echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
 fi
 source ~/.bashrc
-sudo rosdep init
 
 # Getting Packages
 echo "Installing Deps...:"

@@ -13,7 +13,7 @@ import std_srvs.srv as std_srvs
 
 import functools
 
-from task_generator.constants import Constants, Pedsim
+from task_generator.constants import Config, Pedsim
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import (
     KnownObstacles,
@@ -26,6 +26,7 @@ from task_generator.shared import (
     DynamicObstacle,
     Model,
     ModelType,
+    Namespace,
     Obstacle,
     PositionOrientation,
     Robot,
@@ -39,7 +40,7 @@ from task_generator.utils import rosparam_get
 
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
-T = Constants.WAIT_FOR_SERVICE_TIMEOUT
+T = Config.General.WAIT_FOR_SERVICE_TIMEOUT
 
 # TODO structure these together
 
@@ -157,7 +158,7 @@ class PedsimManager(EntityManager):
         )
 
     def __init__(self, namespace, simulator):
-        EntityManager.__init__(self, namespace=namespace, simulator=simulator)
+        EntityManager.__init__(self, namespace=Namespace("/sim_1"), simulator=simulator)
 
         self._known_obstacles = KnownObstacles()
 

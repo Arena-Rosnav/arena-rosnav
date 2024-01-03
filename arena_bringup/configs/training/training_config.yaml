@@ -12,7 +12,7 @@ no_gpu: true
 task_mode: "random"
 # number of simulation timesteps
 n_timesteps: 20000000
-max_num_moves_per_eps: 100
+max_num_moves_per_eps: 10000
 goal_radius: 0.2
 safety_distance: 0.5
 
@@ -66,13 +66,13 @@ rl_agent:
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
 
   frame_stacking:
-    enabled: true
+    enabled: false
     stack_size: 8
 
   reward_fnc: "rule_13"
 
   normalize: 
-    enabled: true
+    enabled: false
     settings:
       norm_obs: true
       norm_reward: false # Whether to normalize rewards or not
