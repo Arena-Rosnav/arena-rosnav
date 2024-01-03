@@ -46,11 +46,11 @@ class Namespace(str):
 
     @property
     def simulation_ns(self) -> Namespace:
-        return Namespace(self.split("/")[0])
+        return Namespace(os.path.dirname(self))
 
     @property
     def robot_ns(self) -> Namespace:
-        return Namespace(self.split("/")[1])
+        return Namespace(os.path.basename(os.path.normpath(self)))
 
     def remove_double_slash(self) -> Namespace:
         return Namespace(self.replace("//", "/"))

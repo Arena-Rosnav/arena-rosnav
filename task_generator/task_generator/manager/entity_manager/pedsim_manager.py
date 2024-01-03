@@ -158,7 +158,7 @@ class PedsimManager(EntityManager):
         )
 
     def __init__(self, namespace, simulator):
-        EntityManager.__init__(self, namespace=Namespace("/sim_1"), simulator=simulator)
+        EntityManager.__init__(self, namespace=namespace, simulator=simulator)
 
         self._known_obstacles = KnownObstacles()
 
