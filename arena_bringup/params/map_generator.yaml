@@ -1,5 +1,5 @@
 generator: barn
-episode_per_map: 5
+episode_per_map: 8
 
 map_properties:
   width: 120

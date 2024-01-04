@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 12
+n_envs: 16
 # gpu yes or no
 no_gpu: true
 
@@ -12,7 +12,7 @@ no_gpu: true
 task_mode: "dynamic_map_random"
 # number of simulation timesteps
 n_timesteps: 40000000
-max_num_moves_per_eps: 1000
+max_num_moves_per_eps: 800
 goal_radius: 0.25
 safety_distance: 0.5
 
@@ -25,7 +25,7 @@ monitoring:
     # display episode statistics (avg. success rate, reward, eps length..)
     episode_statistics:
       enabled: true
-      last_n_eps: 50
+      last_n_eps: 25
   # weights and biases logging
   use_wandb: true
   # save evaluation stats during training in log file
@@ -37,9 +37,9 @@ callbacks:
     # max number of steps per episode
     max_num_moves_per_eps: 1250
     # number of evaluation episodes
-    n_eval_episodes: 50
+    n_eval_episodes: 40
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 25000
+    eval_freq: 30000
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
@@ -56,18 +56,18 @@ callbacks:
   # stops training when last stage reached and threshold satisfied
   stop_training:
     threshold_type: "succ"
-    threshold: 0.95
+    threshold: 0.98
 
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "AGENT_57"
+  architecture_name: "RosnavResNet_1"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
 
   frame_stacking:
     enabled: true
-    stack_size: 8
+    stack_size: 6
 
   reward_fnc: "base_semantic"
 
@@ -102,7 +102,7 @@ rl_agent:
     settings:
       initial_value: 0.001
       final_value: 0.0001
-      decay_steps: 20000000
+      decay_steps: 30000000
 
   ppo:
     batch_size: 20480
