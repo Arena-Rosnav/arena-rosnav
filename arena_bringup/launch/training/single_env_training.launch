@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  DEDICATED ROBOT LAUNCH NEEDED FOR TRAINING, SINCE DURING MULTIPROCESSING
+  WE CAN'T LAUNCH ANOTHER SUBPROCESS WITHIN A DAEMON.
+  THEREFOR, WE NEED TO START THE ROBOT LAUNCH WITHIN 'start_training.launch'.
+ -->
+
 <launch>
   <arg name="ns" />
   <arg name="model" default="jackal"/>
@@ -13,6 +19,19 @@
     <!-- use simulator and rviz-->
     <include file="$(find arena_bringup)/launch/training/flatland_simulator.launch">
       <arg name="ns" value="$(arg ns)" />
+    </include>
+
+    <include file="$(find arena_bringup)/launch/training/train_robot.launch">
+      <arg name="namespace" value="/$(arg ns)/$(arg ns)" />
+      <arg name="sim_namespace" value="/$(arg ns)" />
+
+      <arg name="name" value="$(arg model)" />
+      <arg name="model" value="$(arg model)" />
+      <arg name="frame" value="$(arg model)/" />
+      <arg name="agent_name" value="$(arg model)"/>
+
+      <arg name="train_mode" value="true"/>
+
     </include>
 
     <remap from="/clock" to="/$(arg ns)/clock"/>

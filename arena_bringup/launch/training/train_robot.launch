@@ -8,6 +8,7 @@
   <arg name="namespace" default="" />
   <arg name="sim_namespace" default="" />
   <arg name="frame" default="" /> <!-- frame name -->
+  <arg name="local_planner" default="rosnav" />
 
   <arg name="train_mode" default="false" doc="If false, start the Rosnav Deployment Nodes"/>
   <arg name="agent_name" default="$(arg name)" doc="DRL agent name to be deployed"/>
@@ -17,9 +18,6 @@
   <param name="agent_name" value="$(arg agent_name)"/>
 
   <remap from="$(arg namespace)/map" to="/map" />
-
-  <remap from="$(arg namespace)/odom" to="$(arg namespace)/odom_amcl"
-    if="$(eval arg('complexity') > 1)" />
 
   <group ns="$(arg namespace)">
     <param name="agent_name" value="$(arg agent_name)"/>

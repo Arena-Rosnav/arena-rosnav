@@ -6,6 +6,7 @@
         type="train_agent.py"
         pkg="training"
         args="--config $(arg config)"
+        output="screen"
     >
         <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load" ns="configuration"/>
     </node>
