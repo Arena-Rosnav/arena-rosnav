@@ -83,7 +83,7 @@ class FlatlandEnv(gymnasium.Env):
 
         delay_node_init(ns=self.ns.simulation_ns)
 
-        if rospy.get_param("/debug_mode", False):
+        if not rospy.get_param("/debug_mode", False):
             rospy.init_node("env_" + self.ns, anonymous=True)
 
         self._is_train_mode = rosparam_get(
