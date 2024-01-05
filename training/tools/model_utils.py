@@ -146,7 +146,7 @@ def get_ppo_instance(
 
     if not config["debug_mode"]:
         model.save(os.path.join(paths["model"], "best_model"))
-        if isinstance(train_env, VecNormalize):
+        if isinstance(train_env.venv, VecNormalize):
             train_env.save(os.path.join(paths["model"], "vec_normalize.pkl"))
     return model
 
