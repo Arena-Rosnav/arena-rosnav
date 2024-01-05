@@ -5,14 +5,14 @@ debug_mode: false
 # number of parallel environments
 n_envs: 16
 # gpu yes or no
-no_gpu: true
+no_gpu: false
 
 ### General Training
 # navigation task mode, chose from "random" or "staged"
 task_mode: "dynamic_map_random"
 # number of simulation timesteps
 n_timesteps: 40000000
-max_num_moves_per_eps: 800
+max_num_moves_per_eps: 850
 goal_radius: 0.25
 safety_distance: 0.5
 
@@ -66,22 +66,22 @@ rl_agent:
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
 
   frame_stacking:
-    enabled: true
+    enabled: false
     stack_size: 6
 
   reward_fnc: "base_semantic"
 
-  normalize: 
+  normalize:
     enabled: true
     settings:
       norm_obs: true
       norm_reward: false # Whether to normalize rewards or not
-      clip_obs: 30.0 # Max absolute value for observation 
+      clip_obs: 30.0 # Max absolute value for observation
       clip_reward: 20.0 # Max value absolute for discounted reward
       gamma: 0.99 # discount factor
-    
+
   laser:
-    full_range_laser: true  # additional laser covering 360° covering blind spots -> additional collision check
+    full_range_laser: true # additional laser covering 360° covering blind spots -> additional collision check
     reduce_num_beams:
       enabled: false
       num_beams: 200

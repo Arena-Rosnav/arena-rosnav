@@ -26,7 +26,7 @@ def get_ns_idx(ns: str):
     try:
         return int(re.search(r"\d+", ns)[0])
     except Exception:
-        return random.uniform(0, 10)
+        return random.uniform(0, 3)
         # return 0.5
 
 
@@ -36,7 +36,7 @@ def delay_node_init(ns):
         # the training script may crash.
 
         ns_int = get_ns_idx(ns)
-        time.sleep((ns_int + 1.5) * 2)
+        time.sleep((ns_int + 1.5) * 2.2)
         # time.sleep((random.randint(2, 6) + random.uniform(0, 3) * 2))
     except Exception:
         rospy.logwarn(
@@ -248,9 +248,9 @@ class FlatlandEnv(gymnasium.Env):
         self._last_action = np.array([0, 0, 0])
 
         if self._is_train_mode:
-            for _ in range(2):
+            for _ in range(5):
                 self.agent_action_pub.publish(Twist())
-                self.call_service_takeSimStep(t=0.25)
+                self.call_service_takeSimStep(t=0.1)
                 time.sleep(0.15)
 
         obs_dict = self.observation_collector.get_observations()
