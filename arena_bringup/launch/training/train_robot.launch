@@ -53,7 +53,7 @@
     </group>
 
     <include file="$(find arena_bringup)/launch/utils/fake_localization.launch">
-      <arg name="ns" value="$(arg namespace)" />
+      <arg name="ns" value="$(arg sim_namespace)" />
       <arg name="robot_name" value="$(arg model)" />
       <arg name="global_frame_id" value="map" />
       <arg name="odom_frame_id" value="$(arg frame)odom" />

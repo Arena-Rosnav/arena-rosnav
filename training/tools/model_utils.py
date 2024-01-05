@@ -2,6 +2,7 @@ import os
 import sys
 from typing import Callable
 
+import rospy
 import wandb
 from rl_utils.utils.eval_callbacks.staged_train_callback import InitiateNewTrainStage
 from rl_utils.utils.learning_rate_schedules.linear import linear_decay
@@ -133,7 +134,9 @@ def get_ppo_instance(
         config["rl_agent"]["architecture_name"] and not config["rl_agent"]["resume"]
     )
     model = (
-        instantiate_new_model(agent_description, observation_manager, config, train_env, paths)
+        instantiate_new_model(
+            agent_description, observation_manager, config, train_env, paths
+        )
         if new_model
         else load_model(config, train_env, paths)
     )
@@ -145,7 +148,8 @@ def get_ppo_instance(
 
     ## Save model once
 
-    if not config["debug_mode"]:
+    if not rospy.get_param("debug_mode"):
+        print("Saving model to: ", paths["model"])
         model.save(os.path.join(paths["model"], "best_model"))
         if isinstance(train_env.venv, VecNormalize):
             train_env.save(os.path.join(paths["model"], "vec_normalize.pkl"))
@@ -153,7 +157,11 @@ def get_ppo_instance(
 
 
 def instantiate_new_model(
-    agent_description: BaseAgent, observation_manager, config: dict, train_env: VecEnv, PATHS: dict
+    agent_description: BaseAgent,
+    observation_manager,
+    config: dict,
+    train_env: VecEnv,
+    PATHS: dict,
 ) -> PPO:
     ppo_config = config["rl_agent"]["ppo"].copy()
     ppo_config["batch_size"] = ppo_config["m_batch_size"]

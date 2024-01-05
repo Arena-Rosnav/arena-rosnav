@@ -11,8 +11,7 @@ import rospy
 from flatland_msgs.msg import StepWorld
 from geometry_msgs.msg import Twist
 from rl_utils.utils.observation_collector.constants import DONE_REASONS
-from rl_utils.utils.observation_collector.observation_manager import \
-    ObservationManager
+from rl_utils.utils.observation_collector.observation_manager import ObservationManager
 from rl_utils.utils.rewards.reward_function import RewardFunction
 from rosnav.model.base_agent import BaseAgent
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
@@ -22,19 +21,23 @@ from task_generator.task_generator_node import TaskGenerator
 from task_generator.tasks.base_task import BaseTask
 from task_generator.utils import rosparam_get
 
+
 def get_ns_idx(ns: str):
     try:
         return int(re.search(r"\d+", ns)[0])
     except Exception:
-        return random.randint(1000, 10000000)
+        return random.uniform(0, 10)
+        # return 0.5
+
 
 def delay_node_init(ns):
     try:
         # given every environment enough time to initialize, if we dont put sleep,
         # the training script may crash.
 
-        # ns_int = get_ns_idx(ns)
-        time.sleep((random.randint(1, 4) + 1) * 2)
+        ns_int = get_ns_idx(ns)
+        time.sleep((ns_int + 1.5) * 2)
+        # time.sleep((random.randint(2, 6) + random.uniform(0, 3) * 2))
     except Exception:
         rospy.logwarn(
             "Can't not determinate the number of the environment, training script may crash!"
@@ -88,14 +91,11 @@ class FlatlandEnv(gymnasium.Env):
         self.ns = Namespace(ns)
         self._agent_description = agent_description
 
-        delay_node_init(ns=self.ns.simulation_ns)
-
         if not rospy.get_param("/debug_mode", False):
-            rospy.init_node("env_" + str(get_ns_idx(self.ns.simulation_ns)), anonymous=True)
+            delay_node_init(ns=self.ns.simulation_ns)
+            rospy.init_node(f"env_{self.ns}".replace("/", "_"), anonymous=True)
 
-        self._is_train_mode = rosparam_get(
-            bool, "/train_mode", default=True
-        )
+        self._is_train_mode = rosparam_get(bool, "/train_mode", default=True)
         self._step_size = rosparam_get(float, "/step_size")
 
         self.model_space_encoder = RosnavSpaceManager(
@@ -124,6 +124,8 @@ class FlatlandEnv(gymnasium.Env):
         return self.model_space_encoder.get_observation_space()
 
     def _setup_env_for_training(self, reward_fnc: str, **kwargs):
+        if not rospy.get_param("/debug_mode", False):
+            delay_node_init(self.ns.simulation_ns)
         # instantiate task manager
         task_generator = TaskGenerator(self.ns.simulation_ns)
         self.task: BaseTask = task_generator._get_predefined_task(**kwargs)
