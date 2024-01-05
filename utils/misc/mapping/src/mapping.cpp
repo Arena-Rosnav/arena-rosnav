@@ -3,7 +3,6 @@
 /*init*/
 void GridMap::initMap(ros::NodeHandle& nh){
     node_ = nh;
-
     /* get parameters*/
     std::string static_map_service_name = "/static_map";  
     ros::service::waitForService(static_map_service_name); // important
@@ -194,7 +193,7 @@ void GridMap::initMap(ros::NodeHandle& nh){
 bool GridMap::get_static_map(){
     nav_msgs::GetMap srv;
     srv.request={}; //std_srvs::Empty::Request& request
-    
+
     if (static_map_client_.call(srv))
     {   
       ROS_INFO_STREAM("Is stacic map available: "<<"True");
@@ -1473,9 +1472,7 @@ void GridMap::visCallback(const ros::TimerEvent& /*event*/) {
 }
 
 int main(int argc, char **argv){
-    
     ros::init(argc, argv, "sdf_map");
-    std::cout<<"start"<<std::endl;
     ros::NodeHandle nh("~");
     //GridMap filter();
 

@@ -22,6 +22,9 @@ import geometry_msgs.msg as geometry_msgs
 import std_srvs.srv as std_srvs
 
 
+###
+from std_msgs import msg
+
 class RobotManager:
     """
     The robot manager manages the goal and start
@@ -55,7 +58,7 @@ class RobotManager:
     _move_base_goal_pub: rospy.Publisher
     _pub_goal_timer: rospy.Timer
     _clear_costmaps_srv: rospy.ServiceProxy
-
+	
     def __init__(
         self, namespace: Namespace, entity_manager: EntityManager, robot: Robot
     ):
@@ -76,6 +79,10 @@ class RobotManager:
         self._robot = robot
 
         self._position = self._start_pos
+        
+        # Variavbles for task reset
+        self.reset_task = 0
+        rospy.Subscriber("reset_task", msg.Bool, self._reset_task_callback)
 
     def set_up_robot(self):
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
@@ -190,14 +197,9 @@ class RobotManager:
         distance_to_goal: float = np.linalg.norm(
             np.array(goal[:2]) - np.array(start[:2])
         )
-
-        # https://gamedev.stackexchange.com/a/4472
         angle_to_goal: float = np.pi - np.abs(np.abs(goal[2] - start[2]) - np.pi)
-
-        return (
-            distance_to_goal < self._goal_tolerance_distance
-            and angle_to_goal < self._goal_tolerance_angle
-        )
+        
+        return distance_to_goal < self._goal_tolerance_distance and angle_to_goal < self._goal_tolerance_angle and self.reset_task
 
     def _publish_goal_periodically(self, *args, **kwargs):
         if self._goal_pos is not None:
@@ -281,3 +283,7 @@ class RobotManager:
             current_position.position.y,
             rot.as_euler("xyz")[2],
         )
+    
+    def _reset_task_callback(self, msg: msg.Bool):
+        self.reset_task = msg.data
+	

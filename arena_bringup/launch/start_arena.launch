@@ -7,7 +7,6 @@
   <arg name="desired_resets" default="10" />
   <param name="desired_resets" value="$(arg desired_resets)" />
 
-
   <!-- ___________ ARGS ___________ -->
   <!-- You can launch a single robot and his local_planner with arguments -->
   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]" />
@@ -22,8 +21,7 @@
 
   <arg name="complexity" default="1" doc="1 = Map known, Position known; 2 = Map known, Position unknown (AMCL); 3 = Map unknown, Position unknown (SLAM)" />
   
-
-  <arg name="agent_name" default="$(arg model)"     doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')" />
+  <arg name="agent_name" default="$(arg model)" doc = "DRL agent name to be deployed" unless="$(eval arg('local_planner') != 'rosnav')" />
   <!-- Or you can load a robot setup file to launch multiple robots in the same simulation -->
   <!-- If the robot_setup_file is specified it is always loaded -->
   <arg name="robot_setup_file" default="" doc="" />
@@ -32,12 +30,9 @@
   <param name="record_data" value="$(arg record_data)" />
 
   <param name="robot_setup_file" value="$(arg robot_setup_file)" />
-  <param name="model" value="$(arg model)" />
   <param name="local_planner"  value="$(arg local_planner)"/>
   <param name="agent_name" value="$(arg agent_name)" unless="$(eval arg('local_planner') != 'rosnav')"/>
-
   <param name="complexity" value="$(arg complexity)" />
-  
 
   <arg name="task_mode" default="random" doc="[random, staged, scenario, parametrized, dynamic_map_random, dynamic_map_staged]" />
   <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
@@ -70,11 +65,9 @@
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" />
 
-
   <!-- TEST IF YOU NEED THIS -->
   <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" if="$(eval arg('robot_setup_file') == '')" /> 
 
-  
   <!-- <param name="robot_yaml_path" value="$(find arena-simulation-setup)/robot/$(arg model)/$(arg model).model.yaml" /> -->
   <!-- <param name="tmp_model_path" value="/tmp" /> -->
 

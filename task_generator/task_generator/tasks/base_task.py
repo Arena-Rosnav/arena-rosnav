@@ -20,7 +20,6 @@ class Props_Manager:
     robot_managers: List[RobotManager]
     world_manager: WorldManager
 
-
 class Props_Modelloader:
     model_loader: ModelLoader
     dynamic_model_loader: ModelLoader
