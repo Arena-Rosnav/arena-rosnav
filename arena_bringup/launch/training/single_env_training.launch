@@ -22,7 +22,7 @@
     </include>
 
     <include file="$(find arena_bringup)/launch/training/train_robot.launch">
-      <arg name="namespace" value="/$(arg ns)/$(arg ns)" />
+      <arg name="namespace" value="/$(arg ns)/$(arg model)" />
       <arg name="sim_namespace" value="/$(arg ns)" />
 
       <arg name="name" value="$(arg model)" />

@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+import re
 import time
 from typing import Tuple
 
@@ -8,8 +9,8 @@ import rospy
 from flatland_msgs.msg import StepWorld
 from geometry_msgs.msg import Twist
 from rl_utils.utils.observation_collector.constants import DONE_REASONS
-
-from rl_utils.utils.observation_collector.observation_manager import ObservationManager
+from rl_utils.utils.observation_collector.observation_manager import \
+    ObservationManager
 from rl_utils.utils.rewards.reward_function import RewardFunction
 from rosnav.model.base_agent import BaseAgent
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
@@ -19,14 +20,14 @@ from task_generator.task_generator_node import TaskGenerator
 from task_generator.tasks.base_task import BaseTask
 from task_generator.utils import rosparam_get
 
+ns_idx = lambda ns: int(re.search(r"\d+", ns)[0])
 
 def delay_node_init(ns):
     try:
         # given every environment enough time to initialize, if we dont put sleep,
         # the training script may crash.
-        import re
 
-        ns_int = int(re.search(r"\d+", ns)[0])
+        ns_int = ns_idx(ns)[0]
         time.sleep((ns_int + 1) * 2)
     except Exception:
         rospy.logwarn(
@@ -84,7 +85,7 @@ class FlatlandEnv(gymnasium.Env):
         delay_node_init(ns=self.ns.simulation_ns)
 
         if not rospy.get_param("/debug_mode", False):
-            rospy.init_node("env_" + self.ns.simulation_ns[-1], anonymous=True)
+            rospy.init_node("env_" + ns_idx(self.ns.simulation_ns), anonymous=True)
 
         self._is_train_mode = rosparam_get(
             bool, "/train_mode", default=True, strict=True
