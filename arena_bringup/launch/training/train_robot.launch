@@ -56,7 +56,7 @@
       <arg name="ns" value="$(arg sim_namespace)" />
       <arg name="robot_name" value="$(arg model)" />
       <arg name="global_frame_id" value="map" />
-      <arg name="odom_frame_id" value="$(arg frame)odom" />
+      <arg name="odom_frame_id" value="$(arg namespace)/odom" />
     </include>
 
   </group>

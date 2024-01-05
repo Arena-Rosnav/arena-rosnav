@@ -244,7 +244,9 @@ class TaskGenerator:
                 robot_model=self._robot_loader.bind(robot_model),
                 planner=rosparam_get(str, "/local_planner", ""),
                 agent=rosparam_get(str, "/agent_name", ""),
-                name=robot_model,
+                name=f"{self._namespace[1:]}_{robot_model}"
+                if self._train_mode
+                else {robot_model},
             )
         else:
             robots = [

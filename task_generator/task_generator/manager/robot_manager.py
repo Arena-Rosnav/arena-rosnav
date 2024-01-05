@@ -123,9 +123,9 @@ class RobotManager:
 
         self._launch_robot()
         self._robot_radius = (
-            rosparam_get(float, "robot_radius") 
+            rosparam_get(float, "robot_radius")
             if Utils.get_arena_type() == Constants.ArenaType.TRAINING
-            else rosparam_get(float, self.namespace("robot_radius")) 
+            else rosparam_get(float, self.namespace("robot_radius"))
         )
 
         # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
@@ -147,7 +147,7 @@ class RobotManager:
 
     @property
     def namespace(self) -> Namespace:
-        return self._namespace(self.name)
+        return self._namespace(self.model_name)
 
     @property
     def is_done(self) -> bool:
@@ -225,7 +225,7 @@ class RobotManager:
 
     def _launch_robot(self):
         rospy.loginfo(f"START WITH MODEL {self.namespace}")
-        
+
         if Utils.get_arena_type() != Constants.ArenaType.TRAINING:
             roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(  # type: ignore
                 ["arena_bringup", "robot.launch"]
