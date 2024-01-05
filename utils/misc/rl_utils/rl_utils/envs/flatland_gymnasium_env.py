@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 import re
 import time
+import random
+
 from typing import Tuple
 
 import gymnasium
@@ -20,15 +22,19 @@ from task_generator.task_generator_node import TaskGenerator
 from task_generator.tasks.base_task import BaseTask
 from task_generator.utils import rosparam_get
 
-ns_idx = lambda ns: int(re.search(r"\d+", ns)[0])
+def get_ns_idx(ns: str):
+    try:
+        return int(re.search(r"\d+", ns)[0])
+    except Exception:
+        return random.randint(1000, 10000000)
 
 def delay_node_init(ns):
     try:
         # given every environment enough time to initialize, if we dont put sleep,
         # the training script may crash.
 
-        ns_int = ns_idx(ns)[0]
-        time.sleep((ns_int + 1) * 2)
+        # ns_int = get_ns_idx(ns)
+        time.sleep((random.randint(1, 4) + 1) * 2)
     except Exception:
         rospy.logwarn(
             "Can't not determinate the number of the environment, training script may crash!"
@@ -85,10 +91,10 @@ class FlatlandEnv(gymnasium.Env):
         delay_node_init(ns=self.ns.simulation_ns)
 
         if not rospy.get_param("/debug_mode", False):
-            rospy.init_node("env_" + ns_idx(self.ns.simulation_ns), anonymous=True)
+            rospy.init_node("env_" + str(get_ns_idx(self.ns.simulation_ns)), anonymous=True)
 
         self._is_train_mode = rosparam_get(
-            bool, "/train_mode", default=True, strict=True
+            bool, "/train_mode", default=True
         )
         self._step_size = rosparam_get(float, "/step_size")
 
