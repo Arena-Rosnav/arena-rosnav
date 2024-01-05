@@ -49,9 +49,9 @@ def main():
         config["rl_agent"]["architecture_name"]
     )
 
-    train_env, eval_env = make_envs(agent_description, config, paths)
+    train_env, eval_env, observation_manager = make_envs(agent_description, config, paths)
     eval_cb = init_callbacks(config, train_env, eval_env, paths)
-    model = get_ppo_instance(agent_description, config, train_env, paths)
+    model = get_ppo_instance(agent_description, observation_manager, config, train_env, paths)
 
     rospy.on_shutdown(lambda: on_shutdown(model))
 

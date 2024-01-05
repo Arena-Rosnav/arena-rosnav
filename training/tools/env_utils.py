@@ -149,6 +149,8 @@ def make_envs(
     )
     eval_env = DummyVecEnv(eval_env_fncs)
 
+    observation_manager = eval_env.envs[0].model_space_encoder.observation_space_manager
+    
     # load vec wrappers
     train_env, eval_env = load_vec_framestack(config, train_env, eval_env)
 
@@ -164,4 +166,4 @@ def make_envs(
         after_x_eps=cmd_logging_cfg["last_n_eps"],
     )
 
-    return train_env, eval_env
+    return train_env, eval_env, observation_manager

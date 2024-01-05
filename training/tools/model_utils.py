@@ -124,6 +124,7 @@ def load_lr_schedule(config: dict) -> Callable:
 
 def get_ppo_instance(
     agent_description: BaseAgent,
+    observation_manager,
     config: dict,
     train_env: VecEnv,
     paths: dict,
@@ -132,7 +133,7 @@ def get_ppo_instance(
         config["rl_agent"]["architecture_name"] and not config["rl_agent"]["resume"]
     )
     model = (
-        instantiate_new_model(agent_description, config, train_env, paths)
+        instantiate_new_model(agent_description, observation_manager, config, train_env, paths)
         if new_model
         else load_model(config, train_env, paths)
     )
@@ -152,7 +153,7 @@ def get_ppo_instance(
 
 
 def instantiate_new_model(
-    agent_description: BaseAgent, config: dict, train_env: VecEnv, PATHS: dict
+    agent_description: BaseAgent, observation_manager, config: dict, train_env: VecEnv, PATHS: dict
 ) -> PPO:
     ppo_config = config["rl_agent"]["ppo"].copy()
     ppo_config["batch_size"] = ppo_config["m_batch_size"]
@@ -182,7 +183,7 @@ def instantiate_new_model(
         policy_kwargs = agent_description.get_kwargs()
         policy_kwargs["features_extractor_kwargs"][
             "observation_space_manager"
-        ] = train_env.venv.envs[0].model_space_encoder.observation_space_manager
+        ] = observation_manager
         policy_kwargs["features_extractor_kwargs"]["stacked_obs"] = config["rl_agent"][
             "frame_stacking"
         ]["enabled"]
