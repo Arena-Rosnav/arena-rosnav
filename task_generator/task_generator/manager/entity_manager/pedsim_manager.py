@@ -298,8 +298,8 @@ class PedsimManager(EntityManager):
         else:
             rospy.logwarn("spawn walls failed!")
 
-        if rosparam_get(str, "world_file", "") == "generated_world":
-            rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), True)
+        # if rosparam_get(str, "world_file", "") == "generated_world":
+        #     rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), True)
         return
 
     def spawn_obstacles(self, obstacles):
@@ -584,11 +584,11 @@ class PedsimManager(EntityManager):
         if self._is_paused:
             return
 
-        if not rosparam_get(
-            bool, self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), False
-        ):
-            return
-        rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), False)
+        # if not rosparam_get(
+        #     bool, self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), False
+        # ):
+        #     return
+        # rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), False)
 
         if isinstance(self._simulator, FlatlandSimulator):
             return
@@ -603,11 +603,11 @@ class PedsimManager(EntityManager):
         if self._is_paused:
             return
 
-        if not rosparam_get(
-            bool, self._namespace(self.PARAM_NEEDS_RESPAWN_OBSTACLES), False
-        ):
-            return
-        rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_OBSTACLES), False)
+        # if not rosparam_get(
+        #     bool, self._namespace(self.PARAM_NEEDS_RESPAWN_OBSTACLES), False
+        # ):
+        #     return
+        # rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_OBSTACLES), False)
 
         if isinstance(self._simulator, FlatlandSimulator):
             return  # already taken care of by pedsim
@@ -649,11 +649,11 @@ class PedsimManager(EntityManager):
         if self._is_paused:
             return
 
-        if not rosparam_get(
-            bool, self._namespace(self.PARAM_NEEDS_RESPAWN_PEDS), False
-        ):
-            return
-        rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_PEDS), False)
+        # if not rosparam_get(
+        #     bool, self._namespace(self.PARAM_NEEDS_RESPAWN_PEDS), False
+        # ):
+        #     return
+        # rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_PEDS), False)
 
         if isinstance(self._simulator, FlatlandSimulator):
             return  # already taken care of by pedsim

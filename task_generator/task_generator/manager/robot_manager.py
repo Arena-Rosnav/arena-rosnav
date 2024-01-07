@@ -123,7 +123,7 @@ class RobotManager:
 
         self._launch_robot()
         self._robot_radius = (
-            rosparam_get(float, "robot_radius")
+            rospy.get_param_cached("robot_radius")
             if Utils.get_arena_type() == Constants.ArenaType.TRAINING
             else rosparam_get(float, self.namespace("robot_radius"))
         )
@@ -251,8 +251,8 @@ class RobotManager:
             self.process.start()
 
         # Overwrite default move base params
-        base_frame: str = rosparam_get(str, self.namespace("robot_base_frame"))
-        sensor_frame: str = rosparam_get(str, self.namespace("robot_sensor_frame"))
+        base_frame: str = rospy.get_param_cached(self.namespace("robot_base_frame"))
+        sensor_frame: str = rospy.get_param_cached(self.namespace("robot_sensor_frame"))
 
         rospy.set_param(
             self.namespace("move_base", "global_costmap", "robot_base_frame"),

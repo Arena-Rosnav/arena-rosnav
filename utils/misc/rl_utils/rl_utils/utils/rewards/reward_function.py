@@ -166,7 +166,7 @@ class RewardFunction:
 
     def reset(self):
         """Reset before each episode."""
-        self.goal_radius = rospy.get_param("/goal_radius", 0.3)
+        self.goal_radius = rospy.get_param_cached("goal_radius", 0.3)
 
         for reward_unit in self._reward_units:
             reward_unit.reset()
@@ -222,7 +222,7 @@ class RewardFunction:
     def goal_radius(self, value) -> None:
         if value < REWARD_CONSTANTS.MIN_GOAL_RADIUS:
             raise ValueError(
-                f"Goal radius smaller than {REWARD_CONSTANTS.MIN_GOAL_RADIUS}"
+                f"Given goal radius ({value}) smaller than {REWARD_CONSTANTS.MIN_GOAL_RADIUS}"
             )
         self._goal_radius = value
 

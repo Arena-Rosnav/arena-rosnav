@@ -66,6 +66,8 @@ class BaseTask(Props_):
         self.robot_managers = robot_managers
         self.world_manager = world_manager
 
+        self._train_mode = rospy.get_param_cached("train_mode", False)
+
         self.__reset_start = rospy.Publisher(
             self.TOPIC_RESET_START, std_msgs.Empty, queue_size=1
         )
@@ -134,21 +136,22 @@ class BaseTask(Props_):
             return False
         self._reset_semaphore = True
 
-        try:
-            rospy.set_param(self.PARAM_RESETTING, True)
-            self.__reset_start.publish()
-            return_val = callback()
-            rospy.set_param(self.PARAM_RESETTING, False)
-            self.__reset_end.publish()
-            self.last_reset_time = self.clock.clock.secs
+        if not self._train_mode:
+            try:
+                rospy.set_param(self.PARAM_RESETTING, True)
+                self.__reset_start.publish()
+                return_val = callback()
+                rospy.set_param(self.PARAM_RESETTING, False)
+                self.__reset_end.publish()
+                self.last_reset_time = self.clock.clock.secs
 
-        except rospy.ServiceException as e:
-            rospy.logerr(repr(e))
-            rospy.signal_shutdown("Reset error!")
-            raise Exception("reset error!")
+            except rospy.ServiceException as e:
+                rospy.logerr(repr(e))
+                rospy.signal_shutdown("Reset error!")
+                raise Exception("reset error!")
 
-        finally:
-            self._reset_semaphore = False
+            finally:
+                self._reset_semaphore = False
 
         return return_val
 

@@ -47,14 +47,22 @@ class DynamicMapRandomTask(RandomTask):
     def reset(
         self, reset_after_new_map: bool = False, first_map: bool = False, **kwargs
     ):
-        if first_map or self.itf_dynamicmap.episodes >= self._eps_per_map:
-            self.itf_dynamicmap.request_new_map(first_map=first_map)
+        try:
+            if first_map or self.itf_dynamicmap.episodes >= self._eps_per_map:
+                self.itf_dynamicmap.request_new_map(first_map=first_map)
 
-            return {}, None
+                return {}, None
 
-        if not reset_after_new_map:
-            # only update eps count when resetting the scene
-            self.itf_dynamicmap.episodes += self._iterator
+            if not reset_after_new_map:
+                # only update eps count when resetting the scene
+                self.itf_dynamicmap.episodes = (
+                    self.itf_dynamicmap.episodes + self._iterator
+                )
+        except Exception as e:
+            print(e)
+            if first_map:
+                self.itf_dynamicmap.request_new_map(first_map=first_map)
+                return {}, None
 
         def callback():
             return False

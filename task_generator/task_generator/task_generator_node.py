@@ -102,8 +102,10 @@ class TaskGenerator:
         self._namespace = Namespace(namespace)
 
         # ParamsW
-        self._task_mode = Constants.TaskMode(rosparam_get(str, "task_mode"))
-        self._entity_mode = Constants.EntityManager(rosparam_get(str, "entity_manager"))
+        self._task_mode = Constants.TaskMode(rospy.get_param("task_mode"))
+        self._entity_mode = Constants.EntityManager(
+            rospy.get_param_cached("entity_manager")
+        )
         self._auto_reset = rosparam_get(bool, "~auto_reset", True)
         self._train_mode = rosparam_get(bool, "train_mode", False)
 
