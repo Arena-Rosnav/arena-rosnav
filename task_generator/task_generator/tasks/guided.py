@@ -10,6 +10,7 @@ from task_generator.shared import PositionOrientation
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.tasks.base_task import BaseTask
 from task_generator.tasks.utils import ITF_Random, RandomList
+from task_generator.utils import Utils
 
 import geometry_msgs.msg as geometry_msgs
 
@@ -150,18 +151,7 @@ class GuidedTask(BaseTask):
         return False
 
     def _add_waypoint(self, pos: geometry_msgs.PoseStamped):
-        waypoint = PositionOrientation(
-            pos.pose.position.x,
-            pos.pose.position.y,
-            euler_from_quaternion(
-                [
-                    pos.pose.orientation.x,
-                    pos.pose.orientation.y,
-                    pos.pose.orientation.z,
-                    pos.pose.orientation.w
-                ]
-            )[2]
-        )
+        waypoint = Utils.pose_to_position(pos.pose)
 
         self._waypoints.append(waypoint)
         rospy.set_param(self.PARAM_WAYPOINTS, [tuple(wp) for wp in self._waypoints])

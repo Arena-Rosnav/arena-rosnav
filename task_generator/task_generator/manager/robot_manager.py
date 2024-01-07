@@ -269,15 +269,4 @@ class RobotManager:
         )
 
     def _robot_pos_callback(self, data: nav_msgs.Odometry):
-        current_position = data.pose.pose
-        quat = current_position.orientation
-
-        rot = scipy.spatial.transform.Rotation.from_quat(
-            [quat.x, quat.y, quat.z, quat.w]
-        )
-
-        self._position = PositionOrientation(
-            current_position.position.x,
-            current_position.position.y,
-            rot.as_euler("xyz")[2],
-        )
+        self._position = Utils.pose_to_position(data.pose.pose)
