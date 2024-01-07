@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 16
+n_envs: 8
 # gpu yes or no
 no_gpu: false
 
@@ -12,7 +12,7 @@ no_gpu: false
 task_mode: "dynamic_map_random"
 # number of simulation timesteps
 n_timesteps: 40000000
-max_num_moves_per_eps: 850
+max_num_moves_per_eps: 1000
 goal_radius: 0.25
 safety_distance: 0.5
 
@@ -35,7 +35,7 @@ callbacks:
   ### Periodic Eval
   periodic_eval:
     # max number of steps per episode
-    max_num_moves_per_eps: 1250
+    max_num_moves_per_eps: 1300
     # number of evaluation episodes
     n_eval_episodes: 40
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
