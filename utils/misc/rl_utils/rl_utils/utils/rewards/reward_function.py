@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import rospy
 from std_msgs.msg import Float32
+from training.tools.dynamic_parameter import DynamicParameter
 
 from .constants import REWARD_CONSTANTS
 from .utils import (
@@ -81,9 +82,8 @@ class RewardFunction:
         self._rew_fnc_dict = load_rew_fnc(self._rew_func_name)
         self._reward_units: List["RewardUnit"] = self._setup_reward_function()
 
-        # Subscriber to new goal in order to bypass fault
-        self._goal_sub = rospy.Subscriber(
-            "/update_param/goal_radius", Float32, self.goal_radius
+        self._goal_radius_updater = DynamicParameter(
+            cls=self, key="goal_radius", message_type=Float32
         )
 
     def _setup_reward_function(self) -> List["RewardUnit"]:
@@ -229,7 +229,7 @@ class RewardFunction:
                 f"Given goal radius ({value}) smaller than {REWARD_CONSTANTS.MIN_GOAL_RADIUS}"
             )
 
-        self._goal_radius = value.data if type(value) is Float32 else value
+        self._goal_radius = value
 
     @property
     def safe_dist(self) -> float:

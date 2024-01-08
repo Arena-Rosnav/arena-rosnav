@@ -65,5 +65,5 @@
     <arg name="ns_prefix" value="$(arg ns_prefix)" />
     <arg name="model" value="$(arg model)" />
   </include> 
-
+  
 </launch>
