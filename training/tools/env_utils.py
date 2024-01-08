@@ -16,6 +16,7 @@ from stable_baselines3.common.vec_env import (
 )
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from task_generator.shared import Namespace
+from .delayed_subproc_vec_env import DelayedSubprocVecEnv
 
 
 def load_vec_normalize(config: dict, paths: dict, env: VecEnv, eval_env: VecEnv):
@@ -74,6 +75,7 @@ def _init_env_fnc(
     reward_fnc: str,
     max_steps_per_episode: int,
     seed: int = 0,
+    trigger_init: bool = False,
 ):
     """
     Initialize the environment function.
@@ -95,6 +97,7 @@ def _init_env_fnc(
             agent_description=agent_description,
             reward_fnc=reward_fnc,
             max_steps_per_episode=max_steps_per_episode,
+            trigger_init=trigger_init,
         )
 
     set_random_seed(seed)
@@ -126,6 +129,7 @@ def make_envs(
             agent_description=agent_description,
             reward_fnc=config["rl_agent"]["reward_fnc"],
             max_steps_per_episode=config["max_num_moves_per_eps"],
+            trigger_init=True if not config["debug_mode"] else False,
         )
         for idx in range(config["n_envs"])
     ]
@@ -138,19 +142,20 @@ def make_envs(
             max_steps_per_episode=config["callbacks"]["periodic_eval"][
                 "max_num_moves_per_eps"
             ],
+            trigger_init=False,
         )
     ]
 
     # vectorize environments
     train_env = (
-        SubprocVecEnv(train_env_fncs, start_method="fork")
+        DelayedSubprocVecEnv(train_env_fncs, start_method="fork")
         if not config["debug_mode"]
         else DummyVecEnv(train_env_fncs)
     )
     eval_env = DummyVecEnv(eval_env_fncs)
 
     observation_manager = eval_env.envs[0].model_space_encoder.observation_space_manager
-    
+
     # load vec wrappers
     train_env, eval_env = load_vec_framestack(config, train_env, eval_env)
 

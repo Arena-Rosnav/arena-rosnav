@@ -2,13 +2,14 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import rospy
+from std_msgs.msg import Float32
 
 from .constants import REWARD_CONSTANTS
 from .utils import (
     InternalStateInfoUpdate,
     load_rew_fnc,
-    safe_dist_breached,
     min_dist_laser,
+    safe_dist_breached,
 )
 
 
@@ -79,6 +80,11 @@ class RewardFunction:
 
         self._rew_fnc_dict = load_rew_fnc(self._rew_func_name)
         self._reward_units: List["RewardUnit"] = self._setup_reward_function()
+
+        # Subscriber to new goal in order to bypass fault
+        self._goal_sub = rospy.Subscriber(
+            "/update_param/goal_radius", Float32, self.goal_radius
+        )
 
     def _setup_reward_function(self) -> List["RewardUnit"]:
         """Sets up the reward function.
@@ -166,8 +172,6 @@ class RewardFunction:
 
     def reset(self):
         """Reset before each episode."""
-        self.goal_radius = rospy.get_param_cached("goal_radius", 0.3)
-
         for reward_unit in self._reward_units:
             reward_unit.reset()
 
@@ -224,7 +228,8 @@ class RewardFunction:
             raise ValueError(
                 f"Given goal radius ({value}) smaller than {REWARD_CONSTANTS.MIN_GOAL_RADIUS}"
             )
-        self._goal_radius = value
+
+        self._goal_radius = value.data if type(value) is Float32 else value
 
     @property
     def safe_dist(self) -> float:
