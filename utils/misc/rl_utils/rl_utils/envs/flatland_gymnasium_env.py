@@ -30,21 +30,6 @@ def get_ns_idx(ns: str):
         # return 0.5
 
 
-def delay_node_init(ns):
-    try:
-        # given every environment enough time to initialize, if we dont put sleep,
-        # the training script may crash.
-
-        ns_int = get_ns_idx(ns)
-        time.sleep((ns_int + 2) * 2.5)
-        # time.sleep((random.randint(2, 6) + random.uniform(0, 3) * 2))
-    except Exception:
-        rospy.logwarn(
-            "Can't not determinate the number of the environment, training script may crash!"
-        )
-        time.sleep(2)
-
-
 class FlatlandEnv(gymnasium.Env):
     """
     FlatlandEnv is an environment class that represents a Flatland environment for reinforcement learning.
@@ -54,25 +39,32 @@ class FlatlandEnv(gymnasium.Env):
         agent_description (BaseAgent): The agent description.
         reward_fnc (str): The name of the reward function.
         max_steps_per_episode (int): The maximum number of steps per episode.
+        trigger_init (bool): Whether to trigger the initialization of the environment.
         *args: Additional positional arguments.
         **kwargs: Additional keyword arguments.
 
     Attributes:
         metadata (dict): The metadata of the environment.
-        ns (Namespace): The namespace of the environment.
+        ns (str): The namespace of the environment.
         _agent_description (BaseAgent): The agent description.
-        _is_train_mode (bool): Flag indicating if the environment is in training mode.
-        model_space_encoder (RosnavSpaceManager): The space encoder for the model.
-        task (BaseTask): The task manager.
-        reward_calculator (RewardFunction): The reward calculator.
-        agent_action_pub (rospy.Publisher): The publisher for agent actions.
-        _service_name_step (str): The name of the step world service.
-        _step_world_srv (rospy.ServiceProxy): The step world service proxy.
-        observation_collector (ObservationManager): The observation collector.
+        _debug_mode (bool): Whether the environment is in debug mode.
+        _is_train_mode (bool): Whether the environment is in train mode.
+        _step_size (float): The step size of the environment.
+        _reward_fnc (str): The name of the reward function.
+        _kwargs (dict): Additional keyword arguments.
         _steps_curr_episode (int): The current number of steps in the episode.
         _episode (int): The current episode number.
         _max_steps_per_episode (int): The maximum number of steps per episode.
-        _last_action (np.ndarray): The last action taken by the agent.
+        _last_action (np.ndarray): The last action taken in the environment.
+        model_space_encoder (RosnavSpaceManager): The space encoder for the model.
+        task (BaseTask): The task manager for the environment.
+        reward_calculator (RewardFunction): The reward calculator for the environment.
+        agent_action_pub (rospy.Publisher): The publisher for agent actions.
+        _service_name_step (str): The name of the step world service.
+        _step_world_publisher (rospy.Publisher): The publisher for the step world service.
+        _step_world_srv (rospy.ServiceProxy): The service proxy for the step world service.
+        observation_collector (ObservationManager): The observation collector for the environment.
+
     """
 
     metadata = {"render_modes": ["human"]}
@@ -83,6 +75,7 @@ class FlatlandEnv(gymnasium.Env):
         agent_description: BaseAgent,
         reward_fnc: str,
         max_steps_per_episode=100,
+        trigger_init: bool = False,
         *args,
         **kwargs,
     ):
@@ -92,13 +85,31 @@ class FlatlandEnv(gymnasium.Env):
         self._agent_description = agent_description
 
         self._debug_mode = rospy.get_param("/debug_mode", False)
+
         if not self._debug_mode:
-            delay_node_init(ns=self.ns.simulation_ns)
             rospy.init_node(f"env_{self.ns}".replace("/", "_"))
 
         self._is_train_mode = rospy.get_param_cached("/train_mode", default=True)
         self._step_size = rospy.get_param_cached("/step_size")
 
+        self._reward_fnc = reward_fnc
+        self._kwargs = kwargs
+
+        self._steps_curr_episode = 0
+        self._episode = 0
+        self._max_steps_per_episode = max_steps_per_episode
+        self._last_action = np.array([0, 0, 0])  # linear x, linear y, angular z
+
+        if not trigger_init:
+            self.init()
+
+    def init(self):
+        """
+        Initializes the environment.
+
+        Returns:
+            bool: True if the initialization is successful, False otherwise.
+        """
         self.model_space_encoder = RosnavSpaceManager(
             space_encoder_class=self._agent_description.space_encoder_class,
             observation_spaces=self._agent_description.observation_spaces,
@@ -106,15 +117,11 @@ class FlatlandEnv(gymnasium.Env):
         )
 
         if self._is_train_mode:
-            self._setup_env_for_training(reward_fnc, **kwargs)
+            self._setup_env_for_training(self._reward_fnc, **self._kwargs)
 
         # observation collector
         self.observation_collector = ObservationManager(self.ns)
-
-        self._steps_curr_episode = 0
-        self._episode = 0
-        self._max_steps_per_episode = max_steps_per_episode
-        self._last_action = np.array([0, 0, 0])  # linear x, linear y, angular z
+        return True
 
     @property
     def action_space(self):
