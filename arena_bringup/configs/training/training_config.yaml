@@ -1,15 +1,17 @@
 ### General
 # in debug_mode no agent directories will be created and no models will be saved
 # further no wandb logging and fake (simulated) multiprocessing for traceback
-debug_mode: false
+debug_mode: true
 # number of parallel environments
 n_envs: 2
 # gpu yes or no
 no_gpu: false
 
 ### General Training
-# navigation task mode, chose from "random" or "staged"
-task_mode: "random"
+tm_robots: "random"
+tm_obstacles: "random"
+tm_modules: "staged"
+
 # number of simulation timesteps
 n_timesteps: 40000000
 max_num_moves_per_eps: 800
