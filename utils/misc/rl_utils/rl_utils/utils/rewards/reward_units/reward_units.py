@@ -114,7 +114,7 @@ class RewardSafeDistance(RewardUnit):
 
     def __call__(self, *args: Any, **kwargs: Any):
         violation_in_blind_spot = False
-        if "full_laser_scan" in kwargs:
+        if "full_laser_scan" in kwargs and len(kwargs["full_laser_scan"]) > 0:
             violation_in_blind_spot = kwargs["full_laser_scan"].min() <= self._safe_dist
 
         if (
