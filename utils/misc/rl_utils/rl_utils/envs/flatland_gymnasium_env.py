@@ -18,7 +18,6 @@ from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
 from std_srvs.srv import Empty
 from task_generator.shared import Namespace
 from task_generator.task_generator_node import TaskGenerator
-from task_generator.tasks.base_task import BaseTask
 from task_generator.utils import rosparam_get
 
 
@@ -134,7 +133,10 @@ class FlatlandEnv(gymnasium.Env):
     def _setup_env_for_training(self, reward_fnc: str, **kwargs):
         # instantiate task manager
         task_generator = TaskGenerator(self.ns.simulation_ns)
-        self.task: BaseTask = task_generator._get_predefined_task(**kwargs)
+        self.task = task_generator._get_predefined_task(**kwargs)
+
+        rospy.set_param(self.task.PARAM_TM_ROBOTS, "random")
+        rospy.set_param(self.task.PARAM_TM_OBSTACLES, "random")
 
         # reward calculator
         self.reward_calculator = RewardFunction(
@@ -254,10 +256,8 @@ class FlatlandEnv(gymnasium.Env):
         self._last_action = np.array([0, 0, 0])
 
         if self._is_train_mode:
-            for _ in range(5):
-                self.agent_action_pub.publish(Twist())
-                self.call_service_takeSimStep(t=0.1)
-                time.sleep(0.15)
+            self.agent_action_pub.publish(Twist())
+            self.call_service_takeSimStep(t=0.25)
 
         obs_dict = self.observation_collector.get_observations()
         info_dict = {}

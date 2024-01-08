@@ -39,7 +39,6 @@
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_folder_name)/map.yaml" />
   <param name="world_path" value="$(find arena-simulation-setup)/maps/$(arg map_folder_name)/map.world.yaml" />
   <param name="map_path" value="$(arg map_path)" />
-  <param name="_dedicated_train_launch" value="true" />
   <param name="model" value="$(arg model)" />
 
   <!-- map server-->

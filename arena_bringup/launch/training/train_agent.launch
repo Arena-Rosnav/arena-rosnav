@@ -2,6 +2,10 @@
 <launch>
     <arg name="config" default=""  />
 
+    <node pkg="task_generator" name="task_generator_server" type="server.py" output="screen"/>
+    <node pkg="task_generator" name="task_generator_filewatcher" type="filewatcher.py" output="screen"/>
+
+
     <node name="train_agent"
         type="train_agent.py"
         pkg="training"

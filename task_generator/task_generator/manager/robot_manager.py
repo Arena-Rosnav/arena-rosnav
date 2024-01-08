@@ -9,7 +9,7 @@ import scipy.spatial.transform
 
 import roslaunch
 import rospy
-from task_generator.constants import Constants
+from task_generator.constants import Constants, Config
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
@@ -67,17 +67,17 @@ class RobotManager:
         self._goal_pos = PositionOrientation(0, 0, 0)
 
         self._goal_tolerance_distance = rosparam_get(
-            float, "goal_radius", Constants.GOAL_TOLERANCE_RADIUS
+            float, "goal_radius", Config.Robot.GOAL_TOLERANCE_RADIUS
         )  # + self._robot_radius
         self._goal_tolerance_angle = rosparam_get(
-            float, "goal_tolerance_angle", Constants.GOAL_TOLERANCE_ANGLE
+            float, "goal_tolerance_angle", Config.Robot.GOAL_TOLERANCE_ANGLE
         )
 
         self._robot = robot
         self._safety_distance = rosparam_get(
             float,
             f"{robot.name}/safety_distance",
-            Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST,
+            Config.Robot.SPAWN_ROBOT_SAFE_DIST,
         )
 
         self._position = self._start_pos

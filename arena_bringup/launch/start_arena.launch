@@ -39,7 +39,10 @@
   <param name="complexity" value="$(arg complexity)" />
   
 
-  <arg name="task_mode" default="random" doc="[random, staged, scenario, parametrized, dynamic_map_random, dynamic_map_staged]" />
+  <arg name="tm_robots" default="random"/>
+  <arg name="tm_obstacles" default="random"/>
+  <arg name="tm_modules" default="" />
+  
   <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
   <arg name="show_rviz" default="true" doc="Enables rviz in gazebo" />
   <arg name="rviz_file" default="nav"/>
@@ -60,7 +63,9 @@
   
   <param name="model" value="$(arg model)" />
   <param name="simulator" value="$(arg simulator)" />
-  <param name="task_mode" value="$(arg task_mode)" />
+  <param name="tm_robots" value="$(arg tm_robots)" />
+  <param name="tm_obstacles" value="$(arg tm_obstacles)" />
+  <param name="tm_modules" value="$(arg tm_modules)" />
   <param name="pedsim" type="bool" value="$(arg pedsim)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
