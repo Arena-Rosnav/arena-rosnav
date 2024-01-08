@@ -248,7 +248,7 @@ def init_callbacks(
         treshhold_type=curriculum_cfg["threshold_type"],
         upper_threshold=curriculum_cfg["upper_threshold"],
         lower_threshold=curriculum_cfg["lower_threshold"],
-        task_mode=config["task_mode"],
+        activated="staged" in config["tm_modules"],
         verbose=1,
     )
 

@@ -115,7 +115,7 @@ class TaskFactory:
 
                 self._train_mode = rosparam_get(bool, "/train_mode", False)
 
-                if self._train_mode:
+                if not self._train_mode:
                     self.__reset_start = rospy.Publisher(
                         self.TOPIC_RESET_START, std_msgs.Empty, queue_size=1
                     )

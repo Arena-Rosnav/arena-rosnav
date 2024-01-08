@@ -8,7 +8,9 @@ from .general import generate_discrete_action_dict
 
 def populate_ros_params(params: dict):
     # general params
-    rospy.set_param("task_mode", params["task_mode"])
+    rospy.set_param("tm_robots", params["tm_robots"])
+    rospy.set_param("tm_obstacles", params["tm_obstacles"])
+    rospy.set_param("tm_modules", params["tm_modules"])
 
     is_discrete = params["rl_agent"]["action_space"]["discrete"]
     rospy.set_param(

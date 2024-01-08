@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import rospy
 from std_msgs.msg import Float32
-from training.tools.dynamic_parameter import DynamicParameter
+from tools.dynamic_parameter import DynamicParameter
 
 from .constants import REWARD_CONSTANTS
 from .utils import (

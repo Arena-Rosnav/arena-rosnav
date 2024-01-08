@@ -135,9 +135,6 @@ class FlatlandEnv(gymnasium.Env):
         task_generator = TaskGenerator(self.ns.simulation_ns)
         self.task = task_generator._get_predefined_task(**kwargs)
 
-        rospy.set_param(self.task.PARAM_TM_ROBOTS, "random")
-        rospy.set_param(self.task.PARAM_TM_OBSTACLES, "random")
-
         # reward calculator
         self.reward_calculator = RewardFunction(
             rew_func_name=reward_fnc,
@@ -220,11 +217,11 @@ class FlatlandEnv(gymnasium.Env):
             info,
         )
 
-    def call_service_takeSimStep(self, t: float = None):
+    def call_service_takeSimStep(self, t: float = None, srv_call: bool = True):
+        if srv_call:
+            self._step_world_srv()
         request = StepWorld()
         request.required_time = self._step_size if t is None else t
-
-        # self._step_world_srv()
 
         self._step_world_publisher.publish(request)
 
@@ -257,7 +254,7 @@ class FlatlandEnv(gymnasium.Env):
 
         if self._is_train_mode:
             self.agent_action_pub.publish(Twist())
-            self.call_service_takeSimStep(t=0.25)
+            self.call_service_takeSimStep(t=0.1)
 
         obs_dict = self.observation_collector.get_observations()
         info_dict = {}
