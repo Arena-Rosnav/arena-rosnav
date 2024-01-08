@@ -151,6 +151,8 @@ class TaskFactory:
                     cls.registry_module[module](task=self) for module in modules
                 ]
 
+                self._first_reset = True
+
             def set_tm_robots(self, tm_robots: Constants.TaskMode.TM_Robots):
                 """
                 Sets the task mode for robots.
@@ -189,19 +191,22 @@ class TaskFactory:
                 Returns:
                     None
                 """
-                if (
-                    new_tm_robots := Constants.TaskMode.TM_Robots(
-                        rosparam_get(str, self.PARAM_TM_ROBOTS)
-                    )
-                ) != self.__param_tm_robots:
-                    self.set_tm_robots(new_tm_robots)
+                if not self._train_mode or self._first_reset:
+                    if (
+                        new_tm_robots := Constants.TaskMode.TM_Robots(
+                            rosparam_get(str, self.PARAM_TM_ROBOTS)
+                        )
+                    ) != self.__param_tm_robots:
+                        self.set_tm_robots(new_tm_robots)
 
-                if (
-                    new_tm_obstacles := Constants.TaskMode.TM_Obstacles(
-                        rosparam_get(str, self.PARAM_TM_OBSTACLES)
-                    )
-                ) != self.__param_tm_obstacles:
-                    self.set_tm_obstacles(new_tm_obstacles)
+                    if (
+                        new_tm_obstacles := Constants.TaskMode.TM_Obstacles(
+                            rosparam_get(str, self.PARAM_TM_OBSTACLES)
+                        )
+                    ) != self.__param_tm_obstacles:
+                        self.set_tm_obstacles(new_tm_obstacles)
+
+                    self._first_reset = False
 
                 for module in self.__modules:
                     module.before_reset()
