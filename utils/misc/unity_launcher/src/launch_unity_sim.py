@@ -15,8 +15,13 @@ def launch_unity():
     current_path = os.path.dirname(os.path.abspath(__file__))
     ws_src_path = os.path.join(current_path, "../../../../..")
     unity_executable_path = os.path.join(ws_src_path, "arena-unity/Build/arena-unity")
+    
+    # args
+    args = list()
+    arena_sim_setup_path = ["-arena_sim_setup_path", os.path.join(ws_src_path, "arena-simulation-setup")]
+    args += arena_sim_setup_path
 
-    subprocess.run([unity_executable_path], check=True)
+    subprocess.run([unity_executable_path] + args, check=True)
 
 
 if __name__ == '__main__':
