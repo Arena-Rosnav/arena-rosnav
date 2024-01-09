@@ -11,8 +11,6 @@ def launch_unity():
     """
     rospy.init_node('unity_sim_node', anonymous=True)
 
-    unity_executable_path = "/path/to/your/project.x86_64"
-
     # find unity executable
     current_path = os.path.dirname(os.path.abspath(__file__))
     ws_src_path = os.path.join(current_path, "../../../../..")
