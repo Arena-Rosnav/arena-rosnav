@@ -172,3 +172,4 @@ class BaseTask(Props_):
 
     def _clock_callback(self, clock: rosgraph_msgs.Clock):
         self.clock = clock
+
