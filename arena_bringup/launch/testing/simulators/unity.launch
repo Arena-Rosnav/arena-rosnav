@@ -25,4 +25,5 @@
         type="load_world_service.py" 
         output="screen"
     /> -->
+  <node name="unity_sim_node" pkg="unity_launcher" type="launch_unity_sim.py" output="screen"/>
 </launch>
