@@ -200,7 +200,10 @@ class RobotManager:
         )
         angle_to_goal: float = np.pi - np.abs(np.abs(goal[2] - start[2]) - np.pi)
 
-        return distance_to_goal < self._goal_tolerance_distance and angle_to_goal < self._goal_tolerance_angle
+        if (self._robot.model.name == "go1"):
+            return distance_to_goal < self._goal_tolerance_distance and angle_to_goal < self._goal_tolerance_angle and self.reset_task
+        else:
+            return distance_to_goal < self._goal_tolerance_distance and angle_to_goal < self._goal_tolerance_angle
 
     def _publish_goal_periodically(self, *args, **kwargs):
         if self._goal_pos is not None:
