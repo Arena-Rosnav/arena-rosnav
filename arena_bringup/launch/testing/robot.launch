@@ -11,8 +11,7 @@
   <arg name="sim_namespace" default="" />
   <arg name="frame" default="" /> <!-- frame name -->
 
-  <arg name="train_mode" default="false" doc="If false, start the Rosnav Deployment Nodes"
-    unless="$(eval arg('local_planner') != 'rosnav')" />
+  <arg name="train_mode" default="false" doc="If false, start the Rosnav Deployment Nodes" />
   <arg name="agent_name" default="$(arg name)" doc="DRL agent name to be deployed"
     unless="$(eval arg('local_planner') != 'rosnav')" />
 

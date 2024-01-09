@@ -171,9 +171,9 @@ class WorldManager:
             raise Exception("can't find any non-occupied spaces")
 
         point = PositionRadius(
-            float(np.round(x * self.world.map.resolution +
+            float(np.round(float(x) * self.world.map.resolution +
                   self.world.map.origin.x, 3)),
-            float(np.round(y * self.world.map.resolution +
+            float(np.round(float(y) * self.world.map.resolution +
                   self.world.map.origin.y, 3)),
             safe_dist
         )
@@ -295,7 +295,7 @@ class WorldManager:
                                 int((i % 5) * self._shape[0]/5)
                             )
                         ) for i in range(to_produce)]
-                    rospy.logerr(f"couldn't find enough empty cells for {to_produce} requests")
+                    rospy.logerr(f"Couldn't find enough empty cells for {to_produce} requests")
                 
                 finally:
                     return result
