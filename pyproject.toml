@@ -35,6 +35,7 @@ shimmy = "^1.3.0"
 pysocialforce = "^1.1.2"
 socialforce = "^0.2.3"
 watchdog = "^3.0.0"
+pyinstrument = "^4.6.1"
 
 [tool.poetry.dev-dependencies]
 
