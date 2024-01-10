@@ -19,11 +19,11 @@
   <include file="$(find arena_bringup)/launch/utils/rviz.launch">
     <arg name="show_rviz" value="$(arg show_rviz)" />
   </include>
-  <!-- <node 
-        pkg="unity_utils" 
-        name="load_world_service" 
-        type="load_world_service.py" 
-        output="screen"
-    /> -->
-  <node name="unity_sim_node" pkg="unity_launcher" type="launch_unity_sim.py" output="screen"/>
+
+  <arg name="dev_mode" default="false"/>
+
+  <node name="unity_sim_node" pkg="unity_launcher" type="launch_unity_sim.py" output="screen">
+    <param name="dev_mode" value="$(arg dev_mode)" />
+  </node>
+
 </launch>
