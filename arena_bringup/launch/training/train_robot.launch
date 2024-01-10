@@ -7,7 +7,6 @@
   <arg name="model" default="" />
   <arg name="namespace" default="" />
   <arg name="sim_namespace" default="" />
-  <arg name="frame" default="" /> <!-- frame name -->
   <arg name="local_planner" default="rosnav" />
 
   <arg name="train_mode" default="false" doc="If false, start the Rosnav Deployment Nodes"/>

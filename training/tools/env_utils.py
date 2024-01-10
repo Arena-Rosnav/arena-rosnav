@@ -120,8 +120,12 @@ def make_envs(
     Returns:
         tuple: A tuple containing the training environment and evaluation environment.
     """
-    train_ns = lambda idx: f"/sim_{idx + 1}/{rospy.get_param('model')}"
-    eval_ns = f"/eval_sim/{rospy.get_param('model')}"
+    SIM_PREFIX = "sim_"
+    EVAL_PREFIX = "eval_sim"
+    train_ns = (
+        lambda idx: f"/{SIM_PREFIX}{idx + 1}/{SIM_PREFIX}{idx + 1}_{rospy.get_param('model')}"
+    )
+    eval_ns = f"/{EVAL_PREFIX}/{EVAL_PREFIX}_{rospy.get_param('model')}"
 
     train_env_fncs = [
         _init_env_fnc(
