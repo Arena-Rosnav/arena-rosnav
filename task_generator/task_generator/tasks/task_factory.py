@@ -217,8 +217,6 @@ class TaskFactory:
                 self.obstacle_manager.spawn_obstacles(obstacles)
                 self.obstacle_manager.spawn_dynamic_obstacles(dynamic_obstacles)
 
-                self.n_dynamic_obstacles = len(dynamic_obstacles)
-
                 for module in self.__modules:
                     module.after_reset()
 
