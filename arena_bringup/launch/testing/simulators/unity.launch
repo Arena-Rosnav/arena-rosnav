@@ -20,10 +20,10 @@
     <arg name="show_rviz" value="$(arg show_rviz)" />
   </include>
 
-  <arg name="dev_mode" default="false"/>
+  <arg name="development_mode" default="false" />
 
   <node name="unity_sim_node" pkg="unity_launcher" type="launch_unity_sim.py" output="screen">
-    <param name="dev_mode" value="$(arg dev_mode)" />
+    <param name="development_mode" value="$(arg development_mode)" />
   </node>
 
 </launch>
