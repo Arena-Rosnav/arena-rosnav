@@ -38,6 +38,7 @@ from task_generator.manager.obstacle_manager import ObstacleManager
 import map_distance_server.srv as map_distance_server_srvs
 import std_msgs.msg as std_msgs
 import std_srvs.srv as std_srvs
+import training.srv as training_srvs
 
 
 def create_default_robot_list(
@@ -220,11 +221,18 @@ class TaskGenerator:
         # - Create a robot manager
         # - Launch the robot.launch file
 
+        PARAM_TM_MODULES = "tm_modules"
+
+        if self._train_mode:
+            tm_modules_value = rospy.ServiceProxy(PARAM_TM_MODULES, training_srvs.String).call().value
+        else:
+            tm_modules_value = rosparam_get(str, PARAM_TM_MODULES, "")
+
         tm_modules = list(
             set(
                 [
                     Constants.TaskMode.TM_Module(mod)
-                    for mod in rosparam_get(str, "tm_modules", "").split(",")
+                    for mod in tm_modules_value.split(",")
                     if mod != ""
                 ]
             )

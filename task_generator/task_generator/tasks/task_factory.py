@@ -16,6 +16,8 @@ from task_generator.tasks.robots import TM_Robots
 
 import std_msgs.msg as std_msgs
 import rosgraph_msgs.msg as rosgraph_msgs
+import training.srv as training_srvs
+
 from task_generator.utils import ModelLoader
 
 
@@ -144,6 +146,10 @@ class TaskFactory:
                     )
                 )
 
+                if self._train_mode:
+                    self.set_tm_robots(Constants.TaskMode.TM_Robots(rospy.ServiceProxy(self.PARAM_TM_ROBOTS, training_srvs.String).call().value))
+                    self.set_tm_obstacles(Constants.TaskMode.TM_Obstacles(rospy.ServiceProxy(self.PARAM_TM_OBSTACLES, training_srvs.String).call().value))
+
                 self.__param_tm_obstacles = None
                 self.__param_tm_robots = None
                 self.__modules = [
@@ -192,7 +198,8 @@ class TaskFactory:
                 """
                 try:
                     self.__reset_start.publish()
-                    if not self._train_mode or self._first_reset:
+
+                    if not self._train_mode:
                         if (
                             new_tm_robots := Constants.TaskMode.TM_Robots(
                                 rosparam_get(str, self.PARAM_TM_ROBOTS)
@@ -207,7 +214,7 @@ class TaskFactory:
                         ) != self.__param_tm_obstacles:
                             self.set_tm_obstacles(new_tm_obstacles)
 
-                        self._first_reset = False
+                    self._first_reset &= False
 
                     for module in self.__modules:
                         module.before_reset()
@@ -258,7 +265,7 @@ class TaskFactory:
                 
                 except Exception as e:
                     raise e
-                
+
                 finally:
                     rospy.set_param(self.PARAM_RESETTING, False)
                     self.__reset_mutex = False
