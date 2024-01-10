@@ -6,8 +6,8 @@ import rospy
 from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
 from rl_utils.utils.vec_wrapper.delayed_subproc_vec_env import DelayedSubprocVecEnv
 from rl_utils.utils.vec_wrapper.vec_stats_wrapper import VecStatsRecorder
+from rl_utils.utils.vec_wrapper.profiler_wrapper import ProfilingVecEnv
 from rosnav.model.base_agent import BaseAgent
-from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import (
     DummyVecEnv,
@@ -171,4 +171,7 @@ def make_envs(
         after_x_eps=cmd_logging_cfg["last_n_eps"],
     )
 
+    # train_env = ProfilingVecEnv(
+    #     train_env, profile_step=True, profile_reset=True, per_call=True
+    # )
     return train_env, eval_env, observation_manager
