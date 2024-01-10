@@ -107,9 +107,6 @@ class TaskFactory:
                     **kwargs: Arbitrary keyword arguments.
                 """
                 self.namespace = namespace
-                self.namespace_prefix = (
-                    f"/{namespace}/" if os.path.basename(namespace) else ""
-                )
 
                 self.obstacle_manager = obstacle_manager
                 self.robot_managers = robot_managers
@@ -237,7 +234,6 @@ class TaskFactory:
 
                 finally:
                     self.__reset_end.publish()
-                    
 
             def _mutex_reset_task(self, **kwargs):
                 """
@@ -262,14 +258,13 @@ class TaskFactory:
                 try:
                     rospy.set_param(self.PARAM_RESETTING, True)
                     self._reset_task()
-                
+
                 except Exception as e:
                     raise e
 
                 finally:
                     rospy.set_param(self.PARAM_RESETTING, False)
                     self.__reset_mutex = False
-                
 
             def reset(self, **kwargs):
                 """

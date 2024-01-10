@@ -22,12 +22,11 @@
     </include>
 
     <include file="$(find arena_bringup)/launch/training/train_robot.launch">
-      <arg name="namespace" value="/$(arg ns)/$(arg model)" />
+      <arg name="namespace" value="/$(arg ns)/$(arg ns)_$(arg model)" />
       <arg name="sim_namespace" value="/$(arg ns)" />
 
-      <arg name="name" value="$(arg model)" />
+      <arg name="name" value="$(arg ns)_$(arg model)" />
       <arg name="model" value="$(arg model)" />
-      <arg name="frame" value="$(arg model)/" />
       <arg name="agent_name" value="$(arg model)"/>
 
       <arg name="train_mode" value="true"/>

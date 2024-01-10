@@ -147,7 +147,7 @@ class RobotManager:
 
     @property
     def namespace(self) -> Namespace:
-        return self._namespace(self.model_name)
+        return Namespace(f"{self._namespace}{self._namespace}_{self.model_name}")
 
     @property
     def is_done(self) -> bool:
