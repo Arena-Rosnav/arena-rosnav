@@ -100,6 +100,9 @@ class Mod_Staged(TM_Module):
 
         self.__debug_mode = rosparam_get(bool, "debug_mode", False)
 
+        #TODO get real value from training env
+        self.__training_config_path = None
+
         if self.__debug_mode:
             self.__training_config_path = None
 
