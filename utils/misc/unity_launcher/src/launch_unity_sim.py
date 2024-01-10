@@ -11,11 +11,6 @@ def launch_unity():
     """
     rospy.init_node('unity_sim_node', anonymous=True)
 
-    rospy.logerr(rospy.get_param('~development_mode', 'valls'))
-    rospy.logerr(rospy.get_param('~headless', 'raaahh'))
-    rospy.logerr(rospy.get_param('/dev_mode', 'xalls'))
-    rospy.logerr(rospy.get_param('dev_mode', 'yalls'))
-
     dev = rospy.get_param('~development_mode', False)
     if isinstance(dev, bool) and dev:
         # Unity should be launched trough Unity Editor in dev mode
@@ -29,15 +24,12 @@ def launch_unity():
     # args
     args = list()
     args += [
-        "-arena_sim_setup_path", 
+        "-arena_sim_setup_path",
         os.path.join(ws_src_path, "arena-simulation-setup")
     ]
     headless = rospy.get_param('~headless', False)
     if isinstance(headless, bool) and headless:
-        rospy.logerr("AAAAHAHAHAAHAHAH")
         args += ["-batchmode"]
-
-    rospy.logerr(args)
 
     subprocess.run([unity_executable_path] + args, check=True)
 
