@@ -21,7 +21,10 @@ def on_shutdown(model):
 def main():
     args, _ = parse_training_args()
 
-    config = load_config(args.config)
+    if (config_name := args.config) == "":
+        raise RuntimeError("no config specified")
+
+    config = load_config(config_name)
     rospy.set_param("debug_mode", config["debug_mode"])
 
     # in debug mode, we emulate multiprocessing on only one process

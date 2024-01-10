@@ -115,13 +115,12 @@ class TaskFactory:
 
                 self._train_mode = rosparam_get(bool, "/train_mode", False)
 
-                if not self._train_mode:
-                    self.__reset_start = rospy.Publisher(
-                        self.TOPIC_RESET_START, std_msgs.Empty, queue_size=1
-                    )
-                    self.__reset_end = rospy.Publisher(
-                        self.TOPIC_RESET_END, std_msgs.Empty, queue_size=1
-                    )
+                self.__reset_start = rospy.Publisher(
+                    self.TOPIC_RESET_START, std_msgs.Empty, queue_size=1
+                )
+                self.__reset_end = rospy.Publisher(
+                    self.TOPIC_RESET_END, std_msgs.Empty, queue_size=1
+                )
                 self.__reset_mutex = False
 
                 rospy.Subscriber("/clock", rosgraph_msgs.Clock, self._clock_callback)
@@ -191,38 +190,47 @@ class TaskFactory:
                 Returns:
                     None
                 """
-                if not self._train_mode or self._first_reset:
-                    if (
-                        new_tm_robots := Constants.TaskMode.TM_Robots(
-                            rosparam_get(str, self.PARAM_TM_ROBOTS)
-                        )
-                    ) != self.__param_tm_robots:
-                        self.set_tm_robots(new_tm_robots)
+                try:
+                    self.__reset_start.publish()
+                    if not self._train_mode or self._first_reset:
+                        if (
+                            new_tm_robots := Constants.TaskMode.TM_Robots(
+                                rosparam_get(str, self.PARAM_TM_ROBOTS)
+                            )
+                        ) != self.__param_tm_robots:
+                            self.set_tm_robots(new_tm_robots)
 
-                    if (
-                        new_tm_obstacles := Constants.TaskMode.TM_Obstacles(
-                            rosparam_get(str, self.PARAM_TM_OBSTACLES)
-                        )
-                    ) != self.__param_tm_obstacles:
-                        self.set_tm_obstacles(new_tm_obstacles)
+                        if (
+                            new_tm_obstacles := Constants.TaskMode.TM_Obstacles(
+                                rosparam_get(str, self.PARAM_TM_OBSTACLES)
+                            )
+                        ) != self.__param_tm_obstacles:
+                            self.set_tm_obstacles(new_tm_obstacles)
 
-                    self._first_reset = False
+                        self._first_reset = False
 
-                for module in self.__modules:
-                    module.before_reset()
+                    for module in self.__modules:
+                        module.before_reset()
 
-                self.__tm_robots.reset(**kwargs)
-                obstacles, dynamic_obstacles = self.__tm_obstacles.reset(**kwargs)
+                    self.__tm_robots.reset(**kwargs)
+                    obstacles, dynamic_obstacles = self.__tm_obstacles.reset(**kwargs)
 
-                self.obstacle_manager.spawn_obstacles(obstacles)
-                self.obstacle_manager.spawn_dynamic_obstacles(dynamic_obstacles)
+                    self.obstacle_manager.spawn_obstacles(obstacles)
+                    self.obstacle_manager.spawn_dynamic_obstacles(dynamic_obstacles)
 
-                self.n_dynamic_obstacles = len(dynamic_obstacles)
+                    for module in self.__modules:
+                        module.after_reset()
 
-                for module in self.__modules:
-                    module.after_reset()
+                    self.last_reset_time = self.clock.clock.secs
 
-                self.last_reset_time = self.clock.clock.secs
+                except rospy.ServiceException as e:
+                    rospy.logerr(repr(e))
+                    rospy.signal_shutdown("Reset error!")
+                    raise Exception("reset error!") from e
+
+                finally:
+                    self.__reset_end.publish()
+                    
 
             def _mutex_reset_task(self, **kwargs):
                 """
@@ -246,17 +254,15 @@ class TaskFactory:
 
                 try:
                     rospy.set_param(self.PARAM_RESETTING, True)
-                    self.__reset_start.publish()
                     self._reset_task()
-                except rospy.ServiceException as e:
-                    rospy.logerr(repr(e))
-                    rospy.signal_shutdown("Reset error!")
-                    raise Exception("reset error!")
-
+                
+                except Exception as e:
+                    raise e
+                
                 finally:
                     rospy.set_param(self.PARAM_RESETTING, False)
-                    self.__reset_end.publish()
                     self.__reset_mutex = False
+                
 
             def reset(self, **kwargs):
                 """
