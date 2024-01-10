@@ -2,7 +2,6 @@
 <launch>
   <arg name="world" default="turtlebot3_house" />
   <arg name="model" default="burger"/>
-  <arg name="headless" default="false"/>
   <arg name="gui" default="true"/>
   <arg name="show_rviz" default="true" doc="Wether to show rviz or not" />
   <arg name="tcp_ip" default="0.0.0.0"/>
@@ -21,9 +20,11 @@
   </include>
 
   <arg name="development_mode" default="false" />
+  <arg name="headless" default="false"/>
 
   <node name="unity_sim_node" pkg="unity_launcher" type="launch_unity_sim.py" output="screen">
     <param name="development_mode" value="$(arg development_mode)" />
+    <param name="headless" value="$(arg headless)" />
   </node>
 
 </launch>
