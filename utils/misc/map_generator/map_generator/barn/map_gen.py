@@ -8,10 +8,14 @@ from map_generator.factory import MapGeneratorFactory
 from map_generator.utils.general import calc_infl_rad_cells
 from map_generator.barn.obstacle_map import ObstacleMap
 from map_generator.barn.robot_map import RobotMap
-from map_generator.constants import BARN_MAX_RECURSION_DEPTH
+from map_generator.constants import (
+    BARN_MAX_RECURSION_DEPTH,
+    MapGenerators,
+    MAP_GENERATOR_NS,
+)
 
 
-@MapGeneratorFactory.register("barn")
+@MapGeneratorFactory.register(MapGenerators.BARN)
 class BarnMapGenerator(BaseMapGenerator):
     """
     BarnMapGenerator is a class that generates a grid map with the barn algorithm for the Rosnav environment.
@@ -48,7 +52,7 @@ class BarnMapGenerator(BaseMapGenerator):
         robot_infl_radius: float,
         map_resolution: float,
         smooth_iter: int = 5,
-        fill_pct: float = 0.25,
+        fill_pct: float = 0.2,
         seed: int = None,
         *args,
         **kwargs
@@ -111,9 +115,11 @@ class BarnMapGenerator(BaseMapGenerator):
             number of smoothing iterations, and map resolution.
         """
         height, width, map_res = super().retrieve_params()
-        fill_pct = rospy.get_param("/generator_configs/barn/fill_pct", self.fill_pct)
+        fill_pct = rospy.get_param(
+            MAP_GENERATOR_NS("algorithm_config/fill_pct"), self.fill_pct
+        )
         smooth_iter = rospy.get_param(
-            "/generator_configs/barn/smooth_iter", self.smooth_iter
+            MAP_GENERATOR_NS("algorithm_config/smooth_iter"), self.smooth_iter
         )
 
         return height, width, fill_pct, smooth_iter, map_res

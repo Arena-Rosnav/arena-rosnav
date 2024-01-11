@@ -30,7 +30,7 @@
   <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
-  <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" />
+  <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" ns="map_generator" />
   
   <!--  PARAMS DON'T CHANGE THEM  -->
   <param name="use_sim_time" value="true" />

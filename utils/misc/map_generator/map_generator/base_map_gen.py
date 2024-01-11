@@ -3,6 +3,7 @@ from typing import Iterable, Union
 
 import numpy as np
 import rospy
+from map_generator.constants import MAP_GENERATOR_NS
 
 
 class BaseMapGenerator(ABC):
@@ -42,9 +43,11 @@ class BaseMapGenerator(ABC):
             Iterable[Union[int, float, str]]: A tuple containing the height, width, and map resolution.
         """
 
-        height = rospy.get_param("/map_properties/height", self.height)
-        width = rospy.get_param("/map_properties/width", self.width)
-        map_res = rospy.get_param("/map_properties/resolution", self.map_resolution)
+        height = rospy.get_param(MAP_GENERATOR_NS("map_properties/height"), self.height)
+        width = rospy.get_param(MAP_GENERATOR_NS("map_properties/width"), self.width)
+        map_res = rospy.get_param(
+            MAP_GENERATOR_NS("map_properties/resolution"), self.map_resolution
+        )
         return height, width, map_res
 
     @abstractmethod

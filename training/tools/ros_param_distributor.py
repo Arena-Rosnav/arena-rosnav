@@ -8,16 +8,13 @@ import training.srv as training_srvs
 from .general import generate_discrete_action_dict
 
 
-
-def populate_ros_params(params: dict):
+def populate_ros_params(params: dict, paths: dict):
     # general params
     rospy.set_param("tm_robots", params["tm_robots"])
     rospy.set_param("tm_obstacles", params["tm_obstacles"])
     rospy.set_param("tm_modules", params["tm_modules"])
-    
-    # rospy.Service("tm_robots", training_srvs.String, lambda *_, **__: training_srvs.StringResponse(params["tm_robots"]))
-    # rospy.Service("tm_obstacles", training_srvs.String, lambda *_, **__: training_srvs.StringResponse(params["tm_obstacles"]))
-    # rospy.Service("tm_modules", training_srvs.String, lambda *_, **__: training_srvs.StringResponse(params["tm_modules"]))
+
+    rospy.set_param("training_config_path", paths["config"])
 
     is_discrete = params["rl_agent"]["action_space"]["discrete"]
     rospy.set_param(
