@@ -207,18 +207,19 @@ class Mod_Staged(TM_Module):
 
             # The current stage is stored inside the config file for when the training is stopped and later continued, the correct stage can be restored.
             if self.__training_config_path is not None:
-                self.__config_lock.acquire()
+                pass
+                # self.__config_lock.acquire()
 
-                with open(self.__training_config_path, "r", encoding="utf-8") as target:
-                    config = yaml.load(target, Loader=yaml.FullLoader)
-                    config["callbacks"]["training_curriculum"][
-                        "curr_stage"
-                    ] = self.stage.serialize()
+                # with open(self.__training_config_path, "r", encoding="utf-8") as target:
+                #     config = yaml.load(target, Loader=yaml.FullLoader)
+                #     config["callbacks"]["training_curriculum"][
+                #         "curr_stage"
+                #     ] = self.stage.serialize()
 
-                with open(self.__training_config_path, "w", encoding="utf-8") as target:
-                    yaml.dump(config, target, allow_unicode=True, indent=4)
+                # with open(self.__training_config_path, "w", encoding="utf-8") as target:
+                #     yaml.dump(config, target, allow_unicode=True, indent=4)
 
-                self.__config_lock.release()
+                # self.__config_lock.release()
 
     def reconfigure(self, config):
         """
