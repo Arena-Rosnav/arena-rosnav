@@ -37,16 +37,20 @@ def populate_ros_params(params: dict, paths: dict):
     # populate laser params
     populate_laser_params(params)
 
-    dmre_client = dynamic_reconfigure.client.Client(
-        name="task_generator_server", config_callback=lambda _: None
+    rospy.set_param(
+        "task_generator_server/STAGED_curriculum",
+        params["callbacks"]["training_curriculum"]["training_curriculum_file"],
     )
-    dmre_client.update_configuration(
-        {
-            "STAGED_curriculum": params["callbacks"]["training_curriculum"][
-                "training_curriculum_file"
-            ]
-        }
-    )
+    # dmre_client = dynamic_reconfigure.client.Client(
+    #     name="task_generator_server", config_callback=lambda _: None
+    # )
+    # dmre_client.update_configuration(
+    #     {
+    #         "STAGED_curriculum": params["callbacks"]["training_curriculum"][
+    #             "training_curriculum_file"
+    #         ]
+    #     }
+    # )
 
 
 def populate_laser_params(params: dict):

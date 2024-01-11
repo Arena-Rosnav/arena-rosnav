@@ -29,7 +29,7 @@ class Stage(NamedTuple):
 class DynamicMapStage(NamedTuple):
     algorithm: str
     algorithm_config: Dict[str, Any]
-    map_properties: Dict[str, Any]
+    # map_properties: Dict[str, Any]
 
     def serialize(self) -> Dict:
         return self._asdict()
@@ -247,10 +247,10 @@ class Mod_Staged(TM_Module):
                             "algorithm_config",
                             rosparam_get(dict, MAP_GENERATOR_NS("algorithm_config")),
                         ),
-                        map_properties=stage["map_generator"].get(
-                            "map_properties",
-                            rosparam_get(dict, MAP_GENERATOR_NS("map_properties")),
-                        ),
+                        # map_properties=stage["map_generator"].get(
+                        #     "map_properties",
+                        #     rosparam_get(dict, MAP_GENERATOR_NS("map_properties")),
+                        # ),
                     ).serialize(),
                 )
                 for i, stage in enumerate(yaml.load(f, Loader=yaml.FullLoader))
