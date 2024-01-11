@@ -169,10 +169,16 @@ def make_envs(
     # wrap env with statistics wrapper
     cmd_logging_cfg = config["monitoring"]["cmd_line_logging"]["episode_statistics"]
     verbose = cmd_logging_cfg["enabled"]
+    
     train_env = VecStatsRecorder(
         train_env,
         verbose=verbose,
         after_x_eps=cmd_logging_cfg["last_n_eps"],
+    )
+    eval_env = VecStatsRecorder(
+        eval_env,
+        verbose=verbose,
+        after_x_eps=config["callbacks"]["periodic_eval"]["n_eval_episodes"],
     )
 
     # train_env = ProfilingVecEnv(
