@@ -59,7 +59,7 @@ def create_yaml_files(map_name: str, dir_path: str):
     empty_yaml = EMPTY_MAP_YAML
     map_yaml = DYNAMIC_MAP_YAML
 
-    map_res = rospy.get_param(MAP_GENERATOR_NS("map_properties/resolution"), 0.25)
+    map_res = rospy.get_param(MAP_GENERATOR_NS("map_properties/resolution"))
     empty_yaml["resolution"] = map_res
     map_yaml["resolution"] = map_res
 

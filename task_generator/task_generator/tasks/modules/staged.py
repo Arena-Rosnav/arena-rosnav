@@ -175,7 +175,13 @@ class Mod_Staged(TM_Module):
 
                 # set map generator params
                 if self.stage.dynamic_map is not None:
-                    rospy.set_param(MAP_GENERATOR_NS, self.stage.dynamic_map)
+                    rospy.set_param(
+                        MAP_GENERATOR_NS("algorithm"), self.stage.dynamic_map.algorithm
+                    )
+                    rospy.set_param(
+                        MAP_GENERATOR_NS("algorithm_config"),
+                        self.stage.dynamic_map.algorithm_config,
+                    )
 
                 # set obstacle configuration
                 obs_config = {}
@@ -251,7 +257,7 @@ class Mod_Staged(TM_Module):
                         #     "map_properties",
                         #     rosparam_get(dict, MAP_GENERATOR_NS("map_properties")),
                         # ),
-                    ).serialize(),
+                    ),
                 )
                 for i, stage in enumerate(yaml.load(f, Loader=yaml.FullLoader))
             }
