@@ -1,0 +1,3 @@
+inters:
+  - name: PoliteInter
+    type: polite_inter/PoliteInter

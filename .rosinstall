@@ -34,7 +34,7 @@
 
 - git:
     local-name: ../utils-extern/ros/move_base_flex
-    uri: https://github.com/voshch/move_base_flex.git
+    uri: https://github.com/Arena-Rosnav/move_base_flex.git
 
 - git:
     local-name: ../utils-extern/misc/robots

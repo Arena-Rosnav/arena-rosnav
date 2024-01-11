@@ -8,12 +8,12 @@
   <arg name="frame" />
 
   <group ns="move_base_flex">
-    <rosparam file="$(find arena_bringup)/params/mbf/inter/bypass.yaml"
+    <rosparam file="$(find arena_bringup)/params/mbf/inter/aggressive.yaml"
       command="load" subst_value="True" />
     <!-- <rosparam
       file="$(find arena-simulation-setup)/robot/$(arg model)/configs/mbf/inter/passthrough.yaml"
       command="load" subst_value="True" /> -->
-    <param name="base_inter_planner" value="BypassInter" />
+    <param name="base_inter_planner" value="AggressiveInter" />
   </group>
 
 </launch>

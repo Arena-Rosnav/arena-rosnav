@@ -35,12 +35,17 @@ import std_srvs.srv as std_srvs
 
 
 def create_default_robot_list(
-    robot_model: ModelWrapper, name: str, planner: str, agent: str
+    robot_model: ModelWrapper,
+    name: str,
+    inter_planner:str,
+    local_planner: str,
+    agent: str
 ) -> List[Robot]:
     return [
         Robot(
             model=robot_model,
-            planner=planner,
+            inter_planner=inter_planner,
+            local_planner=local_planner,
             agent=agent,
             position=next(gen_init_pos),
             name=name,
@@ -243,7 +248,8 @@ class TaskGenerator:
         if robot_setup_file == "":
             robots = create_default_robot_list(
                 robot_model=self._robot_loader.bind(robot_model),
-                planner=rosparam_get(str, "/local_planner", ""),
+                inter_planner=rosparam_get(str, "/inter_planner", ""),
+                local_planner=rosparam_get(str, "/local_planner", ""),
                 agent=rosparam_get(str, "/agent_name", ""),
                 name=robot_model,
             )

@@ -10,6 +10,7 @@
   <arg name="train_mode" default="false"/>
   <arg name="agent_name" default="rule_05"/>
 
+  <remap from="cmd_vel" to="cmd_vel_actual" />
 
   <param name="agent_name" value="$(arg agent_name)" />
 
@@ -52,10 +53,4 @@
   <remap from="cmd_vel" to="/devnulll" /> <!-- optics -->
   <remap from="/clock" to="/$(arg sim_namespace)/clock"/>
 
-  <include file="$(find arena_bringup)/launch/testing/move_base/mbf_nav/costmap_nav.launch">
-    <arg name="model" value="$(arg model)" />
-    <arg name="speed" value="$(arg speed)" />
-    <arg name="namespace" value="$(arg namespace)" />
-    <arg name="frame" value="$(arg frame)" />
-  </include>
 </launch>
