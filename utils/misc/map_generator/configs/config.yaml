@@ -1,25 +1,24 @@
-generator: barn
+algorithm: barn
 
 map_properties:
-  width: 4000
-  height: 8000
+  width: 35
+  height: 35
   resolution: 1
 
-generator_configs:
-  barn:
-    fill_pct: 0.2 # initial fill percentage
-    smooth_iter: 5 # smoothing iterations
-    seed: null # for reproducing maps
+algorithm_config:
+  fill_pct: 1. # initial fill percentage
+  smooth_iter: 5 # smoothing iterations
+  seed: null # for reproducing maps
 
-  rosnav:
-    map_type: indoor # chose between 'indoor' and 'outdoor'
+  # rosnav:
+  # map_type: indoor # chose between 'indoor' and 'outdoor'
 
-    # indoor parameters
-    indoor:
-      corridor_radius: 5 # total corridor diameter = 1+2*corridor_radius
-      iterations: 100 # number of nodes for the indoor map algorithm
-    
-    # outdoor parameters
-    outdoor:
-      obstacle_num: 15 # number of outdoor obstacles
-      obstacle_extra_radius: 1 # total obstacle diameter = 1+2*obstacle_extra_radius
+  # # indoor parameters
+  # indoor:
+  #   corridor_radius: 5 # total corridor diameter = 1+2*corridor_radius
+  #   iterations: 100 # number of nodes for the indoor map algorithm
+  
+  # # outdoor parameters
+  # outdoor:
+  #   obstacle_num: 15 # number of outdoor obstacles
+  #   obstacle_extra_radius: 1 # total obstacle diameter = 1+2*obstacle_extra_radius
