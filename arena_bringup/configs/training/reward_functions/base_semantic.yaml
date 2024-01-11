@@ -2,7 +2,7 @@ goal_reached:
   reward: 15
 
 safe_distance:
-  reward: -0.2
+  reward: -0.1
 
 collision:
   reward: -10
