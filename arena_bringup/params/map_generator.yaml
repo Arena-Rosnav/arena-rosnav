@@ -2,9 +2,9 @@ generator: barn
 episode_per_map: 1
 
 map_properties:
-  width: 120
-  height: 120
-  resolution: 0.15 # should stay fixed
+  width: 80
+  height: 40
+  resolution: .5 # should stay fixed
 
 generator_configs:
   barn:

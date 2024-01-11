@@ -10,7 +10,7 @@ import rospkg
 
 import yaml
 import rospy
-from task_generator.constants import Constants
+from task_generator.constants import Constants, Config
 from task_generator.manager.utils import WorldMap, WorldOccupancy
 
 from task_generator.shared import Model, ModelType, ModelWrapper, Namespace, Obstacle, ObstacleProps, PositionOrientation
@@ -183,7 +183,7 @@ class YAMLUtil:
 
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             if rospy.get_param("laser/full_range_laser", False):
-                plugins.append(Constants.PLUGIN_FULL_RANGE_LASER.copy())
+                plugins.append(Config.PLUGIN_FULL_RANGE_LASER.copy())
 
             for plugin in plugins:
                 for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
@@ -229,10 +229,10 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
 
     padded_heightmap = np.pad(
         heightmap,
-        [
+        np.array([
             (pad_y, pad_y + 1 - heightmap.shape[0] % 2),
             (pad_x, pad_x + 1 - heightmap.shape[1] % 2)
-        ],
+        ]),
         mode="constant",
         constant_values=0
     )

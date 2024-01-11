@@ -7,9 +7,9 @@ import roslaunch
 import os
 import scipy.spatial.transform
 
-import roslaunch
+import roslaunch.rlutil, roslaunch.parent
 import rospy
-from task_generator.constants import Constants
+from task_generator.constants import Config, Constants
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
@@ -65,10 +65,10 @@ class RobotManager:
         self._goal_pos = PositionOrientation(0, 0, 0)
 
         self._goal_tolerance_distance = rosparam_get(
-            float, "goal_radius", Constants.GOAL_TOLERANCE_RADIUS
+            float, "goal_radius", Config.Robot.GOAL_TOLERANCE_RADIUS
         )  # + self._robot_radius
         self._goal_tolerance_angle = rosparam_get(
-            float, "goal_tolerance_angle", Constants.GOAL_TOLERANCE_ANGLE
+            float, "goal_tolerance_angle", Config.Robot.GOAL_TOLERANCE_ANGLE
         )
 
         self._robot = robot
@@ -128,7 +128,7 @@ class RobotManager:
 
     @property
     def safe_distance(self) -> float:
-        return self._robot_radius + Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST
+        return self._robot_radius + Config.Robot.SPAWN_ROBOT_SAFE_DIST
 
     @property
     def model_name(self) -> str:
@@ -185,8 +185,11 @@ class RobotManager:
         start = self._position
         goal = self._goal_pos
 
-        distance_to_goal: float = np.linalg.norm(
-            np.array(goal[:2]) - np.array(start[:2]))
+        distance_to_goal: float = float(
+            np.linalg.norm(
+                np.array(goal[:2]) - np.array(start[:2])
+            )
+        )
 
         # https://gamedev.stackexchange.com/a/4472
         angle_to_goal: float = np.pi - np.abs(np.abs(goal[2] - start[2]) - np.pi)
@@ -213,7 +216,7 @@ class RobotManager:
         self._move_base_goal_pub.publish(goal_msg)
 
     def _launch_robot(self):
-        roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(  # type: ignore
+        roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(
             ["arena_bringup", "robot.launch"]
         )
 
@@ -230,8 +233,8 @@ class RobotManager:
             f"agent_name:={self._robot.agent}",
         ]
 
-        self.process = roslaunch.parent.ROSLaunchParent(  # type: ignore
-            roslaunch.rlutil.get_or_generate_uuid(None, False),  # type: ignore
+        self.process = roslaunch.parent.ROSLaunchParent(
+            roslaunch.rlutil.get_or_generate_uuid(None, False),
             [(*roslaunch_file, args)],
         )
         self.process.start()
@@ -266,12 +269,12 @@ class RobotManager:
         quat = current_position.orientation
 
         rot = scipy.spatial.transform.Rotation.from_quat(
-            [
+            np.array([
                 quat.x,
                 quat.y,
                 quat.z,
                 quat.w
-            ]
+            ])
         )
 
         self._position = PositionOrientation(

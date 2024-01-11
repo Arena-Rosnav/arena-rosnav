@@ -70,8 +70,8 @@
   # Change back to Arena-Rosnav once the PR is merged
 - git:
     local-name: ../planners/rosnav
-    uri: https://github.com/tuananhroman/rosnav-rl.git
-    version: master
+    uri: https://github.com/Arena-Rosnav/rosnav-rl.git
+    version: dev
 
 - git:
     local-name: ../planners/arena-ros

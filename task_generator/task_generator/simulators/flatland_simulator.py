@@ -5,15 +5,15 @@ import std_srvs.srv as std_srvs
 import flatland_msgs.msg as flatland_msgs
 import geometry_msgs.msg as geometry_msgs
 
-from task_generator.shared import ModelType
+from task_generator.shared import ModelType, Namespace
 
 from task_generator.utils import rosparam_get
 
-from task_generator.constants import Constants
+from task_generator.constants import Constants, Config
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
 
-T = Constants.WAIT_FOR_SERVICE_TIMEOUT
+T = Config.General.WAIT_FOR_SERVICE_TIMEOUT
 
 
 @SimulatorFactory.register(Constants.Simulator.FLATLAND)
@@ -121,7 +121,7 @@ class FlatlandSimulator(BaseSimulator):
         request.yaml_path = model.description
 
         request.name = entity.name
-        request.ns = self._namespace(entity.name)
+        request.ns = Namespace(entity.name)
         request.pose = geometry_msgs.Pose2D(
             x=entity.position.x, y=entity.position.y, theta=entity.position.orientation
         )

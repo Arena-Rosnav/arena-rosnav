@@ -15,7 +15,7 @@ from .constants import TRAINING_CONSTANTS
 
 
 def initialize_config(
-    PATHS: dict,
+    paths: dict,
     config: dict,
     n_envs: int = 1,
     debug_mode: bool = False,
@@ -46,20 +46,20 @@ def initialize_config(
     )
 
     if not debug_mode:
-        write_config_yaml(config, PATHS)
+        write_config_yaml(config, paths)
     print_hyperparameters(config["rl_agent"]["ppo"])
 
     return config
 
 
-def write_config_yaml(config: dict, PATHS: dict) -> None:
+def write_config_yaml(config: dict, paths: dict) -> None:
     """
     Write training_config.yaml to agent directory
 
     :param hyperparams: dict containing model specific hyperparameters
-    :param PATHS: dictionary containing model specific paths
+    :param paths: dictionary containing model specific paths
     """
-    with open(PATHS["config"], "w") as outfile:
+    with open(paths["config"], "w") as outfile:
         yaml.dump(config, outfile, default_flow_style=False)
 
 
@@ -118,7 +118,7 @@ def get_paths(config: dict) -> dict:
 
 
 def wait_for_nodes(
-    with_ns: bool, n_envs: int, timeout: int = 30, nodes_per_ns: int = 3
+    with_ns: bool, n_envs: int, timeout: int = 30, nodes_per_ns: int = 2
 ) -> None:
     """
     Checks for timeout seconds if all nodes to corresponding namespace are online.
