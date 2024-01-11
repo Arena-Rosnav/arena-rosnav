@@ -18,7 +18,7 @@
   <!-- Load usual move base params -->
   <group ns="move_base_flex">
     
-    <rosparam file="$(find arena_bringup)/params/mbf/hateb_local_planner_params.yaml"
+    <rosparam file="$(find arena_bringup)/params/mbf/local/hateb_local_planner_params.yaml"
       command="load" subst_value="True" />
     <rosparam
       file="$(find arena-simulation-setup)/robot/$(arg model)/configs/mbf/hateb_local_planner_params.yaml"

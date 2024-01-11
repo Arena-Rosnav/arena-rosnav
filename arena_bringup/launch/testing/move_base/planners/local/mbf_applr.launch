@@ -16,7 +16,7 @@
 
   <!-- move_base_flex -->
   <group ns="move_base_flex">
-    <rosparam file="$(find arena_bringup)/params/mbf/applr_local_planner_params.yaml"
+    <rosparam file="$(find arena_bringup)/params/mbf/local/applr_local_planner_params.yaml"
       command="load" subst_value="True" />
     <rosparam
       file="$(find arena-simulation-setup)/robot/$(arg model)/configs/mbf/applr_local_planner_params.yaml"

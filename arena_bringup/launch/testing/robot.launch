@@ -3,6 +3,7 @@
   <!-- <env name="ROSCONSOLE_CONFIG_FILE" value="$(find arena_bringup)/params/rosconsole.conf"/> -->
 
   <!-- ___________ ARGS ___________ -->
+  <arg name="inter_planner" />
   <arg name="local_planner" default="" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]" />
 
   <arg name="name" default="" />
@@ -68,8 +69,9 @@
       <remap from="cmd_vel" to="$(arg namespace)/cmd_vel" />
       <remap from="odom" to="$(arg namespace)/odom" />
 
-      <include file="$(find arena_bringup)/launch/testing/move_base/bootstrap.launch">
+      <include file="$(find arena_bringup)/launch/testing/move_base/mbf_nav/costmap_nav.launch">
 
+        <arg name="inter_planner" value="$(arg inter_planner)" />
         <arg name="local_planner" value="$(arg local_planner)" />
 
         <arg name="model" value="$(arg model)" />

@@ -23,7 +23,7 @@
   </group>
 
   <group ns="move_base_flex">
-    <rosparam file="$(find arena_bringup)/params/mbf/trail_local_planner_params.yaml"
+    <rosparam file="$(find arena_bringup)/params/mbf/local/trail_local_planner_params.yaml"
       command="load" subst_value="True" />
 
     <rosparam

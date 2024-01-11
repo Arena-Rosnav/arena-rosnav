@@ -21,7 +21,7 @@
   </group>
   
   <group ns="move_base_flex">
-    <rosparam file="$(find arena_bringup)/params/mbf/lflh_params.yaml"
+    <rosparam file="$(find arena_bringup)/params/mbf/local/lflh_params.yaml"
       command="load" subst_value="True" />
     <rosparam
       file="$(find arena-simulation-setup)/robot/$(arg model)/configs/mbf/lflh_params.yaml"
