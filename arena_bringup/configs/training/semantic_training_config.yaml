@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 16
+n_envs: 32
 # gpu yes or no
 no_gpu: false
 
@@ -14,7 +14,7 @@ tm_modules: "staged"
 
 # number of simulation timesteps
 n_timesteps: 40000000
-max_num_moves_per_eps: 1200
+max_num_moves_per_eps: 1000
 goal_radius: 0.3
 safety_distance: 0.75
 
@@ -39,9 +39,9 @@ callbacks:
     # max number of steps per episode
     max_num_moves_per_eps: 1700
     # number of evaluation episodes
-    n_eval_episodes: 50
+    n_eval_episodes: 30
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 35000
+    eval_freq: 10000
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
@@ -79,7 +79,7 @@ rl_agent:
       norm_obs: true
       norm_reward: false # Whether to normalize rewards or not
       clip_obs: 30.0 # Max absolute value for observation
-      clip_reward: 20.0 # Max value absolute for discounted reward
+      clip_reward: 25.0 # Max value absolute for discounted reward
       gamma: 0.99 # discount factor
 
   laser:
@@ -104,7 +104,7 @@ rl_agent:
     settings:
       initial_value: 0.001
       final_value: 0.0001
-      decay_steps: 30000000
+      decay_steps: 10000000
 
   ppo:
     batch_size: 15872
@@ -117,4 +117,4 @@ rl_agent:
     gae_lambda: 0.95
     m_batch_size: 256
     n_epochs: 3
-    clip_range: 0.225
+    clip_range: 0.2
