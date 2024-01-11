@@ -26,9 +26,13 @@ class Stage(NamedTuple):
         return self._asdict()
 
 
-class DynamicMapStage(Stage):
+class DynamicMapStage(NamedTuple):
     algorithm: str
     algorithm_config: Dict[str, Any]
+    map_properties: Dict[str, Any]
+
+    def serialize(self) -> Dict:
+        return self._asdict()
 
 
 StageIndex = int
@@ -234,7 +238,20 @@ class Mod_Staged(TM_Module):
                     interactive=stage.get("interactive", 0),
                     dynamic=stage.get("dynamic", 0),
                     goal_radius=stage.get("goal_radius", None),
-                    dynamic_map=stage.get("map_generator", None),
+                    dynamic_map=DynamicMapStage(
+                        algorithm=stage["map_generator"].get(
+                            "algorithm",
+                            rosparam_get(str, MAP_GENERATOR_NS("algorithm")),
+                        ),
+                        algorithm_config=stage["map_generator"].get(
+                            "algorithm_config",
+                            rosparam_get(dict, MAP_GENERATOR_NS("algorithm_config")),
+                        ),
+                        map_properties=stage["map_generator"].get(
+                            "map_properties",
+                            rosparam_get(dict, MAP_GENERATOR_NS("map_properties")),
+                        ),
+                    ).serialize(),
                 )
                 for i, stage in enumerate(yaml.load(f, Loader=yaml.FullLoader))
             }

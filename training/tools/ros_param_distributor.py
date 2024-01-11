@@ -3,9 +3,9 @@ import contextlib
 import rospy
 from rosnav.utils.utils import get_actions_from_robot_yaml
 
-import training.srv as training_srvs
-
 from .general import generate_discrete_action_dict
+
+import dynamic_reconfigure.client
 
 
 def populate_ros_params(params: dict, paths: dict):
@@ -36,6 +36,17 @@ def populate_ros_params(params: dict, paths: dict):
 
     # populate laser params
     populate_laser_params(params)
+
+    dmre_client = dynamic_reconfigure.client.Client(
+        name="task_generator_server", config_callback=lambda _: None
+    )
+    dmre_client.update_configuration(
+        {
+            "STAGED_curriculum": params["callbacks"]["training_curriculum"][
+                "training_curriculum_file"
+            ]
+        }
+    )
 
 
 def populate_laser_params(params: dict):

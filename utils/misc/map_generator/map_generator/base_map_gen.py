@@ -43,10 +43,12 @@ class BaseMapGenerator(ABC):
             Iterable[Union[int, float, str]]: A tuple containing the height, width, and map resolution.
         """
 
-        height = rospy.get_param(MAP_GENERATOR_NS("map_properties/height"), self.height)
-        width = rospy.get_param(MAP_GENERATOR_NS("map_properties/width"), self.width)
+        height = rospy.get_param(
+            MAP_GENERATOR_NS("map_properties", "height"), self.height
+        )
+        width = rospy.get_param(MAP_GENERATOR_NS("map_properties", "width"), self.width)
         map_res = rospy.get_param(
-            MAP_GENERATOR_NS("map_properties/resolution"), self.map_resolution
+            MAP_GENERATOR_NS("map_properties", "resolution"), self.map_resolution
         )
         return height, width, map_res
 

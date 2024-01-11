@@ -6,7 +6,7 @@ Then starts the map_server node.
 import rospy
 import roslaunch
 
-from map_generator.constants import MAP_FOLDER_NAME, ROSNAV_MAP_FOLDER
+from map_generator.constants import MAP_FOLDER_NAME, ROSNAV_MAP_FOLDER, MAP_GENERATOR_NS
 from map_generator.utils.map import create_empty_map, create_yaml_files
 from map_generator.utils.general import load_map_generator_config
 
@@ -61,7 +61,9 @@ def main():
     """
     if rospy.get_param("map_file", "") == MAP_FOLDER_NAME:
         cfg = load_map_generator_config()
-        map_properties = rospy.get_param("map_properties", cfg["map_properties"])
+        map_properties = rospy.get_param(
+            MAP_GENERATOR_NS("map_properties"), cfg["map_properties"]
+        )
 
         create_empty_map(
             height=map_properties["height"],
