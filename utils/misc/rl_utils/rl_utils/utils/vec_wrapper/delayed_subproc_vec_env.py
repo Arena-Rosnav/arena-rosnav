@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import time
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
@@ -94,6 +95,8 @@ class DelayedSubprocVecEnv(SubprocVecEnv):
 
             remote.send(("init", None))
             success = remote.recv()
+            
+            time.sleep(1)
 
         self.remotes[0].send(("get_spaces", None))
         observation_space, action_space = self.remotes[0].recv()

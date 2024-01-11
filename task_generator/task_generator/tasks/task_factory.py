@@ -144,8 +144,8 @@ class TaskFactory:
                 )
 
                 if self._train_mode:
-                    self.set_tm_robots(Constants.TaskMode.TM_Robots(rospy.ServiceProxy(self.PARAM_TM_ROBOTS, training_srvs.String).call().value))
-                    self.set_tm_obstacles(Constants.TaskMode.TM_Obstacles(rospy.ServiceProxy(self.PARAM_TM_OBSTACLES, training_srvs.String).call().value))
+                    self.set_tm_robots(Constants.TaskMode.TM_Robots(rospy.get_param("tm_robots")))
+                    self.set_tm_obstacles(Constants.TaskMode.TM_Obstacles(rospy.get_param("tm_obstacles")))
 
                 self.__param_tm_obstacles = None
                 self.__param_tm_robots = None
