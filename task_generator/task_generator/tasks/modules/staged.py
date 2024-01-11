@@ -247,12 +247,12 @@ class Mod_Staged(TM_Module):
                     goal_radius=stage.get("goal_radius", None),
                     dynamic_map=DynamicMapStage(
                         algorithm=stage["map_generator"].get(
-                            "algorithm",
-                            rosparam_get(str, MAP_GENERATOR_NS("algorithm")),
+                            "algorithm"
+                            # rosparam_get(str, MAP_GENERATOR_NS("algorithm")),
                         ),
                         algorithm_config=stage["map_generator"].get(
-                            "algorithm_config",
-                            rosparam_get(dict, MAP_GENERATOR_NS("algorithm_config")),
+                            "algorithm_config"
+                            # rosparam_get(dict, MAP_GENERATOR_NS("algorithm_config")),
                         ),
                         # map_properties=stage["map_generator"].get(
                         #     "map_properties",
