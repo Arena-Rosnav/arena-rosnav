@@ -143,17 +143,15 @@ class TaskFactory:
                     )
                 )
 
-                if self._train_mode:
-                    self.set_tm_robots(Constants.TaskMode.TM_Robots(rospy.get_param("tm_robots")))
-                    self.set_tm_obstacles(Constants.TaskMode.TM_Obstacles(rospy.get_param("tm_obstacles")))
-
                 self.__param_tm_obstacles = None
                 self.__param_tm_robots = None
                 self.__modules = [
                     cls.registry_module[module](task=self) for module in modules
                 ]
 
-                self._first_reset = True
+                if self._train_mode:
+                    self.set_tm_robots(Constants.TaskMode.TM_Robots(rospy.get_param("tm_robots")))
+                    self.set_tm_obstacles(Constants.TaskMode.TM_Obstacles(rospy.get_param("tm_obstacles")))
 
             def set_tm_robots(self, tm_robots: Constants.TaskMode.TM_Robots):
                 """
@@ -210,8 +208,6 @@ class TaskFactory:
                             )
                         ) != self.__param_tm_obstacles:
                             self.set_tm_obstacles(new_tm_obstacles)
-
-                    self._first_reset &= False
 
                     for module in self.__modules:
                         module.before_reset()

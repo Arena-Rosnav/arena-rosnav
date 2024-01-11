@@ -46,7 +46,7 @@ def main():
         debug_mode=config["debug_mode"],
     )
 
-    populate_ros_params(config)
+    populate_ros_params(config, paths)
 
     agent_description: BaseAgent = AgentFactory.instantiate(
         config["rl_agent"]["architecture_name"]

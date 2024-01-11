@@ -223,11 +223,7 @@ class TaskGenerator:
 
         PARAM_TM_MODULES = "tm_modules"
 
-        # if self._train_mode:
-        #     tm_modules_value = rospy.ServiceProxy(PARAM_TM_MODULES, training_srvs.String).call().value
-        # else:
         tm_modules_value = rosparam_get(str, PARAM_TM_MODULES, "")
-
         tm_modules = list(
             set(
                 [
