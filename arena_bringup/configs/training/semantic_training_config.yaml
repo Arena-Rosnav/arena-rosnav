@@ -14,7 +14,7 @@ tm_modules: "staged"
 
 # number of simulation timesteps
 n_timesteps: 40000000
-max_num_moves_per_eps: 1000
+max_num_moves_per_eps: 800
 goal_radius: 0.3
 safety_distance: 0.75
 
@@ -39,9 +39,9 @@ callbacks:
     # max number of steps per episode
     max_num_moves_per_eps: 1700
     # number of evaluation episodes
-    n_eval_episodes: 30
+    n_eval_episodes: 40
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 10000
+    eval_freq: 12500
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
@@ -104,7 +104,7 @@ rl_agent:
     settings:
       initial_value: 0.001
       final_value: 0.0001
-      decay_steps: 10000000
+      decay_steps: 15000000
 
   ppo:
     batch_size: 15872

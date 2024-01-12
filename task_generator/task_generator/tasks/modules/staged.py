@@ -174,10 +174,11 @@ class Mod_Staged(TM_Module):
                 rospy.set_param(self.PARAM_GOAL_RADIUS, goal_radius)
 
                 # set map generator params
-                if self.stage.dynamic_map is not None:
+                if self.stage.dynamic_map.algorithm is not None:
                     rospy.set_param(
                         MAP_GENERATOR_NS("algorithm"), self.stage.dynamic_map.algorithm
                     )
+                if self.stage.dynamic_map.algorithm_config is not None:
                     rospy.set_param(
                         MAP_GENERATOR_NS("algorithm_config"),
                         self.stage.dynamic_map.algorithm_config,

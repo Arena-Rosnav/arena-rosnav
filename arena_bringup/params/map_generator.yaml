@@ -1,10 +1,10 @@
 algorithm: barn
-episode_per_map: 4
+episode_per_map: 5
 
 map_properties:
-  width: 36
-  height: 36
-  resolution: 1. # should stay fixed during runtime
+  width: 72
+  height: 72
+  resolution: 0.5 # should stay fixed during runtime
 
 algorithm_config:
   fill_pct: 0.125 # initial fill percentage
