@@ -104,7 +104,6 @@ rl_agent:
     settings:
       initial_value: 0.001
       final_value: 0.0001
-      decay_steps: 15000000
 
   ppo:
     batch_size: 15872

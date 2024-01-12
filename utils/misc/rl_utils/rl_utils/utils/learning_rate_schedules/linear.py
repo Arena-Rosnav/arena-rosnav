@@ -2,9 +2,7 @@ from typing import Callable
 from typing import Callable
 
 
-def linear_decay(
-    initial_value: float, final_value: float, decay_steps: int
-) -> Callable[[int], float]:
+def linear_decay(initial_value: float, final_value: float) -> Callable[[float], float]:
     """
     Linear decay schedule.
 
@@ -14,22 +12,20 @@ def linear_decay(
         decay_steps (int): Number of steps to decay over.
 
     Returns:
-        Callable[[int], float]: Schedule that computes current value depending on current step.
+        Callable[[float], float]: Schedule that computes current value depending on remaining progress.
     """
 
-    def func(current_step: int) -> float:
+    def func(progress_remaining: float) -> float:
         """
         Compute the current value.
 
         Args:
-            current_step (int): Current step.
+            progress_remaining (float): Remaining progress.
 
         Returns:
             float: Current value.
         """
-        return initial_value - (initial_value - final_value) * (
-            current_step / decay_steps
-        )
+        return initial_value - (initial_value - final_value) * (1 - progress_remaining)
 
     return func
 
