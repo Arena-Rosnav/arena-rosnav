@@ -14,6 +14,7 @@ from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils import rosparam_get
 
 from map_generator.constants import MAP_GENERATOR_NS
+
 # DYNAMIC MAP INTERFACE
 
 DynamicMapConfiguration = Dict[str, Dict]
@@ -72,13 +73,15 @@ class Mod_DynamicMap(TM_Module):
         self.__get_dist_map_service = rospy.ServiceProxy(
             self.SERVICE_DISTANCE_MAP, map_distance_server_srvs.GetDistanceMap
         )
-        
+
         num_envs: int = (
             rosparam_get(int, "num_envs", 1)
             if "eval_sim" not in self._TASK.robot_managers[0].namespace
             else 1
         )
-        self._target_eps_num = rosparam_get(int, MAP_GENERATOR_NS("episode_per_map"), 1) * num_envs
+        self._target_eps_num = (
+            rosparam_get(int, MAP_GENERATOR_NS("episode_per_map"), 1) * num_envs
+        )
 
     def _set_config(self, config: DynamicMapConfiguration):
         """
@@ -156,4 +159,7 @@ class Mod_DynamicMap(TM_Module):
         """
         Setter for the _episodes property.
         """
-        rospy.set_param(self.PARAM_EPISODES, value)
+        try:
+            rospy.set_param(self.PARAM_EPISODES, value)
+        except Exception as e:
+            rospy.logwarn(e)
