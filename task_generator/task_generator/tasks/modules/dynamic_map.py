@@ -152,7 +152,11 @@ class Mod_DynamicMap(TM_Module):
         """
         Property representing the current number of episodes.
         """
-        return rosparam_get(float, self.PARAM_EPISODES, float("inf"))
+        try:
+            return rosparam_get(float, self.PARAM_EPISODES, float("inf"))
+        except Exception as e:
+            rospy.logwarn(e)
+            return 0
 
     @_episodes.setter
     def _episodes(self, value: float):
