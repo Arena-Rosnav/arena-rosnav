@@ -63,7 +63,7 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "RosnavResNet_1"
+  architecture_name: "RosnavResNet_2"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
 
@@ -104,7 +104,6 @@ rl_agent:
     settings:
       initial_value: 0.001
       final_value: 0.0001
-      decay_steps: 30000000
 
   ppo:
     batch_size: 20480
