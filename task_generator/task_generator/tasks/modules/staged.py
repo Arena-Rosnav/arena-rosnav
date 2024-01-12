@@ -231,12 +231,16 @@ class Mod_Staged(TM_Module):
         Args:
             config: The new configuration values.
         """
-
-        curriculum_file = str(
-            self.CURRICULUM_PATH(
-                rosparam_get(str, self.NODE_CONFIGURATION(self.PARAM_CURRICULUM))
+        try:
+            curriculum_file = str(
+                self.CURRICULUM_PATH(
+                    rosparam_get(str, self.NODE_CONFIGURATION(self.PARAM_CURRICULUM))
+                )
             )
-        )
+        except Exception as e:
+            rospy.logwarn(e)
+            curriculum_file = "default.yaml"
+
         assert os.path.isfile(curriculum_file), f"{curriculum_file} is not a file"
 
         with open(curriculum_file) as f:
@@ -264,9 +268,13 @@ class Mod_Staged(TM_Module):
                 for i, stage in enumerate(yaml.load(f, Loader=yaml.FullLoader))
             }
 
-        starting_index = rosparam_get(
-            StageIndex, self.NODE_CONFIGURATION(self.PARAM_INDEX)
-        )
+        try:
+            starting_index = rosparam_get(
+                StageIndex, self.NODE_CONFIGURATION(self.PARAM_INDEX)
+            )
+        except Exception as e:
+            rospy.logwarn(e)
+            starting_index = 0
 
         self.__config = Config(stages=stages, starting_index=starting_index)
 
