@@ -49,13 +49,7 @@ class Mod_DynamicMap(TM_Module):
         """
         self._episodes += 1
 
-        num_envs: int = (
-            rosparam_get(int, "num_envs", 1)
-            if "eval_sim" not in self._TASK.robot_managers[0].namespace
-            else 1
-        )
-
-        if self._episodes >= rosparam_get(int, MAP_GENERATOR_NS("episode_per_map"), 1) * num_envs:
+        if self._episodes >= self._target_eps_num:
             self.request_new_map()
 
     def __init__(self, **kwargs):
@@ -78,6 +72,13 @@ class Mod_DynamicMap(TM_Module):
         self.__get_dist_map_service = rospy.ServiceProxy(
             self.SERVICE_DISTANCE_MAP, map_distance_server_srvs.GetDistanceMap
         )
+        
+        num_envs: int = (
+            rosparam_get(int, "num_envs", 1)
+            if "eval_sim" not in self._TASK.robot_managers[0].namespace
+            else 1
+        )
+        self._target_eps_num = rosparam_get(int, MAP_GENERATOR_NS("episode_per_map"), 1) * num_envs
 
     def _set_config(self, config: DynamicMapConfiguration):
         """

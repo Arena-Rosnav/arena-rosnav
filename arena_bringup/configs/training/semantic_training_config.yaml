@@ -14,7 +14,7 @@ tm_modules: "staged"
 
 # number of simulation timesteps
 n_timesteps: 40000000
-max_num_moves_per_eps: 800
+max_num_moves_per_eps: 1000
 goal_radius: 0.3
 safety_distance: 0.75
 
@@ -63,7 +63,7 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "RosnavResNet_1"
+  architecture_name: "RosnavResNet_2"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
 
