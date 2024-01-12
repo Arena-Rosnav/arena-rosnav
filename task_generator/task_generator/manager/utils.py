@@ -317,7 +317,7 @@ def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[
 
 
 _world_model_loader = ModelLoader(os.path.join(
-    RosPack().get_path("arena-simulation-setup"), "tmp", "models"))
+    RosPack().get_path("arena-simulation-setup"), "obstacles", "static_obstacles"))
 
 
 def configurations_to_obstacles(configurations: Collection[WorldObstacleConfiguration]) -> WorldObstacles:

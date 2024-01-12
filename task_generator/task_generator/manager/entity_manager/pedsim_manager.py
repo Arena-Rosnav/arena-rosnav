@@ -161,15 +161,22 @@ class PedsimManager(EntityManager):
 
         self._known_obstacles = KnownObstacles()
 
-        rospy.wait_for_service(self._namespace(self.SERVICE_SPAWN_PEDS), timeout=T)
-        rospy.wait_for_service(self._namespace(self.SERVICE_RESPAWN_PEDS), timeout=T)
-        rospy.wait_for_service(self._namespace(self.SERVICE_RESET_ALL_PEDS), timeout=T)
-        rospy.wait_for_service(self._namespace(self.SERVICE_REMOVE_ALL_PEDS), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_SPAWN_PEDS), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_RESPAWN_PEDS), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_RESET_ALL_PEDS), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_REMOVE_ALL_PEDS), timeout=T)
 
-        rospy.wait_for_service(self._namespace(self.SERVICE_ADD_WALLS), timeout=T)
-        rospy.wait_for_service(self._namespace(self.SERVICE_CLEAR_WALLS), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_ADD_WALLS), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_CLEAR_WALLS), timeout=T)
 
-        rospy.wait_for_service(self._namespace(self.SERVICE_SPAWN_OBSTACLES), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_SPAWN_OBSTACLES), timeout=T)
         rospy.wait_for_service(
             self._namespace(self.SERVICE_RESPAWN_OBSTACLES), timeout=T
         )
@@ -177,7 +184,8 @@ class PedsimManager(EntityManager):
             self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES), timeout=T
         )
 
-        rospy.wait_for_service(self._namespace(self.SERVICE_REGISTER_ROBOT), timeout=T)
+        rospy.wait_for_service(self._namespace(
+            self.SERVICE_REGISTER_ROBOT), timeout=T)
 
         self._spawn_peds_srv = rospy.ServiceProxy(
             self._namespace(self.SERVICE_SPAWN_PEDS),
@@ -289,17 +297,21 @@ class PedsimManager(EntityManager):
         if self._add_walls_srv.call(
             srv
         ).success:  # TODO create combined heightmap from previous walls
-            self._known_obstacles.create_or_get(
+            wall = self._known_obstacles.create_or_get(
                 name=self.WALLS_ENTITY,
                 obstacle=walls_to_obstacle(heightmap),
                 layer=ObstacleLayer.WORLD,
                 pedsim_spawned=False,
             )
+            
+            if not isinstance(self._simulator, FlatlandSimulator):
+                self._simulator.spawn_entity(wall.obstacle)
         else:
             rospy.logwarn("spawn walls failed!")
 
         if rosparam_get(str, "world_file", "") == "generated_world":
-            rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), True)
+            rospy.set_param(self._namespace(
+                self.PARAM_NEEDS_RESPAWN_WALLS), True)
         return
 
     def spawn_obstacles(self, obstacles):
@@ -309,10 +321,10 @@ class PedsimManager(EntityManager):
         self.agent_topic_str = ""
 
         for obstacle in obstacles:
-            # Temporary fix to 
+            # Temporary fix to
             # world obstacles are overwritten by normal obstacles
-            if "_shelf_" in obstacle.name:
-                return
+            # if "_shelf_" in obstacle.name:
+            #     return
             msg = pedsim_msgs.Obstacle()
 
             msg.name = obstacle.name
@@ -320,7 +332,8 @@ class PedsimManager(EntityManager):
             # TODO create a global helper function for this kind of use case
             msg.pose = self.pos_to_pose(obstacle.position)
 
-            interaction_radius: float = obstacle.extra.get("interaction_radius", 0.0)
+            interaction_radius: float = obstacle.extra.get(
+                "interaction_radius", 0.0)
 
             self.agent_topic_str += f",{obstacle.name}/0"
 
@@ -347,12 +360,16 @@ class PedsimManager(EntityManager):
                     pedsim_spawned=False,
                     layer=ObstacleLayer.INUSE,
                 )
+            if not isinstance(self._simulator, FlatlandSimulator):
+                self._simulator.spawn_entity(obstacle)
 
         if not self._respawn_obstacles_srv.call(srv).success:
             rospy.logwarn(f"spawn static obstacle failed!")
 
-        rospy.set_param(self._namespace("agent_topic_string"), self.agent_topic_str)
-        rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_OBSTACLES), True)
+        rospy.set_param(self._namespace(
+            "agent_topic_string"), self.agent_topic_str)
+        rospy.set_param(self._namespace(
+            self.PARAM_NEEDS_RESPAWN_OBSTACLES), True)
 
         return
 
@@ -379,7 +396,8 @@ class PedsimManager(EntityManager):
             msg.start_up_mode = Pedsim.START_UP_MODE(
                 obstacle.extra.get("start_up_mode", None)
             )
-            msg.wait_time = Pedsim.WAIT_TIME(obstacle.extra.get("wait_time", None))
+            msg.wait_time = Pedsim.WAIT_TIME(
+                obstacle.extra.get("wait_time", None))
             msg.trigger_zone_radius = Pedsim.TRIGGER_ZONE_RADIUS(
                 obstacle.extra.get("std_srvs.Trigger_zone_radius", None)
             )
@@ -465,8 +483,10 @@ class PedsimManager(EntityManager):
                     override=lambda model: model.replace(
                         description=YAMLUtil.serialize(
                             YAMLUtil.update_plugins(
-                                namespace=self._simulator._namespace(str(msg.id)),
-                                description=YAMLUtil.parse_yaml(model.description),
+                                namespace=self._simulator._namespace(
+                                    str(msg.id)),
+                                description=YAMLUtil.parse_yaml(
+                                    model.description),
                             )
                         )
                     ),
@@ -493,7 +513,8 @@ class PedsimManager(EntityManager):
         if not self._respawn_peds_srv.call(srv).success:
             rospy.logwarn(f"spawn dynamic obstacles failed!")
 
-        rospy.set_param(self._namespace("agent_topic_string"), self.agent_topic_str)
+        rospy.set_param(self._namespace(
+            "agent_topic_string"), self.agent_topic_str)
         rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_PEDS), True)
 
     def unuse_obstacles(self):
@@ -526,7 +547,8 @@ class PedsimManager(EntityManager):
                 self._clear_walls_srv.call(std_srvs.TriggerRequest())
 
                 actions.append(
-                    lambda: self._simulator.delete_entity(name=self.WALLS_ENTITY)
+                    lambda: self._simulator.delete_entity(
+                        name=self.WALLS_ENTITY)
                 )
                 to_forget.append(self.WALLS_ENTITY)
 
@@ -542,7 +564,8 @@ class PedsimManager(EntityManager):
                                     name=obstacle_id, position=jail
                                 )
 
-                            actions.append(functools.partial(anon1, obstacle_id))
+                            actions.append(
+                                functools.partial(anon1, obstacle_id))
 
                         else:
                             # end
@@ -550,7 +573,8 @@ class PedsimManager(EntityManager):
                                 obstacle.pedsim_spawned = False
                                 self._simulator.delete_entity(name=obstacle_id)
 
-                            actions.append(functools.partial(anon2, obstacle_id))
+                            actions.append(
+                                functools.partial(anon2, obstacle_id))
                             to_forget.append(obstacle_id)
 
                     else:
@@ -611,7 +635,8 @@ class PedsimManager(EntityManager):
             bool, self._namespace(self.PARAM_NEEDS_RESPAWN_OBSTACLES), False
         ):
             return
-        rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_OBSTACLES), False)
+        rospy.set_param(self._namespace(
+            self.PARAM_NEEDS_RESPAWN_OBSTACLES), False)
 
         if isinstance(self._simulator, FlatlandSimulator):
             return  # already taken care of by pedsim
@@ -647,7 +672,8 @@ class PedsimManager(EntityManager):
 
                 entity.pedsim_spawned = True
 
-        rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_OBSTACLES), False)
+        rospy.set_param(self._namespace(
+            self.PARAM_NEEDS_RESPAWN_OBSTACLES), False)
 
     def _ped_callback(self, actors: pedsim_msgs.AgentStates):
         if self._is_paused:
@@ -687,7 +713,8 @@ class PedsimManager(EntityManager):
                 # )
 
             else:
-                rospy.loginfo("Spawning dynamic obstacle: actor_id = %s", actor_id)
+                rospy.loginfo(
+                    "Spawning dynamic obstacle: actor_id = %s", actor_id)
 
                 self._simulator.spawn_entity(
                     entity=Obstacle(
