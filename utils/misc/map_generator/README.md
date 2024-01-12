@@ -31,6 +31,7 @@ The Map-Generator encapsulates the option of providing different algorithms for 
 | 3    | MapGeneratorNode | "/map"                     | MapDistanceNode  |
 | 4    | MapDistanceNode  | "/signal_new_distance_map" | TaskMode         |
 | 5    | TaskMode         | "/dynamic_map/task_reset"  | TaskMode         |
+| 6    | MapGeneratorNode | "/map_obstacles"           | WorldManager     |
 
 Class | on topic | Class
 
@@ -54,6 +55,9 @@ Meanwhile, the simulation is paused.
 ### 4. TaskMode | "/dynamic_map/task_reset" | TaskMode
 
 - The task instance, initially detecting the target number of episodes, sends a signal to the other task instances in order to reset the scene, and the receiving end updates the MapManager with the recently generated distance map.
+
+### 6. MapGeneratorNode | "/map_obstacles" | WorldManager
+- Publish Configuration of different Obstacles here for them to be loaded in Arena Rosnav, for configuration see in msg/MapObstacles.msg
 
 ## NEW TASK MODES
 

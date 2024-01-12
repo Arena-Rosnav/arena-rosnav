@@ -54,16 +54,16 @@ def create_outdoor_map(
         obstacles.append(Obstacle(model_name="shelf", position=Pose(position=Point(
             x=random_position[1], y=height-random_position[0], z=0), orientation=Quaternion())))
 
-        obstacle_grid[
-            slice(
-                random_position[0] - obstacle_extra_radius,
-                random_position[0] + obstacle_extra_radius + 1,
-            ),  # create 1 pixel obstacles with extra radius if specified
-            slice(
-                random_position[1] - obstacle_extra_radius,
-                random_position[1] + obstacle_extra_radius + 1,
-            ),
-        ] = 1
+        # obstacle_grid[
+        #     slice(
+        #         random_position[0] - obstacle_extra_radius,
+        #         random_position[0] + obstacle_extra_radius + 1,
+        #     ),  # create 1 pixel obstacles with extra radius if specified
+        #     slice(
+        #         random_position[1] - obstacle_extra_radius,
+        #         random_position[1] + obstacle_extra_radius + 1,
+        #     ),
+        # ] = 1
 
     obstacle_data = {"obstacles": obstacles, "occupancy": obstacle_grid}
     return grid_map, obstacle_data

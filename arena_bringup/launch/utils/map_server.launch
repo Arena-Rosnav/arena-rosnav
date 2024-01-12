@@ -3,9 +3,6 @@
   <arg name="map_file" />
   <arg name="map_path" />
   <node pkg="map_generator" name="map_server_starter" type="map_server.py"/>
-  <node pkg="world_generator" name="world_generator" type="world_generator.py" >
-    <!-- <remap from="/map" to="/world/map" /> -->
-  </node>
   <group if="$(eval arg('map_file') != 'dynamic_map')">
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)">
       <!-- In multi-env training /clock not available, since we only want one map_server, it's clock topic is remapped to /clock -->
