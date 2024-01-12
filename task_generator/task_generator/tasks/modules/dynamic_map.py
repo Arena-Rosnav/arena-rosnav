@@ -13,6 +13,7 @@ from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils import rosparam_get
 
+from map_generator.constants import MAP_GENERATOR_NS
 # DYNAMIC MAP INTERFACE
 
 DynamicMapConfiguration = Dict[str, Dict]
@@ -54,7 +55,7 @@ class Mod_DynamicMap(TM_Module):
             else 1
         )
 
-        if self._episodes >= rosparam_get(int, "episode_per_map", 1) * num_envs:
+        if self._episodes >= rosparam_get(int, MAP_GENERATOR_NS("episode_per_map"), 1) * num_envs:
             self.request_new_map()
 
     def __init__(self, **kwargs):

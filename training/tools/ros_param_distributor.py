@@ -6,7 +6,6 @@ from rosnav.utils.utils import get_actions_from_robot_yaml
 
 from .general import generate_discrete_action_dict
 
-import dynamic_reconfigure.client
 
 
 def populate_ros_params(params: dict, paths: dict):
