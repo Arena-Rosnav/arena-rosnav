@@ -10,18 +10,10 @@ import rospkg
 
 import yaml
 import rospy
-from task_generator.constants import Constants
+from task_generator.constants import Constants, Config
 from task_generator.manager.utils import WorldMap, WorldOccupancy
 
-from task_generator.shared import (
-    Model,
-    ModelType,
-    ModelWrapper,
-    Namespace,
-    Obstacle,
-    ObstacleProps,
-    PositionOrientation,
-)
+from task_generator.shared import Model, ModelType, ModelWrapper, Namespace, Obstacle, ObstacleProps, PositionOrientation
 from task_generator.utils import Utils
 
 
@@ -71,8 +63,8 @@ class SDFUtil:
 
 class ObstacleLayer(enum.IntEnum):
     UNUSED = 0  # unused, could be garbage collected
-    INUSE = 1  # in use, but can be unused
-    WORLD = 2  # intrinsic part of world
+    INUSE = 1   # in use, but can be unused
+    WORLD = 2   # intrinsic part of world
 
 
 @dataclasses.dataclass
@@ -191,7 +183,7 @@ class YAMLUtil:
 
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             if rospy.get_param("laser/full_range_laser", False):
-                plugins.append(Constants.PLUGIN_FULL_RANGE_LASER.copy())
+                plugins.append(Config.PLUGIN_FULL_RANGE_LASER.copy())
 
             for plugin in plugins:
                 for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
@@ -200,12 +192,10 @@ class YAMLUtil:
                         default_val = YAMLUtil.PLUGIN_PROPS_DEFAULT_VAL[plugin["type"]][
                             prop
                         ]
-                    plugin[prop] = str(
-                        namespace(
-                            plugin.get(prop, "")
-                            if not default_val
-                            else plugin.get(prop, default_val),
-                        )
+                    plugin[prop] = namespace(
+                        plugin.get(prop, "")
+                        if not default_val
+                        else plugin.get(prop, default_val),
                     )
 
                 # for prop in YAMLUtil.PLUGIN_PROPS_TO_CHANGE.get(plugin["type"], []):
@@ -221,40 +211,42 @@ class YAMLUtil:
         return description
 
 
-tmp_dir = os.path.join(
-    rospkg.RosPack().get_path("arena-simulation-setup"), "tmp", "heightmap"
-)
+tmp_dir = os.path.join(rospkg.RosPack().get_path(
+    "arena-simulation-setup"), "tmp", "heightmap")
 os.makedirs(tmp_dir, exist_ok=True)
 
 
 def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
+
     model_name = "__WALLS"
-    heightmap = np.logical_not(
-        WorldOccupancy.not_full(world_map.occupancy._walls.grid)
-    )[::-1, :]
+    heightmap = np.logical_not(WorldOccupancy.not_full(world_map.occupancy._walls.grid))[::-1,:]
 
     dtype = np.uint8
 
     target_size: int = 2 ** np.ceil(np.log2(max(heightmap.shape))) + 1
-    pad_y: int = int(np.floor((target_size - heightmap.shape[0]) / 2))
-    pad_x: int = int(np.floor((target_size - heightmap.shape[1]) / 2))
+    pad_y: int = int(np.floor((target_size - heightmap.shape[0])/2))
+    pad_x: int = int(np.floor((target_size - heightmap.shape[1])/2))
 
     padded_heightmap = np.pad(
         heightmap,
-        [
+        np.array([
             (pad_y, pad_y + 1 - heightmap.shape[0] % 2),
-            (pad_x, pad_x + 1 - heightmap.shape[1] % 2),
-        ],
+            (pad_x, pad_x + 1 - heightmap.shape[1] % 2)
+        ]),
         mode="constant",
-        constant_values=0,
+        constant_values=0
     )
 
     img_uri = os.path.join(tmp_dir, f"__WALLS.png")
-    cv2.imwrite(img_uri, np.iinfo(dtype).max * padded_heightmap)
+    cv2.imwrite(
+        img_uri,
+        np.iinfo(dtype).max * padded_heightmap
+    )
 
     z_offset = -0.1
 
-    mesh = f"""
+    mesh = \
+        f"""
         <heightmap>
             <uri>{img_uri}</uri>
             <size>{padded_heightmap.shape[1] * world_map.resolution} {padded_heightmap.shape[0] * world_map.resolution} {height - z_offset}</size>
@@ -267,7 +259,8 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
     # TODO precompute heightmap as own geometry, gazebo heightmap implementation isn't optimal
     # mesh = ""
 
-    sdf_description = f"""
+    sdf_description = \
+        f"""
         <?xml version="1.0" ?>
         <sdf version="1.5">
             <static>true</static>
@@ -295,17 +288,13 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
         models={
             # ModelType.YAML: Model(type=ModelType.YAML, name=model_name, description="", path=""),
             ModelType.SDF: Model(
-                type=ModelType.SDF,
-                name=model_name,
-                description=sdf_description,
-                path="",
-            )
-        },
+                type=ModelType.SDF, name=model_name, description=sdf_description, path="")
+        }
     )
 
     return Obstacle(
         position=PositionOrientation(0, 0, 0),
         name=model_name,
         model=model,
-        extra=dict(),
+        extra=dict()
     )
