@@ -77,7 +77,8 @@ class UnitySimulator(BaseSimulator):
         request.model_xml = model.description
         request.robot_namespace = self._namespace(entity.name)
         request.reference_frame = "world"
-        # Keep in mind that y axis is up
+
+        # send coordinates in the normal ROS refrence frame (FLU)
         request.initial_pose = Pose(
             position=Point(
                 x=entity.position[0],
