@@ -7,7 +7,7 @@ from tf.transformations import quaternion_from_euler
 from task_generator.constants import Constants, UnityConstants
 from task_generator.simulators.base_simulator import BaseSimulator
 
-from task_generator.shared import ModelType, Robot
+from task_generator.shared import ModelType, Robot, Obstacle
 
 # Message Types
 from gazebo_msgs.msg import ModelState
@@ -68,10 +68,10 @@ class UnitySimulator(BaseSimulator):
         pass
 
     def spawn_entity(self, entity):
-        rospy.loginfo("[Unity Simulator] Spawn Request for " + entity.name)
         request = SpawnModelRequest()
 
         model = entity.model.get(self.MODEL_TYPES)
+        rospy.loginfo("[Unity Simulator] Spawn Request for " + model.name)
 
         request.model_name = entity.name
         request.model_xml = model.description
@@ -93,6 +93,10 @@ class UnitySimulator(BaseSimulator):
                 "robot_description"), model.description)
             rospy.set_param(request.robot_namespace(
                 "tf_prefix"), str(request.robot_namespace))
+            
+
+        if isinstance(entity, Obstacle) and "<actor" not in model.description:
+            request.model_xml = model.name
 
         res = self.spawn_model(model.type, request)
         return res.success
