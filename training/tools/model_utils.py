@@ -79,15 +79,16 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
     update(model, "gamma", ppo_params["gamma"])
     update(model, "n_steps", ppo_params["n_steps"])
     update(model, "ent_coef", ppo_params["ent_coef"])
-    update(model, "learning_rate", ppo_params["learning_rate"])
     update(model, "vf_coef", ppo_params["vf_coef"])
     update(model, "max_grad_norm", ppo_params["max_grad_norm"])
     update(model, "gae_lambda", ppo_params["gae_lambda"])
     update(model, "n_epochs", ppo_params["n_epochs"])
-    """
-    if model.clip_range != params['clip_range']:
-        model.clip_range = params['clip_range']
-    """
+
+    if not config["rl_agent"]["lr_schedule"]["enabled"]:
+        update(model, "learning_rate", ppo_params["learning_rate"])
+    else:
+        setattr(model, "learning_rate", load_lr_schedule(config))
+
     if model.n_envs != config["n_envs"]:
         print(
             "{:40}{:<10s}".format(
@@ -123,6 +124,13 @@ def load_lr_schedule(config: dict) -> Callable:
     return lr_schedule
 
 
+def save_model(model: PPO, paths: dict, file_name: str = "best_model") -> None:
+    print("Saving model to: ", paths["model"])
+    model.save(os.path.join(paths["model"], file_name))
+    if isinstance(model.env.venv, VecNormalize):
+        model.env.save(os.path.join(paths["model"], "vec_normalize.pkl"))
+
+
 def get_ppo_instance(
     agent_description: BaseAgent,
     observation_manager,
@@ -148,11 +156,8 @@ def get_ppo_instance(
 
     ## Save model once
 
-    if not rospy.get_param("debug_mode"):
-        print("Saving model to: ", paths["model"])
-        model.save(os.path.join(paths["model"], "best_model"))
-        if isinstance(train_env.venv, VecNormalize):
-            train_env.save(os.path.join(paths["model"], "vec_normalize.pkl"))
+    if not rospy.get_param("debug_mode") and new_model:
+        save_model(model, paths)
     return model
 
 
@@ -216,7 +221,7 @@ sys.modules["rl_utils.rl_utils.utils"] = sys.modules["rosnav.utils"]
 
 def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
     agent_name = config["agent_name"]
-    possible_agent_names = [f"{agent_name}", "best_model", "model"]
+    possible_agent_names = [f"{agent_name}", "best_model", "last_model", "model"]
 
     for name in possible_agent_names:
         if os.path.isfile(os.path.join(PATHS["model"], f"{name}.zip")):
