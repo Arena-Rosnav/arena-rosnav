@@ -5,8 +5,8 @@ import gym
 import rospy
 from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
 from rl_utils.utils.vec_wrapper.delayed_subproc_vec_env import DelayedSubprocVecEnv
-from rl_utils.utils.vec_wrapper.vec_stats_wrapper import VecStatsRecorder
-from rl_utils.utils.vec_wrapper.profiler_wrapper import ProfilingVecEnv
+from rl_utils.utils.vec_wrapper.vec_stats_recorder import VecStatsRecorder
+from rl_utils.utils.vec_wrapper.profiler import ProfilingVecEnv
 from rosnav.model.base_agent import BaseAgent
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import (
@@ -169,7 +169,7 @@ def make_envs(
     # wrap env with statistics wrapper
     cmd_logging_cfg = config["monitoring"]["cmd_line_logging"]["episode_statistics"]
     verbose = cmd_logging_cfg["enabled"]
-    
+
     train_env = VecStatsRecorder(
         train_env,
         verbose=verbose,
