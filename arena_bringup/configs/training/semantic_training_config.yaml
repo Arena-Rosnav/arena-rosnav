@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 32
+n_envs: 64
 # gpu yes or no
 no_gpu: false
 
@@ -13,8 +13,8 @@ tm_obstacles: "random"
 tm_modules: "staged"
 
 # number of simulation timesteps
-n_timesteps: 40000000
-max_num_moves_per_eps: 1000
+n_timesteps: 20000000
+max_num_moves_per_eps: 600
 goal_radius: 0.3
 safety_distance: 0.75
 
@@ -27,7 +27,7 @@ monitoring:
     # display episode statistics (avg. success rate, reward, eps length..)
     episode_statistics:
       enabled: true
-      last_n_eps: 25
+      last_n_eps: 50
   # weights and biases logging
   use_wandb: true
   # save evaluation stats during training in log file
@@ -37,11 +37,11 @@ callbacks:
   ### Periodic Eval
   periodic_eval:
     # max number of steps per episode
-    max_num_moves_per_eps: 1700
+    max_num_moves_per_eps: 1000
     # number of evaluation episodes
-    n_eval_episodes: 40
+    n_eval_episodes: 30
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 12500
+    eval_freq: 7500
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
@@ -52,7 +52,7 @@ callbacks:
     curr_stage: 0
     threshold_type: "succ"
     upper_threshold: 0.95
-    lower_threshold: 0.70
+    lower_threshold: 0.60
 
   ### Stop Training on Threshold
   # stops training when last stage reached and threshold satisfied
@@ -65,7 +65,7 @@ rl_agent:
   # name of architecture defined in the Policy factory
   architecture_name: "RosnavResNet_2"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  resume: jackal_RosnavResNet_2_2024_01_13__17_16_40 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
 
   frame_stacking:
     enabled: false
@@ -102,11 +102,11 @@ rl_agent:
     enabled: true
     type: "linear"
     settings:
-      initial_value: 0.001
+      initial_value: 0.0009
       final_value: 0.0001
 
   ppo:
-    batch_size: 15872
+    batch_size: 10240
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
