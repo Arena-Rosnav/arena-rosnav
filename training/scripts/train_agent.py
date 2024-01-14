@@ -9,12 +9,14 @@ from rosnav.model.base_agent import BaseAgent
 from tools.argsparser import parse_training_args
 from tools.env_utils import make_envs
 from tools.general import generate_agent_name, get_paths, initialize_config, load_config
-from tools.model_utils import get_ppo_instance, init_callbacks
+from tools.model_utils import get_ppo_instance, init_callbacks, save_model
 from tools.ros_param_distributor import populate_ros_params
 
 
-def on_shutdown(model):
+def on_shutdown(model, paths: dict):
     model.env.close()
+    if rospy.get_param("debug_mode"):
+        save_model(model, paths, "last_model")
     sys.exit()
 
 
@@ -22,7 +24,7 @@ def main():
     args, _ = parse_training_args()
 
     if (config_name := args.config) == "":
-        raise RuntimeError("no config specified")
+        raise RuntimeError("No config specified. Please specify a config file.")
 
     config = load_config(config_name)
     rospy.set_param("debug_mode", config["debug_mode"])
@@ -60,7 +62,7 @@ def main():
         agent_description, observation_manager, config, train_env, paths
     )
 
-    rospy.on_shutdown(lambda: on_shutdown(model))
+    rospy.on_shutdown(lambda: on_shutdown(model, paths))
 
     # start training
     start = time.time()
