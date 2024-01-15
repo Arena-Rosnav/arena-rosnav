@@ -88,6 +88,7 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
         update(model, "learning_rate", ppo_params["learning_rate"])
     else:
         setattr(model, "learning_rate", load_lr_schedule(config))
+    model._setup_lr_schedule()
 
     if model.n_envs != config["n_envs"]:
         print(
@@ -128,7 +129,7 @@ def save_model(model: PPO, paths: dict, file_name: str = "best_model") -> None:
     print("Saving model to: ", paths["model"])
     model.save(os.path.join(paths["model"], file_name))
     if isinstance(model.env.venv, VecNormalize):
-        model.env.save(os.path.join(paths["model"], "vec_normalize.pkl"))
+        model.env.save(os.path.join(paths["model"], f"vec_normalize_{file_name}.pkl"))
 
 
 def get_ppo_instance(
