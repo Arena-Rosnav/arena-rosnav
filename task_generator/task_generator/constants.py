@@ -14,7 +14,7 @@ class Defaults:
         no_of_episodes = 5
 
 
-class _Constants:
+class Constants:
 
     @property
     def GOAL_TOLERANCE_RADIUS(self):
