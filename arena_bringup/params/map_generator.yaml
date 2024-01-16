@@ -34,6 +34,6 @@ generator_configs:
 
     # outdoor parameters
     outdoor:
-      obstacle_num: 100 # number of outdoor obstacles
+      obstacle_num: 20 # number of outdoor obstacles
       obstacle_extra_radius: 2 # total obstacle diameter = 1+2*obstacle_extra_radius
       # Here are rosmap exclusive parameters
