@@ -38,9 +38,12 @@ def populate_ros_params(params: dict, paths: dict):
     populate_laser_params(params)
 
     curriculum_file = params["callbacks"]["training_curriculum"]["training_curriculum_file"]
+    staged_idx = params["callbacks"]["training_curriculum"]["curr_stage"]
     
     # shell command
     os.system(f"rosrun dynamic_reconfigure dynparam set /task_generator_server STAGED_curriculum {curriculum_file}")
+    os.system(f"rosrun dynamic_reconfigure dynparam set /task_generator_server STAGED_index {staged_idx}")
+    
     
 
 
