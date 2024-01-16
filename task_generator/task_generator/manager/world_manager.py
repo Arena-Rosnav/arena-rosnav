@@ -7,7 +7,7 @@ import rospy
 
 from task_generator.manager.utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, WorldObstacles, configurations_to_obstacles, occupancy_to_walls
 from task_generator.utils import Utils
-from task_generator.shared import Position, PositionRadius
+from task_generator.shared import Position, PositionRadius, PositionOrientation
 
 from map_generator.msg import MapObstacles, Obstacle
 
@@ -343,11 +343,13 @@ class WorldManager:
     def _handle_map_obstacles(self, obstacle_data: MapObstacles):
         obst_configuration = []
         for obst in obstacle_data.obstacles:
-            obst.position.position.x *= self.resolution
-            obst.position.position.y *= self.resolution
             obst_configuration.append(WorldObstacleConfiguration(
-                position=Utils.pose_to_position(obst.position),
-                model_name="tree",
+                position=PositionOrientation(
+                    x= obst.position.position.x * self.resolution,
+                    y= obst.position.position.y * self.resolution,
+                    orientation=obst.position.orientation.z
+                ),
+                model_name=obst.model_name,
                 extra={}
             ))
 
