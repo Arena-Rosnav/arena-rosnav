@@ -10,24 +10,6 @@ def initialize_map(height: int, width: int, type="indoor") -> np.ndarray:
     return grid_map
 
 
-def insert_root_node(
-    grid_map: np.ndarray, tree: list
-):  # create root node in center of map
-    root_node = [
-        int(np.floor(grid_map.shape[0] / 2)),
-        int(np.floor(grid_map.shape[1] / 2)),
-    ]
-    grid_map[root_node[0], root_node[1]] = 0
-    tree.append(root_node)
-
-
-def insert_new_node(
-    random_position, tree, map
-):  # insert new node into the map and tree
-    map[random_position[0], random_position[1]] = 0
-    tree.append(random_position)
-
-
 def sample(grid_map: np.ndarray, corridor_radius: int, map_default: int) -> list:
     # sample position from map within boundary and leave tolerance for corridor width
     # prevent overlapping obstacles
@@ -47,13 +29,22 @@ def sample(grid_map: np.ndarray, corridor_radius: int, map_default: int) -> list
     return []
 
 
-def find_nearest_node(random_position: int, tree: list) -> list:
-    # find nearest node according to L1 norm
-    nearest_node = []
-    min_distance = np.inf
-    for node in tree:
-        distance = sum(np.abs(np.array(random_position) - np.array(node)))
-        if distance < min_distance:
-            min_distance = distance
-            nearest_node = node
-    return nearest_node
+def rotate_point(point, angle, center):
+    """Rotate a point around a given center."""
+    angle_rad = np.radians(angle)
+    x, y = point
+    cx, cy = center
+
+    # Translate the point to the origin
+    translated_x = x - cx
+    translated_y = y - cy
+
+    # Perform the rotation
+    rotated_x = translated_x * np.cos(angle_rad) - translated_y * np.sin(angle_rad)
+    rotated_y = translated_x * np.sin(angle_rad) + translated_y * np.cos(angle_rad)
+
+    # Translate the point back to its original position
+    new_x = rotated_x + cx
+    new_y = rotated_y + cy
+
+    return new_x, new_y

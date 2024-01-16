@@ -361,8 +361,8 @@ class PedsimManager(EntityManager):
                     pedsim_spawned=False,
                     layer=ObstacleLayer.INUSE,
                 )
-            if not isinstance(self._simulator, FlatlandSimulator):
-                self._simulator.spawn_entity(obstacle)
+            # if not isinstance(self._simulator, FlatlandSimulator):
+            #     self._simulator.spawn_entity(obstacle)
 
         if not self._respawn_obstacles_srv.call(srv).success:
             rospy.logwarn(f"spawn static obstacle failed!")
@@ -660,7 +660,7 @@ class PedsimManager(EntityManager):
                 )
 
             else:
-                rospy.logdebug("Spawning obstacle: name = %s", obstacle_name)
+                rospy.logdebug("Spawning obstacle: name = %s", obstacle.pose)
 
                 self._simulator.spawn_entity(
                     Obstacle(
@@ -671,7 +671,8 @@ class PedsimManager(EntityManager):
                     )
                 )
 
-                entity.pedsim_spawned = True
+                entity.pedsim_spawned = False # TEMP von Halid
+                # entity.pedsim_spawned = True
 
         rospy.set_param(self._namespace(
             self.PARAM_NEEDS_RESPAWN_OBSTACLES), False)

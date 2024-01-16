@@ -6,11 +6,11 @@ from enum import Enum
 
 from map_generator.base_map_gen import BaseMapGenerator
 from map_generator.factory import MapGeneratorFactory
-from map_generator.rosmap.wrapper import create_indoor_map, create_outdoor_map
+from map_generator.rosmap.wrapper import create_canteen_map, create_outdoor_map
 
 
 class MAP_TYPE(Enum):
-    indoor = "indoor"
+    canteen = "canteen"
     outdoor = "outdoor"
 
 
@@ -20,11 +20,10 @@ class RosnavMapGenerator(BaseMapGenerator):
         self,
         height: int,
         width: int,
-        map_type: str = "indoor",
-        corridor_radius: int = 5,
-        iterations: int = 100,
+        map_type: str = "outdoor",
         obstacle_num: int = 10,
         obstacle_extra_radius: int = 1,
+        chair_chance: float = 0.4,
         *args,
         **kwargs,
     ):
@@ -33,14 +32,12 @@ class RosnavMapGenerator(BaseMapGenerator):
 
         self.map_type = MAP_TYPE(map_type.lower())
 
-        # indoor parameters
-        self.iterations = iterations
-        self.corridor_radius = corridor_radius
-
-        # outdoor parameters
+        # parameters
         self.obstacle_num = obstacle_num
         # extra radius for obstacles, middle point is the obstacle center
         self.obstacle_extra_radius = obstacle_extra_radius
+        # the probability of each chair of 4 at a table
+        self.chair_chance = chair_chance
 
     def update_params(
         self,
@@ -48,38 +45,33 @@ class RosnavMapGenerator(BaseMapGenerator):
         width: int,
         map_res: float,
         map_type: str,
-        iterations: int,
-        corridor_radius: int,
         obstacle_num: int,
         obstacle_extra_radius: int,
+        chair_chance: float
     ):
         super().update_params(height, width, map_res)
         self.map_type = map_type
 
-        # indoor params
-        self.iterations, self.corridor_radius = iterations, corridor_radius
+        # canteen params
+        self.chair_chance = chair_chance
+
         # outdoor params
         self.obstacle_num, self.obstacle_extra_radius = (
             obstacle_num,
             obstacle_extra_radius,
         )
 
-    def retrieve_params(self) -> Tuple[int, int, float, MAP_TYPE, int, int, int, int]:
+    def retrieve_params(self) -> Tuple[int, int, float, MAP_TYPE, int, int, float]:
         height, width, map_res = super().retrieve_params()
         map_type = rospy.get_param(
             "/generator_configs/rosmap/map_type", self.map_type)
         if type(map_type) == str:
             map_type = MAP_TYPE(map_type.lower())
 
-        # indoor params
-        corridor_radius = rospy.get_param(
-            "/generator_configs/rosmap/indoor/corridor_radius", self.corridor_radius
+        # params
+        chair_chance = rospy.get_param(
+            "/generator_configs/rosmap/canteen/chair_chance", self.chair_chance
         )
-        iterations = rospy.get_param(
-            "/generator_configs/rosmap/indoor/iterations", self.iterations
-        )
-
-        # outdoor params
         obstacle_num = rospy.get_param(
             "/generator_configs/rosmap/outdoor/obstacle_num", self.obstacle_num
         )
@@ -93,22 +85,22 @@ class RosnavMapGenerator(BaseMapGenerator):
             width,
             map_res,
             map_type,
-            iterations,
-            corridor_radius,
             obstacle_num,
             obstacle_extra_radius,
+            chair_chance
         )
 
     def generate_grid_map(self) -> (np.ndarray, dict):
         super().generate_grid_map()
         return (
-            (create_indoor_map(
+            create_canteen_map(
                 height=self.height,
                 width=self.width,
-                corridor_radius=self.corridor_radius,
-                iterations=self.iterations,
-            ), {})
-            if self.map_type in [MAP_TYPE.indoor, "indoor"]
+                obstacle_number=self.obstacle_num,
+                obstacle_extra_radius=self.obstacle_extra_radius,
+                chair_chance=self.chair_chance
+            )
+            if self.map_type in [MAP_TYPE.canteen, "canteen"]
             else create_outdoor_map(
                 height=self.height,
                 width=self.width,
@@ -120,7 +112,7 @@ class RosnavMapGenerator(BaseMapGenerator):
 
 def test():
     map_gen = RosnavMapGenerator(
-        height=100, width=100, map_type="indoor", corridor_radius=5, iterations=100
+        height=100, width=100, map_type="canteen"
     )
     grid_map = map_gen.generate_grid_map()
 
