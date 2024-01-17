@@ -84,22 +84,22 @@ def place_rect(center, rot: float, chair_chance: float):
         pos = [center[0] - 1, center[1] - 0.8]
         pos = rotate_point(pos, np.rad2deg(rot), center)
         chairs.append(Obstacle(model_name="chair", position=Pose(position=Point(
-            x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot))))
+            x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot - np.pi/2))))
     if np.random.random() <= chair_chance:
         pos = [center[0] - 1, center[1] + 0.8]
         pos = rotate_point(pos, np.rad2deg(rot), center)
         chairs.append(Obstacle(model_name="chair", position=Pose(position=Point(
-            x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot))))
+            x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot - np.pi/2))))
     if np.random.random() <= chair_chance:
         pos = [center[0] + 1, center[1] - 0.8]
         pos = rotate_point(pos, np.rad2deg(rot), center)
         chairs.append(Obstacle(model_name="chair", position=Pose(position=Point(
-            x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=np.pi + rot))))
+            x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot + np.pi/2))))
     if np.random.random() <= chair_chance:
         pos = [center[0] + 1, center[1] + 0.8]
         pos = rotate_point(pos, np.rad2deg(rot), center)
         chairs.append(Obstacle(model_name="chair", position=Pose(position=Point(
-            x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=np.pi + rot))))
+            x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot + np.pi/2))))
 
     return chairs
 

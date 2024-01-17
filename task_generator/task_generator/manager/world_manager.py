@@ -347,7 +347,7 @@ class WorldManager:
                 position=PositionOrientation(
                     x= obst.position.position.x * self.resolution,
                     y= obst.position.position.y * self.resolution,
-                    orientation=obst.position.orientation.z
+                    orientation=obst.position.orientation.z + np.pi/2
                 ),
                 model_name=obst.model_name,
                 extra={}
