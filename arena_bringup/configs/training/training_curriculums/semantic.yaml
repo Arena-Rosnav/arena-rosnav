@@ -13,8 +13,8 @@
   map_generator:
     algorithm: "barn"
     algorithm_config:
-      fill_pct: 0.10
-      smooth_iter: 2
+      fill_pct: 0.05
+      smooth_iter: 5
     # rosnav:
     #   map_type: indoor
     #   indoor:
@@ -24,14 +24,14 @@
     #     obstacle_num: 5
     #     obstacle_extra_radius: 1
   static: 0
-  dynamic: 10
+  dynamic: 12
 - #1
-  goal_radius: 1.0
+  goal_radius: 0.75
   map_generator:
     algorithm: "barn"
     algorithm_config:
       fill_pct: 0.10
-      smooth_iter: 1
+      smooth_iter: 2
   static: 0
   dynamic: 15
 - #2
@@ -49,7 +49,7 @@
     algorithm: "barn"
     algorithm_config:
       fill_pct: 0.125
-      smooth_iter: 1
+      smooth_iter: 3
 
   static: 0
   dynamic: 25
