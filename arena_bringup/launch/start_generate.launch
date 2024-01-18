@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <arg name="gui" default="true"/>
+  <arg name="verbose" default="false"/>
+  
+  <arg name="world_name" default=""/> 
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find arena-simulation-setup)/worlds/$(arg world_name)/worlds/$(arg world_name).world"/>
+    <arg name="gui" value="$(arg gui)"/>
+    <arg name="verbose" value="$(arg verbose)"/>
+  </include>
+
+  <node name="grid_map_generator" pkg="grid_map_generator" type="grid_map_generator_node.py" output="screen">
+       <param name="world_name" value="$(arg world_name)"/>
+  </node>
+  <!-- <node name="gazebo_ros_2Dmap_plugin" pkg="rosservice" type="rosservice" args="call xxwait /gazebo_2Dmap_plugin/generate_map" /> -->
+
+</launch>
+
+
