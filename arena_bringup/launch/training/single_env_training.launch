@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  DEDICATED ROBOT LAUNCH NEEDED FOR TRAINING, SINCE DURING MULTIPROCESSING
+  WE CAN'T LAUNCH ANOTHER SUBPROCESS WITHIN A DAEMON.
+  THEREFOR, WE NEED TO START THE ROBOT LAUNCH WITHIN 'start_training.launch'.
+ -->
+
 <launch>
   <arg name="ns" />
   <arg name="model" default="jackal"/>
@@ -15,10 +21,28 @@
       <arg name="ns" value="$(arg ns)" />
     </include>
 
-    <remap from="/clock" to="/$(arg ns)/clock"/>
-    <include file="$(find pedsim_ros)/launch/pedsim.launch" if="$(eval arg('entity_manager')=='pedsim')">
-      <arg name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world"/>
+    <include file="$(find arena_bringup)/launch/training/train_robot.launch">
+      <arg name="namespace" value="/$(arg ns)/$(arg ns)_$(arg model)" />
+      <arg name="sim_namespace" value="/$(arg ns)" />
+
+      <arg name="name" value="$(arg ns)_$(arg model)" />
+      <arg name="model" value="$(arg model)" />
+      <arg name="agent_name" value="$(arg model)"/>
+
+      <arg name="train_mode" value="true"/>
+
     </include>
+
+    <group>
+      <remap from="/clock" to="/$(arg ns)/clock"/>
+      <remap from="/reset_end" to="/$(arg ns)/reset_end" />
+      <remap from="/reset_start" to="/$(arg ns)/reset_start" />
+
+      <include file="$(find pedsim_ros)/launch/pedsim.launch" if="$(eval arg('entity_manager')=='pedsim')">
+        <arg name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world"/>
+      </include>
+    </group>
+    
   </group>
 
 </launch>

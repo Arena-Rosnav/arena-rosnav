@@ -1,9 +1,9 @@
 ### General
 # in debug_mode no agent directories will be created and no models will be saved
 # further no wandb logging and fake (simulated) multiprocessing for traceback
-debug_mode: true
+debug_mode: false
 # number of parallel environments
-n_envs: 4
+n_envs: 64
 # gpu yes or no
 no_gpu: false
 
@@ -13,10 +13,10 @@ tm_obstacles: "random"
 tm_modules: "staged"
 
 # number of simulation timesteps
-n_timesteps: 40000000
-max_num_moves_per_eps: 800
-goal_radius: 0.25
-safety_distance: 0.5
+n_timesteps: 20000000
+max_num_moves_per_eps: 600
+goal_radius: 0.3
+safety_distance: 0.75
 
 ### Training Monitoring
 monitoring:
@@ -27,9 +27,9 @@ monitoring:
     # display episode statistics (avg. success rate, reward, eps length..)
     episode_statistics:
       enabled: true
-      last_n_eps: 25
+      last_n_eps: 50
   # weights and biases logging
-  use_wandb: false
+  use_wandb: true
   # save evaluation stats during training in log file
   eval_log: false
 
@@ -37,35 +37,35 @@ callbacks:
   ### Periodic Eval
   periodic_eval:
     # max number of steps per episode
-    max_num_moves_per_eps: 1250
+    max_num_moves_per_eps: 1000
     # number of evaluation episodes
-    n_eval_episodes: 40
+    n_eval_episodes: 30
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 30000
+    eval_freq: 7500
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
   # can be either "succ" (success rate) or "rew" (reward)
   training_curriculum:
     # file for the robot's learning curriculum
-    training_curriculum_file: "default.yaml"
+    training_curriculum_file: "semantic.yaml"
     curr_stage: 0
     threshold_type: "succ"
-    upper_threshold: 0.90
-    lower_threshold: 0.65
+    upper_threshold: 0.95
+    lower_threshold: 0.60
 
   ### Stop Training on Threshold
   # stops training when last stage reached and threshold satisfied
   stop_training:
     threshold_type: "succ"
-    threshold: 0.98
+    threshold: 0.985
 
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
   architecture_name: "RosnavResNet_2"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  resume: jackal_RosnavResNet_2_2024_01_13__17_16_40 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
 
   frame_stacking:
     enabled: false
@@ -79,7 +79,7 @@ rl_agent:
       norm_obs: true
       norm_reward: false # Whether to normalize rewards or not
       clip_obs: 30.0 # Max absolute value for observation
-      clip_reward: 20.0 # Max value absolute for discounted reward
+      clip_reward: 25.0 # Max value absolute for discounted reward
       gamma: 0.99 # discount factor
 
   laser:
@@ -95,18 +95,18 @@ rl_agent:
       # number of buckets for each action dimension
       # (only non-holonomic robots with 2D action space supported)
       buckets_linear_vel: 8
-      buckets_angular_vel: 11
+      buckets_angular_vel: 9
 
   lr_schedule:
     # learning rate schedule
     enabled: true
     type: "linear"
     settings:
-      initial_value: 0.001
+      initial_value: 0.0009
       final_value: 0.0001
 
   ppo:
-    batch_size: 20480
+    batch_size: 10240
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
@@ -114,6 +114,6 @@ rl_agent:
     vf_coef: 0.22
     max_grad_norm: 0.5
     gae_lambda: 0.95
-    m_batch_size: 512
+    m_batch_size: 256
     n_epochs: 3
-    clip_range: 0.25
+    clip_range: 0.2

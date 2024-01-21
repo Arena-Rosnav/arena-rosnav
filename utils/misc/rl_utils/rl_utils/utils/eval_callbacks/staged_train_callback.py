@@ -26,7 +26,7 @@ class InitiateNewTrainStage(BaseCallback):
         treshhold_type: str = "succ",
         upper_threshold: float = 0,
         lower_threshold: float = 0,
-        task_mode: str = "staged",
+        activated: bool = False,
         verbose=0,
     ):
         super(InitiateNewTrainStage, self).__init__(verbose=verbose)
@@ -61,7 +61,7 @@ class InitiateNewTrainStage(BaseCallback):
             ), "succ thresholds have to be between [1.0, 0.0]"
 
         self.verbose = verbose
-        self.activated = task_mode in {"staged", "dynamic_map_staged"}
+        self.activated = activated
 
         if self.activated:
             rospy.set_param("/last_stage_reached", False)

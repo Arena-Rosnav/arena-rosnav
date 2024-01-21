@@ -2,13 +2,15 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import rospy
+from std_msgs.msg import Float32
+from tools.dynamic_parameter import DynamicParameter
 
 from .constants import REWARD_CONSTANTS
 from .utils import (
     InternalStateInfoUpdate,
     load_rew_fnc,
-    safe_dist_breached,
     min_dist_laser,
+    safe_dist_breached,
 )
 
 
@@ -79,6 +81,10 @@ class RewardFunction:
 
         self._rew_fnc_dict = load_rew_fnc(self._rew_func_name)
         self._reward_units: List["RewardUnit"] = self._setup_reward_function()
+
+        self._goal_radius_updater = DynamicParameter(
+            cls=self, key="goal_radius", message_type=Float32
+        )
 
     def _setup_reward_function(self) -> List["RewardUnit"]:
         """Sets up the reward function.
@@ -166,8 +172,6 @@ class RewardFunction:
 
     def reset(self):
         """Reset before each episode."""
-        self.goal_radius = rospy.get_param("/goal_radius", 0.3)
-
         for reward_unit in self._reward_units:
             reward_unit.reset()
 
@@ -222,8 +226,9 @@ class RewardFunction:
     def goal_radius(self, value) -> None:
         if value < REWARD_CONSTANTS.MIN_GOAL_RADIUS:
             raise ValueError(
-                f"Goal radius smaller than {REWARD_CONSTANTS.MIN_GOAL_RADIUS}"
+                f"Given goal radius ({value}) smaller than {REWARD_CONSTANTS.MIN_GOAL_RADIUS}"
             )
+
         self._goal_radius = value
 
     @property

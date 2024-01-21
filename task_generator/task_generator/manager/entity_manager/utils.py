@@ -169,7 +169,7 @@ class YAMLUtil:
     }
 
     PLUGIN_PROPS_TO_EXTEND: Dict[str, List[str]] = {
-        "DiffDrive": ["odom_pub", "twist_sub", "ground_truth_pub"],
+        "DiffDrive": ["odom_frame_id", "odom_pub", "twist_sub", "ground_truth_pub"],
         "Laser": ["topic"],
     }
 
@@ -183,7 +183,7 @@ class YAMLUtil:
 
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             if rospy.get_param("laser/full_range_laser", False):
-                plugins.append(Config.PLUGIN_FULL_RANGE_LASER.copy())
+                plugins.append(Constants.PLUGIN_FULL_RANGE_LASER.copy())
 
             for plugin in plugins:
                 for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
