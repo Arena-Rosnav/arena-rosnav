@@ -6,12 +6,24 @@ Then starts the map_server node.
 import rospy
 import roslaunch
 
-from map_generator.constants import MAP_FOLDER_NAME, ROSNAV_MAP_FOLDER
+from map_generator.constants import MAP_FOLDER_NAME, ROSNAV_MAP_FOLDER, MAP_GENERATOR_NS
 from map_generator.utils.map import create_empty_map, create_yaml_files
 from map_generator.utils.general import load_map_generator_config
 
 
 def start_map_server():
+    """
+    Starts the map server node.
+
+    This function initializes the ROS node, creates a map server node, and launches it.
+    It also handles the shutdown process when the ROS node is terminated.
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     rospy.init_node("map_server_starter", anonymous=False)
 
     pkg = "map_server"
@@ -42,9 +54,16 @@ def start_map_server():
 
 
 def main():
+    """
+    Main function for map server.
+    It loads the map generator configuration, creates an empty map,
+    generates YAML files, and starts the map server.
+    """
     if rospy.get_param("map_file", "") == MAP_FOLDER_NAME:
         cfg = load_map_generator_config()
-        map_properties = rospy.get_param("map_properties", cfg["map_properties"])
+        map_properties = rospy.get_param(
+            MAP_GENERATOR_NS("map_properties"), cfg["map_properties"]
+        )
 
         create_empty_map(
             height=map_properties["height"],

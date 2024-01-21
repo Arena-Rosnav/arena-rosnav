@@ -2,12 +2,13 @@ from typing import Any, Callable, Dict
 from warnings import warn
 
 import numpy as np
+from rl_utils.utils.observation_collector.constants import DONE_REASONS
 
-from ..constants import REWARD_CONSTANTS, DEFAULTS
+from ..constants import DEFAULTS, REWARD_CONSTANTS
 from ..reward_function import RewardFunction
-from .base_reward_units import RewardUnit, GlobalplanRewardUnit
-from .reward_unit_factory import RewardUnitFactory
 from ..utils import check_params
+from .base_reward_units import GlobalplanRewardUnit, RewardUnit
+from .reward_unit_factory import RewardUnitFactory
 
 # UPDATE WHEN ADDING A NEW UNIT
 __all__ = [
@@ -28,7 +29,11 @@ __all__ = [
 
 @RewardUnitFactory.register("goal_reached")
 class RewardGoalReached(RewardUnit):
-    DONE_INFO = {"is_done": True, "done_reason": 2, "is_success": True}
+    DONE_INFO = {
+        "is_done": True,
+        "done_reason": DONE_REASONS.SUCCESS.name,
+        "is_success": True,
+    }
     NOT_DONE_INFO = {"is_done": False}
 
     @check_params
@@ -68,9 +73,9 @@ class RewardGoalReached(RewardUnit):
         """
         if distance_to_goal < self._reward_function.goal_radius:
             self.add_reward(self._reward)
-            self.add_info(RewardGoalReached.DONE_INFO)
+            self.add_info(self.DONE_INFO)
         else:
-            self.add_info(RewardGoalReached.NOT_DONE_INFO)
+            self.add_info(self.NOT_DONE_INFO)
 
     def reset(self):
         self._goal_radius = self._reward_function.goal_radius
@@ -109,7 +114,7 @@ class RewardSafeDistance(RewardUnit):
 
     def __call__(self, *args: Any, **kwargs: Any):
         violation_in_blind_spot = False
-        if "full_laser_scan" in kwargs:
+        if "full_laser_scan" in kwargs and len(kwargs["full_laser_scan"]) > 0:
             violation_in_blind_spot = kwargs["full_laser_scan"].min() <= self._safe_dist
 
         if (
@@ -117,7 +122,7 @@ class RewardSafeDistance(RewardUnit):
             or violation_in_blind_spot
         ):
             self.add_reward(self._reward)
-            self.add_info(RewardSafeDistance.SAFE_DIST_VIOLATION_INFO)
+            self.add_info(self.SAFE_DIST_VIOLATION_INFO)
 
 
 @RewardUnitFactory.register("no_movement")
@@ -213,7 +218,11 @@ class RewardApproachGoal(RewardUnit):
 
 @RewardUnitFactory.register("collision")
 class RewardCollision(RewardUnit):
-    DONE_INFO = {"is_done": True, "done_reason": 1, "is_success": False}
+    DONE_INFO = {
+        "is_done": True,
+        "done_reason": DONE_REASONS.COLLISION.name,
+        "is_success": False,
+    }
 
     @check_params
     def __init__(
@@ -249,7 +258,7 @@ class RewardCollision(RewardUnit):
         laser_min = self._reward_function.get_internal_state_info("min_dist_laser")
         if laser_min <= self.robot_radius or coll_in_blind_spots:
             self.add_reward(self._reward)
-            self.add_info(RewardCollision.DONE_INFO)
+            self.add_info(self.DONE_INFO)
 
 
 @RewardUnitFactory.register("distance_travelled")

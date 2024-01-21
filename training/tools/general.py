@@ -160,6 +160,7 @@ def load_config(config_name: str) -> dict:
     """
     Load config parameters from config file
     """
+
     config_location = TRAINING_CONSTANTS.PATHS.TRAINING_CONFIGS(config_name)
     with open(config_location, "r", encoding="utf-8") as target:
         config = yaml.load(target, Loader=yaml.FullLoader)
@@ -207,7 +208,8 @@ def generate_discrete_action_dict(
         for linear_action in linear_actions
         for angular_action in angular_actions
     ]
-    discrete_action_space.append((0, 0))
+    if (0, 0) not in discrete_action_space:
+        discrete_action_space.append((0, 0))
 
     return [
         {
