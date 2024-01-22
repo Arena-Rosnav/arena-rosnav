@@ -76,7 +76,7 @@
   <param name="entity_manager" value="$(arg entity_manager)" />
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
-  <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" />
+  <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" ns="map_generator" />
 
 
   <!-- TEST IF YOU NEED THIS -->

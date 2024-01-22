@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-
-    <!-- TODO capture actual args -->
-    <arg name="args" default="" />
+    <arg name="config" default="''"  />
 
     <node name="train_agent"
         type="train_agent.py"
         pkg="training"
-        args="$(arg args)"
-    >
-        <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load" ns="configuration"/>
+        args="--config $(arg config)"
+        output="screen"
+    >   
     </node>
 </launch>
