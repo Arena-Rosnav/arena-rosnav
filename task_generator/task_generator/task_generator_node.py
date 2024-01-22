@@ -51,7 +51,7 @@ def create_default_robot_list(
             agent=agent,
             position=next(gen_init_pos),
             name=name,
-            record_data=False,
+            record_data=rosparam_get(bool, "record_data", False),
             extra=dict(),
         )
     ]
