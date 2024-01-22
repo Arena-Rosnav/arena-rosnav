@@ -2,8 +2,8 @@ algorithm: barn
 episode_per_map: 5
 
 map_properties:
-  width: 72
-  height: 72
+  width: 74
+  height: 74
   resolution: 0.5 # should stay fixed during runtime
 
 algorithm_config:
