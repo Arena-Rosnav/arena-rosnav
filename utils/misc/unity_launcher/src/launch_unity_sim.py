@@ -31,6 +31,10 @@ def launch_unity():
     if isinstance(headless, bool) and headless:
         args += ["-batchmode"]
 
+    # test
+    args += ["-force-vulkan"]
+
+
     subprocess.run([unity_executable_path] + args, check=True)
 
 
