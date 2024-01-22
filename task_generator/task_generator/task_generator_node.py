@@ -264,6 +264,7 @@ class TaskGenerator:
 
         robot_model: str = rosparam_get(str, "/model")
 
+
         if robot_setup_file == "":
             robots = create_default_robot_list(
                 robot_model=self._robot_loader.bind(robot_model),
@@ -272,7 +273,7 @@ class TaskGenerator:
                 agent=rosparam_get(str, "/agent_name", ""),
                 name=f"{self._namespace[1:]}_{robot_model}"
                 if self._train_mode
-                else {robot_model},
+                else robot_model,
             )
         else:
             robots = [
