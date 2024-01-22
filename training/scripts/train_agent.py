@@ -15,7 +15,7 @@ from tools.ros_param_distributor import populate_ros_params
 
 def on_shutdown(model, paths: dict):
     model.env.close()
-    if rospy.get_param("debug_mode"):
+    if not rospy.get_param("debug_mode", False):
         save_model(model, paths, "last_model")
     sys.exit()
 

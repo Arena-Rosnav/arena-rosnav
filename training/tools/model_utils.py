@@ -220,12 +220,33 @@ sys.modules["rl_agent"] = sys.modules["rosnav"]
 sys.modules["rl_utils.rl_utils.utils"] = sys.modules["rosnav.utils"]
 
 
-def load_model(
-    file_name: str,
-    model_path: str,
-    train_env: VecEnv,
-) -> PPO:
-    return PPO.load(os.path.join(model_path, file_name), train_env)
+def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
+    agent_name = config["agent_name"]
+    checkpoint = config["rl_agent"]["checkpoint"]
+    possible_agent_names = [
+        checkpoint,
+        "best_model",
+        "last_model",
+        f"{agent_name}",
+        "model",
+    ]
+
+    for name in possible_agent_names:
+        target_path = os.path.join(PATHS["model"], f"{checkpoint}.zip")
+        if os.path.isfile(target_path):
+            rospy.loginfo(f"Loading model from {target_path}")
+            model = PPO.load(os.path.join(PATHS["model"], name), train_env)
+            break
+
+    if not model:
+        raise FileNotFoundError(
+            f"Could not find model file for agent {agent_name}!"
+            "You might need to change the 'checkpoint' in the config file "
+            "accordingly."
+        )
+
+    update_hyperparam_model(model, PATHS, config)
+    return model
 
 
 def init_callbacks(
