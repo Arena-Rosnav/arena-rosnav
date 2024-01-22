@@ -142,13 +142,13 @@ def get_ppo_instance(
     new_model: bool = (
         config["rl_agent"]["architecture_name"] and not config["rl_agent"]["resume"]
     )
-    model = (
-        instantiate_new_model(
+    if new_model:
+        model = instantiate_new_model(
             agent_description, observation_manager, config, train_env, paths
         )
-        if new_model
-        else load_model(config, train_env, paths)
-    )
+    else:
+        model = load_model(config["rl_agent"]["checkpoint"], paths["model"], train_env)
+        update_hyperparam_model(model, paths, config)
 
     wandb_logging: bool = not config["debug_mode"] and config["monitoring"]["use_wandb"]
 
@@ -222,18 +222,27 @@ sys.modules["rl_utils.rl_utils.utils"] = sys.modules["rosnav.utils"]
 
 def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
     agent_name = config["agent_name"]
-    possible_agent_names = [f"{agent_name}", "best_model", "last_model", "model"]
+    checkpoint = config["rl_agent"]["checkpoint"]
+    possible_agent_names = [
+        checkpoint,
+        "best_model",
+        "last_model",
+        f"{agent_name}",
+        "model",
+    ]
 
     for name in possible_agent_names:
-        if os.path.isfile(os.path.join(PATHS["model"], f"{name}.zip")):
+        target_path = os.path.join(PATHS["model"], f"{checkpoint}.zip")
+        if os.path.isfile(target_path):
+            rospy.loginfo(f"Loading model from {target_path}")
             model = PPO.load(os.path.join(PATHS["model"], name), train_env)
             break
 
     if not model:
         raise FileNotFoundError(
             f"Could not find model file for agent {agent_name}!"
-            "You might need to change the 'agent_name' in the config file "
-            "according to the name of the parent directory of the desired model."
+            "You might need to change the 'checkpoint' in the config file "
+            "accordingly."
         )
 
     update_hyperparam_model(model, PATHS, config)

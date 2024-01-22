@@ -40,3 +40,7 @@ class OBS_DICT_KEYS:
         PEDESTRIAN_MOVING = SemanticAttribute.IS_PEDESTRIAN_MOVING.value
         PEDESTRIAN_VEL_X = SemanticAttribute.PEDESTRIAN_VEL_X.value
         PEDESTRIAN_VEL_Y = SemanticAttribute.PEDESTRIAN_VEL_Y.value
+
+        RELATIVE_LOCATION = "relative_location"
+        RELATIVE_X_VEL = "relative_x_vel"
+        RELATIVE_Y_VEL = "relative_y_vel"

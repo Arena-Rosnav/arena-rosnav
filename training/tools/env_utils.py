@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Tuple, Union
 
 import gym
@@ -32,20 +33,36 @@ def load_vec_normalize(config: dict, paths: dict, env: VecEnv, eval_env: VecEnv)
     Returns:
         Tuple[VecEnv, VecEnv]: Tuple containing the loaded and initialized VecNormalize objects for the environment.
     """
+    agent_name = config["agent_name"]
+    checkpoint = config["rl_agent"]["checkpoint"]
+    possible_agent_names = [
+        checkpoint,
+        "best_model",
+        "last_model",
+        f"{agent_name}",
+        "model",
+    ]
+
+    if not config["rl_agent"]["resume"]:
+        # New agent so init new VecNormalize object
+        normalization_conf = config["rl_agent"]["normalize"]["settings"]
+        env = VecNormalize(env, training=True, **normalization_conf)
+        eval_env = VecNormalize(eval_env, training=False, **normalization_conf)
+        return env, eval_env
+
     if config["rl_agent"]["normalize"]["enabled"]:
-        load_path = os.path.join(paths["model"], "vec_normalize.pkl")
-        if os.path.isfile(load_path):
-            env = VecNormalize.load(load_path=load_path, venv=env)
-            eval_env = VecNormalize.load(load_path=load_path, venv=eval_env)
-            print("Succesfully loaded VecNormalize object from pickle file..")
-        elif not config["rl_agent"]["resume"]:
-            # New agent so init new VecNormalize object
-            normalization_conf = config["rl_agent"]["normalize"]["settings"]
-            env = VecNormalize(env, training=True, **normalization_conf)
-            eval_env = VecNormalize(eval_env, training=False, **normalization_conf)
-        else:
-            raise ValueError("No VecNormalize object found..")
-    return env, eval_env
+        for name in possible_agent_names:
+            load_path = os.path.join(paths["model"], f"vec_normalize_{name}.pkl")
+            if os.path.isfile(load_path):
+                env = VecNormalize.load(load_path=load_path, venv=env)
+                eval_env = VecNormalize.load(load_path=load_path, venv=eval_env)
+                rospy.loginfo(
+                    "Succesfully loaded VecNormalize object from pickle file.."
+                )
+        return env, eval_env
+
+    rospy.logfatal("No VecNormalize object found to load..")
+    sys.exit()
 
 
 def load_vec_framestack(config: dict, env: VecEnv, eval_env: VecEnv):
