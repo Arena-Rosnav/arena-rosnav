@@ -1,11 +1,11 @@
 goal_reached:
-  reward: 15
+  reward: 20
 
 safe_distance:
   reward: -0.1
 
 collision:
-  reward: -10
+  reward: -20
 
 approach_goal:
   pos_factor: 0.5
@@ -25,5 +25,5 @@ two_factor_velocity_difference:
   _on_safe_dist_violation: true
 
 active_heading_direction:
-  r_angle: 0.3
+  r_angle: 0.5
   _on_safe_dist_violation: true
