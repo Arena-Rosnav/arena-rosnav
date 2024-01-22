@@ -123,7 +123,7 @@ class RobotManager:
 
         self._launch_robot()
         self._robot_radius = (
-            rospy.get_param_cached("robot_radius")
+            float(rospy.get_param_cached("robot_radius"))
             if Utils.get_arena_type() == Constants.ArenaType.TRAINING
             else rosparam_get(float, self.namespace("robot_radius"))
         )
