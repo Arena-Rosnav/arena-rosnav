@@ -66,6 +66,7 @@ rl_agent:
   architecture_name: "RosnavResNet_2"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: jackal_RosnavResNet_2_2024_01_13__17_16_40 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  checkpoint: "best_model" # gonna be ignored if resume is not null
 
   frame_stacking:
     enabled: false
