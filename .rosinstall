@@ -9,7 +9,7 @@
 - git:
     local-name: ../arena-unity
     uri: https://github.com/Arena-Rosnav/arena-unity.git
-    version: main
+    version: dynamic-obstacle-loading
 
 # - git:
 #     local-name: ../utils/arena-tools
@@ -73,7 +73,7 @@
 - git:
     local-name: ../arena-simulation-setup
     uri: https://github.com/arena-rosnav/arena-simulation-setup.git
-    version: master
+    version: map_generator_obstacles
 
 - git:
     local-name: ../arena-evaluation
