@@ -11,7 +11,8 @@
   <!-- ___________ ARGS ___________ -->
   <!-- You can launch a single robot and his local_planner with arguments -->
   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]" />
-  <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]" />
+  <arg name="inter_planner" default="bypass" doc="inter planner type [bypass, shortsighted, polite, aggressive, sideways]" />
+  <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav, cohan]" />
   <arg name="simulator" default="flatland" doc="[flatland, gazebo, unity]" />
   <env name="SIMULATOR" value="$(arg simulator)" />
 
@@ -33,13 +34,18 @@
 
   <param name="robot_setup_file" value="$(arg robot_setup_file)" />
   <param name="model" value="$(arg model)" />
+  <param name="inter_planner"  value="$(arg inter_planner)"/>
   <param name="local_planner"  value="$(arg local_planner)"/>
   <param name="agent_name" value="$(arg agent_name)" unless="$(eval arg('local_planner') != 'rosnav')"/>
+  
 
   <param name="complexity" value="$(arg complexity)" />
   
 
-  <arg name="task_mode" default="random" doc="[random, staged, scenario, parametrized, dynamic_map_random, dynamic_map_staged]" />
+  <arg name="tm_robots" default="random"/>
+  <arg name="tm_obstacles" default="random"/>
+  <arg name="tm_modules" default="" />
+  
   <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
   <arg name="show_rviz" default="true" doc="Enables rviz in gazebo" />
   <arg name="rviz_file" default="nav"/>
@@ -60,7 +66,9 @@
   
   <param name="model" value="$(arg model)" />
   <param name="simulator" value="$(arg simulator)" />
-  <param name="task_mode" value="$(arg task_mode)" />
+  <param name="tm_robots" value="$(arg tm_robots)" />
+  <param name="tm_obstacles" value="$(arg tm_obstacles)" />
+  <param name="tm_modules" value="$(arg tm_modules)" />
   <param name="pedsim" type="bool" value="$(arg pedsim)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
@@ -68,7 +76,7 @@
   <param name="entity_manager" value="$(arg entity_manager)" />
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
-  <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" />
+  <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" ns="map_generator" />
 
 
   <!-- TEST IF YOU NEED THIS -->

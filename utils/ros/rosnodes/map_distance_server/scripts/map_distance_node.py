@@ -12,6 +12,8 @@ from nav_msgs.srv import GetMap
 from PIL import Image
 from std_msgs.msg import String
 
+from map_generator.constants import MAP_GENERATOR_NS
+
 
 def nearlyequal(a, b, sigfig=5):
     return round(abs(a - b), sigfig) == 0
@@ -122,7 +124,7 @@ class MapDistanceServer:
         # nearest distance + 1 (cell is one more step away from obstacle than
         # neighbor)
         for x, y in free_space_coordinates:
-            dist = float("inf")
+            dist = -1
 
             for j in range(-1, 2):
                 for i in range(-1, 2):
@@ -182,6 +184,7 @@ class MapDistanceServer:
         # return np.reshape(coordinates_with_length, (height_in_cell, width_in_cell))
 
     def _get_index(self, x, y):
+        # print(x,y, x * self.map.info.width + y)
         return x * self.map.info.width + y
 
 
@@ -229,7 +232,7 @@ class DynamicMapDistanceServer(MapDistanceServer):
 
     def update_map_data(self, new_map_data: list):
         """Updates the map data with the new distance map."""
-        map_properties = rospy.get_param("map_properties")
+        map_properties = rospy.get_param(MAP_GENERATOR_NS("map_properties"))
         width, height = map_properties["width"], map_properties["height"]
 
         required_map_size = len(self.map.data)

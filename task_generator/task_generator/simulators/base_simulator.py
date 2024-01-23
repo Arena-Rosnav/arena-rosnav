@@ -34,14 +34,14 @@ class BaseSimulator:
 
     def before_reset_task(self):
         """
-        Is executed each time before the task is reseted. This is useful in
+        Is executed each time before the task is reset. This is useful in
         order to pause the simulation.
         """
         raise NotImplementedError()
 
     def after_reset_task(self):
         """
-        Is executed after the task is reseted. This is useful to unpause the
+        Is executed after the task is reset. This is useful to unpause the
         simulation.
         """
         raise NotImplementedError()

@@ -1,7 +1,17 @@
+import enum
 from pathlib import Path
 
 import rospkg
 
+from task_generator.shared import Namespace
+
+
+class MapGenerators(enum.Enum):
+    BARN = "barn"
+    ROSNAV = "rosnav"
+
+
+MAP_GENERATOR_NS = Namespace("/map_generator")
 MAP_FOLDER_NAME = "dynamic_map"
 EMPTY_MAP_YAML = {
     "image": "map.png",

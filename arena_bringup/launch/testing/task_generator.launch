@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- I ONLY EXIST FOR COMPATIBILITY REASONS, O CRUEL WORLD -->
 <launch>
-    <arg name="scenario_json_path" default="$(find arena-simulation-setup)/scenarios/empty_map.json"/>
-    <arg name="auto_reset" default="true" />
-
-
-    <!--  ************** task generator  ***************  -->
-    <node pkg="task_generator" name="task_generator_node" type="main.py" output="screen">
-        <param name="scenario_json_path" value="$(arg scenario_json_path)"/>
-        <param name="auto_reset" value="$(arg auto_reset)" />
-        
-        <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load" ns="configuration"/>
-    </node>
+    <include file="$(find task_generator)/launch/task_generator.launch">
+    </include>
 </launch>
