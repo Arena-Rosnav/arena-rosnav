@@ -58,7 +58,7 @@
 - git:
     local-name: ../arena-simulation-setup
     uri: https://github.com/arena-rosnav/arena-simulation-setup.git
-    version: merge-planners
+    version: master
 
 - git:
     local-name: ../arena-evaluation
