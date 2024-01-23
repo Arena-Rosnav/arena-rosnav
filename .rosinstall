@@ -71,7 +71,7 @@
 - git:
     local-name: ../planners/rosnav
     uri: https://github.com/Arena-Rosnav/rosnav-rl.git
-    version: dev
+    version: rename
 
 - git:
     local-name: ../planners/arena-ros
