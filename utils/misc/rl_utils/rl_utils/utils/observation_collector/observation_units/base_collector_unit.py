@@ -5,6 +5,9 @@ import numpy as np
 import rospy
 from geometry_msgs.msg import Pose, Pose2D, PoseStamped
 from nav_msgs.msg import Odometry
+from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import (
+    SemanticAggregateUnit,
+)
 from sensor_msgs.msg import LaserScan
 from task_generator.shared import Namespace
 
@@ -148,15 +151,24 @@ class BaseCollectorUnit(CollectorUnit):
         """
         obs_dict = super().get_observations(obs_dict)
 
-        dist_to_goal, angle_to_goal = get_goal_pose_in_robot_frame(
-            goal_pos=self._subgoal, robot_pos=self._robot_pose
-        )
+        goal_in_robot_frame = SemanticAggregateUnit.get_relative_pos_to_robot(
+            self._robot_pose,
+            np.array([[self._subgoal.x, self._subgoal.y, 1]]),
+        ).squeeze(0)
+
+        dist_to_goal = np.linalg.norm(goal_in_robot_frame)
+        angle_to_goal = np.arctan2(goal_in_robot_frame[1], goal_in_robot_frame[0])
 
         obs_dict.update(
             {
                 OBS_DICT_KEYS.LASER: self._laser,
                 OBS_DICT_KEYS.ROBOT_POSE: self._robot_pose,
-                OBS_DICT_KEYS.GOAL: (dist_to_goal, angle_to_goal),
+                OBS_DICT_KEYS.GOAL_DIST_ANGLE: (
+                    dist_to_goal,
+                    angle_to_goal,
+                ),
+                OBS_DICT_KEYS.GOAL_LOCATION: (self._subgoal.x, self._subgoal.y),
+                OBS_DICT_KEYS.GOAL_LOCATION_IN_ROBOT_FRAME: goal_in_robot_frame,
                 OBS_DICT_KEYS.DISTANCE_TO_GOAL: dist_to_goal,
                 OBS_DICT_KEYS.LAST_ACTION: kwargs.get(
                     "last_action", np.array([0, 0, 0])
