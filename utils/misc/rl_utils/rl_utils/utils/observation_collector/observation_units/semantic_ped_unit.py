@@ -25,6 +25,7 @@ class SemanticAggregateUnit(AggregateCollectorUnit):
             np.ndarray: The relative positions of distant pedestrians to the robot.
         """
         robot_pose_array = np.array([robot_pose.x, robot_pose.y, robot_pose.theta])
+
         # homogeneous transformation matrix: map_T_robot
         map_T_robot = np.array(
             [
@@ -41,11 +42,14 @@ class SemanticAggregateUnit(AggregateCollectorUnit):
                 [0, 0, 1],
             ]
         )
+
         robot_T_map = np.linalg.inv(map_T_robot)
+
         ped_pos = np.stack(
             [[frame.location.x, frame.location.y, 1] for frame in distant_frames.points]
         )
-        return np.matmul(robot_T_map, ped_pos.T).T
+
+        return np.einsum("ij,kj->ki", robot_T_map, ped_pos)[:, :2]
 
     @staticmethod
     def get_relative_vel_to_robot(

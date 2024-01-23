@@ -157,6 +157,7 @@ class BaseCollectorUnit(CollectorUnit):
                 OBS_DICT_KEYS.LASER: self._laser,
                 OBS_DICT_KEYS.ROBOT_POSE: self._robot_pose,
                 OBS_DICT_KEYS.GOAL: (dist_to_goal, angle_to_goal),
+                OBS_DICT_KEYS.GOAL_LOCATION: (self._subgoal.x, self._subgoal.y),
                 OBS_DICT_KEYS.DISTANCE_TO_GOAL: dist_to_goal,
                 OBS_DICT_KEYS.LAST_ACTION: kwargs.get(
                     "last_action", np.array([0, 0, 0])

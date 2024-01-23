@@ -703,7 +703,7 @@ class RewardActiveHeadingDirection(RewardUnit):
 
     def __call__(
         self,
-        goal_in_robot_frame: np.ndarray,
+        goal_location: tuple,
         action: np.ndarray,
         relative_location: np.ndarray,
         relative_x_vel: np.ndarray,
@@ -734,7 +734,7 @@ class RewardActiveHeadingDirection(RewardUnit):
             return 0.0
 
         # prefer goal theta:
-        theta_pre = goal_in_robot_frame[1]
+        theta_pre = np.arctan2(goal_location[1], goal_location[0])
         d_theta = theta_pre
 
         v_x = action[0]
