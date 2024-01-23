@@ -14,42 +14,7 @@ class Defaults:
         no_of_episodes = 5
 
 
-<<<<<<< HEAD
-class _Constants:
-
-    @property
-    def GOAL_TOLERANCE_RADIUS(self):
-        return rosparam_get(float, "goal_radius", 1.0)
-
-    @property
-    def GOAL_TOLERANCE_ANGLE(self):
-        return rosparam_get(float, "goal_tolerance_angle", 30 * math.pi / 180)
-
-    @property
-    def TIMEOUT(self):
-        return rosparam_get(float, "timeout", 3*60)  # 3 min
-
-    @property
-    def WAIT_FOR_SERVICE_TIMEOUT(self):
-        return rosparam_get(float, "timeout_wait_for_service", 60)  # 60 secs
-
-    @property
-    def MAX_RESET_FAIL_TIMES(self):
-        return rosparam_get(int, "max_reset_fail_times", 10)
-
-    class ObstacleManager:
-        DYNAMIC_OBSTACLES = 15
-        STATIC_OBSTACLES = 15
-        INTERACTIVE_OBSTACLES = 15
-
-        OBSTACLE_MAX_RADIUS = 0.6
-
-    class RobotManager:
-        SPAWN_ROBOT_SAFE_DIST = 0.25
-
-=======
 class Constants:
->>>>>>> master
     class Simulator(Enum):
         FLATLAND = "flatland"
         GAZEBO = "gazebo"
