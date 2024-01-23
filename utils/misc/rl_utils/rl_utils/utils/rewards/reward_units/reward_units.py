@@ -703,7 +703,7 @@ class RewardActiveHeadingDirection(RewardUnit):
 
     def __call__(
         self,
-        goal_location: tuple,
+        goal_in_robot_frame: np.ndarray,
         action: np.ndarray,
         relative_location: np.ndarray,
         relative_x_vel: np.ndarray,
@@ -734,7 +734,7 @@ class RewardActiveHeadingDirection(RewardUnit):
             return 0.0
 
         # prefer goal theta:
-        theta_pre = np.arctan2(goal_location[1], goal_location[0])
+        theta_pre = goal_in_robot_frame[1]
         d_theta = theta_pre
 
         v_x = action[0]
@@ -759,7 +759,7 @@ class RewardActiveHeadingDirection(RewardUnit):
                         ped_theta = np.arctan2(p_y, p_x)
                         vo_theta = np.arctan2(
                             3 * self.robot_radius,
-                            np.sqrt(ped_dis**2 - (3 * self.robot_radius) ** 2),
+                            np.sqrt(abs(ped_dis**2 - (3 * self.robot_radius) ** 2)),
                         )
                         # Check if the robot's trajectory intersects with the pedestrian's VO cone
                         theta_rp = np.arctan2(
