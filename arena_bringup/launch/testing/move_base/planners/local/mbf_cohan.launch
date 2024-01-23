@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- Arguments -->
+  <arg name="model" default="burger"/>
+  <arg name="speed" default="0.22"/>
+
+  <arg name="namespace" />
+  <arg name="frame" />
+
+  <remap from="cmd_vel" to="cmd_vel_actual" />
+
+  <!-- Load usual move base params -->
+  <group ns="move_base_flex">
+    
+    <rosparam file="$(find arena_bringup)/params/mbf/local/hateb_local_planner_params.yaml"
+      command="load" subst_value="True" />
+    <rosparam
+      file="$(find arena-simulation-setup)/robot/$(arg model)/configs/mbf/hateb_local_planner_params.yaml"
+      command="load" subst_value="True" />
+
+    <param name="base_local_planner" value="HATebLocalPlannerROS" />
+    <param name="base_global_planner" value="GlobalPlanner" />
+    <param name="GlobalPlanner/allow_unknown" value="true" />
+  </group>
+
+
+  <!-- Stage agents to /tracked_agents -->
+  <node name="agents" pkg="cohan_layers" type="agents_bridge.py" output="screen"/>
+
+  <!-- agent pose prediction, for the local-planning -->
+  <node pkg="agent_path_prediction" type="agent_path_prediction" name="agent_path_predict" output="screen" >
+    <remap from="map" to="/map"/>
+    <remap from="$(arg namespace)/agent_path_predict/tracked_agents" to="/tracked_agents"/>
+    <remap from="$(arg namespace)/agent_path_predict/external_agent_trajs" to="/move_base_node/HATebLocalPlannerROS/agent_local_trajs"/>
+
+    <param name="velobs_mul" value="1.0"/>
+    <param name="velscale_mul" value="2.0"/>
+  </node>
+
+  <node pkg="agent_path_prediction" type="predict_goal.py" name="agent_goal_predict" output="screen">
+  </node>
+
+  <!-- Filter the agents from laser scan -->
+  <include file="$(find cohan_layers)/launch/agent_filter.launch">
+    <!--<arg name="namespace" value="$(arg namespace)"/>-->
+  </include>
+
+</launch>
