@@ -21,6 +21,7 @@ import nav_msgs.msg as nav_msgs
 import geometry_msgs.msg as geometry_msgs
 import std_srvs.srv as std_srvs
 
+from std_msgs import msg
 
 class RobotManager:
     """
@@ -81,6 +82,18 @@ class RobotManager:
         )
 
         self._position = self._start_pos
+
+        # Variables for task reset (only for go1)
+        if (self._robot.model.name == "go1"):
+            # Task reset
+            self.reset_task = msg.Bool(data=False)
+            self.reset_task_pub = rospy.Publisher('reset_task', msg.Bool, queue_size=10)
+            self.current_time = 0.0
+            self.time_passive = 7.0 # s
+            # Danger mode reset
+            self.danger_mode = False
+            self.reset_already_once = False
+            rospy.Subscriber("danger_mode",msg.Bool,self._danger_mode_callback)
 
     def set_up_robot(self):
         self._robot = dataclasses.replace(
@@ -202,10 +215,28 @@ class RobotManager:
         # https://gamedev.stackexchange.com/a/4472
         angle_to_goal: float = np.pi - np.abs(np.abs(goal[2] - start[2]) - np.pi)
 
-        return (
-            distance_to_goal < self._goal_tolerance_distance
-            and angle_to_goal < self._goal_tolerance_angle
-        )
+        if (self._robot.model.name == "go1"):
+            # Danger mode reset
+            if self.danger_mode and not self.reset_already_once:
+                self.reset_already_once = True
+                return 1
+            else:
+                self.reset_already_once = False
+            # Task reset
+            if distance_to_goal < self._goal_tolerance_distance and angle_to_goal < self._goal_tolerance_angle and not self.reset_task.data:
+                self.reset_task.data = True
+                self.reset_task_pub.publish(self.reset_task)
+                self.current_time = rospy.get_rostime().secs
+        
+            if self.reset_task.data and rospy.get_rostime().secs-self.current_time >= self.time_passive:
+                self.reset_task.data = False
+                self.reset_task_pub.publish(self.reset_task)
+                return 1
+
+            return 0
+
+        else:
+            return distance_to_goal < self._goal_tolerance_distance and angle_to_goal < self._goal_tolerance_angle
 
     def _publish_goal_periodically(self, *args, **kwargs):
         if self._goal_pos is not None:
@@ -290,3 +321,7 @@ class RobotManager:
             current_position.position.y,
             rot.as_euler("xyz")[2],
         )
+
+    def _danger_mode_callback(self,msg: msg.Bool):
+        self.danger_mode = msg.data
+        print("Mode:", self.danger_mode)
