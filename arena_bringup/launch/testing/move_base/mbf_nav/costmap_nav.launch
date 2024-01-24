@@ -8,6 +8,8 @@
     <arg name="inter_planner" />
     <arg name="local_planner" />
 
+    <arg name="agent_name" default="$(arg model)" if="$(eval arg('local_planner') == 'rosnav')" />
+
     <include file="$(find arena_bringup)/launch/testing/move_base/planners/local/mbf_$(arg local_planner).launch">
         <arg name="model" value="$(arg model)" />
         <arg name="speed" value="$(arg speed)" />
