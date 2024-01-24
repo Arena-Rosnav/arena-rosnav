@@ -221,7 +221,7 @@ sys.modules["rl_utils.rl_utils.utils"] = sys.modules["rosnav.utils"]
 
 
 def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
-    agent_name = config["agent_name"]
+    agent_name = config["rl_agent"]["resume"]
     checkpoint = config["rl_agent"]["checkpoint"]
     possible_agent_names = [
         checkpoint,
