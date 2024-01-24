@@ -147,7 +147,7 @@ def get_ppo_instance(
             agent_description, observation_manager, config, train_env, paths
         )
     else:
-        model = load_model(config["rl_agent"]["checkpoint"], paths["model"], train_env)
+        model = load_model(config, train_env, paths)
         update_hyperparam_model(model, paths, config)
 
     wandb_logging: bool = not config["debug_mode"] and config["monitoring"]["use_wandb"]
@@ -221,7 +221,7 @@ sys.modules["rl_utils.rl_utils.utils"] = sys.modules["rosnav.utils"]
 
 
 def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
-    agent_name = config["rl_agent"]["resume"]
+    agent_name = config["agent_name"]
     checkpoint = config["rl_agent"]["checkpoint"]
     possible_agent_names = [
         checkpoint,
