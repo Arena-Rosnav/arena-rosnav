@@ -122,7 +122,7 @@ class Mod_Staged(TM_Module):
 
         rospy.Subscriber(
             os.path.join(
-                Namespace(self._TASK.namespace).simulation_ns,
+                self._TASK.namespace,
                 self.TOPIC_NEXT_STAGE,
             ),
             std_msgs.Bool,
@@ -134,7 +134,7 @@ class Mod_Staged(TM_Module):
 
         rospy.Subscriber(
             os.path.join(
-                Namespace(self._TASK.namespace).simulation_ns,
+                self._TASK.namespace,
                 self.TOPIC_PREVIOUS_STAGE,
             ),
             std_msgs.Bool,
