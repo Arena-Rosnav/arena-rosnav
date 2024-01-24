@@ -29,7 +29,6 @@ class Constants:
         FLATLAND = "flatland"
 
     class TaskMode:
-
         @enum.unique
         class TM_Obstacles(enum.Enum):
             PARAMETRIZED = "parametrized"
@@ -71,7 +70,7 @@ class Constants:
         "name": "full_static_laser",
         "frame": "full_laser",
         "topic": "full_scan",
-        "body": "link_base",
+        "body": "base_link",
         "broadcast_tf": "true",
         "origin": [0, 0, 0],
         "range": 2.0,
@@ -83,10 +82,12 @@ class Constants:
 
 ### TaskConfig
 
+
 @dataclasses.dataclass
 class TaskConfig_General:
     WAIT_FOR_SERVICE_TIMEOUT: float
     MAX_RESET_FAIL_TIMES: int
+
 
 @dataclasses.dataclass
 class TaskConfig_Robot:
@@ -94,6 +95,7 @@ class TaskConfig_Robot:
     GOAL_TOLERANCE_ANGLE: float
     SPAWN_ROBOT_SAFE_DIST: float
     TIMEOUT: float
+
 
 @dataclasses.dataclass
 class TaskConfig_Obstacles:
@@ -112,6 +114,7 @@ class TaskConfig_Obstacles:
 
     OBSTACLE_MAX_RADIUS: float
 
+
 @dataclasses.dataclass
 class TaskConfig:
     General: TaskConfig_General
@@ -120,35 +123,53 @@ class TaskConfig:
 
 
 def reconfigure() -> TaskConfig:
-
     return TaskConfig(
         General=TaskConfig_General(
-            WAIT_FOR_SERVICE_TIMEOUT = rosparam_get(float, "timeout_wait_for_service", 60),  # 60 secs
-            MAX_RESET_FAIL_TIMES = rosparam_get(int, "max_reset_fail_times", 10),
+            WAIT_FOR_SERVICE_TIMEOUT=rosparam_get(
+                float, "timeout_wait_for_service", 60
+            ),  # 60 secs
+            MAX_RESET_FAIL_TIMES=rosparam_get(int, "max_reset_fail_times", 10),
         ),
         Robot=TaskConfig_Robot(
-            GOAL_TOLERANCE_RADIUS = rosparam_get(float, "goal_radius", 1.0),
-            GOAL_TOLERANCE_ANGLE = rosparam_get(float, "goal_tolerance_angle", 30 * math.pi / 180),
-            SPAWN_ROBOT_SAFE_DIST = 0.25,
-            TIMEOUT = rosparam_get(float, "timeout", 3*60),  # 3 min
+            GOAL_TOLERANCE_RADIUS=rosparam_get(float, "goal_radius", 1.0),
+            GOAL_TOLERANCE_ANGLE=rosparam_get(
+                float, "goal_tolerance_angle", 30 * math.pi / 180
+            ),
+            SPAWN_ROBOT_SAFE_DIST=0.25,
+            TIMEOUT=rosparam_get(float, "timeout", 3 * 60),  # 3 min
         ),
         Obstacles=TaskConfig_Obstacles(
-            MIN_DYNAMIC_OBS = rosparam_get(int, "~configuration/task_mode/random/interactive/min", 0),
-            MAX_DYNAMIC_OBS = rosparam_get(int, "~configuration/task_mode/random/interactive/max", 0),
-
-            MIN_STATIC_OBS = rosparam_get(int, "~configuration/task_mode/random/static/min", 0),
-            MAX_STATIC_OBS = rosparam_get(int, "~configuration/task_mode/random/static/max", 0),
-
-            MIN_INTERACTIVE_OBS = rosparam_get(int, "~configuration/task_mode/random/interactive/min", 0),
-            MAX_INTERACTIVE_OBS = rosparam_get(int, "~configuration/task_mode/random/interactive/max", 0),
-
-            MODELS_DYNAMIC_OBSTACLES = rosparam_get(list, "~configuration/task_mode/random/dynamic/models", []),
-            MODELS_INTERACTIVE_OBSTACLES = rosparam_get(list, "~configuration/task_mode/random/interactive/models", []),
-            MODELS_STATIC_OBSTACLES = rosparam_get(list, "~configuration/task_mode/random/static/models", []),
-
-            OBSTACLE_MAX_RADIUS = 15
-        )
+            MIN_DYNAMIC_OBS=rosparam_get(
+                int, "~configuration/task_mode/random/interactive/min", 0
+            ),
+            MAX_DYNAMIC_OBS=rosparam_get(
+                int, "~configuration/task_mode/random/interactive/max", 0
+            ),
+            MIN_STATIC_OBS=rosparam_get(
+                int, "~configuration/task_mode/random/static/min", 0
+            ),
+            MAX_STATIC_OBS=rosparam_get(
+                int, "~configuration/task_mode/random/static/max", 0
+            ),
+            MIN_INTERACTIVE_OBS=rosparam_get(
+                int, "~configuration/task_mode/random/interactive/min", 0
+            ),
+            MAX_INTERACTIVE_OBS=rosparam_get(
+                int, "~configuration/task_mode/random/interactive/max", 0
+            ),
+            MODELS_DYNAMIC_OBSTACLES=rosparam_get(
+                list, "~configuration/task_mode/random/dynamic/models", []
+            ),
+            MODELS_INTERACTIVE_OBSTACLES=rosparam_get(
+                list, "~configuration/task_mode/random/interactive/models", []
+            ),
+            MODELS_STATIC_OBSTACLES=rosparam_get(
+                list, "~configuration/task_mode/random/static/models", []
+            ),
+            OBSTACLE_MAX_RADIUS=15,
+        ),
     )
+
 
 Config = reconfigure()
 
@@ -183,8 +204,6 @@ pedsim_ns = Namespace(
     "task_generator_node/configuration/pedsim/default_actor_config")
 
 # TODO make everything dynamic_reconfigure
-
-
 def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     """
     load pedsim param
@@ -197,12 +216,8 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
 
     if isinstance(val, list):
         lo, hi = val[:2]
-
-        def gen(): return min(
-            hi,
-            max(lo,
-                random.normalvariate((hi + lo) / 2, (hi - lo) / 6)
-                )
+        gen = lambda: min(
+            hi, max(lo, random.normalvariate((hi + lo) / 2, (hi - lo) / 6))
         )
         # gen = lambda: random.uniform(lo, hi)
 

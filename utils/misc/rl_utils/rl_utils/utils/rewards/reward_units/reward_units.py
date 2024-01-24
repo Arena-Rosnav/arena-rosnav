@@ -759,7 +759,7 @@ class RewardActiveHeadingDirection(RewardUnit):
                         ped_theta = np.arctan2(p_y, p_x)
                         vo_theta = np.arctan2(
                             3 * self.robot_radius,
-                            np.sqrt(ped_dis**2 - (3 * self.robot_radius) ** 2),
+                            np.sqrt(abs(ped_dis**2 - (3 * self.robot_radius) ** 2)),
                         )
                         # Check if the robot's trajectory intersects with the pedestrian's VO cone
                         theta_rp = np.arctan2(

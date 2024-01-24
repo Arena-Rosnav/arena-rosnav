@@ -12,7 +12,7 @@ from rl_utils.utils.observation_collector.constants import OBS_DICT_KEYS
 class SemanticAggregateUnit(AggregateCollectorUnit):
     @staticmethod
     def get_relative_pos_to_robot(
-        robot_pose: Pose2D, distant_frames: pedsim_msgs.SemanticData
+        robot_pose: Pose2D, distant_frames: np.ndarray
     ) -> np.ndarray:
         """
         Calculates the relative positions of distant pedestrians to the robot.
@@ -25,6 +25,7 @@ class SemanticAggregateUnit(AggregateCollectorUnit):
             np.ndarray: The relative positions of distant pedestrians to the robot.
         """
         robot_pose_array = np.array([robot_pose.x, robot_pose.y, robot_pose.theta])
+
         # homogeneous transformation matrix: map_T_robot
         map_T_robot = np.array(
             [
@@ -41,11 +42,10 @@ class SemanticAggregateUnit(AggregateCollectorUnit):
                 [0, 0, 1],
             ]
         )
+
         robot_T_map = np.linalg.inv(map_T_robot)
-        ped_pos = np.stack(
-            [[frame.location.x, frame.location.y, 1] for frame in distant_frames.points]
-        )
-        return np.matmul(robot_T_map, ped_pos.T).T
+
+        return np.einsum("ij,kj->ki", robot_T_map, distant_frames)[:, :2]
 
     @staticmethod
     def get_relative_vel_to_robot(
@@ -90,13 +90,14 @@ class SemanticAggregateUnit(AggregateCollectorUnit):
     ) -> Dict[str, Any]:
         obs_dict = super().get_observations(obs_dict, *args, **kwargs)
         if len(obs_dict[SemanticAttribute.IS_PEDESTRIAN.value].points) > 0:
+            ped_data = obs_dict[OBS_DICT_KEYS.SEMANTIC.PEDESTRIAN_LOCATION.value].points
             obs_dict[
                 OBS_DICT_KEYS.SEMANTIC.RELATIVE_LOCATION.value
             ] = SemanticAggregateUnit.get_relative_pos_to_robot(
                 robot_pose=obs_dict[OBS_DICT_KEYS.ROBOT_POSE],
-                distant_frames=obs_dict[
-                    OBS_DICT_KEYS.SEMANTIC.PEDESTRIAN_LOCATION.value
-                ],
+                distant_frames=np.stack(
+                    [[frame.location.x, frame.location.y, 1] for frame in ped_data]
+                ),
             )
 
             (
