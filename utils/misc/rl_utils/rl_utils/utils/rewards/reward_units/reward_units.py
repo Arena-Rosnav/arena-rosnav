@@ -755,11 +755,17 @@ class RewardActiveHeadingDirection(RewardUnit):
                     p_vy = ped_y_vel
 
                     ped_dis = np.linalg.norm([p_x, p_y])
+                    
                     if ped_dis <= self._ped_min_dist:
                         ped_theta = np.arctan2(p_y, p_x)
+                        
+                        # 3*robot_radius:= estimation for sum of the pedestrian radius and the robot radius
+                        vector = ped_dis**2 - (3 * self.robot_radius) ** 2
+                        if vector < 0: continue # in this case the robot likely crashed into the pedestrian, disregard this pedestrian
+                        
                         vo_theta = np.arctan2(
                             3 * self.robot_radius,
-                            np.sqrt(abs(ped_dis**2 - (3 * self.robot_radius) ** 2)),
+                            np.sqrt(vector),
                         )
                         # Check if the robot's trajectory intersects with the pedestrian's VO cone
                         theta_rp = np.arctan2(
