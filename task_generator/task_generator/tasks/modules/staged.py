@@ -163,7 +163,9 @@ class Mod_Staged(TM_Module):
 
         if self.__current_stage != self.__target_stage:
             self.__current_stage = self.__target_stage
-            rospy.loginfo(f"Loading stage {self.__current_stage}")
+            rospy.loginfo(
+                f"[{self._TASK.namespace}] Loading stage {self.__current_stage}"
+            )
 
             # only update cpmfogiratopm with one task module instance
             if "sim_1" in rospy.get_name() or self.__debug_mode:
@@ -204,6 +206,9 @@ class Mod_Staged(TM_Module):
                 rospy.set_param(
                     self.PARAM_LAST_STAGE_REACHED,
                     self.__current_stage == self.MAX_STAGE,
+                )
+                rospy.set_param(
+                    self.NODE_CONFIGURATION(self.PARAM_INDEX), self.__current_stage
                 )
 
             # The current stage is stored inside the config file for when the training is stopped and later continued, the correct stage can be restored.
@@ -285,7 +290,7 @@ class Mod_Staged(TM_Module):
         """
         Flag indicating whether the module is running in evaluation simulation mode.
         """
-        return self._TASK.namespace == "eval_sim"
+        return "eval_sim" in self._TASK.namespace
 
     @property
     def MIN_STAGE(self) -> StageIndex:
