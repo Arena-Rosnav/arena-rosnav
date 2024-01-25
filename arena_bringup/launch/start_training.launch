@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
   <!-- CONSTANTS -->
-  <param name="SIMULATOR" value="flatland" />
+  <!-- <param name="SIMULATOR" value="flatland" /> -->
+  <arg name="SIMULATOR" value="unity" />
+  <param name="SIMULATOR" value="$(arg SIMULATOR)" />
+  <param name="simulator" value="$(arg SIMULATOR)" />
   <param name="local_planner" value="rosnav" />
 
 
@@ -57,12 +60,14 @@
   <include file="$(find arena_bringup)/launch/training/single_env_training.launch">
     <arg name="ns" value="eval_sim" />
     <arg name="model" value="$(arg model)" />
+    <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
   </include>
 
   <include file="$(find arena_bringup)/launch/training/start_envs.launch">
     <arg name="num_envs" value="$(arg num_envs)" />
     <arg name="ns_prefix" value="$(arg ns_prefix)" />
     <arg name="model" value="$(arg model)" />
+    <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
   </include> 
   
   <node pkg="task_generator" name="task_generator_server" type="server.py" output="screen"/>
