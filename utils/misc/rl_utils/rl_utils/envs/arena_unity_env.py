@@ -8,11 +8,12 @@ from typing import Tuple
 import gymnasium
 import numpy as np
 import rospy
-from flatland_msgs.msg import StepWorld
+from rosgraph_msgs.msg import Clock
 from geometry_msgs.msg import Twist
 from rl_utils.utils.observation_collector.constants import DONE_REASONS
 from rl_utils.utils.observation_collector.observation_manager import ObservationManager
 from rl_utils.utils.rewards.reward_function import RewardFunction
+from rl_utils.utils.arena_unity_utils.unity_timer import UnityTimer
 from rosnav.model.base_agent import BaseAgent
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
 from std_srvs.srv import Empty
@@ -30,6 +31,8 @@ def get_ns_idx(ns: str):
 
 
 class ArenaUnityEnv(gymnasium.Env):
+    """That's an environment for Arena Unity
+    """
     
     metadata = {"render_modes": ["human"]}
 
@@ -115,13 +118,12 @@ class ArenaUnityEnv(gymnasium.Env):
 
         self.agent_action_pub = rospy.Publisher(self.ns("cmd_vel"), Twist, queue_size=1)
 
-        # service clients
-        self._service_name_step = self.ns.simulation_ns("step_world")
-        self._step_world_publisher = rospy.Publisher(
-            self._service_name_step, StepWorld, queue_size=10
-        )
-        self._step_world_srv = rospy.ServiceProxy(
-            self._service_name_step, Empty, persistent=True
+        # Unity specific 
+        clock_topic = self.ns.simulation_ns("clock")       
+        self._unity_timer = UnityTimer(
+            self._step_size,
+            rospy.wait_for_message(clock_topic, Clock, timeout=10),
+            clock_topic
         )
 
     def _pub_action(self, action: np.ndarray) -> Twist:
@@ -151,12 +153,11 @@ class ArenaUnityEnv(gymnasium.Env):
             tuple: A tuple containing the encoded observation, reward, done flag, info dictionary, and False flag.
 
         """
+        if self._is_train_mode:
+            self._unity_timer.wait_for_next_update()
 
         decoded_action = self._decode_action(action)
         self._pub_action(decoded_action)
-
-        if self._is_train_mode:
-            self.call_service_takeSimStep()
 
         obs_dict = self.observation_collector.get_observations(
             last_action=self._last_action
@@ -186,13 +187,8 @@ class ArenaUnityEnv(gymnasium.Env):
             info,
         )
 
-    def call_service_takeSimStep(self, t: float = None, srv_call: bool = True):
-        if srv_call:
-            self._step_world_srv()
-        request = StepWorld()
-        request.required_time = self._step_size if t is None else t
-
-        self._step_world_publisher.publish(request)
+    def unity_clock_cb(self, time_msg: Clock):
+        pass
 
     def reset(self, seed=None, options=None):
         """
@@ -222,7 +218,7 @@ class ArenaUnityEnv(gymnasium.Env):
 
         if self._is_train_mode:
             self.agent_action_pub.publish(Twist())
-            self.call_service_takeSimStep(t=0.1)
+            self._unity_timer.wait_for_next_update()
 
         obs_dict = self.observation_collector.get_observations()
         info_dict = {}
