@@ -119,10 +119,11 @@ class ArenaUnityEnv(gymnasium.Env):
         self.agent_action_pub = rospy.Publisher(self.ns("cmd_vel"), Twist, queue_size=1)
 
         # Unity specific 
-        clock_topic = self.ns.simulation_ns("clock")       
+        clock_topic = self.ns.simulation_ns("clock")
+        clock_msg = rospy.wait_for_message(clock_topic, Clock, timeout=10)
         self._unity_timer = UnityTimer(
             self._step_size,
-            rospy.wait_for_message(clock_topic, Clock, timeout=10),
+            rospy.Time(clock_msg.clock.secs, clock_msg.clock.nsecs),
             clock_topic
         )
 
