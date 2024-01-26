@@ -62,7 +62,7 @@
       </node>
     </group>
 
-    <node pkg="arena-evaluation" type="data_recorder_node.py" name="data_recorder_node"
+    <node pkg="arena-evaluation" type="data_recorder_node" name="data_recorder_node"
       if="$(eval arg('record_data'))">
       <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load"
         ns="configuration" />

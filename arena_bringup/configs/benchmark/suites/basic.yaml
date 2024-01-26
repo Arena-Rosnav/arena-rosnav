@@ -1,16 +1,16 @@
 stages:
   - name: scenario
-    episodes: 10
+    episodes: 1
     robot: jackal
-    map: map7
+    map: map_empty
     tm_robots: scenario
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: map7.json
+        file: default.json
 
   - name: scenario_random
-    episodes: 10
+    episodes: 4
     robot: jackal
     map: map_empty
     tm_robots: scenario
@@ -32,23 +32,4 @@ stages:
           max: 5
           models: ["actor1"]
 
-  - name: random
-    episodes: 10
-    robot: jackal
-    map: map_empty
-    tm_robots: random
-    tm_obstacles: random
-    config:
-      RANDOM:
-        static:
-          min: 5
-          max: 10
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 3
-          max: 5
-          models: ["actor1"]
+

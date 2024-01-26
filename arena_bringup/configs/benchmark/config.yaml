@@ -3,7 +3,7 @@ suite:
   scale_episodes: 1
 
 contest:
-  config: teb.yaml
+  config: inter.yaml
 
 general:
   simulator: flatland
