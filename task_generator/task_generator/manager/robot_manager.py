@@ -174,14 +174,14 @@ class RobotManager:
             self.move_robot_to_pos(start_pos)
 
             if self._robot.record_data:
-                rospy.set_param(self.namespace("goal"), list(self._goal_pos))
+                rospy.set_param(self.namespace("start"), [float(v) for v in self._start_pos])
 
         if goal_pos is not None:
             self._goal_pos = goal_pos
             self._publish_goal(self._goal_pos)
 
             if self._robot.record_data:
-                rospy.set_param(self.namespace("start"), list(self._start_pos))
+                rospy.set_param(self.namespace("goal"), [float(v) for v in self._goal_pos])
 
         try:
             self._clear_costmaps_srv()

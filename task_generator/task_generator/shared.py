@@ -344,7 +344,7 @@ class Robot(RobotProps):
         inter_planner = str(obj.get("inter", ""))
         local_planner = str(obj.get("planner", ""))
         agent = str(obj.get("agent", ""))
-        record_data = bool(obj.get("record_data", False))
+        record_data = bool(obj.get("record_data", rosparam_get(bool, "record_data", False)))
 
         return Robot(
             name=name,

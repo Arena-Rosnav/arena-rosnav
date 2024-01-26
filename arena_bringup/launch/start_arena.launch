@@ -139,12 +139,14 @@
   </include>
 
   <!-- Launch pedsim agent spawner  -->
-  
-  <include file="$(find pedsim_ros)/launch/pedsim.launch" if="$(eval arg('pedsim'))">
-    <arg name="sfm" value="$(arg sfm)"/>
-    <arg name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" />
-    <arg name="visualize" value="true" />
-  </include>
+  <group if="$(eval arg('pedsim'))">
+    <include file="$(find pedsim_ros)/launch/pedsim.launch">
+      <arg name="sfm" value="$(arg sfm)"/>
+      <arg name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" />
+      <arg name="visualize" value="true" />
+    </include>
+    <node pkg="arena-evaluation" ns="pedsim_simulator" type="data_recorder_node.py" name="data_recorder_node" if="$(eval arg('record_data'))" />
+  </group>
 
   <node type="create_config_file.py" pkg="rviz_utils" name="rviz_config_file_creator" />
   

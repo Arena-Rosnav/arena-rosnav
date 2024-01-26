@@ -19,7 +19,6 @@
 
   <arg name="complexity" default="1" />
 
-  <!-- TODO: Add data recorder -->
   <arg name="record_data" default="false" />
 
   <param name="model" value="$(arg model)" />
@@ -41,6 +40,7 @@
 
   <group ns="$(arg namespace)">
     <param name="local_planner" value="$(arg local_planner)" />
+    <param name="inter_planner" value="$(arg inter_planner)" />
     <param name="agent_name" value="$(arg agent_name)"
       unless="$(eval arg('local_planner') != 'rosnav')" />
     <param name="model" value="$(arg model)" />
