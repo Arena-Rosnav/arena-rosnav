@@ -22,7 +22,7 @@ The Map-Generator encapsulates the option of providing different algorithms for 
 
 ## MECHANISM
 
-![mechanism](mechanism.png)
+![mechanism](mechanism2.png)
 
 | Line | Publisher        | on topic                   | Subscriber       |
 | ---- | ---------------- | -------------------------- | ---------------- |
