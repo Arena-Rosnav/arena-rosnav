@@ -146,8 +146,9 @@ class MapGeneratorNode:
 
         obst_msg = MapObstacles()
         if obstacle_data != {}:
-            obst_msg.data = MapGeneratorNode.preprocess_map_data(
-                obstacle_data["occupancy"])
+            print(obstacle_data)
+            obst_msg.data = self._preprocess_map_data(
+                grid_map=obstacle_data["occupancy"])
             obst_msg.obstacles = obstacle_data["obstacles"]
 
         self._map_obst_pub.publish(obst_msg)

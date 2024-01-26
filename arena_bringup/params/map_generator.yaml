@@ -1,38 +1,27 @@
-algorithm: barn
+algorithm: rosmap
 episode_per_map: 5
 
 map_properties:
-  width: 74
-  height: 74
-  resolution: 0.5 # should stay fixed during runtime
+  width: 50
+  height: 50
+  resolution: 0.5
 
 algorithm_config:
-  fill_pct: 0.125 # initial fill percentage
-  smooth_iter: 2 # smoothing iterations
-  # seed: 0 # for reproducing maps
+  # Configurations for barn
+  fill_pct: 1. # initial fill percentage
+  smooth_iter: 5 # smoothing iterations
+  # seed: null # for reproducing maps
 
-# rosnav:
-#   map_type: indoor # chose between 'indoor' and 'outdoor'
+  # Shared across rosmap, rosnav
+  map_type: canteen # chose between 'indoor' (rosnav only) and 'outdoor' and 'canteen' (rosmap only)
+  obstacle_num: 15 # number of outdoor obstacles
+  obstacle_extra_radius: 5 # total obstacle diameter = 1+2*obstacle_extra_radius
 
-#   # indoor parameters
-#   indoor:
-#     corridor_radius: 5 # total corridor diameter = 1+2*corridor_radius
-#     iterations: 100 # number of nodes for the indoor map algorithm
-  
-#   # outdoor parameters
-#   outdoor:
-#     obstacle_num: 150 # number of outdoor obstacles
-#     obstacle_extra_radius: 2 # total obstacle diameter = 1+2*obstacle_extra_radius
+  rosnav:
+    indoor:
+      corridor_radius: 5 # total corridor diameter = 1+2*corridor_radius
+      iterations: 100 # number of nodes for the indoor map algorithm
 
-  # rosmap:
-  #   map_type: canteen # chose between 'canteen' and 'outdoor'
-
-  #   # canteen parameters
-  #   canteen:
-  #     chair_chance: 0.6 # between 0 and 1
-
-  #   # outdoor parameters
-  #   outdoor:
-  #     obstacle_num: 20 # number of outdoor obstacles
-  #     obstacle_extra_radius: 2 # total obstacle diameter = 1+2*obstacle_extra_radius
-  #     # Here are rosmap exclusive parameters
+  rosmap:
+    canteen:
+      chair_chance: 0.6 # between 0 and 1

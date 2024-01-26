@@ -1,3 +1,7 @@
+from map_generator.constants import (
+    MapGenerators,
+    MAP_GENERATOR_NS,
+)
 from typing import Tuple
 
 import numpy as np
@@ -14,12 +18,14 @@ class MAP_TYPE(Enum):
     outdoor = "outdoor"
 
 
-@MapGeneratorFactory.register("rosmap")
+@MapGeneratorFactory.register(MapGenerators.ROSMAP)
 class RosnavMapGenerator(BaseMapGenerator):
     def __init__(
         self,
         height: int,
         width: int,
+        robot_infl_radius: float,
+        map_resolution: float,
         map_type: str = "outdoor",
         obstacle_num: int = 10,
         obstacle_extra_radius: int = 1,
@@ -28,7 +34,7 @@ class RosnavMapGenerator(BaseMapGenerator):
         **kwargs,
     ):
         super().__init__(height, width,
-                         map_resolution=kwargs["map_resolution"])
+                         map_resolution=map_resolution)
 
         self.map_type = MAP_TYPE(map_type.lower())
 
@@ -64,19 +70,23 @@ class RosnavMapGenerator(BaseMapGenerator):
     def retrieve_params(self) -> Tuple[int, int, float, MAP_TYPE, int, int, float]:
         height, width, map_res = super().retrieve_params()
         map_type = rospy.get_param(
-            "/generator_configs/rosmap/map_type", self.map_type)
+            MAP_GENERATOR_NS("algorithm_config/rosnav/map_type"), self.map_type
+        )
         if type(map_type) == str:
             map_type = MAP_TYPE(map_type.lower())
 
         # params
         chair_chance = rospy.get_param(
-            "/generator_configs/rosmap/canteen/chair_chance", self.chair_chance
+            MAP_GENERATOR_NS("/algorithm_config/rosmap/canteen/chair_chance"),
+            self.chair_chance
         )
         obstacle_num = rospy.get_param(
-            "/generator_configs/rosmap/outdoor/obstacle_num", self.obstacle_num
+            MAP_GENERATOR_NS("/algorithm_config/rosmap/outdoor/obstacle_num"),
+            self.obstacle_num
         )
         obstacle_extra_radius = rospy.get_param(
-            "/generator_configs/rosmap/outdoor/obstacle_extra_radius",
+            MAP_GENERATOR_NS(
+                "/algorithm_config/rosmap/outdoor/obstacle_extra_radius"),
             self.obstacle_extra_radius,
         )
 
