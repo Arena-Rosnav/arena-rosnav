@@ -15,6 +15,7 @@
   <node name="grid_map_generator" pkg="grid_map_generator" type="grid_map_generator_node.py" output="screen">
        <param name="world_name" value="$(arg world_name)"/>
   </node>
+  
   <!-- <node name="gazebo_ros_2Dmap_plugin" pkg="rosservice" type="rosservice" args="call xxwait /gazebo_2Dmap_plugin/generate_map" /> -->
 
 </launch>
