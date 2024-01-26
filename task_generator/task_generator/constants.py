@@ -55,6 +55,7 @@ class Constants:
             DYNAMIC_MAP = "dynamic_map"
             CLEAR_FORBIDDEN_ZONES = "clear_forbidden_zones"
             RVIZ_UI = "rviz_ui"
+            BENCHMARK = "benchmark"
 
             @classmethod
             def prefix(cls, *args):

@@ -1,28 +1,26 @@
-episodes: 50
-autoreset: true
-
+DYNAMICMAP: {}
+PARAMETRIZED:
+  file: default.xml
+RANDOM:
+  dynamic:
+    max: 5
+    min: 3
+    models:
+    - actor1
+  interactive:
+    max: 0
+    min: 0
+    models:
+    - shelf
+  static:
+    max: 10
+    min: 5
+    models:
+    - shelf
 SCENARIO:
   file: default.json
-
-PARAMETRIZED:
-  file: default.xml 
-
 STAGED:
-  curriculum: "default.yaml"
+  curriculum: default.yaml
   index: 0
-
-DYNAMICMAP: {}
-
-RANDOM:
-  static:
-    min: 0
-    max: 0
-    models: ["shelf"]
-  interactive:
-    min: 0
-    max: 0
-    models: ["shelf"]
-  dynamic:
-    min: 3
-    max: 3
-    models: ["actor1"]
+autoreset: true
+episodes: 50

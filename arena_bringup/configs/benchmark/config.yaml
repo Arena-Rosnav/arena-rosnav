@@ -1,0 +1,10 @@
+suite:
+  config: basic.yaml
+  scale_episodes: 1
+
+contest:
+  config: teb.yaml
+
+general:
+  robot: jackal
+  simulator: flatland

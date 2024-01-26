@@ -45,6 +45,7 @@
   <arg name="tm_robots" default="random"/>
   <arg name="tm_obstacles" default="random"/>
   <arg name="tm_modules" default="" />
+  <arg name="benchmark_resume" default="false" />
   
   <arg name="visualization" default="rviz" doc="[rviz, flatland]" />
   <arg name="show_rviz" default="true" doc="Enables rviz in gazebo" />
@@ -69,11 +70,13 @@
   <param name="tm_robots" value="$(arg tm_robots)" />
   <param name="tm_obstacles" value="$(arg tm_obstacles)" />
   <param name="tm_modules" value="$(arg tm_modules)" />
+  <param name="/benchmark_resume" value="$(arg benchmark_resume)" />
   <param name="pedsim" type="bool" value="$(arg pedsim)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
   <param name="show_viz" value="$(arg show_rviz)"/>
   <param name="entity_manager" value="$(arg entity_manager)" />
+
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" ns="map_generator" />
