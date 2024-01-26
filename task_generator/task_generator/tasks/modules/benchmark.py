@@ -36,7 +36,6 @@ class Config(typing.NamedTuple):
         config: str
 
     class General(typing.NamedTuple):
-        robot: str
         simulator: str
 
     suite: Suite
@@ -61,6 +60,7 @@ class Suite(typing.NamedTuple):
     class Stage(typing.NamedTuple):
         name: str
         episodes: int
+        robot: str
         map: str
         tm_robots: Constants.TaskMode.TM_Robots
         tm_obstacles: Constants.TaskMode.TM_Obstacles
@@ -287,13 +287,13 @@ class Mod_Benchmark(TM_Module):
                 "record_data:=true",
 
                 f"simulator:={config.general.simulator}",
-                f"model:={config.general.robot}",
                 
                 # contest
                 f"inter_planner:={contest_config.inter_planner}",
                 f"local_planner:={contest_config.local_planner}",
 
                 # suite
+                f"model:={suite_config.robot}",
                 f"map_file:={suite_config.map}",
                 f"tm_robots:={suite_config.tm_robots}",
                 f"tm_obstacles:={suite_config.tm_obstacles}"

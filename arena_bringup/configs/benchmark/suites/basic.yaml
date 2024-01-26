@@ -1,6 +1,7 @@
 stages:
   - name: scenario
     episodes: 10
+    robot: jackal
     map: map7
     tm_robots: scenario
     tm_obstacles: scenario
@@ -10,6 +11,7 @@ stages:
 
   - name: scenario_random
     episodes: 10
+    robot: jackal
     map: map_empty
     tm_robots: scenario
     tm_obstacles: random
@@ -32,6 +34,7 @@ stages:
 
   - name: random
     episodes: 10
+    robot: jackal
     map: map_empty
     tm_robots: random
     tm_obstacles: random

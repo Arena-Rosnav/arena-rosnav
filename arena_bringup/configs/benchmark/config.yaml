@@ -6,5 +6,4 @@ contest:
   config: teb.yaml
 
 general:
-  robot: jackal
   simulator: flatland
