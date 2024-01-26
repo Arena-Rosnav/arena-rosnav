@@ -26,9 +26,15 @@ class UnitySimulator(BaseSimulator):
 
     def __init__(self, namespace: str):
         super().__init__(namespace)
+        
+        rospy.logwarn("HHHAAAAALLLLLOOO")
+        
         self._robot_name = rosparam_get(str, "robot_model", "")
 
         rospy.loginfo("Waiting for Unity services...")
+        
+        rospy.logwarn(self._namespace(
+            "unity", "spawn_walls"))
 
         rospy.wait_for_service(self._namespace(
             "unity", "spawn_walls"), timeout=T)

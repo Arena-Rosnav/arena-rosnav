@@ -30,10 +30,14 @@ def launch_unity():
     headless = rospy.get_param('~headless', False)
     if isinstance(headless, bool) and headless:
         args += ["-batchmode"]
-
+    namespace = rospy.get_param("~namespace", "")
+    args += [
+        "-namespace",
+        namespace
+    ]
+    
     # test
     args += ["-force-vulkan"]
-
 
     subprocess.run([unity_executable_path] + args, check=True)
 

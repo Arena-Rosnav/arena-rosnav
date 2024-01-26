@@ -19,12 +19,14 @@
     <arg name="show_rviz" value="$(arg show_rviz)" />
   </include>
 
+  <arg name="namespace" default="" />
   <arg name="development_mode" default="false" />
   <arg name="headless" default="false"/>
 
   <node name="unity_sim_node" pkg="unity_launcher" type="launch_unity_sim.py" output="screen">
     <param name="development_mode" value="$(arg development_mode)" />
     <param name="headless" value="$(arg headless)" />
+    <param name="namespace" value="$(arg namespace)" />
   </node>
 
 </launch>
