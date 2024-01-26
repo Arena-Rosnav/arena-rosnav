@@ -284,6 +284,7 @@ class Mod_Benchmark(TM_Module):
                 "start_arena.launch",
                 "tm_modules:=benchmark",
                 "benchmark_resume:=true",
+                "record_data:=true",
 
                 f"simulator:={config.general.simulator}",
                 f"model:={config.general.robot}",
