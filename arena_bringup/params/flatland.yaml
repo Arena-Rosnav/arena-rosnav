@@ -1,3 +1,3 @@
-step_size: 0.25
+step_size: 0.2
 update_rate: 10
 viz_pub_rate: 30

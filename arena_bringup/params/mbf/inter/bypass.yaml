@@ -1,0 +1,3 @@
+inters:
+  - name: BypassInter
+    type: bypass_inter/BypassInter

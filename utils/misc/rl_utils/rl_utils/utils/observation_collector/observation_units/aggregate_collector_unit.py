@@ -8,6 +8,7 @@ from task_generator.shared import Namespace
 
 import sensor_msgs.msg as sensor_msgs
 import pedsim_msgs.msg as pedsim_msgs
+from pedsim_agents.utils import SemanticAttribute
 
 from rl_utils.utils.observation_collector.observation_units.collector_unit import (
     CollectorUnit,
@@ -77,8 +78,8 @@ class AggregateCollectorUnit(CollectorUnit):
 
         self._laser_observations = []
         self._semantic_observations = {
-            semantic_type: self.SemanticObservation(pedsim_msgs.SemanticData())
-            for semantic_type in Constants.OBS_DICT_KEYS.SEMANTIC
+            semantic_type.value: self.SemanticObservation(pedsim_msgs.SemanticData())
+            for semantic_type in SemanticAttribute
         }
 
     def init_subs(self):
@@ -112,7 +113,7 @@ class AggregateCollectorUnit(CollectorUnit):
                         pedsim_msgs.SemanticData()
                     )
                     self._semantic_observations[
-                        semantic_attribute
+                        semantic_attribute.value
                     ] = observation_container
 
                     rospy.Subscriber(
@@ -145,17 +146,9 @@ class AggregateCollectorUnit(CollectorUnit):
         #         obs.invalidate()
 
         for semantic_attribute, observation in self._semantic_observations.items():
-            obs_dict[semantic_attribute.value] = observation.value
+            obs_dict[semantic_attribute] = observation.value
 
         return obs_dict
 
     def wait(self):
         pass
-
-    @staticmethod
-    def cloudpoint_to_laser_scan(cloud_point: np.ndarray) -> np.ndarray:
-        return distances_from_pointcloud(cloud_point)
-
-    @staticmethod
-    def cloudpoint_msg_to_numpy(msg) -> np.ndarray:
-        return np.frombuffer(msg.data, dtype=np.dtype(CloudPointDType))

@@ -3,6 +3,18 @@ from typing import List, Tuple
 
 
 class Node:
+    """
+    Represents a node in the A* algorithm.
+
+    Attributes:
+        parent (list): The parent node of the current node.
+        r (int): The row coordinate of the node.
+        c (int): The column coordinate of the node.
+        g (int): The cost of the path from the start node to the current node.
+        h (int): The estimated cost from the current node to the goal node.
+        f (int): The sum of g and h, representing the total cost of the node.
+    """
+
     def __init__(self, parent: list, coord: list):
         self.parent = parent
         self.r = coord[0]
@@ -13,11 +25,37 @@ class Node:
         self.f = 0
 
     def __eq__(self, other):
+        """
+        Check if two objects are equal based on their row and column values.
+
+        Args:
+            other: The object to compare with.
+
+        Returns:
+            True if the objects are equal, False otherwise.
+        """
         return self.r == other.r and self.c == other.c
 
 
-# class to perform A* search on C-space
 class AStarSearch:
+    """
+    A* search algorithm implementation for pathfinding on a grid map.
+
+    Args:
+        map (List[List[int]]): The grid map represented as a 2D list of integers.
+        infl_rad_cells (int): The inflation radius in cells.
+
+    Attributes:
+        map (List[List[int]]): The grid map represented as a 2D list of integers.
+        map_rows (int): The number of rows in the grid map.
+        map_cols (int): The number of columns in the grid map.
+        infl_rad_cells (int): The inflation radius in cells.
+
+    Methods:
+        __call__(start_coord, end_coord, dist_map): Performs the A* search algorithm to find the path from start_coord to end_coord.
+        return_path(end_node): Generates the path from the end node to the start node.
+    """
+
     # infl_rad_cells: the inflation radius, in cells
     def __init__(self, map: List[List[int]], infl_rad_cells: int):
         self.map = map
@@ -32,6 +70,17 @@ class AStarSearch:
         end_coord: List[Tuple[int, int]],
         dist_map: List[List[int]],
     ):
+        """
+        Performs the A* search algorithm to find the path from start_coord to end_coord.
+
+        Args:
+            start_coord (List[Tuple[int, int]]): The coordinates of the start position.
+            end_coord (List[Tuple[int, int]]): The coordinates of the end position.
+            dist_map (List[List[int]]): The grid with the distances to the closest obstacle at each point.
+
+        Returns:
+            List[Tuple[int, int]]: The path from the start position to the end position.
+        """
         # limit turns to 45 degrees
         valid_moves_dict = {
             (0, 1): [(-1, 1), (0, 1), (1, 1)],
@@ -176,7 +225,16 @@ class AStarSearch:
                     not_visited.append(child)
 
     # generate the path from start to end
-    def return_path(self, end_node):
+    def return_path(self, end_node: Node):
+        """
+        Generates the path from the end node to the start node.
+
+        Args:
+            end_node (Node): The end node of the path.
+
+        Returns:
+            List[Tuple[int, int]]: The path from the end position to the start position.
+        """
         path = []
         curr_node = end_node
         while curr_node != None:

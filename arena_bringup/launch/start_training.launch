@@ -30,18 +30,15 @@
   <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" /> 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
-  <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" />
+  <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" ns="map_generator" />
   
   <!--  PARAMS DON'T CHANGE THEM  -->
-  <arg name="reset_remove_all" default="false" />
-  <param name="reset_remove_all" value="$(arg reset_remove_all)" />
   <param name="use_sim_time" value="true" />
   <param name="train_mode" value="$(arg train_mode)" />
   <param name="num_envs" value="$(arg num_envs)" />
   <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_folder_name)/map.yaml" />
   <param name="world_path" value="$(find arena-simulation-setup)/maps/$(arg map_folder_name)/map.world.yaml" />
   <param name="map_path" value="$(arg map_path)" />
-  <param name="_dedicated_train_launch" value="true" />
   <param name="model" value="$(arg model)" />
 
   <!-- map server-->
@@ -67,5 +64,8 @@
     <arg name="ns_prefix" value="$(arg ns_prefix)" />
     <arg name="model" value="$(arg model)" />
   </include> 
+  
+  <node pkg="task_generator" name="task_generator_server" type="server.py" output="screen"/>
+  <node pkg="task_generator" name="task_generator_filewatcher" type="filewatcher.py" output="screen"/>
 
 </launch>

@@ -34,7 +34,7 @@
 
 - git:
     local-name: ../utils-extern/ros/move_base_flex
-    uri: https://github.com/voshch/move_base_flex.git
+    uri: https://github.com/Arena-Rosnav/move_base_flex.git
 
 - git:
     local-name: ../utils-extern/misc/robots
@@ -88,10 +88,10 @@
 #   uri: https://github.com/Arena-Rosnav/crowdnav-ros.git
 #   version: master
 
-#- git:
-#   local-name: ../planners/rlca-ros
-#   uri: https://github.com/Arena-Rosnav/rlca-ros.git
-#   version: master
+- git:
+   local-name: ../planners/rlca-ros
+   uri: https://github.com/Arena-Rosnav/rlca-ros.git
+   version: mbf
 
 #- git:
 #   local-name: ../planners/sarl-star
@@ -106,23 +106,23 @@
 #   local-name: ../planners/all_in_one
 #   uri: https://github.com/Arena-Rosnav/all_in_one
 #   version: master
-#- git:
-#   local-name: ../planners/applr
-#   uri: https://github.com/Arena-Rosnav/applr
-#   version: master
-#- git:
-#   local-name: ../planners/lflh
-#   uri: https://github.com/Arena-Rosnav/lflh
-#   version: master
-#- git:
-#   local-name: ../planners/dragon
-#   uri: https://github.com/Arena-Rosnav/dragon
-#   version: master
-#- git:
-#   local-name: ../planners/trail
-#   uri: https://github.com/Arena-Rosnav/trail
-#   version: master
-#- git:
-#    local-name: ../planners/cohan
-#    uri: https://github.com/Arena-Rosnav/cohan_planner_multi
-#    version: master
+- git:
+   local-name: ../planners/applr
+   uri: https://github.com/Arena-Rosnav/applr
+   version: mbf
+- git:
+   local-name: ../planners/lflh
+   uri: https://github.com/Arena-Rosnav/lflh
+   version: mbf
+- git:
+   local-name: ../planners/dragon
+   uri: https://github.com/Arena-Rosnav/dragon
+   version: mbf
+- git:
+   local-name: ../planners/trail
+   uri: https://github.com/Arena-Rosnav/trail
+   version: mbf
+- git:
+    local-name: ../planners/cohan
+    uri: https://github.com/Arena-Rosnav/cohan_planner_multi
+    version: master

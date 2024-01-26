@@ -1,0 +1,120 @@
+### General
+# in debug_mode no agent directories will be created and no models will be saved
+# further no wandb logging and fake (simulated) multiprocessing for traceback
+debug_mode: false
+# number of parallel environments
+n_envs: 64
+# gpu yes or no
+no_gpu: false
+
+### General Training
+tm_robots: "random"
+tm_obstacles: "random"
+tm_modules: "staged"
+
+# number of simulation timesteps
+n_timesteps: 20000000
+max_num_moves_per_eps: 600
+goal_radius: 0.3
+safety_distance: 0.75
+
+### Training Monitoring
+monitoring:
+  cmd_line_logging:
+    # display training metrics
+    training_metrics:
+      enabled: true
+    # display episode statistics (avg. success rate, reward, eps length..)
+    episode_statistics:
+      enabled: true
+      last_n_eps: 50
+  # weights and biases logging
+  use_wandb: true
+  # save evaluation stats during training in log file
+  eval_log: false
+
+callbacks:
+  ### Periodic Eval
+  periodic_eval:
+    # max number of steps per episode
+    max_num_moves_per_eps: 1000
+    # number of evaluation episodes
+    n_eval_episodes: 30
+    # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
+    eval_freq: 7500
+
+  ### Training Curriculum
+  # threshold metric to be considered during evaluation
+  # can be either "succ" (success rate) or "rew" (reward)
+  training_curriculum:
+    # file for the robot's learning curriculum
+    training_curriculum_file: "semantic.yaml"
+    curr_stage: 0
+    threshold_type: "succ"
+    upper_threshold: 0.95
+    lower_threshold: 0.60
+
+  ### Stop Training on Threshold
+  # stops training when last stage reached and threshold satisfied
+  stop_training:
+    threshold_type: "succ"
+    threshold: 0.985
+
+### Agent Specs: Training Hyperparameter and Network Architecture
+rl_agent:
+  # name of architecture defined in the Policy factory
+  architecture_name: "RosnavResNet_2"
+  # path to latest checkpoint; if provided the training will be resumed from that checkpoint
+  resume: jackal_RosnavResNet_2_2024_01_13__17_16_40 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  checkpoint: "best_model" # gonna be ignored if resume is not null
+
+  frame_stacking:
+    enabled: false
+    stack_size: 6
+
+  reward_fnc: "base_semantic"
+
+  normalize:
+    enabled: true
+    settings:
+      norm_obs: true
+      norm_reward: false # Whether to normalize rewards or not
+      clip_obs: 30.0 # Max absolute value for observation
+      clip_reward: 25.0 # Max value absolute for discounted reward
+      gamma: 0.99 # discount factor
+
+  laser:
+    full_range_laser: true # additional laser covering 360° covering blind spots -> additional collision check
+    reduce_num_beams:
+      enabled: false
+      num_beams: 200
+
+  action_space:
+    discrete: true
+    custom_discretization: # only used if discrete is true, otherwise ignored
+      enabled: true
+      # number of buckets for each action dimension
+      # (only non-holonomic robots with 2D action space supported)
+      buckets_linear_vel: 8
+      buckets_angular_vel: 9
+
+  lr_schedule:
+    # learning rate schedule
+    enabled: true
+    type: "linear"
+    settings:
+      initial_value: 0.0009
+      final_value: 0.0001
+
+  ppo:
+    batch_size: 10240
+    gamma: 0.99
+    n_steps: 1200
+    ent_coef: 0.005
+    learning_rate: 0.0003
+    vf_coef: 0.22
+    max_grad_norm: 0.5
+    gae_lambda: 0.95
+    m_batch_size: 256
+    n_epochs: 3
+    clip_range: 0.2

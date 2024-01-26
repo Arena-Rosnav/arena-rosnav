@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- <env name="ROSCONSOLE_CONFIG_FILE" value="$(find arena_bringup)/params/rosconsole.conf"/> -->
+
+  <!-- ___________ ARGS ___________ -->
+  <arg name="name" default="" />
+  <arg name="model" default="" />
+  <arg name="namespace" default="" />
+  <arg name="sim_namespace" default="" />
+
+  <arg name="inter_planner" default="bypass" />
+  <arg name="local_planner" default="rosnav" />
+
+  <arg name="train_mode" default="false" doc="If false, start the Rosnav Deployment Nodes"/>
+  <arg name="agent_name" default="$(arg name)" doc="DRL agent name to be deployed"/>
+
+  <param name="model" value="$(arg model)" />
+  <param name="train_mode" value="$(arg train_mode)"/>
+  <param name="agent_name" value="$(arg agent_name)"/>
+
+  <remap from="$(arg namespace)/map" to="/map" />
+
+  <group ns="$(arg namespace)">
+    <param name="agent_name" value="$(arg agent_name)"/>
+    <param name="model" value="$(arg model)" />
+    <param name="robot_name" value="$(arg name)" />
+
+    <rosparam command="load"
+      file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" />
+
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster"
+      args="0 0 0 0 0 0 1 map $(arg name)/odom" />
+    
+    <!-- move_base plan manager: which provide basic global planner and cost map -->
+    <group>
+
+      <remap from="cmd_vel" to="$(arg namespace)/cmd_vel" />
+      <remap from="odom" to="$(arg namespace)/odom" />
+
+      <include file="$(find arena_bringup)/launch/testing/move_base/mbf_nav/costmap_nav.launch">
+
+        <arg name="inter_planner" value="$(arg inter_planner)" />
+        <arg name="local_planner" value="$(arg local_planner)" />
+
+        <arg name="model" value="$(arg model)" />
+        <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
+
+        <arg name="namespace" value="$(arg namespace)" />
+        <arg name="frame" value="$(arg name)/" />
+
+      </include>
+    </group>
+
+    <include file="$(find arena_bringup)/launch/utils/fake_localization.launch">
+      <arg name="ns" value="$(arg sim_namespace)" />
+      <arg name="robot_name" value="$(arg model)" />
+      <arg name="global_frame_id" value="map" />
+      <arg name="odom_frame_id" value="$(arg namespace)/odom" />
+    </include>
+
+  </group>
+
+
+</launch>

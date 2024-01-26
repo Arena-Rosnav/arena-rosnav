@@ -163,7 +163,7 @@ class TM_Random(TM_Obstacles):
             1,
         )
 
-        rospy.logwarn(f"{MODELS_DYNAMIC_OBSTACLES}")
+        # rospy.logwarn(f"{MODELS_DYNAMIC_OBSTACLES}")
 
         def indexer() -> Callable[..., int]:
             indices: Dict[str, Iterator[int]] = dict()
