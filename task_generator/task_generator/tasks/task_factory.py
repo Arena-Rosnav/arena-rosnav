@@ -318,3 +318,4 @@ from .modules.clear_forbidden_zones import Mod_ClearForbiddenZones
 from .modules.dynamic_map import Mod_DynamicMap
 from .modules.rviz_ui import Mod_OverrideRobot
 from .modules.staged import Mod_Staged
+from .modules.benchmark import Mod_Benchmark
