@@ -3,6 +3,7 @@
   <!-- <env name="ROSCONSOLE_CONFIG_FILE" value="$(find arena_bringup)/params/rosconsole.conf"/> -->
 
   <!-- ___________ ARGS ___________ -->
+  <arg name="inter_planner" />
   <arg name="local_planner" default="" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]" />
 
   <arg name="name" default="" />
@@ -10,6 +11,8 @@
   <arg name="namespace" default="" />
   <arg name="sim_namespace" default="" />
   <arg name="frame" default="" /> <!-- frame name -->
+
+  <arg name="SIMULATOR" default="flatland" />
 
   <arg name="train_mode" default="false" doc="If false, start the Rosnav Deployment Nodes" />
   <arg name="agent_name" default="$(arg name)" doc="DRL agent name to be deployed"
@@ -50,7 +53,7 @@
     <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster"
       args="0 0 0 0 0 0 1 map $(arg name)/odom" />
 
-    <group if="$(eval arg('train_mode') != 'true' and env('SIMULATOR') == 'gazebo')">
+    <group if="$(eval arg('train_mode') != 'true' and arg('SIMULATOR') == 'gazebo')">
       <include file="$(find arena-simulation-setup)/robot/$(arg model)/launch/control.launch">
         <arg name="robot_namespace" value="$(arg namespace)" />
         <arg name="frame" value="$(arg frame)" />
@@ -72,7 +75,9 @@
       <remap from="cmd_vel" to="$(arg namespace)/cmd_vel" />
       <remap from="odom" to="$(arg namespace)/odom" />
 
-      <include file="$(find arena_bringup)/launch/testing/move_base/bootstrap.launch">
+      <include file="$(find arena_bringup)/launch/testing/move_base/mbf_nav/costmap_nav.launch">
+
+        <arg name="inter_planner" value="$(arg inter_planner)" />
         <arg name="local_planner" value="$(arg local_planner)" />
 
         <arg name="model" value="$(arg model)" />

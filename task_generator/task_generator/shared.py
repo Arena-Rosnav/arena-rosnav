@@ -46,17 +46,17 @@ class Namespace(str):
 
     @property
     def simulation_ns(self) -> Namespace:
-        return Namespace(self.split("/")[0])
+        return Namespace(os.path.dirname(self))
 
     @property
     def robot_ns(self) -> Namespace:
-        return Namespace(self.split("/")[1])
+        return Namespace(os.path.basename(os.path.normpath(self)))
 
     def remove_double_slash(self) -> Namespace:
         return Namespace(self.replace("//", "/"))
 
 
-yaml.add_representer(Namespace, str) #type: ignore
+yaml.add_representer(Namespace, lambda dumper, data: dumper.represent_str(str(data)))
 
 
 # TODO deprecate this in favor of Model.EMPTY
@@ -275,7 +275,8 @@ class DynamicObstacleProps(ObstacleProps):
 
 @dataclasses.dataclass(frozen=True)
 class RobotProps(EntityProps):
-    planner: str
+    inter_planner: str
+    local_planner: str
     agent: str
     record_data: bool
 
@@ -340,14 +341,16 @@ class Robot(RobotProps):
     def parse(obj: Dict, model: ModelWrapper) -> "Robot":
         name = str(obj.get("name", ""))
         position = PositionOrientation(*obj.get("pos", next(gen_init_pos)))
-        planner = str(obj.get("planner", ""))
+        inter_planner = str(obj.get("inter", ""))
+        local_planner = str(obj.get("planner", ""))
         agent = str(obj.get("agent", ""))
         record_data = bool(obj.get("record_data", False))
 
         return Robot(
             name=name,
             position=position,
-            planner=planner,
+            inter_planner=inter_planner,
+            local_planner=local_planner,
             model=model,
             agent=agent,
             record_data=record_data,

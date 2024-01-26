@@ -3,11 +3,17 @@ from typing import Iterable, Union
 
 import numpy as np
 import rospy
+from map_generator.constants import MAP_GENERATOR_NS
 
 
 class BaseMapGenerator(ABC):
     """
-    Base Map Generator as parent class for all other generators.
+    Base class for map generators.
+
+    Attributes:
+        height (int): The height of the map.
+        width (int): The width of the map.
+        map_resolution (float): The resolution of the map.
     """
 
     def __init__(self, height: int, width: int, map_resolution: float, *args, **kwargs):
@@ -30,15 +36,33 @@ class BaseMapGenerator(ABC):
 
     @abstractmethod
     def retrieve_params(self) -> Iterable[Union[int, float, str]]:
-        """Retrieve parameters from ROS parameter server."""
-        height = rospy.get_param("/map_properties/height", self.height)
-        width = rospy.get_param("/map_properties/width", self.width)
-        map_res = rospy.get_param("/map_properties/resolution", self.map_resolution)
+        """
+        Retrieves the map parameters from ROS.
+
+        Returns:
+            Iterable[Union[int, float, str]]: A tuple containing the height, width, and map resolution.
+        """
+
+        height = rospy.get_param(
+            MAP_GENERATOR_NS("map_properties", "height"), self.height
+        )
+        width = rospy.get_param(MAP_GENERATOR_NS("map_properties", "width"), self.width)
+        map_res = rospy.get_param(
+            MAP_GENERATOR_NS("map_properties", "resolution"), self.map_resolution
+        )
         return height, width, map_res
 
     @abstractmethod
     def update_params(self, height: int, width: int, map_res: float):
-        """Update object parameters with new values."""
+        """
+        Updates the map parameters.
+
+        Args:
+            height (int): The new height of the map.
+            width (int): The new width of the map.
+            map_res (float): The new resolution of the map.
+        """
+
         self.height = height
         self.width = width
         self.map_resolution = map_res

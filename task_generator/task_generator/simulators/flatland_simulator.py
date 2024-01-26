@@ -48,7 +48,7 @@ class FlatlandSimulator(BaseSimulator):
     _synchronous: bool
 
     def __init__(self, namespace):
-        super().__init__(namespace)
+        super().__init__(namespace=namespace)
 
         self._move_robot_pub = rospy.Publisher(
             self._namespace("move_model"), flatland_msgs.MoveModelMsg, queue_size=10
