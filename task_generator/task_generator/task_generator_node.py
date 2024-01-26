@@ -116,7 +116,7 @@ class TaskGenerator:
         # Publishers
         if not self._train_mode:
             self._pub_scenario_reset = rospy.Publisher(
-                "scenario_reset", std_msgs.Int16, queue_size=1
+                "scenario_reset", std_msgs.Int16, queue_size=1, latch=True
             )
             self._pub_scenario_finished = rospy.Publisher(
                 "scenario_finished", std_msgs.Empty, queue_size=10
@@ -167,7 +167,7 @@ class TaskGenerator:
             except:
                 pass
 
-            self._number_of_resets = 0
+            self._number_of_resets += 1
 
             # The second reset below caused bugs and did not help according to my testing
             # self.reset_task()

@@ -86,6 +86,8 @@ class TaskFactory:
             __tm_robots: TM_Robots
             __tm_obstacles: TM_Obstacles
 
+            _force_reset: bool
+
             def __init__(
                 self,
                 obstacle_manager: ObstacleManager,
@@ -106,6 +108,7 @@ class TaskFactory:
                     *args: Variable length argument list.
                     **kwargs: Arbitrary keyword arguments.
                 """
+                self._force_reset = False
                 self.namespace = namespace
 
                 self.obstacle_manager = obstacle_manager
@@ -269,6 +272,7 @@ class TaskFactory:
                 Args:
                     **kwargs: Arbitrary keyword arguments.
                 """
+                self._force_reset = False
                 if self._train_mode:
                     self._reset_task(**kwargs)
                 else:
@@ -282,7 +286,7 @@ class TaskFactory:
                 Returns:
                     bool: True if the task is done, False otherwise.
                 """
-                return self.__tm_robots.done
+                return self._force_reset or self.__tm_robots.done
 
             def set_robot_position(self, position: PositionOrientation):
                 """
@@ -301,6 +305,9 @@ class TaskFactory:
                     position (PositionOrientation): The goal position for the robot.
                 """
                 self.__tm_robots.set_goal(position)
+
+            def force_reset(self):
+                self._force_reset = True
 
         return CombinedTask
 
