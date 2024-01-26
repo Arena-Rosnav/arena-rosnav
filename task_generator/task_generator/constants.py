@@ -11,7 +11,7 @@ from task_generator.shared import Namespace, rosparam_get
 
 class Defaults:
     class task_config:
-        no_of_episodes = 5
+        episodes = 5
 
 
 class Constants:

@@ -18,7 +18,7 @@ RANDOM:
     models:
     - shelf
 SCENARIO:
-  file: map7.json
+  file: default.json
 STAGED:
   curriculum: default.yaml
   index: 0

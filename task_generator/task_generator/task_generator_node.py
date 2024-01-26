@@ -143,8 +143,8 @@ class TaskGenerator:
             self._number_of_resets = 0
             self._desired_resets = rosparam_get(
                 int,
-                "~configuration/no_of_episodes",
-                Defaults.task_config.no_of_episodes,
+                "~configuration/episodes",
+                Defaults.task_config.episodes,
             )
 
             self.srv_start_model_visualization = rospy.ServiceProxy(
@@ -166,11 +166,6 @@ class TaskGenerator:
                 self.srv_setup_finished(std_srvs.EmptyRequest())
             except:
                 pass
-
-            self._number_of_resets += 1
-
-            # The second reset below caused bugs and did not help according to my testing
-            # self.reset_task()
 
             # Timers
             rospy.Timer(rospy.Duration(nsecs=int(0.5e9)), self._check_task_status)
@@ -323,16 +318,15 @@ class TaskGenerator:
 
         is_end = self._task.reset(callback=lambda: False, **kwargs)
 
-        self._pub_scenario_reset.publish(self._number_of_resets)
-        # self._send_end_message_on_end(is_end)
-
         self._env_wrapper.after_reset_task()
+
+        self._pub_scenario_reset.publish(self._number_of_resets)
+        self._number_of_resets += 1
+        # self._send_end_message_on_end(is_end)
 
         rospy.loginfo("=============")
         rospy.loginfo("Task Reset!")
         rospy.loginfo("=============")
-
-        self._number_of_resets += 1
 
     def _check_task_status(self, *args, **kwargs):
         if self._task.is_done:
