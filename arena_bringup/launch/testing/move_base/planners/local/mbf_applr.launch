@@ -7,7 +7,7 @@
   <arg name="namespace" />
   <arg name="frame" />
 
-  <remap from="cmd_vel" to="cmd_vel_actual" />
+  <node name="mbf_cmd_vel_relay" pkg="topic_tools" type="relay" args="cmd_vel_internal cmd_vel" />
 
   <!-- move_base_flex -->
   <group ns="move_base_flex">

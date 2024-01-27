@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+
+  <node name="mbf_cmd_vel_relay" pkg="topic_tools" type="relay" args="cmd_vel_internal cmd_vel" />
+
   <!-- Arguments -->
   <arg name="model" default="burger" />
   <arg name="speed" />
@@ -7,8 +10,6 @@
   <arg name="frame" />
   <arg name="move_forward_only" default="false" />
   <arg name="model_file" default="$(find drl_vo_barn_nav)/src/model/drl_vo.zip" />
-
-  <remap from="cmd_vel" to="cmd_vel_actual" />
 
   <!-- move_base_flex-->
 
@@ -40,7 +41,4 @@
       <arg name="goal_y" value="0" />
     </include>
   </group>
-
-  <!-- for move_base_flex -->
-  <remap from="cmd_vel" to="devnull" />
 </launch>
