@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
 
-  <!--<env name="GAZEBO_MODEL_PATH" value="$(find arena-simulation-setup)/worlds/$(arg world)/models" />-->
-  <env name="GAZEBO_MODEL_PATH" value="$(find arena-simulation-setup)/gazebo_models" />
+  <env name="GAZEBO_MODEL_PATH" value="$(find arena-simulation-setup)/worlds/$(arg world)/models" />
 
   <arg name="world" default="turtlebot3_house" />
   <arg name="model" default="burger"/>
