@@ -1,5 +1,6 @@
 import dataclasses
 from typing import Optional
+import typing
 
 import numpy as np
 import rospy
@@ -20,14 +21,30 @@ from tf.transformations import quaternion_from_euler
 import nav_msgs.msg as nav_msgs
 import geometry_msgs.msg as geometry_msgs
 import std_srvs.srv as std_srvs
+import std_msgs.msg as std_msgs
 
-from std_msgs import msg
+
 
 class RobotManager:
     """
     The robot manager manages the goal and start
     position of a robot for all task modes.
     """
+
+    __registry: typing.Dict[str, typing.Type["RobotManager"]] = dict()
+
+    @classmethod
+    def register(cls, model: str):
+        def wrapper(wrapped: typing.Type["RobotManager"]) -> typing.Type["RobotManager"]:
+            cls.__registry[model] = wrapped
+            return wrapped
+        return wrapper
+    
+    @classmethod
+    def resolve(cls, model: str) -> typing.Type["RobotManager"]:
+        if model in cls.__registry:
+            return cls.__registry[model]
+        return cls
 
     _namespace: Namespace
 
@@ -82,18 +99,6 @@ class RobotManager:
         )
 
         self._position = self._start_pos
-
-        # Variables for task reset (only for go1)
-        if (self._robot.model.name == "go1"):
-            # Task reset
-            self.reset_task = msg.Bool(data=False)
-            self.reset_task_pub = rospy.Publisher('reset_task', msg.Bool, queue_size=10)
-            self.current_time = 0.0
-            self.time_passive = 7.0 # s
-            # Danger mode reset
-            self.danger_mode = False
-            self.reset_already_once = False
-            rospy.Subscriber("danger_mode",msg.Bool,self._danger_mode_callback)
 
     def set_up_robot(self):
         self._robot = dataclasses.replace(
@@ -215,28 +220,7 @@ class RobotManager:
         # https://gamedev.stackexchange.com/a/4472
         angle_to_goal: float = np.pi - np.abs(np.abs(goal[2] - start[2]) - np.pi)
 
-        if (self._robot.model.name == "go1"):
-            # Danger mode reset
-            if self.danger_mode and not self.reset_already_once:
-                self.reset_already_once = True
-                return 1
-            else:
-                self.reset_already_once = False
-            # Task reset
-            if distance_to_goal < self._goal_tolerance_distance and angle_to_goal < self._goal_tolerance_angle and not self.reset_task.data:
-                self.reset_task.data = True
-                self.reset_task_pub.publish(self.reset_task)
-                self.current_time = rospy.get_rostime().secs
-        
-            if self.reset_task.data and rospy.get_rostime().secs-self.current_time >= self.time_passive:
-                self.reset_task.data = False
-                self.reset_task_pub.publish(self.reset_task)
-                return 1
-
-            return 0
-
-        else:
-            return distance_to_goal < self._goal_tolerance_distance and angle_to_goal < self._goal_tolerance_angle
+        return distance_to_goal < self._goal_tolerance_distance and angle_to_goal < self._goal_tolerance_angle
 
     def _publish_goal_periodically(self, *args, **kwargs):
         if self._goal_pos is not None:
@@ -322,6 +306,65 @@ class RobotManager:
             rot.as_euler("xyz")[2],
         )
 
-    def _danger_mode_callback(self,msg: msg.Bool):
-        self.danger_mode = msg.data
-        print("Mode:", self.danger_mode)
+
+@RobotManager.register("go1")
+class ResetRobotManager(RobotManager):
+
+    TOPIC_RESET_ROBOT = "reset_task"
+    TOPIC_DANGER_MODE = "danger_mode"
+
+    TIME_PASSIVE = 7.0
+
+    _reset_robot_pub: rospy.Publisher
+
+    _danger_mode: bool
+    _reset_robot_value: bool
+    _reset_already_once: bool
+    _reset_robot_time: float
+
+    @property
+    def _reset_robot(self) -> bool:
+        return self._reset_robot_value
+    
+    @_reset_robot.setter
+    def _reset_robot(self, v: bool):
+        self._reset_robot_value = v
+        self._reset_robot_pub.publish(std_msgs.Bool(self._reset_robot_value))
+
+    def set_up_robot(self):
+        super().set_up_robot()
+    
+        # Task reset
+        self._reset_robot_pub = rospy.Publisher(self.TOPIC_RESET_ROBOT, std_msgs.Bool, queue_size=10)
+        self._reset_robot_time = 0.0
+        # Danger mode reset
+        self._danger_mode = False
+        self._reset_already_once = False
+        self._reset_robot_value = False
+        rospy.Subscriber(self.TOPIC_DANGER_MODE, std_msgs.Bool, self._danger_mode_callback)
+
+    def _danger_mode_callback(self, msg: std_msgs.Bool):
+        self._danger_mode = msg.data
+        # print("Mode:", self.danger_mode)
+
+
+    @RobotManager._is_goal_reached.getter
+    def _is_goal_reached(self) -> bool:
+
+        # Danger mode reset
+        if self._danger_mode and not self._reset_already_once:
+            self._reset_already_once = True
+            return True
+        
+        self._reset_already_once = False
+
+        # Task reset
+        if not self._reset_robot_value and super()._is_goal_reached:
+            self._reset_robot = True
+            self._reset_robot_time = rospy.get_rostime().secs
+            return True
+    
+        if self._reset_robot_value and rospy.get_rostime().secs - self._reset_robot_time >= self.TIME_PASSIVE:
+            self._reset_robot = False
+        
+        return False

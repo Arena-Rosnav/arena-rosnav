@@ -290,7 +290,7 @@ class TaskGenerator:
 
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             return [
-                RobotManager(
+                RobotManager.resolve(robots[0].model.name)(
                     namespace=self._namespace,
                     entity_manager=self._entity_manager,
                     robot=robots[0],
@@ -303,7 +303,7 @@ class TaskGenerator:
             robot_managers.append(
                 # RobotManager(os.path.join(namespace, name), simulator, robot)
                 # old but working due to namespace issue with "/" prefix in robot name
-                RobotManager(
+                RobotManager.resolve(robot.model.name)(
                     namespace=self._namespace,
                     entity_manager=self._entity_manager,
                     robot=robot,
