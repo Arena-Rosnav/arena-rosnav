@@ -2,12 +2,12 @@ stages:
   - name: scenario
     episodes: 1
     robot: jackal
-    map: map_empty
+    map: arena_corridor
     tm_robots: scenario
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: default.json
+        file: arena_corridor_1.json
 
   - name: scenario_random
     episodes: 4
