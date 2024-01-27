@@ -29,7 +29,7 @@
             [-3, -5.5, 0],
             [-3, -7.5, 0]
         ],
-        "waypoint_mode": 1
+        "waypoint_mode": 2 //waypoint mode 2 follows waypoints in order, 0 and 1 do something else (maybe random)
       },   
       {
         "name": "Visitor_1",
@@ -49,7 +49,7 @@
             [-15.5, -5, 0],
             [-15.7, -7, 0]
         ],
-        "waypoint_mode": 1
+        "waypoint_mode": 2
       },  
       {
         "name": "Nurse_1",
@@ -67,7 +67,7 @@
             [-5.5, -4.5, 0],
             [-10, -4.5, 0]
         ],
-        "waypoint_mode": 1
+        "waypoint_mode": 2
       }, 
       {
         "name": "Nurse_2",
@@ -79,7 +79,7 @@
             [2.7, -5.5, 0],
             [-16.5, -5.5, 0]
         ],
-        "waypoint_mode": 1
+        "waypoint_mode": 2
       }                                                       
     ],
     "interactive": []
