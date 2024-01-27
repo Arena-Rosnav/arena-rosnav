@@ -1,0 +1,54 @@
+{
+  "robots": [
+    {
+      "start": [-2.2, -9.5, 0.0],
+      "goal": [0.5, 11.0, 0.000108]
+    }
+  ],
+  "obstacles": {
+
+    "static": [
+    ],
+
+    "dynamic": [
+      {
+        "name": "Visitor_1",
+        "pos": [-5.815111, -10.739109, 1.679718],
+        "type": "adult",
+        "model": "actor1",
+        "waypoints": [
+            [-16.0, -5.6, 0.025],
+            [3.33, -5.26, -0.0014],
+            [-5.99, 5.6, 0.00247]
+        ],
+        "waypoint_mode": 1
+      },   
+      {
+        "name": "Visitor_2",
+        "pos": [3.34, -7.4, -0.00143],
+        "type": "adult",
+        "model": "actor1",
+        "waypoints": [
+            [3.34, -7.4, -0.00143],
+            [3.04,5.31,0.00247],
+            [-11.9,5.16,-0.00143]
+        ],
+        "waypoint_mode": 1
+      },  
+      {
+        "name": "Nurse_1",
+        "pos": [-6.13, 8.71,0.00247],
+        "type": "adult",
+        "model": "actor1",
+        "waypoints": [
+            [-6.13, 8.71,0.00247],
+            [-10.3,-7.48,-0.00534]                                             
+        ],
+        "waypoint_mode": 1
+      }                                                              
+    ],
+    "interactive": []
+  },
+  "resets": 50,
+  "map": "arena_hospital_small"
+}
