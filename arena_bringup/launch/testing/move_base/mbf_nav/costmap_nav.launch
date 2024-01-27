@@ -33,7 +33,7 @@
                 <remap from="cmd_vel" to="cmd_vel_actual" />
             at the top of every launch file that needs to override the move_base_flex node cmd_vel output, otherwise add to exclusions
         -->
-        <remap from="cmd_vel" to="cmd_vel_actual" unless="$(eval arg('local_planner') in ['teb', 'dwa', 'mpc'])" />
+        <remap from="cmd_vel_actual" to="cmd_vel" unless="$(eval arg('local_planner') in ['teb', 'dwa', 'mpc'])" />
 
         <node pkg="mbf_costmap_nav" type="mbf_costmap_nav" respawn="false" name="move_base_flex"
             output="log">
