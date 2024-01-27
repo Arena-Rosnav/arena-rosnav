@@ -10,13 +10,13 @@
   <remap from="cmd_vel" to="cmd_vel_actual" />
 
   <group ns="move_base_flex">
-   <!-- <rosparam file="$(find arena_bringup)/params/mbf/local/rlca_planner_params.yaml"
+   <rosparam file="$(find arena_bringup)/params/mbf/local/rlca_planner_params.yaml"
       command="load" subst_value="True" />
     <rosparam
       file="$(find arena-simulation-setup)/robot/$(arg model)/configs/mbf/dwa_local_planner_params.yaml"
       command="load" subst_value="True" />
 
-    <param name="base_local_planner" value="DwaLocalPlannerROS" />-->
+    <param name="base_local_planner" value="DwaLocalPlannerROS" />
   </group>
 
  
@@ -31,8 +31,4 @@
     <remap from="/move_base/NavfnROS/make_plan" to="$(arg namespace)/move_base_flex/NavfnROS/make_plan" />
     <remap from="initialpose" to="/initialpose" />
   </node>
-
-  <!-- for move_base_flex node -->
-  <remap from="cmd_vel" to="devnull" />
-  
 </launch>
