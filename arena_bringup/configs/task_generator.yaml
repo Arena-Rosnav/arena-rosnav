@@ -18,7 +18,7 @@ RANDOM:
     models:
     - shelf
 SCENARIO:
-  file: default.json
+  file: arena_corridor_1.json
 STAGED:
   curriculum: default.yaml
   index: 0
