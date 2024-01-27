@@ -63,7 +63,7 @@
 - git:
     local-name: ../arena-evaluation
     uri: https://github.com/voshch/arena-evaluation.git
-    version: refactoring
+    version: pedsim
 
 ### PLANNERS 
   # Comment in which planners you need
