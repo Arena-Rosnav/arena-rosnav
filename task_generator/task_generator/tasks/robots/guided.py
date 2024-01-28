@@ -49,7 +49,7 @@ class TM_Guided(TM_Random):
         Returns:
             None
         """
-        TM_Random.reset(self, **kwargs)
+        super().reset(**kwargs)
         self._reset_waypoints()
 
     @property

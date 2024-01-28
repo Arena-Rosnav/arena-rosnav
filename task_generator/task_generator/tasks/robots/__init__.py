@@ -1,7 +1,6 @@
-from typing import List
-from task_generator.constants import Constants, TaskConfig
-from task_generator.shared import Obstacle, PositionOrientation
-from task_generator.tasks import Props_, TaskMode
+from task_generator.constants import Config
+from task_generator.shared import PositionOrientation
+from task_generator.tasks import TaskMode
 
 
 class TM_Robots(TaskMode):
@@ -16,11 +15,13 @@ class TM_Robots(TaskMode):
 
     """
 
+    _last_reset: int
+
     def __init__(self, **kwargs):
         TaskMode.__init__(self, **kwargs)
 
     def reset(self, **kwargs):
-        ...
+        self._last_reset = self._PROPS.clock.clock.secs
 
     def set_position(self, position: PositionOrientation):
         """
@@ -53,4 +54,7 @@ class TM_Robots(TaskMode):
             bool: True if all robots are done, False otherwise.
 
         """
+        if (self._PROPS.clock.clock.secs - self._last_reset) > Config.Robot.TIMEOUT:
+            return True
+        
         return all(robot.is_done for robot in self._PROPS.robot_managers)
