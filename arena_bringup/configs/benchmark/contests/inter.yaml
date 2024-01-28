@@ -1,13 +1,36 @@
 contestants:
-
-  - name: teb-sideways
+  - name: teb-shortsighted
     local_planner: teb
-    inter_planner: sideways
+    inter_planner: shortsighted
 
-  - name: teb-basic
+  - name: teb-polite
     local_planner: teb
-    inter_planner: sideways
+    inter_planner: polite
 
   - name: teb-aggressive
     local_planner: teb
+    inter_planner: aggressive
+
+  - name: rosnav-shortsighted
+    local_planner: rosnav
+    inter_planner: shortsighted
+
+  - name: rosnav-polite
+    local_planner: rosnav
+    inter_planner: polite
+
+  - name: rosnav-aggressive
+    local_planner: rosnav
+    inter_planner: aggressive
+
+  - name: cohan-shortsighted
+    local_planner: cohan
+    inter_planner: shortsighted
+
+  - name: cohan-polite
+    local_planner: cohan
+    inter_planner: polite
+
+  - name: cohan-aggressive
+    local_planner: cohan
     inter_planner: aggressive
