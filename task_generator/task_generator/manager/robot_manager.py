@@ -15,8 +15,6 @@ from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
 from task_generator.utils import Utils, rosparam_get
 
-from tf.transformations import quaternion_from_euler
-
 import nav_msgs.msg as nav_msgs
 import geometry_msgs.msg as geometry_msgs
 import std_srvs.srv as std_srvs
@@ -216,13 +214,7 @@ class RobotManager:
         goal_msg.header.seq = 0
         goal_msg.header.stamp = rospy.get_rostime()
         goal_msg.header.frame_id = "map"
-        goal_msg.pose.position.x = goal.x
-        goal_msg.pose.position.y = goal.y
-        goal_msg.pose.position.z = 0
-
-        goal_msg.pose.orientation = geometry_msgs.Quaternion(
-            *quaternion_from_euler(0.0, 0.0, goal.orientation, axes="sxyz")
-        )
+        goal_msg.pose = Utils.pos_to_pose(goal)
 
         self._move_base_goal_pub.publish(goal_msg)
 
@@ -278,16 +270,4 @@ class RobotManager:
         )
 
     def _robot_pos_callback(self, data: nav_msgs.Odometry):
-        # TODO @TheZomb use Utils function here
-        current_position = data.pose.pose
-        quat = current_position.orientation
-
-        rot = scipy.spatial.transform.Rotation.from_quat(
-            [quat.x, quat.y, quat.z, quat.w]
-        )
-
-        self._position = PositionOrientation(
-            current_position.position.x,
-            current_position.position.y,
-            rot.as_euler("xyz")[2],
-        )
+        self._position = Utils.pose_to_pos(data.pose.pose)

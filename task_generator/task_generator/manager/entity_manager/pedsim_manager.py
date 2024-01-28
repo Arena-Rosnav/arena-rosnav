@@ -37,9 +37,7 @@ from typing import Callable, List
 
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
 from task_generator.simulators.unity_simulator import UnitySimulator
-from task_generator.utils import rosparam_get
-
-from tf.transformations import quaternion_from_euler, euler_from_quaternion
+from task_generator.utils import Utils
 
 T = Config.General.WAIT_FOR_SERVICE_TIMEOUT
 
@@ -131,32 +129,6 @@ class PedsimManager(EntityManager):
     _semaphore_reset: bool
 
     WALLS_ENTITY = "__WALLS"
-
-    @staticmethod
-    def convert_pose(pose: geometry_msgs.Pose) -> PositionOrientation:
-        # flatland has a different coordinate system
-        return PositionOrientation(
-            pose.position.x,
-            pose.position.y,
-            -math.pi / 2
-            + euler_from_quaternion(
-                [
-                    pose.orientation.x,
-                    pose.orientation.y,
-                    pose.orientation.z,
-                    pose.orientation.w,
-                ]
-            )[2],
-        )
-
-    @staticmethod
-    def pos_to_pose(pos: PositionOrientation) -> geometry_msgs.Pose:
-        return geometry_msgs.Pose(
-            position=geometry_msgs.Point(x=pos.x, y=pos.y, z=0),
-            orientation=geometry_msgs.Quaternion(
-                *quaternion_from_euler(0.0, 0.0, pos.orientation, axes="sxyz")
-            ),
-        )
 
     def __init__(self, namespace, simulator):
         EntityManager.__init__(self, namespace=namespace, simulator=simulator)
@@ -305,7 +277,7 @@ class PedsimManager(EntityManager):
                 layer=ObstacleLayer.WORLD,
                 pedsim_spawned=False,
             )
-            
+
             if not isinstance(self._simulator, FlatlandSimulator):
                 self._simulator.spawn_entity(wall.obstacle)
         else:
@@ -327,7 +299,7 @@ class PedsimManager(EntityManager):
             msg.name = obstacle.name
 
             # TODO create a global helper function for this kind of use case
-            msg.pose = self.pos_to_pose(obstacle.position)
+            msg.pose = Utils.pos_to_pose(obstacle.position)
 
             interaction_radius: float = obstacle.extra.get(
                 "interaction_radius", 0.0)
@@ -651,7 +623,7 @@ class PedsimManager(EntityManager):
 
             if entity.pedsim_spawned:
                 self._simulator.move_entity(
-                    position=self.convert_pose(obstacle.pose), name=obstacle_name
+                    position=Utils.pose_to_pos(obstacle.pose, -math.pi / 2), name=obstacle_name
                 )
 
             else:
@@ -660,13 +632,13 @@ class PedsimManager(EntityManager):
                 self._simulator.spawn_entity(
                     Obstacle(
                         name=obstacle_name,
-                        position=self.convert_pose(obstacle.pose),
+                        position=Utils.pose_to_pos(obstacle.pose, -math.pi / 2),
                         model=entity.obstacle.model,
                         extra=entity.obstacle.extra,
                     )
                 )
 
-                entity.pedsim_spawned = False # TEMP von Halid
+                entity.pedsim_spawned = False  # TEMP von Halid
                 # entity.pedsim_spawned = True
 
         rospy.set_param(self._namespace(
@@ -701,7 +673,7 @@ class PedsimManager(EntityManager):
                 self._simulator.spawn_entity(
                     entity=Obstacle(
                         name=actor_id,
-                        position=self.convert_pose(actor.pose),
+                        position=Utils.pose_to_pos(actor.pose, -math.pi / 2),
                         model=entity.obstacle.model,
                         extra=entity.obstacle.extra,
                     )

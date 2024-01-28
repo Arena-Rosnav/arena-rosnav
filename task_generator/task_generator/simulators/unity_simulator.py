@@ -1,13 +1,13 @@
 import rospy
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
-from task_generator.utils import rosparam_get
+from task_generator.utils import rosparam_get, Utils
 from task_generator.manager.utils import WorldWalls
 from tf.transformations import quaternion_from_euler
 from task_generator.constants import Constants, UnityConstants, Config
 from task_generator.simulators.base_simulator import BaseSimulator
 
-from task_generator.shared import ModelType, Robot, Obstacle
+from task_generator.shared import ModelType, Robot, Obstacle, PositionOrientation
 
 # Message Types
 from gazebo_msgs.msg import ModelState
@@ -79,15 +79,7 @@ class UnitySimulator(BaseSimulator):
         request.reference_frame = "world"
 
         # send coordinates in the normal ROS refrence frame (FLU)
-        request.initial_pose = Pose(
-            position=Point(
-                x=entity.position[0],
-                y=entity.position[1],
-                z=0.35
-            ),
-            orientation=Quaternion(
-                *quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz"))
-        )
+        request.initial_pose = Utils.pos_to_pose(entity.position)
 
         if isinstance(entity, Robot):
             rospy.set_param(request.robot_namespace(
@@ -102,24 +94,15 @@ class UnitySimulator(BaseSimulator):
         res = self.spawn_model(model.type, request)
         return res.success
 
-    def move_entity(self, name, position):
+    def move_entity(self, name, position: PositionOrientation):
         rospy.loginfo("[Unity Simulator] Move Request for " + name)
 
         request = SetModelStateRequest()
         request.model_state = ModelState()
 
         request.model_state.model_name = name
-        pose = Pose(
-            position=Point(
-                x=position[0],
-                y=position[1],
-                z=0.35
-            ),
-            orientation=Quaternion(
-                *quaternion_from_euler(0.0, 0.0, position[2], axes="sxyz")
-            )
-        )
-        request.model_state.pose = pose
+
+        request.model_state.pose = Utils.pos_to_pose(position)
         request.model_state.reference_frame = "world"
 
         self._move_model_srv(request)
@@ -130,21 +113,15 @@ class UnitySimulator(BaseSimulator):
             DeleteModelRequest(model_name=name))
         return bool(res.success)
 
-    def _publish_goal(self, goal):
+    def _publish_goal(self, goal: PositionOrientation):
         rospy.loginfo("[Unity Simulator] Goal Request")
 
         goal_msg = PoseStamped()
         goal_msg.header.seq = 0
         goal_msg.header.stamp = rospy.get_rostime()
         goal_msg.header.frame_id = "map"
-        goal_msg.pose.position.x = goal[0]
-        goal_msg.pose.position.z = goal[1]
-
-        goal_msg.pose.orientation.w = 0
-        goal_msg.pose.orientation.x = 0
-        goal_msg.pose.orientation.y = 0
-        goal_msg.pose.orientation.z = 1
-
+        goal_msg.pose = Utils.pos_to_pose(goal)
+        
         self._goal_pub.publish(goal_msg)
 
     def spawn_walls(self, walls: WorldWalls):
