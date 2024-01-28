@@ -1,0 +1,12 @@
+contestants:
+  - name: dwa-basic
+    local_planner: dwa
+    inter_planner: bypass
+
+  - name: dwa-aggressive
+    local_planner: dwa
+    inter_planner: bypass
+
+  - name: dwa-polite
+    local_planner: dwa
+    inter_planner: bypass
