@@ -40,6 +40,7 @@ class RosnavMapGenerator(BaseMapGenerator):
 
         # parameters
         self.obstacle_num = obstacle_num
+        self.map_resolution = map_resolution
         # extra radius for obstacles, middle point is the obstacle center
         self.obstacle_extra_radius = obstacle_extra_radius
         # the probability of each chair of 4 at a table
@@ -108,7 +109,8 @@ class RosnavMapGenerator(BaseMapGenerator):
                 width=self.width,
                 obstacle_number=self.obstacle_num,
                 obstacle_extra_radius=self.obstacle_extra_radius,
-                chair_chance=self.chair_chance
+                chair_chance=self.chair_chance,
+                map_resolution=self.map_resolution
             )
             if self.map_type in [MAP_TYPE.canteen, "canteen"]
             else create_outdoor_map(
@@ -116,6 +118,7 @@ class RosnavMapGenerator(BaseMapGenerator):
                 width=self.width,
                 obstacle_number=self.obstacle_num,
                 obstacle_extra_radius=self.obstacle_extra_radius,
+                map_resolution=self.map_resolution
             )
         )
 

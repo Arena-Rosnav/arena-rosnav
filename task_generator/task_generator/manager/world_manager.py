@@ -345,8 +345,8 @@ class WorldManager:
         for obst in obstacle_data.obstacles:
             obst_configuration.append(WorldObstacleConfiguration(
                 position=PositionOrientation(
-                    x= obst.position.position.x * self.resolution,
-                    y= obst.position.position.y * self.resolution,
+                    x= obst.position.position.x,
+                    y= obst.position.position.y,
                     orientation=obst.position.orientation.z
                 ),
                 model_name=obst.model_name,

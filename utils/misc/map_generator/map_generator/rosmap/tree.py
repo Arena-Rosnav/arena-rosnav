@@ -29,7 +29,7 @@ def sample(grid_map: np.ndarray, corridor_radius: int, map_default: int) -> list
     return []
 
 
-def rotate_point(point, angle, center):
+def rotate_scale_point(point, angle, center, scale: float):
     """Rotate a point around a given center."""
     angle_rad = np.radians(angle)
     x, y = point
@@ -46,5 +46,9 @@ def rotate_point(point, angle, center):
     # Translate the point back to its original position
     new_x = rotated_x + cx
     new_y = rotated_y + cy
+
+    # scale the position
+    new_x *= scale
+    new_y *= scale
 
     return new_x, new_y
