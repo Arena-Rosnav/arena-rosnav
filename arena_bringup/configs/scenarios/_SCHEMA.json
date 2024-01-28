@@ -1,19 +1,28 @@
 {
   "obstacles": {
-    "dynamic": ["<PEDSIM AGENT DESCRIPTION>"],
+    "dynamic": [{
+      "name": "<unique name:string>",
+      "pos": ["<X:float>", "<Y:float>", "<theta:float>"],
+      "type": "<type:str:adult|...]>",
+      "model": "<model:string>",
+      "waypoints": [
+        ["<X:float>", "<Y:float>", "<theta:float>"]
+      ],
+      "waypoint_mode": "<waypoint mode:int:0=loop,1=random>"
+    }],
     "static": [
       {
-        "name": "<object name>",
-        "pos": ["X", "Y", "theta"],
-        "model": "<model name>"
+        "name": "<unique name:string>",
+        "pos": ["<X:float>", "<Y:float>", "<theta:float>"],
+        "model": "<model:string>"
       }
     ]
   },
   "robots": [
     {
-      "start": ["X", "Y", "theta"],
-      "goal": ["X", "Y", "theta"]
+      "start": ["<X:float>", "<Y:float>", "<theta:float>"],
+      "goal": ["<X:float>", "<Y:float>", "<theta:float>"]
     }
   ],
-  "map": "<NAME OF THE MAP>"
+  "map": "<map name:string>"
 }

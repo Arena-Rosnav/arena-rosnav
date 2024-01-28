@@ -1,0 +1,76 @@
+{
+    "robots": [
+      {
+        "start": [17.0, 18.0, 0.7],
+        "goal": [30.0, 1.25, 0.0]
+      }
+    ],
+    "obstacles": {
+      "static": [
+        {
+          "name": "shelf1",
+          "model": "shelf",
+          "pos": [13.0, 11.0, -0.5]
+        },
+        {
+          "name": "shelf2",
+          "model": "shelf",
+          "pos": [12.0, 12.0, -0.5]
+        },
+        {
+          "name": "shelf3",
+          "model": "shelf",
+          "pos": [14.0, 10.0, -0.5]
+        },
+        {
+          "name": "shelf4",
+          "model": "shelf",
+          "pos": [26.6, 10.0, -0.5]
+        },
+        {
+          "name": "shelf5",
+          "model": "shelf",
+          "pos": [20.8, 5.02, -0.5]
+        }
+      ],
+  
+      "dynamic": [
+        {
+          "name": "1",
+          "pos": [27.3, 1.31, 0.0],
+          "type": "adult",
+          "model": "actor1",
+          "waypoints": [
+              [27.3, 1.31, 0.0],
+              [23.9, 10.9, 0.0]
+          ],
+          "waypoint_mode": 1
+        },
+        {
+          "name": "2",
+          "pos": [30.0,14.3,0],
+          "type": "adult",
+          "model": "actor1",
+          "waypoints": [
+              [30.0,14.3,0],
+              [17.0, 15.2, 0.0]
+          ],
+          "waypoint_mode": 1
+        },
+        {
+          "name": "3",
+          "pos": [30.6, 8.85, 0.0],
+          "type": "adult",
+          "model": "actor1",
+          "waypoints": [
+            [30.6, 8.85, 0.0],
+            [22.0, 0.7, 0.0]
+          ],
+          "waypoint_mode": 1
+        }
+      ],
+      "interactive": []
+    },
+    "map": "map_empty"
+  }
+  

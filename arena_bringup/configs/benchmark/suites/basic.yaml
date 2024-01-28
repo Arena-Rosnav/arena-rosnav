@@ -2,16 +2,16 @@ stages:
   - name: scenario
     episodes: 1
     robot: jackal
-    map: map_empty
+    map: arena_hospital_small
     tm_robots: scenario
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: default.json
+        file: arena_hospital_small_4.json
 
   - name: scenario_random
     episodes: 4
-    robot: jackal
+    robot: cob4
     map: map_empty
     tm_robots: scenario
     tm_obstacles: random
@@ -31,5 +31,3 @@ stages:
           min: 3
           max: 5
           models: ["actor1"]
-
-

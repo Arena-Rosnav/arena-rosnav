@@ -322,7 +322,9 @@ class TaskGenerator:
 
         self._pub_scenario_reset.publish(self._number_of_resets)
         self._number_of_resets += 1
-        # self._send_end_message_on_end(is_end)
+        self._send_end_message_on_end()
+
+        self._env_wrapper.after_reset_task()
 
         rospy.loginfo("=============")
         rospy.loginfo("Task Reset!")
@@ -339,7 +341,7 @@ class TaskGenerator:
 
         return std_srvs.EmptyResponse()
 
-    def _send_end_message_on_end(self, is_end: bool):
+    def _send_end_message_on_end(self):
         if self._number_of_resets < self._desired_resets:
             return
 
