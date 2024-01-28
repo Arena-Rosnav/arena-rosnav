@@ -7,7 +7,7 @@ from .tree import *
 
 
 def create_outdoor_map(
-    height: int, width: int, obstacle_number: int, obstacle_extra_radius: int
+    height: int, width: int, obstacle_number: int, obstacle_extra_radius: int, map_resolution: float
 ) -> (np.ndarray, dict):
     grid_map = initialize_map(height, width, type="outdoor")
     obstacles = []
@@ -17,8 +17,14 @@ def create_outdoor_map(
         if random_position == []:  # couldn't find free spot
             continue
 
-        obstacles.append(Obstacle(model_name="tree", position=Pose(position=Point(
-            x=random_position[1], y=height-random_position[0], z=0), orientation=Quaternion())))
+        obst = Obstacle(model_name="tree", position=Pose(position=Point(
+            x=random_position[1], y=height-random_position[0], z=0), orientation=Quaternion()))
+
+        # scale position with map resolution
+        obst.position.position.x *= map_resolution
+        obst.position.position.y *= map_resolution
+
+        obstacles.append(obst)
 
         obstacle_grid[
             slice(
@@ -36,7 +42,7 @@ def create_outdoor_map(
 
 
 def create_canteen_map(
-    height: int, width: int, obstacle_number: int, obstacle_extra_radius: int, chair_chance: float
+    height: int, width: int, obstacle_number: int, obstacle_extra_radius: int, chair_chance: float, map_resolution: float
 ) -> (np.ndarray, dict):
     grid_map = initialize_map(height, width, type="outdoor")
     obstacles = []
@@ -51,12 +57,16 @@ def create_canteen_map(
         table_pos = [random_position[1], height-random_position[0]]
 
         # place a table and random amount of chairs around it
-        obstacles.append(Obstacle(model_name="table", position=Pose(position=Point(
-            x=table_pos[0], y=table_pos[1], z=0), orientation=Quaternion(z=rot))))
+        table = Obstacle(model_name="table", position=Pose(position=Point(
+            x=table_pos[0], y=table_pos[1], z=0), orientation=Quaternion(z=rot)))
+        # scale position with map resolution
+        table.position.position.x *= map_resolution
+        table.position.position.y *= map_resolution
+        obstacles.append(table)
 
         # each chair has a chance to spawn
         # obstacles += place_rect(table_pos, rot, chair_chance)
-        obstacles += place_round(table_pos, rot, chair_chance)
+        obstacles += place_round(table_pos, rot, chair_chance, map_resolution)
 
         obstacle_grid[
             slice(
@@ -73,7 +83,7 @@ def create_canteen_map(
     return grid_map, obstacle_data
 
 
-def place_rect(center, rot: float, chair_chance: float):
+def place_rect(center, rot: float, chair_chance: float, map_resolution: float):
     """
     Place the chairs around a rectangular table
     """
@@ -82,29 +92,29 @@ def place_rect(center, rot: float, chair_chance: float):
     # each chair has a chance to spawn
     if np.random.random() <= chair_chance:
         pos = [center[0] - 1, center[1] - 0.8]
-        pos = rotate_point(pos, np.rad2deg(rot), center)
+        pos = rotate_scale_point(pos, np.rad2deg(rot), center, map_resolution)
         chairs.append(Obstacle(model_name="chair", position=Pose(position=Point(
             x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot))))
     if np.random.random() <= chair_chance:
         pos = [center[0] - 1, center[1] + 0.8]
-        pos = rotate_point(pos, np.rad2deg(rot), center)
+        pos = rotate_scale_point(pos, np.rad2deg(rot), center, map_resolution)
         chairs.append(Obstacle(model_name="chair", position=Pose(position=Point(
             x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot))))
     if np.random.random() <= chair_chance:
         pos = [center[0] + 1, center[1] - 0.8]
-        pos = rotate_point(pos, np.rad2deg(rot), center)
+        pos = rotate_scale_point(pos, np.rad2deg(rot), center, map_resolution)
         chairs.append(Obstacle(model_name="chair", position=Pose(position=Point(
             x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot + np.pi))))
     if np.random.random() <= chair_chance:
         pos = [center[0] + 1, center[1] + 0.8]
-        pos = rotate_point(pos, np.rad2deg(rot), center)
+        pos = rotate_scale_point(pos, np.rad2deg(rot), center, map_resolution)
         chairs.append(Obstacle(model_name="chair", position=Pose(position=Point(
             x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot + np.pi))))
 
     return chairs
 
 
-def place_round(center, rot: float, chair_chance: float):
+def place_round(center, rot: float, chair_chance: float, map_resolution: float):
     """
     Place the chairs around a round table
     """
@@ -113,22 +123,22 @@ def place_round(center, rot: float, chair_chance: float):
     # each chair has a chance to spawn
     if np.random.random() <= chair_chance:
         pos = [center[0] - 1, center[1]]
-        pos = rotate_point(pos, np.rad2deg(rot), center)
+        pos = rotate_scale_point(pos, np.rad2deg(rot), center, map_resolution)
         chairs.append(Obstacle(model_name="chair", position=Pose(position=Point(
             x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot + 0 * np.pi))))
     if np.random.random() <= chair_chance:
         pos = [center[0], center[1] - 1]
-        pos = rotate_point(pos, np.rad2deg(rot), center)
+        pos = rotate_scale_point(pos, np.rad2deg(rot), center, map_resolution)
         chairs.append(Obstacle(model_name="chair", position=Pose(position=Point(
             x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot + 0.5 * np.pi))))
     if np.random.random() <= chair_chance:
         pos = [center[0] + 1, center[1]]
-        pos = rotate_point(pos, np.rad2deg(rot), center)
+        pos = rotate_scale_point(pos, np.rad2deg(rot), center, map_resolution)
         chairs.append(Obstacle(model_name="chair", position=Pose(position=Point(
             x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot + 1 * np.pi))))
     if np.random.random() <= chair_chance:
         pos = [center[0], center[1] + 1]
-        pos = rotate_point(pos, np.rad2deg(rot), center)
+        pos = rotate_scale_point(pos, np.rad2deg(rot), center, map_resolution)
         chairs.append(Obstacle(model_name="chair", position=Pose(position=Point(
             x=pos[0], y=pos[1], z=0), orientation=Quaternion(z=rot + 1.5 * np.pi))))
 
