@@ -106,6 +106,8 @@ class TM_Scenario(TM_Robots):
             None
         """
 
+        super().reset(**kwargs)
+
         SCENARIO_ROBOTS = self._config.robots
 
         # check robot manager length

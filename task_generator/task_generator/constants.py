@@ -135,7 +135,7 @@ def reconfigure() -> TaskConfig:
                 float, "goal_tolerance_angle", 30 * math.pi / 180
             ),
             SPAWN_ROBOT_SAFE_DIST=0.25,
-            TIMEOUT=rosparam_get(float, "timeout", 3 * 60),  # 3 min
+            TIMEOUT=rosparam_get(float, "timeout", 60),  # 1 min
         ),
         Obstacles=TaskConfig_Obstacles(
             MIN_DYNAMIC_OBS=rosparam_get(
