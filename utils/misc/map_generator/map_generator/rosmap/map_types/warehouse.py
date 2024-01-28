@@ -7,13 +7,19 @@ from ..utils import *
 
 
 def create_warehouse_map(
-    height: int, width: int, obstacle_number: int, obstacle_extra_radius: int, map_resolution: float
+    height: int,
+    width: int,
+    map_resolution: float
 ) -> (np.ndarray, dict):
-    grid_map = initialize_map(height, width, type="outdoor")
+    grid_map = initialize_map(height, width, type="bordered")
     obstacles = []
-    obstacle_grid = np.tile(0, [height, width])
-    for _ in range(obstacle_number):
-        random_position = sample(obstacle_grid, obstacle_extra_radius, 0)
+    obstacle_grid = np.tile(0, [height, width]) # leave out for now
+
+    # random between horizontal and vertical
+    rot = np.pi / 2 if np.random.random() < 0.5 else 0
+
+    for _ in range(1000):
+        random_position = sample(obstacle_grid, 0, 0)
         if random_position == []:  # couldn't find free spot
             continue
 
@@ -25,17 +31,6 @@ def create_warehouse_map(
         obst.position.position.y *= map_resolution
 
         obstacles.append(obst)
-
-        obstacle_grid[
-            slice(
-                random_position[0] - obstacle_extra_radius,
-                random_position[0] + obstacle_extra_radius + 1,
-            ),  # create 1 pixel obstacles with extra radius if specified
-            slice(
-                random_position[1] - obstacle_extra_radius,
-                random_position[1] + obstacle_extra_radius + 1,
-            ),
-        ] = 1
 
     obstacle_data = {"obstacles": obstacles, "occupancy": obstacle_grid}
     return grid_map, obstacle_data

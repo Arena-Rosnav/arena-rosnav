@@ -117,20 +117,18 @@ class RosnavMapGenerator(BaseMapGenerator):
             )
         elif self.map_type in [MAP_TYPE.outdoor, "outdoor"]:
             return create_outdoor_map(
-                    height=self.height,
-                    width=self.width,
-                    obstacle_number=self.obstacle_num,
-                    obstacle_extra_radius=self.obstacle_extra_radius,
-                    map_resolution=self.map_resolution
-                )
+                height=self.height,
+                width=self.width,
+                obstacle_number=self.obstacle_num,
+                obstacle_extra_radius=self.obstacle_extra_radius,
+                map_resolution=self.map_resolution
+            )
         elif self.map_type in [MAP_TYPE.warehouse, "warehouse"]:
             return create_warehouse_map(
-                    height=self.height,
-                    width=self.width,
-                    obstacle_number=self.obstacle_num,
-                    obstacle_extra_radius=self.obstacle_extra_radius,
-                    map_resolution=self.map_resolution
-                )
+                height=self.height,
+                width=self.width,
+                map_resolution=self.map_resolution
+            )
 
 
 def test():

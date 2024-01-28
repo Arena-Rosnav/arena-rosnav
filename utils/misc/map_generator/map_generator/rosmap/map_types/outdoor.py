@@ -9,7 +9,7 @@ from ..utils import *
 def create_outdoor_map(
     height: int, width: int, obstacle_number: int, obstacle_extra_radius: int, map_resolution: float
 ) -> (np.ndarray, dict):
-    grid_map = initialize_map(height, width, type="outdoor")
+    grid_map = initialize_map(height, width, type="bordered")
     obstacles = []
     obstacle_grid = np.tile(0, [height, width])
     for _ in range(obstacle_number):
