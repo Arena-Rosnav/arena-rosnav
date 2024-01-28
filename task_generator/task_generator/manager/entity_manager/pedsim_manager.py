@@ -322,10 +322,6 @@ class PedsimManager(EntityManager):
         self.agent_topic_str = ""
 
         for obstacle in obstacles:
-            # Temporary fix to
-            # world obstacles are overwritten by normal obstacles
-            # if "_shelf_" in obstacle.name:
-            #     return
             msg = pedsim_msgs.Obstacle()
 
             msg.name = obstacle.name
@@ -680,12 +676,6 @@ class PedsimManager(EntityManager):
         if self._is_paused:
             return
 
-        # if not rosparam_get(
-        #     bool, self._namespace(self.PARAM_NEEDS_RESPAWN_PEDS), False
-        # ):
-        #     return
-        # rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_PEDS), False)
-
         if isinstance(self._simulator, FlatlandSimulator):
             return  # already taken care of by pedsim
 
@@ -703,16 +693,7 @@ class PedsimManager(EntityManager):
                 continue
 
             if entity.pedsim_spawned:
-                pass  # handled by pedsim
-                # self._simulator.move_entity(
-                #     name=actor_id,
-                #     position=(
-                #         actor_pose.position.x,
-                #         actor_pose.position.y,
-                #         actor_pose.orientation.z + math.pi/2
-                #     )
-                # )
-
+                continue  # handled by pedsim
             else:
                 rospy.loginfo(
                     "Spawning dynamic obstacle: actor_id = %s", actor_id)
