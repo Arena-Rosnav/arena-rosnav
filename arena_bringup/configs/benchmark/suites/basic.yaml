@@ -1,13 +1,4 @@
 stages:
-  - name: scenario
-    episodes: 1
-    robot: jackal
-    map: map_empty
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: default.json
 
   - name: scenario_random
     episodes: 4
@@ -33,3 +24,12 @@ stages:
           models: ["actor1"]
 
 
+  - name: scenario
+    episodes: 1
+    robot: jackal
+    map: arena_corridor
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_corridor4.json

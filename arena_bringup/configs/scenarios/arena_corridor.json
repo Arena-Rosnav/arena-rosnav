@@ -1,0 +1,52 @@
+{
+    "robots": [
+      {
+        "start": [12, 0, 0.7],
+        "goal": [-15, 0, 0.7]
+      }
+    ],
+    "obstacles": {
+  
+      "static": [
+      ],
+  
+      "dynamic": [
+        {
+          "name": "Visitor_1",
+          "pos": [-10, 0, 1],
+          "type": "adult",
+          "model": "actor1",
+          "waypoints": [
+              [-10, -1, 1],
+              [-7, 1.8, 1]
+          ],
+          "waypoint_mode": 1
+        },   
+        {
+          "name": "Visitor_2",
+          "pos": [-6,0,1],
+          "type": "adult",
+          "model": "actor1",
+          "waypoints": [
+                [-3, -1, 1],
+                [0, 1.8, 1]
+          ],
+          "waypoint_mode": 1
+        },  
+        {
+          "name": "Visitor_3",
+          "pos": [2, 0, 1],
+          "type": "adult",
+          "model": "actor1",
+          "waypoints": [
+              [5, -1, 1],
+              [10, -1, 1]                                             
+          ],
+          "waypoint_mode": 1
+        }                                               
+      ],
+      "interactive": []
+    },
+    "resets": 50,
+    "map": "arena_corridor"
+  }
