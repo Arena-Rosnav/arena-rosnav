@@ -10,12 +10,15 @@ from enum import Enum
 
 from map_generator.base_map_gen import BaseMapGenerator
 from map_generator.factory import MapGeneratorFactory
-from map_generator.rosmap.wrapper import create_canteen_map, create_outdoor_map
+from .map_types.canteen import create_canteen_map
+from .map_types.outdoor import create_outdoor_map
+from .map_types.warehouse import create_warehouse_map
 
 
 class MAP_TYPE(Enum):
     canteen = "canteen"
     outdoor = "outdoor"
+    warehouse = "warehouse"
 
 
 @MapGeneratorFactory.register(MapGenerators.ROSMAP)
@@ -103,8 +106,8 @@ class RosnavMapGenerator(BaseMapGenerator):
 
     def generate_grid_map(self) -> (np.ndarray, dict):
         super().generate_grid_map()
-        return (
-            create_canteen_map(
+        if self.map_type in [MAP_TYPE.canteen, "canteen"]:
+            return create_canteen_map(
                 height=self.height,
                 width=self.width,
                 obstacle_number=self.obstacle_num,
@@ -112,15 +115,22 @@ class RosnavMapGenerator(BaseMapGenerator):
                 chair_chance=self.chair_chance,
                 map_resolution=self.map_resolution
             )
-            if self.map_type in [MAP_TYPE.canteen, "canteen"]
-            else create_outdoor_map(
-                height=self.height,
-                width=self.width,
-                obstacle_number=self.obstacle_num,
-                obstacle_extra_radius=self.obstacle_extra_radius,
-                map_resolution=self.map_resolution
-            )
-        )
+        elif self.map_type in [MAP_TYPE.outdoor, "outdoor"]:
+            return create_outdoor_map(
+                    height=self.height,
+                    width=self.width,
+                    obstacle_number=self.obstacle_num,
+                    obstacle_extra_radius=self.obstacle_extra_radius,
+                    map_resolution=self.map_resolution
+                )
+        elif self.map_type in [MAP_TYPE.warehouse, "warehouse"]:
+            return create_warehouse_map(
+                    height=self.height,
+                    width=self.width,
+                    obstacle_number=self.obstacle_num,
+                    obstacle_extra_radius=self.obstacle_extra_radius,
+                    map_resolution=self.map_resolution
+                )
 
 
 def test():
