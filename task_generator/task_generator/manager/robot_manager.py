@@ -235,7 +235,7 @@ class RobotManager:
             )
 
             args = [
-                f"SIMULATOR:={rosparam_get(str, 'SIMULATOR', 'flatland')}",
+                f"SIMULATOR:={Utils.get_simulator().value}",
                 f"model:={self.model_name}",
                 f"name:={self.name}",
                 f"namespace:={self.namespace}",
