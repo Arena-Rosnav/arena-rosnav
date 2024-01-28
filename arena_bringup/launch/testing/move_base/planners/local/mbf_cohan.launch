@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+
+  <node name="mbf_cmd_vel_relay" pkg="topic_tools" type="relay" args="cmd_vel_internal cmd_vel" />
+
   <!-- Arguments -->
   <arg name="model" default="burger"/>
   <arg name="speed" default="0.22"/>
 
   <arg name="namespace" />
   <arg name="frame" />
-
-  <remap from="cmd_vel" to="cmd_vel_actual" />
 
   <!-- Load usual move base params -->
   <group ns="move_base_flex">
