@@ -1,13 +1,13 @@
 stages:
   - name: scenario
     episodes: 1
-    robot: cob4
-    map: arena_corridor
+    robot: jackal
+    map: arena_hospital_small
     tm_robots: scenario
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_3.json
+        file: arena_hospital_small_4.json
 
   - name: scenario_random
     episodes: 4

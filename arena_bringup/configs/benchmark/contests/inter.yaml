@@ -1,8 +1,4 @@
 contestants:
-  - name: teb-shortsighted
-    local_planner: teb
-    inter_planner: shortsighted
-
   - name: teb-polite
     local_planner: teb
     inter_planner: polite
@@ -11,10 +7,6 @@ contestants:
     local_planner: teb
     inter_planner: aggressive
 
-  - name: rosnav-shortsighted
-    local_planner: rosnav
-    inter_planner: shortsighted
-
   - name: rosnav-polite
     local_planner: rosnav
     inter_planner: polite
@@ -22,11 +14,7 @@ contestants:
   - name: rosnav-aggressive
     local_planner: rosnav
     inter_planner: aggressive
-
-  - name: cohan-shortsighted
-    local_planner: cohan
-    inter_planner: shortsighted
-
+    
   - name: cohan-polite
     local_planner: cohan
     inter_planner: polite

@@ -9,7 +9,7 @@ stages:
       SCENARIO:
         file: map_empty_1.json
 
-   - name: map_empty_2_jackal
+  - name: map_empty_2_jackal
     episodes: 1
     robot: jackal
     map: map_empty
@@ -82,7 +82,7 @@ stages:
       SCENARIO:
         file: map_empty_1.json
 
-   - name: map_empty_2_agvota
+  - name: map_empty_2_agvota
     episodes: 1
     robot: agvota
     map: map_empty
@@ -155,7 +155,7 @@ stages:
       SCENARIO:
         file: map_empty_1.json
 
-   - name: map_empty_2_cob4
+  - name: map_empty_2_cob4
     episodes: 1
     robot: cob4
     map: map_empty

@@ -9,7 +9,7 @@ stages:
       SCENARIO:
         file: arena_corridor_1.json
 
-   - name: arena_corridor_2_jackal
+  - name: arena_corridor_2_jackal
     episodes: 1
     robot: jackal
     map: arena_corridor
@@ -82,7 +82,7 @@ stages:
       SCENARIO:
         file: arena_corridor_1.json
 
-   - name: arena_corridor_2_agvota
+  - name: arena_corridor_2_agvota
     episodes: 1
     robot: agvota
     map: arena_corridor
@@ -155,7 +155,7 @@ stages:
       SCENARIO:
         file: arena_corridor_1.json
 
-   - name: arena_corridor_2_cob4
+  - name: arena_corridor_2_cob4
     episodes: 1
     robot: cob4
     map: arena_corridor

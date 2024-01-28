@@ -9,7 +9,7 @@ stages:
       SCENARIO:
         file: arena_hospital_small_1.json
 
-   - name: arena_hospital_small_2_jackal
+  - name: arena_hospital_small_2_jackal
     episodes: 1
     robot: jackal
     map: arena_hospital_small
@@ -82,7 +82,7 @@ stages:
       SCENARIO:
         file: arena_hospital_small_1.json
 
-   - name: arena_hospital_small_2_agvota
+  - name: arena_hospital_small_2_agvota
     episodes: 1
     robot: agvota
     map: arena_hospital_small
@@ -155,7 +155,7 @@ stages:
       SCENARIO:
         file: arena_hospital_small_1.json
 
-   - name: arena_hospital_small_2_cob4
+  - name: arena_hospital_small_2_cob4
     episodes: 1
     robot: cob4
     map: arena_hospital_small
