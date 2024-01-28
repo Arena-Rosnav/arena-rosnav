@@ -29,7 +29,7 @@
             [-3, -5.5, 0],
             [-3, -7.5, 0]
         ],
-        "waypoint_mode": 2 //waypoint mode 2 follows waypoints in order, 0 and 1 do something else (maybe random)
+        "waypoint_mode": 2
       },   
       {
         "name": "Visitor_1",
