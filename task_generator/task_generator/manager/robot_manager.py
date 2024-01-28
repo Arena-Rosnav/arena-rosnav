@@ -5,7 +5,6 @@ import numpy as np
 import rospy
 import roslaunch
 import os
-import scipy.spatial.transform
 
 import roslaunch
 import rospy
