@@ -9,4 +9,4 @@ contestants:
 
   - name: teb-polite
     local_planner: teb
-    inter_planner: polite
+    inter_planner: bypass

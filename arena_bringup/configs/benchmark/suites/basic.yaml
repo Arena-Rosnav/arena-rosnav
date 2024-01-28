@@ -7,7 +7,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_1.json
+        file: arena_corridor_3.json
 
   - name: scenario_random
     episodes: 4
