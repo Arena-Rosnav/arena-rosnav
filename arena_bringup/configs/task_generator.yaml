@@ -14,8 +14,8 @@ DYNAMICMAP: {}
 
 RANDOM:
   static:
-    min: 0
-    max: 0
+    min: 5
+    max: 10
     models: ["shelf"]
   interactive:
     min: 0
@@ -23,5 +23,5 @@ RANDOM:
     models: ["shelf"]
   dynamic:
     min: 3
-    max: 3
+    max: 5
     models: ["actor1"]

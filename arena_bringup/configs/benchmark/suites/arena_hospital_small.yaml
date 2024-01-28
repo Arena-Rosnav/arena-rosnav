@@ -1,0 +1,219 @@
+stages:
+  - name: arena_hospital_small_1_jackal
+    episodes: 1
+    robot: jackal
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_1.json
+
+  - name: arena_hospital_small_2_jackal
+    episodes: 1
+    robot: jackal
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_2.json 
+
+  - name: arena_hospital_small_3_jackal
+    episodes: 1
+    robot: jackal
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_3.json
+
+  - name: arena_hospital_small_4_jackal
+    episodes: 1
+    robot: jackal
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_4.json
+
+  - name: arena_hospital_small_5_jackal
+    episodes: 1
+    robot: jackal
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_5.json
+        
+  - name: arena_hospital_small_random_jackal
+    episodes: 5
+    robot: jackal
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: random
+    config:
+      SCENARIO:
+        file: arena_hospital_small_1.json
+      RANDOM:
+        static:
+          min: 5
+          max: 10
+          models: ["shelf"]
+        interactive:
+          min: 0
+          max: 0
+          models: ["shelf"]
+        dynamic:
+          min: 3
+          max: 5
+          models: ["actor1"]
+
+  - name: arena_hospital_small_1_agvota
+    episodes: 1
+    robot: agvota
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_1.json
+
+  - name: arena_hospital_small_2_agvota
+    episodes: 1
+    robot: agvota
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_2.json 
+
+  - name: arena_hospital_small_3_agvota
+    episodes: 1
+    robot: agvota
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_3.json
+
+  - name: arena_hospital_small_4_agvota
+    episodes: 1
+    robot: agvota
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_4.json
+
+  - name: arena_hospital_small_5_agvota
+    episodes: 1
+    robot: agvota
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_5.json
+        
+  - name: arena_hospital_small_random_agvota
+    episodes: 5
+    robot: agvota
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: random
+    config:
+      SCENARIO:
+        file: arena_hospital_small_1.json
+      RANDOM:
+        static:
+          min: 5
+          max: 10
+          models: ["shelf"]
+        interactive:
+          min: 0
+          max: 0
+          models: ["shelf"]
+        dynamic:
+          min: 3
+          max: 5
+          models: ["actor1"]
+
+  - name: arena_hospital_small_1_cob4
+    episodes: 1
+    robot: cob4
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_1.json
+
+  - name: arena_hospital_small_2_cob4
+    episodes: 1
+    robot: cob4
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_2.json 
+
+  - name: arena_hospital_small_3_cob4
+    episodes: 1
+    robot: cob4
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_3.json
+
+  - name: arena_hospital_small_4_cob4
+    episodes: 1
+    robot: cob4
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_4.json
+
+  - name: arena_hospital_small_5_cob4
+    episodes: 1
+    robot: cob4
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_5.json
+        
+  - name: arena_hospital_small_random_cob4
+    episodes: 5
+    robot: cob4
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: random
+    config:
+      SCENARIO:
+        file: arena_hospital_small_1.json
+      RANDOM:
+        static:
+          min: 5
+          max: 10
+          models: ["shelf"]
+        interactive:
+          min: 0
+          max: 0
+          models: ["shelf"]
+        dynamic:
+          min: 3
+          max: 5
+          models: ["actor1"]
