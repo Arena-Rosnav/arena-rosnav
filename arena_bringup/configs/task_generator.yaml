@@ -1,5 +1,4 @@
 episodes: 50
-autoreset: true
 
 SCENARIO:
   file: default.json

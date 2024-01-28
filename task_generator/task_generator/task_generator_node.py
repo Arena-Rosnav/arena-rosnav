@@ -56,7 +56,7 @@ def create_default_robot_list(
             agent=agent,
             position=next(gen_init_pos),
             name=name,
-            record_data=False,
+            record_data=rosparam_get(bool, "record_data", False),
             extra=dict(),
         )
     ]
@@ -326,7 +326,7 @@ class TaskGenerator:
         is_end = self._task.reset(callback=lambda: False, **kwargs)
 
         self._pub_scenario_reset.publish(self._number_of_resets)
-        # self._send_end_message_on_end(is_end)
+        self._send_end_message_on_end()
 
         self._env_wrapper.after_reset_task()
 
@@ -347,7 +347,7 @@ class TaskGenerator:
 
         return std_srvs.EmptyResponse()
 
-    def _send_end_message_on_end(self, is_end: bool):
+    def _send_end_message_on_end(self):
         if self._number_of_resets < self._desired_resets:
             return
 

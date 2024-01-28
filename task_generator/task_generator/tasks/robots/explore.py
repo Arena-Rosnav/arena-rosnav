@@ -3,7 +3,7 @@ import random
 from typing import Dict
 import genpy
 import rospy
-from task_generator.constants import Constants
+from task_generator.constants import Config, Constants
 from task_generator.shared import PositionOrientation, rosparam_get
 from task_generator.tasks.robots.random import TM_Random
 from task_generator.tasks.task_factory import TaskFactory
@@ -42,9 +42,7 @@ class TM_Explore(TM_Random):
                     i, PositionOrientation(*waypoint, random.random() * 2 * math.pi)
                 )
 
-            elif (self._PROPS.clock.clock - self._timeouts[i]).secs > rosparam_get(
-                float, "TIMEOUT", 90
-            ):
+            elif (self._PROPS.clock.clock - self._timeouts[i]).secs > Config.Robot.TIMEOUT:
                 waypoint = self._PROPS.world_manager.get_position_on_map(
                     safe_dist=robot._robot_radius, forbid=False
                 )
