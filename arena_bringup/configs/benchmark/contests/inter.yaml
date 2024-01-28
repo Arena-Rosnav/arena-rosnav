@@ -1,4 +1,9 @@
 contestants:
+
+  - name: teb-sideways
+    local_planner: teb
+    inter_planner: sideways
+
   - name: teb-basic
     local_planner: teb
     inter_planner: sideways
@@ -6,7 +11,3 @@ contestants:
   - name: teb-aggressive
     local_planner: teb
     inter_planner: aggressive
-
-  - name: teb-polite
-    local_planner: teb
-    inter_planner: bypass

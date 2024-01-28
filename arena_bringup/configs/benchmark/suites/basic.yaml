@@ -31,5 +31,3 @@ stages:
           min: 3
           max: 5
           models: ["actor1"]
-
-

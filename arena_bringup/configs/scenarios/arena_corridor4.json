@@ -13,23 +13,23 @@
       "dynamic": [
         {
           "name": "Visitor_1",
-          "pos": [-10, 0, 1],
+          "pos": [-13, 0, 1],
           "type": "adult",
           "model": "actor1",
           "waypoints": [
-              [-10, -1, 1],
-              [-7, 1.8, 1]
+              [-13, 0, 1],
+              [-4, 0, 1]
           ],
           "waypoint_mode": 1
         },   
         {
           "name": "Visitor_2",
-          "pos": [-6,0,1],
+          "pos": [-7,1,1],
           "type": "adult",
           "model": "actor1",
           "waypoints": [
-                [-3, -1, 1],
-                [0, 1.8, 1]
+                [-7, 1, 1],
+                [1, 1, 1]
           ],
           "waypoint_mode": 1
         },  
@@ -39,8 +39,8 @@
           "type": "adult",
           "model": "actor1",
           "waypoints": [
-              [5, -1, 1],
-              [10, -1, 1]                                             
+              [2, 0, 1],
+              [11, 0, 1]                                             
           ],
           "waypoint_mode": 1
         }                                               
