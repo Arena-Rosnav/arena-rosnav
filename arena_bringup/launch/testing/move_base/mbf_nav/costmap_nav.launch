@@ -29,11 +29,11 @@
     <group>
 
         <!--
-            enable cmd_vel masking, add
-                <remap from="cmd_vel" to="cmd_vel_actual" />
-            at the top of every launch file that needs to override the move_base_flex node cmd_vel output, otherwise add to exclusions
+            to disable cmd_vel masking, add
+                <node name="mbf_cmd_vel_relay" pkg="topic_tools" type="relay" args="cmd_vel_internal cmd_vel" />
+            at the top of every launch file that doesn't need to override the move_base_flex node cmd_vel output
         -->
-        <remap from="cmd_vel" to="cmd_vel_actual" unless="$(eval arg('local_planner') in ['teb', 'dwa', 'mpc'])" />
+        <remap from="cmd_vel" to="cmd_vel_internal" />
 
         <node pkg="mbf_costmap_nav" type="mbf_costmap_nav" respawn="false" name="move_base_flex"
             output="log">
