@@ -318,12 +318,18 @@ class WorldManager:
         filt = np.full((filt_size, filt_size), 1) / (filt_size ** 2)
 
         spread = scipy.signal.convolve2d(
-            WorldOccupancy.not_empty(occupancy).astype(
+            WorldOccupancy.not_full(occupancy).astype(
                 np.uint8) * np.iinfo(np.uint8).max,
             filt,
             mode="full",
             boundary="fill",
             fillvalue=int(WorldOccupancy.FULL)
         )
+
+        # import cv2
+        # cv2.imwrite("_debug1.png", occupancy)
+        # cv2.imwrite("_debug2.png", WorldOccupancy.not_full(occupancy).astype(np.uint8) * np.iinfo(np.uint8).max)
+        # cv2.imwrite("_debug3.png", spread)
+        # cv2.imwrite("_debug4.png", WorldOccupancy.empty(spread).astype(np.uint8) * np.iinfo(np.uint8).max)
 
         return np.transpose(np.where(WorldOccupancy.empty(spread)))
