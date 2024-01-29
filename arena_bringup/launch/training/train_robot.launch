@@ -7,6 +7,8 @@
   <arg name="model" default="" />
   <arg name="namespace" default="" />
   <arg name="sim_namespace" default="" />
+
+  <arg name="inter_planner" default="bypass" />
   <arg name="local_planner" default="rosnav" />
 
   <arg name="train_mode" default="false" doc="If false, start the Rosnav Deployment Nodes"/>
@@ -36,16 +38,16 @@
       <remap from="cmd_vel" to="$(arg namespace)/cmd_vel" />
       <remap from="odom" to="$(arg namespace)/odom" />
 
-      <include file="$(find arena_bringup)/launch/testing/move_base/bootstrap.launch">
+      <include file="$(find arena_bringup)/launch/testing/move_base/mbf_nav/costmap_nav.launch">
+        <arg name="train_mode" value="$(arg train_mode)" />
+
+        <arg name="inter_planner" value="$(arg inter_planner)" />
         <arg name="local_planner" value="$(arg local_planner)" />
 
         <arg name="model" value="$(arg model)" />
-        <arg name="train_mode" value="$(arg train_mode)" />
-        <arg name="agent_name" value="$(arg agent_name)" />
+        <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
 
         <arg name="namespace" value="$(arg namespace)" />
-        <arg name="sim_namespace" value="$(arg sim_namespace)" />
-
         <arg name="frame" value="$(arg name)/" />
 
       </include>

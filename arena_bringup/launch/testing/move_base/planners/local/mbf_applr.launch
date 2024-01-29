@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- Arguments -->
+  <arg name="model" default="jackal"/>
+  <arg name="speed" />
+  <arg name="move_forward_only" default="false"/>
+  <arg name="namespace" />
+  <arg name="frame" />
+
+  <remap from="cmd_vel" to="cmd_vel_actual" />
+
+  <!-- move_base_flex -->
+  <group ns="move_base_flex">
+    <rosparam file="$(find arena_bringup)/params/mbf/local/applr_local_planner_params.yaml"
+      command="load" subst_value="True" />
+    <rosparam
+      file="$(find arena-simulation-setup)/robot/$(arg model)/configs/mbf/applr_local_planner_params.yaml"
+      command="load" subst_value="True" />
+
+    <param name="base_local_planner" value="TrajectoryPlannerROS"/>
+    <param name="base_global_planner" value="NavfnROS" />
+  </group>
+
+  <group>
+    <arg name="move_base_node" value="move_base_flex" />
+    <remap from="$(arg move_base_node)/make_plan" to="move_base_legacy_relay/make_plan" />
+    <node pkg="applr" type="test_param_policy.py" name="test_param_policy" output="screen">
+      <param name="move_base_node" value="$(arg move_base_node)" />
+    </node>
+  </group>
+  
+</launch>

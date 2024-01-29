@@ -11,7 +11,8 @@
   <!-- ___________ ARGS ___________ -->
   <!-- You can launch a single robot and his local_planner with arguments -->
   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]" />
-  <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav]" />
+  <arg name="inter_planner" default="bypass" doc="inter planner type [bypass, shortsighted, polite, aggressive, sideways]" />
+  <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav, cohan]" />
   <arg name="simulator" default="flatland" doc="[flatland, gazebo]" />
   <env name="SIMULATOR" value="$(arg simulator)" />
 
@@ -33,8 +34,10 @@
 
   <param name="robot_setup_file" value="$(arg robot_setup_file)" />
   <param name="model" value="$(arg model)" />
+  <param name="inter_planner"  value="$(arg inter_planner)"/>
   <param name="local_planner"  value="$(arg local_planner)"/>
   <param name="agent_name" value="$(arg agent_name)" unless="$(eval arg('local_planner') != 'rosnav')"/>
+  
 
   <param name="complexity" value="$(arg complexity)" />
   

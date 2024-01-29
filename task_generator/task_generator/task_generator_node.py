@@ -42,16 +42,21 @@ import training.srv as training_srvs
 
 
 def create_default_robot_list(
-    robot_model: ModelWrapper, name: str, planner: str, agent: str
+    robot_model: ModelWrapper,
+    name: str,
+    inter_planner:str,
+    local_planner: str,
+    agent: str
 ) -> List[Robot]:
     return [
         Robot(
             model=robot_model,
-            planner=planner,
+            inter_planner=inter_planner,
+            local_planner=local_planner,
             agent=agent,
             position=next(gen_init_pos),
             name=name,
-            record_data=False,
+            record_data=rosparam_get(bool, "record_data", False),
             extra=dict(),
         )
     ]
@@ -214,6 +219,8 @@ class TaskGenerator:
             entity_manager=self._entity_manager,
         )
 
+        obstacle_manager.spawn_world_obstacles(world_manager.world)
+
         robot_managers = self._create_robot_managers()
 
         # For every robot
@@ -259,14 +266,16 @@ class TaskGenerator:
 
         robot_model: str = rosparam_get(str, "/model")
 
+
         if robot_setup_file == "":
             robots = create_default_robot_list(
                 robot_model=self._robot_loader.bind(robot_model),
-                planner=rosparam_get(str, "/local_planner", ""),
+                inter_planner=rosparam_get(str, "/inter_planner", ""),
+                local_planner=rosparam_get(str, "/local_planner", ""),
                 agent=rosparam_get(str, "/agent_name", ""),
                 name=f"{self._namespace[1:]}_{robot_model}"
                 if self._train_mode
-                else {robot_model},
+                else robot_model,
             )
         else:
             robots = [
@@ -317,7 +326,7 @@ class TaskGenerator:
         is_end = self._task.reset(callback=lambda: False, **kwargs)
 
         self._pub_scenario_reset.publish(self._number_of_resets)
-        # self._send_end_message_on_end(is_end)
+        self._send_end_message_on_end()
 
         self._env_wrapper.after_reset_task()
 
@@ -338,7 +347,7 @@ class TaskGenerator:
 
         return std_srvs.EmptyResponse()
 
-    def _send_end_message_on_end(self, is_end: bool):
+    def _send_end_message_on_end(self):
         if self._number_of_resets < self._desired_resets:
             return
 

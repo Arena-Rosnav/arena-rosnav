@@ -26,6 +26,8 @@ class TM_Random(TM_Robots):
             None
         """
 
+        super().reset(**kwargs)
+
         ROBOT_POSITIONS: List[
             Tuple[PositionOrientation, PositionOrientation]
         ] = kwargs.get("ROBOT_POSITIONS", [])
