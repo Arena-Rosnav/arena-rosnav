@@ -127,6 +127,7 @@ class RosnavMapGenerator(BaseMapGenerator):
             return create_warehouse_map(
                 height=self.height,
                 width=self.width,
+                obstacle_number=self.obstacle_num,
                 map_resolution=self.map_resolution
             )
 
