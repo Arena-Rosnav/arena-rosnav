@@ -19,7 +19,7 @@ sudo echo ""
 echo "Preparing Project...:"
 mkdir -p ~/arena_ws/src 
 cd ~/arena_ws
-catkin_make
+catkin build
 cd src
 git clone https://github.com/Arena-Rosnav/arena-rosnav.git
 cd arena-rosnav
@@ -34,7 +34,7 @@ rosdep update && rosdep install --from-paths src --ignore-src -r -y
 
 # Project Install
 echo "Installing Project...:"
-catkin_make
+catkin build
 if ! grep -q 'source $HOME/arena_ws/devel/setup.bash' ~/.bashrc; then
   echo 'source $HOME/arena_ws/devel/setup.bash' >> ~/.bashrc
 fi

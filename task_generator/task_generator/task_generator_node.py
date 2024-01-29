@@ -214,6 +214,8 @@ class TaskGenerator:
             entity_manager=self._entity_manager,
         )
 
+        obstacle_manager.spawn_world_obstacles(world_manager.world)
+
         robot_managers = self._create_robot_managers()
 
         # For every robot
