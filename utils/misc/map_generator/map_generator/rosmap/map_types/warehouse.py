@@ -10,7 +10,11 @@ from ..utils import *
 def create_warehouse_map(
     height: int,
     width: int,
-    obstacle_number: int,
+    pallet_jacks: int,
+    hor_dist_shelfs_min: int,
+    hor_dist_shelfs_max: int,
+    vert_dist_shelfs_min: int,
+    vert_dist_shelfs_max: int,
     map_resolution: float
 ) -> (np.ndarray, dict):
     grid_map = initialize_map(height, width, type="bordered")
@@ -18,15 +22,17 @@ def create_warehouse_map(
     obstacle_grid = np.tile(0, [height, width])
 
     # RANDOM PARAMS
+    print(pallet_jacks)
 
     # random between horizontal and vertical
     rot = np.pi / 2 if np.random.random() < 0.5 else 0
 
     # how far the shelf right next to each other should be
     # replace /2 with * map_resolution?
-    vert_dist = np.random.randint(18, 30) / 2
+    vert_dist = np.random.randint(
+        vert_dist_shelfs_min, vert_dist_shelfs_max) / 2
     # how far the next shelf row should be
-    hor_dist = np.random.randint(29, 36) / 2
+    hor_dist = np.random.randint(hor_dist_shelfs_min, hor_dist_shelfs_max) / 2
 
     # start pos
     start_vert = np.random.randint(int(vert_dist/2)+1, int(vert_dist * 2))
@@ -68,7 +74,7 @@ def create_warehouse_map(
                       int(point.x + hor_dist + 1)),
             ] = 1
 
-    for _ in range(obstacle_number):
+    for _ in range(pallet_jacks):
         random_position = sample(obstacle_grid, 3, 0)
         if random_position == []:  # couldn't find free spot
             continue

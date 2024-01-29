@@ -19,15 +19,20 @@ algorithm_config:
   # 'outdoor' 
   # 'canteen' (rosmap only)
   # 'warehouse' (rosmap only)
-  obstacle_num: 3 # number of outdoor obstacles
-  # in warehouse corresponds to number of pallet jacks
+  obstacle_num: 15 # number of obstacles
   obstacle_extra_radius: 5 # total obstacle diameter = 1+2*obstacle_extra_radius
 
   rosnav:
     indoor:
       corridor_radius: 5 # total corridor diameter = 1+2*corridor_radius
-      iterations: 100 # number of nodes for the indoor map algorithm
+      iterations: 256 # number of nodes for the indoor map algorithm
 
   rosmap:
     canteen:
       chair_chance: 0.6 # between 0 and 1
+    warehouse:
+      pallet_jacks: 5
+      hor_dist_shelfs_min: 29
+      hor_dist_shelfs_max: 36
+      vert_dist_shelfs_min: 18
+      vert_dist_shelfs_max: 30

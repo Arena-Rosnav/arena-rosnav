@@ -27,8 +27,8 @@ class RosnavMapGenerator(BaseMapGenerator):
         self,
         height: int,
         width: int,
-        robot_infl_radius: float,
         map_resolution: float,
+        robot_infl_radius: float,
         map_type: str = "outdoor",
         obstacle_num: int = 10,
         obstacle_extra_radius: int = 1,
@@ -38,6 +38,8 @@ class RosnavMapGenerator(BaseMapGenerator):
     ):
         super().__init__(height, width,
                          map_resolution=map_resolution)
+        
+        print(kwargs)
 
         self.map_type = MAP_TYPE(map_type.lower())
 
@@ -49,6 +51,14 @@ class RosnavMapGenerator(BaseMapGenerator):
         # the probability of each chair of 4 at a table
         self.chair_chance = chair_chance
 
+        # warehouse params
+        self.pallet_jacks = kwargs['rosmap']['warehouse']['pallet_jacks'] or 3
+        self.hor_dist_shelfs_min = kwargs['rosmap']['warehouse']['hor_dist_shelfs_min'] or 20
+        self.hor_dist_shelfs_max = kwargs['rosmap']['warehouse']['hor_dist_shelfs_max'] or 22
+        self.vert_dist_shelfs_min = kwargs['rosmap']['warehouse']['vert_dist_shelfs_min'] or 10
+        self.vert_dist_shelfs_max = kwargs['rosmap']['warehouse']['vert_dist_shelfs_max'] or 12
+
+
     def update_params(
         self,
         height: int,
@@ -57,6 +67,11 @@ class RosnavMapGenerator(BaseMapGenerator):
         map_type: str,
         obstacle_num: int,
         obstacle_extra_radius: int,
+        pallet_jacks: int,
+        hor_dist_shelfs_min: int,
+        hor_dist_shelfs_max: int,
+        vert_dist_shelfs_min: int,
+        vert_dist_shelfs_max: int,
         chair_chance: float
     ):
         super().update_params(height, width, map_res)
@@ -71,7 +86,14 @@ class RosnavMapGenerator(BaseMapGenerator):
             obstacle_extra_radius,
         )
 
-    def retrieve_params(self) -> Tuple[int, int, float, MAP_TYPE, int, int, float]:
+        # warehouse params
+        self.pallet_jacks = pallet_jacks
+        self.hor_dist_shelfs_min = hor_dist_shelfs_min
+        self.hor_dist_shelfs_max = hor_dist_shelfs_max
+        self.vert_dist_shelfs_min = vert_dist_shelfs_min
+        self.vert_dist_shelfs_max = vert_dist_shelfs_max
+
+    def retrieve_params(self) -> Tuple[int, int, float, MAP_TYPE, int, int, int, int, int, int, int, float]:
         height, width, map_res = super().retrieve_params()
         map_type = rospy.get_param(
             MAP_GENERATOR_NS("algorithm_config/rosnav/map_type"), self.map_type
@@ -94,6 +116,33 @@ class RosnavMapGenerator(BaseMapGenerator):
             self.obstacle_extra_radius,
         )
 
+        # warehouse
+        pallet_jacks = rospy.get_param(
+            MAP_GENERATOR_NS(
+                "/algorithm_config/rosmap/warehouse/pallet_jacks"),
+            self.pallet_jacks
+        )
+        hor_dist_shelfs_min = rospy.get_param(
+            MAP_GENERATOR_NS(
+                "/algorithm_config/rosmap/warehouse/hor_dist_shelfs_min"),
+            self.hor_dist_shelfs_min
+        )
+        hor_dist_shelfs_max = rospy.get_param(
+            MAP_GENERATOR_NS(
+                "/algorithm_config/rosmap/warehouse/hor_dist_shelfs_max"),
+            self.hor_dist_shelfs_max
+        )
+        vert_dist_shelfs_min = rospy.get_param(
+            MAP_GENERATOR_NS(
+                "/algorithm_config/rosmap/warehouse/vert_dist_shelfs_min"),
+            self.vert_dist_shelfs_min
+        )
+        vert_dist_shelfs_max = rospy.get_param(
+            MAP_GENERATOR_NS(
+                "/algorithm_config/rosmap/warehouse/vert_dist_shelfs_max"),
+            self.vert_dist_shelfs_max
+        )
+
         return (
             height,
             width,
@@ -101,7 +150,12 @@ class RosnavMapGenerator(BaseMapGenerator):
             map_type,
             obstacle_num,
             obstacle_extra_radius,
-            chair_chance
+            pallet_jacks,
+            hor_dist_shelfs_min,
+            hor_dist_shelfs_max,
+            vert_dist_shelfs_min,
+            vert_dist_shelfs_max,
+            chair_chance,
         )
 
     def generate_grid_map(self) -> (np.ndarray, dict):
@@ -127,7 +181,11 @@ class RosnavMapGenerator(BaseMapGenerator):
             return create_warehouse_map(
                 height=self.height,
                 width=self.width,
-                obstacle_number=self.obstacle_num,
+                pallet_jacks=self.pallet_jacks,
+                hor_dist_shelfs_min=self.hor_dist_shelfs_min,
+                hor_dist_shelfs_max=self.hor_dist_shelfs_max,
+                vert_dist_shelfs_min=self.vert_dist_shelfs_min,
+                vert_dist_shelfs_max=self.vert_dist_shelfs_max,
                 map_resolution=self.map_resolution
             )
 
