@@ -165,7 +165,7 @@ class Config:
             "Enabled": True,
             "Head Length": 0.1,
             "Head Radius": 0.15,
-            "Name": f"{robot_name} Goal",
+            "Name": f"{robot_name} {'Subgoal' if 'subgoal' in topic else 'Goal'}",
             "Queue Size": 10,
             "Shaft Length": 0.5,
             "Shaft Radius": 0.03,
