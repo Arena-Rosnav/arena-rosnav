@@ -219,6 +219,8 @@ class TaskGenerator:
             entity_manager=self._entity_manager,
         )
 
+        obstacle_manager.spawn_world_obstacles(world_manager.world)
+
         robot_managers = self._create_robot_managers()
 
         # For every robot
@@ -324,7 +326,7 @@ class TaskGenerator:
         is_end = self._task.reset(callback=lambda: False, **kwargs)
 
         self._pub_scenario_reset.publish(self._number_of_resets)
-        # self._send_end_message_on_end(is_end)
+        self._send_end_message_on_end()
 
         self._env_wrapper.after_reset_task()
 
@@ -345,7 +347,7 @@ class TaskGenerator:
 
         return std_srvs.EmptyResponse()
 
-    def _send_end_message_on_end(self, is_end: bool):
+    def _send_end_message_on_end(self):
         if self._number_of_resets < self._desired_resets:
             return
 
