@@ -129,7 +129,9 @@ def save_model(model: PPO, paths: dict, file_name: str = "best_model") -> None:
     print("Saving model to: ", paths["model"])
     model.save(os.path.join(paths["model"], file_name))
     if isinstance(model.env.venv, VecNormalize):
-        model.env.save(os.path.join(paths["model"], f"vec_normalize_{file_name}.pkl"))
+        model.env.venv.save(
+            os.path.join(paths["model"], f"vec_normalize_{file_name}.pkl")
+        )
 
 
 def get_ppo_instance(
