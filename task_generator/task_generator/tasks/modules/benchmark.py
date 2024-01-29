@@ -281,7 +281,7 @@ class Mod_Benchmark(TM_Module):
         suite_config = self._suite.config(self._suite_index)
 
         self._taskgen_restore()
-        self._taskgen_write(suite_config.config)
+        self._taskgen_write({**suite_config.config, **dict(episodes=suite_config.episodes+1)})
 
         subprocess.Popen(
             [

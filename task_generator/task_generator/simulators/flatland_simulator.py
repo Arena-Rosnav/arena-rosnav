@@ -1,3 +1,4 @@
+import time
 import rospy
 import flatland_msgs.srv as flatland_srvs
 import std_srvs.srv as std_srvs
@@ -163,10 +164,20 @@ class FlatlandSimulator(BaseSimulator):
 
     #     self._spawn_models_from_string_srv(request)
 
+    SERVICE_CALL_TRIES = 5
+
     def _pause(self):
-        if self._synchronous:
-            return self._pause_srv()
+        if not self._synchronous: return
+        for _ in range(self.SERVICE_CALL_TRIES):
+            try: self._pause_srv()
+            except rospy.ServiceException: time.sleep(0.1)
+            else: return
+        else: rospy.logerr(f"failed to pause in {self.SERVICE_CALL_TRIES} tries")
 
     def _resume(self):
-        if self._synchronous:
-            return self._resume_srv()
+        if not self._synchronous: return
+        for _ in range(self.SERVICE_CALL_TRIES):
+            try: self._resume_srv()
+            except rospy.ServiceException: time.sleep(0.1)
+            else: return
+        else: rospy.logerr(f"failed to resume in {self.SERVICE_CALL_TRIES} tries")
