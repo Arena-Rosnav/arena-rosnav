@@ -67,6 +67,7 @@ def create_warehouse_map(
             obstacles.append(obst)
 
             # Block space in grid
+            # TODO Rework, currently not working properly
             obstacle_grid[
                 slice(int(point.y+1),
                       int(point.y + 3)),
