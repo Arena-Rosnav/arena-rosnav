@@ -243,7 +243,7 @@ class RobotManager:
                 f"inter_planner:={self._robot.inter_planner}",
             	f"local_planner:={self._robot.local_planner}",
                 f"complexity:={rosparam_get(int, 'complexity', 1)}",
-                *(["record_data:=True", f"record_data_dir:={self._robot.record_data_dir}"] if self._robot.record_data_dir is not None else []),
+                *(["record_data:=true", f"record_data_dir:={self._robot.record_data_dir}"] if self._robot.record_data_dir is not None else []),
                 f"train_mode:={rosparam_get(bool, 'train_mode', False)}",
                 f"agent_name:={self._robot.agent}",
             ]

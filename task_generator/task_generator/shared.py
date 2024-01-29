@@ -278,7 +278,7 @@ class RobotProps(EntityProps):
     inter_planner: str
     local_planner: str
     agent: str
-    record_data: bool
+    record_data_dir: Optional[str] = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -341,10 +341,10 @@ class Robot(RobotProps):
     def parse(obj: Dict, model: ModelWrapper) -> "Robot":
         name = str(obj.get("name", ""))
         position = PositionOrientation(*obj.get("pos", next(gen_init_pos)))
-        inter_planner = str(obj.get("inter", ""))
-        local_planner = str(obj.get("planner", ""))
-        agent = str(obj.get("agent", ""))
-        record_data = bool(obj.get("record_data", rosparam_get(bool, "record_data", False)))
+        inter_planner = str(obj.get("inter_planner", rosparam_get(str, "inter_planner", "")))
+        local_planner = str(obj.get("local_planner", rosparam_get(str, "local_planner", "")))
+        agent = str(obj.get("agent", rosparam_get(str, "agent_name", "")))
+        record_data = obj.get("record_data_dir", rospy.get_param("record_data_dir", None))
 
         return Robot(
             name=name,
@@ -353,6 +353,6 @@ class Robot(RobotProps):
             local_planner=local_planner,
             model=model,
             agent=agent,
-            record_data=record_data,
+            record_data_dir=record_data,
             extra=obj,
         )

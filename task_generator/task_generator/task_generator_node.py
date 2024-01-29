@@ -56,7 +56,7 @@ def create_default_robot_list(
             agent=agent,
             position=next(gen_init_pos),
             name=name,
-            record_data=rosparam_get(bool, "record_data", False),
+            record_data_dir=rospy.get_param("record_data_dir", None),
             extra=dict(),
         )
     ]
@@ -279,7 +279,7 @@ class TaskGenerator:
                         robot,
                         model=self._robot_loader.bind(robot["model"]),
                     ),
-                    name=f'{robot["model"]}_{i}_{robot.get("amount", 1)-1}',
+                    name=f'{robot["model"]}_{i}_{robot.get("amount", 1)-1}'
                 )
                 for robot in read_robot_setup_file(robot_setup_file)
                 for i in range(robot.get("amount", 1))

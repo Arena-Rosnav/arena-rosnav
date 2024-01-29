@@ -7,6 +7,9 @@
   <arg name="desired_resets" default="10" />
   <param name="desired_resets" value="$(arg desired_resets)" />
 
+  <arg name="timeout" default="" />
+  <param name="timeout" value="$(arg timeout)" if="$(eval arg('timeout') != '')" />
+
 
   <!-- ___________ ARGS ___________ -->
   <!-- You can launch a single robot and his local_planner with arguments -->
@@ -30,12 +33,13 @@
   <arg name="robot_setup_file" default="" doc="" />
 
   <arg name="record_data" default="false" />
-  <param name="record_data" value="$(arg record_data)" />
+  <arg name="record_data_dir" default="auto:" />
+  <param name="record_data_dir" type="str" value="$(arg record_data_dir)" if="$(eval arg('record_data'))"/>
 
   <param name="robot_setup_file" value="$(arg robot_setup_file)" />
   <param name="model" value="$(arg model)" />
-  <param name="inter_planner"  value="$(arg inter_planner)"/>
-  <param name="local_planner"  value="$(arg local_planner)"/>
+  <param name="inter_planner" value="$(arg inter_planner)"/>
+  <param name="local_planner" value="$(arg local_planner)"/>
   <param name="agent_name" value="$(arg agent_name)" unless="$(eval arg('local_planner') != 'rosnav')"/>
   
 
