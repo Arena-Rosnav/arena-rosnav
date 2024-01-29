@@ -665,7 +665,7 @@ class RewardActiveHeadingDirection(RewardUnit):
 
     Args:
         reward_function (RewardFunction): The reward function to be used.
-        r_angle (float, optional): Desired heading direction in the robot's local frame. Defaults to 0.6.
+        r_angle (float, optional): Weight for difference between max deviation of heading direction and desired heading direction. Defaults to 0.6.
         theta_m (float, optional): Maximum allowable deviation of the heading direction. Defaults to np.pi/6.
         theta_min (int, optional): Minimum allowable deviation of the heading direction. Defaults to 1000.
         ped_min_dist (float, optional): Minimum distance to pedestrians. Defaults to 8.0.
@@ -755,14 +755,15 @@ class RewardActiveHeadingDirection(RewardUnit):
                     p_vy = ped_y_vel
 
                     ped_dis = np.linalg.norm([p_x, p_y])
-                    
+
                     if ped_dis <= self._ped_min_dist:
                         ped_theta = np.arctan2(p_y, p_x)
-                        
+
                         # 3*robot_radius:= estimation for sum of the pedestrian radius and the robot radius
                         vector = ped_dis**2 - (3 * self.robot_radius) ** 2
-                        if vector < 0: continue # in this case the robot likely crashed into the pedestrian, disregard this pedestrian
-                        
+                        if vector < 0:
+                            continue  # in this case the robot likely crashed into the pedestrian, disregard this pedestrian
+
                         vo_theta = np.arctan2(
                             3 * self.robot_radius,
                             np.sqrt(vector),
