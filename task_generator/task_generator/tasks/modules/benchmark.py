@@ -1,3 +1,5 @@
+import datetime
+import pathlib
 from task_generator.constants import Constants
 from task_generator.shared import Namespace
 from task_generator.tasks.modules import TM_Module
@@ -46,8 +48,9 @@ class Config(typing.NamedTuple):
 class Suite(typing.NamedTuple):
 
     @classmethod
-    def parse(cls, obj: typing.Dict):
+    def parse(cls, name: str, obj: typing.Dict):
         return cls(
+            name = name,
             stages = [
                 cls.Stage(**stage)
                 for stage
@@ -66,6 +69,9 @@ class Suite(typing.NamedTuple):
         tm_obstacles: Constants.TaskMode.TM_Obstacles
         config: typing.Dict
 
+        timeout: float = 60
+
+    name: str
     stages: typing.List[Stage]
 
     @property
@@ -82,8 +88,9 @@ class Suite(typing.NamedTuple):
 class Contest(typing.NamedTuple):
 
     @classmethod
-    def parse(cls, obj: typing.Dict):
+    def parse(cls, name: str, obj: typing.Dict):
         return cls(
+            name = name,
             contestants = [
                 cls.Contestant(**contestant)
                 for contestant
@@ -98,6 +105,7 @@ class Contest(typing.NamedTuple):
         local_planner: str
         inter_planner: str
 
+    name: str
     contestants: typing.List[Contestant]
 
     @property
@@ -134,6 +142,7 @@ class Mod_Benchmark(TM_Module):
     _contest: Contest
     _episode_index: int
 
+    _runid: str
     _contest_index: Contest.Index
     _suite_index: Suite.Index
 
@@ -147,24 +156,25 @@ class Mod_Benchmark(TM_Module):
     @classmethod
     def _load_contest(cls, contest: str) -> Contest:
         with open(cls.DIR("contests", contest)) as f:
-            return Contest.parse(yaml.load(f, yaml.FullLoader))
+            return Contest.parse(pathlib.Path(contest).stem, yaml.load(f, yaml.FullLoader))
         
     @classmethod
     def _load_suite(cls, suite: str) -> Suite:
         with open(cls.DIR("suites", suite)) as f:
-            return Suite.parse(yaml.load(f, yaml.FullLoader))
+            return Suite.parse(pathlib.Path(suite).stem, yaml.load(f, yaml.FullLoader))
     
     @classmethod
-    def _resume(cls) -> typing.Tuple[Contest.Index, Suite.Index]:
+    def _resume(cls) -> typing.Tuple[str, Contest.Index, Suite.Index]:
         with open(cls.DIR(cls.LOCK_FILE)) as f:
-            contest, suite = f.read().split(" ")
-        return Contest.Index(contest), Suite.Index(suite)
+            runid, contest, suite = f.read().split(" ")
+        return runid, Contest.Index(contest), Suite.Index(suite)
 
 
     @classmethod
     def _taskgen_backup(cls):
+        if os.path.exists(bkup_file := cls.TASK_GENERATOR_CONFIG + ".bkup"): return
         with open(cls.TASK_GENERATOR_CONFIG) as fr:
-            with open(cls.TASK_GENERATOR_CONFIG + ".bkup", "w") as fw:
+            with open(bkup_file, "w") as fw:
                 fw.write(fr.read())
 
     @classmethod
@@ -205,11 +215,12 @@ class Mod_Benchmark(TM_Module):
         # first run
         if not rospy.get_param("/benchmark_resume", False):
             self._taskgen_backup()
+            self._runid = f"{self._contest.name}_{datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S')}"
             self._contest_index = self._contest.min_index
             self._suite_index = self._suite.min_index
             return self._reincarnate()
 
-        self._contest_index, self._suite_index = self._resume()
+        self._runid, self._contest_index, self._suite_index = self._resume()
 
 
     def before_reset(self):
@@ -263,7 +274,7 @@ class Mod_Benchmark(TM_Module):
     def _reincarnate(self):
 
         with open(self.DIR(self.LOCK_FILE), "w") as f:
-            f.write(f"{self._contest_index} {self._suite_index}")
+            f.write(f"{self._runid} {self._contest_index} {self._suite_index}")
 
         config = self._config
         contest_config = self._contest.config(self._contest_index)
@@ -285,8 +296,10 @@ class Mod_Benchmark(TM_Module):
                 "tm_modules:=benchmark",
                 "benchmark_resume:=true",
                 "record_data:=true",
+                f"record_data_dir:={self._runid}/{contest_config.name}/{suite_config.name}",
 
                 f"simulator:={config.general.simulator}",
+                f"timeout:={suite_config.timeout}",
                 
                 # contest
                 f"inter_planner:={contest_config.inter_planner}",
