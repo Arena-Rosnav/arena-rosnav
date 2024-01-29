@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
   path_search
   traj_planner
   plan_msgs
+  laser_geometry
 )
 
 find_package(Eigen3 REQUIRED)
@@ -30,7 +31,21 @@ find_package(PCL 1.7 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES intermediate_planner
-  CATKIN_DEPENDS roscpp rospy std_msgs nav_msgs geometry_msgs plan_visualization mapping path_search traj_planner plan_msgs
+  CATKIN_DEPENDS
+    roscpp
+    rospy
+    std_msgs
+    nav_msgs
+    geometry_msgs
+    
+    visualization_msgs
+    plan_visualization
+
+    mapping
+    path_search
+    traj_planner
+    plan_msgs
+    laser_geometry
   #DEPENDS system_lib
 )
 
