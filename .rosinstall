@@ -51,7 +51,7 @@
 
 - git:
     local-name: ../utils-extern/misc/unitree_ros
-    uri: https://github.com/voshch/unitree_ros
+    uri: https://github.com/aqubits/unitree_ros
 
 ### ARENA INFRASTRUCTURE
 
