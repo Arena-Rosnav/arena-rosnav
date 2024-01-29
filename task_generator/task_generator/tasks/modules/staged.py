@@ -148,11 +148,11 @@ class Mod_Staged(TM_Module):
 
             self.__config_lock = FileLock(f"{self.__training_config_path}.lock")
 
+        self.__current_stage = -1
+
         self._dmre_client = dynamic_reconfigure.client.Client(
             name=self.NODE_CONFIGURATION, config_callback=self.reconfigure
         )
-
-        self.__current_stage = None
 
     def before_reset(self):
         """
@@ -199,17 +199,6 @@ class Mod_Staged(TM_Module):
                     )
 
                 self._dmre_client.update_configuration(obs_config)
-
-            # publish stage state
-            if self.IS_EVAL_SIM:  # TODO reconsider if this check is needed
-                rospy.set_param(self.PARAM_CURR_STAGE, self.__current_stage)
-                rospy.set_param(
-                    self.PARAM_LAST_STAGE_REACHED,
-                    self.__current_stage == self.MAX_STAGE,
-                )
-                rospy.set_param(
-                    self.NODE_CONFIGURATION(self.PARAM_INDEX), self.__current_stage
-                )
 
             # The current stage is stored inside the config file for when the training is stopped and later continued, the correct stage can be restored.
             if self.__training_config_path is not None:
@@ -331,6 +320,19 @@ class Mod_Staged(TM_Module):
             val = max(self.MIN_STAGE, min(self.MAX_STAGE, val))
 
         self.__target_stage = val
+
+        # publish stage state
+        if (
+            self.IS_EVAL_SIM and self.__current_stage != self.__target_stage
+        ):  # TODO reconsider if this check is needed
+            rospy.set_param(self.PARAM_CURR_STAGE, self.__target_stage)
+            rospy.set_param(
+                self.PARAM_LAST_STAGE_REACHED,
+                self.__target_stage == self.MAX_STAGE,
+            )
+            os.system(
+                f"rosrun dynamic_reconfigure dynparam set /task_generator_server {self.PARAM_INDEX} {self.__target_stage}"
+            )
 
     @property
     def stage(self) -> Stage:
