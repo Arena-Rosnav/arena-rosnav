@@ -13,7 +13,7 @@ import std_srvs.srv as std_srvs
 
 import functools
 
-from task_generator.constants import Config, Pedsim
+from task_generator.constants import Config, Constants, Pedsim
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import (
     KnownObstacles,
@@ -36,7 +36,7 @@ from task_generator.simulators.flatland_simulator import FlatlandSimulator
 from typing import Callable, List
 
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
-from task_generator.utils import rosparam_get
+from task_generator.utils import Utils, rosparam_get
 
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
@@ -591,7 +591,10 @@ class PedsimManager(EntityManager):
         #     return
         # rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), False)
 
-        if isinstance(self._simulator, FlatlandSimulator):
+        if not Utils.is_synthetic_map():
+            return
+
+        if Utils.get_simulator() in [Constants.Simulator.FLATLAND]:
             return
 
         entity = self._known_obstacles.get(self.WALLS_ENTITY)
