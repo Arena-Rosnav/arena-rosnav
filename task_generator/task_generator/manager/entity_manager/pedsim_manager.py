@@ -680,6 +680,6 @@ class PedsimManager(EntityManager):
                         model=entity.obstacle.model,
                         extra=entity.obstacle.extra,
                     )
-                )ich sehe in unity 
+                )
 
                 entity.pedsim_spawned = True
