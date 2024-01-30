@@ -1,4 +1,6 @@
 import datetime
+import hashlib
+import json
 import pathlib
 from task_generator.constants import Constants
 from task_generator.shared import Namespace
@@ -6,7 +8,6 @@ from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.task_factory import TaskFactory
 
 import typing
-import dataclasses
 import os
 import yaml
 import subprocess
@@ -52,7 +53,7 @@ class Suite(typing.NamedTuple):
         return cls(
             name = name,
             stages = [
-                cls.Stage(**stage)
+                cls.Stage.parse(stage)
                 for stage
                 in obj["stages"]
             ]
@@ -69,7 +70,25 @@ class Suite(typing.NamedTuple):
         tm_obstacles: Constants.TaskMode.TM_Obstacles
         config: typing.Dict
 
-        timeout: float = 60
+        seed: int
+        timeout: float
+
+        @classmethod
+        def _hash(cls, obj: typing.Dict) -> int:
+            """
+            hash json-serializable object to non-negative int32
+            """
+            return 0x7f_ff_ff_ff & int.from_bytes(
+                hashlib.sha1(json.dumps(obj).encode()).digest()[-4:],
+                byteorder="big"
+            )
+
+        @classmethod
+        def parse(cls, obj: typing.Dict) -> "Suite.Stage":
+            obj.setdefault("timeout", 60)
+            obj.setdefault("seed", cls._hash(obj))
+            return cls(**obj)
+        
 
     name: str
     stages: typing.List[Stage]
@@ -92,7 +111,7 @@ class Contest(typing.NamedTuple):
         return cls(
             name = name,
             contestants = [
-                cls.Contestant(**contestant)
+                cls.Contestant.parse(contestant)
                 for contestant
                 in obj["contestants"]
             ]
@@ -104,6 +123,11 @@ class Contest(typing.NamedTuple):
         name: str
         local_planner: str
         inter_planner: str
+
+        @classmethod
+        def parse(cls, obj: typing.Dict) -> "Contest.Contestant":
+            obj.setdefault("inter_planner", "bypass")
+            return cls(**obj)
 
     name: str
     contestants: typing.List[Contestant]
@@ -178,7 +202,7 @@ class Mod_Benchmark(TM_Module):
                 fw.write(fr.read())
 
     @classmethod
-    def _taskgen_write(cls, config: typing.Dict):
+    def _taskgen_write(cls, *configs: typing.Dict):
 
         def overwrite(source: typing.Dict, target: typing.Dict):
             for k,v in source.items():
@@ -190,11 +214,14 @@ class Mod_Benchmark(TM_Module):
             return target
 
         with open(cls.TASK_GENERATOR_CONFIG, "r") as f:
-            config = overwrite(config, yaml.load(f, yaml.FullLoader))
+            joint_config = yaml.load(f, yaml.FullLoader)
+
+        for config in configs:
+            overwrite(config, joint_config)        
         
         # yaml has problems with r+
         with open(cls.TASK_GENERATOR_CONFIG, "w") as f:
-            yaml.dump(config, f)
+            yaml.dump(joint_config, f)
 
     @classmethod
     def _taskgen_restore(cls):
@@ -281,7 +308,15 @@ class Mod_Benchmark(TM_Module):
         suite_config = self._suite.config(self._suite_index)
 
         self._taskgen_restore()
-        self._taskgen_write({**suite_config.config, **dict(episodes=suite_config.episodes+1)})
+        self._taskgen_write(
+            {
+                "episodes": suite_config.episodes+1,
+                "RANDOM": {
+                    "seed": suite_config.seed
+                }
+            },
+            suite_config.config
+        )
 
         subprocess.Popen(
             [

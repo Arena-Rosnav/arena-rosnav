@@ -11,7 +11,7 @@ stages:
 
   - name: scenario_random
     episodes: 4
-    robot: cob4
+    robot: jackal
     map: map_empty
     tm_robots: scenario
     tm_obstacles: random
