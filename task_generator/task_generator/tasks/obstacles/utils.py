@@ -3,8 +3,8 @@
 
 import dataclasses
 import math
-import random
 from typing import Dict, List, Optional
+from task_generator.constants import Config
 from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, PositionOrientation, PositionRadius
 from task_generator.tasks import Props_
 
@@ -68,7 +68,7 @@ class ITF_Obstacle:
 
         if position is None:
             point = props.world_manager.get_position_on_map(safe_distance)
-            position = PositionOrientation(point.x, point.y, random.random() * 2*math.pi)
+            position = PositionOrientation(point.x, point.y, Config.General.RNG.random() * 2*math.pi)
 
         if extra is None:
             extra = dict()
