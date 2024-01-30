@@ -120,7 +120,7 @@ class ArenaUnityEnv(gymnasium.Env):
 
         # Unity specific 
         clock_topic = self.ns.simulation_ns("clock")
-        clock_msg = rospy.wait_for_message(clock_topic, Clock, timeout=10)
+        clock_msg = rospy.wait_for_message(clock_topic, Clock, timeout=30)
         self._unity_timer = UnityTimer(
             self._step_size,
             rospy.Time(clock_msg.clock.secs, clock_msg.clock.nsecs),
