@@ -56,6 +56,7 @@
 
       <include file="$(find pedsim_ros)/launch/pedsim.launch" if="$(eval arg('entity_manager')=='pedsim')">
         <arg name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world"/>
+        <arg name="sfm" value="$(eval arg('sfm'))" />
       </include>
     </group>
     

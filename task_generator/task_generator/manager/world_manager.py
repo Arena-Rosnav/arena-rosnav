@@ -183,7 +183,7 @@ class WorldManager:
 
         return Position(point.x, point.y)
 
-    def get_positions_on_map(self, n: int, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> List[Position]:
+    def get_positions_on_map(self, n: int, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True, rng: Optional[np.random.Generator] = None) -> List[Position]:
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both
@@ -209,6 +209,9 @@ class WorldManager:
 
         if forbidden_zones is None:
             forbidden_zones = []
+
+        if rng is None:
+            rng = np.random.default_rng()
 
         fork = self._world.map.occupancy.fork()
 
@@ -256,7 +259,7 @@ class WorldManager:
                         if to_produce > len(available_positions):
                             raise RuntimeError()
 
-                        candidates = available_positions[np.random.choice(
+                        candidates = available_positions[rng.choice(
                             len(available_positions), to_produce, replace=False), :]
 
                         for candidate in candidates:
@@ -318,12 +321,18 @@ class WorldManager:
         filt = np.full((filt_size, filt_size), 1) / (filt_size ** 2)
 
         spread = scipy.signal.convolve2d(
-            WorldOccupancy.not_empty(occupancy).astype(
+            WorldOccupancy.not_full(occupancy).astype(
                 np.uint8) * np.iinfo(np.uint8).max,
             filt,
             mode="full",
             boundary="fill",
             fillvalue=int(WorldOccupancy.FULL)
         )
+
+        # import cv2
+        # cv2.imwrite("_debug1.png", occupancy)
+        # cv2.imwrite("_debug2.png", WorldOccupancy.not_full(occupancy).astype(np.uint8) * np.iinfo(np.uint8).max)
+        # cv2.imwrite("_debug3.png", spread)
+        # cv2.imwrite("_debug4.png", WorldOccupancy.empty(spread).astype(np.uint8) * np.iinfo(np.uint8).max)
 
         return np.transpose(np.where(WorldOccupancy.empty(spread)))

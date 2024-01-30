@@ -1,6 +1,8 @@
 <launch>
 
     <arg name="model" default="" />
+    <arg name="train_mode" default="false" />
+
     <arg name="namespace" />
     <arg name="frame" />
     <arg name="speed" default="2" />
@@ -13,6 +15,7 @@
     <include file="$(find arena_bringup)/launch/testing/move_base/planners/local/mbf_$(arg local_planner).launch">
         <arg name="model" value="$(arg model)" />
         <arg name="speed" value="$(arg speed)" />
+        <arg name="train_mode" value="$(arg train_mode)" if="$(eval arg('local_planner') == 'rosnav')" />
         <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
         <arg name="namespace" value="$(arg namespace)" />
         <arg name="frame" value="$(arg frame)" />
@@ -33,7 +36,7 @@
                 <remap from="cmd_vel" to="cmd_vel_actual" />
             at the top of every launch file that needs to override the move_base_flex node cmd_vel output, otherwise add to exclusions
         -->
-        <remap from="cmd_vel" to="cmd_vel_actual" unless="$(eval arg('local_planner') in ['teb', 'dwa', 'mpc'])" />
+        <remap from="cmd_vel_actual" to="cmd_vel" unless="$(eval arg('local_planner') in ['teb', 'dwa', 'mpc'])" />
 
         <node pkg="mbf_costmap_nav" type="mbf_costmap_nav" respawn="false" name="move_base_flex"
             output="log">

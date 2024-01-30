@@ -62,11 +62,12 @@
       </node>
     </group>
 
-    <node pkg="arena-evaluation" type="data_recorder_node.py" name="data_recorder_node"
-      if="$(eval arg('record_data'))">
-      <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load"
-        ns="configuration" />
-    </node>
+    <group>
+      <remap from="scan" to="scan" />
+      <remap from="odom" to="odom" />
+      <remap from="cmd_vel" to="cmd_vel" />
+      <node pkg="arena-evaluation" type="data_recorder_node.py" name="data_recorder_node" if="$(eval arg('record_data'))" />
+    </group>
     
     <!-- move_base plan manager: which provide basic global planner and cost map -->
     <group>

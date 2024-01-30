@@ -1,5 +1,4 @@
 episodes: 50
-autoreset: true
 
 SCENARIO:
   file: default.json
@@ -14,6 +13,7 @@ STAGED:
 DYNAMICMAP: {}
 
 RANDOM:
+  seed: -1
   static:
     min: 0
     max: 0

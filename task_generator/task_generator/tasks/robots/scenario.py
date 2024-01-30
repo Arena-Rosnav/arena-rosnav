@@ -57,7 +57,7 @@ class TM_Scenario(TM_Robots):
 
     @classmethod
     def prefix(cls, *args):
-        return super().prefix("scenario")
+        return super().prefix("scenario", *args)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -105,6 +105,8 @@ class TM_Scenario(TM_Robots):
         Returns:
             None
         """
+
+        super().reset(**kwargs)
 
         SCENARIO_ROBOTS = self._config.robots
 

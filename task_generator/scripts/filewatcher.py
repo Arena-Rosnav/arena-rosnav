@@ -89,13 +89,18 @@ def run(namespace: Optional[str] = None):
                         # "no_of_episodes": content.get("no_of_episodes")
                     },
                     **{
-                        name: encode(recursive_get(content, name.split("_")))
-                        for name in
-                        (
-                            str(param.get("name", ""))
-                            for group in TaskGeneratorConfig.config_description.get("groups", [])
-                            for param in group.get("parameters", [])
+                        k:v
+                        for (k,v)
+                        in (
+                            (name, encode(recursive_get(content, name.split("_"))))
+                            for name in
+                            (
+                                str(param.get("name", ""))
+                                for group in TaskGeneratorConfig.config_description.get("groups", [])
+                                for param in group.get("parameters", [])
+                            )
                         )
+                        if v is not None
                     }
                 }
             )

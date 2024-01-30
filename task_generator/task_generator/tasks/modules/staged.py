@@ -122,7 +122,7 @@ class Mod_Staged(TM_Module):
 
         rospy.Subscriber(
             os.path.join(
-                Namespace(self._TASK.namespace).simulation_ns,
+                self._TASK.namespace,
                 self.TOPIC_NEXT_STAGE,
             ),
             std_msgs.Bool,
@@ -134,7 +134,7 @@ class Mod_Staged(TM_Module):
 
         rospy.Subscriber(
             os.path.join(
-                Namespace(self._TASK.namespace).simulation_ns,
+                self._TASK.namespace,
                 self.TOPIC_PREVIOUS_STAGE,
             ),
             std_msgs.Bool,
@@ -148,11 +148,11 @@ class Mod_Staged(TM_Module):
 
             self.__config_lock = FileLock(f"{self.__training_config_path}.lock")
 
+        self.__current_stage = -1
+
         self._dmre_client = dynamic_reconfigure.client.Client(
             name=self.NODE_CONFIGURATION, config_callback=self.reconfigure
         )
-
-        self.__current_stage = None
 
     def before_reset(self):
         """
@@ -163,7 +163,9 @@ class Mod_Staged(TM_Module):
 
         if self.__current_stage != self.__target_stage:
             self.__current_stage = self.__target_stage
-            rospy.loginfo(f"Loading stage {self.__current_stage}")
+            rospy.loginfo(
+                f"[{self._TASK.namespace}] Loading stage {self.__current_stage}"
+            )
 
             # only update cpmfogiratopm with one task module instance
             if "sim_1" in rospy.get_name() or self.__debug_mode:
@@ -197,14 +199,6 @@ class Mod_Staged(TM_Module):
                     )
 
                 self._dmre_client.update_configuration(obs_config)
-
-            # publish stage state
-            if self.IS_EVAL_SIM:  # TODO reconsider if this check is needed
-                rospy.set_param(self.PARAM_CURR_STAGE, self.__current_stage)
-                rospy.set_param(
-                    self.PARAM_LAST_STAGE_REACHED,
-                    self.__current_stage == self.MAX_STAGE,
-                )
 
             # The current stage is stored inside the config file for when the training is stopped and later continued, the correct stage can be restored.
             if self.__training_config_path is not None:
@@ -285,7 +279,7 @@ class Mod_Staged(TM_Module):
         """
         Flag indicating whether the module is running in evaluation simulation mode.
         """
-        return self._TASK.namespace == "eval_sim"
+        return "eval_sim" in self._TASK.namespace
 
     @property
     def MIN_STAGE(self) -> StageIndex:
@@ -326,6 +320,19 @@ class Mod_Staged(TM_Module):
             val = max(self.MIN_STAGE, min(self.MAX_STAGE, val))
 
         self.__target_stage = val
+
+        # publish stage state
+        if (
+            self.IS_EVAL_SIM and self.__current_stage != self.__target_stage
+        ):  # TODO reconsider if this check is needed
+            rospy.set_param(self.PARAM_CURR_STAGE, self.__target_stage)
+            rospy.set_param(
+                self.PARAM_LAST_STAGE_REACHED,
+                self.__target_stage == self.MAX_STAGE,
+            )
+            os.system(
+                f"rosrun dynamic_reconfigure dynparam set /task_generator_server {self.PARAM_INDEX} {self.__target_stage}"
+            )
 
     @property
     def stage(self) -> Stage:
