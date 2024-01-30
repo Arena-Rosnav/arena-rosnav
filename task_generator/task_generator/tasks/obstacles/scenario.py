@@ -1,21 +1,20 @@
 import dataclasses
 import json
 import os
-from typing import Dict, List
+from typing import List
 
 import rospkg
 import rospy
 from task_generator.constants import Constants
-from task_generator.shared import DynamicObstacle, Namespace, Obstacle, rosparam_get
+from task_generator.shared import DynamicObstacle, Obstacle, rosparam_get
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.task_factory import TaskFactory
 
 import dynamic_reconfigure.client
-from task_generator.cfg import TaskGeneratorConfig
 
 
 @dataclasses.dataclass
-class Config:
+class _Config:
     static: List[Obstacle]
     dynamic: List[DynamicObstacle]
 
@@ -23,7 +22,7 @@ class Config:
 @TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.SCENARIO)
 class TM_Scenario(TM_Obstacles):
 
-    _config: Config
+    _config: _Config
 
     @classmethod
     def prefix(cls, *args):
@@ -51,7 +50,7 @@ class TM_Scenario(TM_Obstacles):
         ) as f:
             scenario = json.load(f)
 
-        self._config = Config(
+        self._config = _Config(
             static=[
                 Obstacle.parse(
                     obs,

@@ -10,8 +10,6 @@ STAGED:
   curriculum: "default.yaml"
   index: 0
 
-DYNAMICMAP: {}
-
 RANDOM:
   seed: -1
   static:
