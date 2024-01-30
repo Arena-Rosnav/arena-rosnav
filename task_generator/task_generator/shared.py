@@ -13,6 +13,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
     overload,
 )
 
@@ -21,24 +22,30 @@ import yaml
 import rospy
 
 T = TypeVar("T")
+U = TypeVar("U")
 _unspecified = rospy.client._Unspecified()
+_UNSPECIFIED = rospy.client._Unspecified
+_notfound = object()
 
+def rosparam_get(cast: Type[T], param_name: str, default:Union[U, _UNSPECIFIED]=_unspecified) -> Union[T, U]:
+    """
+    Get typed ros parameter (strict)
+    @cast: Return type of function
+    @param_name: Name of parameter on parameter server
+    @default: Default value. Raise ValueError is default is unset and parameter can't be found.
+    """
+    
+    val = rospy.get_param(param_name=param_name, default=_notfound)
 
-def rosparam_get(cast: Type[T], param_name: str, default=_unspecified, strict: bool = False) -> T:
-    val = rospy.get_param(param_name=param_name, default=default)
+    if val == _notfound:
+        if isinstance(default, _UNSPECIFIED):
+            raise ValueError(f"required parameter {param_name} is not set")
+        return default
 
-    if strict:
-        if not isinstance(val, cast):
-            raise ValueError(
-                f"param {param_name} is not of type {cast} but {type(val)} with val {val}")
-    else:
-        try:
-            val = cast(val)
-        except ValueError as e:
-            raise ValueError(f"could not cast {val} to {cast}", e)
-
-    return val
-
+    try:
+        return cast(val)
+    except ValueError as e:
+        raise ValueError(f"could not cast {val} to {cast} of param {param_name}") from e
 
 class Namespace(str):
     def __call__(self, *args: str) -> Namespace:
