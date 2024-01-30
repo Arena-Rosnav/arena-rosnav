@@ -4,6 +4,7 @@ from typing import Collection, List, Optional, Tuple
 import numpy as np
 import scipy.signal
 import rospy
+from task_generator.constants import Config
 
 from task_generator.manager.utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls
 from task_generator.shared import Position, PositionRadius
@@ -117,7 +118,6 @@ class WorldManager:
         # safe_dist / resolution
 
         import math
-        import random
 
         def is_pos_valid(x: float, y: float, safe_dist: float, forbidden_zones: List[PositionRadius]):
             """
@@ -161,7 +161,7 @@ class WorldManager:
         while len(possible_cells) > 0:
 
             # Select a random cell
-            x, y = possible_cells.pop(random.randrange(len(possible_cells)))
+            x, y = possible_cells.pop(Config.General.RNG.integers(len(possible_cells)))
 
             # Check if valid
             if is_pos_valid(float(x), float(y), safe_dist_in_cells, forbidden_zones_in_cells):
@@ -183,7 +183,7 @@ class WorldManager:
 
         return Position(point.x, point.y)
 
-    def get_positions_on_map(self, n: int, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True, rng: Optional[np.random.Generator] = None) -> List[Position]:
+    def get_positions_on_map(self, n: int, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> List[Position]:
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both
@@ -209,9 +209,6 @@ class WorldManager:
 
         if forbidden_zones is None:
             forbidden_zones = []
-
-        if rng is None:
-            rng = np.random.default_rng()
 
         fork = self._world.map.occupancy.fork()
 
@@ -259,7 +256,7 @@ class WorldManager:
                         if to_produce > len(available_positions):
                             raise RuntimeError()
 
-                        candidates = available_positions[rng.choice(
+                        candidates = available_positions[Config.General.RNG.choice(
                             len(available_positions), to_produce, replace=False), :]
 
                         for candidate in candidates:
