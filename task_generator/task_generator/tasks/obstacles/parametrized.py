@@ -57,7 +57,7 @@ class TM_Parametrized(TM_Obstacles):
 
     @classmethod
     def prefix(cls, *args):
-        return super().prefix("scenario")
+        return super().prefix("parametrized", *args)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

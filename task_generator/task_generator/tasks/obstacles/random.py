@@ -1,7 +1,9 @@
 import itertools
 import math
 import random
-from typing import Callable, Dict, Iterator, List
+from typing import Callable, Dict, Iterator, List, Optional
+
+import numpy as np
 import rospy
 from task_generator.constants import Constants
 from task_generator.shared import (
@@ -9,7 +11,7 @@ from task_generator.shared import (
     Obstacle,
     PositionOrientation,
     PositionRadius,
-    rosparam_get,
+    rosparam_get
 )
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
@@ -32,6 +34,8 @@ class Config:
     MODELS_STATIC_OBSTACLES: List[str]
     MODELS_INTERACTIVE_OBSTACLES: List[str]
     MODELS_DYNAMIC_OBSTACLES: List[str]
+
+    SEED: Optional[int]
 
 
 @TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.RANDOM)
@@ -56,7 +60,7 @@ class TM_Random(TM_Obstacles):
 
     @classmethod
     def prefix(cls, *args):
-        return super().prefix("scenario")
+        return super().prefix("random", *args)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -103,6 +107,7 @@ class TM_Random(TM_Obstacles):
             MODELS_DYNAMIC_OBSTACLES=rosparam_get(
                 str, self.NODE_CONFIGURATION("RANDOM_dynamic_models"), ""
             ).split("/"),
+            SEED=rosparam_get(int, self.NODE_CONFIGURATION("RANDOM_seed"), None)
         )
 
     def reset(self, **kwargs) -> Obstacles:
@@ -180,7 +185,7 @@ class TM_Random(TM_Obstacles):
             n=N_STATIC_OBSTACLES
             + N_INTERACTIVE_OBSTACLES
             + N_DYNAMIC_OBSTACLES * (1 + waypoints_per_ped),
-            safe_dist=1,
+            safe_dist=1
         )
 
         _positions = [

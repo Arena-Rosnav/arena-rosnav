@@ -2,9 +2,8 @@ import math
 import random
 from typing import Dict
 import genpy
-import rospy
 from task_generator.constants import Config, Constants
-from task_generator.shared import PositionOrientation, rosparam_get
+from task_generator.shared import PositionOrientation
 from task_generator.tasks.robots.random import TM_Random
 from task_generator.tasks.task_factory import TaskFactory
 
@@ -17,6 +16,10 @@ class TM_Explore(TM_Random):
     """
 
     _timeouts: Dict[int, genpy.Time]
+
+    @classmethod
+    def prefix(cls, *args):
+        return super().prefix("explore", *args)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

@@ -32,6 +32,10 @@ class TM_Guided(TM_Random):
     _waypoints: List[PositionOrientation]
     _waypoint_states: Dict[str, int]
 
+    @classmethod
+    def prefix(cls, *args):
+        return super().prefix("guided", *args)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

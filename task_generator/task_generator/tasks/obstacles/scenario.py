@@ -27,7 +27,7 @@ class TM_Scenario(TM_Obstacles):
 
     @classmethod
     def prefix(cls, *args):
-        return super().prefix("scenario")
+        return super().prefix("scenario", *args)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
