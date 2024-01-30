@@ -9,7 +9,7 @@ import rospkg
 import rospy
 import yaml
 from rospkg import RosPack
-from task_generator.constants import Config, Constants, Defaults
+from task_generator.constants import Constants, Defaults
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
 from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
@@ -22,7 +22,7 @@ from task_generator.shared import (
     Namespace,
     Robot,
     gen_init_pos,
-    rosparam_get,
+    rosparam_get
 )
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
@@ -38,7 +38,6 @@ from task_generator.manager.obstacle_manager import ObstacleManager
 import map_distance_server.srv as map_distance_server_srvs
 import std_msgs.msg as std_msgs
 import std_srvs.srv as std_srvs
-import training.srv as training_srvs
 
 
 def create_default_robot_list(
