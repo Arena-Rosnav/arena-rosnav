@@ -121,7 +121,7 @@ class InitiateNewTrainStage(BaseCallback):
                 self.threshhold_type == "succ"
                 and EvalObject.last_success_rate >= self.upper_threshold
             ):
-                if not rospy.get_param("/last_stage_reached"):
+                if not rospy.get_param("/last_state_reached", False):
                     EvalObject.best_mean_reward = -np.inf
                     EvalObject.last_success_rate = -np.inf
 
