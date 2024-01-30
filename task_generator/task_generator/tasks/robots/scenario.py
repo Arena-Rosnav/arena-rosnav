@@ -13,7 +13,7 @@ from task_generator.tasks.task_factory import TaskFactory
 import dynamic_reconfigure.client
 
 
-class RobotGoal(NamedTuple):
+class _RobotGoal(NamedTuple):
     """
     Represents the start and goal positions for a robot.
     """
@@ -22,7 +22,7 @@ class RobotGoal(NamedTuple):
     goal: PositionOrientation
 
     @staticmethod
-    def parse(obj: dict) -> "RobotGoal":
+    def parse(obj: dict) -> "_RobotGoal":
         """
         Parses a dictionary object and returns a RobotGoal instance.
 
@@ -32,15 +32,15 @@ class RobotGoal(NamedTuple):
         Returns:
             RobotGoal: The parsed RobotGoal instance.
         """
-        return RobotGoal(
+        return _RobotGoal(
             start=PositionOrientation(*obj.get("start", [])),
             goal=PositionOrientation(*obj.get("goal", [])),
         )
 
 
 @dataclasses.dataclass
-class Config:
-    robots: List[RobotGoal]
+class _Config:
+    robots: List[_RobotGoal]
 
 
 @TaskFactory.register_robots(Constants.TaskMode.TM_Robots.SCENARIO)
@@ -53,11 +53,11 @@ class TM_Scenario(TM_Robots):
         _config (Config): The configuration object for the scenario.
     """
 
-    _config: Config
+    _config: _Config
 
     @classmethod
     def prefix(cls, *args):
-        return super().prefix("scenario")
+        return super().prefix("scenario", *args)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -91,8 +91,8 @@ class TM_Scenario(TM_Robots):
         ) as f:
             scenario = json.load(f)
 
-        self._config = Config(
-            robots=[RobotGoal.parse(robot) for robot in scenario.get("robots", [])]
+        self._config = _Config(
+            robots=[_RobotGoal.parse(robot) for robot in scenario.get("robots", [])]
         )
 
     def reset(self, **kwargs):

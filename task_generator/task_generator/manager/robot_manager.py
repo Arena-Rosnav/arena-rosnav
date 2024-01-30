@@ -148,7 +148,9 @@ class RobotManager:
     @property
     def namespace(self) -> Namespace:
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            return Namespace(f"{self._namespace}{self._namespace}_{self.model_name}") # schizophrenia
+            return Namespace(
+                f"{self._namespace}{self._namespace}_{self.model_name}"
+            )  # schizophrenia
 
         return self._namespace(self.model_name)
 
@@ -241,7 +243,7 @@ class RobotManager:
                 f"namespace:={self.namespace}",
                 f"frame:={self.name+'/' if self.name != '' else ''}",
                 f"inter_planner:={self._robot.inter_planner}",
-            	f"local_planner:={self._robot.local_planner}",
+                f"local_planner:={self._robot.local_planner}",
                 f"complexity:={rosparam_get(int, 'complexity', 1)}",
                 f"record_data:={self._robot.record_data}",
                 f"train_mode:={rosparam_get(bool, 'train_mode', False)}",
@@ -257,8 +259,6 @@ class RobotManager:
         # Overwrite default move base params
         base_frame: str = rospy.get_param_cached(self.namespace("robot_base_frame"))
         sensor_frame: str = rospy.get_param_cached(self.namespace("robot_sensor_frame"))
-
-        print(f"{self.namespace}")
 
         rospy.set_param(
             self.namespace("move_base", "global_costmap", "robot_base_frame"),

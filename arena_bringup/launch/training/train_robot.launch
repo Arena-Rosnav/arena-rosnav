@@ -39,6 +39,7 @@
       <remap from="odom" to="$(arg namespace)/odom" />
 
       <include file="$(find arena_bringup)/launch/testing/move_base/mbf_nav/costmap_nav.launch">
+        <arg name="train_mode" value="$(arg train_mode)" />
 
         <arg name="inter_planner" value="$(arg inter_planner)" />
         <arg name="local_planner" value="$(arg local_planner)" />
