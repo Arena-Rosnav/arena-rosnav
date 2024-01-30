@@ -26,15 +26,12 @@ class UnitySimulator(BaseSimulator):
 
     def __init__(self, namespace: str):
         super().__init__(namespace)
-        
-        rospy.logwarn("HHHAAAAALLLLLOOO")
-        
+
         self._robot_name = rosparam_get(str, "robot_model", "")
 
-        rospy.loginfo("Waiting for Unity services...")
-        
-        rospy.logwarn(self._namespace(
-            "unity", "spawn_walls"))
+        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Waiting for Unity services...")
+
+        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] namespace:" + self._namespace("unity") + ", robot name: " + self._robot_name)
 
         rospy.wait_for_service(self._namespace(
             "unity", "spawn_walls"), timeout=T)
@@ -44,6 +41,8 @@ class UnitySimulator(BaseSimulator):
             "unity", "delete_model"), timeout=T)
         rospy.wait_for_service(self._namespace(
             "unity", "set_model_state"), timeout=T)
+        
+        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] found all unity services")
 
         # TODO: Custom Message Types
         self._spawn_walls_srv = rospy.ServiceProxy(
@@ -77,7 +76,7 @@ class UnitySimulator(BaseSimulator):
         request = SpawnModelRequest()
 
         model = entity.model.get(self.MODEL_TYPES)
-        rospy.loginfo("[Unity Simulator] Spawn Request for " + model.name)
+        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Spawn Request for " + model.name)
 
         request.model_name = entity.name
         request.model_xml = model.description
@@ -109,7 +108,7 @@ class UnitySimulator(BaseSimulator):
         return res.success
 
     def move_entity(self, name, position):
-        rospy.loginfo("[Unity Simulator] Move Request for " + name)
+        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Move Request for " + name)
 
         request = SetModelStateRequest()
         request.model_state = ModelState()
@@ -131,13 +130,13 @@ class UnitySimulator(BaseSimulator):
         self._move_model_srv(request)
 
     def delete_entity(self, name):
-        rospy.loginfo("[Unity Simulator] Delete Request for " + name)
+        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Delete Request for " + name)
         res: DeleteModelResponse = self._remove_model_srv(
             DeleteModelRequest(model_name=name))
         return bool(res.success)
 
     def _publish_goal(self, goal):
-        rospy.loginfo("[Unity Simulator] Goal Request")
+        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Goal Request")
 
         goal_msg = PoseStamped()
         goal_msg.header.seq = 0
@@ -154,6 +153,8 @@ class UnitySimulator(BaseSimulator):
         self._goal_pub.publish(goal_msg)
 
     def spawn_walls(self, walls: WorldWalls):
+        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Spawn Wall Request")
+        
         # send a spawn request to unity for all walls
         request = SpawnWallsRequest()
         request.walls = []
