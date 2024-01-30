@@ -107,7 +107,7 @@ class TM_Random(TM_Obstacles):
             MODELS_DYNAMIC_OBSTACLES=rosparam_get(
                 str, self.NODE_CONFIGURATION("RANDOM_dynamic_models"), ""
             ).split("/"),
-            SEED=rosparam_get(int, self.NODE_CONFIGURATION("RANDOM_seed"), None)
+            SEED=(lambda x: x if x >= 0 else None)(rosparam_get(int, self.NODE_CONFIGURATION("RANDOM_seed"), -1))
         )
 
     def reset(self, **kwargs) -> Obstacles:
@@ -185,7 +185,8 @@ class TM_Random(TM_Obstacles):
             n=N_STATIC_OBSTACLES
             + N_INTERACTIVE_OBSTACLES
             + N_DYNAMIC_OBSTACLES * (1 + waypoints_per_ped),
-            safe_dist=1
+            safe_dist=1,
+            rng = np.random.default_rng(self._config.SEED)
         )
 
         _positions = [

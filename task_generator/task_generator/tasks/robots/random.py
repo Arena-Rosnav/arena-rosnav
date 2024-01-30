@@ -37,7 +37,7 @@ class TM_Random(TM_Robots):
 
     def reconfigure(self, config):
         self._config = Config(
-            SEED=rosparam_get(int, self.NODE_CONFIGURATION("RANDOM_seed"), None)
+            SEED=(lambda x: x if x >= 0 else None)(rosparam_get(int, self.NODE_CONFIGURATION("RANDOM_seed"), -1))
         )
 
     def reset(self, **kwargs):
@@ -74,7 +74,8 @@ class TM_Random(TM_Robots):
                 for position in (
                     self._PROPS.world_manager.get_positions_on_map(
                         n=2 * (len(self._PROPS.robot_managers) - len(ROBOT_POSITIONS)),
-                        safe_dist=biggest_robot
+                        safe_dist=biggest_robot,
+                        rng = np.random.default_rng(self._config.SEED)
                     )
                 )
             ]
