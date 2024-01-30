@@ -224,10 +224,12 @@ class Mod_Benchmark(TM_Module):
             yaml.dump(joint_config, f)
 
     @classmethod
-    def _taskgen_restore(cls):
+    def _taskgen_restore(cls, cleanup: bool = False):
         with open(cls.TASK_GENERATOR_CONFIG_BKUP) as fr:
             with open(cls.TASK_GENERATOR_CONFIG, "w") as fw:
                 fw.write(fr.read())
+        if cleanup:
+            os.remove(cls.TASK_GENERATOR_CONFIG_BKUP)
         
 
     # RUNTIME
@@ -266,7 +268,7 @@ class Mod_Benchmark(TM_Module):
 
         if self._contest_index > self._contest.max_index:
             os.remove(self.DIR(self.LOCK_FILE))
-            self._taskgen_restore()
+            self._taskgen_restore(cleanup=True)
             self._suicide()
         else:
             self._reincarnate()
