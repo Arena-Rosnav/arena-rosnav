@@ -12,7 +12,7 @@
   <arg name="world_file" default=""/>
 
   <!-- TODO: make non-constant -->
-  <arg name="sfm" value="passthrough" />
+  <arg name="sfm" value="" />
 
   <!-- use fake localization-->
   <group ns="$(arg ns)" >
