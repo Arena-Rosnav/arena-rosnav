@@ -161,7 +161,5 @@ def main():
     except rospy.ROSInterruptException:
         rospy.loginfo("Node terminated!")
 
-if __name__ == '__main__':
+if __name__ == '__main__':  
     main()
-
-
