@@ -49,6 +49,8 @@ class ArenaUnityEnv(gymnasium.Env):
         """
         Just sets all the given parameters as properties
         """
+        rospy.loginfo("[Unity Env ns:" + ns + "]: Starting intialization")
+        
         super(ArenaUnityEnv, self).__init__()
 
         self.ns = Namespace(ns)
@@ -72,6 +74,8 @@ class ArenaUnityEnv(gymnasium.Env):
 
         if not trigger_init:
             self.init()
+            
+        rospy.loginfo("[Unity Env ns:" + self.ns + "]: Intialization done")
 
     def init(self):
         """
@@ -88,6 +92,7 @@ class ArenaUnityEnv(gymnasium.Env):
         )
 
         if self._is_train_mode:
+            rospy.loginfo("[Unity Env ns:" + self.ns + "]: Setting up env for training")
             self._setup_env_for_training(self._reward_fnc, **self._kwargs)
 
         # observation collector
