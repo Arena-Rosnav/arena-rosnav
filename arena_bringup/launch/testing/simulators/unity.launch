@@ -4,8 +4,9 @@
   <arg name="model" default="burger"/>
   <arg name="gui" default="true"/>
   <arg name="show_rviz" default="true" doc="Wether to show rviz or not" />
-  <arg name="tcp_ip" default="0.0.0.0"/>
+  <arg name="tcp_ip" default="127.0.0.1"/>
   <arg name="tcp_port" default="10000"/>
+
   <arg 
         name="world_file_path" 
         default="$(find arena-simulation-setup)/worlds/$(arg world)/worlds/$(arg world).world" 
@@ -27,6 +28,8 @@
     <param name="development_mode" value="$(arg development_mode)" />
     <param name="headless" value="$(arg headless)" />
     <param name="namespace" value="$(arg namespace)" />
+    <param name="tcp_ip" value="$(arg tcp_ip)" />
+    <param name="tcp_port" value="$(arg tcp_port)" />
   </node>
 
 </launch>
