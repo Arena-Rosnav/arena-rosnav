@@ -78,7 +78,7 @@ class UnitySimulator(BaseSimulator):
         model = entity.model.get(self.MODEL_TYPES)
         rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Spawn Request for " + model.name)
 
-        request.model_name = entity.name
+        request.model_name = model.name
         request.model_xml = model.description
         request.robot_namespace = self._namespace(entity.name)
         request.reference_frame = "world"
@@ -165,5 +165,5 @@ class UnitySimulator(BaseSimulator):
                           z=UnityConstants.WALL_HEIGHT)
             )
             request.walls.append(wall_req)
-
         self._spawn_walls_srv(request)
+        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Sent Spawn Wall Request")
