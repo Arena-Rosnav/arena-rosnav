@@ -19,7 +19,6 @@ import nav_msgs.msg as nav_msgs
 class Utils:
     @staticmethod
     def get_simulator() -> Constants.Simulator:
-        rospy.logwarn("Sim:" + rosparam_get(str, "simulator", "not defined"))
         return Constants.Simulator(rosparam_get(str, "simulator", "flatland").lower())
 
     @staticmethod
