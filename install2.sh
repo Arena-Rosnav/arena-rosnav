@@ -18,19 +18,26 @@ sudo echo ""
 # Project Setup
 echo "Preparing Project...:"
 mkdir -p ~/arena_ws/src 
-cd ~/arena_ws/src
+cd ~/arena_ws
+
+# clone arena-rosnav
+cd src
 git clone https://github.com/Arena-Rosnav/arena-rosnav.git
 cd arena-rosnav
 until rosws update ; do echo "failed to update, retrying..." ; done
- 
+cd ..
+#
  
 #python env init
+cd src/arena-rosnav
+. "$(poetry env info -p)/bin/activate"
 poetry run poetry install
+cd ../..
 #
  
 # Missing Deps
 echo "Installing Missing Deps...:"
-cd ../..
+
 sudo apt update && sudo apt install -y libopencv-dev liblua5.2-dev libarmadillo-dev ros-noetic-nlopt liblcm-dev
 rosdep update && rosdep install --from-paths src --ignore-src -r -y
  
