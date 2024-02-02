@@ -25,14 +25,14 @@ cd src
 git clone https://github.com/Arena-Rosnav/arena-rosnav.git
 cd arena-rosnav
 until rosws update ; do echo "failed to update, retrying..." ; done
-cd ..
+cd ../..
 #
  
 #python env init
 cd src/arena-rosnav
 export PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring # resolve faster
+poetry run poetry install --no-root
 . "$(poetry env info -p)/bin/activate"
-poetry run poetry install
 cd ../..
 #
  
@@ -49,31 +49,29 @@ catkin build
 export ROS_MASTER_URI=http://127.0.0.1:11311/
 export ROS_IP=127.0.0.1
  
-python -m pip install torch rospkg PyYAML filelock scipy PyQT5 empy defusedxml wandb lxml seaborn netifaces
-
 # add to .bashrc if exists
-if [ -e ~/.zshrc ]; then
-  if ! grep -q "source /opt/ros/noetic/setup.bash" ~/.zshrc; then
-    echo "source /opt/ros/noetic/setup.bash" >> ~/.zshrc
+if [ -e ~/.bashrc ]; then
+  if ! grep -q "source /opt/ros/noetic/setup.bash" ~/.bashrc; then
+    echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
   fi
-  if ! grep -q 'export PATH="$HOME/.local/bin"' ~/.zshrc; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+  if ! grep -q 'export PATH="$HOME/.local/bin"' ~/.bashrc; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
   fi
-  if ! grep -q 'source $HOME/arena_ws/devel/setup.bash' ~/.zshrc; then
-    echo 'source $HOME/arena_ws/devel/setup.bash' >> ~/.zshrc
+  if ! grep -q 'source $HOME/arena_ws/devel/setup.bash' ~/.bashrc; then
+    echo 'source $HOME/arena_ws/devel/setup.bash' >> ~/.bashrc
   fi
 fi
 
 # add to .zshrc if exists
 if [ -e ~/.zshrc ]; then
-  if ! grep -q "source /opt/ros/noetic/setup.bash" ~/.zshrc; then
-    echo "source /opt/ros/noetic/setup.bash" >> ~/.zshrc
+  if ! grep -q "source /opt/ros/noetic/setup.zsh" ~/.zshrc; then
+    echo "source /opt/ros/noetic/setup.zsh" >> ~/.zshrc
   fi
   if ! grep -q 'export PATH="$HOME/.local/bin"' ~/.zshrc; then
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
   fi
-  if ! grep -q 'source $HOME/arena_ws/devel/setup.bash' ~/.zshrc; then
-    echo 'source $HOME/arena_ws/devel/setup.bash' >> ~/.zshrc
+  if ! grep -q 'source $HOME/arena_ws/devel/setup.zsh' ~/.zshrc; then
+    echo 'source $HOME/arena_ws/devel/setup.zsh' >> ~/.zshrc
   fi
 fi
  
