@@ -1,3 +1,4 @@
+from numpy import full
 import rospy
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
@@ -80,7 +81,7 @@ class UnitySimulator(BaseSimulator):
 
         request.model_name = model.name
         request.model_xml = model.description
-        request.robot_namespace = self._namespace(entity.name)
+        request.robot_namespace = entity.name
         request.reference_frame = "world"
 
         # send coordinates in the normal ROS refrence frame (FLU)
@@ -95,9 +96,10 @@ class UnitySimulator(BaseSimulator):
         )
 
         if isinstance(entity, Robot):
-            rospy.set_param(request.robot_namespace(
+            full_robot_ns = self._namespace(entity.name)
+            rospy.set_param(full_robot_ns(
                 "robot_description"), model.description)
-            rospy.set_param(request.robot_namespace(
+            rospy.set_param(full_robot_ns(
                 "tf_prefix"), str(request.robot_namespace))
             
 
