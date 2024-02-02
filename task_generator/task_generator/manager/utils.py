@@ -192,8 +192,8 @@ class WorldMap:
                 )
             ),
             origin=Position(
-                distmap.info.origin.position.x,
-                distmap.info.origin.position.y
+                distmap.info.origin.position.y,
+                distmap.info.origin.position.x
             ),
             resolution=distmap.info.resolution,
             time=distmap.info.map_load_time
