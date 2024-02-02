@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 import re
-import time
 import random
 
 from typing import Tuple
