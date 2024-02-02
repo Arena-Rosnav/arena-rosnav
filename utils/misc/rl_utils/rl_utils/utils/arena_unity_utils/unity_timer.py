@@ -18,8 +18,9 @@ class UnityTimer:
                 published to.
         """
         self._current_time = start_time
-        self._update_duration = update_duration
-        self._update_offset = rospy.Duration(update_duration)
+        # self._update_duration = update_duration
+        self._update_duration = 3
+        self._update_offset = rospy.Duration(secs=self._update_duration, nsecs=0)
         self._next_update = self._current_time + self._update_offset
         self._clock_subscrition = rospy.Subscriber(clock_topic, Clock, self._clock_callback)
 
@@ -31,6 +32,8 @@ class UnityTimer:
         """
         r = rospy.Rate(10 * 1.0 / self._update_duration)
         
+        rospy.loginfo("*****************Wating for update")
+        
         while self._current_time < self._next_update and not rospy.is_shutdown():
             if self._current_time >= self._next_update:
                 # check if loop is too slow
@@ -39,5 +42,6 @@ class UnityTimer:
 
                 self._next_update = self._current_time + self._update_offset
                 return
+            rospy.loginfo("*****************Going back to sleep")
 
             r.sleep()

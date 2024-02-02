@@ -63,6 +63,7 @@ class ArenaUnityEnv(gymnasium.Env):
 
         self._is_train_mode = rospy.get_param_cached("/train_mode", default=True)
         self._step_size = rospy.get_param_cached("/step_size")
+        rospy.loginfo("[Unity Env ns:" + ns + "]: Step size " + str(self._step_size))
 
         self._reward_fnc = reward_fnc
         self._kwargs = kwargs
@@ -159,18 +160,24 @@ class ArenaUnityEnv(gymnasium.Env):
             tuple: A tuple containing the encoded observation, reward, done flag, info dictionary, and False flag.
 
         """
+        rospy.loginfo("[Unity Env ns:" + self.ns + "]: Step call start.")
+        
         if self._is_train_mode:
             self._unity_timer.wait_for_next_update()
 
         decoded_action = self._decode_action(action)
+        # rospy.loginfo("[Unity Env ns:" + self.ns + "]: Publishing action.")
         self._pub_action(decoded_action)
 
         obs_dict = self.observation_collector.get_observations(
             last_action=self._last_action
         )
+        # rospy.loginfo("[Unity Env ns:" + self.ns + "]: Observations: " + str(obs_dict))
+        
         self._last_action = decoded_action
 
         # calculate reward
+        # rospy.loginfo("[Unity Env ns:" + self.ns + "]: Calculating Rewards.")
         reward, reward_info = self.reward_calculator.get_reward(
             action=decoded_action,
             **obs_dict,
@@ -208,7 +215,7 @@ class ArenaUnityEnv(gymnasium.Env):
             tuple: A tuple containing the encoded observation and an empty info dictionary.
 
         """
-
+        rospy.loginfo("[Unity Env ns:" + self.ns + "]: Resetting.")
         super().reset(seed=seed)
         self._episode += 1
         self.agent_action_pub.publish(Twist())
