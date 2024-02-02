@@ -69,4 +69,4 @@ class Mod_OverrideRobot(TM_Module):
         self._TASK.set_robot_goal(poso)
 
     def _cb_new_scenario(self, *args, **kwargs):
-        self._TASK.reset()
+        self._TASK.force_reset()

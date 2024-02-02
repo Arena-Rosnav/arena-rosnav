@@ -1,0 +1,72 @@
+{
+    "robots": [
+      {
+        "start": [12, 0, 0.7],
+        "goal": [-15, 0, 0.7]
+      }
+    ],
+    "obstacles": {
+  
+      "static": [
+      ],
+  
+      "dynamic": [
+        {
+          "name": "Visitor_1",
+          "pos": [12.5, -1.5, 1],
+          "type": "adult",
+          "model": "actor1",
+          "waypoints": [
+              [12.5, 1.5, 1],
+              [-15, 1.5, 1], 
+              [-15, -1.5, 1],
+              [12.5, -1.5, 1]
+          ],
+          "waypoint_mode": 1
+        },   
+        {
+          "name": "Visitor_2",
+          "pos": [-6, 1.5, 1],
+          "type": "adult",
+          "model": "actor1",
+          "waypoints": [
+            [-15, 1.5, 1], 
+            [-15, -1.5, 1],
+            [12.5, -1.5, 1],
+            [12.5, 1.5, 1]
+          ],
+          "waypoint_mode": 1
+        },  
+        {
+          "name": "Visitor_3",
+          "pos": [-15, -1.5, 1],
+          "type": "adult",
+          "model": "actor1",
+          "waypoints": [
+            [-15, -1.5, 1],
+            [12.5, -1.5, 1],   
+            [12.5, 1.5, 1],
+            [-15, 1.5, 1]                                     
+          ],
+          "waypoint_mode": 1
+        },  
+        {
+          "name": "Visitor_4",
+          "pos": [-1, -1.5, 1],
+          "type": "adult",
+          "model": "actor1",
+          "waypoints": [
+            [12.5, -1.5, 1],
+            [12.5, 1.5, 1],
+            [-15, 1.5, 1],  
+            [-15, -1.5, 1]                                     
+          ],
+          "waypoint_mode": 1
+        }                                                    
+      ],
+      "interactive": []
+    },
+    "resets": 50,
+    "map": "arena_corridor"
+  }
+  

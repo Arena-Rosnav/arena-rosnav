@@ -1,13 +1,11 @@
 import math
-import random
 from typing import Dict
+
 import genpy
-import rospy
-from task_generator.constants import Constants
-from task_generator.shared import PositionOrientation, rosparam_get
+from task_generator.constants import Config, Constants
+from task_generator.shared import PositionOrientation
 from task_generator.tasks.robots.random import TM_Random
 from task_generator.tasks.task_factory import TaskFactory
-
 
 @TaskFactory.register_robots(Constants.TaskMode.TM_Robots.EXPLORE)
 class TM_Explore(TM_Random):
@@ -17,6 +15,11 @@ class TM_Explore(TM_Random):
     """
 
     _timeouts: Dict[int, genpy.Time]
+
+    @classmethod
+    def prefix(cls, *args):
+        return super().prefix("explore", *args)
+        
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -39,17 +42,15 @@ class TM_Explore(TM_Random):
                     safe_dist=robot._robot_radius, forbid=False
                 )
                 self._set_goal(
-                    i, PositionOrientation(*waypoint, random.random() * 2 * math.pi)
+                    i, PositionOrientation(*waypoint, Config.General.RNG.random() * 2 * math.pi)
                 )
 
-            elif (self._PROPS.clock.clock - self._timeouts[i]).secs > rosparam_get(
-                float, "TIMEOUT", 90
-            ):
+            elif (self._PROPS.clock.clock - self._timeouts[i]).secs > Config.Robot.TIMEOUT:
                 waypoint = self._PROPS.world_manager.get_position_on_map(
                     safe_dist=robot._robot_radius, forbid=False
                 )
                 self._set_position(
-                    i, PositionOrientation(*waypoint, random.random() * 2 * math.pi)
+                    i, PositionOrientation(*waypoint, Config.General.RNG.random() * 2 * math.pi)
                 )
 
         return False

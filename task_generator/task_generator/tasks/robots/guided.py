@@ -32,6 +32,10 @@ class TM_Guided(TM_Random):
     _waypoints: List[PositionOrientation]
     _waypoint_states: Dict[str, int]
 
+    @classmethod
+    def prefix(cls, *args):
+        return super().prefix("guided", *args)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -49,7 +53,7 @@ class TM_Guided(TM_Random):
         Returns:
             None
         """
-        TM_Random.reset(self, **kwargs)
+        super().reset(**kwargs)
         self._reset_waypoints()
 
     @property

@@ -1,0 +1,219 @@
+stages:
+  - name: map_empty_1_jackal
+    episodes: 1
+    robot: jackal
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_1.json
+
+  - name: map_empty_2_jackal
+    episodes: 1
+    robot: jackal
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_2.json 
+
+  - name: map_empty_3_jackal
+    episodes: 1
+    robot: jackal
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_3.json
+
+  - name: map_empty_4_jackal
+    episodes: 1
+    robot: jackal
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_4.json
+
+  - name: map_empty_5_jackal
+    episodes: 1
+    robot: jackal
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_5.json
+        
+  - name: map_empty_random_jackal
+    episodes: 5
+    robot: jackal
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: random
+    config:
+      SCENARIO:
+        file: map_empty_1.json
+      RANDOM:
+        static:
+          min: 5
+          max: 10
+          models: ["shelf"]
+        interactive:
+          min: 0
+          max: 0
+          models: ["shelf"]
+        dynamic:
+          min: 3
+          max: 5
+          models: ["actor1"]
+
+  - name: map_empty_1_agvota
+    episodes: 1
+    robot: agvota
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_1.json
+
+  - name: map_empty_2_agvota
+    episodes: 1
+    robot: agvota
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_2.json 
+
+  - name: map_empty_3_agvota
+    episodes: 1
+    robot: agvota
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_3.json
+
+  - name: map_empty_4_agvota
+    episodes: 1
+    robot: agvota
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_4.json
+
+  - name: map_empty_5_agvota
+    episodes: 1
+    robot: agvota
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_5.json
+        
+  - name: map_empty_random_agvota
+    episodes: 5
+    robot: agvota
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: random
+    config:
+      SCENARIO:
+        file: map_empty_1.json
+      RANDOM:
+        static:
+          min: 5
+          max: 10
+          models: ["shelf"]
+        interactive:
+          min: 0
+          max: 0
+          models: ["shelf"]
+        dynamic:
+          min: 3
+          max: 5
+          models: ["actor1"]
+
+  - name: map_empty_1_cob4
+    episodes: 1
+    robot: cob4
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_1.json
+
+  - name: map_empty_2_cob4
+    episodes: 1
+    robot: cob4
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_2.json 
+
+  - name: map_empty_3_cob4
+    episodes: 1
+    robot: cob4
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_3.json
+
+  - name: map_empty_4_cob4
+    episodes: 1
+    robot: cob4
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_4.json
+
+  - name: map_empty_5_cob4
+    episodes: 1
+    robot: cob4
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: map_empty_5.json
+        
+  - name: map_empty_random_cob4
+    episodes: 5
+    robot: cob4
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: random
+    config:
+      SCENARIO:
+        file: map_empty_1.json
+      RANDOM:
+        static:
+          min: 5
+          max: 10
+          models: ["shelf"]
+        interactive:
+          min: 0
+          max: 0
+          models: ["shelf"]
+        dynamic:
+          min: 3
+          max: 5
+          models: ["actor1"]

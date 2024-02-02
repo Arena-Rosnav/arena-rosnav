@@ -19,8 +19,8 @@
 
   <arg name="complexity" default="1" />
 
-  <!-- TODO: Add data recorder -->
   <arg name="record_data" default="false" />
+  <arg name="record_data_dir" default="auto:" />
 
   <param name="model" value="$(arg model)" />
   <param name="train_mode" value="$(arg train_mode)"
@@ -41,6 +41,7 @@
 
   <group ns="$(arg namespace)">
     <param name="local_planner" value="$(arg local_planner)" />
+    <param name="inter_planner" value="$(arg inter_planner)" />
     <param name="agent_name" value="$(arg agent_name)"
       unless="$(eval arg('local_planner') != 'rosnav')" />
     <param name="model" value="$(arg model)" />
@@ -62,10 +63,8 @@
       </node>
     </group>
 
-    <node pkg="arena-evaluation" type="data_recorder_node.py" name="data_recorder_node"
-      if="$(eval arg('record_data'))">
-      <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load"
-        ns="configuration" />
+    <node pkg="arena-evaluation" type="data_recorder_node" name="data_recorder_node" if="$(eval arg('record_data'))" args="--dir=$(arg record_data_dir)/$(arg name)">
+      <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load" ns="configuration" />
     </node>
     
     <!-- move_base plan manager: which provide basic global planner and cost map -->

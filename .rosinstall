@@ -62,8 +62,8 @@
 
 - git:
     local-name: ../arena-evaluation
-    uri: https://github.com/Arena-Rosnav/arena-evaluation.git
-    version: master
+    uri: https://github.com/voshch/arena-evaluation.git
+    version: arena-3
 
 ### PLANNERS 
   # Comment in which planners you need

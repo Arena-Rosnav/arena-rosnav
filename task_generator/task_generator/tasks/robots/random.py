@@ -1,7 +1,7 @@
 import math
-import random
 from typing import List, Tuple
-from task_generator.constants import Constants, TaskConfig
+
+from task_generator.constants import Config, Constants
 from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
 from task_generator.tasks.task_factory import TaskFactory
@@ -15,6 +15,13 @@ class TM_Random(TM_Robots):
     Inherits from TM_Robots class.
     """
 
+    @classmethod
+    def prefix(cls, *args):
+        return super().prefix("random", *args)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def reset(self, **kwargs):
         """
         Reset the task generator.
@@ -25,6 +32,8 @@ class TM_Random(TM_Robots):
         Returns:
             None
         """
+
+        super().reset(**kwargs)
 
         ROBOT_POSITIONS: List[
             Tuple[PositionOrientation, PositionOrientation]
@@ -40,15 +49,21 @@ class TM_Random(TM_Robots):
             )
 
         if len(ROBOT_POSITIONS) < len(self._PROPS.robot_managers):
+            to_generate = 2*(len(self._PROPS.robot_managers) - len(ROBOT_POSITIONS))
+
+            orientations = 2 * math.pi * Config.General.RNG.random(to_generate)
+            positions = self._PROPS.world_manager.get_positions_on_map(
+                n= to_generate,
+                safe_dist=biggest_robot
+            )
+
             generated_positions = [
                 PositionOrientation(
-                    position.x, position.y, random.random() * 2 * math.pi
+                    position.x, position.y, orientation
                 )
-                for position in (
-                    self._PROPS.world_manager.get_positions_on_map(
-                        n=2 * (len(self._PROPS.robot_managers) - len(ROBOT_POSITIONS)),
-                        safe_dist=biggest_robot,
-                    )
+                for (orientation, position) in zip(
+                    orientations,
+                    positions
                 )
             ]
 

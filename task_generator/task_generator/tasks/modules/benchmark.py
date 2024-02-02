@@ -1,10 +1,13 @@
+import datetime
+import hashlib
+import json
+import pathlib
 from task_generator.constants import Constants
 from task_generator.shared import Namespace
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.task_factory import TaskFactory
 
 import typing
-import dataclasses
 import os
 import yaml
 import subprocess
@@ -46,10 +49,11 @@ class Config(typing.NamedTuple):
 class Suite(typing.NamedTuple):
 
     @classmethod
-    def parse(cls, obj: typing.Dict):
+    def parse(cls, name: str, obj: typing.Dict):
         return cls(
+            name = name,
             stages = [
-                cls.Stage(**stage)
+                cls.Stage.parse(stage)
                 for stage
                 in obj["stages"]
             ]
@@ -66,6 +70,27 @@ class Suite(typing.NamedTuple):
         tm_obstacles: Constants.TaskMode.TM_Obstacles
         config: typing.Dict
 
+        seed: int
+        timeout: float
+
+        @classmethod
+        def _hash(cls, obj: typing.Dict) -> int:
+            """
+            hash json-serializable object to non-negative int32
+            """
+            return 0x7f_ff_ff_ff & int.from_bytes(
+                hashlib.sha1(json.dumps(obj).encode()).digest()[-4:],
+                byteorder="big"
+            )
+
+        @classmethod
+        def parse(cls, obj: typing.Dict) -> "Suite.Stage":
+            obj.setdefault("timeout", 60)
+            obj.setdefault("seed", cls._hash(obj))
+            return cls(**obj)
+        
+
+    name: str
     stages: typing.List[Stage]
 
     @property
@@ -82,10 +107,11 @@ class Suite(typing.NamedTuple):
 class Contest(typing.NamedTuple):
 
     @classmethod
-    def parse(cls, obj: typing.Dict):
+    def parse(cls, name: str, obj: typing.Dict):
         return cls(
+            name = name,
             contestants = [
-                cls.Contestant(**contestant)
+                cls.Contestant.parse(contestant)
                 for contestant
                 in obj["contestants"]
             ]
@@ -98,6 +124,12 @@ class Contest(typing.NamedTuple):
         local_planner: str
         inter_planner: str
 
+        @classmethod
+        def parse(cls, obj: typing.Dict) -> "Contest.Contestant":
+            obj.setdefault("inter_planner", "bypass")
+            return cls(**obj)
+
+    name: str
     contestants: typing.List[Contestant]
 
     @property
@@ -134,6 +166,7 @@ class Mod_Benchmark(TM_Module):
     _contest: Contest
     _episode_index: int
 
+    _runid: str
     _contest_index: Contest.Index
     _suite_index: Suite.Index
 
@@ -147,28 +180,29 @@ class Mod_Benchmark(TM_Module):
     @classmethod
     def _load_contest(cls, contest: str) -> Contest:
         with open(cls.DIR("contests", contest)) as f:
-            return Contest.parse(yaml.load(f, yaml.FullLoader))
+            return Contest.parse(pathlib.Path(contest).stem, yaml.load(f, yaml.FullLoader))
         
     @classmethod
     def _load_suite(cls, suite: str) -> Suite:
         with open(cls.DIR("suites", suite)) as f:
-            return Suite.parse(yaml.load(f, yaml.FullLoader))
+            return Suite.parse(pathlib.Path(suite).stem, yaml.load(f, yaml.FullLoader))
     
     @classmethod
-    def _resume(cls) -> typing.Tuple[Contest.Index, Suite.Index]:
+    def _resume(cls) -> typing.Tuple[str, Contest.Index, Suite.Index]:
         with open(cls.DIR(cls.LOCK_FILE)) as f:
-            contest, suite = f.read().split(" ")
-        return Contest.Index(contest), Suite.Index(suite)
+            runid, contest, suite = f.read().split(" ")
+        return runid, Contest.Index(contest), Suite.Index(suite)
 
 
     @classmethod
     def _taskgen_backup(cls):
+        if os.path.exists(bkup_file := cls.TASK_GENERATOR_CONFIG + ".bkup"): return
         with open(cls.TASK_GENERATOR_CONFIG) as fr:
-            with open(cls.TASK_GENERATOR_CONFIG + ".bkup", "w") as fw:
+            with open(bkup_file, "w") as fw:
                 fw.write(fr.read())
 
     @classmethod
-    def _taskgen_write(cls, config: typing.Dict):
+    def _taskgen_write(cls, *configs: typing.Dict):
 
         def overwrite(source: typing.Dict, target: typing.Dict):
             for k,v in source.items():
@@ -180,17 +214,22 @@ class Mod_Benchmark(TM_Module):
             return target
 
         with open(cls.TASK_GENERATOR_CONFIG, "r") as f:
-            config = overwrite(config, yaml.load(f, yaml.FullLoader))
+            joint_config = yaml.load(f, yaml.FullLoader)
+
+        for config in configs:
+            overwrite(config, joint_config)        
         
         # yaml has problems with r+
         with open(cls.TASK_GENERATOR_CONFIG, "w") as f:
-            yaml.dump(config, f)
+            yaml.dump(joint_config, f)
 
     @classmethod
-    def _taskgen_restore(cls):
+    def _taskgen_restore(cls, cleanup: bool = False):
         with open(cls.TASK_GENERATOR_CONFIG_BKUP) as fr:
             with open(cls.TASK_GENERATOR_CONFIG, "w") as fw:
                 fw.write(fr.read())
+        if cleanup:
+            os.remove(cls.TASK_GENERATOR_CONFIG_BKUP)
         
 
     # RUNTIME
@@ -205,11 +244,12 @@ class Mod_Benchmark(TM_Module):
         # first run
         if not rospy.get_param("/benchmark_resume", False):
             self._taskgen_backup()
+            self._runid = f"{self._contest.name}_{datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S')}"
             self._contest_index = self._contest.min_index
             self._suite_index = self._suite.min_index
             return self._reincarnate()
 
-        self._contest_index, self._suite_index = self._resume()
+        self._runid, self._contest_index, self._suite_index = self._resume()
 
 
     def before_reset(self):
@@ -228,7 +268,7 @@ class Mod_Benchmark(TM_Module):
 
         if self._contest_index > self._contest.max_index:
             os.remove(self.DIR(self.LOCK_FILE))
-            self._taskgen_restore()
+            self._taskgen_restore(cleanup=True)
             self._suicide()
         else:
             self._reincarnate()
@@ -263,14 +303,22 @@ class Mod_Benchmark(TM_Module):
     def _reincarnate(self):
 
         with open(self.DIR(self.LOCK_FILE), "w") as f:
-            f.write(f"{self._contest_index} {self._suite_index}")
+            f.write(f"{self._runid} {self._contest_index} {self._suite_index}")
 
         config = self._config
         contest_config = self._contest.config(self._contest_index)
         suite_config = self._suite.config(self._suite_index)
 
         self._taskgen_restore()
-        self._taskgen_write(suite_config.config)
+        self._taskgen_write(
+            {
+                "episodes": suite_config.episodes+1,
+                "RANDOM": {
+                    "seed": suite_config.seed
+                }
+            },
+            suite_config.config
+        )
 
         subprocess.Popen(
             [
@@ -285,8 +333,10 @@ class Mod_Benchmark(TM_Module):
                 "tm_modules:=benchmark",
                 "benchmark_resume:=true",
                 "record_data:=true",
+                f"record_data_dir:={self._runid}/{contest_config.name}/{suite_config.name}",
 
                 f"simulator:={config.general.simulator}",
+                f"timeout:={suite_config.timeout}",
                 
                 # contest
                 f"inter_planner:={contest_config.inter_planner}",
