@@ -52,6 +52,10 @@
 - git:
     local-name: ../utils-extern/misc/unitree_ros
     uri: https://github.com/voshch/unitree_ros
+    
+- git:
+    local-name: ../utils-extern/plugins/gazebo_ros_2Dmap_plugin
+    uri: https://github.com/marinaKollmitz/gazebo_ros_2Dmap_plugin.git
 
 ### ARENA INFRASTRUCTURE
 
