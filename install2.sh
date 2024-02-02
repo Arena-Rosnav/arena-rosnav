@@ -30,6 +30,7 @@ cd ..
  
 #python env init
 cd src/arena-rosnav
+export PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring # resolve faster
 . "$(poetry env info -p)/bin/activate"
 poetry run poetry install
 cd ../..
