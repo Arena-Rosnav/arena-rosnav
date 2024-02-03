@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+
   <!-- Arguments -->
   <arg name="model" />
   <arg name="speed" />
@@ -7,9 +8,6 @@
   <arg name="namespace" />
   <arg name="frame" />
   <arg name="odom_topic" default="odom" />
-
-  <remap from="cmd_vel" to="cmd_vel_actual" />
-
 
   <!-- move_base flex-->
   <group ns="move_base_flex">
@@ -37,7 +35,7 @@
     <param name="cap" value="10" />
   </node>
 
-  <node pkg="barn_challenge" type="cone_bench.py" name="cone_bench" output="screen">
+  <node pkg="barn_challenge" type="cone_bench.py" name="cone_bench" output="log">
 
     <remap from="odom" to="$(arg odom_topic)"/>
     <remap from="cmd_vel" to="cmd_vel"/>

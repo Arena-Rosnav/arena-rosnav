@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+
+  <node name="mbf_cmd_vel_relay" pkg="topic_tools" type="relay" args="cmd_vel_internal cmd_vel" />
+
   <!-- Arguments -->
   <arg name="model" />
   <arg name="speed" />
@@ -16,7 +19,6 @@
     <param name="base_local_planner" value="TebLocalPlannerROS" />
   </group>
 
-  <!-- temp -->
   <group ns="move_base_legacy_relay">
     <rosparam file="$(find arena_bringup)/params/mbf/local/teb_local_planner_params.yaml"
       command="load" subst_value="True" />

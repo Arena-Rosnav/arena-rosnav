@@ -1,0 +1,32 @@
+contestants:
+  - name: teb-basic
+    local_planner: teb
+    inter_planner: bypass
+
+  - name: dwa-basic
+    local_planner: dwa
+    inter_planner: bypass
+
+  - name: dragon-basic
+    local_planner: dragon
+    inter_planner: bypass
+
+  - name: rosnav-basic
+    local_planner: rosnav
+    inter_planner: bypass
+
+  - name: applr-basic
+    local_planner: applr
+    inter_planner: bypass
+
+  - name: lflh-basic
+    local_planner: lflh
+    inter_planner: bypass
+
+  - name: trail-basic
+    local_planner: trail
+    inter_planner: bypass
+
+  - name: cohan-basic
+    local_planner: cohan
+    inter_planner: bypass

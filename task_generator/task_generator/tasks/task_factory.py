@@ -86,6 +86,8 @@ class TaskFactory:
             __tm_robots: TM_Robots
             __tm_obstacles: TM_Obstacles
 
+            _force_reset: bool
+
             def __init__(
                 self,
                 obstacle_manager: ObstacleManager,
@@ -106,6 +108,7 @@ class TaskFactory:
                     *args: Variable length argument list.
                     **kwargs: Arbitrary keyword arguments.
                 """
+                self._force_reset = False
                 self.namespace = namespace
 
                 self.obstacle_manager = obstacle_manager
@@ -269,6 +272,7 @@ class TaskFactory:
                 Args:
                     **kwargs: Arbitrary keyword arguments.
                 """
+                self._force_reset = False
                 if self._train_mode:
                     self._reset_task(**kwargs)
                 else:
@@ -282,7 +286,7 @@ class TaskFactory:
                 Returns:
                     bool: True if the task is done, False otherwise.
                 """
-                return self.__tm_robots.done
+                return self._force_reset or self.__tm_robots.done
 
             def set_robot_position(self, position: PositionOrientation):
                 """
@@ -302,6 +306,9 @@ class TaskFactory:
                 """
                 self.__tm_robots.set_goal(position)
 
+            def force_reset(self):
+                self._force_reset = True
+
         return CombinedTask
 
 
@@ -318,3 +325,4 @@ from .modules.clear_forbidden_zones import Mod_ClearForbiddenZones
 from .modules.dynamic_map import Mod_DynamicMap
 from .modules.rviz_ui import Mod_OverrideRobot
 from .modules.staged import Mod_Staged
+from .modules.benchmark import Mod_Benchmark

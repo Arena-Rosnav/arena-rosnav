@@ -13,7 +13,7 @@ import dynamic_reconfigure.client
 
 class Defaults:
     class task_config:
-        no_of_episodes = 5
+        episodes = 5
 
 
 class Constants:
@@ -60,6 +60,7 @@ class Constants:
             DYNAMIC_MAP = "dynamic_map"
             CLEAR_FORBIDDEN_ZONES = "clear_forbidden_zones"
             RVIZ_UI = "rviz_ui"
+            BENCHMARK = "benchmark"
 
             @classmethod
             def prefix(cls, *args):
