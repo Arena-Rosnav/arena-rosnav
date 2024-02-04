@@ -37,8 +37,24 @@ class RewardUnit(ABC):
         self._on_safe_dist_violation = _on_safe_dist_violation
 
     @property
+    def robot_radius(self):
+        return self._reward_function.robot_radius
+
+    @property
     def on_safe_dist_violation(self):
         return self._on_safe_dist_violation
+
+    def get_internal_state_info(self, key: str) -> Any:
+        """
+        Retrieves internal state information from the RewardFunction wrapper based on the provided key.
+
+        Args:
+            key (str): The key to identify the internal state information.
+
+        Returns:
+            Any: The internal state information associated with the provided key.
+        """
+        return self._reward_function.get_internal_state_info(key=key)
 
     def add_reward(self, value: float):
         """Adds the given value to the episode's reward.
@@ -64,12 +80,12 @@ class RewardUnit(ABC):
         """Method to reset the unit state after each episode."""
         pass
 
-    @property
-    def robot_radius(self):
-        return self._reward_function.robot_radius
-
     @abstractmethod
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        Placeholder method for calling the reward unit. It should alter the reward and possibly the info dict.
+        This method should be overridden in the derived classes.
+        """
         raise NotImplementedError()
 
 

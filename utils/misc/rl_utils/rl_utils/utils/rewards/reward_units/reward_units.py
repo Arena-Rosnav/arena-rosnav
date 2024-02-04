@@ -121,7 +121,7 @@ class RewardSafeDistance(RewardUnit):
             violation_in_blind_spot = kwargs["full_laser_scan"].min() <= self._safe_dist
 
         if (
-            self._reward_function.get_internal_state_info("safe_dist_breached")
+            self.get_internal_state_info("safe_dist_breached")
             or violation_in_blind_spot
         ):
             self.add_reward(self._reward)
@@ -258,7 +258,7 @@ class RewardCollision(RewardUnit):
         if "full_laser_scan" in kwargs:
             coll_in_blind_spots = kwargs["full_laser_scan"].min() <= self.robot_radius
 
-        laser_min = self._reward_function.get_internal_state_info("min_dist_laser")
+        laser_min = self.get_internal_state_info("min_dist_laser")
         if laser_min <= self.robot_radius or coll_in_blind_spots:
             self.add_reward(self._reward)
             self.add_info(self.DONE_INFO)
