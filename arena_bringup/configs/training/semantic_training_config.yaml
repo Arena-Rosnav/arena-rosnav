@@ -3,18 +3,18 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 16
+n_envs: 12
 # gpu yes or no
 no_gpu: false
 
 ### General Training
 tm_robots: "random"
 tm_obstacles: "random"
-tm_modules: "staged"
+tm_modules: ""
 
 # number of simulation timesteps
-n_timesteps: 6000000
-max_num_moves_per_eps: 250
+n_timesteps: 8000000
+max_num_moves_per_eps: 350
 goal_radius: 0.3
 safety_distance: 1
 
@@ -63,9 +63,9 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "RosnavResNet_2"
+  architecture_name: "RosnavResNet_7"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: jackal_RosnavResNet_2_2024_01_23__18_55_05 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   checkpoint: "last_model"
 
   frame_stacking:
@@ -107,7 +107,7 @@ rl_agent:
       final_value: 0.0001
 
   ppo:
-    batch_size: 1280
+    batch_size: 1920
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
