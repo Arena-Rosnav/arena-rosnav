@@ -55,7 +55,7 @@ def create_default_robot_list(
             agent=agent,
             position=next(gen_init_pos),
             name=name,
-            record_data_dir=rospy.get_param("record_data_dir", None),
+            record_data_dir=rosparam_get(str, "record_data_dir", None),
             extra=dict(),
         )
     ]
@@ -101,7 +101,7 @@ class TaskGenerator:
 
     _start_time: float
     _number_of_resets: int
-    _desired_resets: int
+    _desired_resets: float
 
     def __init__(self, namespace: str = "/") -> None:
         self._namespace = Namespace(namespace)
@@ -140,11 +140,11 @@ class TaskGenerator:
             rospy.set_param("/robot_names", self._task.robot_names)
 
             self._number_of_resets = 0
-            self._desired_resets = rosparam_get(
-                int,
-                "~configuration/episodes",
+            self._desired_resets = (lambda x: float("inf") if x<0 else x)(rosparam_get(
+                float,
+                Constants.TASK_GENERATOR_SERVER_NODE("episodes"),
                 Defaults.task_config.episodes,
-            )
+            ))
 
             self.srv_start_model_visualization = rospy.ServiceProxy(
                 "start_model_visualization", std_srvs.Empty

@@ -1,4 +1,4 @@
-episodes: 50
+episodes: -1
 
 SCENARIO:
   file: default.json

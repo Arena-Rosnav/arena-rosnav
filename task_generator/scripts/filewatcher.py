@@ -86,7 +86,7 @@ def run(namespace: Optional[str] = None):
             client.update_configuration(
                 {
                     **{
-                        # "no_of_episodes": content.get("no_of_episodes")
+                        "episodes": content.get("episodes")
                     },
                     **{
                         k:v

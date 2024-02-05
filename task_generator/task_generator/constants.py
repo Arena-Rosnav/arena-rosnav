@@ -13,7 +13,7 @@ import dynamic_reconfigure.client
 
 class Defaults:
     class task_config:
-        episodes = 5
+        episodes = -1
 
 
 class Constants:
