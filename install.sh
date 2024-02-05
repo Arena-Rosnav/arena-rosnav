@@ -29,6 +29,7 @@ if [[ -d ~/arena_ws ]]; then
   exit 1
 fi
 
+sudo add-apt-repository universe
 sudo apt update
 
 # ROS
