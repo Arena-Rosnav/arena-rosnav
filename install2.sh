@@ -83,3 +83,5 @@ echo "Installation Complete."
 echo "You can confirm that it works, by running the following command in a NEW terminal:"
 echo ""
 echo "roslaunch arena_bringup start_arena.launch"
+echo ""
+echo "If you need to train or use rosnav/aio planners, download and run install3_training.sh.
