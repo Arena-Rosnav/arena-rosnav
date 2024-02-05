@@ -14,6 +14,7 @@ import subprocess
 
 import rospkg
 import rospy
+import arena_evaluation_msgs.srv as arena_evaluation_srvs
 
 def _get_rosmaster_pid() -> int:
     try:
@@ -74,7 +75,7 @@ class Suite(typing.NamedTuple):
         timeout: float
 
         @classmethod
-        def _hash(cls, obj: typing.Dict) -> int:
+        def hash(cls, obj: typing.Dict) -> int:
             """
             hash json-serializable object to non-negative int32
             """
@@ -86,7 +87,7 @@ class Suite(typing.NamedTuple):
         @classmethod
         def parse(cls, obj: typing.Dict) -> "Suite.Stage":
             obj.setdefault("timeout", 60)
-            obj.setdefault("seed", cls._hash(obj))
+            obj.setdefault("seed", cls.hash(obj))
             return cls(**obj)
         
 
@@ -170,6 +171,8 @@ class Mod_Benchmark(TM_Module):
     _contest_index: Contest.Index
     _suite_index: Suite.Index
 
+    _requires_restart: bool
+
     # CONFIGURATION
 
     @classmethod
@@ -241,12 +244,15 @@ class Mod_Benchmark(TM_Module):
         self._contest = self._load_contest(self._config.contest.config)
         self._episode_index = 0
 
+        self._requires_restart = False
+
         # first run
         if not rospy.get_param("/benchmark_resume", False):
             self._taskgen_backup()
             self._runid = f"{self._contest.name}_{datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S')}"
             self._contest_index = self._contest.min_index
             self._suite_index = self._suite.min_index
+            self._requires_restart = True
             return self._reincarnate()
 
         self._runid, self._contest_index, self._suite_index = self._resume()
@@ -279,12 +285,19 @@ class Mod_Benchmark(TM_Module):
     
     @suite_index.setter
     def suite_index(self, index: int):
+
+        old_config = self._suite.config(self._suite_index)
         self._suite_index = Suite.Index(index)
 
         if self._suite_index > self._suite.max_index:
             self._suite_index = self._suite.min_index
             self.contest_index += 1
         else:
+            new_config = self._suite.config(self._suite_index)
+
+            if new_config.map != old_config.map or new_config.robot != old_config.robot:
+                self._requires_restart = True
+            
             self._reincarnate()
 
     @property
@@ -312,46 +325,52 @@ class Mod_Benchmark(TM_Module):
         self._taskgen_restore()
         self._taskgen_write(
             {
-                "episodes": suite_config.episodes+1,
+                "episodes": -1,
                 "RANDOM": {
-                    "seed": suite_config.seed
+                    "seed": suite_config.seed ^ Suite.Stage.hash({"":self._runid})
                 }
             },
             suite_config.config
         )
 
-        subprocess.Popen(
-            [
-                os.path.join(
-                    rospkg.RosPack().get_path("task_generator"),
-                    "scripts",
-                    "delay_restart.py"
-                ),
-                f"{_get_rosmaster_pid()}",
-                "arena_bringup",
-                "start_arena.launch",
-                "tm_modules:=benchmark",
-                "benchmark_resume:=true",
-                "record_data:=true",
-                f"record_data_dir:={self._runid}/{contest_config.name}/{suite_config.name}",
+        record_data_dir = f"{self._runid}/{contest_config.name}/{suite_config.name}"
 
-                f"simulator:={config.general.simulator}",
-                f"timeout:={suite_config.timeout}",
-                
-                # contest
-                f"inter_planner:={contest_config.inter_planner}",
-                f"local_planner:={contest_config.local_planner}",
+        if self._requires_restart:
+            subprocess.Popen(
+                [
+                    os.path.join(
+                        rospkg.RosPack().get_path("task_generator"),
+                        "scripts",
+                        "delay_restart.py"
+                    ),
+                    f"{_get_rosmaster_pid()}",
+                    "arena_bringup",
+                    "start_arena.launch",
+                    "tm_modules:=benchmark",
+                    "benchmark_resume:=true",
+                    "record_data:=true",
+                    f"record_data_dir:={record_data_dir}",
 
-                # suite
-                f"model:={suite_config.robot}",
-                f"map_file:={suite_config.map}",
-                f"tm_robots:={suite_config.tm_robots}",
-                f"tm_obstacles:={suite_config.tm_obstacles}"
-            ],
-            start_new_session=True
-        )
+                    f"simulator:={config.general.simulator}",
+                    f"timeout:={suite_config.timeout}",
+                    
+                    # contest
+                    f"inter_planner:={contest_config.inter_planner}",
+                    f"local_planner:={contest_config.local_planner}",
 
-        self._suicide()
+                    # suite
+                    f"model:={suite_config.robot}",
+                    f"map_file:={suite_config.map}",
+                    f"tm_robots:={suite_config.tm_robots}",
+                    f"tm_obstacles:={suite_config.tm_obstacles}"
+                ],
+                start_new_session=True
+            )
+            self._suicide()
+        
+        else:
+            rospy.ServiceProxy(f"/{suite_config.robot}/change_directory", arena_evaluation_srvs.ChangeDirectory).call(arena_evaluation_srvs.ChangeDirectoryRequest(record_data_dir))
+
 
     def _suicide(self):
         subprocess.run(["kill", f"{_get_rosmaster_pid()}"])

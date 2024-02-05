@@ -63,7 +63,7 @@
       </node>
     </group>
 
-    <node pkg="arena-evaluation" type="data_recorder_node" name="data_recorder_node" if="$(eval arg('record_data'))" args="--dir=$(arg record_data_dir)/$(arg name)">
+    <node pkg="arena_evaluation" type="data_recorder_node" name="data_recorder_node" if="$(eval arg('record_data'))" args="--dir=$(arg record_data_dir)/$(arg name)">
       <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load" ns="configuration" />
     </node>
     

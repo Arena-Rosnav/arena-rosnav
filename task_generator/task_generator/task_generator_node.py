@@ -346,7 +346,7 @@ class TaskGenerator:
         if self._number_of_resets < self._desired_resets:
             return
 
-        rospy.loginfo("Shutting down. All tasks completed")
+        rospy.loginfo(f"Shutting down. All {self._desired_resets} tasks completed")
 
         rospy.signal_shutdown("Finished all episodes of the current scenario")
 
