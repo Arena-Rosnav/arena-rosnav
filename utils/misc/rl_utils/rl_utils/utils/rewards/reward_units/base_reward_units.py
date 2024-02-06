@@ -44,7 +44,16 @@ class RewardUnit(ABC):
     def on_safe_dist_violation(self):
         return self._on_safe_dist_violation
 
-    def get_internal_state_info(self, key: str) -> Any:
+    def add_internal_state_info(self, key: str, value: Any):
+        """Adds internal state information to the RewardFunction wrapper.
+
+        Args:
+            key (str): The key to identify the internal state information.
+            value (Any): The internal state information to add.
+        """
+        self._reward_function.add_internal_state_info(key=key, value=value)
+
+    def get_internal_state_info(self, key: str, default: Any = None) -> Any:
         """
         Retrieves internal state information from the RewardFunction wrapper based on the provided key.
 
@@ -54,7 +63,7 @@ class RewardUnit(ABC):
         Returns:
             Any: The internal state information associated with the provided key.
         """
-        return self._reward_function.get_internal_state_info(key=key)
+        return self._reward_function.get_internal_state_info(key=key, default=default)
 
     def add_reward(self, value: float):
         """Adds the given value to the episode's reward.
