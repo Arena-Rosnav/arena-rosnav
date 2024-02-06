@@ -18,6 +18,10 @@ class TOPICS:
 
     PEDSIM_STATES = "pedsim_simulator/simulated_agents"
     PEDSIM_SEMANTIC = "pedsim_agents/semantic"
+    
+    PED_SAFE_DIST = "ped_safe_dist"
+    OBS_SAFE_DIST = "obs_safe_dist"
+    COLLISION = "collision"
 
 
 class OBS_DICT_KEYS:
@@ -34,6 +38,10 @@ class OBS_DICT_KEYS:
     LAST_ACTION = "last_action"
     GLOBAL_PLAN = "global_plan"
     DONE = "is_done"
+    PED_SAFE_DIST = "ped_safe_dist"
+    OBS_SAFE_DIST = "obs_safe_dist"
+    COLLSION = "collision"
+    
 
     # why not have SEMANTIC = SemanticAttribute ?
     class SEMANTIC(enum.Enum):
