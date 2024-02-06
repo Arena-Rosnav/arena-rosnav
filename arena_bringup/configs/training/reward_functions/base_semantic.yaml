@@ -28,7 +28,6 @@ active_heading_direction:
   r_angle: 0.6
   _on_safe_dist_violation: true
 
-# ped_type_safety_distance:
-#   type: 1
-#   reward: -0.25
-#   safety_distance: 2.0
+ped_type_collision:
+  type: 1
+  reward: -2.5
