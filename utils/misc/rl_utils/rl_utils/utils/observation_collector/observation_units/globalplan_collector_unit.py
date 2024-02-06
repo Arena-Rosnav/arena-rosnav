@@ -9,6 +9,8 @@ from ..constants import OBS_DICT_KEYS, TOPICS
 from ..utils import pose3d_to_pose2d
 from .collector_unit import CollectorUnit
 
+from mbf_msgs.msg import GetPathActionGoal
+
 
 class GlobalplanCollectorUnit(CollectorUnit):
     """
@@ -41,7 +43,7 @@ class GlobalplanCollectorUnit(CollectorUnit):
         Initializes the subscriber for the global plan topic.
         """
         self._globalplan_sub = rospy.Subscriber(
-            self._ns(TOPICS.GLOBALPLAN), Path, self._cb_globalplan
+            self._ns(TOPICS.GLOBALPLAN), GetPathActionGoal, self._cb_globalplan
         )
 
     def get_observations(
