@@ -1,7 +1,7 @@
 import enum
 from pedsim_agents.utils import SemanticAttribute
 
-MAX_WAIT = 1  # in seconds
+MAX_WAIT = 2  # in seconds
 SLEEP = 0.05  # in seconds
 
 class DONE_REASONS(enum.Enum):

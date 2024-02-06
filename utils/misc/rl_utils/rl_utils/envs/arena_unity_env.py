@@ -11,6 +11,10 @@ from rosgraph_msgs.msg import Clock
 from geometry_msgs.msg import Twist
 from rl_utils.utils.observation_collector.constants import DONE_REASONS
 from rl_utils.utils.observation_collector.observation_manager import ObservationManager
+from rl_utils.utils.observation_collector.observation_units.base_collector_unit import BaseCollectorUnit
+from rl_utils.utils.observation_collector.observation_units.unity_collector_unity import UnityCollectorUnit
+from rl_utils.utils.observation_collector.observation_units.globalplan_collector_unit import GlobalplanCollectorUnit
+from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import SemanticAggregateUnit
 from rl_utils.utils.rewards.reward_function import RewardFunction
 from rl_utils.utils.arena_unity_utils.unity_timer import UnityTimer
 from rosnav.model.base_agent import BaseAgent
@@ -95,8 +99,16 @@ class ArenaUnityEnv(gymnasium.Env):
             rospy.loginfo("[Unity Env ns:" + self.ns + "]: Setting up env for training")
             self._setup_env_for_training(self._reward_fnc, **self._kwargs)
 
-        # observation collector
-        self.observation_collector = ObservationManager(self.ns)
+        # observation collectors including the Unity-specific observation collector
+        self.observation_collector = ObservationManager(
+            ns=self.ns,
+            obs_structur=[
+                BaseCollectorUnit,
+                GlobalplanCollectorUnit,
+                SemanticAggregateUnit,
+                UnityCollectorUnit
+            ]
+        )
         return True
 
     @property
