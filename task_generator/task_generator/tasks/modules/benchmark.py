@@ -2,7 +2,7 @@ import datetime
 import hashlib
 import json
 import pathlib
-from task_generator.constants import Constants
+from task_generator.constants import Config, Constants
 from task_generator.shared import Namespace, rosparam_get
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.task_factory import TaskFactory
@@ -24,7 +24,7 @@ def _get_rosmaster_pid() -> int:
     except Exception as e:
         raise RuntimeError("could not determine rosmaster pid") from e
 
-class Config(typing.NamedTuple):
+class _Config(typing.NamedTuple):
 
     @classmethod
     def parse(cls, obj: typing.Dict):
@@ -88,7 +88,7 @@ class Suite(typing.NamedTuple):
 
         @classmethod
         def parse(cls, obj: typing.Dict) -> "Suite.Stage":
-            obj.setdefault("timeout", 60)
+            obj.setdefault("timeout", Config.Robot.TIMEOUT)
             obj.setdefault("seed", cls.hash(obj))
             return cls(**obj)
         
@@ -165,7 +165,7 @@ class Mod_Benchmark(TM_Module):
     )
     TASK_GENERATOR_CONFIG_BKUP = TASK_GENERATOR_CONFIG + ".bkup"
 
-    _config: Config
+    _config: _Config
     _suite: Suite
     _contest: Contest
     _episode_index: int
@@ -180,9 +180,9 @@ class Mod_Benchmark(TM_Module):
     # CONFIGURATION
 
     @classmethod
-    def _load_config(cls) -> Config:
+    def _load_config(cls) -> _Config:
         with open(cls.DIR("config.yaml")) as f:
-            return Config.parse(yaml.load(f, yaml.FullLoader))
+            return _Config.parse(yaml.load(f, yaml.FullLoader))
 
     @classmethod
     def _load_contest(cls, contest: str) -> Contest:

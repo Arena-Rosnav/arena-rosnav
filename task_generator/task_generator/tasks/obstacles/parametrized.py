@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from rospkg import RosPack
 from task_generator.constants import Config, Constants
-from task_generator.shared import DynamicObstacle, ModelWrapper, Namespace, Obstacle, rosparam_get
+from task_generator.shared import DynamicObstacle, ModelWrapper, Namespace, Obstacle
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 from task_generator.tasks.task_factory import TaskFactory
@@ -68,7 +68,7 @@ class TM_Parametrized(TM_Obstacles):
 
     def reconfigure(self, config):
 
-        xml_path = self.PATH_XML(rosparam_get(str, self.NODE_CONFIGURATION("PARAMETRIZED_file")))
+        xml_path = self.PATH_XML(config["PARAMETRIZED_file"])
 
         tree = ET.parse(xml_path)
         root = tree.getroot()
