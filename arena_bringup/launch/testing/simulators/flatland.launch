@@ -2,6 +2,7 @@
 <launch>
   <arg name="rviz_file" default="nav_LP"/>
   <arg name="model" default="model"/>
+  <arg name="headless" default="false"/>
   <arg name="show_rviz" default="true" />
 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland_deploy.yaml" />
@@ -25,14 +26,16 @@
   /> -->
 
   <!--  _____________ flatland viz  _____________  -->
-  <group if="$(eval arg('visualization') == 'flatland')">
-    <node name="flatland_viz" pkg="flatland_viz" type="flatland_viz" required="false" />
-  </group>
+  <group unless="$(eval arg('headless') > 1)">
+    <group if="$(eval arg('visualization') == 'flatland')">
+      <node name="flatland_viz" pkg="flatland_viz" type="flatland_viz" required="false" />
+    </group>
 
-  <!-- start_rviz -->
-  <include file="$(find arena_bringup)/launch/utils/rviz.launch">
-    <arg name="show_rviz" value="$(eval arg('visualization') == 'rviz' and arg('show_rviz') == true)" />
-  </include>
+    <!-- start_rviz -->
+    <include file="$(find arena_bringup)/launch/utils/rviz.launch">
+      <arg name="show_rviz" value="$(eval arg('visualization') == 'rviz' and arg('show_rviz') == true)" />
+    </include>
+  </group>
 
   <!-- synchronize -->
   <param name="synchronous" value="true"/>

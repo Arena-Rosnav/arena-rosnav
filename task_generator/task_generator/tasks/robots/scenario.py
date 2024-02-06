@@ -6,7 +6,7 @@ from typing import List, NamedTuple
 import rospkg
 import rospy
 from task_generator.constants import Constants
-from task_generator.shared import PositionOrientation, PositionRadius, rosparam_get
+from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
 from task_generator.tasks.task_factory import TaskFactory
 
@@ -77,16 +77,12 @@ class TM_Scenario(TM_Robots):
             None
         """
 
-        rospy.logdebug(
-            f"RECONFIGURED SCENARIO TO FILE {rosparam_get(str, self.NODE_CONFIGURATION('SCENARIO_file'))}"
-        )
-
         with open(
             os.path.join(
                 rospkg.RosPack().get_path("arena_bringup"),
                 "configs",
                 "scenarios",
-                rosparam_get(str, self.NODE_CONFIGURATION("SCENARIO_file")),
+                config['SCENARIO_file'],
             )
         ) as f:
             scenario = json.load(f)

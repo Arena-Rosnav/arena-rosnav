@@ -4,9 +4,8 @@ import os
 from typing import List
 
 import rospkg
-import rospy
 from task_generator.constants import Constants
-from task_generator.shared import DynamicObstacle, Obstacle, rosparam_get
+from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.task_factory import TaskFactory
 
@@ -38,14 +37,12 @@ class TM_Scenario(TM_Obstacles):
 
     def reconfigure(self, config):
 
-        rospy.logdebug(f"RECONFIGURED SCENARIO TO FILE {rosparam_get(str, self.NODE_CONFIGURATION('SCENARIO_file'))}")
-
         with open(
             os.path.join(
                 rospkg.RosPack().get_path("arena_bringup"),
                 "configs",
                 "scenarios",
-                rosparam_get(str, self.NODE_CONFIGURATION("SCENARIO_file"))
+                config["SCENARIO_file"]
             )
         ) as f:
             scenario = json.load(f)

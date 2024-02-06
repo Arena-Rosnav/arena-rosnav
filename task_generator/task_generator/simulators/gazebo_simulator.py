@@ -17,10 +17,6 @@ from task_generator.simulators.simulator_factory import SimulatorFactory
 
 from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
 
-
-T = Config.General.WAIT_FOR_SERVICE_TIMEOUT
-
-
 @SimulatorFactory.register(Constants.Simulator.GAZEBO)
 class GazeboSimulator(BaseSimulator):
 

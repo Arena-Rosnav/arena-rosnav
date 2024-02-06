@@ -14,9 +14,6 @@ from task_generator.constants import Constants, Config
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
 
-T = Config.General.WAIT_FOR_SERVICE_TIMEOUT
-
-
 @SimulatorFactory.register(Constants.Simulator.FLATLAND)
 class FlatlandSimulator(BaseSimulator):
     """
@@ -57,9 +54,9 @@ class FlatlandSimulator(BaseSimulator):
 
         self._tmp_model_path = str(rosparam_get(str, "tmp_model_path", "/tmp"))
 
-        rospy.wait_for_service(self._namespace("move_model"), timeout=T)
-        rospy.wait_for_service(self._namespace("spawn_model"), timeout=T)
-        rospy.wait_for_service(self._namespace("delete_model"), timeout=T)
+        rospy.wait_for_service(self._namespace("move_model"), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+        rospy.wait_for_service(self._namespace("spawn_model"), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+        rospy.wait_for_service(self._namespace("delete_model"), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
 
         self._move_model_srv = rospy.ServiceProxy(
             self._namespace("move_model"), flatland_srvs.MoveModel, persistent=True

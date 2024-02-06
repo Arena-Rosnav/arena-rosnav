@@ -7,8 +7,7 @@ from task_generator.shared import (
     DynamicObstacle,
     Obstacle,
     PositionOrientation,
-    PositionRadius,
-    rosparam_get
+    PositionRadius
 )
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
@@ -75,33 +74,15 @@ class TM_Random(TM_Obstacles):
             None
         """
         self._config = _Config(
-            MIN_STATIC_OBSTACLES=rosparam_get(
-                int, self.NODE_CONFIGURATION("RANDOM_static_min"), 0
-            ),
-            MIN_INTERACTIVE_OBSTACLES=rosparam_get(
-                int, self.NODE_CONFIGURATION("RANDOM_interactive_min"), 0
-            ),
-            MIN_DYNAMIC_OBSTACLES=rosparam_get(
-                int, self.NODE_CONFIGURATION("RANDOM_dynamic_min"), 0
-            ),
-            MAX_STATIC_OBSTACLES=rosparam_get(
-                int, self.NODE_CONFIGURATION("RANDOM_static_max"), 0
-            ),
-            MAX_INTERACTIVE_OBSTACLES=rosparam_get(
-                int, self.NODE_CONFIGURATION("RANDOM_interactive_max"), 0
-            ),
-            MAX_DYNAMIC_OBSTACLES=rosparam_get(
-                int, self.NODE_CONFIGURATION("RANDOM_dynamic_max"), 0
-            ),
-            MODELS_STATIC_OBSTACLES=rosparam_get(
-                str, self.NODE_CONFIGURATION("RANDOM_static_models"), ""
-            ).split("/"),
-            MODELS_INTERACTIVE_OBSTACLES=rosparam_get(
-                str, self.NODE_CONFIGURATION("RANDOM_interactive_models"), ""
-            ).split("/"),
-            MODELS_DYNAMIC_OBSTACLES=rosparam_get(
-                str, self.NODE_CONFIGURATION("RANDOM_dynamic_models"), ""
-            ).split("/")
+            MIN_STATIC_OBSTACLES=config["RANDOM_static_min"],
+            MIN_INTERACTIVE_OBSTACLES=config["RANDOM_interactive_min"],
+            MIN_DYNAMIC_OBSTACLES=config["RANDOM_dynamic_min"],
+            MAX_STATIC_OBSTACLES=config["RANDOM_static_max"],
+            MAX_INTERACTIVE_OBSTACLES=config["RANDOM_interactive_max"],
+            MAX_DYNAMIC_OBSTACLES=config["RANDOM_dynamic_max"],
+            MODELS_STATIC_OBSTACLES=config["RANDOM_static_models"].split(";"),
+            MODELS_INTERACTIVE_OBSTACLES=config["RANDOM_interactive_models"].split(";"),
+            MODELS_DYNAMIC_OBSTACLES=config["RANDOM_dynamic_models"].split(";")
         )
 
     def reset(self, **kwargs) -> Obstacles:

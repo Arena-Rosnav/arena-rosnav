@@ -167,7 +167,6 @@ class TaskFactory:
                     tm_robots in cls.registry_robots
                 ), f"TaskMode '{tm_robots}' for robots is not registered!"
                 self.__tm_robots = cls.registry_robots[tm_robots](props=self)
-                self.__tm_robots.reconfigure(None)
                 self.__param_tm_robots = tm_robots
 
             def set_tm_obstacles(self, tm_obstacles: Constants.TaskMode.TM_Obstacles):
@@ -181,7 +180,6 @@ class TaskFactory:
                     tm_obstacles in cls.registry_obstacles
                 ), f"TaskMode '{tm_obstacles}' for obstacles is not registered!"
                 self.__tm_obstacles = cls.registry_obstacles[tm_obstacles](props=self)
-                self.__tm_obstacles.reconfigure(None)
                 self.__param_tm_obstacles = tm_obstacles
 
             def _reset_task(self, **kwargs):

@@ -10,12 +10,6 @@ import rospy
 from task_generator.shared import Namespace, rosparam_get
 import dynamic_reconfigure.client
 
-
-class Defaults:
-    class task_config:
-        episodes = 5
-
-
 class Constants:
 
     TASK_GENERATOR_SERVER_NODE = Namespace("task_generator_server")
@@ -88,66 +82,45 @@ class Constants:
 # TaskConfig
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class TaskConfig_General:
-    WAIT_FOR_SERVICE_TIMEOUT: float
-    MAX_RESET_FAIL_TIMES: int
-    RNG: np.random.Generator
+    WAIT_FOR_SERVICE_TIMEOUT: float = dataclasses.field(default_factory=lambda:rosparam_get(float, "timeout_wait_for_service", 60))
+    MAX_RESET_FAIL_TIMES: int = dataclasses.field(default_factory=lambda:rosparam_get(int, "max_reset_fail_times", 10))
+    RNG: np.random.Generator = dataclasses.field(default_factory=lambda:np.random.default_rng())
+    DESIRED_EPISODES: float = float("inf")
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class TaskConfig_Robot:
-    GOAL_TOLERANCE_RADIUS: float
-    GOAL_TOLERANCE_ANGLE: float
-    SPAWN_ROBOT_SAFE_DIST: float
-    TIMEOUT: float
+    GOAL_TOLERANCE_RADIUS: float = 1.0
+    GOAL_TOLERANCE_ANGLE: float = 30 * math.pi/180
+    SPAWN_ROBOT_SAFE_DIST: float = 0.25
+    TIMEOUT: float = float("inf")
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class TaskConfig_Obstacles:
-    OBSTACLE_MAX_RADIUS: float
+    OBSTACLE_MAX_RADIUS: float = 15
 
 
 @dataclasses.dataclass
 class TaskConfig:
-    General: TaskConfig_General
-    Robot: TaskConfig_Robot
-    Obstacles: TaskConfig_Obstacles
+    General: TaskConfig_General = dataclasses.field(default_factory=lambda:TaskConfig_General())
+    Robot: TaskConfig_Robot = dataclasses.field(default_factory=lambda:TaskConfig_Robot())
+    Obstacles: TaskConfig_Obstacles = dataclasses.field(default_factory=lambda:TaskConfig_Obstacles())
 
 
-def reconfigure() -> TaskConfig:
-    return TaskConfig(
-        General=TaskConfig_General(
-            WAIT_FOR_SERVICE_TIMEOUT=rosparam_get(
-                float, "timeout_wait_for_service", 60
-            ),  # 60 secs
-            MAX_RESET_FAIL_TIMES=rosparam_get(int, "max_reset_fail_times", 10),
-            RNG=np.random.default_rng((lambda x: x if x >= 0 else None)(
-                rosparam_get(int, Constants.TASK_GENERATOR_SERVER_NODE("RANDOM_seed"), -1)))
-        ),
-        Robot=TaskConfig_Robot(
-            GOAL_TOLERANCE_RADIUS=rosparam_get(float, "goal_radius", 1.0),
-            GOAL_TOLERANCE_ANGLE=rosparam_get(
-                float, "goal_tolerance_angle", 30 * math.pi / 180
-            ),
-            SPAWN_ROBOT_SAFE_DIST=0.25,
-            TIMEOUT=rosparam_get(float, "timeout", 60),  # 1 min
-        ),
-        Obstacles=TaskConfig_Obstacles(
-            OBSTACLE_MAX_RADIUS=15,
-        ),
-    )
+Config = TaskConfig()
 
-Config = reconfigure()
-
-def _cb_reconfigure(*args, **kwargs):
+def _cb_reconfigure(config):
     global Config
 
-    new_config = reconfigure()
-
-    Config.General = new_config.General
-    Config.Robot = new_config.Robot
-    Config.Obstacles = new_config.Obstacles
+    Config.General.RNG=np.random.default_rng((lambda x: x if x >= 0 else None)(config["RANDOM_seed"]))
+    Config.General.DESIRED_EPISODES=(lambda x: float("inf") if x<0 else x)(config["episodes"])
+    
+    Config.Robot.GOAL_TOLERANCE_RADIUS=config["goal_radius"]
+    Config.Robot.GOAL_TOLERANCE_ANGLE=config["goal_tolerance_angle"]
+    Config.Robot.TIMEOUT=(lambda x: float("inf") if x<0 else x)(config["timeout"])
 
 dynamic_reconfigure.client.Client(
     name=Constants.TASK_GENERATOR_SERVER_NODE,
