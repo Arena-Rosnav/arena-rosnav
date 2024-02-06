@@ -17,7 +17,9 @@
   <arg name="inter_planner" default="bypass" doc="inter planner type [bypass, shortsighted, polite, aggressive, sideways]" />
   <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav, cohan]" />
   <arg name="simulator" default="flatland" doc="[flatland, gazebo]" />
+  <arg name="headless" default="0" doc="0 = show all, 1 = show only rviz, 2 = show nothing" />
   <env name="SIMULATOR" value="$(arg simulator)" />
+  <param name="headless" value="$(arg headless)" /> 
 
   <arg name="entity_manager" default="pedsim" doc="[pedsim]" />
   <arg name="pedsim" value="$(eval entity_manager == 'pedsim')" />
@@ -115,6 +117,7 @@
     <arg name="rviz_file" value="$(arg rviz_file)" />
     <arg name="model" value="$(arg model)" />
     <arg name="show_rviz" value="$(arg show_rviz)" />
+    <arg name="headless" value="$(arg headless)" />
   </include>
 
   <!-- Gazebo -->
@@ -122,10 +125,9 @@
     <arg name="model" value="$(arg model)" />
     <arg name="rviz_file" value="$(arg rviz_file)" />
     <arg name="show_rviz" default="$(arg show_rviz)" />
-    <arg name="headless" default="false" />
-    <arg name="gui" default="true" />
     <arg name="world" value="$(arg world_file)"/>
     <arg name="pedsim" value="$(arg pedsim)"/>
+    <arg name="headless" value="$(arg headless)" />
   </include>
 
   <!-- map server-->
