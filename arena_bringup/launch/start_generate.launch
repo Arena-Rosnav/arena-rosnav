@@ -3,12 +3,12 @@
 
   <arg name="gui" default="true"/>
   <arg name="verbose" default="false"/>
-  <env name="GAZEBO_MODEL_PATH" value="$(find arena-simulation-setup)/gazebo_models" />
+  <env name="GAZEBO_MODEL_PATH" value="$(find arena_simulation_setup)/gazebo_models" />
   
   <arg name="world_name" default=""/> 
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find arena-simulation-setup)/worlds/$(arg world_name)/worlds/$(arg world_name).world"/>
+    <arg name="world_name" value="$(find arena_simulation_setup)/worlds/$(arg world_name)/worlds/$(arg world_name).world"/>
     <arg name="gui" value="$(arg gui)"/>
     <arg name="verbose" value="$(arg verbose)"/>
   </include>
@@ -28,5 +28,3 @@
 
 
 </launch>
-
-

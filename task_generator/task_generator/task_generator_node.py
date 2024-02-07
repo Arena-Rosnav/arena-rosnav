@@ -130,7 +130,7 @@ class TaskGenerator:
 
         # Loaders
         self._robot_loader = ModelLoader(
-            os.path.join(RosPack().get_path("arena-simulation-setup"), "robot")
+            os.path.join(RosPack().get_path("arena_simulation_setup"), "entities", "robots")
         )
 
         if not self._train_mode:

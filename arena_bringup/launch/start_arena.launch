@@ -63,7 +63,7 @@
   <param name="reset_remove_all" value="$(arg reset_remove_all)" />
 
   <arg name="map_file" default="map_empty" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]" />
-  <arg name="map_path" default="$(find arena-simulation-setup)/maps/$(arg map_file)/map.yaml" />
+  <arg name="map_path" default="$(find arena_simulation_setup)/worlds/$(arg map_file)/map/map.yaml" />
 
   <arg name="world_file" default="$(arg map_file)" doc="set to generated_world to replace occupancy map with obstacles and walls (NOT IMPLEMENTED YET)"/>
 
@@ -89,15 +89,15 @@
 
 
   <!-- TEST IF YOU NEED THIS -->
-  <rosparam command="load" file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" if="$(eval arg('robot_setup_file') == '')" /> 
+  <rosparam command="load" file="$(find arena_simulation_setup)/entities/robots/$(arg model)/model_params.yaml" if="$(eval arg('robot_setup_file') == '')" /> 
 
   
-  <!-- <param name="robot_yaml_path" value="$(find arena-simulation-setup)/robot/$(arg model)/$(arg model).model.yaml" /> -->
+  <!-- <param name="robot_yaml_path" value="$(find arena_simulation_setup)/entities/robots/$(arg model)/$(arg model).model.yaml" /> -->
   <!-- <param name="tmp_model_path" value="/tmp" /> -->
 
-  <!-- the folder name under the path arena-simulation-setup/maps  -->
-  <param name="world_path" value="$(find arena-simulation-setup)/maps/$(arg map_file)/map.world.yaml" />
-  <param name="map_layer_path" value="$(find arena-simulation-setup)/maps/$(arg map_file)/map.world.yaml" />
+  <!-- the folder name under the path arena_simulation_setup/envs/maps  -->
+  <param name="world_path" value="$(find arena_simulation_setup)/worlds/$(arg map_file)/map/map.world.yaml" />
+  <param name="map_layer_path" value="$(find arena_simulation_setup)/worlds/$(arg map_file)/map/map.world.yaml" />
   <param name="map_file" value="$(arg map_file)" />
 
   <!-- DRL action frequency -->
@@ -151,7 +151,7 @@
   <group if="$(eval arg('pedsim'))">
     <include file="$(find pedsim_ros)/launch/pedsim.launch">
       <arg name="sfm" value="$(arg sfm)"/>
-      <arg name="scene_file" value="$(find arena-simulation-setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" />
+      <arg name="scene_file" value="$(find arena_simulation_setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" />
       <arg name="visualize" value="true" />
     </include>
   </group>

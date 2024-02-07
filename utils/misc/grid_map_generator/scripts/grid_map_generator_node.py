@@ -28,7 +28,7 @@ class GridMapGenerator:
             rospy.signal_shutdown("No world_name argument provided.")
             return
         
-        # Create folder inside /arena-simulation-setup/maps 
+        # Create folder inside /arena_simulation_setup/maps 
         self.timer0_  = threading.Thread(target=self.create_folder, args=(world_name,))
         self.timer0_ .start()
 
@@ -61,10 +61,10 @@ class GridMapGenerator:
 
         folder_name = world_name  
         rospack = rospkg.RosPack()
-        arena_pkg_path = rospack.get_path("arena-simulation-setup")
+        arena_pkg_path = rospack.get_path("arena_simulation_setup")
 
-        maps_dir = os.path.join(arena_pkg_path,"maps")
-        folder_path = os.path.join(maps_dir, folder_name) 
+        maps_dir = os.path.join(arena_pkg_path, "worlds")
+        folder_path = os.path.join(maps_dir, folder_name, "map") 
 
         try:
         # Create the folder/directory
@@ -96,9 +96,9 @@ class GridMapGenerator:
         # Run the map_saver command using subprocess
         folder_name = world_name 
         rospack = rospkg.RosPack()
-        arena_pkg_path = rospack.get_path("arena-simulation-setup")
-        maps_dir = os.path.join(arena_pkg_path,"maps")
-        folder_path = os.path.join(maps_dir,folder_name, "map") 
+        arena_pkg_path = rospack.get_path("arena_simulation_setup")
+        maps_dir = os.path.join(arena_pkg_path, "worlds")
+        folder_path = os.path.join(maps_dir, folder_name, "map") 
         map_saver_command = ['rosrun', 'map_server', 'map_saver', '-f', folder_path, '/map:=/map2d']
         subprocess.run(map_saver_command)
         rospy.loginfo("Map saved successfully.")
@@ -107,9 +107,9 @@ class GridMapGenerator:
 
         folder_name = world_name 
         rospack = rospkg.RosPack()
-        arena_pkg_path = rospack.get_path("arena-simulation-setup")
-        maps_dir = os.path.join(arena_pkg_path,"maps")
-        folder_path = os.path.join(maps_dir,folder_name)      
+        arena_pkg_path = rospack.get_path("arena_simulation_setup")
+        maps_dir = os.path.join(arena_pkg_path, "worlds")
+        folder_path = os.path.join(maps_dir, folder_name, "map")      
         file_path = os.path.join(folder_path, "map.yaml")    
    
         # Read existing content
@@ -138,10 +138,10 @@ layers:
         folder_name = world_name 
         file_name = "map.world.yaml"
         rospack = rospkg.RosPack()
-        arena_pkg_path = rospack.get_path("arena-simulation-setup")
-        maps_dir = os.path.join(arena_pkg_path,"maps")
-        folder_path = os.path.join(maps_dir,folder_name)     
-        file_path = os.path.join(folder_path, file_name) 
+        arena_pkg_path = rospack.get_path("arena_simulation_setup")
+        maps_dir = os.path.join(arena_pkg_path, "worlds")
+        folder_path = os.path.join(maps_dir, folder_name)     
+        file_path = os.path.join(folder_path, "map", file_name) 
 
         try:
          with open(file_path, 'w') as file:

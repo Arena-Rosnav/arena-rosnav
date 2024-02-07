@@ -12,6 +12,8 @@ import dynamic_reconfigure.client
 
 class Constants:
 
+    DEFAULT_PEDESTRIAN_MODEL = "actor1"
+
     TASK_GENERATOR_SERVER_NODE = Namespace("task_generator_server")
 
     class Simulator(Enum):

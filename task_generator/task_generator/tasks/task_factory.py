@@ -133,16 +133,18 @@ class TaskFactory:
 
                 self.model_loader = ModelLoader(
                     os.path.join(
-                        RosPack().get_path("arena-simulation-setup"),
+                        RosPack().get_path("arena_simulation_setup"),
+                        "entities",
                         "obstacles",
-                        "static_obstacles",
+                        "static",
                     )
                 )
                 self.dynamic_model_loader = ModelLoader(
                     os.path.join(
-                        RosPack().get_path("arena-simulation-setup"),
+                        RosPack().get_path("arena_simulation_setup"),
+                        "entities",
                         "obstacles",
-                        "dynamic_obstacles",
+                        "dynamic",
                     )
                 )
 
