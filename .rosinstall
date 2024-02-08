@@ -44,6 +44,10 @@
     local-name: ../utils-extern/misc/jackal
     uri: https://github.com/jackal/jackal.git
 
+- git:
+    local-name: ../utils-extern/misc/brne_social_navigation
+    uri: https://github.com/Atharva-05/brne_social_navigation
+
 
 # - git:
 #   local-name: ../utils/gazebo_sfm_plugin
