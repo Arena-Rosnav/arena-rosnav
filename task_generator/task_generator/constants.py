@@ -255,3 +255,4 @@ class Pedsim:
 
 class UnityConstants:
     WALL_HEIGHT = 4.0
+    ATTACH_SAFE_DIST_SENSOR_TOPIC = "attach_safe_dist_sensor"

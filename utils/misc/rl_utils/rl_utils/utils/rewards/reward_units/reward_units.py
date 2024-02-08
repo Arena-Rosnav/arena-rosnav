@@ -3,8 +3,12 @@ from warnings import warn
 
 import numpy as np
 import random
-from rl_utils.utils.observation_collector.constants import DONE_REASONS, OBS_DICT_KEYS
+from rl_utils.utils.observation_collector.constants import DONE_REASONS, OBS_DICT_KEYS, TOPICS
+import rospy
 
+from unity_msgs.srv import AttachSafeDistSensorRequest, AttachSafeDistSensor
+
+from task_generator.constants import Config, UnityConstants
 from ..constants import DEFAULTS, REWARD_CONSTANTS
 from ..reward_function import RewardFunction
 from ..utils import check_params
@@ -789,3 +793,131 @@ class RewardActiveHeadingDirection(RewardUnit):
             d_theta = theta_pre
 
         return self._r_angle * (self._theta_m - abs(d_theta))
+
+
+@RewardUnitFactory.register("ped_safe_distance")
+class RewardPedSafeDistance(RewardUnit):
+    SAFE_DIST_VIOLATION_INFO = {"safe_dist_violation": True}
+
+    @check_params
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        reward: float = DEFAULTS.PED_SAFE_DISTANCE.REWARD,
+        safe_dist: float = DEFAULTS.PED_SAFE_DISTANCE.SAFE_DIST,
+        *args,
+        **kwargs,
+    ):
+        """Unity-specific class for calculating the reward when violating the ped-specific safe 
+        distance.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            reward (float, optional): The reward value for violating the safe distance. Defaults to 
+                DEFAULTS.PED_SAFE_DISTANCE.REWARD.
+            safe_dist (bool, optional): Safety distance which should not be passed. The value should
+                not include the radius of the robot body. Defaults to 
+                DEFAULTS.PED_SAFE_DISTANCE.SAFE_DIST.
+        """
+        super().__init__(reward_function, True, *args, **kwargs)
+        self._reward = reward
+        self._safe_dist = safe_dist
+        
+        # Send request to Unity to attach sensor
+        service_topic = reward_function.ns.simulation_ns(
+            "unity", 
+            UnityConstants.ATTACH_SAFE_DIST_SENSOR_TOPIC
+        )
+        rospy.wait_for_service(
+            service_topic,
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
+        )
+        request = AttachSafeDistSensorRequest(
+            robot_name=reward_function.ns.robot_ns,
+            safe_dist_topic=TOPICS.PED_SAFE_DIST,
+            ped_safe_dist=True,
+            obs_safe_dist=False,
+            safe_dist=kwargs["safe_dist"]
+        )
+        response = rospy.ServiceProxy(service_topic, AttachSafeDistSensor)(request)
+        # Check success
+        if not response.success:
+            raise rospy.ServiceException(response.message)
+
+    def check_parameters(self, *args, **kwargs):
+        if self._reward > 0.0:
+            warn_msg = (
+                f"[{self.__class__.__name__}] Reconsider this reward. "
+                f"Positive rewards may lead to unfavorable behaviors. "
+                f"Current value: {self._reward}"
+            )
+            warn(warn_msg)
+
+    def __call__(self, *args: Any, **kwargs: Any):
+        if OBS_DICT_KEYS.PED_SAFE_DIST in kwargs and kwargs[OBS_DICT_KEYS.PED_SAFE_DIST]:
+            self.add_reward(self._reward)
+            self.add_info(self.SAFE_DIST_VIOLATION_INFO)
+
+
+@RewardUnitFactory.register("obs_safe_distance")
+class RewardObsSafeDistance(RewardUnit):
+    SAFE_DIST_VIOLATION_INFO = {"safe_dist_violation": True}
+
+    @check_params
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        reward: float = DEFAULTS.OBS_SAFE_DISTANCE.REWARD,
+        safe_dist: float = DEFAULTS.OBS_SAFE_DISTANCE.SAFE_DIST,
+        *args,
+        **kwargs,
+    ):
+        """Unity-specific class for calculating the reward when violating the obs-specific safe 
+        distance.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            reward (float, optional): The reward value for violating the safe distance. Defaults to 
+                DEFAULTS.OBS_SAFE_DISTANCE.REWARD.
+            safe_dist (bool, optional): Safety distance which should not be passed. The value should
+                not include the radius of the robot body. Defaults to
+                DEFAULTS.OBS_SAFE_DISTANCE.SAFE_DIST.
+        """
+        super().__init__(reward_function, True, *args, **kwargs)
+        self._reward = reward
+        self._safe_dist = safe_dist
+        
+        # Send request to Unity to attach sensor
+        service_topic = reward_function.ns.simulation_ns(
+            "unity", 
+            UnityConstants.ATTACH_SAFE_DIST_SENSOR_TOPIC
+        )
+        rospy.wait_for_service(
+            service_topic,
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
+        )
+        request = AttachSafeDistSensorRequest(
+            robot_name=reward_function.ns.robot_ns,
+            safe_dist_topic=TOPICS.OBS_SAFE_DIST,
+            ped_safe_dist=False,
+            obs_safe_dist=True,
+            safe_dist=kwargs["safe_dist"]
+        )
+        response = rospy.ServiceProxy(service_topic, AttachSafeDistSensor)(request)
+        # Check success
+        if not response.success:
+            raise rospy.ServiceException(response.message)
+
+    def check_parameters(self, *args, **kwargs):
+        if self._reward > 0.0:
+            warn_msg = (
+                f"[{self.__class__.__name__}] Reconsider this reward. "
+                f"Positive rewards may lead to unfavorable behaviors. "
+                f"Current value: {self._reward}"
+            )
+            warn(warn_msg)
+
+    def __call__(self, *args: Any, **kwargs: Any):
+        if OBS_DICT_KEYS.OBS_SAFE_DIST in kwargs and kwargs[OBS_DICT_KEYS.OBS_SAFE_DIST]:
+            self.add_reward(self._reward)
+            self.add_info(self.SAFE_DIST_VIOLATION_INFO)
