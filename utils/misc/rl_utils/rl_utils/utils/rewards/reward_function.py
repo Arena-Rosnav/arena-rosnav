@@ -22,6 +22,8 @@ class RewardFunction:
         _robot_radius (float): Radius of the robot.
         _safe_dist (float): Safe distance of the agent.
         _goal_radius (float): Radius of the goal.
+        
+        _distinguished_safe_dist: If true, the unity-based collider approach is used for safe dist.
 
         _internal_state_info (Dict[str, Any]): Centralized internal state info for the reward units.
             E.g. to avoid computing same parameter in a single step multiple times.
@@ -37,6 +39,8 @@ class RewardFunction:
     _robot_radius: float
     _safe_dist: float
     _goal_radius: float
+    
+    _distinguished_safe_dist: bool
 
     _internal_state_info: Dict[str, Any]
 
@@ -52,6 +56,7 @@ class RewardFunction:
         robot_radius: float,
         goal_radius: float,
         safe_dist: float,
+        distinguished_safe_dist: bool,
         internal_state_updates: List[InternalStateInfoUpdate] = None,
         *args,
         **kwargs,
@@ -68,6 +73,8 @@ class RewardFunction:
         self._robot_radius = robot_radius
         self._safe_dist = safe_dist
         self._goal_radius = goal_radius
+
+        self._distinguished_safe_dist = distinguished_safe_dist
 
         # globally accessible and required information for RewardUnits
         self._internal_state_info: Dict[str, Any] = {}

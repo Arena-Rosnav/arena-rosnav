@@ -72,7 +72,10 @@ rl_agent:
     enabled: false
     stack_size: 6
 
-  reward_fnc: "base_semantic"
+  reward_fnc: "unity_default"
+  # whether unity collider-based or laser-based safety distance is used
+  # if true, reward_fnc must include ped_safe_dist and obs_safe_dist
+  distinguished_safe_dist: true
 
   normalize:
     enabled: true
