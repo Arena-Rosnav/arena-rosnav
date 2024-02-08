@@ -4,6 +4,7 @@ import numpy as np
 import rospy
 from std_msgs.msg import Float32
 from tools.dynamic_parameter import DynamicParameter
+from task_generator.shared import Namespace
 
 from .constants import REWARD_CONSTANTS
 from .utils import (
@@ -57,6 +58,7 @@ class RewardFunction:
         goal_radius: float,
         safe_dist: float,
         distinguished_safe_dist: bool,
+        ns: Namespace,
         internal_state_updates: List[InternalStateInfoUpdate] = None,
         *args,
         **kwargs,
@@ -75,6 +77,7 @@ class RewardFunction:
         self._goal_radius = goal_radius
 
         self._distinguished_safe_dist = distinguished_safe_dist
+        self._ns = ns
 
         # globally accessible and required information for RewardUnits
         self._internal_state_info: Dict[str, Any] = {}
@@ -249,6 +252,10 @@ class RewardFunction:
     @property
     def distinguished_safe_dist(self) -> bool:
         return self._distinguished_safe_dist
+    
+    @property
+    def ns(self) -> Namespace:
+        return self._ns
 
     def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("

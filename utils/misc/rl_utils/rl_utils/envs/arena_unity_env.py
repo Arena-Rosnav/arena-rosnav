@@ -131,8 +131,10 @@ class ArenaUnityEnv(gymnasium.Env):
             robot_radius=self.task.robot_managers[0]._robot_radius,
             safe_dist=self.task.robot_managers[0].safe_distance,
             goal_radius=rosparam_get(float, "goal_radius", 0.3),
-            distinguished_safe_dist=rosparam_get(bool, "rl_agent/distinguished_safe_dist", False)
+            distinguished_safe_dist=rosparam_get(bool, "rl_agent/distinguished_safe_dist", False),
+            ns=self.ns
         )
+        rospy.logerr(rosparam_get(bool, "rl_agent/distinguished_safe_dist", False))
 
         self.agent_action_pub = rospy.Publisher(self.ns("cmd_vel"), Twist, queue_size=1)
 
