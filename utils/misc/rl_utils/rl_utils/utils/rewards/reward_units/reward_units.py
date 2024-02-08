@@ -258,6 +258,14 @@ class RewardCollision(RewardUnit):
             warn(warn_msg)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        # quick Unity-specific check
+        if (self._reward_function.distinguished_safe_dist and 
+            OBS_DICT_KEYS.COLLSION in kwargs and
+            kwargs[OBS_DICT_KEYS.COLLSION]):
+            self.add_reward(self._reward)
+            self.add_info(self.DONE_INFO)
+            return
+
         coll_in_blind_spots = False
         if "full_laser_scan" in kwargs:
             coll_in_blind_spots = kwargs["full_laser_scan"].min() <= self.robot_radius
