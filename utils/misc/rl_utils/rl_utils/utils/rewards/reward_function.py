@@ -246,6 +246,10 @@ class RewardFunction:
     def safe_dist_breached(self) -> bool:
         return self.get_internal_state_info("safe_dist_breached")
 
+    @property
+    def distinguished_safe_dist(self) -> bool:
+        return self._distinguished_safe_dist
+
     def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
         for name, params in self._rew_fnc_dict.items():

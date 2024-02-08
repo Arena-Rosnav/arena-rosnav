@@ -78,7 +78,12 @@ def min_dist_laser(
 
 
 def safe_dist_breached(reward_function: "RewardFunction", *args, **kwargs) -> None:
-    return (
-        reward_function.get_internal_state_info("min_dist_laser")
-        <= reward_function.safe_dist
-    )
+    if reward_function.distinguished_safe_dist:
+        return (
+            kwargs["ped_safe_dist"] or kwargs["obs_safe_dist"]
+        )
+    else:
+        return (
+            reward_function.get_internal_state_info("min_dist_laser")
+            <= reward_function.safe_dist
+        )
