@@ -1,0 +1,3 @@
+inters:
+  - name: BrneInter
+    type: brne_inter/BrneInter
