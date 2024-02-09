@@ -845,7 +845,7 @@ class RewardPedSafeDistance(RewardUnit):
             safe_dist_topic=TOPICS.PED_SAFE_DIST,
             ped_safe_dist=True,
             obs_safe_dist=False,
-            safe_dist=kwargs["safe_dist"]
+            safe_dist=self._safe_dist
         )
         response = rospy.ServiceProxy(service_topic, AttachSafeDistSensor)(request)
         # Check success
@@ -909,7 +909,7 @@ class RewardObsSafeDistance(RewardUnit):
             safe_dist_topic=TOPICS.OBS_SAFE_DIST,
             ped_safe_dist=False,
             obs_safe_dist=True,
-            safe_dist=kwargs["safe_dist"]
+            safe_dist=self._safe_dist
         )
         response = rospy.ServiceProxy(service_topic, AttachSafeDistSensor)(request)
         # Check success
