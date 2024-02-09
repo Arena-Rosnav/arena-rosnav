@@ -16,6 +16,9 @@
 
   <param name="single_env" value="false" />
 
+  <!-- unity specific -->
+  <arg name="time_scale" default="1" />
+
   <!-- train mode  -->
   <arg name="train_mode" default="true"/>
 
@@ -61,6 +64,7 @@
     <arg name="ns" value="eval_sim" />
     <arg name="model" value="$(arg model)" />
     <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
+    <arg name="time_scale" value="$(arg time_scale)" />
   </include>
 
   <include file="$(find arena_bringup)/launch/training/start_envs.launch">
@@ -68,6 +72,7 @@
     <arg name="ns_prefix" value="$(arg ns_prefix)" />
     <arg name="model" value="$(arg model)" />
     <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
+    <arg name="time_scale" value="$(arg time_scale)" />
   </include> 
   
   <node pkg="task_generator" name="task_generator_server" type="server.py" output="screen"/>

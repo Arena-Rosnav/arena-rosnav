@@ -47,6 +47,12 @@ def launch_unity():
         "-tcp_port",
         tcp_port
     ]
+    # time scale
+    time_scale = str(rospy.get_param("~time_scale", "1"))
+    args += [
+        "-time_scale",
+        time_scale
+    ]
 
     # test
     args += ["-force-vulkan"]

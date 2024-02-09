@@ -12,6 +12,8 @@
   <arg name="world_file" default=""/>
   <arg name="SIMULATOR" />
   <arg name="env_num" default="0" />
+  <!-- unity specific -->
+  <arg name="time_scale" default="1" />
 
   <!-- TODO: make non-constant -->
   <arg name="sfm" value="passthrough" />
@@ -36,6 +38,7 @@
         <arg name="headless" value="$(arg headless)" />
         <arg name="namespace" value="$(arg ns)" />
         <arg name="tcp_port" value="$(eval arg('env_num') + 10000)" />
+        <arg name="time_scale" value="$(arg time_scale)" />
       </include>
     </group>
 

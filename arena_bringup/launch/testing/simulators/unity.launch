@@ -6,6 +6,7 @@
   <arg name="show_rviz" default="true" doc="Wether to show rviz or not" />
   <arg name="tcp_ip" default="127.0.0.1"/>
   <arg name="tcp_port" default="10000"/>
+  <arg name="time_scale" default="1" />
 
   <arg 
         name="world_file_path" 
@@ -30,6 +31,7 @@
     <param name="namespace" value="$(arg namespace)" />
     <param name="tcp_ip" value="$(arg tcp_ip)" />
     <param name="tcp_port" value="$(arg tcp_port)" />
+    <param name="time_scale" value="$arg time_scale)" />
   </node>
 
 </launch>
