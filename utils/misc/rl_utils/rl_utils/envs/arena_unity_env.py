@@ -134,7 +134,6 @@ class ArenaUnityEnv(gymnasium.Env):
             distinguished_safe_dist=rosparam_get(bool, "rl_agent/distinguished_safe_dist", False),
             ns=self.ns
         )
-        rospy.logerr(rosparam_get(bool, "rl_agent/distinguished_safe_dist", False))
 
         self.agent_action_pub = rospy.Publisher(self.ns("cmd_vel"), Twist, queue_size=1)
 
@@ -174,8 +173,6 @@ class ArenaUnityEnv(gymnasium.Env):
             tuple: A tuple containing the encoded observation, reward, done flag, info dictionary, and False flag.
 
         """
-        rospy.loginfo("[Unity Env ns:" + self.ns + "]: Step call start.")
-        
         if self._is_train_mode:
             self._unity_timer.wait_for_next_update()
 
