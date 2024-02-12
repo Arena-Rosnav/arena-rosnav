@@ -5,7 +5,7 @@ from typing import List
 
 import rospkg
 from task_generator.constants import Constants
-from task_generator.shared import DynamicObstacle, Obstacle
+from task_generator.shared import DynamicObstacle, Obstacle, rosparam_get
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.task_factory import TaskFactory
 
@@ -39,8 +39,9 @@ class TM_Scenario(TM_Obstacles):
 
         with open(
             os.path.join(
-                rospkg.RosPack().get_path("arena_bringup"),
-                "configs",
+                rospkg.RosPack().get_path("arena_simulation_setup"),
+                "worlds",
+                rosparam_get(str, "map_file"),
                 "scenarios",
                 config["SCENARIO_file"]
             )
@@ -58,8 +59,7 @@ class TM_Scenario(TM_Obstacles):
             dynamic=[
                 DynamicObstacle.parse(
                     obs,
-                    model=self._PROPS.dynamic_model_loader.bind(
-                        obs["model"])
+                    model=self._PROPS.dynamic_model_loader.bind(obs.get("model", Constants.DEFAULT_PEDESTRIAN_MODEL))
                 )
                 for obs in scenario.get("obstacles", {}).get("dynamic", [])
             ]

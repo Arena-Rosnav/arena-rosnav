@@ -47,14 +47,14 @@
     <param name="model" value="$(arg model)" />
 
     <rosparam command="load"
-      file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" />
+      file="$(find arena_simulation_setup)/entities/robots/$(arg model)/model_params.yaml" />
     <param name="robot_name" value="$(arg name)" />
 
     <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster"
       args="0 0 0 0 0 0 1 map $(arg name)/odom" />
 
     <group if="$(eval arg('train_mode') != 'true' and arg('SIMULATOR') == 'gazebo')">
-      <include file="$(find arena-simulation-setup)/robot/$(arg model)/launch/control.launch">
+      <include file="$(find arena_simulation_setup)/entities/robots/$(arg model)/launch/control.launch">
         <arg name="robot_namespace" value="$(arg namespace)" />
         <arg name="frame" value="$(arg frame)" />
       </include>
@@ -73,7 +73,7 @@
       <remap from="cmd_vel" to="$(arg namespace)/cmd_vel" />
       <remap from="odom" to="$(arg namespace)/odom" />
 
-      <include file="$(find arena_bringup)/launch/testing/move_base/mbf_nav/costmap_nav.launch">
+      <include file="$(find arena_simulation_setup)/launch/mbf/mbf_nav/costmap_nav.launch">
 
         <arg name="inter_planner" value="$(arg inter_planner)" />
         <arg name="local_planner" value="$(arg local_planner)" />

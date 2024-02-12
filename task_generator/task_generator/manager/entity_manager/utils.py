@@ -212,7 +212,7 @@ class YAMLUtil:
 
 
 tmp_dir = os.path.join(rospkg.RosPack().get_path(
-    "arena-simulation-setup"), "tmp", "heightmap")
+    "arena_simulation_setup"), "tmp", "heightmap")
 os.makedirs(tmp_dir, exist_ok=True)
 
 

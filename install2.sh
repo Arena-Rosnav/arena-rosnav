@@ -7,7 +7,7 @@ current_dir="$(pwd)"
  
 # Check if Folder Empty
 if [[ -d ~/arena_ws/src/arena-rosnav ]]; then
-  echo "Install Folder ~/arena_ws/src/arena-rosnav already exists."
+  echo "Install Folder ~/arena_ws/src/arena/arena-rosnav already exists."
   echo "This indicates Arena Rosnav is already installed."
   echo "If you wish to reinstall, please delete ~/arena_ws"
   exit 1
@@ -17,23 +17,20 @@ sudo echo ""
  
 # Project Setup
 echo "Preparing Project...:"
-mkdir -p ~/arena_ws/src 
+mkdir -p ~/arena_ws
 cd ~/arena_ws
 
 # clone arena-rosnav
-cd src
-git clone https://github.com/Arena-Rosnav/arena-rosnav.git
-cd arena-rosnav
-until rosws update ; do echo "failed to update, retrying..." ; done
-cd ../..
+git clone https://github.com/Arena-Rosnav/arena-rosnav.git src/arena/arena-rosnav
+until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to update, retrying..." ; done
 #
  
 #python env init
-cd src/arena-rosnav
+cd src/arena/arena-rosnav
 export PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring # resolve faster
 poetry run poetry install --no-root
 . "$(poetry env info -p)/bin/activate"
-cd ../..
+cd ~/arena_ws
 #
  
 # Missing Deps
@@ -49,31 +46,25 @@ catkin build
 export ROS_MASTER_URI=http://127.0.0.1:11311/
 export ROS_IP=127.0.0.1
  
-# add to .bashrc if exists
-if [ -e ~/.bashrc ]; then
-  if ! grep -q "source /opt/ros/noetic/setup.bash" ~/.bashrc; then
-    echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
-  fi
-  if ! grep -q 'export PATH="$HOME/.local/bin"' ~/.bashrc; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-  fi
-  if ! grep -q 'source $HOME/arena_ws/devel/setup.bash' ~/.bashrc; then
-    echo 'source $HOME/arena_ws/devel/setup.bash' >> ~/.bashrc
-  fi
-fi
 
-# add to .zshrc if exists
-if [ -e ~/.zshrc ]; then
-  if ! grep -q "source /opt/ros/noetic/setup.zsh" ~/.zshrc; then
-    echo "source /opt/ros/noetic/setup.zsh" >> ~/.zshrc
+MARKER="# ARENA-ROSNAV"
+SHELLS=(~/.zshrc ~/.bashrc)
+
+# add to .<shell>rc if exists
+for SHELL in "${SHELLS[@]}"
+do
+  if [ -e "$SHELL" ]; then
+    if ! grep -q $MARKER "$SHELL"; then
+      echo "Adding to $SHELL"
+      echo '' >> "$SHELL"
+      echo $MARKER >> "$SHELL"
+      echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$SHELL"
+#      echo '. "$(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate"' >> "$SHELL"
+      echo 'source $HOME/arena_ws/devel/setup.bash' >> "$SHELL"
+      echo '' >> "$SHELL"
+    fi
   fi
-  if ! grep -q 'export PATH="$HOME/.local/bin"' ~/.zshrc; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-  fi
-  if ! grep -q 'source $HOME/arena_ws/devel/setup.zsh' ~/.zshrc; then
-    echo 'source $HOME/arena_ws/devel/setup.zsh' >> ~/.zshrc
-  fi
-fi
+done
  
 # Return to the original working directory
 cd "$current_dir"
@@ -84,4 +75,4 @@ echo "You can confirm that it works, by running the following command in a NEW t
 echo ""
 echo "roslaunch arena_bringup start_arena.launch"
 echo ""
-echo "If you need to train or use rosnav/aio planners, download and run install3_training.sh.
+echo "If you need to train or use rosnav/aio planners, download and run install3_training.sh."
