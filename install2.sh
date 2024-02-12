@@ -6,7 +6,7 @@ set -e
 current_dir="$(pwd)"
  
 # Check if Folder Empty
-if [[ -d ~/arena_ws/src/arena-rosnav ]]; then
+if [[ -d ~/arena_ws/src/arena ]]; then
   echo "Install Folder ~/arena_ws/src/arena/arena-rosnav already exists."
   echo "This indicates Arena Rosnav is already installed."
   echo "If you wish to reinstall, please delete ~/arena_ws"
@@ -29,6 +29,7 @@ until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to update
 cd src/arena/arena-rosnav
 export PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring # resolve faster
 poetry run poetry install --no-root
+poetry env use python3.8
 . "$(poetry env info -p)/bin/activate"
 cd ~/arena_ws
 #
@@ -42,7 +43,7 @@ rosdep update && rosdep install --from-paths src --ignore-src -r -y
 # Project Install
 echo "Installing Project...:"
 catkin build
- 
+
 export ROS_MASTER_URI=http://127.0.0.1:11311/
 export ROS_IP=127.0.0.1
  
@@ -54,10 +55,10 @@ SHELLS=(~/.zshrc ~/.bashrc)
 for SHELL in "${SHELLS[@]}"
 do
   if [ -e "$SHELL" ]; then
-    if ! grep -q $MARKER "$SHELL"; then
+    if ! grep -q "$MARKER" "$SHELL"; then
       echo "Adding to $SHELL"
       echo '' >> "$SHELL"
-      echo $MARKER >> "$SHELL"
+      echo "$MARKER" >> "$SHELL"
       echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$SHELL"
 #      echo '. "$(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate"' >> "$SHELL"
       echo 'source $HOME/arena_ws/devel/setup.bash' >> "$SHELL"
