@@ -42,9 +42,9 @@ class GlobalplanCollectorUnit(CollectorUnit):
         """
         Initializes the subscriber for the global plan topic.
         """
-        self._globalplan_sub = rospy.Subscriber(
-            self._ns(TOPICS.GLOBALPLAN), GetPathActionGoal, self._cb_globalplan
-        )
+        # self._globalplan_sub = rospy.Subscriber(
+        #     self._ns(TOPICS.GLOBALPLAN), GetPathActionGoal, self._cb_globalplan
+        # )
 
     def get_observations(
         self, obs_dict: Dict[str, Any], *args, **kwargs
@@ -58,6 +58,7 @@ class GlobalplanCollectorUnit(CollectorUnit):
         Returns:
             Dict[str, Any]: The updated observation dictionary.
         """
+        return obs_dict
         obs_dict = super().get_observations(obs_dict=obs_dict)
         obs_dict.update({OBS_DICT_KEYS.GLOBAL_PLAN: self._globalplan})
         return obs_dict
