@@ -6,6 +6,7 @@
   <arg name="SIMULATOR" />
   <!-- unity specific -->
   <arg name="time_scale" default="1" />
+  <arg name="headless" default="true" />
 
   <include file="$(find arena_bringup)/launch/training/single_env_training.launch">
     <arg name="ns" value="$(arg ns_prefix)_$(arg num_envs)" />
@@ -13,6 +14,7 @@
     <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
     <arg name="env_num" value="$(arg num_envs)" />
     <arg name="time_scale" value="$(arg time_scale)" />
+    <arg name="headless" value="$(arg headless)" />
   </include>
 
   <include file="$(find arena_bringup)/launch/training/start_envs.launch" if="$(eval arg('num_envs') > 1)">
@@ -21,5 +23,6 @@
     <arg name="model" value="$(arg model)" />
     <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
     <arg name="time_scale" value="$(arg time_scale)" />
+    <arg name="headless" value="$(arg headless)" />
   </include>
 </launch>

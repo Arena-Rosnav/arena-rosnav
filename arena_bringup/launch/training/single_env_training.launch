@@ -14,6 +14,7 @@
   <arg name="env_num" default="0" />
   <!-- unity specific -->
   <arg name="time_scale" default="1" />
+  <arg name="headless" default="true" />
 
   <!-- TODO: make non-constant -->
   <arg name="sfm" value="passthrough" />
@@ -29,12 +30,9 @@
       <!-- Unity -->
     <group>
       <!-- not required <remap from="clock" to="/$(arg ns)/clock"/> -->
-
-      <arg name="development_mode" default="false" />
-      <arg name="headless" default="false" />
       <include file="$(find arena_bringup)/launch/testing/simulators/unity.launch" if="$(eval arg('SIMULATOR') == 'unity')">
         <arg name="world" default="$(arg world_file)" />
-        <arg name="development_mode" value="$(arg development_mode)" />
+        <arg name="development_mode" value="false" />
         <arg name="headless" value="$(arg headless)" />
         <arg name="namespace" value="$(arg ns)" />
         <arg name="tcp_port" value="$(eval arg('env_num') + 10000)" />

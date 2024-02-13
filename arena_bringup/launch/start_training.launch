@@ -18,6 +18,7 @@
 
   <!-- unity specific -->
   <arg name="time_scale" default="1" />
+  <arg name="headless" default="true" />
 
   <!-- train mode  -->
   <arg name="train_mode" default="true"/>
@@ -65,6 +66,7 @@
     <arg name="model" value="$(arg model)" />
     <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
     <arg name="time_scale" value="$(arg time_scale)" />
+    <arg name="headless" value="$(arg headless)" />
   </include>
 
   <include file="$(find arena_bringup)/launch/training/start_envs.launch">
@@ -73,6 +75,7 @@
     <arg name="model" value="$(arg model)" />
     <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
     <arg name="time_scale" value="$(arg time_scale)" />
+    <arg name="headless" value="$(arg headless)" />
   </include> 
   
   <node pkg="task_generator" name="task_generator_server" type="server.py" output="screen"/>
