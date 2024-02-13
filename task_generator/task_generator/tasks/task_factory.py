@@ -215,8 +215,11 @@ class TaskFactory:
                     self.__tm_robots.reset(**kwargs)
                     obstacles, dynamic_obstacles = self.__tm_obstacles.reset(**kwargs)
 
-                    self.obstacle_manager.spawn_obstacles(obstacles)
-                    self.obstacle_manager.spawn_dynamic_obstacles(dynamic_obstacles)
+                    def respawn():
+                        self.obstacle_manager.spawn_obstacles(obstacles)
+                        self.obstacle_manager.spawn_dynamic_obstacles(dynamic_obstacles)
+
+                    self.obstacle_manager.respawn(respawn)
 
                     for module in self.__modules:
                         module.after_reset()
