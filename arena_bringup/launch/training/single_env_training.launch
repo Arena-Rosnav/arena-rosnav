@@ -37,6 +37,7 @@
         <arg name="namespace" value="$(arg ns)" />
         <arg name="tcp_port" value="$(eval arg('env_num') + 10000)" />
         <arg name="time_scale" value="$(arg time_scale)" />
+        <arg name="training" value="true" />
       </include>
     </group>
 
