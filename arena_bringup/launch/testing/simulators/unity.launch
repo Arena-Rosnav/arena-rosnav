@@ -7,6 +7,7 @@
   <arg name="tcp_ip" default="127.0.0.1"/>
   <arg name="tcp_port" default="10000"/>
   <arg name="time_scale" default="1" />
+  <arg name="training" default="false" />
 
   <arg 
         name="world_file_path" 
@@ -17,7 +18,8 @@
     <arg name="tcp_ip" value="$(arg tcp_ip)" />
     <arg name="tcp_port" value="$(arg tcp_port)" />
   </include>
-  <include file="$(find arena_bringup)/launch/utils/rviz.launch">
+
+  <include file="$(find arena_bringup)/launch/utils/rviz.launch" if="$(eval not arg('training'))">
     <arg name="show_rviz" value="$(arg show_rviz)" />
   </include>
 
