@@ -20,6 +20,7 @@ class UnityTimer:
                 published to.
         """
         self._current_time = start_time
+        self._last_update = start_time
         self._update_duration = update_duration
         self._update_offset = rospy.Duration(secs=self._update_duration, nsecs=0)
         self._next_update = self._current_time + self._update_offset
@@ -36,10 +37,14 @@ class UnityTimer:
 
             # update next update time
             if self._current_time >= self._next_update + self._update_offset:
-                rospy.logwarn(f"Training loop missed rate of {1.0 / self._update_duration} Hz. Missed update at {self._next_update} nsecs and rescheduling next update to {self._current_time + self._update_offset} nsecs")
+                duration = self._current_time - self._last_update
+                millisecs = duration.nsecs / 1e6
+                rospy.logwarn(f"Training loop missed rate of {1.0 / self._update_duration} Hz. Took {duration.secs}.{millisecs:03.0f}s in Unity-Time")
                 self._next_update = self._current_time + self._update_offset
             else:
                 self._next_update = self._next_update + self._update_offset
+                
+            self._last_update = self._current_time
 
             self._event.set()
             self._event.clear()
