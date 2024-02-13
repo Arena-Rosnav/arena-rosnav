@@ -31,7 +31,7 @@
     <param name="namespace" value="$(arg namespace)" />
     <param name="tcp_ip" value="$(arg tcp_ip)" />
     <param name="tcp_port" value="$(arg tcp_port)" />
-    <param name="time_scale" value="$arg time_scale)" />
+    <param name="time_scale" value="$(arg time_scale)" />
   </node>
 
 </launch>
