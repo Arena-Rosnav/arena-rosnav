@@ -25,7 +25,6 @@ def create_office_map(
 
     # random between horizontal and vertical
     rot = np.pi / 2 if np.random.random() < 0.5 else 0
-    rot = 0
 
     # how far the shelf right next to each other should be
     # replace /2 with * map_resolution?
