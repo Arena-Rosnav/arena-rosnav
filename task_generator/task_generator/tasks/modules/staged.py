@@ -226,11 +226,7 @@ class Mod_Staged(TM_Module):
             config: The new configuration values.
         """
         try:
-            curriculum_file = str(
-                self.CURRICULUM_PATH(
-                    rosparam_get(str, self.NODE_CONFIGURATION(self.PARAM_CURRICULUM))
-                )
-            )
+            curriculum_file = str(self.CURRICULUM_PATH(config[self.PARAM_CURRICULUM]))
         except Exception as e:
             rospy.logwarn(e)
             curriculum_file = "default.yaml"
@@ -263,9 +259,7 @@ class Mod_Staged(TM_Module):
             }
 
         try:
-            starting_index = rosparam_get(
-                StageIndex, self.NODE_CONFIGURATION(self.PARAM_INDEX)
-            )
+            starting_index = config[self.PARAM_INDEX]
         except Exception as e:
             rospy.logwarn(e)
             starting_index = 0

@@ -49,11 +49,13 @@ def recursive_get(obj: Any, property: List[str], fallback: Any = None) -> Any:
     
 def encode(var: Any):
     if isinstance(var, list):
-        return "/".join(var)
+        return ";".join(var)
     if isinstance(var, dict):
         return json.dumps(var)
     return var
 
+def get_or_ignore(obj: dict, key: str) -> dict:
+    return {key: obj.get(key)} if key in obj else {}
 
 def run(namespace: Optional[str] = None):
 
@@ -86,7 +88,9 @@ def run(namespace: Optional[str] = None):
             client.update_configuration(
                 {
                     **{
-                        # "no_of_episodes": content.get("no_of_episodes")
+                        k:v
+                        for d in [get_or_ignore(content, parameter["name"]) for parameter in TaskGeneratorConfig.config_description.get("parameters", [])]
+                        for k,v in d.items()
                     },
                     **{
                         k:v
@@ -95,9 +99,9 @@ def run(namespace: Optional[str] = None):
                             (name, encode(recursive_get(content, name.split("_"))))
                             for name in
                             (
-                                str(param.get("name", ""))
+                                str(parameter["name"])
                                 for group in TaskGeneratorConfig.config_description.get("groups", [])
-                                for param in group.get("parameters", [])
+                                for parameter in group.get("parameters", [])
                             )
                         )
                         if v is not None

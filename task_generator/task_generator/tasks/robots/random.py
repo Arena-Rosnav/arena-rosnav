@@ -1,19 +1,11 @@
 import math
-import random
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
-import numpy as np
-from task_generator.constants import Constants, TaskConfig
-from task_generator.shared import PositionOrientation, PositionRadius, rosparam_get
+from task_generator.constants import Config, Constants
+from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
 from task_generator.tasks.task_factory import TaskFactory
 
-import dynamic_reconfigure.client
-import dataclasses
-
-@dataclasses.dataclass
-class Config:
-    SEED: Optional[int]
 
 @TaskFactory.register_robots(Constants.TaskMode.TM_Robots.RANDOM)
 class TM_Random(TM_Robots):
@@ -22,7 +14,6 @@ class TM_Random(TM_Robots):
 
     Inherits from TM_Robots class.
     """
-    _config: Config
 
     @classmethod
     def prefix(cls, *args):
@@ -30,15 +21,6 @@ class TM_Random(TM_Robots):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-        dynamic_reconfigure.client.Client(
-            name=self.NODE_CONFIGURATION, config_callback=self.reconfigure
-        )
-
-    def reconfigure(self, config):
-        self._config = Config(
-            SEED=(lambda x: x if x >= 0 else None)(rosparam_get(int, self.NODE_CONFIGURATION("RANDOM_seed"), -1))
-        )
 
     def reset(self, **kwargs):
         """
@@ -67,16 +49,21 @@ class TM_Random(TM_Robots):
             )
 
         if len(ROBOT_POSITIONS) < len(self._PROPS.robot_managers):
+            to_generate = 2*(len(self._PROPS.robot_managers) - len(ROBOT_POSITIONS))
+
+            orientations = 2 * math.pi * Config.General.RNG.random(to_generate)
+            positions = self._PROPS.world_manager.get_positions_on_map(
+                n= to_generate,
+                safe_dist=biggest_robot
+            )
+
             generated_positions = [
                 PositionOrientation(
-                    position.x, position.y, random.random() * 2 * math.pi
+                    position.x, position.y, orientation
                 )
-                for position in (
-                    self._PROPS.world_manager.get_positions_on_map(
-                        n=2 * (len(self._PROPS.robot_managers) - len(ROBOT_POSITIONS)),
-                        safe_dist=biggest_robot,
-                        rng = np.random.default_rng(self._config.SEED)
-                    )
+                for (orientation, position) in zip(
+                    orientations,
+                    positions
                 )
             ]
 

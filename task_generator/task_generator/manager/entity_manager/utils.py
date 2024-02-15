@@ -201,9 +201,11 @@ class YAMLUtil:
                             prop
                         ]
                     plugin[prop] = namespace(
-                        plugin.get(prop, "")
-                        if not default_val
-                        else plugin.get(prop, default_val),
+                        (
+                            plugin.get(prop, "")
+                            if not default_val
+                            else plugin.get(prop, default_val)
+                        ),
                     )
 
                     if prop == "odom_frame_id" and plugin[prop][0] == "/":
@@ -223,7 +225,7 @@ class YAMLUtil:
 
 
 tmp_dir = os.path.join(
-    rospkg.RosPack().get_path("arena-simulation-setup"), "tmp", "heightmap"
+    rospkg.RosPack().get_path("arena_simulation_setup"), "tmp", "heightmap"
 )
 os.makedirs(tmp_dir, exist_ok=True)
 

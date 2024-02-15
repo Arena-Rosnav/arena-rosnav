@@ -1,7 +1,7 @@
 from typing import Collection
 import rospy
 import yaml
-from task_generator.constants import FlatlandRandomModel
+from task_generator.constants import Config, FlatlandRandomModel
 from task_generator.shared import (
     DynamicObstacle,
     ModelType,
@@ -15,7 +15,6 @@ from task_generator.shared import (
 from task_generator.simulators.flatland_simulator import FlatlandSimulator
 from .entity_manager import EntityManager
 
-import random
 from task_generator.shared import Model
 
 import numpy as np
@@ -153,19 +152,19 @@ class FlatlandManager(EntityManager):
             # type = random.choice(["circle", "polygon"])
 
             if _type == "circle":
-                radius = random.uniform(min_radius, max_radius)
+                radius = Config.General.RNG.uniform(min_radius, max_radius)
 
                 return {"type": _type, "radius": radius}
 
             # Defined in flatland definition
-            points_amount = random.randint(3, 8)
+            points_amount = Config.General.RNG.integers(3, 8, endpoint=True)
             angle_interval = 2 * np.pi / points_amount
 
             points = []
 
             for p in range(points_amount):
-                angle = random.uniform(0, angle_interval)
-                radius = random.uniform(min_radius, max_radius)
+                angle = Config.General.RNG.uniform(0, angle_interval)
+                radius = Config.General.RNG.uniform(min_radius, max_radius)
 
                 real_angle = angle_interval * p + angle
 
@@ -196,7 +195,7 @@ class FlatlandManager(EntityManager):
             model["plugins"].append(
                 {
                     **FlatlandRandomModel.RANDOM_MOVE_PLUGIN,
-                    "linear_velocity": random.uniform(0, linear_vel),
+                    "linear_velocity": Config.General.RNG.uniform(0, linear_vel),
                     "angular_velocity_max": angular_vel_max,
                 }
             )

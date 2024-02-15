@@ -86,6 +86,8 @@ class TaskFactory:
             __tm_robots: TM_Robots
             __tm_obstacles: TM_Obstacles
 
+            _force_reset: bool
+
             def __init__(
                 self,
                 obstacle_manager: ObstacleManager,
@@ -106,6 +108,7 @@ class TaskFactory:
                     *args: Variable length argument list.
                     **kwargs: Arbitrary keyword arguments.
                 """
+                self._force_reset = False
                 self.namespace = namespace
 
                 self.obstacle_manager = obstacle_manager
@@ -130,16 +133,18 @@ class TaskFactory:
 
                 self.model_loader = ModelLoader(
                     os.path.join(
-                        RosPack().get_path("arena-simulation-setup"),
+                        RosPack().get_path("arena_simulation_setup"),
+                        "entities",
                         "obstacles",
-                        "static_obstacles",
+                        "static",
                     )
                 )
                 self.dynamic_model_loader = ModelLoader(
                     os.path.join(
-                        RosPack().get_path("arena-simulation-setup"),
+                        RosPack().get_path("arena_simulation_setup"),
+                        "entities",
                         "obstacles",
-                        "dynamic_obstacles",
+                        "dynamic",
                     )
                 )
 
@@ -164,7 +169,6 @@ class TaskFactory:
                     tm_robots in cls.registry_robots
                 ), f"TaskMode '{tm_robots}' for robots is not registered!"
                 self.__tm_robots = cls.registry_robots[tm_robots](props=self)
-                self.__tm_robots.reconfigure(None)
                 self.__param_tm_robots = tm_robots
 
             def set_tm_obstacles(self, tm_obstacles: Constants.TaskMode.TM_Obstacles):
@@ -178,7 +182,6 @@ class TaskFactory:
                     tm_obstacles in cls.registry_obstacles
                 ), f"TaskMode '{tm_obstacles}' for obstacles is not registered!"
                 self.__tm_obstacles = cls.registry_obstacles[tm_obstacles](props=self)
-                self.__tm_obstacles.reconfigure(None)
                 self.__param_tm_obstacles = tm_obstacles
 
             def _reset_task(self, **kwargs):
@@ -269,6 +272,7 @@ class TaskFactory:
                 Args:
                     **kwargs: Arbitrary keyword arguments.
                 """
+                self._force_reset = False
                 if self._train_mode:
                     self._reset_task(**kwargs)
                 else:
@@ -282,7 +286,7 @@ class TaskFactory:
                 Returns:
                     bool: True if the task is done, False otherwise.
                 """
-                return self.__tm_robots.done
+                return self._force_reset or self.__tm_robots.done
 
             def set_robot_position(self, position: PositionOrientation):
                 """
@@ -302,6 +306,9 @@ class TaskFactory:
                 """
                 self.__tm_robots.set_goal(position)
 
+            def force_reset(self):
+                self._force_reset = True
+
         return CombinedTask
 
 
@@ -318,3 +325,4 @@ from .modules.clear_forbidden_zones import Mod_ClearForbiddenZones
 from .modules.dynamic_map import Mod_DynamicMap
 from .modules.rviz_ui import Mod_OverrideRobot
 from .modules.staged import Mod_Staged
+from .modules.benchmark import Mod_Benchmark

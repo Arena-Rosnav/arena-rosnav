@@ -1,0 +1,101 @@
+repositories:
+  arena/evaluation:
+    type: git
+    url: https://github.com/voshch/arena-evaluation.git
+    version: 1ec926c52f3288468d110e1365ce69a175cbc4f2
+  arena/simulation-setup:
+    type: git
+    url: https://github.com/Arena-Rosnav/arena-simulation-setup.git
+    version: 43acb8407618cbc0ea36d30fed3459aa30ef031e
+  arena/utils/3rd-party-robot-packages:
+    type: git
+    url: https://github.com/Arena-Rosnav/3rd-party-robot-packages
+    version: 8b60c1169626568bf734a07c3b0f13b06d3e2871
+  arena/utils/flatland:
+    type: git
+    url: https://github.com/Arena-Rosnav/flatland.git
+    version: 375c756e1952dfe40230781a64b8ab624ccf8a33
+  arena/utils/move_base_flex:
+    type: git
+    url: https://github.com/Arena-Rosnav/move_base_flex.git
+    version: c3613d87e3e7c65d85225feb3f90350023c1361a
+  arena/utils/navigation:
+    type: git
+    url: https://github.com/arena-rosnav/navigation.git
+    version: 17ba8f0dd36de563be0cfe1d02173eb45ae7daa0
+  arena/utils/pedsim_ros:
+    type: git
+    url: https://github.com/arena-rosnav/pedsim_ros.git
+    version: f56f02828ee0ee3f292744c8529f78b70e6d9cdc
+  arena/utils/stable-baselines3:
+    type: git
+    url: https://github.com/tuananhroman/stable-baselines3.git
+    version: 03cd2dfe9a3b56a3fea76443b6bb04fd8af7d295
+  arena/utils/unitree_ros:
+    type: git
+    url: https://github.com/voshch/unitree_ros
+    version: 8be8a62854c7616aefa45b09b8ab467cefcccfc1
+  extern/ford_msgs:
+    type: git
+    url: https://bitbucket.org/acl-swarm/ford_msgs/master/
+    version: b01f3ff4a704d4630824a1cdff2ffaa236464be8
+  extern/gazebo_ros_2Dmap_plugin:
+    type: git
+    url: https://github.com/marinaKollmitz/gazebo_ros_2Dmap_plugin.git
+    version: 0820610f46235cd7ce1458ea030ef83b1616da37
+  extern/jackal:
+    type: git
+    url: https://github.com/jackal/jackal.git
+    version: 85e16bd7b3ea72a4b5a2d3ca8224e056d7ab1c70
+  planners/all_in_one:
+    type: git
+    url: https://github.com/Arena-Rosnav/all_in_one
+    version: dc066282a94ace1759d874cb348efc8f3762b411
+  planners/applr:
+    type: git
+    url: https://github.com/Arena-Rosnav/applr
+    version: 7e3248d1486ba70691e5130a57731eb8c6647af5
+  planners/arena-ros:
+    type: git
+    url: https://github.com/Arena-Rosnav/arena-ros.git
+    version: e76dbbccf85a70399a2e0a4f1c6a2b6fca61d16e
+  planners/cadrl-ros:
+    type: git
+    url: https://github.com/Arena-Rosnav/cadrl-ros.git
+    version: bdabb7a5dca8d750c5977decdbbbfa5d58b4b586
+  planners/cohan:
+    type: git
+    url: https://github.com/Arena-Rosnav/cohan_planner_multi
+    version: de6f9bda9a3dcba05e50998962a36444f063930d
+  planners/crowdnav-ros:
+    type: git
+    url: https://github.com/Arena-Rosnav/crowdnav-ros.git
+    version: 6042af91e96b1e686a761b496f7d1d6b67185fdd
+  planners/dragon:
+    type: git
+    url: https://github.com/Arena-Rosnav/dragon
+    version: c74a9e94863283dbc32766c07d3af4e761a10c31
+  planners/lflh:
+    type: git
+    url: https://github.com/Arena-Rosnav/lflh
+    version: 9971069d678ca3750b757890da57e99b3ac1318a
+  planners/mpc:
+    type: git
+    url: https://github.com/rst-tu-dortmund/mpc_local_planner
+    version: 5b4e465fec718245484e8668e6dd45539ca37983
+  planners/rlca-ros:
+    type: git
+    url: https://github.com/Arena-Rosnav/rlca-ros.git
+    version: d83e9bf33b29e2076716c8a66ce0fb6fd4ef7302
+  planners/rosnav:
+    type: git
+    url: https://github.com/Arena-Rosnav/rosnav-rl.git
+    version: 07056d7f3385e6094b40f2687b0cbc645708f6b4
+  planners/sarl-star:
+    type: git
+    url: https://github.com/Arena-Rosnav/sarl-star.git
+    version: ae084b40aec6b0195564437134b2d84a3e67e720
+  planners/trail:
+    type: git
+    url: https://github.com/Arena-Rosnav/trail
+    version: 5b38367d185c407152847da9a9d3a7b3c114e4c8

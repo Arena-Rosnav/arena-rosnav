@@ -192,8 +192,8 @@ class WorldMap:
                 )
             ),
             origin=Position(
-                distmap.info.origin.position.x,
-                distmap.info.origin.position.y
+                distmap.info.origin.position.y,
+                distmap.info.origin.position.x
             ),
             resolution=distmap.info.resolution,
             time=distmap.info.map_load_time
@@ -317,7 +317,7 @@ def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[
 
 
 _world_model_loader = ModelLoader(os.path.join(
-    RosPack().get_path("arena-simulation-setup"), "tmp", "models"))
+    RosPack().get_path("arena_simulation_setup"), "tmp", "models"))
 
 
 def configurations_to_obstacles(configurations: Collection[WorldObstacleConfiguration]) -> WorldObstacles:

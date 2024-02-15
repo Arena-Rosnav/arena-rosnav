@@ -1,17 +1,13 @@
 import itertools
-import math
-import random
-from typing import Callable, Dict, Iterator, List, Optional
+from typing import Callable, Dict, Iterator, List
 
 import numpy as np
-import rospy
-from task_generator.constants import Constants
+from task_generator.constants import Config, Constants
 from task_generator.shared import (
     DynamicObstacle,
     Obstacle,
     PositionOrientation,
-    PositionRadius,
-    rosparam_get
+    PositionRadius
 )
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
@@ -22,7 +18,7 @@ import dataclasses
 
 
 @dataclasses.dataclass
-class Config:
+class _Config:
     MIN_STATIC_OBSTACLES: int
     MIN_INTERACTIVE_OBSTACLES: int
     MIN_DYNAMIC_OBSTACLES: int
@@ -34,8 +30,6 @@ class Config:
     MODELS_STATIC_OBSTACLES: List[str]
     MODELS_INTERACTIVE_OBSTACLES: List[str]
     MODELS_DYNAMIC_OBSTACLES: List[str]
-
-    SEED: Optional[int]
 
 
 @TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.RANDOM)
@@ -56,7 +50,7 @@ class TM_Random(TM_Obstacles):
 
     """
 
-    _config: Config
+    _config: _Config
 
     @classmethod
     def prefix(cls, *args):
@@ -79,35 +73,16 @@ class TM_Random(TM_Obstacles):
         Returns:
             None
         """
-        self._config = Config(
-            MIN_STATIC_OBSTACLES=rosparam_get(
-                int, self.NODE_CONFIGURATION("RANDOM_static_min"), 0
-            ),
-            MIN_INTERACTIVE_OBSTACLES=rosparam_get(
-                int, self.NODE_CONFIGURATION("RANDOM_interactive_min"), 0
-            ),
-            MIN_DYNAMIC_OBSTACLES=rosparam_get(
-                int, self.NODE_CONFIGURATION("RANDOM_dynamic_min"), 0
-            ),
-            MAX_STATIC_OBSTACLES=rosparam_get(
-                int, self.NODE_CONFIGURATION("RANDOM_static_max"), 0
-            ),
-            MAX_INTERACTIVE_OBSTACLES=rosparam_get(
-                int, self.NODE_CONFIGURATION("RANDOM_interactive_max"), 0
-            ),
-            MAX_DYNAMIC_OBSTACLES=rosparam_get(
-                int, self.NODE_CONFIGURATION("RANDOM_dynamic_max"), 0
-            ),
-            MODELS_STATIC_OBSTACLES=rosparam_get(
-                str, self.NODE_CONFIGURATION("RANDOM_static_models"), ""
-            ).split("/"),
-            MODELS_INTERACTIVE_OBSTACLES=rosparam_get(
-                str, self.NODE_CONFIGURATION("RANDOM_interactive_models"), ""
-            ).split("/"),
-            MODELS_DYNAMIC_OBSTACLES=rosparam_get(
-                str, self.NODE_CONFIGURATION("RANDOM_dynamic_models"), ""
-            ).split("/"),
-            SEED=(lambda x: x if x >= 0 else None)(rosparam_get(int, self.NODE_CONFIGURATION("RANDOM_seed"), -1))
+        self._config = _Config(
+            MIN_STATIC_OBSTACLES=config["RANDOM_static_min"],
+            MIN_INTERACTIVE_OBSTACLES=config["RANDOM_interactive_min"],
+            MIN_DYNAMIC_OBSTACLES=config["RANDOM_dynamic_min"],
+            MAX_STATIC_OBSTACLES=config["RANDOM_static_max"],
+            MAX_INTERACTIVE_OBSTACLES=config["RANDOM_interactive_max"],
+            MAX_DYNAMIC_OBSTACLES=config["RANDOM_dynamic_max"],
+            MODELS_STATIC_OBSTACLES=config["RANDOM_static_models"].split(";"),
+            MODELS_INTERACTIVE_OBSTACLES=config["RANDOM_interactive_models"].split(";"),
+            MODELS_DYNAMIC_OBSTACLES=config["RANDOM_dynamic_models"].split(";")
         )
 
     def reset(self, **kwargs) -> Obstacles:
@@ -127,23 +102,29 @@ class TM_Random(TM_Obstacles):
             Tuple[List[Obstacle], List[DynamicObstacle]]: A tuple containing the generated obstacles and dynamic obstacles.
 
         """
+
         N_STATIC_OBSTACLES: int = kwargs.get(
             "N_STATIC_OBSTACLES",
-            random.randint(
-                self._config.MIN_STATIC_OBSTACLES, self._config.MAX_STATIC_OBSTACLES
+            Config.General.RNG.integers(
+                self._config.MIN_STATIC_OBSTACLES,
+                self._config.MAX_STATIC_OBSTACLES,
+                endpoint=True
             ),
         )
         N_INTERACTIVE_OBSTACLES: int = kwargs.get(
             "N_INTERACTIVE_OBSTACLES",
-            random.randint(
+            Config.General.RNG.integers(
                 self._config.MIN_INTERACTIVE_OBSTACLES,
                 self._config.MAX_INTERACTIVE_OBSTACLES,
+                endpoint=True
             ),
         )
         N_DYNAMIC_OBSTACLES: int = kwargs.get(
             "N_DYNAMIC_OBSTACLES",
-            random.randint(
-                self._config.MIN_DYNAMIC_OBSTACLES, self._config.MAX_DYNAMIC_OBSTACLES
+            Config.General.RNG.integers(
+                self._config.MIN_DYNAMIC_OBSTACLES,
+                self._config.MAX_DYNAMIC_OBSTACLES,
+                endpoint=True
             ),
         )
 
@@ -185,12 +166,11 @@ class TM_Random(TM_Obstacles):
             n=N_STATIC_OBSTACLES
             + N_INTERACTIVE_OBSTACLES
             + N_DYNAMIC_OBSTACLES * (1 + waypoints_per_ped),
-            safe_dist=1,
-            rng = np.random.default_rng(self._config.SEED)
+            safe_dist=1
         )
 
         _positions = [
-            PositionOrientation(*pos, 2 * math.pi * random.random())
+            PositionOrientation(*pos, 2 * np.pi * Config.General.RNG.random())
             for pos in points[
                 : (N_STATIC_OBSTACLES + N_INTERACTIVE_OBSTACLES + N_DYNAMIC_OBSTACLES)
             ]
@@ -218,10 +198,10 @@ class TM_Random(TM_Obstacles):
                     model=self._PROPS.model_loader.bind(model),
                     position=next(positions),
                 )
-                for model in random.choices(
-                    population=list(MODELS_STATIC_OBSTACLES.keys()),
-                    weights=list(MODELS_STATIC_OBSTACLES.values()),
-                    k=N_STATIC_OBSTACLES,
+                for model in Config.General.RNG.choice(
+                    a=list(MODELS_STATIC_OBSTACLES.keys()),
+                    p=list(MODELS_STATIC_OBSTACLES.values()),
+                    size=N_STATIC_OBSTACLES,
                 )
             ]
 
@@ -236,10 +216,10 @@ class TM_Random(TM_Obstacles):
                     model=self._PROPS.model_loader.bind(model),
                     position=next(positions),
                 )
-                for model in random.choices(
-                    population=list(MODELS_INTERACTIVE_OBSTACLES.keys()),
-                    weights=list(MODELS_INTERACTIVE_OBSTACLES.values()),
-                    k=N_INTERACTIVE_OBSTACLES,
+                for model in Config.General.RNG.choice(
+                    a=list(MODELS_INTERACTIVE_OBSTACLES.keys()),
+                    p=list(MODELS_INTERACTIVE_OBSTACLES.values()),
+                    size=N_INTERACTIVE_OBSTACLES,
                 )
             ]
 
@@ -258,10 +238,10 @@ class TM_Random(TM_Obstacles):
                     waypoints=list(itertools.islice(waypoints, waypoints_per_ped)),
                     position=next(positions),
                 )
-                for model in random.choices(
-                    population=list(MODELS_DYNAMIC_OBSTACLES.keys()),
-                    weights=list(MODELS_DYNAMIC_OBSTACLES.values()),
-                    k=N_DYNAMIC_OBSTACLES,
+                for model in Config.General.RNG.choice(
+                    a=list(MODELS_DYNAMIC_OBSTACLES.keys()),
+                    p=list(MODELS_DYNAMIC_OBSTACLES.values()),
+                    size=N_DYNAMIC_OBSTACLES,
                 )
             ]
 
