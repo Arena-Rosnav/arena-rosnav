@@ -15,14 +15,14 @@ DYNAMICMAP: {}
 RANDOM:
   seed: -1
   static:
-    min: 0
-    max: 0
+    min: 4
+    max: 4
     models: ["shelf"]
   interactive:
     min: 0
     max: 0
     models: ["shelf"]
   dynamic:
-    min: 3
-    max: 3
+    min: 4
+    max: 4
     models: ["actor1"]

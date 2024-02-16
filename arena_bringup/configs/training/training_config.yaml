@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: true
 # number of parallel environments
-n_envs: 2
+n_envs: 1
 # gpu yes or no
 no_gpu: false
 
@@ -14,7 +14,7 @@ tm_modules: "staged"
 
 # number of simulation timesteps
 n_timesteps: 40000000
-max_num_moves_per_eps: 800
+max_num_moves_per_eps: 50
 goal_radius: 0.25
 safety_distance: 0.5
 
