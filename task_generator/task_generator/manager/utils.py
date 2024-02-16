@@ -63,12 +63,12 @@ class WorldOccupancy:
     
     @staticmethod
     def not_empty(grid: np.ndarray) -> np.ndarray:
-        return np.invert(WorldOccupancy.full(grid))
+        return np.invert(WorldOccupancy.empty(grid))
 
     @staticmethod
     def emptyish(grid: np.ndarray, thresh: Optional[float] = None) -> np.ndarray:
         if thresh is None:
-            thresh = float((WorldOccupancy.FULL + WorldOccupancy.EMPTY) / 2)
+            thresh = float((int(WorldOccupancy.FULL) + int(WorldOccupancy.EMPTY)) / 2)
         return grid >= thresh
 
     @staticmethod
@@ -91,8 +91,8 @@ class WorldOccupancy:
         self.grid.fill(WorldOccupancy.EMPTY)
 
     def occupy(self, lo:Tuple[int, int], hi: Tuple[int, int]):
-        ly, hy = np.clip([lo[1], hi[1]], 0, self._grid.shape[0] - 1)
-        lx, hx = np.clip([lo[0], hi[0]], 0, self._grid.shape[1] - 1)
+        ly, hy = np.clip(np.array([lo[1], hi[1]]), 0, self._grid.shape[0] - 1)
+        lx, hx = np.clip(np.array([lo[0], hi[0]]), 0, self._grid.shape[1] - 1)
         self._grid[
             int(ly):int(hy),
             int(lx):int(hx)
@@ -192,8 +192,8 @@ class WorldMap:
                 )
             ),
             origin=Position(
-                distmap.info.origin.position.x,
-                distmap.info.origin.position.y
+                distmap.info.origin.position.y,
+                distmap.info.origin.position.x
             ),
             resolution=distmap.info.resolution,
             time=distmap.info.map_load_time
@@ -317,7 +317,7 @@ def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[
 
 
 _world_model_loader = ModelLoader(os.path.join(
-    RosPack().get_path("arena-simulation-setup"), "tmp", "models"))
+    RosPack().get_path("arena_simulation_setup"), "tmp", "models"))
 
 
 def configurations_to_obstacles(configurations: Collection[WorldObstacleConfiguration]) -> WorldObstacles:

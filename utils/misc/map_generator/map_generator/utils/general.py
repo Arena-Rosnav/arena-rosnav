@@ -20,8 +20,8 @@ def get_config_path() -> Path:
 
 
 def get_robot_config_path(robot_name: str) -> Path:
-    p = Path(rospkg.RosPack().get_path("arena-simulation-setup"))
-    return p / "robot" / f"{robot_name}" / "model_params.yaml"
+    p = Path(rospkg.RosPack().get_path("arena_simulation_setup"))
+    return p / "entities" / "robots" / f"{robot_name}" / "model_params.yaml"
 
 
 def load_config(cfg_location: str) -> dict:

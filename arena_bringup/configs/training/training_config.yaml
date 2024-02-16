@@ -3,17 +3,20 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: true
 # number of parallel environments
-n_envs: 1
+n_envs: 2
 # gpu yes or no
 no_gpu: false
 
 ### General Training
-# navigation task mode, chose from "random" or "staged"
-task_mode: "dynamic_map_random"
+tm_robots: "random"
+tm_obstacles: "random"
+tm_modules: "staged"
+
 # number of simulation timesteps
-n_timesteps: 20000000
-max_num_moves_per_eps: 100
-goal_radius: 0.2
+n_timesteps: 40000000
+max_num_moves_per_eps: 800
+goal_radius: 0.25
+safety_distance: 0.5
 
 ### Training Monitoring
 monitoring:
@@ -24,7 +27,7 @@ monitoring:
     # display episode statistics (avg. success rate, reward, eps length..)
     episode_statistics:
       enabled: true
-      last_n_eps: 20
+      last_n_eps: 25
   # weights and biases logging
   use_wandb: false
   # save evaluation stats during training in log file
@@ -34,11 +37,11 @@ callbacks:
   ### Periodic Eval
   periodic_eval:
     # max number of steps per episode
-    max_num_moves_per_eps: 500
+    max_num_moves_per_eps: 1250
     # number of evaluation episodes
-    n_eval_episodes: 50
+    n_eval_episodes: 40
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 20000
+    eval_freq: 30000
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
@@ -55,32 +58,33 @@ callbacks:
   # stops training when last stage reached and threshold satisfied
   stop_training:
     threshold_type: "succ"
-    threshold: 0.95
+    threshold: 0.98
 
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "AGENT_57"
+  architecture_name: "RosnavResNet_3"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  checkpoint: "best_model" # gonna be ignored if resume is not null
 
   frame_stacking:
-    enabled: true
-    stack_size: 8
+    enabled: false
+    stack_size: 6
 
-  reward_fnc: "rule_13"
+  reward_fnc: "base_semantic"
 
-  normalize: 
+  normalize:
     enabled: true
     settings:
       norm_obs: true
-      norm_reward: true # Whether to normalize rewards or not
-      clip_obs: 30.0 # Max absolute value for observation 
+      norm_reward: false # Whether to normalize rewards or not
+      clip_obs: 30.0 # Max absolute value for observation
       clip_reward: 20.0 # Max value absolute for discounted reward
       gamma: 0.99 # discount factor
-    
+
   laser:
-    full_range_laser: true  # additional laser covering 360° covering blind spots -> additional collision check
+    full_range_laser: true # additional laser covering 360° covering blind spots -> additional collision check
     reduce_num_beams:
       enabled: false
       num_beams: 200
@@ -94,8 +98,16 @@ rl_agent:
       buckets_linear_vel: 8
       buckets_angular_vel: 11
 
+  lr_schedule:
+    # learning rate schedule
+    enabled: true
+    type: "linear"
+    settings:
+      initial_value: 0.001
+      final_value: 0.0001
+
   ppo:
-    batch_size: 19200
+    batch_size: 20480
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
@@ -103,6 +115,6 @@ rl_agent:
     vf_coef: 0.22
     max_grad_norm: 0.5
     gae_lambda: 0.95
-    m_batch_size: 40
+    m_batch_size: 512
     n_epochs: 3
-    clip_range: 0.22
+    clip_range: 0.25

@@ -26,6 +26,10 @@ class Utils:
         return Constants.ArenaType(os.getenv("ARENA_TYPE", "training").lower())
 
     @staticmethod
+    def is_synthetic_map() -> bool:
+        return rosparam_get(str, "map_file") in ["dynamic_map"]
+
+    @staticmethod
     def generate_map_inner_border(free_space_indices, map_: nav_msgs.OccupancyGrid):
         """generate map border (four vertices of the map)
 

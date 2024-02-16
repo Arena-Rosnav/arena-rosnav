@@ -78,8 +78,9 @@ class VisualizeRobotModel:
     @staticmethod
     def read_robot_model_file(robot_model):
         file_path = os.path.join(
-            rospkg.RosPack().get_path("arena-simulation-setup"),
-            "robot",
+            rospkg.RosPack().get_path("arena_simulation_setup"),
+            "entities",
+            "robots",
             robot_model,
             f"{robot_model}.model.yaml"
         )
