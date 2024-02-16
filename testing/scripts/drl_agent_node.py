@@ -17,7 +17,7 @@ from task_generator.shared import Namespace
 sys.modules["rl_agent"] = sys.modules["rosnav"]
 
 
-ACTION_FREQUENCY = 4  # in Hz
+ACTION_FREQUENCY = 5  # in Hz
 
 
 class RosnavActionNode:
@@ -31,34 +31,20 @@ class RosnavActionNode:
         self.ns = Namespace(ns)
 
         self._action_pub = rospy.Publisher(f"{self.ns}/cmd_vel", Twist, queue_size=1)
-        self._action_period_time = RosnavActionNode._get_action_frequency_in_nsecs()
-        self.last_time = 0
-
         rospy.wait_for_service(f"{self.ns}/rosnav/get_action")
         self._get_action_srv = rospy.ServiceProxy(
             f"{self.ns}/rosnav/get_action", GetAction
         )
 
-        rospy.Subscriber("/clock", Clock, callback=self._clock_callback)
+        frequency = rospy.get_param("action_frequency", ACTION_FREQUENCY)
+        self._rate = rospy.Rate(frequency)
 
-    @staticmethod
-    def _get_action_frequency_in_nsecs():
-        action_period_time = 1 / rospy.get_param("action_frequency", ACTION_FREQUENCY)
-
-        return action_period_time * 100000000
-
-    def _clock_callback(self, data):
-        curr_time = data.clock.secs * (10**12) + data.clock.nsecs
-
-        if curr_time - self.last_time <= self._action_period_time:
-            return
-
-        self._get_and_publish_next_action()
+        while not rospy.is_shutdown():
+            self._get_and_publish_next_action()
+            self._rate.sleep()
 
     def _get_and_publish_next_action(self) -> None:
-        msg = GetActionRequest()
-
-        action = self._get_action_srv(msg).action
+        action = self._get_action_srv(GetActionRequest()).action
         self._publish_action(action)
 
     def _publish_action(self, action):
