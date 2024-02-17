@@ -4,6 +4,7 @@ WARN='\033[0;93m'
 WHITE='\033[0;37m'
 GREEN='\033[0;32m'
 RED='\033[0;31m'
+RESET='\033[0m'
 
 FATAL=0
 
@@ -31,4 +32,4 @@ else
     echo 'updated successfully'
 fi
 
-echo ''
+echo $RESET
