@@ -19,7 +19,6 @@
   <arg name="simulator" default="flatland" doc="[flatland, gazebo, unity]" />
   <arg name="headless" default="0" doc="0 = show all, 1 = show only rviz, 2 = show nothing" />
   <env name="SIMULATOR" value="$(arg simulator)" />
-  <param name="headless" value="$(arg headless)" /> 
 
   <arg name="entity_manager" default="pedsim" doc="[pedsim]" />
   <arg name="pedsim" value="$(eval entity_manager == 'pedsim')" />
@@ -132,11 +131,11 @@
 
   <!-- Unity -->
   <arg name="development_mode" default="false" />
-  <arg name="headless" default="false" />
+  <arg name="headless_unity" default="false" />
   <include file="$(find arena_bringup)/launch/testing/simulators/unity.launch" if="$(eval arg('simulator') == 'unity')">
     <arg name="world" default="$(arg world_file)" />
     <arg name="development_mode" value="$(arg development_mode)" />
-    <arg name="headless" value="$(arg headless)" />
+    <arg name="headless" value="$(arg headless_unity)" />
   </include>
 
   <!-- map server-->
