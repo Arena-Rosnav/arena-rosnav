@@ -25,7 +25,7 @@ def launch_unity():
     args = list()
     args += [
         "-arena_sim_setup_path",
-        os.path.join(ws_src_path, "arena-simulation-setup")
+        os.path.join(ws_src_path, "simulation-setup")
     ]
     headless = rospy.get_param('~headless', False)
     if isinstance(headless, bool) and headless:
