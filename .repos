@@ -14,7 +14,7 @@ repositories:
   arena/utils/flatland:
     type: git
     url: https://github.com/Arena-Rosnav/flatland.git
-    version: 375c756e1952dfe40230781a64b8ab624ccf8a33
+    version: 9ba699c6
   arena/utils/move_base_flex:
     type: git
     url: https://github.com/Arena-Rosnav/move_base_flex.git
@@ -90,7 +90,7 @@ repositories:
   planners/rosnav:
     type: git
     url: https://github.com/Arena-Rosnav/rosnav-rl.git
-    version: 07056d7f3385e6094b40f2687b0cbc645708f6b4
+    version: de3b4000
   planners/sarl-star:
     type: git
     url: https://github.com/Arena-Rosnav/sarl-star.git
