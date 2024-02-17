@@ -4,7 +4,7 @@ from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.utils import rosparam_get
 from task_generator.manager.utils import WorldWalls
 from tf.transformations import quaternion_from_euler
-from task_generator.constants import Constants, UnityConstants
+from task_generator.constants import Constants, UnityConstants, Config
 from task_generator.simulators.base_simulator import BaseSimulator
 
 from task_generator.shared import ModelType, Robot, Obstacle
@@ -16,7 +16,7 @@ from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from unity_msgs.srv import SpawnWalls, SpawnWallsRequest
 from unity_msgs.msg import Wall
 
-T = Constants.WAIT_FOR_SERVICE_TIMEOUT
+T = Config.General.WAIT_FOR_SERVICE_TIMEOUT
 
 
 @SimulatorFactory.register(Constants.Simulator.UNITY)
@@ -103,7 +103,7 @@ class UnitySimulator(BaseSimulator):
         return res.success
 
     def move_entity(self, name, position):
-        rospy.loginfo("[Unity Simulator] Move Request for " + name)
+        # rospy.loginfo("[Unity Simulator] Move Request for " + name)
 
         request = SetModelStateRequest()
         request.model_state = ModelState()

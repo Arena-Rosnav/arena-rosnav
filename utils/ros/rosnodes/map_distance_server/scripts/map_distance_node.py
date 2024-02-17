@@ -12,6 +12,8 @@ from nav_msgs.srv import GetMap
 from PIL import Image
 from std_msgs.msg import String
 
+from map_generator.constants import MAP_GENERATOR_NS
+
 
 def nearlyequal(a, b, sigfig=5):
     return round(abs(a - b), sigfig) == 0
@@ -25,9 +27,10 @@ def print_map(map):
 class MapDistanceServer:
     def __init__(self):
         self._distance_map_path = os.path.join(
-            Path(rospkg.RosPack().get_path("arena-simulation-setup")),
-            "maps",
+            Path(rospkg.RosPack().get_path("arena_simulation_setup")),
+            "worlds",
             rospy.get_param("map_file"),
+            "map",
             "distance_map.png",
         )
 
@@ -143,6 +146,8 @@ class MapDistanceServer:
                     if coordinates_with_length[index] >= 0:
                         dist = min(coordinates_with_length[index] + 1, dist)
 
+            if np.isinf(dist): dist = 0 #regularize
+
             coordinates_length_dict.setdefault(dist, []).append((x, y))
             coordinates_with_length[self._get_index(x, y)] = dist
 
@@ -229,7 +234,7 @@ class DynamicMapDistanceServer(MapDistanceServer):
 
     def update_map_data(self, new_map_data: list):
         """Updates the map data with the new distance map."""
-        map_properties = rospy.get_param("map_properties")
+        map_properties = rospy.get_param(MAP_GENERATOR_NS("map_properties"))
         width, height = map_properties["width"], map_properties["height"]
 
         required_map_size = len(self.map.data)

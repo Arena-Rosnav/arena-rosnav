@@ -1,10 +1,10 @@
+from enum import Enum
 from typing import Tuple
 
 import numpy as np
 import rospy
-from enum import Enum
-
 from map_generator.base_map_gen import BaseMapGenerator
+from map_generator.constants import MapGenerators, MAP_GENERATOR_NS
 from map_generator.factory import MapGeneratorFactory
 from map_generator.rosnav.wrapper import create_indoor_map, create_outdoor_map
 
@@ -14,7 +14,7 @@ class MAP_TYPE(Enum):
     outdoor = "outdoor"
 
 
-@MapGeneratorFactory.register("rosnav")
+@MapGeneratorFactory.register(MapGenerators.ROSNAV)
 class RosnavMapGenerator(BaseMapGenerator):
     def __init__(
         self,
@@ -65,24 +65,29 @@ class RosnavMapGenerator(BaseMapGenerator):
 
     def retrieve_params(self) -> Tuple[int, int, float, MAP_TYPE, int, int, int, int]:
         height, width, map_res = super().retrieve_params()
-        map_type = rospy.get_param("/generator_configs/rosnav/map_type", self.map_type)
+        map_type = rospy.get_param(
+            MAP_GENERATOR_NS("algorithm_config/rosnav/map_type"), self.map_type
+        )
         if type(map_type) == str:
             map_type = MAP_TYPE(map_type.lower())
 
         # indoor params
         corridor_radius = rospy.get_param(
-            "/generator_configs/rosnav/indoor/corridor_radius", self.corridor_radius
+            MAP_GENERATOR_NS("algorithm_config/rosnav/indoor/corridor_radius"),
+            self.corridor_radius,
         )
         iterations = rospy.get_param(
-            "/generator_configs/rosnav/indoor/iterations", self.iterations
+            MAP_GENERATOR_NS("algorithm_config/rosnav/indoor/iterations"),
+            self.iterations,
         )
 
         # outdoor params
         obstacle_num = rospy.get_param(
-            "/generator_configs/rosnav/outdoor/obstacle_num", self.obstacle_num
+            MAP_GENERATOR_NS("algorithm_config/rosnav/outdoor/obstacle_num"),
+            self.obstacle_num,
         )
         obstacle_extra_radius = rospy.get_param(
-            "/generator_configs/rosnav/outdoor/obstacle_extra_radius",
+            MAP_GENERATOR_NS("algorithm_config/rosnav/outdoor/obstacle_extra_radius"),
             self.obstacle_extra_radius,
         )
 

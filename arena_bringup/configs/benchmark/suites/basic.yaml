@@ -1,0 +1,33 @@
+stages:
+  - name: scenario
+    episodes: 1
+    robot: jackal
+    map: arena_hospital_small
+    tm_robots: scenario
+    tm_obstacles: scenario
+    config:
+      SCENARIO:
+        file: arena_hospital_small_4.json
+
+  - name: scenario_random
+    episodes: 4
+    robot: jackal
+    map: map_empty
+    tm_robots: scenario
+    tm_obstacles: random
+    config:
+      SCENARIO:
+        file: default.json
+      RANDOM:
+        static:
+          min: 5
+          max: 10
+          models: ["shelf"]
+        interactive:
+          min: 0
+          max: 0
+          models: ["shelf"]
+        dynamic:
+          min: 3
+          max: 5
+          models: ["actor1"]

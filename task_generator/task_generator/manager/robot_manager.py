@@ -9,7 +9,7 @@ import scipy.spatial.transform
 
 import roslaunch
 import rospy
-from task_generator.constants import Constants
+from task_generator.constants import Constants, Config
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
@@ -67,20 +67,22 @@ class RobotManager:
         self._goal_pos = PositionOrientation(0, 0, 0)
 
         self._goal_tolerance_distance = rosparam_get(
-            float, "goal_radius", Constants.GOAL_TOLERANCE_RADIUS
+            float, "goal_radius", Config.Robot.GOAL_TOLERANCE_RADIUS
         )  # + self._robot_radius
         self._goal_tolerance_angle = rosparam_get(
-            float, "goal_tolerance_angle", Constants.GOAL_TOLERANCE_ANGLE
+            float, "goal_tolerance_angle", Config.Robot.GOAL_TOLERANCE_ANGLE
         )
 
         self._robot = robot
+        self._safety_distance = rosparam_get(
+            float,
+            f"{robot.name}/safety_distance",
+            Config.Robot.SPAWN_ROBOT_SAFE_DIST,
+        )
 
         self._position = self._start_pos
 
     def set_up_robot(self):
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            self._robot_radius = rosparam_get(float, "robot_radius")
-
         self._robot = dataclasses.replace(
             self._robot,
             model=self._robot.model.override(
@@ -120,8 +122,11 @@ class RobotManager:
         #     return
 
         self._launch_robot()
-
-        self._robot_radius = rosparam_get(float, self.namespace("robot_radius"))
+        self._robot_radius = (
+            float(rospy.get_param_cached("robot_radius"))
+            if Utils.get_arena_type() == Constants.ArenaType.TRAINING
+            else rosparam_get(float, self.namespace("robot_radius"))
+        )
 
         # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
         self._clear_costmaps_srv = rospy.ServiceProxy(
@@ -130,7 +135,7 @@ class RobotManager:
 
     @property
     def safe_distance(self) -> float:
-        return self._robot_radius + Constants.RobotManager.SPAWN_ROBOT_SAFE_DIST
+        return self._robot_radius + self._safety_distance
 
     @property
     def model_name(self) -> str:
@@ -142,7 +147,12 @@ class RobotManager:
 
     @property
     def namespace(self) -> Namespace:
-        return self._namespace(self.name)
+        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+            return Namespace(
+                f"{self._namespace}{self._namespace}_{self.model_name}"
+            )  # schizophrenia
+
+        return self._namespace(self._robot.name)
 
     @property
     def is_done(self) -> bool:
@@ -165,15 +175,15 @@ class RobotManager:
             self._start_pos = start_pos
             self.move_robot_to_pos(start_pos)
 
-            if self._robot.record_data:
-                rospy.set_param(self.namespace("goal"), list(self._goal_pos))
+            if self._robot.record_data_dir is not None:
+                rospy.set_param(self.namespace("start"), [float(v) for v in self._start_pos])
 
         if goal_pos is not None:
             self._goal_pos = goal_pos
             self._publish_goal(self._goal_pos)
 
-            if self._robot.record_data:
-                rospy.set_param(self.namespace("start"), list(self._start_pos))
+            if self._robot.record_data_dir is not None:
+                rospy.set_param(self.namespace("goal"), [float(v) for v in self._goal_pos])
 
         try:
             self._clear_costmaps_srv()
@@ -219,37 +229,36 @@ class RobotManager:
         self._move_base_goal_pub.publish(goal_msg)
 
     def _launch_robot(self):
-        roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(  # type: ignore
-            ["arena_bringup", "robot.launch"]
-        )
+        rospy.logwarn(f"START WITH MODEL {self.namespace}")
 
-        rospy.loginfo(f"START WITH MODEL {self.namespace}")
+        if Utils.get_arena_type() != Constants.ArenaType.TRAINING:
+            roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(  # type: ignore
+                ["arena_bringup", "robot.launch"]
+            )
 
-        args = [
-            f"SIMULATOR:={rosparam_get(str, 'SIMULATOR', 'flatland')}",
-            f"model:={self.model_name}",
-            f"name:={self.name}",
-            f"namespace:={self.namespace}",
-            f"frame:={self.name+'/' if self.name != '' else ''}",
-            f"local_planner:={self._robot.planner}",
-            f"complexity:={rosparam_get(int, 'complexity', 1)}",
-            f"record_data:={self._robot.record_data}",
-            f"train_mode:={rosparam_get(bool, 'train_mode', False)}",
-            f"agent_name:={self._robot.agent}",
-        ]
+            args = [
+                f"SIMULATOR:={Utils.get_simulator().value}",
+                f"model:={self.model_name}",
+                f"name:={self.name}",
+                f"namespace:={self.namespace}",
+                f"frame:={self.name+'/' if self.name != '' else ''}",
+                f"inter_planner:={self._robot.inter_planner}",
+                f"local_planner:={self._robot.local_planner}",
+                f"complexity:={rosparam_get(int, 'complexity', 1)}",
+                *(["record_data:=true", f"record_data_dir:={self._robot.record_data_dir}"] if self._robot.record_data_dir is not None else []),
+                f"train_mode:={rosparam_get(bool, 'train_mode', False)}",
+                f"agent_name:={self._robot.agent}",
+            ]
 
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            args += [f"sim_namespace:={self.namespace.simulation_ns}"]
-
-        self.process = roslaunch.parent.ROSLaunchParent(  # type: ignore
-            roslaunch.rlutil.get_or_generate_uuid(None, False),  # type: ignore
-            [(*roslaunch_file, args)],
-        )
-        self.process.start()
+            self.process = roslaunch.parent.ROSLaunchParent(  # type: ignore
+                roslaunch.rlutil.get_or_generate_uuid(None, False),  # type: ignore
+                [(*roslaunch_file, args)],
+            )
+            self.process.start()
 
         # Overwrite default move base params
-        base_frame: str = rosparam_get(str, self.namespace("robot_base_frame"))
-        sensor_frame: str = rosparam_get(str, self.namespace("robot_sensor_frame"))
+        base_frame: str = rospy.get_param_cached(self.namespace("robot_base_frame"))
+        sensor_frame: str = rospy.get_param_cached(self.namespace("robot_sensor_frame"))
 
         rospy.set_param(
             self.namespace("move_base", "global_costmap", "robot_base_frame"),

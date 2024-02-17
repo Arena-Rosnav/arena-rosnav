@@ -45,7 +45,6 @@ build/
 # python
 __pycache__/
 *.py[cod]
-poetry.lock
 
 #vscode
 .vscode/
@@ -59,3 +58,7 @@ poetry.lock
 # Unity Data
 utils/misc/unity_simulator/unity_simulator_BurstDebugInformation_DoNotShip/
 !**/UnityPlayer.so
+
+*.lock
+*.bkup
+*.log

@@ -29,6 +29,7 @@ if [[ -d ~/arena_ws ]]; then
   exit 1
 fi
 
+sudo add-apt-repository universe
 sudo apt update
 
 # ROS
@@ -44,7 +45,7 @@ source ~/.bashrc
 
 # Getting Packages
 echo "Installing Deps...:"
-sudo apt install -y python3 python-is-python3 git python3-rosdep python3-pip python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
+sudo apt install -y python3 python-is-python3 git python3-rosdep python3-pip python3-rosinstall-generator python3-vcstool build-essential python3-catkin-tools
 
 # Poetry
 echo "Installing Poetry...:"

@@ -13,7 +13,7 @@ import std_srvs.srv as std_srvs
 
 import functools
 
-from task_generator.constants import Constants, Pedsim
+from task_generator.constants import Config, Constants, Pedsim
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import (
     KnownObstacles,
@@ -26,6 +26,7 @@ from task_generator.shared import (
     DynamicObstacle,
     Model,
     ModelType,
+    Namespace,
     Obstacle,
     PositionOrientation,
     Robot,
@@ -36,11 +37,8 @@ from typing import Callable, List
 
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
 from task_generator.simulators.unity_simulator import UnitySimulator
-from task_generator.utils import rosparam_get
-
+from task_generator.utils import Utils, rosparam_get
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
-
-T = Constants.WAIT_FOR_SERVICE_TIMEOUT
 
 # TODO structure these together
 
@@ -162,23 +160,23 @@ class PedsimManager(EntityManager):
 
         self._known_obstacles = KnownObstacles()
 
-        rospy.wait_for_service(self._namespace(self.SERVICE_SPAWN_PEDS), timeout=T)
-        rospy.wait_for_service(self._namespace(self.SERVICE_RESPAWN_PEDS), timeout=T)
-        rospy.wait_for_service(self._namespace(self.SERVICE_RESET_ALL_PEDS), timeout=T)
-        rospy.wait_for_service(self._namespace(self.SERVICE_REMOVE_ALL_PEDS), timeout=T)
+        rospy.wait_for_service(self._namespace(self.SERVICE_SPAWN_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+        rospy.wait_for_service(self._namespace(self.SERVICE_RESPAWN_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+        rospy.wait_for_service(self._namespace(self.SERVICE_RESET_ALL_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+        rospy.wait_for_service(self._namespace(self.SERVICE_REMOVE_ALL_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
 
-        rospy.wait_for_service(self._namespace(self.SERVICE_ADD_WALLS), timeout=T)
-        rospy.wait_for_service(self._namespace(self.SERVICE_CLEAR_WALLS), timeout=T)
+        rospy.wait_for_service(self._namespace(self.SERVICE_ADD_WALLS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+        rospy.wait_for_service(self._namespace(self.SERVICE_CLEAR_WALLS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
 
-        rospy.wait_for_service(self._namespace(self.SERVICE_SPAWN_OBSTACLES), timeout=T)
+        rospy.wait_for_service(self._namespace(self.SERVICE_SPAWN_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
         rospy.wait_for_service(
-            self._namespace(self.SERVICE_RESPAWN_OBSTACLES), timeout=T
+            self._namespace(self.SERVICE_RESPAWN_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
         )
         rospy.wait_for_service(
-            self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES), timeout=T
+            self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
         )
 
-        rospy.wait_for_service(self._namespace(self.SERVICE_REGISTER_ROBOT), timeout=T)
+        rospy.wait_for_service(self._namespace(self.SERVICE_REGISTER_ROBOT), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
 
         self._spawn_peds_srv = rospy.ServiceProxy(
             self._namespace(self.SERVICE_SPAWN_PEDS),
@@ -299,8 +297,8 @@ class PedsimManager(EntityManager):
         else:
             rospy.logwarn("spawn walls failed!")
 
-        if rosparam_get(str, "world_file", "") == "generated_world":
-            rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), True)
+        # if rosparam_get(str, "world_file", "") == "generated_world":
+        #     rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), True)
         return
 
     def spawn_obstacles(self, obstacles):
@@ -585,13 +583,16 @@ class PedsimManager(EntityManager):
         if self._is_paused:
             return
 
-        if not rosparam_get(
-            bool, self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), False
-        ):
-            return
-        rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), False)
+        # if not rosparam_get(
+        #     bool, self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), False
+        # ):
+        #     return
+        # rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_WALLS), False)
 
-        if isinstance(self._simulator, FlatlandSimulator):
+        if not Utils.is_synthetic_map():
+            return
+
+        if Utils.get_simulator() in [Constants.Simulator.FLATLAND]:
             return
 
         entity = self._known_obstacles.get(self.WALLS_ENTITY)
@@ -604,11 +605,11 @@ class PedsimManager(EntityManager):
         if self._is_paused:
             return
 
-        if not rosparam_get(
-            bool, self._namespace(self.PARAM_NEEDS_RESPAWN_OBSTACLES), False
-        ):
-            return
-        rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_OBSTACLES), False)
+        # if not rosparam_get(
+        #     bool, self._namespace(self.PARAM_NEEDS_RESPAWN_OBSTACLES), False
+        # ):
+        #     return
+        # rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_OBSTACLES), False)
 
         if isinstance(self._simulator, FlatlandSimulator):
             return  # already taken care of by pedsim
@@ -650,11 +651,11 @@ class PedsimManager(EntityManager):
         if self._is_paused:
             return
 
-        if not rosparam_get(
-            bool, self._namespace(self.PARAM_NEEDS_RESPAWN_PEDS), False
-        ):
-            return
-        rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_PEDS), False)
+        # if not rosparam_get(
+        #     bool, self._namespace(self.PARAM_NEEDS_RESPAWN_PEDS), False
+        # ):
+        #     return
+        # rospy.set_param(self._namespace(self.PARAM_NEEDS_RESPAWN_PEDS), False)
 
         if isinstance(self._simulator, FlatlandSimulator):
             return  # already taken care of by pedsim
