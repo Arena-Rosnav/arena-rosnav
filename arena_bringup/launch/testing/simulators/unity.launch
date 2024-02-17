@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <arg name="world" default="turtlebot3_house" />
+  <!--<arg name="world" default="turtlebot3_house" />-->
   <arg name="model" default="burger"/>
   <arg name="gui" default="true"/>
   <arg name="show_rviz" default="true" doc="Wether to show rviz or not" />
   <arg name="tcp_ip" default="0.0.0.0"/>
   <arg name="tcp_port" default="10000"/>
-  <arg 
+  <!--<arg 
         name="world_file_path" 
         default="$(find arena-simulation-setup)/worlds/$(arg world)/worlds/$(arg world).world" 
     />
-  <param name="world_file_path" value="$(arg world_file_path)" />
+  <param name="world_file_path" value="$(arg world_file_path)" />-->
   <include file="$(find ros_tcp_endpoint)/launch/endpoint.launch">
     <arg name="tcp_ip" value="$(arg tcp_ip)" />
     <arg name="tcp_port" value="$(arg tcp_port)" />
