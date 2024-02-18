@@ -50,12 +50,14 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   Wall.msg
+  Collision.msg
 )
 
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
   SpawnWalls.srv
+  AttachSafeDistSensor.srv
 )
 
 ## Generate actions in the 'action' folder

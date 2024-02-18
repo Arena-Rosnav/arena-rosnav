@@ -594,6 +594,9 @@ class PedsimManager(EntityManager):
 
         if Utils.get_simulator() in [Constants.Simulator.FLATLAND]:
             return
+        
+        if isinstance(self._simulator, UnitySimulator):
+            return
 
         entity = self._known_obstacles.get(self.WALLS_ENTITY)
 

@@ -83,7 +83,11 @@ class Constants:
     }
 
 
+<<<<<<< HEAD
 # TaskConfig
+=======
+### TaskConfig
+>>>>>>> unity-training-2
 
 
 @dataclasses.dataclass
@@ -119,6 +123,7 @@ Config = TaskConfig()
 def _cb_reconfigure(config):
     global Config
 
+<<<<<<< HEAD
     Config.General.RNG=np.random.default_rng((lambda x: x if x >= 0 else None)(config["RANDOM_seed"]))
     Config.General.DESIRED_EPISODES=(lambda x: float("inf") if x<0 else x)(config["episodes"])
     
@@ -130,6 +135,65 @@ dynamic_reconfigure.client.Client(
     name=Constants.TASK_GENERATOR_SERVER_NODE,
     config_callback=_cb_reconfigure
 )
+=======
+@dataclasses.dataclass
+class TaskConfig:
+    General: TaskConfig_General
+    Robot: TaskConfig_Robot
+    Obstacles: TaskConfig_Obstacles
+
+
+def reconfigure() -> TaskConfig:
+    return TaskConfig(
+        General=TaskConfig_General(
+            WAIT_FOR_SERVICE_TIMEOUT=rosparam_get(
+                float, "timeout_wait_for_service", 60
+            ),  # 60 secs
+            MAX_RESET_FAIL_TIMES=rosparam_get(int, "max_reset_fail_times", 10),
+        ),
+        Robot=TaskConfig_Robot(
+            GOAL_TOLERANCE_RADIUS=rosparam_get(float, "goal_radius", 1.0),
+            GOAL_TOLERANCE_ANGLE=rosparam_get(
+                float, "goal_tolerance_angle", 30 * math.pi / 180
+            ),
+            SPAWN_ROBOT_SAFE_DIST=0.25,
+            TIMEOUT=rosparam_get(float, "timeout", 60),  # 1 min
+        ),
+        Obstacles=TaskConfig_Obstacles(
+            MIN_DYNAMIC_OBS=rosparam_get(
+                int, "~configuration/task_mode/random/interactive/min", 0
+            ),
+            MAX_DYNAMIC_OBS=rosparam_get(
+                int, "~configuration/task_mode/random/interactive/max", 0
+            ),
+            MIN_STATIC_OBS=rosparam_get(
+                int, "~configuration/task_mode/random/static/min", 0
+            ),
+            MAX_STATIC_OBS=rosparam_get(
+                int, "~configuration/task_mode/random/static/max", 0
+            ),
+            MIN_INTERACTIVE_OBS=rosparam_get(
+                int, "~configuration/task_mode/random/interactive/min", 0
+            ),
+            MAX_INTERACTIVE_OBS=rosparam_get(
+                int, "~configuration/task_mode/random/interactive/max", 0
+            ),
+            MODELS_DYNAMIC_OBSTACLES=rosparam_get(
+                list, "~configuration/task_mode/random/dynamic/models", []
+            ),
+            MODELS_INTERACTIVE_OBSTACLES=rosparam_get(
+                list, "~configuration/task_mode/random/interactive/models", []
+            ),
+            MODELS_STATIC_OBSTACLES=rosparam_get(
+                list, "~configuration/task_mode/random/static/models", []
+            ),
+            OBSTACLE_MAX_RADIUS=15,
+        ),
+    )
+
+
+Config = reconfigure()
+>>>>>>> unity-training-2
 
 
 class FlatlandRandomModel:
@@ -161,7 +225,10 @@ class FlatlandRandomModel:
 pedsim_ns = Namespace(
     "task_generator_node/configuration/pedsim/default_actor_config")
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> unity-training-2
 # TODO make everything dynamic_reconfigure
 def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     """
@@ -175,6 +242,7 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
 
     if isinstance(val, list):
         lo, hi = val[:2]
+<<<<<<< HEAD
 
         def gen(): return min(
             hi,
@@ -182,6 +250,10 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
                 lo,
                 Config.General.RNG.normal((hi + lo) / 2, (hi - lo) / 6)
             )
+=======
+        gen = lambda: min(
+            hi, max(lo, random.normalvariate((hi + lo) / 2, (hi - lo) / 6))
+>>>>>>> unity-training-2
         )
         # gen = lambda: random.uniform(lo, hi)
 
@@ -219,3 +291,4 @@ class Pedsim:
 
 class UnityConstants:
     WALL_HEIGHT = 4.0
+    ATTACH_SAFE_DIST_SENSOR_TOPIC = "attach_safe_dist_sensor"
