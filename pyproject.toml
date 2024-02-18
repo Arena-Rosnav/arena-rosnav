@@ -2,11 +2,10 @@
 name = "arena-rosnav"
 version = "0.1.0"
 description = ""
-authors = ["ReykCS <reyk-carstens@web.de>"]
+authors = ["ReykCS <reyk-carstens@web.de>", "Volodymyr Shcherbyna <edu@vshch.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8,<3.11"
-torch = "^1.11.0"
 rospkg = "^1.4.0"
 PyYAML = "^6.0"
 filelock = "^3.7.1"
@@ -14,11 +13,29 @@ scipy = "^1.8.1"
 empy = "^3.3.4"
 defusedxml = "^0.7.1"
 lxml = "^4.9.1"
-wandb = "^0.13.9"
-seaborn = "^0.12.2"
 netifaces = "^0.11.0"
+
+# all planners except rosnav and aio
+[tool.poetry.group.planner.dependencies]
+torch = "^1.11.0" # applr, crowdnav, lflh, rlca, sarl, trail
+seaborn = "^0.12.2" # lflh
+tensorboard = "^2.12.2" # lflh
+torchdiffeq = "^0.2.3" # lflh
+cvxpy = "^1.3.0" # lflh
+cvxpylayers = "^0.1.5" #lflh
+mpi4py = "^3.1.4" # cadrl, rlca
+tensorboardx = "^2.6" # applr
+gym = "^0.22" # applr, crowdnav, sarl, trail
+opencv-python = "^4.8" # applr
+
+# rosnav incl training toolchain
+[tool.poetry.group.training]
+optional = true
+[tool.poetry.group.training.dependencies]
+stable-baselines3 = {path = "../utils/stable-baselines3", develop = true}
+torch = "^1.11.0"
+wandb = "^0.13.9"
 tensorboard = "^2.12.2"
-stable-baselines3 = {path = "../utils-extern/misc/stable-baselines3", develop = true}
 torchdiffeq = "^0.2.3"
 diffcp = "^1.0.21"
 cvxpy = "^1.3.0"
@@ -32,6 +49,7 @@ sb3-contrib = "^2.1.0"
 shimmy = "^1.3.0"
 
 # pedsim-waypoint-plugin deps
+[tool.poetry.group.social.dependencies]
 pysocialforce = "^1.1.2"
 socialforce = "^0.2.3"
 watchdog = "^3.0.0"
@@ -42,3 +60,4 @@ pyinstrument = "^4.6.1"
 [build-system]
 requires = ["setuptools==62.2.0", "wheel==0.38.4"]
 build-backend = "setuptools.build_meta"
+

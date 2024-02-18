@@ -13,6 +13,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
     overload,
 )
 
@@ -21,24 +22,30 @@ import yaml
 import rospy
 
 T = TypeVar("T")
+U = TypeVar("U")
 _unspecified = rospy.client._Unspecified()
+_UNSPECIFIED = rospy.client._Unspecified
+_notfound = object()
 
+def rosparam_get(cast: Type[T], param_name: str, default:Union[U, _UNSPECIFIED]=_unspecified) -> Union[T, U]:
+    """
+    Get typed ros parameter (strict)
+    @cast: Return type of function
+    @param_name: Name of parameter on parameter server
+    @default: Default value. Raise ValueError is default is unset and parameter can't be found.
+    """
+    
+    val = rospy.get_param(param_name=param_name, default=_notfound)
 
-def rosparam_get(cast: Type[T], param_name: str, default=_unspecified, strict: bool = False) -> T:
-    val = rospy.get_param(param_name=param_name, default=default)
+    if val == _notfound:
+        if isinstance(default, _UNSPECIFIED):
+            raise ValueError(f"required parameter {param_name} is not set")
+        return default
 
-    if strict:
-        if not isinstance(val, cast):
-            raise ValueError(
-                f"param {param_name} is not of type {cast} but {type(val)} with val {val}")
-    else:
-        try:
-            val = cast(val)
-        except ValueError as e:
-            raise ValueError(f"could not cast {val} to {cast}", e)
-
-    return val
-
+    try:
+        return cast(val)
+    except ValueError as e:
+        raise ValueError(f"could not cast {val} to {cast} of param {param_name}") from e
 
 class Namespace(str):
     def __call__(self, *args: str) -> Namespace:
@@ -278,7 +285,7 @@ class RobotProps(EntityProps):
     inter_planner: str
     local_planner: str
     agent: str
-    record_data: bool
+    record_data_dir: Optional[str] = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -341,10 +348,10 @@ class Robot(RobotProps):
     def parse(obj: Dict, model: ModelWrapper) -> "Robot":
         name = str(obj.get("name", ""))
         position = PositionOrientation(*obj.get("pos", next(gen_init_pos)))
-        inter_planner = str(obj.get("inter", ""))
-        local_planner = str(obj.get("planner", ""))
-        agent = str(obj.get("agent", ""))
-        record_data = bool(obj.get("record_data", False))
+        inter_planner = str(obj.get("inter_planner", rosparam_get(str, "inter_planner", "")))
+        local_planner = str(obj.get("local_planner", rosparam_get(str, "local_planner", "")))
+        agent = str(obj.get("agent", rosparam_get(str, "agent_name", "")))
+        record_data = obj.get("record_data_dir", rospy.get_param("record_data_dir", None))
 
         return Robot(
             name=name,
@@ -353,6 +360,6 @@ class Robot(RobotProps):
             local_planner=local_planner,
             model=model,
             agent=agent,
-            record_data=record_data,
+            record_data_dir=record_data,
             extra=obj,
         )

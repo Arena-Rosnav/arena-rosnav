@@ -41,8 +41,6 @@ from task_generator.utils import Utils, rosparam_get
 
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
-T = Config.General.WAIT_FOR_SERVICE_TIMEOUT
-
 # TODO structure these together
 
 
@@ -137,31 +135,23 @@ class PedsimManager(EntityManager):
 
         self._known_obstacles = KnownObstacles()
 
-        rospy.wait_for_service(self._namespace(
-            self.SERVICE_SPAWN_PEDS), timeout=T)
-        rospy.wait_for_service(self._namespace(
-            self.SERVICE_RESPAWN_PEDS), timeout=T)
-        rospy.wait_for_service(self._namespace(
-            self.SERVICE_RESET_ALL_PEDS), timeout=T)
-        rospy.wait_for_service(self._namespace(
-            self.SERVICE_REMOVE_ALL_PEDS), timeout=T)
+        rospy.wait_for_service(self._namespace(self.SERVICE_SPAWN_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+        rospy.wait_for_service(self._namespace(self.SERVICE_RESPAWN_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+        rospy.wait_for_service(self._namespace(self.SERVICE_RESET_ALL_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+        rospy.wait_for_service(self._namespace(self.SERVICE_REMOVE_ALL_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
 
-        rospy.wait_for_service(self._namespace(
-            self.SERVICE_ADD_WALLS), timeout=T)
-        rospy.wait_for_service(self._namespace(
-            self.SERVICE_CLEAR_WALLS), timeout=T)
+        rospy.wait_for_service(self._namespace(self.SERVICE_ADD_WALLS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+        rospy.wait_for_service(self._namespace(self.SERVICE_CLEAR_WALLS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
 
-        rospy.wait_for_service(self._namespace(
-            self.SERVICE_SPAWN_OBSTACLES), timeout=T)
+        rospy.wait_for_service(self._namespace(self.SERVICE_SPAWN_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
         rospy.wait_for_service(
-            self._namespace(self.SERVICE_RESPAWN_OBSTACLES), timeout=T
+            self._namespace(self.SERVICE_RESPAWN_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
         )
         rospy.wait_for_service(
-            self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES), timeout=T
+            self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
         )
 
-        rospy.wait_for_service(self._namespace(
-            self.SERVICE_REGISTER_ROBOT), timeout=T)
+        rospy.wait_for_service(self._namespace(self.SERVICE_REGISTER_ROBOT), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
 
         self._spawn_peds_srv = rospy.ServiceProxy(
             self._namespace(self.SERVICE_SPAWN_PEDS),
