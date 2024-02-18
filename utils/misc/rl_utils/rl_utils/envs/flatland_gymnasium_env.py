@@ -1,8 +1,7 @@
 #! /usr/bin/env python3
+import random
 import re
 import time
-import random
-
 from typing import Tuple
 
 import gymnasium
@@ -12,6 +11,15 @@ from flatland_msgs.msg import StepWorld
 from geometry_msgs.msg import Twist
 from rl_utils.utils.observation_collector.constants import DONE_REASONS
 from rl_utils.utils.observation_collector.observation_manager import ObservationManager
+from rl_utils.utils.observation_collector.observation_units.base_collector_unit import (
+    BaseCollectorUnit,
+)
+from rl_utils.utils.observation_collector.observation_units.globalplan_collector_unit import (
+    GlobalplanCollectorUnit,
+)
+from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import (
+    SemanticAggregateUnit,
+)
 from rl_utils.utils.rewards.reward_function import RewardFunction
 from rosnav.model.base_agent import BaseAgent
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
@@ -119,7 +127,14 @@ class FlatlandEnv(gymnasium.Env):
             self._setup_env_for_training(self._reward_fnc, **self._kwargs)
 
         # observation collector
-        self.observation_collector = ObservationManager(self.ns)
+        self.observation_collector = ObservationManager(
+            ns=self.ns,
+            obs_structur=[
+                BaseCollectorUnit,
+                GlobalplanCollectorUnit,
+                SemanticAggregateUnit,
+            ],
+        )
         return True
 
     @property

@@ -232,6 +232,9 @@ class WorldManager:
                 posr = PositionRadius(*pos, safe_dist)
                 fork.occupy(*self.world.map.tf_posr2rect(posr))
                 forbidden_zones.append(posr)
+                points.append(pos)
+                
+            return points
 
         else:
             max_depth = 10

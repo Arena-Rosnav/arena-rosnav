@@ -135,7 +135,7 @@ class RewardFunction:
         Returns:
             Any: Value of the internal state information.
         """
-        if self._internal_state_info[key]:
+        if key in self._internal_state_info:
             return self._internal_state_info[key]
         else:
             return default

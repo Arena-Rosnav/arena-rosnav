@@ -27,7 +27,7 @@
   <!-- if it's false flatland server will not publish any debug related infomation and you will not able to visuzalize e.g robot, dynamic obstacles  -->
   <!-- <param name="space_encoder" value="UniformEncoder" /> -->
   <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load" ns="configuration"/>
-  <rosparam command="load" file="$(find arena_simulation_setup)/entities/robot/$(arg model)/model_params.yaml" /> 
+  <rosparam command="load" file="$(find arena_simulation_setup)/entities/robots/$(arg model)/model_params.yaml" /> 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" ns="map_generator" />
