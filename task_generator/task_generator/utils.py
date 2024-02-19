@@ -30,6 +30,10 @@ class Utils:
         return rosparam_get(str, "map_file") in ["dynamic_map"]
 
     @staticmethod
+    def is_unity_map() -> bool:
+        return "_unity".casefold() in rosparam_get(str, "map_file").casefold()
+
+    @staticmethod
     def generate_map_inner_border(free_space_indices, map_: nav_msgs.OccupancyGrid):
         """generate map border (four vertices of the map)
 
