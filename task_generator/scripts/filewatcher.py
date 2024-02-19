@@ -123,17 +123,23 @@ def run(namespace: Optional[str] = None):
         ]
     ]
 
-    try:
-        while True:
-            for observer in observers:
-                observer.join(1)
-    except KeyboardInterrupt as e:
-        raise e
-    finally:
+    def cleanup():
         for observer in observers:
             observer.stop()
         for observer in observers:
             observer.join()
+
+    rospy.on_shutdown(cleanup)
+
+    try:
+        while len(active_observers := [observer for observer in observers if observer.is_alive()]):
+            for observer in active_observers:
+                observer.join(1)
+    except KeyboardInterrupt as e:
+        raise e
+    finally:
+        cleanup()
+        
 
 
 if __name__ == "__main__":
