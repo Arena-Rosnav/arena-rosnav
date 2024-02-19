@@ -9,6 +9,7 @@ from task_generator.manager.utils import World
 from task_generator.manager.world_manager import WorldManager
 from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.simulators.base_simulator import BaseSimulator
+from task_generator.utils import Utils
 
 
 class ObstacleManager:
@@ -38,7 +39,7 @@ class ObstacleManager:
         self._entity_manager.spawn_walls(
             walls=world.entities.walls, heightmap=world.map)
         
-        if isinstance(self._simulator, UnitySimulator):
+        if isinstance(self._simulator, UnitySimulator) and not Utils.is_unity_map():
             self._simulator.spawn_walls(world.entities.walls)
 
         self._entity_manager.spawn_obstacles(

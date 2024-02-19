@@ -12,6 +12,7 @@ def launch_unity():
     rospy.init_node('unity_sim_node', anonymous=True)
 
     dev = rospy.get_param('~development_mode', False)
+    map = rospy.get_param('~map_file', "map_empty")
     if isinstance(dev, bool) and dev:
         # Unity should be launched trough Unity Editor in dev mode
         return
@@ -33,8 +34,10 @@ def launch_unity():
 
     # test
     args += ["-force-vulkan"]
-
-
+    
+    
+    args += ["-map", map]
+    
     subprocess.run([unity_executable_path] + args, check=True)
 
 

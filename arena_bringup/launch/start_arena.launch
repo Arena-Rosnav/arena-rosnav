@@ -136,6 +136,7 @@
     <!--<arg name="world" default="$(arg world_file)" />-->
     <arg name="development_mode" value="$(arg development_mode)" />
     <arg name="headless" value="$(arg headless_unity)" />
+    <arg name="map_file" value="$(arg map_file)" />
   </include>
 
   <!-- map server-->
