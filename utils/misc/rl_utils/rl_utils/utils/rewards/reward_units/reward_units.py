@@ -1,3 +1,4 @@
+import random
 from typing import Any, Callable, Dict
 from warnings import warn
 
@@ -11,10 +12,9 @@ from unity_msgs.srv import AttachSafeDistSensorRequest, AttachSafeDistSensor
 from task_generator.constants import Config, UnityConstants
 from ..constants import DEFAULTS, REWARD_CONSTANTS
 from ..reward_function import RewardFunction
-from ..utils import check_params
+from ..utils import check_params, get_ped_type_min_distances
 from .base_reward_units import GlobalplanRewardUnit, RewardUnit
 from .reward_unit_factory import RewardUnitFactory
-
 
 # UPDATE WHEN ADDING A NEW UNIT
 __all__ = [
@@ -125,7 +125,7 @@ class RewardSafeDistance(RewardUnit):
             violation_in_blind_spot = kwargs["full_laser_scan"].min() <= self._safe_dist
 
         if (
-            self._reward_function.get_internal_state_info("safe_dist_breached")
+            self.get_internal_state_info("safe_dist_breached")
             or violation_in_blind_spot
         ):
             self.add_reward(self._reward)
@@ -268,9 +268,12 @@ class RewardCollision(RewardUnit):
 
         coll_in_blind_spots = False
         if "full_laser_scan" in kwargs:
-            coll_in_blind_spots = kwargs["full_laser_scan"].min() <= self.robot_radius
+            if len(kwargs["full_laser_scan"]) > 0:
+                coll_in_blind_spots = (
+                    kwargs["full_laser_scan"].min() <= self.robot_radius
+                )
 
-        laser_min = self._reward_function.get_internal_state_info("min_dist_laser")
+        laser_min = self.get_internal_state_info("min_dist_laser")
         if laser_min <= self.robot_radius or coll_in_blind_spots:
             self.add_reward(self._reward)
             self.add_info(self.DONE_INFO)
@@ -929,3 +932,132 @@ class RewardObsSafeDistance(RewardUnit):
         if OBS_DICT_KEYS.OBS_SAFE_DIST in kwargs and kwargs[OBS_DICT_KEYS.OBS_SAFE_DIST]:
             self.add_reward(self._reward)
             self.add_info(self.SAFE_DIST_VIOLATION_INFO)
+
+
+@RewardUnitFactory.register("ped_type_safety_distance")
+class RewardPedTypeSafetyDistance(RewardUnit):
+    """
+    RewardPedTypeDistance is a reward unit that provides a reward based on the distance between the agent and a specific pedestrian type.
+
+    Args:
+        reward_function (RewardFunction): The reward function to which this reward unit belongs.
+        ped_type (int, optional): The type of pedestrian to consider. Defaults to DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE.TYPE.
+        reward (float, optional): The reward value to be added if the distance to the pedestrian type is less than the safety distance. Defaults to DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE.REWARD.
+        safety_distance (float, optional): The safety distance threshold. If the distance to the pedestrian type is less than this value, the reward is added. Defaults to DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE.DISTANCE.
+        _on_safe_dist_violation (bool, optional): A flag indicating whether to trigger a violation event when the safety distance is violated. Defaults to DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE._ON_SAFE_DIST_VIOLATION.
+        *args: Variable length argument list.
+        **kwargs: Arbitrary keyword arguments.
+
+    Attributes:
+        _type (int): The type of pedestrian to consider.
+        _reward (float): The reward value to be added if the distance to the pedestrian type is less than the safety distance.
+        _safety_distance (float): The safety distance threshold.
+
+    Methods:
+        __call__(*args, **kwargs): Calculates the reward based on the distance to the pedestrian type.
+        reset(): Resets the reward unit.
+    """
+
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        ped_type: int = DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE.TYPE,
+        reward: float = DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE.REWARD,
+        safety_distance: float = DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE.DISTANCE,
+        _on_safe_dist_violation: bool = DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE._ON_SAFE_DIST_VIOLATION,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+        self._type = ped_type
+        self._reward = reward
+        self._safety_distance = safety_distance
+
+    def __call__(self, *args: Any, **kwargs: Any) -> None:
+        ped_type_min_distances = self.get_internal_state_info(
+            "min_distances_per_ped_type"
+        )
+
+        if ped_type_min_distances is None:
+            self.add_internal_state_info(
+                key="min_distances_per_ped_type",
+                value=get_ped_type_min_distances(**kwargs),
+            )
+            ped_type_min_distances = self.get_internal_state_info(
+                "min_distances_per_ped_type"
+            )
+
+        if self._type not in ped_type_min_distances:
+            rospy.logwarn(
+                f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {self._type} not found."
+            )
+            return
+
+        if ped_type_min_distances[self._type] < self._safety_distance:
+            self.add_reward(self._reward)
+
+    def reset(self):
+        pass
+
+
+@RewardUnitFactory.register("ped_type_collision")
+class RewardPedTypeCollision(RewardUnit):
+    """
+    RewardPedTypeCollision is a reward unit that provides a reward when the robot collides with a specific pedestrian type.
+
+    Args:
+        reward_function (RewardFunction): The reward function to which this reward unit belongs.
+        ped_type (int, optional): The specific pedestrian type to check for collision. Defaults to DEFAULTS.PED_TYPE_SPECIFIC_COLLISION.TYPE.
+        reward (float, optional): The reward value to be added when a collision with the specific pedestrian type occurs. Defaults to DEFAULTS.PED_TYPE_SPECIFIC_COLLISION.REWARD.
+        *args: Variable length argument list.
+        **kwargs: Arbitrary keyword arguments.
+
+    Attributes:
+        _type (int): The specific pedestrian type to check for collision.
+        _reward (float): The reward value to be added when a collision with the specific pedestrian type occurs.
+    """
+
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        ped_type: int = DEFAULTS.PED_TYPE_SPECIFIC_COLLISION.TYPE,
+        reward: float = DEFAULTS.PED_TYPE_SPECIFIC_COLLISION.REWARD,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(reward_function, True, *args, **kwargs)
+        self._type = ped_type
+        self._reward = reward
+
+    def __call__(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Checks if the robot has collided with the specific pedestrian type and adds the reward if a collision occurs.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
+        ped_type_min_distances = self.get_internal_state_info(
+            "min_distances_per_ped_type"
+        )
+
+        if ped_type_min_distances is None:
+            self.add_internal_state_info(
+                key="min_distances_per_ped_type",
+                value=get_ped_type_min_distances(**kwargs),
+            )
+            ped_type_min_distances = self.get_internal_state_info(
+                "min_distances_per_ped_type"
+            )
+
+        if self._type not in ped_type_min_distances:
+            rospy.logwarn(
+                f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {self._type} not found."
+            )
+            return
+
+        if ped_type_min_distances[self._type] <= self.robot_radius:
+            self.add_reward(self._reward)
+
+    def reset(self):
+        pass

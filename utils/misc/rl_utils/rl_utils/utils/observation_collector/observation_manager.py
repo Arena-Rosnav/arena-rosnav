@@ -40,7 +40,7 @@ class ObservationManager:
             SemanticAggregateUnit,
         ]
         self._observation_units = self._instantiate_units()
-        self._init_units()
+        self._inititialize_units()
 
     def _instantiate_units(self) -> List[CollectorUnit]:
         """
@@ -54,7 +54,7 @@ class ObservationManager:
             for collector_class in self._obs_structur
         ]
 
-    def _init_units(self) -> None:
+    def _inititialize_units(self) -> None:
         """
         Initialize all observation units.
         """
