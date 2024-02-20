@@ -9,7 +9,7 @@
   <arg name="ns" />
   <arg name="model" default="jackal"/>
   <arg name="entity_manager" default="pedsim"/>
-  <arg name="world_file" default=""/>
+  <arg name="world_file" default="map_empty"/>
   <arg name="SIMULATOR" />
   <arg name="env_num" default="0" />
   <!-- unity specific -->
@@ -31,7 +31,7 @@
     <group>
       <!-- not required <remap from="clock" to="/$(arg ns)/clock"/> -->
       <include file="$(find arena_bringup)/launch/testing/simulators/unity.launch" if="$(eval arg('SIMULATOR') == 'unity')">
-        <arg name="world" default="$(arg world_file)" />
+        <!--<arg name="world" default="$(arg world_file)" />-->
         <arg name="development_mode" value="false" />
         <arg name="headless" value="$(arg headless)" />
         <arg name="namespace" value="$(arg ns)" />
