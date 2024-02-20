@@ -32,7 +32,7 @@ opencv-python = "^4.8" # applr
 [tool.poetry.group.training]
 optional = true
 [tool.poetry.group.training.dependencies]
-stable-baselines3 = {path = "../arena/utils/stable-baselines3", develop = true}
+stable-baselines3 = {path = "../../arena/utils/stable-baselines3", develop = true}
 torch = "^1.11.0"
 wandb = "^0.13.9"
 tensorboard = "^2.12.2"
