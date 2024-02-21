@@ -77,7 +77,7 @@ class UnitySimulator(BaseSimulator):
         request = SpawnModelRequest()
 
         model = entity.model.get(self.MODEL_TYPES)
-        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Spawn Request for " + model.name)
+        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Spawn Request for " + entity.name)
 
         request.model_name = model.name
         request.model_xml = model.description
