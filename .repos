@@ -14,7 +14,7 @@ repositories:
   arena/utils/flatland:
     type: git
     url: https://github.com/Arena-Rosnav/flatland.git
-    version: 375c756e1952dfe40230781a64b8ab624ccf8a33
+    version: 862fb2d5
   arena/utils/move_base_flex:
     type: git
     url: https://github.com/Arena-Rosnav/move_base_flex.git
@@ -26,7 +26,7 @@ repositories:
   arena/utils/pedsim_ros:
     type: git
     url: https://github.com/arena-rosnav/pedsim_ros.git
-    version: fe814cb6
+    version: 5a295bd5
   arena/utils/stable-baselines3:
     type: git
     url: https://github.com/tuananhroman/stable-baselines3.git
