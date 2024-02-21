@@ -99,6 +99,10 @@ if Counter.changed + Counter.added + Counter.removed == 0:
     logger.info(f"Nothing to do. Exiting.")
     sys.exit(0)
 
-with open(FILE_REPOS, "w") as f:
-    f.write(yaml.dump({"repositories": yaml_repos}))
-logger.info(f"Successfully updated. ~{Counter.changed} +{Counter.added} -{Counter.removed}")
+logger.info(f"Summary: ~{Counter.changed} +{Counter.added} -{Counter.removed}.")
+if ask_user("Confirm?"):
+    with open(FILE_REPOS, "w") as f:
+        f.write(yaml.dump({"repositories": yaml_repos}))
+    logger.info("Successfully updated.")
+else:
+    logger.info("Canceled.")
