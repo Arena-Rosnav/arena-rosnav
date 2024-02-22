@@ -172,6 +172,13 @@ class UnityCollectorUnit(CollectorUnit):
                 OBS_DICT_KEYS.OBS_SAFE_DIST: self._obs_safe_dist
             }
         )
+        if self._enable_rgbd:
+            obs_dict.update(
+                {
+                    OBS_DICT_KEYS.IMAGE_COLOR: self._image_color,
+                    OBS_DICT_KEYS.IMAGE_DEPTH: self._image_depth
+                }
+            )
 
         return obs_dict
 
