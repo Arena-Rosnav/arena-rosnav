@@ -2,8 +2,8 @@ algorithm: rosmap
 episode_per_map: 1
 
 map_properties:
-  width: 70
-  height: 60
+  width: 80
+  height: 80
   resolution: 0.5
 
 algorithm_config:
@@ -13,7 +13,7 @@ algorithm_config:
   # seed: null # for reproducing maps
 
   # Shared across rosmap, rosnav
-  map_type: office
+  map_type: canteen
   # Options:
   # 'indoor' (rosnav only)
   # 'outdoor' 
