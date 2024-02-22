@@ -89,15 +89,23 @@ class SemanticAggregateUnit(AggregateCollectorUnit):
         self, obs_dict: Dict[str, Any], *args, **kwargs
     ) -> Dict[str, Any]:
         obs_dict = super().get_observations(obs_dict, *args, **kwargs)
+
+        obs_dict[SemanticAttribute.SOCIAL_STATE.value] = list(
+            map(
+                lambda x: int(x.evidence) >> 8,
+                obs_dict[SemanticAttribute.SOCIAL_STATE.value].points,
+            )
+        )
+
         if len(obs_dict[SemanticAttribute.IS_PEDESTRIAN.value].points) > 0:
             ped_data = obs_dict[OBS_DICT_KEYS.SEMANTIC.PEDESTRIAN_LOCATION.value].points
-            obs_dict[
-                OBS_DICT_KEYS.SEMANTIC.RELATIVE_LOCATION.value
-            ] = SemanticAggregateUnit.get_relative_pos_to_robot(
-                robot_pose=obs_dict[OBS_DICT_KEYS.ROBOT_POSE],
-                distant_frames=np.stack(
-                    [[frame.location.x, frame.location.y, 1] for frame in ped_data]
-                ),
+            obs_dict[OBS_DICT_KEYS.SEMANTIC.RELATIVE_LOCATION.value] = (
+                SemanticAggregateUnit.get_relative_pos_to_robot(
+                    robot_pose=obs_dict[OBS_DICT_KEYS.ROBOT_POSE],
+                    distant_frames=np.stack(
+                        [[frame.location.x, frame.location.y, 1] for frame in ped_data]
+                    ),
+                )
             )
 
             (
