@@ -91,6 +91,9 @@ rl_agent:
     reduce_num_beams:
       enabled: false
       num_beams: 200
+  
+  rgbd:
+    enabled: true
 
   action_space:
     discrete: true

@@ -24,13 +24,14 @@ class TOPICS:
     PED_SAFE_DIST = "ped_safe_dist"
     OBS_SAFE_DIST = "obs_safe_dist"
     COLLISION = "collision"
+    IMAGE_DEPTH = "rgbd/depth"
+    IMAGE_COLOR = "rgbd/image"
 
 
 class OBS_DICT_KEYS:
     """
     Constants for observation dictionary keys.
     """
-
     LASER = "laser_scan"
     ROBOT_POSE = "robot_pose"
     GOAL_DIST_ANGLE = "goal_in_robot_frame"
@@ -40,9 +41,12 @@ class OBS_DICT_KEYS:
     LAST_ACTION = "last_action"
     GLOBAL_PLAN = "global_plan"
     DONE = "is_done"
+
     PED_SAFE_DIST = "ped_safe_dist"
     OBS_SAFE_DIST = "obs_safe_dist"
     COLLSION = "collision"
+    IMAGE_DEPTH = "image_depth"
+    IMAGE_COLOR = "image_color"
     
 
     # why not have SEMANTIC = SemanticAttribute ?

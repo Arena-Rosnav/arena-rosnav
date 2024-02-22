@@ -36,6 +36,9 @@ def populate_ros_params(params: dict, paths: dict):
 
     # populate laser params
     populate_laser_params(params)
+    
+    # populate rgbd params
+    populate_rgbd_params(params)
 
     curriculum_file = params["callbacks"]["training_curriculum"]["training_curriculum_file"]
     staged_idx = params["callbacks"]["training_curriculum"]["curr_stage"]
@@ -61,6 +64,14 @@ def populate_laser_params(params: dict):
         rospy.set_param(
             "laser/reduced_num_laser_beams",
             params["rl_agent"]["laser"]["reduce_num_beams"]["num_beams"],
+        )
+        
+
+def populate_rgbd_params(params: dict):
+    with contextlib.suppress(KeyError):
+        rospy.set_param(
+            "rgbd/enabled",
+            params["rl_agent"]["rgbd"]["enabled"]
         )
 
 
