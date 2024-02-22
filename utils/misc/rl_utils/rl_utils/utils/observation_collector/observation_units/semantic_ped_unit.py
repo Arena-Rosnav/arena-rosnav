@@ -90,13 +90,6 @@ class SemanticAggregateUnit(AggregateCollectorUnit):
     ) -> Dict[str, Any]:
         obs_dict = super().get_observations(obs_dict, *args, **kwargs)
 
-        obs_dict[SemanticAttribute.SOCIAL_STATE.value] = list(
-            map(
-                lambda x: int(x.evidence) >> 8,
-                obs_dict[SemanticAttribute.SOCIAL_STATE.value].points,
-            )
-        )
-
         if len(obs_dict[SemanticAttribute.IS_PEDESTRIAN.value].points) > 0:
             ped_data = obs_dict[OBS_DICT_KEYS.SEMANTIC.PEDESTRIAN_LOCATION.value].points
             obs_dict[OBS_DICT_KEYS.SEMANTIC.RELATIVE_LOCATION.value] = (
