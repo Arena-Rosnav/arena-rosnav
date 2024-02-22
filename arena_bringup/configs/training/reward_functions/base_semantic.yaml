@@ -30,4 +30,14 @@ active_heading_direction:
 
 ped_type_collision:
   type: 1
-  reward: -2.5
+  reward: -5
+
+ped_type_safety_distance:
+  type: 1
+  reward: -0.5
+  safety_distance: 1.5
+
+ped_type_vel_constraint:
+  type: 1
+  penalty_factor: 0.05
+  active_distance: 1.5
