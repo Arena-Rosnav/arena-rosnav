@@ -29,9 +29,13 @@ def launch_unity():
         os.path.join(ws_src_path, "simulation-setup")
     ]
     # headless arg
-    headless = rospy.get_param('~headless', False)
-    if isinstance(headless, bool) and headless:
-        args += ["-batchmode"]
+    headless = str(rospy.get_param('~headless', False))
+    # if isinstance(headless, bool) and headless:
+    #     args += ["-batchmode"]
+    args += [
+        "-arena_headless",
+        headless
+    ]
     # namespace
     namespace = rospy.get_param("~namespace", "")
     args += [
