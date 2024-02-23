@@ -11,6 +11,10 @@ repositories:
     type: git
     url: https://github.com/Arena-Rosnav/3rd-party-robot-packages
     version: 8b60c1169626568bf734a07c3b0f13b06d3e2871
+  arena/utils/crowdsim:
+    type: git
+    url: https://github.com/Arena-Rosnav/crowdsim
+    version: 9970f204
   arena/utils/flatland:
     type: git
     url: https://github.com/Arena-Rosnav/flatland.git
@@ -26,7 +30,7 @@ repositories:
   arena/utils/pedsim_ros:
     type: git
     url: https://github.com/arena-rosnav/pedsim_ros.git
-    version: 91bdce9d
+    version: c539cf4b
   arena/utils/stable-baselines3:
     type: git
     url: https://github.com/tuananhroman/stable-baselines3.git

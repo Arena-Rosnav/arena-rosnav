@@ -8,7 +8,7 @@ from task_generator.shared import Namespace
 
 import sensor_msgs.msg as sensor_msgs
 import pedsim_msgs.msg as pedsim_msgs
-from pedsim_agents.utils import SemanticAttribute
+from crowdsim_agents.utils import SemanticAttribute
 
 from rl_utils.utils.observation_collector.observation_units.collector_unit import (
     CollectorUnit,

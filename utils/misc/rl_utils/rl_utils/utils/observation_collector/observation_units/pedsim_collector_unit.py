@@ -13,7 +13,7 @@ from geometry_msgs.msg import Pose, Twist
 from ..constants import TOPICS, OBS_DICT_KEYS
 from .collector_unit import CollectorUnit
 
-from pedsim_agents.utils import SemanticAttribute
+from crowdsim_agents.utils import SemanticAttribute
 import pedsim_msgs.msg as pedsim_msgs
 
 class PedsimStateCollectorUnit(CollectorUnit):

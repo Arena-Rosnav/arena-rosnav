@@ -1,0 +1,26 @@
+<launch>
+    <arg name="entity_manager" default="" />
+    <arg name="sfm" default="" />
+    <arg name="world_file" default="" />
+
+    <arg name="scene_file" value="$(find arena_simulation_setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" />
+
+    <arg name="pedsim" value="$(eval entity_manager in ('pedsim', 'crowdsim'))" />
+    <env name="PEDSIM" value="$(arg pedsim)" />
+    <param name="pedsim" type="bool" value="$(arg pedsim)" />
+
+    <group if="$(eval arg('entity_manager') == 'pedsim')">
+        <include file="$(find pedsim_ros)/launch/pedsim.launch">
+        <arg name="scene_file" value="$(arg scene_file)" />
+        <arg name="visualize" value="true" />
+        </include>
+    </group>
+
+    <group if="$(eval arg('entity_manager') == 'crowdsim')">
+        <include file="$(find crowdsim)/launch/crowdsim.launch">
+        <arg name="sfm" value="$(arg sfm)" if="$(eval arg('sfm') != '')"/>
+        <arg name="scene_file" value="$(arg scene_file)" />
+        <arg name="visualize" value="true" />
+        </include>
+    </group>
+</launch>
