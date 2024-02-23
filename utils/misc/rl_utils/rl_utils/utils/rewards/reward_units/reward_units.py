@@ -921,3 +921,48 @@ class RewardPedTypeCollision(RewardUnit):
 
     def reset(self):
         pass
+
+
+@RewardUnitFactory.register("ped_type_vel_constraint")
+class RewardPedTypeVelocityConstraint(RewardUnit):
+
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        ped_type: int = DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE.TYPE,
+        penalty_factor: float = 0.05,
+        active_distance: float = DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE.DISTANCE,
+        _on_safe_dist_violation: bool = DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE._ON_SAFE_DIST_VIOLATION,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+        self._type = ped_type
+        self._penalty_factor = penalty_factor
+        self._active_distance = active_distance
+
+    def __call__(self, action: np.ndarray, *args: Any, **kwargs: Any) -> None:
+        ped_type_min_distances = self.get_internal_state_info(
+            "min_distances_per_ped_type"
+        )
+
+        if ped_type_min_distances is None:
+            self.add_internal_state_info(
+                key="min_distances_per_ped_type",
+                value=get_ped_type_min_distances(**kwargs),
+            )
+            ped_type_min_distances = self.get_internal_state_info(
+                "min_distances_per_ped_type"
+            )
+
+        if self._type not in ped_type_min_distances:
+            rospy.logwarn(
+                f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {self._type} not found."
+            )
+            return
+
+        if ped_type_min_distances[self._type] < self._active_distance:
+            self.add_reward(-self._penalty_factor * action[0])
+
+    def reset(self):
+        pass
