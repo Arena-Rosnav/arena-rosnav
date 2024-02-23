@@ -17,7 +17,7 @@ class TOPICS:
     GLOBALPLAN = "move_base_flex/get_path/goal"
 
     PEDSIM_STATES = "pedsim_simulator/simulated_agents"
-    PEDSIM_SEMANTIC = "pedsim_agents/semantic"
+    PEDSIM_SEMANTIC = "crowdsim_agents/semantic"
 
 
 class OBS_DICT_KEYS:

@@ -14,7 +14,7 @@ from ..constants import TOPICS, OBS_DICT_KEYS
 from .collector_unit import CollectorUnit
 
 from crowdsim_agents.utils import SemanticAttribute
-import pedsim_msgs.msg as pedsim_msgs
+import crowdsim_msgs.msg as crowdsim_msgs
 
 class PedsimStateCollectorUnit(CollectorUnit):
     """
@@ -73,7 +73,7 @@ class PedsimStateCollectorUnit(CollectorUnit):
         for attribute in SemanticAttribute:
             self._semantic_sub[attribute] = rospy.Subscriber(
                 self._ns(TOPICS.PEDSIM_SEMANTIC),
-                pedsim_msgs.SemanticData,
+                crowdsim_msgs.SemanticData,
                 functools.partialmethod(self._cb_pedsim_semantic, attribute)
             )
 
@@ -118,7 +118,7 @@ class PedsimStateCollectorUnit(CollectorUnit):
             self._agent_states
         )
 
-    def _cb_pedsim_semantic(self, attribute: SemanticAttribute, data: pedsim_msgs.SemanticData):
+    def _cb_pedsim_semantic(self, attribute: SemanticAttribute, data: crowdsim_msgs.SemanticData):
         
         if attribute != SemanticAttribute(data.type):
             rospy.logwarn("mismatched semantic type")
