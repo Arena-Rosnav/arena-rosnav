@@ -31,7 +31,7 @@ class MapDistanceServer:
             "worlds",
             rospy.get_param("map_file"),
             "map",
-            "distance_map.png",
+            "dynamic_map.png",
         )
 
         rospy.wait_for_service("/static_map")

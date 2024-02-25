@@ -37,16 +37,14 @@ class ObstacleManager:
 
         self._entity_manager.spawn_walls(
             walls=world.entities.walls, heightmap=world.map)
-        
+        self._entity_manager.spawn_obstacles(
+            obstacles=world.entities.obstacles)
+
         if isinstance(self._simulator, UnitySimulator):
             # self._simulator.delete_entity("__WALLS")
             self._simulator.spawn_walls(world.entities.walls)
             # for obst in world.entities.obstacles:
             #     self._simulator.spawn_entity(obst)
-
-
-        self._entity_manager.spawn_obstacles(
-            obstacles=world.entities.obstacles)
 
     def spawn_dynamic_obstacles(self, setups: Collection[DynamicObstacle]):
         """

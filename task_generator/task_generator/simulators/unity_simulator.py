@@ -96,7 +96,7 @@ class UnitySimulator(BaseSimulator):
         return res.success
 
     def move_entity(self, name, position: PositionOrientation):
-        rospy.loginfo("[Unity Simulator] Move Request for " + name)
+        # rospy.loginfo("[Unity Simulator] Move Request for " + name)
 
         request = SetModelStateRequest()
         request.model_state = ModelState()

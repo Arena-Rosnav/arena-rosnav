@@ -3,7 +3,6 @@
 
   <arg name="gui" default="true"/>
   <arg name="verbose" default="false"/>
-  <env name="GAZEBO_MODEL_PATH" value="$(find arena_simulation_setup)/gazebo_models" />
   
   <arg name="world_name" default=""/> 
 

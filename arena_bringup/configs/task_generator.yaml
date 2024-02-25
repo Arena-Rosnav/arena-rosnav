@@ -11,8 +11,8 @@ STAGED:
 RANDOM:
   seed: -1
   static:
-    min: 5
-    max: 10
+    min: 0
+    max: 0
     models: ["shelf"]
   interactive:
     min: 0

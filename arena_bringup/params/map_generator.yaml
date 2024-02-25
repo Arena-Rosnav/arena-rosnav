@@ -2,18 +2,18 @@ algorithm: rosmap
 episode_per_map: 1
 
 map_properties:
-  width: 80
-  height: 80
+  width: 40
+  height: 40
   resolution: 0.5
 
 algorithm_config:
   # Configurations for barn
-  fill_pct: 1. # initial fill percentage
-  smooth_iter: 5 # smoothing iterations
+  fill_pct: 0.125 # initial fill percentage
+  smooth_iter: 2 # smoothing iterations
   # seed: null # for reproducing maps
 
   # Shared across rosmap, rosnav
-  map_type: canteen
+  map_type: warehouse
   # Options:
   # 'indoor' (rosnav only)
   # 'outdoor' 

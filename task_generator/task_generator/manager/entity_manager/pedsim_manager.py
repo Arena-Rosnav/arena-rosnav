@@ -296,7 +296,6 @@ class PedsimManager(EntityManager):
 
             msg.name = obstacle.name
 
-            # TODO create a global helper function for this kind of use case
             msg.pose = Utils.pos_to_pose(obstacle.position)
 
             interaction_radius: float = obstacle.extra.get(

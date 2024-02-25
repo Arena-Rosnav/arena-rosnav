@@ -89,7 +89,7 @@ class WorldManager:
                     PositionRadius(
                         obstacle.position.x,
                         obstacle.position.y,
-                        1   # TODO actual radius
+                        8   # TODO actual radius
                     )
                 )
             )

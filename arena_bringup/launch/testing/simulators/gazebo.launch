@@ -2,6 +2,7 @@
 <launch>
 
   <env name="GAZEBO_MODEL_PATH" value="$(find arena_simulation_setup)/worlds/$(arg world)/models" />
+  <env name="GAZEBO_MODEL_PATH" value="$(find arena_simulation_setup)/entities/obstacles/static" if="$(eval arg('world') == 'dynamic_map')"/>
 
   <arg name="world" default="turtlebot3_house" />
   <arg name="model" default="burger"/>
