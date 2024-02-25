@@ -1,7 +1,9 @@
 import functools
-import yaml
-from tools.constants import TRAINING_CONSTANTS
+
 import numpy as np
+import yaml
+from rl_utils.utils.observation_collector.constants import OBS_DICT_KEYS
+from tools.constants import TRAINING_CONSTANTS
 
 
 def check_params(fn):
@@ -71,6 +73,9 @@ def min_dist_laser(
     if laser_scan is None and not point_cloud:
         raise ValueError("Neither LaserScan nor PointCloud data was provided!")
 
+    if len(laser_scan) == 0:
+        return np.inf
+
     if not from_aggregate_obs:
         return laser_scan.min()
     else:
@@ -82,3 +87,27 @@ def safe_dist_breached(reward_function: "RewardFunction", *args, **kwargs) -> No
         reward_function.get_internal_state_info("min_dist_laser")
         <= reward_function.safe_dist
     )
+
+
+def get_ped_type_min_distances(**kwargs):
+    ped_distances = {}
+
+    relative_locations = kwargs.get(
+        OBS_DICT_KEYS.SEMANTIC.RELATIVE_LOCATION.value, None
+    )
+    pedestrian_types = kwargs.get(OBS_DICT_KEYS.SEMANTIC.PEDESTRIAN_TYPE.value, None)
+
+    if relative_locations is None or pedestrian_types is None:
+        return ped_distances
+
+    if len(relative_locations) == 0 or len(pedestrian_types.points) == 0:
+        return ped_distances
+
+    for relative_loc, type_data in zip(relative_locations, pedestrian_types.points):
+        distance = np.linalg.norm(relative_loc)
+        evidence = int(type_data.evidence)
+
+        if evidence not in ped_distances or ped_distances[evidence] > distance:
+            ped_distances[evidence] = distance
+
+    return ped_distances

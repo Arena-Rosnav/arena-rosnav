@@ -2,6 +2,7 @@ import dataclasses
 import os
 from typing import Any, List, Type
 import rospy
+from task_generator.constants import Constants
 
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
@@ -48,7 +49,7 @@ class Reconfigurable:
         ...
 
     NODE_CONFIGURATION = Namespace(
-        os.path.join(rospy.get_namespace(), "task_generator_server")
+        os.path.join(rospy.get_namespace(), Constants.TASK_GENERATOR_SERVER_NODE)
     )
 
     @classmethod

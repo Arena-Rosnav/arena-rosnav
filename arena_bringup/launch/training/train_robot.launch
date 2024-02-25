@@ -26,7 +26,7 @@
     <param name="robot_name" value="$(arg name)" />
 
     <rosparam command="load"
-      file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" />
+      file="$(find arena_simulation_setup)/entities/robots/$(arg model)/model_params.yaml" />
 
 
     <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster"
@@ -38,7 +38,7 @@
       <remap from="cmd_vel" to="$(arg namespace)/cmd_vel" />
       <remap from="odom" to="$(arg namespace)/odom" />
 
-      <include file="$(find arena_bringup)/launch/testing/move_base/mbf_nav/costmap_nav.launch">
+      <include file="$(find arena_simulation_setup)/launch/mbf/mbf_nav/costmap_nav.launch">
         <arg name="train_mode" value="$(arg train_mode)" />
 
         <arg name="inter_planner" value="$(arg inter_planner)" />

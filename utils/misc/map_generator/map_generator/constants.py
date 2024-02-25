@@ -32,7 +32,7 @@ DYNAMIC_MAP_YAML = {
     "free_thresh": 0.196,
 }
 
-ROSNAV_MAP_FOLDER = Path(rospkg.RosPack().get_path("arena-simulation-setup")) / "maps"
+ROSNAV_MAP_FOLDER = Path(rospkg.RosPack().get_path("arena_simulation_setup")) / "worlds"
 
 ROSNAV_PLACEMENT_TRIES = 20  # how many tries of placing obstacle without overlapping
 

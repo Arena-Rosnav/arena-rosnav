@@ -1,3 +1,4 @@
+import rospy
 from task_generator.constants import Config
 from task_generator.shared import PositionOrientation
 from task_generator.tasks import TaskMode
@@ -55,6 +56,7 @@ class TM_Robots(TaskMode):
 
         """
         if (self._PROPS.clock.clock.secs - self._last_reset) > Config.Robot.TIMEOUT:
+            rospy.logwarn(f"REACHED {Config.Robot.TIMEOUT}")
             return True
         
         return all(robot.is_done for robot in self._PROPS.robot_managers)

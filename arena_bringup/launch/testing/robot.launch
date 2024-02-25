@@ -19,8 +19,8 @@
 
   <arg name="complexity" default="1" />
 
-  <!-- TODO: Add data recorder -->
   <arg name="record_data" default="false" />
+  <arg name="record_data_dir" default="auto:" />
 
   <param name="model" value="$(arg model)" />
   <param name="train_mode" value="$(arg train_mode)"
@@ -41,19 +41,20 @@
 
   <group ns="$(arg namespace)">
     <param name="local_planner" value="$(arg local_planner)" />
+    <param name="inter_planner" value="$(arg inter_planner)" />
     <param name="agent_name" value="$(arg agent_name)"
       unless="$(eval arg('local_planner') != 'rosnav')" />
     <param name="model" value="$(arg model)" />
 
     <rosparam command="load"
-      file="$(find arena-simulation-setup)/robot/$(arg model)/model_params.yaml" />
+      file="$(find arena_simulation_setup)/entities/robots/$(arg model)/model_params.yaml" />
     <param name="robot_name" value="$(arg name)" />
 
     <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster"
       args="0 0 0 0 0 0 1 map $(arg name)/odom" />
 
     <group if="$(eval arg('train_mode') != 'true' and arg('SIMULATOR') == 'gazebo')">
-      <include file="$(find arena-simulation-setup)/robot/$(arg model)/launch/control.launch">
+      <include file="$(find arena_simulation_setup)/entities/robots/$(arg model)/launch/control.launch">
         <arg name="robot_namespace" value="$(arg namespace)" />
         <arg name="frame" value="$(arg frame)" />
       </include>
@@ -62,12 +63,9 @@
       </node>
     </group>
 
-    <group>
-      <remap from="scan" to="scan" />
-      <remap from="odom" to="odom" />
-      <remap from="cmd_vel" to="cmd_vel" />
-      <node pkg="arena-evaluation" type="data_recorder_node.py" name="data_recorder_node" if="$(eval arg('record_data'))" />
-    </group>
+    <node pkg="arena_evaluation" type="data_recorder_node" name="data_recorder_node" if="$(eval arg('record_data'))" args="--dir=$(arg record_data_dir)/$(arg name)">
+      <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load" ns="configuration" />
+    </node>
     
     <!-- move_base plan manager: which provide basic global planner and cost map -->
     <group>
@@ -75,7 +73,7 @@
       <remap from="cmd_vel" to="$(arg namespace)/cmd_vel" />
       <remap from="odom" to="$(arg namespace)/odom" />
 
-      <include file="$(find arena_bringup)/launch/testing/move_base/mbf_nav/costmap_nav.launch">
+      <include file="$(find arena_simulation_setup)/launch/mbf/mbf_nav/costmap_nav.launch">
 
         <arg name="inter_planner" value="$(arg inter_planner)" />
         <arg name="local_planner" value="$(arg local_planner)" />

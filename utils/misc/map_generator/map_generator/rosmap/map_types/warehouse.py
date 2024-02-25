@@ -22,7 +22,6 @@ def create_warehouse_map(
     obstacle_grid = np.tile(0, [height, width])
 
     # RANDOM PARAMS
-    print(pallet_jacks)
 
     # random between horizontal and vertical
     rot = np.pi / 2 if np.random.random() < 0.5 else 0

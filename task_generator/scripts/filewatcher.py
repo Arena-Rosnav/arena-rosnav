@@ -49,11 +49,13 @@ def recursive_get(obj: Any, property: List[str], fallback: Any = None) -> Any:
     
 def encode(var: Any):
     if isinstance(var, list):
-        return "/".join(var)
+        return ";".join(var)
     if isinstance(var, dict):
         return json.dumps(var)
     return var
 
+def get_or_ignore(obj: dict, key: str) -> dict:
+    return {key: obj.get(key)} if key in obj else {}
 
 def run(namespace: Optional[str] = None):
 
@@ -86,16 +88,23 @@ def run(namespace: Optional[str] = None):
             client.update_configuration(
                 {
                     **{
-                        # "no_of_episodes": content.get("no_of_episodes")
+                        k:v
+                        for d in [get_or_ignore(content, parameter["name"]) for parameter in TaskGeneratorConfig.config_description.get("parameters", [])]
+                        for k,v in d.items()
                     },
                     **{
-                        name: encode(recursive_get(content, name.split("_")))
-                        for name in
-                        (
-                            str(param.get("name", ""))
-                            for group in TaskGeneratorConfig.config_description.get("groups", [])
-                            for param in group.get("parameters", [])
+                        k:v
+                        for (k,v)
+                        in (
+                            (name, encode(recursive_get(content, name.split("_"))))
+                            for name in
+                            (
+                                str(parameter["name"])
+                                for group in TaskGeneratorConfig.config_description.get("groups", [])
+                                for parameter in group.get("parameters", [])
+                            )
                         )
+                        if v is not None
                     }
                 }
             )
@@ -114,17 +123,23 @@ def run(namespace: Optional[str] = None):
         ]
     ]
 
-    try:
-        while True:
-            for observer in observers:
-                observer.join(1)
-    except KeyboardInterrupt as e:
-        raise e
-    finally:
+    def cleanup():
         for observer in observers:
             observer.stop()
         for observer in observers:
             observer.join()
+
+    rospy.on_shutdown(cleanup)
+
+    try:
+        while len(active_observers := [observer for observer in observers if observer.is_alive()]):
+            for observer in active_observers:
+                observer.join(1)
+    except KeyboardInterrupt as e:
+        raise e
+    finally:
+        cleanup()
+        
 
 
 if __name__ == "__main__":

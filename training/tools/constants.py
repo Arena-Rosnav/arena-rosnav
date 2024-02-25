@@ -9,7 +9,7 @@ class TRAINING_CONSTANTS(object):
     class PATHS(object):
         MAIN = rospkg.RosPack().get_path("training")
         ROBOT_MODEL = rospy.get_param("robot_model")
-        SIMULATION_SETUP = rospkg.RosPack().get_path("arena-simulation-setup")
+        SIMULATION_SETUP = rospkg.RosPack().get_path("arena_simulation_setup")
 
         CONFIGS = rospkg.RosPack().get_path("arena_bringup") + "/configs"
         TRAINING_CONFIGS = lambda file_name: os.path.join(

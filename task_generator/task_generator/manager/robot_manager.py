@@ -145,9 +145,11 @@ class RobotManager:
     @property
     def namespace(self) -> Namespace:
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            return Namespace(f"{self._namespace}{self._namespace}_{self.model_name}") # schizophrenia
+            return Namespace(
+                f"{self._namespace}{self._namespace}_{self.model_name}"
+            )  # schizophrenia
 
-        return self._namespace(self.model_name)
+        return self._namespace(self._robot.name)
 
     @property
     def is_done(self) -> bool:
@@ -170,15 +172,15 @@ class RobotManager:
             self._start_pos = start_pos
             self.move_robot_to_pos(start_pos)
 
-            if self._robot.record_data:
-                rospy.set_param(self.namespace("goal"), list(self._goal_pos))
+            if self._robot.record_data_dir is not None:
+                rospy.set_param(self.namespace("start"), [float(v) for v in self._start_pos])
 
         if goal_pos is not None:
             self._goal_pos = goal_pos
             self._publish_goal(self._goal_pos)
 
-            if self._robot.record_data:
-                rospy.set_param(self.namespace("start"), list(self._start_pos))
+            if self._robot.record_data_dir is not None:
+                rospy.set_param(self.namespace("goal"), [float(v) for v in self._goal_pos])
 
         try:
             self._clear_costmaps_srv()
@@ -218,7 +220,7 @@ class RobotManager:
         self._move_base_goal_pub.publish(goal_msg)
 
     def _launch_robot(self):
-        rospy.loginfo(f"START WITH MODEL {self.namespace}")
+        rospy.logwarn(f"START WITH MODEL {self.namespace}")
 
         if Utils.get_arena_type() != Constants.ArenaType.TRAINING:
             roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(  # type: ignore
@@ -232,9 +234,9 @@ class RobotManager:
                 f"namespace:={self.namespace}",
                 f"frame:={self.name+'/' if self.name != '' else ''}",
                 f"inter_planner:={self._robot.inter_planner}",
-            	f"local_planner:={self._robot.local_planner}",
+                f"local_planner:={self._robot.local_planner}",
                 f"complexity:={rosparam_get(int, 'complexity', 1)}",
-                f"record_data:={self._robot.record_data}",
+                *(["record_data:=true", f"record_data_dir:={self._robot.record_data_dir}"] if self._robot.record_data_dir is not None else []),
                 f"train_mode:={rosparam_get(bool, 'train_mode', False)}",
                 f"agent_name:={self._robot.agent}",
             ]
@@ -248,8 +250,6 @@ class RobotManager:
         # Overwrite default move base params
         base_frame: str = rospy.get_param_cached(self.namespace("robot_base_frame"))
         sensor_frame: str = rospy.get_param_cached(self.namespace("robot_sensor_frame"))
-
-        print(f"{self.namespace}")
 
         rospy.set_param(
             self.namespace("move_base", "global_costmap", "robot_base_frame"),

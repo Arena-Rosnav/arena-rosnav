@@ -13,12 +13,14 @@ from map_generator.factory import MapGeneratorFactory
 from .map_types.canteen import create_canteen_map
 from .map_types.outdoor import create_outdoor_map
 from .map_types.warehouse import create_warehouse_map
+from .map_types.office import create_office_map
 
 
 class MAP_TYPE(Enum):
     canteen = "canteen"
     outdoor = "outdoor"
     warehouse = "warehouse"
+    office = "office"
 
 
 @MapGeneratorFactory.register(MapGenerators.ROSMAP)
@@ -38,7 +40,7 @@ class RosnavMapGenerator(BaseMapGenerator):
     ):
         super().__init__(height, width,
                          map_resolution=map_resolution)
-        
+
         print(kwargs)
 
         self.map_type = MAP_TYPE(map_type.lower())
@@ -58,6 +60,12 @@ class RosnavMapGenerator(BaseMapGenerator):
         self.vert_dist_shelfs_min = kwargs['rosmap']['warehouse']['vert_dist_shelfs_min'] or 10
         self.vert_dist_shelfs_max = kwargs['rosmap']['warehouse']['vert_dist_shelfs_max'] or 12
 
+        # office params
+        self.hor_dist_table_min = kwargs['rosmap']['office']['hor_dist_table_min'] or 20
+        self.hor_dist_table_max = kwargs['rosmap']['office']['hor_dist_table_max'] or 22
+        self.vert_dist_table_min = kwargs['rosmap']['office']['vert_dist_table_min'] or 10
+        self.vert_dist_table_max = kwargs['rosmap']['office']['vert_dist_table_max'] or 12
+        self.row_chance = kwargs['rosmap']['office']['row_chance'] or 0.5
 
     def update_params(
         self,
@@ -143,6 +151,28 @@ class RosnavMapGenerator(BaseMapGenerator):
             self.vert_dist_shelfs_max
         )
 
+        # office
+        hor_dist_table_min = rospy.get_param(
+            MAP_GENERATOR_NS(
+                "/algorithm_config/rosmap/office/hor_dist_table_min"),
+            self.hor_dist_table_min
+        )
+        hor_dist_table_max = rospy.get_param(
+            MAP_GENERATOR_NS(
+                "/algorithm_config/rosmap/office/hor_dist_table_max"),
+            self.hor_dist_table_max
+        )
+        vert_dist_table_min = rospy.get_param(
+            MAP_GENERATOR_NS(
+                "/algorithm_config/rosmap/office/vert_dist_table_min"),
+            self.vert_dist_table_min
+        )
+        vert_dist_table_max = rospy.get_param(
+            MAP_GENERATOR_NS(
+                "/algorithm_config/rosmap/office/vert_dist_table_max"),
+            self.vert_dist_table_max
+        )
+
         return (
             height,
             width,
@@ -186,6 +216,17 @@ class RosnavMapGenerator(BaseMapGenerator):
                 hor_dist_shelfs_max=self.hor_dist_shelfs_max,
                 vert_dist_shelfs_min=self.vert_dist_shelfs_min,
                 vert_dist_shelfs_max=self.vert_dist_shelfs_max,
+                map_resolution=self.map_resolution
+            )
+        elif self.map_type in [MAP_TYPE.office, "office"]:
+            return create_office_map(
+                height=self.height,
+                width=self.width,
+                hor_dist_table_min=self.hor_dist_table_min,
+                hor_dist_table_max=self.hor_dist_table_max,
+                vert_dist_table_min=self.vert_dist_table_min,
+                vert_dist_table_max=self.vert_dist_table_max,
+                row_chance=self.row_chance,
                 map_resolution=self.map_resolution
             )
 

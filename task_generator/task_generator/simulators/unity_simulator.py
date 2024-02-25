@@ -71,7 +71,8 @@ class UnitySimulator(BaseSimulator):
         request = SpawnModelRequest()
 
         model = entity.model.get(self.MODEL_TYPES)
-        rospy.loginfo("[Unity Simulator] Spawn Request for " + model.name)
+        rospy.loginfo(
+            f"[Unity Simulator] Spawn Request for {model.name} with name {entity.name}")
 
         request.model_name = entity.name
         request.model_xml = model.description
@@ -95,7 +96,7 @@ class UnitySimulator(BaseSimulator):
         return res.success
 
     def move_entity(self, name, position: PositionOrientation):
-        rospy.loginfo("[Unity Simulator] Move Request for " + name)
+        # rospy.loginfo("[Unity Simulator] Move Request for " + name)
 
         request = SetModelStateRequest()
         request.model_state = ModelState()
@@ -107,7 +108,7 @@ class UnitySimulator(BaseSimulator):
 
         self._move_model_srv(request)
 
-    def delete_entity(self, name):
+    def delete_entity(self, name: str) -> bool:
         rospy.loginfo("[Unity Simulator] Delete Request for " + name)
         res: DeleteModelResponse = self._remove_model_srv(
             DeleteModelRequest(model_name=name))

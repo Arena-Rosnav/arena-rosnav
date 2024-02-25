@@ -2,19 +2,19 @@ goal_reached:
   reward: 15
 
 safe_distance:
-  reward: -0.1
+  reward: -0.25
 
 collision:
   reward: -15
 
 approach_goal:
-  pos_factor: 0.2
-  neg_factor: 0.3
+  pos_factor: 0.5
+  neg_factor: 0.7
   _on_safe_dist_violation: true
 
-reverse_drive:
-  reward: -0.0001
-  _on_safe_dist_violation: true
+# reverse_drive:
+#   reward: -0.0001
+#   _on_safe_dist_violation: true
 
 # approach_globalplan:
 #   pos_factor: 0.1
@@ -25,5 +25,19 @@ two_factor_velocity_difference:
   _on_safe_dist_violation: true
 
 active_heading_direction:
-  r_angle: 0.3
+  r_angle: 0.6
   _on_safe_dist_violation: true
+
+ped_type_collision:
+  type: 1
+  reward: -5
+
+ped_type_safety_distance:
+  type: 1
+  reward: -0.5
+  safety_distance: 1.5
+
+ped_type_vel_constraint:
+  type: 1
+  penalty_factor: 0.05
+  active_distance: 1.5

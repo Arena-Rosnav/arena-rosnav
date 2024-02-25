@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 64
+n_envs: 20
 # gpu yes or no
 no_gpu: false
 
@@ -13,10 +13,10 @@ tm_obstacles: "random"
 tm_modules: "staged"
 
 # number of simulation timesteps
-n_timesteps: 20000000
-max_num_moves_per_eps: 600
+n_timesteps: 8000000
+max_num_moves_per_eps: 300
 goal_radius: 0.3
-safety_distance: 0.75
+safety_distance: 1
 
 ### Training Monitoring
 monitoring:
@@ -27,7 +27,7 @@ monitoring:
     # display episode statistics (avg. success rate, reward, eps length..)
     episode_statistics:
       enabled: true
-      last_n_eps: 50
+      last_n_eps: 20
   # weights and biases logging
   use_wandb: true
   # save evaluation stats during training in log file
@@ -37,11 +37,11 @@ callbacks:
   ### Periodic Eval
   periodic_eval:
     # max number of steps per episode
-    max_num_moves_per_eps: 1000
+    max_num_moves_per_eps: 500
     # number of evaluation episodes
-    n_eval_episodes: 30
+    n_eval_episodes: 20
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 7500
+    eval_freq: 25000
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
@@ -63,10 +63,10 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "RosnavResNet_2"
+  architecture_name: "RosnavResNet_5"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: jackal_RosnavResNet_2_2024_01_13__17_16_40 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
-  checkpoint: "best_model" # gonna be ignored if resume is not null
+  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  checkpoint: "best_model"
 
   frame_stacking:
     enabled: false
@@ -78,9 +78,9 @@ rl_agent:
     enabled: true
     settings:
       norm_obs: true
-      norm_reward: false # Whether to normalize rewards or not
+      norm_reward: true # Whether to normalize rewards or not
       clip_obs: 30.0 # Max absolute value for observation
-      clip_reward: 25.0 # Max value absolute for discounted reward
+      clip_reward: 30.0 # Max value absolute for discounted reward
       gamma: 0.99 # discount factor
 
   laser:
@@ -103,15 +103,15 @@ rl_agent:
     enabled: true
     type: "linear"
     settings:
-      initial_value: 0.0009
+      initial_value: 0.001
       final_value: 0.0001
 
   ppo:
-    batch_size: 10240
+    batch_size: 2560
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
-    learning_rate: 0.0003
+    learning_rate: 0.0005
     vf_coef: 0.22
     max_grad_norm: 0.5
     gae_lambda: 0.95

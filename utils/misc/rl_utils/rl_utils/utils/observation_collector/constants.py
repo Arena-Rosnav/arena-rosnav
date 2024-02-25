@@ -14,7 +14,7 @@ class TOPICS:
     ROBOT_STATE = "odom"
     GOAL = "goal"
 
-    GLOBALPLAN = "global_plan"
+    GLOBALPLAN = "move_base_flex/get_path/goal"
 
     PEDSIM_STATES = "pedsim_simulator/simulated_agents"
     PEDSIM_SEMANTIC = "pedsim_agents/semantic"
@@ -42,7 +42,10 @@ class OBS_DICT_KEYS:
         PEDESTRIAN_MOVING = SemanticAttribute.IS_PEDESTRIAN_MOVING.value
         PEDESTRIAN_VEL_X = SemanticAttribute.PEDESTRIAN_VEL_X.value
         PEDESTRIAN_VEL_Y = SemanticAttribute.PEDESTRIAN_VEL_Y.value
+        PEDESTRIAN_SOCIAL_STATE = SemanticAttribute.SOCIAL_STATE.value
 
         RELATIVE_LOCATION = "relative_location"
         RELATIVE_X_VEL = "relative_x_vel"
         RELATIVE_Y_VEL = "relative_y_vel"
+
+        MIN_DISTANCE_PER_TYPE = "min_distance_per_type"

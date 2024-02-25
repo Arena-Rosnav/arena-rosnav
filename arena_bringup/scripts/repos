@@ -1,0 +1,108 @@
+#! /usr/bin/python
+
+import yaml
+import sys
+import os
+import logging
+import subprocess
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(levelname)s] %(message)s"
+)
+logger = logging.getLogger("repos")
+
+args = dict(enumerate(sys.argv))
+
+DIR_SRC = os.path.join(os.getcwd(), "src")
+assert os.path.isdir(DIR_SRC), "Current dir does not appear to be a catkin workspace!"
+
+DIR_ARENA_ROSNAV = "arena/arena-rosnav"
+FILE_REPOS = os.path.join(DIR_SRC, args.get(1, os.path.join(DIR_ARENA_ROSNAV, ".repos")))
+
+ws_repos = set()
+
+for root, dirs, files in os.walk(DIR_SRC, topdown=True):
+    if ".git" in dirs:
+        if (relpath := os.path.relpath(root, DIR_SRC)) != DIR_ARENA_ROSNAV:
+            ws_repos.add(relpath)
+            dirs.clear() #no submodules
+
+logger.info(f"Found {len(ws_repos)} repositories in workspace.")
+
+with open(FILE_REPOS) as f:
+    yaml_repos = yaml.load(f, Loader=yaml.FullLoader)["repositories"]
+
+logger.info(f"Found {len(yaml_repos)} repositories in .repos file.")
+
+class GIT:
+    class CMD:
+        COMMIT_HASH = r"git rev-parse HEAD"
+        BRANCH_NAME = r"git name-rev HEAD --name-only"
+        ORIGIN_URL = r"git remote get-url $(git config branch.$(git name-rev --name-only HEAD).remote)"
+
+    @classmethod
+    def cmd(cls, cmd, repo):
+        return subprocess.check_output(f"cd {os.path.join(DIR_SRC, repo)} && {cmd}", shell=True).decode().strip()
+
+    @classmethod
+    def short_hash(cls, hash):
+        return hash[:8]
+
+def ask_user(message):
+    while True:
+        inp = input(f"{message} (y/n): ")
+        print("\033[F\033[K", end="\r")
+        if inp in ("y",): return True
+        if inp in ("n",): return False
+
+class Counter:
+    changed = 0
+    added = 0
+    removed = 0
+
+for repo in ws_repos.union(yaml_repos.keys()).difference((DIR_ARENA_ROSNAV,)):
+    # known repo
+    if repo in ws_repos and repo in yaml_repos:
+
+        hash = GIT.cmd(GIT.CMD.COMMIT_HASH, repo)
+        short_hash = GIT.short_hash(hash)
+        old_hash = yaml_repos[repo]["version"]
+
+        if old_hash not in (hash, short_hash):
+            if ask_user(f"{repo} has been changed ({GIT.cmd(GIT.CMD.BRANCH_NAME, repo)}). Update?"):
+                yaml_repos[repo]["version"] = short_hash
+                print(f"UPDATE {repo}: {old_hash} -> {short_hash}")
+                Counter.changed += 1
+
+    # missing repo
+    elif repo not in ws_repos and repo in yaml_repos:
+        if ask_user(f"{repo} is missing. Remove?"):
+            yaml_repos.remove(repo)
+            print(f"REMOVE {repo}")
+            Counter.removed += 1
+
+    # added repo
+    elif repo in ws_repos and repo not in yaml_repos:
+
+        if ask_user(f"{repo} is not registered. Add?"):
+            yaml_repos[repo] = {
+                "type": "git",
+                "url": GIT.cmd(GIT.CMD.ORIGIN_URL, repo),
+                "version": GIT.short_hash(GIT.cmd(GIT.CMD.COMMIT_HASH, repo))
+            }
+            print(f"ADD {repo}")
+            Counter.added += 1
+
+
+if Counter.changed + Counter.added + Counter.removed == 0:
+    logger.info(f"Nothing to do. Exiting.")
+    sys.exit(0)
+
+logger.info(f"Summary: ~{Counter.changed} +{Counter.added} -{Counter.removed}.")
+if ask_user("Confirm?"):
+    with open(FILE_REPOS, "w") as f:
+        f.write(yaml.dump({"repositories": yaml_repos}))
+    logger.info("Successfully updated.")
+else:
+    logger.info("Canceled.")
