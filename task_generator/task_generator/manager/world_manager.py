@@ -310,6 +310,133 @@ class WorldManager:
 
         return points
 
+    def get_positions_in_zones(self, n: int, safe_dist: float, zone: List[Position], forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> List[Position]:
+            """
+            This function is used in tm_zones (zones.py) to get
+            new waypoints for dynamic obstacles.
+            The function will choose a position in a specified zone 
+            at random and then validate the position. If the position
+            is not valid a new position is chosen. When
+            no valid position is found after 100 retries
+            an error is thrown.
+            Args:
+                safe_dist: minimal distance to the next
+                    obstacles for calculated positons
+                forbid: add returned waypoint to forbidden zones
+                forbidden_zones: Array of (x, y, radius),
+                    describing circles on the map. New
+                    position should not lie on forbidden
+                    zones e.g. the circles.
+                    x, y and radius are in meters
+            """
+            # safe_dist is in meters so at first calc safe dist to distance on
+            # map -> resolution of map is m / cell -> safe_dist in cells is
+            # safe_dist / resolution
+
+            if forbidden_zones is None:
+                forbidden_zones = []
+
+            fork = self._world.map.occupancy.fork()
+
+            points: List[Position] = []
+
+            if n < 0:  # TODO profile when this is faster
+                for _ in range(n):
+                    pos = self._classic_get_random_pos_on_map(
+                        safe_dist=safe_dist, forbidden_zones=forbidden_zones)
+                    posr = PositionRadius(*pos, safe_dist)
+                    fork.occupy(*self.world.map.tf_posr2rect(posr))
+                    forbidden_zones.append(posr)
+                    points.append(pos)
+                    
+                return points
+
+            else:
+                max_depth = 10
+
+                for f_zone in forbidden_zones:
+                    fork.occupy(
+                        *self.world.map.tf_posr2rect(
+                            PositionRadius(
+                                f_zone.x,
+                                f_zone.y,
+                                f_zone.radius / self.resolution
+                            )
+                        )
+                    )
+
+                min_dist: float = safe_dist / self.resolution
+                available_positions = self._occupancy_to_available(
+                    occupancy=fork.grid, safe_dist=min_dist)
+
+                def sample(target: int) -> Collection[Position]:
+
+                    all_banned: np.ndarray = np.zeros((target, 2))
+                    banned_index: int = 0
+
+                    result: List[Position] = list()
+                    depth: int = 0
+
+                    to_produce = target
+
+                    try:
+                        while depth < max_depth:
+
+                            if to_produce > len(available_positions):
+                                raise RuntimeError()
+
+                            candidates = available_positions[Config.General.RNG.choice(
+                                len(available_positions), to_produce, replace=False), :]
+
+                            for candidate in candidates:
+
+                                banned = all_banned[:banned_index, :]
+
+                                if np.any(np.linalg.norm(banned - candidate, axis=1) < min_dist):
+                                    continue
+
+                                all_banned[banned_index] = candidate
+                                banned_index += 1
+
+                                fork.occupy(
+                                    (candidate-min_dist),
+                                    (candidate+min_dist)
+                                )
+                                
+                                result.append(self._world.map.tf_grid2pos(
+                                    (candidate[0], candidate[1])))
+
+                            to_produce = target - len(result)
+                            if to_produce <= 0:
+                                break
+
+                            depth += 1
+
+                        else:
+                            raise RuntimeError(
+                                f"Failed to find free position after {depth} tries")
+
+                    except RuntimeError:
+                        result += [
+                            self._world.map.tf_grid2pos(
+                                (
+                                    (-1-floor(i/5)) * int(self._shape[1]/5),
+                                    int((i % 5) * self._shape[0]/5)
+                                )
+                            ) for i in range(to_produce)]
+                        rospy.logerr(f"Couldn't find enough empty cells for {to_produce} requests")
+                    
+                    finally:
+                        return result
+
+                points = list(sample(n))
+
+            if forbid:
+                fork.commit()
+
+            return points
+
+
     def get_position_on_map(self, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> Position:
         return self.get_positions_on_map(n=1, safe_dist=safe_dist, forbidden_zones=forbidden_zones)[0]
 
