@@ -2,13 +2,17 @@ import itertools
 from typing import Callable, Dict, Iterator, List
 
 import numpy as np
+import yaml
+import os
+import rospkg
 from task_generator.constants import Config, Constants
 from task_generator.shared import (
     DynamicObstacle,
     Obstacle,
     PositionOrientation,
     PositionRadius,
-    Position
+    Position,
+    rosparam_get
 )
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
@@ -22,11 +26,9 @@ import dataclasses
 class _Config:
     MIN_STATIC_OBSTACLES: int
     MIN_INTERACTIVE_OBSTACLES: int
-    MIN_DYNAMIC_OBSTACLES: int
 
     MAX_STATIC_OBSTACLES: int
     MAX_INTERACTIVE_OBSTACLES: int
-    MAX_DYNAMIC_OBSTACLES: int
 
     MODELS_STATIC_OBSTACLES: List[str]
     MODELS_INTERACTIVE_OBSTACLES: List[str]
@@ -80,10 +82,8 @@ class TM_Zones(TM_Obstacles):
         self._config = _Config(
             MIN_STATIC_OBSTACLES=config["RANDOM_static_min"],
             MIN_INTERACTIVE_OBSTACLES=config["RANDOM_interactive_min"],
-            MIN_DYNAMIC_OBSTACLES=config["RANDOM_dynamic_min"],
             MAX_STATIC_OBSTACLES=config["RANDOM_static_max"],
             MAX_INTERACTIVE_OBSTACLES=config["RANDOM_interactive_max"],
-            MAX_DYNAMIC_OBSTACLES=config["RANDOM_dynamic_max"],
             MODELS_STATIC_OBSTACLES=config["RANDOM_static_models"].split(";"),
             MODELS_INTERACTIVE_OBSTACLES=config["RANDOM_interactive_models"].split(";"),
             MODELS_DYNAMIC_OBSTACLES=config["RANDOM_dynamic_models"].split(";"),
@@ -108,6 +108,50 @@ class TM_Zones(TM_Obstacles):
             Tuple[List[Obstacle], List[DynamicObstacle]]: A tuple containing the generated obstacles and dynamic obstacles.
 
         """
+        FILE_ZONES: str = self._config.FILE_ZONES
+        SCENARIO_ZONES: str = self._config.SCENARIO_ZONES
+
+        # read in zones.yaml file containing zone definitions
+        if FILE_ZONES is not None:
+            FILE_ZONES_PATH = os.path.join(
+                rospkg.RosPack().get_path("arena_simulation_setup"),
+                "worlds",
+                rosparam_get(str, "map_file"),
+                "map",
+                FILE_ZONES #config["SCENARIO_file"]
+            )
+            assert os.path.isfile(
+                FILE_ZONES_PATH
+            ), f"Found no {FILE_ZONES} at {FILE_ZONES_PATH}"
+        
+            with open(
+                FILE_ZONES_PATH
+            ) as f:
+                _zones = yaml.safe_load(f)  # read yaml into variable -> list[]
+        else:
+            _zones = []
+            pass # add warning
+            
+        # read in scenario file containing actor definitions
+        if SCENARIO_ZONES is not None:
+            SCENARIO_ZONES_PATH = os.path.join(
+                rospkg.RosPack().get_path("arena_simulation_setup"),
+                "worlds",
+                rosparam_get(str, "map_file"),
+                "map",
+                SCENARIO_ZONES #config["SCENARIO_file"]
+            )
+            assert os.path.isfile(
+                SCENARIO_ZONES_PATH
+            ), f"Found no {SCENARIO_ZONES} at {SCENARIO_ZONES_PATH}"
+        
+            with open(
+                SCENARIO_ZONES_PATH
+            ) as f:
+                _scenario = yaml.safe_load(f)  # read yaml into variable -> list[]
+        else:
+            _scenario = []
+            pass # add warningdefault_zones_scenario.yaml
 
         N_STATIC_OBSTACLES: int = kwargs.get(
             "N_STATIC_OBSTACLES",
@@ -125,14 +169,8 @@ class TM_Zones(TM_Obstacles):
                 endpoint=True
             ),
         )
-        N_DYNAMIC_OBSTACLES: int = kwargs.get(
-            "N_DYNAMIC_OBSTACLES",
-            Config.General.RNG.integers(
-                self._config.MIN_DYNAMIC_OBSTACLES,
-                self._config.MAX_DYNAMIC_OBSTACLES,
-                endpoint=True
-            ),
-        )
+        # sum up amounts of dynamic obstacles for each obstacle type specified in scenario file 
+        N_DYNAMIC_OBSTACLES: int = sum([actor["amount"] for actor in _scenario])
 
         MODELS_STATIC_OBSTACLES: Dict[str, float] = dict.fromkeys(
             kwargs.get("MODELS_STATIC_OBSTACLES", self._config.MODELS_STATIC_OBSTACLES)
@@ -155,8 +193,6 @@ class TM_Zones(TM_Obstacles):
             1,
         )
 
-        # rospy.logwarn(f"{MODELS_DYNAMIC_OBSTACLES}")
-
         def indexer() -> Callable[..., int]:
             indices: Dict[str, Iterator[int]] = dict()
 
@@ -167,8 +203,8 @@ class TM_Zones(TM_Obstacles):
 
             return index
 
-        waypoints_per_ped = 2
-
+        
+        #BEGIN OF LOGIC
         # get random points for static and interactive obstacles
         position_points = self._PROPS.world_manager.get_positions_on_map(
             n=N_STATIC_OBSTACLES
@@ -176,27 +212,32 @@ class TM_Zones(TM_Obstacles):
             safe_dist=1
         )
 
-        # TODO: 
-        # 1. read in zones scenario file SCENARIO_ZONES 
-        # 2. extract different actors (see name) 
-        # 3. read in zones file FILE_ZONES, save the zone polygon points array
-        # 4. loop through actors and call get_positions_in_zones with correct zones/points array
-        # 5. inside get_positions_in_zones: convert zones into masks
-        # 6. inside get_positions_in_zones: calculate a point inside the mask and return it
+        dynamic_position_points: List[Position] = []
+        waypoint_points: List[Position] = []
+        waypoints_per_ped = 2
 
-        # get random points (positions) inside the zones for all dynamic obstacles, differentiated through the obstacle name (defined in default_zones_scenario.yaml)
-        dynamic_position_points = self._PROPS.world_manager.get_positions_on_map(
-            n=N_DYNAMIC_OBSTACLES,
-            safe_dist=1
-        )
+        # get random points (positions + waypoints) inside zones for dynamic obstacles
+        for actor in _scenario:
+            polygon = []    # list to hold every zone which "actor" belongs to and its coordinates, type: List[List[List[int]]]
+            amount = actor["amount"]
+            for _zone in _zones:
+                if(any( zone in _zone["category"] for zone in actor["waypoints in"])):  
+                    polygon += _zone["polygon"]
 
-        # get random points (waypoints) inside the zones for all dynamic obstacles, differentiated through the obstacle name (defined in default_zones_scenario.yaml)
-        dynamic_waypoints = self._PROPS.world_manager.get_positions_in_zones(
-            n=waypoints_per_ped,
-            safe_dist=1,
-            zone = [Position(0,0)]
-        )
-        points = position_points + dynamic_position_points + dynamic_waypoints
+            # for every actor we collect one position (inside of a zone in $polygon)
+            dynamic_position_points += self._PROPS.world_manager.get_positions_in_zones(
+                n=amount,
+                safe_dist=1,
+                zones=polygon
+            )
+            # and also $amount waypoints (inside of zones in $polygon)
+            waypoint_points += self._PROPS.world_manager.get_positions_in_zones(
+                n=amount*2,
+                safe_dist=1,
+                zones=polygon
+            )
+
+        points = position_points + dynamic_position_points + waypoint_points
 
         # convert position related points of static/interactive/dynamic obstacles to PositionOrientation (different datatype) List
         _positions = [
@@ -268,7 +309,6 @@ class TM_Zones(TM_Obstacles):
                     model=self._PROPS.dynamic_model_loader.bind(model),
                     waypoints=list(itertools.islice(waypoints, waypoints_per_ped)),
                     position=next(positions),
-                    #waypoint_type = give new zones boolean config value as new argument
                 )
                 for model in Config.General.RNG.choice(
                     a=list(MODELS_DYNAMIC_OBSTACLES.keys()),
