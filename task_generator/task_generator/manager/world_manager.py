@@ -310,24 +310,28 @@ class WorldManager:
 
         return points
 
-    def get_positions_in_zones(self, n: int, safe_dist: float, zone: List[Position], forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> List[Position]:
+    def get_positions_in_zones(self, n: int, safe_dist: float, zones: List[List[List[int]]], forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> List[Position]:
             """
             This function is used in tm_zones (zones.py) to get
-            new waypoints for dynamic obstacles.
-            The function will choose a position in a specified zone 
+            new position and waypoints for dynamic obstacles.
+            The function will choose a position in a specified zone list
             at random and then validate the position. If the position
             is not valid a new position is chosen. When
             no valid position is found after 100 retries
             an error is thrown.
             Args:
+                n: number of points to be generated
                 safe_dist: minimal distance to the next
                     obstacles for calculated positons
-                forbid: add returned waypoint to forbidden zones
+                zones: List of zones (which is a list of corner points of a zone)
+                    in which to place the points.
                 forbidden_zones: Array of (x, y, radius),
                     describing circles on the map. New
                     position should not lie on forbidden
                     zones e.g. the circles.
                     x, y and radius are in meters
+                forbid: add returned waypoint to forbidden zones
+
             """
             # safe_dist is in meters so at first calc safe dist to distance on
             # map -> resolution of map is m / cell -> safe_dist in cells is
@@ -434,6 +438,8 @@ class WorldManager:
             if forbid:
                 fork.commit()
 
+            # 5. inside get_positions_in_zones: convert zones into masks
+            # 6. inside get_positions_in_zones: calculate a point inside the mask and return it
             return points
 
 
