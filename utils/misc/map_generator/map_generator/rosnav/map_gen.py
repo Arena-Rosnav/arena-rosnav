@@ -20,6 +20,8 @@ class RosnavMapGenerator(BaseMapGenerator):
         self,
         height: int,
         width: int,
+        robot_infl_radius: float,
+        map_resolution: float,
         map_type: str = "indoor",
         corridor_radius: int = 5,
         iterations: int = 100,
@@ -28,7 +30,7 @@ class RosnavMapGenerator(BaseMapGenerator):
         *args,
         **kwargs,
     ):
-        super().__init__(height, width, map_resolution=kwargs["map_resolution"])
+        super().__init__(height, width, map_resolution=map_resolution)
 
         self.map_type = MAP_TYPE(map_type.lower())
 
@@ -102,7 +104,7 @@ class RosnavMapGenerator(BaseMapGenerator):
             obstacle_extra_radius,
         )
 
-    def generate_grid_map(self) -> np.ndarray:
+    def generate_grid_map(self) -> (np.ndarray, dict):
         super().generate_grid_map()
         return (
             create_indoor_map(
@@ -118,7 +120,7 @@ class RosnavMapGenerator(BaseMapGenerator):
                 obstacle_number=self.obstacle_num,
                 obstacle_extra_radius=self.obstacle_extra_radius,
             )
-        )
+        ), {}
 
 
 def test():

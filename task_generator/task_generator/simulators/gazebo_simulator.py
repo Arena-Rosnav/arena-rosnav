@@ -9,8 +9,7 @@ import std_srvs.srv as std_srvs
 
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
-from task_generator.utils import rosparam_get
-from tf.transformations import quaternion_from_euler
+from task_generator.utils import rosparam_get, Utils
 from task_generator.constants import Config, Constants
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
@@ -78,20 +77,13 @@ class GazeboSimulator(BaseSimulator):
 
     # ROBOT
 
-    def move_entity(self, name, position):
+    def move_entity(self, name, position: PositionOrientation):
 
         request = gazebo_srvs.SetModelStateRequest()
         request.model_state = gazebo_msgs.ModelState()
 
         request.model_state.model_name = name
-        pose = geometry_msgs.Pose()
-        pose.position.x = position.x
-        pose.position.y = position.y
-        pose.position.z = 0
-        pose.orientation = geometry_msgs.Quaternion(
-            *quaternion_from_euler(0.0, 0.0, position.orientation, axes="sxyz")
-        )
-        request.model_state.pose = pose
+        request.model_state.pose = Utils.pos_to_pose(position)
         request.model_state.reference_frame = "world"
 
         return bool(self._move_model_srv(request).success)
@@ -103,16 +95,7 @@ class GazeboSimulator(BaseSimulator):
 
         request.model_name = entity.name
         request.model_xml = model.description
-        request.initial_pose = geometry_msgs.Pose(
-            position=geometry_msgs.Point(
-                x=entity.position.x,
-                y=entity.position.y,
-                z=0
-            ),
-            orientation=geometry_msgs.Quaternion(
-                *quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="sxyz")
-            )
-        )
+        request.initial_pose = Utils.pos_to_pose(entity.position)
         request.robot_namespace = Namespace(entity.name)
         request.reference_frame = "world"
 
@@ -135,9 +118,6 @@ class GazeboSimulator(BaseSimulator):
         goal_msg.header.seq = 0
         goal_msg.header.stamp = rospy.get_rostime()
         goal_msg.header.frame_id = "map"
-        goal_msg.pose.position.x = goal.x
-        goal_msg.pose.position.y = goal.y
-        goal_msg.pose.orientation = geometry_msgs.Quaternion(
-            *quaternion_from_euler(0.0, 0.0, goal.orientation, axes="sxyz"))
+        goal_msg.pose = Utils.pos_to_pose(goal)
 
         self._goal_pub.publish(goal_msg)

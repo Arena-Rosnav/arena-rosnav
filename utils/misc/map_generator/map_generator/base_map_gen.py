@@ -22,7 +22,7 @@ class BaseMapGenerator(ABC):
         self.map_resolution = map_resolution
 
     @abstractmethod
-    def generate_grid_map(self) -> np.ndarray:
+    def generate_grid_map(self) -> (np.ndarray, dict):
         """Updates parameters (retrieved from ROS) and generates a grid map.
 
         Raises:

@@ -1,25 +1,45 @@
-algorithm: barn
-episode_per_map: 5
+algorithm: rosmap
+episode_per_map: 1
 
 map_properties:
-  width: 80
-  height: 80
-  resolution: 0.5 # should stay fixed during runtime
+  width: 40
+  height: 40
+  resolution: 0.5
 
 algorithm_config:
+  # Configurations for barn
   fill_pct: 0.125 # initial fill percentage
   smooth_iter: 2 # smoothing iterations
-  # seed: 0 # for reproducing maps
+  # seed: null # for reproducing maps
 
-# rosnav:
-#   map_type: indoor # chose between 'indoor' and 'outdoor'
+  # Shared across rosmap, rosnav
+  map_type: warehouse
+  # Options:
+  # 'indoor' (rosnav only)
+  # 'outdoor' 
+  # 'canteen' (rosmap only)
+  # 'warehouse' (rosmap only)
+  # 'office' (rosmap only)
+  obstacle_num: 15 # number of obstacles
+  obstacle_extra_radius: 5 # total obstacle diameter = 1+2*obstacle_extra_radius
 
-#   # indoor parameters
-#   indoor:
-#     corridor_radius: 5 # total corridor diameter = 1+2*corridor_radius
-#     iterations: 100 # number of nodes for the indoor map algorithm
-  
-#   # outdoor parameters
-#   outdoor:
-#     obstacle_num: 15 # number of outdoor obstacles
-#     obstacle_extra_radius: 1 # total obstacle diameter = 1+2*obstacle_extra_radius
+  rosnav:
+    indoor:
+      corridor_radius: 5 # total corridor diameter = 1+2*corridor_radius
+      iterations: 256 # number of nodes for the indoor map algorithm
+
+  rosmap:
+    canteen:
+      chair_chance: 0.6 # between 0 and 1
+    warehouse:
+      pallet_jacks: 5
+      hor_dist_shelfs_min: 34
+      hor_dist_shelfs_max: 38
+      vert_dist_shelfs_min: 18
+      vert_dist_shelfs_max: 24
+    office:
+      row_chance: 0.7 # between 0 and 1
+      hor_dist_table_min: 12
+      hor_dist_table_max: 13
+      vert_dist_table_min: 20
+      vert_dist_table_max: 21

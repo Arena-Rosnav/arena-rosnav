@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
+
+# Standard Libs
 import subprocess
 from typing import List
-
-import map_generator
 import numpy as np
 import rospy
+
+# Messages
+from nav_msgs.msg import OccupancyGrid
+from std_msgs.msg import String
+from map_generator.msg import MapObstacles
+
+# From this package
 from map_generator.base_map_gen import BaseMapGenerator
 from map_generator.constants import (
     MAP_FOLDER_NAME,
@@ -19,8 +26,6 @@ from map_generator.utils.general import (
     load_robot_config,
 )
 from map_generator.utils.map import make_image
-from nav_msgs.msg import OccupancyGrid
-from std_msgs.msg import String
 
 
 def get_generator_params(default_dict: dict) -> tuple:
@@ -70,9 +75,11 @@ class MapGeneratorNode:
 
         delete_distance_map()
 
-        rospy.Subscriber("/map", OccupancyGrid, self._get_occupancy_grid)
+        rospy.Subscriber("/map", OccupancyGrid, self._set_occupancy_grid)
         rospy.Subscriber("/request_new_map", String, self._callback_new_map)
         self._map_pub = rospy.Publisher("/map", OccupancyGrid, queue_size=1)
+        self._map_obst_pub = rospy.Publisher(
+            "/map_obstacles", MapObstacles, queue_size=1)
 
         self._default_config = load_map_generator_config()
         self._robot_namespaces = MapGeneratorNode.get_all_robot_topics()
@@ -110,7 +117,7 @@ class MapGeneratorNode:
         """
         return self._occupancy_grid
 
-    def _get_occupancy_grid(self, occgrid_msg: OccupancyGrid):
+    def _set_occupancy_grid(self, occgrid_msg: OccupancyGrid):
         """Saves the most recent occupancy grid.
 
         Args:
@@ -132,11 +139,18 @@ class MapGeneratorNode:
         if self.generator_name != rospy.get_param(MAP_GENERATOR_NS("algorithm")):
             self._map_generator = self._initialize_map_generator()
 
-        grid_map = self._map_generator.generate_grid_map()
+        grid_map, obstacle_data = self._map_generator.generate_grid_map()
         self._save_map(grid_map)
 
         self._occupancy_grid.data = self._preprocess_map_data(grid_map)
 
+        obst_msg = MapObstacles()
+        if obstacle_data != {}:
+            obst_msg.data = self._preprocess_map_data(
+                grid_map=obstacle_data["occupancy"])
+            obst_msg.obstacles = obstacle_data["obstacles"]
+
+        self._map_obst_pub.publish(obst_msg)
         self._map_pub.publish(self._occupancy_grid)
 
         if not self._train_mode:
@@ -170,7 +184,8 @@ class MapGeneratorNode:
             map_path (str): The path to save the map.
             map_name (str): The name of the map file.
         """
-        make_image(map=grid_map, map_name=MAP_FOLDER_NAME, dir_path=ROSNAV_MAP_FOLDER)
+        make_image(map=grid_map, map_name=MAP_FOLDER_NAME,
+                   dir_path=ROSNAV_MAP_FOLDER)
 
     @staticmethod
     def get_all_robot_topics() -> List[str]:

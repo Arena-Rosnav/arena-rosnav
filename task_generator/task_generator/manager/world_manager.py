@@ -6,8 +6,11 @@ import scipy.signal
 import rospy
 from task_generator.constants import Config
 
-from task_generator.manager.utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls
-from task_generator.shared import Position, PositionRadius
+from task_generator.manager.utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, WorldObstacles, configurations_to_obstacles, occupancy_to_walls
+from task_generator.utils import Utils
+from task_generator.shared import Position, PositionRadius, PositionOrientation
+
+from map_generator.msg import MapObstacles, Obstacle
 
 
 class WorldManager:
@@ -23,6 +26,8 @@ class WorldManager:
     def __init__(self, world_map: WorldMap, world_obstacles: Optional[Collection[WorldObstacleConfiguration]] = None):
         self._classic_forbidden_zones = []
         self.update_world(world_map=world_map, world_obstacles=world_obstacles)
+        rospy.Subscriber("/map_obstacles", MapObstacles,
+                         self._handle_map_obstacles)
 
     @property
     def world(self) -> World:
@@ -44,6 +49,10 @@ class WorldManager:
     def walls(self) -> WorldWalls:
         return self._world.entities.walls
 
+    @property
+    def obstacles(self) -> WorldObstacles:
+        return self._world.entities.obstacles
+
     def update_world(
         self,
         world_map: WorldMap,
@@ -59,9 +68,10 @@ class WorldManager:
             transform=world_map.tf_grid2pos
         )
 
-        obstacles = configurations_to_obstacles(
-            configurations=world_obstacles
-        )
+        try:
+            obstacles = self._world.entities.obstacles
+        except:
+            obstacles = []
 
         entities = WorldEntities(
             obstacles=obstacles,
@@ -79,14 +89,15 @@ class WorldManager:
                     PositionRadius(
                         obstacle.position.x,
                         obstacle.position.y,
-                        1   # TODO actual radius
+                        8   # TODO actual radius
                     )
                 )
-            )  
+            )
 
     def forbid(self, forbidden_zones: List[PositionRadius]):
         for zone in forbidden_zones:
-            self.world.map.occupancy.forbidden_occupy(*self.world.map.tf_posr2rect(zone))
+            self.world.map.occupancy.forbidden_occupy(
+                *self.world.map.tf_posr2rect(zone))
 
     def forbid_clear(self):
         self._world.map.occupancy.forbidden_clear()
@@ -276,7 +287,7 @@ class WorldManager:
                                 (candidate-min_dist),
                                 (candidate+min_dist)
                             )
-                            
+
                             result.append(self._world.map.tf_grid2pos(
                                 (candidate[0], candidate[1])))
 
@@ -298,8 +309,9 @@ class WorldManager:
                                 int((i % 5) * self._shape[0]/5)
                             )
                         ) for i in range(to_produce)]
-                    rospy.logerr(f"Couldn't find enough empty cells for {to_produce} requests")
-                
+                    rospy.logerr(
+                        f"couldn't find enough empty cells for {to_produce} requests")
+
                 finally:
                     return result
 
@@ -336,3 +348,19 @@ class WorldManager:
         # cv2.imwrite("_debug4.png", WorldOccupancy.empty(spread).astype(np.uint8) * np.iinfo(np.uint8).max)
 
         return np.transpose(np.where(WorldOccupancy.empty(spread)))
+
+    def _handle_map_obstacles(self, obstacle_data: MapObstacles):
+        obst_configuration = []
+        for obst in obstacle_data.obstacles:
+            obst_configuration.append(WorldObstacleConfiguration(
+                position=PositionOrientation(
+                    x= obst.position.position.x,
+                    y= obst.position.position.y,
+                    orientation=obst.position.orientation.z
+                ),
+                model_name=obst.model_name,
+                extra={}
+            ))
+
+        self._world.entities.obstacles = configurations_to_obstacles(
+            obst_configuration)

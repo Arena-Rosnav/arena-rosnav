@@ -1313,6 +1313,8 @@ files = [
     {file = "mpi4py-3.1.5-cp310-cp310-win_amd64.whl", hash = "sha256:aec0e6238ed76c930c07df7dcea19f3be5ca958fb76353e668b19511ed4c86d7"},
     {file = "mpi4py-3.1.5-cp311-cp311-win32.whl", hash = "sha256:f73686e3ff8f76bacb9ecacba0515f84392ad4c561b76603f9680f0fe64ef0ed"},
     {file = "mpi4py-3.1.5-cp311-cp311-win_amd64.whl", hash = "sha256:d854dae2e62042a0355fa24ef7bea50b5380414806319240a57e654be1e59d9c"},
+    {file = "mpi4py-3.1.5-cp312-cp312-win32.whl", hash = "sha256:17cc793bf2fe3921f2c3cda59a2a708d2e0c68ce07c8b9d2b6ee1a9adc28fe3d"},
+    {file = "mpi4py-3.1.5-cp312-cp312-win_amd64.whl", hash = "sha256:8b38ad45a843bcbd7d11e23fd901016bb8069f35a9d4500666090465a2f734f2"},
     {file = "mpi4py-3.1.5-cp35-cp35m-win32.whl", hash = "sha256:61d6c5df1803002cf6c61523417d48f9ecf64b55808e3d9d47815c174d7125dd"},
     {file = "mpi4py-3.1.5-cp35-cp35m-win_amd64.whl", hash = "sha256:de6291eb7587e09637bc56f0e00d94863a1253f9d06b2ee97937bb9d49b53615"},
     {file = "mpi4py-3.1.5-cp36-cp36m-win32.whl", hash = "sha256:dd7ebe2d9c52330670e2424ba3a535df999e57bdaf3a93a8967fede1d2d5927d"},
@@ -2615,7 +2617,7 @@ dev = ["jupyter-book", "matplotlib", "nbconvert", "nbstripout", "nbval", "pycode
 plot = ["flameprof", "matplotlib"]
 
 [[package]]
-name = "stable_baselines3"
+name = "stable-baselines3"
 version = "2.1.0"
 description = "Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms."
 optional = false

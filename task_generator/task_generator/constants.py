@@ -19,6 +19,7 @@ class Constants:
     class Simulator(Enum):
         FLATLAND = "flatland"
         GAZEBO = "gazebo"
+        UNITY = "unity"
 
     class ArenaType(Enum):
         TRAINING = "training"
@@ -159,8 +160,9 @@ class FlatlandRandomModel:
 pedsim_ns = Namespace(
     "task_generator_node/configuration/pedsim/default_actor_config")
 
-
 # TODO make everything dynamic_reconfigure
+
+
 def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     """
     load pedsim param
@@ -169,7 +171,7 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     # load once at the start
     val = rospy.get_param(pedsim_ns(parameter), fallback)
 
-    gen = lambda: val
+    def gen(): return val
 
     if isinstance(val, list):
         lo, hi = val[:2]
@@ -212,3 +214,7 @@ class Pedsim:
     FORCE_FACTOR_SOCIAL = lp("FORCE_FACTOR_SOCIAL", 5.0)
     FORCE_FACTOR_ROBOT = lp("FORCE_FACTOR_ROBOT", 0.0)
     WAYPOINT_MODE = lp("WAYPOINT_MODE", 0)
+
+
+class UnityConstants:
+    WALL_HEIGHT = 4.0

@@ -6,7 +6,7 @@ repositories:
   arena/simulation-setup:
     type: git
     url: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: f093a8ef
+    version: 0016e3d379e848d2d7c11bca6447153ca1ba0e80
   arena/utils/3rd-party-robot-packages:
     type: git
     url: https://github.com/Arena-Rosnav/3rd-party-robot-packages
@@ -47,6 +47,10 @@ repositories:
     type: git
     url: https://github.com/jackal/jackal.git
     version: 85e16bd7b3ea72a4b5a2d3ca8224e056d7ab1c70
+  extern/ros_tcp_endpoint:
+    type: git
+    url: https://github.com/Unity-Technologies/ROS-TCP-Endpoint.git
+    version: 993d366b8900bf9f3d2da444fde64c0379b4dc7c
   planners/all_in_one:
     type: git
     url: https://github.com/Arena-Rosnav/all_in_one

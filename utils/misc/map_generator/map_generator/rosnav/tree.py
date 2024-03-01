@@ -3,10 +3,9 @@ import numpy as np
 
 def initialize_map(height: int, width: int, type="indoor") -> np.ndarray:
     # create empty map with format given by height,width and initialize empty tree
-    if type != "outdoor":
-        return np.tile(1, [height, width])
     grid_map = np.tile(1, [height, width])
-    grid_map[slice(1, height - 1), slice(1, width - 1)] = 0
+    if type == "outdoor":
+        grid_map[slice(1, height - 1), slice(1, width - 1)] = 0
     return grid_map
 
 

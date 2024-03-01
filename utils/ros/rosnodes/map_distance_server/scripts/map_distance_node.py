@@ -31,7 +31,7 @@ class MapDistanceServer:
             "worlds",
             rospy.get_param("map_file"),
             "map",
-            "distance_map.png",
+            "dynamic_map.png",
         )
 
         rospy.wait_for_service("/static_map")
@@ -207,14 +207,13 @@ class DynamicMapDistanceServer(MapDistanceServer):
             # only update the map if it is the first map
             # as static server only contains the first map
             self.map = self.map_service().map
-
         if not os.path.exists(self._distance_map_path) or not self._first_map:
             # If the distance map does not exist or a new map is provided by map generator
             self.new_map_data = list(self._get_map_with_distances())
-            self.new_dist_map_pub.publish(String(""))
             self.save_distance_map(
                 self._distance_map_path, self.new_map_data, self.map.info
             )
+            self.new_dist_map_pub.publish(String(""))
         else:
             distance_map = self.get_distance_map(self._distance_map_path, self.map.info)
             self.new_map_data = distance_map

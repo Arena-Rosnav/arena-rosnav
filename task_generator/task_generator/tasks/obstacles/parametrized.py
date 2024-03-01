@@ -82,11 +82,18 @@ class TM_Parametrized(TM_Obstacles):
                 type=_get_attrib(config, "type", ""),
                 model=self._PROPS.model_loader.bind(_get_attrib(config, "model"))
             )
+        def xml_to_dynamic_config(config):
+            return _ObstacleConfig(
+                min=int(_get_attrib(config, "min")),
+                max=int(_get_attrib(config, "max")),
+                type=_get_attrib(config, "type", ""),
+                model=self._PROPS.dynamic_model_loader.bind(_get_attrib(config, "model"))
+            )
 
         self._config = _Config(
             STATIC = list(map(xml_to_config, root.findall("./static/obstacle") or [])),
-            INTERACTIVE = list(map(xml_to_config, root.findall("./static/interactive") or [])),
-            DYNAMIC = list(map(xml_to_config, root.findall("./static/dynamic") or [])),
+            INTERACTIVE = list(map(xml_to_config, root.findall("./interactive/obstacle") or [])),
+            DYNAMIC = list(map(xml_to_dynamic_config, root.findall("./dynamic/obstacle") or []))
         )
 
 

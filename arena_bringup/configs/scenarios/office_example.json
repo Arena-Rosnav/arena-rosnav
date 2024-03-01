@@ -1,0 +1,289 @@
+{
+  "robots": [
+    {
+      "start": [24.0, 20.0, 0.7],
+      "goal": [2.0, 2.0, 0.0]
+    }
+  ],
+  "obstacles": {
+    "static": [
+      {
+        "name": "desk1",
+        "model": "office_desk",
+        "pos": [8.0, 7.0, 0]
+      },
+      {
+        "name": "chair1",
+        "model": "office_chair",
+        "pos": [8.0, 6.2, 4.71]
+      },
+      {
+        "name": "desk1_1",
+        "model": "office_desk",
+        "pos": [8.0, 8.0, 3.14] 
+      },
+      {
+        "name": "chair1_1",
+        "model": "office_chair",
+        "pos": [8.0, 8.9, 1.57]
+      },
+
+      {
+        "name": "desk2",
+        "model": "office_desk",
+        "pos": [11.0, 7.0, 0]
+      },
+      {
+        "name": "chair2",
+        "model": "office_chair",
+        "pos": [11.0, 6.2, 4.71]
+      },
+      {
+        "name": "desk2_1",
+        "model": "office_desk",
+        "pos": [11.0, 8.0, 3.14] 
+      },
+      {
+        "name": "chair2_1",
+        "model": "office_chair",
+        "pos": [11.0, 8.9, 1.57]
+      },
+
+      {
+        "name": "desk3",
+        "model": "office_desk",
+        "pos": [14.0, 7.0, 0]
+      },
+      {
+        "name": "chair3",
+        "model": "office_chair",
+        "pos": [14.0, 6.2, 4.71]
+      },
+      {
+        "name": "desk3_1",
+        "model": "office_desk",
+        "pos": [14.0, 8.0, 3.14] 
+      },
+      {
+        "name": "chair3_1",
+        "model": "office_chair",
+        "pos": [14.0, 8.9, 1.57]
+      },
+
+      {
+        "name": "desk4",
+        "model": "office_desk",
+        "pos": [17.0, 7.0, 0]
+      },
+      {
+        "name": "chair4",
+        "model": "office_chair",
+        "pos": [17.0, 6.2, 4.71]
+      },
+      {
+        "name": "desk4_1",
+        "model": "office_desk",
+        "pos": [17.0, 8.0, 3.14] 
+      },
+      {
+        "name": "chair4_1",
+        "model": "office_chair",
+        "pos": [17.0, 8.9, 1.57]
+      },
+      
+      {
+        "name": "desk5",
+        "model": "office_desk",
+        "pos": [20.0, 7.0, 0]
+      },
+      {
+        "name": "chair5",
+        "model": "office_chair",
+        "pos": [20.0, 6.2, 4.71]
+      },
+      {
+        "name": "desk5_1",
+        "model": "office_desk",
+        "pos": [20.0, 8.0, 3.14] 
+      },
+      {
+        "name": "chair5_1",
+        "model": "office_chair",
+        "pos": [20.0, 8.9, 1.57]
+      },
+      
+      
+
+
+
+
+
+      
+      {
+        "name": "desk6",
+        "model": "office_desk",
+        "pos": [8.0, 15.0, 0]
+      },
+      {
+        "name": "chair6",
+        "model": "office_chair",
+        "pos": [8.0, 14.2, 4.71]
+      },
+      {
+        "name": "desk6_1",
+        "model": "office_desk",
+        "pos": [8.0, 16.0, 3.14] 
+      },
+      {
+        "name": "chair6_1",
+        "model": "office_chair",
+        "pos": [8.0, 16.9, 1.57]
+      },
+  
+
+
+      {
+        "name": "desk7",
+        "model": "office_desk",
+        "pos": [11.0, 15.0, 0]
+      },
+      {
+        "name": "chair7",
+        "model": "office_chair",
+        "pos": [11.0, 14.2, 4.71]
+      },
+      {
+        "name": "desk7_1",
+        "model": "office_desk",
+        "pos": [11.0, 16.0, 3.14] 
+      },
+      {
+        "name": "chair7_1",
+        "model": "office_chair",
+        "pos": [11.0, 16.9, 1.57]
+      },
+  
+      {
+        "name": "desk8",
+        "model": "office_desk",
+        "pos": [14.0, 15.0, 0]
+      },
+      {
+        "name": "chair8",
+        "model": "office_chair",
+        "pos": [14.0, 14.2, 4.71]
+      },
+      {
+        "name": "desk8_1",
+        "model": "office_desk",
+        "pos": [14.0, 16.0, 3.14] 
+      },
+      {
+        "name": "chair8_1",
+        "model": "office_chair",
+        "pos": [14.0, 16.9, 1.57]
+      },
+  
+      {
+        "name": "desk9",
+        "model": "office_desk",
+        "pos": [17.0, 15.0, 0]
+      },
+      {
+        "name": "chair9",
+        "model": "office_chair",
+        "pos": [17.0, 14.2, 4.71]
+      },
+      {
+        "name": "desk9_1",
+        "model": "office_desk",
+        "pos": [17.0, 16.0, 3.14] 
+      },
+      {
+        "name": "chair9_1",
+        "model": "office_chair",
+        "pos": [17.0, 16.9, 1.57]
+      },
+      
+      {
+        "name": "desk10",
+        "model": "office_desk",
+        "pos": [20.0, 15.0, 0]
+      },
+      {
+        "name": "chair10",
+        "model": "office_chair",
+        "pos": [20.0, 14.2, 4.71]
+      },
+      {
+        "name": "desk10_1",
+        "model": "office_desk",
+        "pos": [20.0, 16.0, 3.14] 
+      },
+      {
+        "name": "chair10_1",
+        "model": "office_chair",
+        "pos": [20.0, 16.9, 1.57]
+      },
+
+      {
+        "name": "desk11",
+        "model": "office_desk",
+        "pos": [23.0, 15.0, 0]
+      },
+      {
+        "name": "chair11",
+        "model": "office_chair",
+        "pos": [23.0, 14.2, 4.71]
+      },
+      {
+        "name": "desk11_1",
+        "model": "office_desk",
+        "pos": [23.0, 16.0, 3.14] 
+      },
+      {
+        "name": "chair11_1",
+        "model": "office_chair",
+        "pos": [23.0, 16.9, 1.57]
+      }
+    ],
+
+    "dynamic": [
+      {
+        "name": "1",
+        "pos": [14.0, 2.0, 0.0],
+        "type": "adult",
+        "model": "actor1",
+        "waypoints": [
+            [2.0, 14.0, 0.0],
+            [14.0, 2.0, 0.0]
+        ],
+        "waypoint_mode": 1
+      },
+      {
+        "name": "2",
+        "pos": [2.0, 8.0, 0.0],
+        "type": "adult",
+        "model": "actor1",
+        "waypoints": [
+            [8.0, 2.0, 0.0],
+            [8.0, 2.0, 0.0]
+        ],
+        "waypoint_mode": 1
+      },
+      {
+        "name": "3",
+        "pos": [8.0, 2.0, 0.0],
+        "type": "adult",
+        "model": "actor1",
+        "waypoints": [
+          [2.0, 8.0, 0.0],
+          [8.0, 2.0, 0.0]
+        ],
+        "waypoint_mode": 1
+      }
+    ],
+    "interactive": []
+  },
+  "map": "map_empty"
+}

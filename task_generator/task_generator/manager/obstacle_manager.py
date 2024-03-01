@@ -2,7 +2,7 @@ from typing import Any, Callable, Collection, Iterator
 
 import itertools
 
-
+from task_generator.simulators.unity_simulator import UnitySimulator
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import World
@@ -39,6 +39,12 @@ class ObstacleManager:
             walls=world.entities.walls, heightmap=world.map)
         self._entity_manager.spawn_obstacles(
             obstacles=world.entities.obstacles)
+
+        if isinstance(self._simulator, UnitySimulator):
+            # self._simulator.delete_entity("__WALLS")
+            self._simulator.spawn_walls(world.entities.walls)
+            # for obst in world.entities.obstacles:
+            #     self._simulator.spawn_entity(obst)
 
     def spawn_dynamic_obstacles(self, setups: Collection[DynamicObstacle]):
         """

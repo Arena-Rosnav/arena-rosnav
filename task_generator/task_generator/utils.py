@@ -6,14 +6,18 @@ from typing import Callable, Collection, Dict, Iterator, List, Optional, Set, Tu
 import rospy
 import os
 import numpy as np
+import math
 
 import heapq
 import itertools
 
 from task_generator.constants import Constants
-from task_generator.shared import ModelWrapper, Model, ModelType
+from task_generator.shared import ModelWrapper, Model, ModelType, PositionOrientation
+
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 import nav_msgs.msg as nav_msgs
+from geometry_msgs.msg import Pose, Point, Quaternion
 
 
 class Utils:
@@ -91,6 +95,32 @@ class Utils:
                     map_2d[y, x] = 100
         free_space_indices_new = np.where(map_2d == 0)
         return free_space_indices_new
+
+    @staticmethod
+    def pose_to_pos(pose: Pose, initial_rot: float = 0) -> PositionOrientation:
+        return PositionOrientation(
+            pose.position.x,
+            pose.position.y,
+            initial_rot
+            +euler_from_quaternion(
+                [
+                    pose.orientation.x,
+                    pose.orientation.y,
+                    pose.orientation.z,
+                    pose.orientation.w,
+                ]
+            )[2],
+        )
+
+    @staticmethod
+    def pos_to_pose(pos: PositionOrientation) -> Pose:
+        return Pose(
+            position=Point(x=pos.x, y=pos.y, z=0),
+            orientation=Quaternion(
+                *quaternion_from_euler(0.0, 0.0, pos.orientation, axes="sxyz")
+            ),
+        )
+
 
 
 class NamespaceIndexer:

@@ -13,7 +13,6 @@ from task_generator.constants import Config, Constants
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
 from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
-from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.utils import WorldMap
@@ -27,6 +26,7 @@ from task_generator.shared import (
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
 from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
+from task_generator.simulators.unity_simulator import UnitySimulator  # noqa
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory

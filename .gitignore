@@ -58,3 +58,7 @@ __pycache__/
 *.lock
 *.bkup
 *.log
+
+# Unity Data
+utils/misc/unity_simulator/unity_simulator_BurstDebugInformation_DoNotShip/
+!**/UnityPlayer.so
