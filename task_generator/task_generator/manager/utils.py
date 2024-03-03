@@ -317,7 +317,7 @@ class WorldMap:
         return self.occupancy._walls.grid.shape
 
     def tf_pos2grid(self, position: Position) -> Tuple[int, int]:
-        return np.round((position.y - self.origin.y) / self.resolution), np.round(self.shape[1] - (position.x - self.origin.x) / self.resolution)
+        return np.round((position.y - self.origin.y) / self.resolution), np.round((position.x - self.origin.x) / self.resolution)
 
     def tf_grid2pos(self, grid_pos: Tuple[int, int]) -> Position:
         return Position(x = grid_pos[1] * self.resolution + self.origin.y, y = grid_pos[0] * self.resolution + self.origin.x)
