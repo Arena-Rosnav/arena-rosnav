@@ -1,6 +1,7 @@
 import itertools
 from math import floor
 from typing import Collection, List, Optional, Tuple
+import typing
 import numpy as np
 import scipy.signal
 import rospy
@@ -17,8 +18,11 @@ class WorldManager:
     obstacle positions.
     """
 
-    _world: World
-    _classic_forbidden_zones: List[PositionRadius]
+    class Bounds(typing.NamedTuple):
+        min_x: float = float("-inf")
+        min_y: float = float("-inf")
+        max_x: float = float("inf")
+        max_y: float = float("inf")
 
     def __init__(self, world_map: WorldMap, world_obstacles: Optional[Collection[WorldObstacleConfiguration]] = None):
         self._classic_forbidden_zones = []
@@ -84,6 +88,8 @@ class WorldManager:
                 )
             )  
 
+        self._garbage_offset = 0
+
     def forbid(self, forbidden_zones: List[PositionRadius]):
         for zone in forbidden_zones:
             self.world.map.occupancy.forbidden_occupy(*self.world.map.tf_posr2rect(zone))
@@ -91,7 +97,37 @@ class WorldManager:
     def forbid_clear(self):
         self._world.map.occupancy.forbidden_clear()
 
-    def _classic_get_random_pos_on_map(self, safe_dist: float, forbid: bool = True, forbidden_zones: Optional[List[PositionRadius]] = None) -> Position:
+    def garbage_positions(self, n: int, offset: Optional[int] = None) -> List[Position]:
+        """
+        Return garbage positions outside the map.
+        If you get spawned here, you should feel ashamed of yourself.
+
+        Args:
+            n: number of positions to generate
+            offset: (optional) offset for consecutive calls
+
+        Returns:
+            List[Position]
+        """
+
+        if offset is None:
+            offset = self._garbage_offset
+        else:
+            self._garbage_offset += n
+
+        return [
+            self._world.map.tf_grid2pos(
+                (
+                    (-1-floor(i/5)) * int(self._shape[1]/5),
+                    int((i % 5) * self._shape[0]/5)
+                )
+            ) for i in range(offset, n+offset)]
+
+    _world: World
+    _garbage_offset: int
+    _classic_forbidden_zones: List[PositionRadius]
+
+    def _classic_random_pos_on_map(self, safe_dist: float, forbid: bool = True, forbidden_zones: Optional[List[PositionRadius]] = None) -> Position:
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both
@@ -183,7 +219,13 @@ class WorldManager:
 
         return Position(point.x, point.y)
 
-    def get_positions_on_map(self, n: int, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> List[Position]:
+    def positions_on_map(self,
+        n: int,
+        safe_dist: float,
+        forbidden_zones: Optional[List[PositionRadius]] = None,
+        forbid: bool = True,
+        bounds: typing.Optional[Bounds] = None
+    ) -> List[Position]:
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both
@@ -194,14 +236,14 @@ class WorldManager:
         no valid position is found after 100 retries
         an error is thrown.
         Args:
-            safe_dist: minimal distance to the next
-                obstacles for calculated positons
+            safe_dist: minimal distance to the next obstacles for calculated positons
             forbid: add returned waypoint to forbidden zones
             forbidden_zones: Array of (x, y, radius),
                 describing circles on the map. New
                 position should not lie on forbidden
                 zones e.g. the circles.
                 x, y and radius are in meters
+            bounds: rectangle to restrict map to
         """
         # safe_dist is in meters so at first calc safe dist to distance on
         # map -> resolution of map is m / cell -> safe_dist in cells is
@@ -214,9 +256,9 @@ class WorldManager:
 
         points: List[Position] = []
 
-        if n < 0:  # TODO profile when this is faster
+        if n < 0 and bounds is None:  # TODO profile when this is faster
             for _ in range(n):
-                pos = self._classic_get_random_pos_on_map(
+                pos = self._classic_random_pos_on_map(
                     safe_dist=safe_dist, forbidden_zones=forbidden_zones)
                 posr = PositionRadius(*pos, safe_dist)
                 fork.occupy(*self.world.map.tf_posr2rect(posr))
@@ -227,6 +269,13 @@ class WorldManager:
 
         else:
             max_depth = 10
+
+            if bounds is not None:
+                fork.occupy(
+                    lo = self.world.map.tf_pos2grid(Position(bounds.min_x, bounds.min_y)),
+                    hi = self.world.map.tf_pos2grid(Position(bounds.max_x, bounds.max_y)),
+                    inv = True
+                )
 
             for zone in forbidden_zones:
                 fork.occupy(
@@ -291,13 +340,7 @@ class WorldManager:
                             f"Failed to find free position after {depth} tries")
 
                 except RuntimeError:
-                    result += [
-                        self._world.map.tf_grid2pos(
-                            (
-                                (-1-floor(i/5)) * int(self._shape[1]/5),
-                                int((i % 5) * self._shape[0]/5)
-                            )
-                        ) for i in range(to_produce)]
+                    result += self.garbage_positions(to_produce)
                     rospy.logerr(f"Couldn't find enough empty cells for {to_produce} requests")
                 
                 finally:
@@ -310,7 +353,7 @@ class WorldManager:
 
         return points
 
-    def get_positions_in_zones(self, n: int, safe_dist: float, zones: List[List[List[int]]], forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> List[Position]:
+    def positions_in_zones(self, n: int, safe_dist: float, zones: List[List[List[int]]], forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> List[Position]:
             """
             This function is used in tm_zones (zones.py) to get
             new position and waypoints for dynamic obstacles.
@@ -346,7 +389,7 @@ class WorldManager:
 
             if n < 0:  # TODO profile when this is faster
                 for _ in range(n):
-                    pos = self._classic_get_random_pos_on_map(
+                    pos = self._classic_random_pos_on_map(
                         safe_dist=safe_dist, forbidden_zones=forbidden_zones)
                     posr = PositionRadius(*pos, safe_dist)
                     fork.occupy(*self.world.map.tf_posr2rect(posr))
@@ -443,10 +486,10 @@ class WorldManager:
             return points
 
 
-    def get_position_on_map(self, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> Position:
-        return self.get_positions_on_map(n=1, safe_dist=safe_dist, forbidden_zones=forbidden_zones)[0]
+    def position_on_map(self, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> Position:
+        return self.positions_on_map(n=1, safe_dist=safe_dist, forbidden_zones=forbidden_zones)[0]
 
-    id_gen = itertools.count()
+    # id_gen = itertools.count()
 
     def _occupancy_to_available(self, occupancy: np.ndarray, safe_dist: float) -> np.ndarray:
 
@@ -463,9 +506,10 @@ class WorldManager:
         )
 
         # import cv2
-        # cv2.imwrite("_debug1.png", occupancy)
-        # cv2.imwrite("_debug2.png", WorldOccupancy.not_full(occupancy).astype(np.uint8) * np.iinfo(np.uint8).max)
-        # cv2.imwrite("_debug3.png", spread)
-        # cv2.imwrite("_debug4.png", WorldOccupancy.empty(spread).astype(np.uint8) * np.iinfo(np.uint8).max)
+        # i = next(self.id_gen)
+        # cv2.imwrite(f"~/_debug{i}_1.png", occupancy)
+        # cv2.imwrite(f"~/_debug{i}_2.png", WorldOccupancy.not_full(occupancy).astype(np.uint8) * np.iinfo(np.uint8).max)
+        # cv2.imwrite(f"~/_debug{i}_3.png", spread)
+        # cv2.imwrite(f"~/_debug{i}_4.png", WorldOccupancy.empty(spread).astype(np.uint8) * np.iinfo(np.uint8).max)
 
         return np.transpose(np.where(WorldOccupancy.empty(spread)))

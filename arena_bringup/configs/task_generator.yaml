@@ -25,4 +25,4 @@ RANDOM:
 
 ZONES:
   file: "zones.yaml"
-  scenario: "default_zones_scenario.yaml"
+  scenario: "default.yaml"
