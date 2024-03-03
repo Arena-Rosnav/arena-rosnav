@@ -34,6 +34,7 @@ class Constants:
             PARAMETRIZED = "parametrized"
             RANDOM = "random"
             SCENARIO = "scenario"
+            ZONES = "zones"
 
             @classmethod
             def prefix(cls, *args):

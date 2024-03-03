@@ -162,7 +162,7 @@ class TM_Random(TM_Obstacles):
             return index
 
         waypoints_per_ped = 2
-        points = self._PROPS.world_manager.get_positions_on_map(
+        points = self._PROPS.world_manager.positions_on_map(
             n=N_STATIC_OBSTACLES
             + N_INTERACTIVE_OBSTACLES
             + N_DYNAMIC_OBSTACLES * (1 + waypoints_per_ped),

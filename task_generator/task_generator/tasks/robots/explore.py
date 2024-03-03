@@ -38,7 +38,7 @@ class TM_Explore(TM_Random):
         """
         for i, robot in enumerate(self._PROPS.robot_managers):
             if robot.is_done:
-                waypoint = self._PROPS.world_manager.get_position_on_map(
+                waypoint = self._PROPS.world_manager.position_on_map(
                     safe_dist=robot._robot_radius, forbid=False
                 )
                 self._set_goal(
@@ -46,7 +46,7 @@ class TM_Explore(TM_Random):
                 )
 
             elif (self._PROPS.clock.clock - self._timeouts[i]).secs > Config.Robot.TIMEOUT:
-                waypoint = self._PROPS.world_manager.get_position_on_map(
+                waypoint = self._PROPS.world_manager.position_on_map(
                     safe_dist=robot._robot_radius, forbid=False
                 )
                 self._set_position(
