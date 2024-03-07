@@ -58,9 +58,10 @@ def launch_unity():
         time_scale
     ]
 
-    # test
     args += ["-force-vulkan"]
-    args += ["-logFile", f"/home/maxmilian/loggging/{namespace}_log.txt"]
+    log_path = os.path.expanduser(f"~/.area_unity_logs/{namespace}_log.txt")
+    rospy.loginfo("[Unity Launcher] Unity now logging to " + log_path)
+    args += ["-logFile", log_path]
 
     subprocess.run([unity_executable_path] + args, check=True)
 
