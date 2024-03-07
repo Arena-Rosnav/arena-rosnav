@@ -161,7 +161,6 @@ class FlatlandRandomModel:
 pedsim_ns = Namespace(
     "task_generator_node/configuration/pedsim/default_actor_config")
 
-
 # TODO make everything dynamic_reconfigure
 def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     """
@@ -219,3 +218,4 @@ class Pedsim:
 
 class UnityConstants:
     WALL_HEIGHT = 4.0
+    ATTACH_SAFE_DIST_SENSOR_TOPIC = "attach_safe_dist_sensor"

@@ -1,6 +1,8 @@
 import enum
 from pedsim_agents.utils import SemanticAttribute
 
+MAX_WAIT = 2  # in seconds
+SLEEP = 0.05  # in seconds
 
 class DONE_REASONS(enum.Enum):
     STEP_LIMIT = 0
@@ -14,17 +16,22 @@ class TOPICS:
     ROBOT_STATE = "odom"
     GOAL = "goal"
 
-    GLOBALPLAN = "global_plan"
+    GLOBALPLAN = "move_base_flex/get_path/goal"
 
     PEDSIM_STATES = "pedsim_simulator/simulated_agents"
     PEDSIM_SEMANTIC = "pedsim_agents/semantic"
+    
+    PED_SAFE_DIST = "ped_safe_dist"
+    OBS_SAFE_DIST = "obs_safe_dist"
+    COLLISION = "collision"
+    IMAGE_DEPTH = "rgbd/depth"
+    IMAGE_COLOR = "rgbd/image"
 
 
 class OBS_DICT_KEYS:
     """
     Constants for observation dictionary keys.
     """
-
     LASER = "laser_scan"
     ROBOT_POSE = "robot_pose"
     GOAL_DIST_ANGLE = "goal_in_robot_frame"
@@ -34,6 +41,13 @@ class OBS_DICT_KEYS:
     LAST_ACTION = "last_action"
     GLOBAL_PLAN = "global_plan"
     DONE = "is_done"
+
+    PED_SAFE_DIST = "ped_safe_dist"
+    OBS_SAFE_DIST = "obs_safe_dist"
+    COLLSION = "collision"
+    IMAGE_DEPTH = "image_depth"
+    IMAGE_COLOR = "image_color"
+    
 
     # why not have SEMANTIC = SemanticAttribute ?
     class SEMANTIC(enum.Enum):
@@ -46,3 +60,5 @@ class OBS_DICT_KEYS:
         RELATIVE_LOCATION = "relative_location"
         RELATIVE_X_VEL = "relative_x_vel"
         RELATIVE_Y_VEL = "relative_y_vel"
+
+        MIN_DISTANCE_PER_TYPE = "min_distance_per_type"

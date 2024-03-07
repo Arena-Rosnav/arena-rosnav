@@ -31,6 +31,6 @@ DYNAMIC_MAP_YAML = {
     "free_thresh": 0.196,
 }
 
-ROSNAV_MAP_FOLDER = Path(rospkg.RosPack().get_path("arena_simulation_setup")) / "enviromnents" / "maps"
+ROSNAV_MAP_FOLDER = Path(rospkg.RosPack().get_path("arena_simulation_setup")) / "worlds"
 
 BARN_MAX_RECURSION_DEPTH = 50

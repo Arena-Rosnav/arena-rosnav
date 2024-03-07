@@ -24,7 +24,7 @@
     #     obstacle_num: 5
     #     obstacle_extra_radius: 1
   static: 0
-  dynamic: 15
+  dynamic: 20
 - #1
   goal_radius: 0.75
   map_generator:
@@ -33,7 +33,7 @@
       fill_pct: 0.075
       smooth_iter: 2
   static: 0
-  dynamic: 15
+  dynamic: 20
 - #2
   goal_radius: 0.5
   map_generator:
@@ -42,7 +42,7 @@
       fill_pct: 0.10
       smooth_iter: 2
   static: 0
-  dynamic: 20
+  dynamic: 25
 - #3
   goal_radius: 0.3
   map_generator:

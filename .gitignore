@@ -54,11 +54,3 @@ __pycache__/
 #dolphin
 
 /**/__pycache__
-
-# Unity Data
-utils/misc/unity_simulator/unity_simulator_BurstDebugInformation_DoNotShip/
-!**/UnityPlayer.so
-
-*.lock
-*.bkup
-*.log

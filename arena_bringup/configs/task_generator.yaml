@@ -20,5 +20,5 @@ RANDOM:
     models: ["shelf"]
   dynamic:
     min: 3
-    max: 5
+    max: 3
     models: ["actor1"]

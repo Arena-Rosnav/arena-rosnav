@@ -5,6 +5,7 @@ from typing import Tuple, Union
 import gym
 import rospy
 from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
+from rl_utils.envs.arena_unity_env import ArenaUnityEnv
 from rl_utils.utils.vec_wrapper.delayed_subproc_vec_env import DelayedSubprocVecEnv
 from rl_utils.utils.vec_wrapper.vec_stats_recorder import VecStatsRecorder
 from rl_utils.utils.vec_wrapper.profiler import ProfilingVecEnv
@@ -109,7 +110,7 @@ def _init_env_fnc(
     """
 
     def _init() -> Union[gym.Env, gym.Wrapper]:
-        return FlatlandEnv(
+        return ArenaUnityEnv(
             ns=ns,
             agent_description=agent_description,
             reward_fnc=reward_fnc,

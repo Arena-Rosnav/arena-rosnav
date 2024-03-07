@@ -132,10 +132,12 @@
   <!-- Unity -->
   <arg name="development_mode" default="false" />
   <arg name="headless_unity" default="false" />
+  <arg name="time_scale" default="1" />
   <include file="$(find arena_bringup)/launch/testing/simulators/unity.launch" if="$(eval arg('simulator') == 'unity')">
     <!--<arg name="world" default="$(arg world_file)" />-->
     <arg name="development_mode" value="$(arg development_mode)" />
     <arg name="headless" value="$(arg headless_unity)" />
+    <arg name="time_scale" value="$(arg time_scale)" />
   </include>
 
   <!-- map server-->

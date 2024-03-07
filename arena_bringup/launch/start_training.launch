@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
   <!-- CONSTANTS -->
-  <param name="SIMULATOR" value="flatland" />
+  <!-- <param name="SIMULATOR" value="flatland" /> -->
+  <arg name="SIMULATOR" value="unity" />
+  <param name="SIMULATOR" value="$(arg SIMULATOR)" />
+  <param name="simulator" value="$(arg SIMULATOR)" />
   <param name="local_planner" value="rosnav" />
 
 
@@ -12,6 +15,10 @@
   <arg name="num_envs" default="1" />
 
   <param name="single_env" value="false" />
+
+  <!-- unity specific -->
+  <arg name="time_scale" default="1" />
+  <arg name="headless" default="true" />
 
   <!-- train mode  -->
   <arg name="train_mode" default="true"/>
@@ -27,7 +34,7 @@
   <!-- if it's false flatland server will not publish any debug related infomation and you will not able to visuzalize e.g robot, dynamic obstacles  -->
   <!-- <param name="space_encoder" value="UniformEncoder" /> -->
   <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load" ns="configuration"/>
-  <rosparam command="load" file="$(find arena_simulation_setup)/entities/robot/$(arg model)/model_params.yaml" /> 
+  <rosparam command="load" file="$(find arena_simulation_setup)/entities/robots/$(arg model)/model_params.yaml" /> 
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" ns="map_generator" />
@@ -57,12 +64,18 @@
   <include file="$(find arena_bringup)/launch/training/single_env_training.launch">
     <arg name="ns" value="eval_sim" />
     <arg name="model" value="$(arg model)" />
+    <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
+    <arg name="time_scale" value="$(arg time_scale)" />
+    <arg name="headless" value="$(arg headless)" />
   </include>
 
   <include file="$(find arena_bringup)/launch/training/start_envs.launch">
     <arg name="num_envs" value="$(arg num_envs)" />
     <arg name="ns_prefix" value="$(arg ns_prefix)" />
     <arg name="model" value="$(arg model)" />
+    <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
+    <arg name="time_scale" value="$(arg time_scale)" />
+    <arg name="headless" value="$(arg headless)" />
   </include> 
   
   <node pkg="task_generator" name="task_generator_server" type="server.py" output="screen"/>
