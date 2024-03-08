@@ -30,7 +30,7 @@ repositories:
   arena/utils/stable-baselines3:
     type: git
     url: https://github.com/Arena-Rosnav/stable-baselines3.git
-    version: 73360367e641b91915777f9a5a920fdaa2190822
+    version: c8255a59428af173c2c853880dffdadd120f1aa3
   arena/utils/unitree_ros:
     type: git
     url: https://github.com/voshch/unitree_ros
