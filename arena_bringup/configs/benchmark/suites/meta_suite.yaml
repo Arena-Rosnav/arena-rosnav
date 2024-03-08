@@ -210,16 +210,16 @@ stages:
         file: 1.json
       RANDOM:
         static:
-          min: 2
-          max: 2
+          min: 0
+          max: 0
           models: ["shelf"]
         interactive:
           min: 0
           max: 0
           models: ["shelf"]
         dynamic:
-          min: 3
-          max: 3
+          min: 5
+          max: 5
           models: ["actor1"]
 
   - name: arena_corridor_random_10obstacles
@@ -233,39 +233,16 @@ stages:
         file: 1.json
       RANDOM:
         static:
-          min: 5
-          max: 5
+          min: 0
+          max: 0
           models: ["shelf"]
         interactive:
           min: 0
           max: 0
           models: ["shelf"]
         dynamic:
-          min: 5
-          max: 5
-          models: ["actor1"]
-
-  - name: arena_corridor_random_20obstacles
-    episodes: 5
-    robot: jackal
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 12
-          max: 12
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 8
-          max: 8
+          min: 10
+          max: 10
           models: ["actor1"]
 
   - name: arena_hospital_small_random_5obstacles
@@ -279,16 +256,16 @@ stages:
         file: 1.json
       RANDOM:
         static:
-          min: 2
-          max: 2
+          min: 0
+          max: 0
           models: ["shelf"]
         interactive:
           min: 0
           max: 0
           models: ["shelf"]
         dynamic:
-          min: 3
-          max: 3
+          min: 5
+          max: 5
           models: ["actor1"]
 
   - name: arena_hospital_small_random_10obstacles
@@ -302,39 +279,16 @@ stages:
         file: 1.json
       RANDOM:
         static:
-          min: 5
-          max: 5
+          min: 0
+          max: 0
           models: ["shelf"]
         interactive:
           min: 0
           max: 0
           models: ["shelf"]
         dynamic:
-          min: 5
-          max: 5
-          models: ["actor1"]
-
-  - name: arena_hospital_small_random_20obstacles
-    episodes: 5
-    robot: jackal
-    map: arena_hospital_small
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 12
-          max: 12
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 8
-          max: 8
+          min: 10
+          max: 10
           models: ["actor1"]
 
   - name: map_empty_random_5obstacles
@@ -348,16 +302,16 @@ stages:
         file: 1.json
       RANDOM:
         static:
-          min: 2
-          max: 2
+          min: 0
+          max: 0
           models: ["shelf"]
         interactive:
           min: 0
           max: 0
           models: ["shelf"]
         dynamic:
-          min: 3
-          max: 3
+          min: 5
+          max: 5
           models: ["actor1"]
 
   - name: map_empty_random_10obstacles
@@ -371,39 +325,16 @@ stages:
         file: 1.json
       RANDOM:
         static:
-          min: 5
-          max: 5
+          min: 0
+          max: 0
           models: ["shelf"]
         interactive:
           min: 0
           max: 0
           models: ["shelf"]
         dynamic:
-          min: 5
-          max: 5
-          models: ["actor1"]
-
-  - name: map_empty_random_20obstacles
-    episodes: 5
-    robot: jackal
-    map: map_empty
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 12
-          max: 12
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 8
-          max: 8
+          min: 10
+          max: 10
           models: ["actor1"]
 
   - name: arena_rooms1_random_5obstacles
@@ -417,16 +348,16 @@ stages:
         file: 1.json
       RANDOM:
         static:
-          min: 2
-          max: 2
+          min: 0
+          max: 0
           models: ["shelf"]
         interactive:
           min: 0
           max: 0
           models: ["shelf"]
         dynamic:
-          min: 3
-          max: 3
+          min: 5
+          max: 5
           models: ["actor1"]
 
   - name: arena_rooms1_random_10obstacles
@@ -440,37 +371,14 @@ stages:
         file: 1.json
       RANDOM:
         static:
-          min: 5
-          max: 5
+          min: 0
+          max: 0
           models: ["shelf"]
         interactive:
           min: 0
           max: 0
           models: ["shelf"]
         dynamic:
-          min: 5
-          max: 5
-          models: ["actor1"]
-
-  - name: arena_rooms1_random_20obstacles
-    episodes: 5
-    robot: jackal
-    map: arena_rooms1
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 12
-          max: 12
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 8
-          max: 8
+          min: 10
+          max: 10
           models: ["actor1"]
