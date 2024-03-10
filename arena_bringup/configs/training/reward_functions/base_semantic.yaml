@@ -12,9 +12,9 @@ approach_goal:
   neg_factor: 0.7
   _on_safe_dist_violation: true
 
-# reverse_drive:
-#   reward: -0.0001
-#   _on_safe_dist_violation: true
+reverse_drive:
+  reward: -0.0002
+  _on_safe_dist_violation: true
 
 # approach_globalplan:
 #   pos_factor: 0.1
@@ -34,8 +34,8 @@ ped_type_collision:
 
 ped_type_safety_distance:
   type: 1
-  reward: -0.5
-  safety_distance: 1.5
+  reward: -0.2
+  safety_distance: 1
 
 ped_type_vel_constraint:
   type: 1
