@@ -14,7 +14,7 @@ repositories:
   arena/utils/crowdsim:
     type: git
     url: https://github.com/Arena-Rosnav/crowdsim
-    version: 1504bf51
+    version: 85fb9f82
   arena/utils/flatland:
     type: git
     url: https://github.com/Arena-Rosnav/flatland.git
