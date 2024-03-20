@@ -48,7 +48,7 @@
         <arg name="model" value="$(arg model)" />
         <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
 
-        <arg name="namespace" value="$(arg namespace)" />
+        <arg name="namespace" value="$(arg sim_namespace)" />
         <arg name="frame" value="$(arg name)/odom" />
 
       </include>
