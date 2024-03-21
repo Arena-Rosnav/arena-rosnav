@@ -26,6 +26,7 @@ two_factor_velocity_difference:
 
 active_heading_direction:
   r_angle: 0.6
+  iters: 40
   _on_safe_dist_violation: true
 
 ped_type_collision:
