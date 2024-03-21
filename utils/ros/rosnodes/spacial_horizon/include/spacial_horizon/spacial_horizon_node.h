@@ -44,6 +44,7 @@ private:
     nav_msgs::GetPlan global_plan;
 
     /* parameters */
+    bool train_mode;
     bool disable_intermediate_planner;
     double goal_tolerance;    // meter
     double subgoal_tolerance; // meter

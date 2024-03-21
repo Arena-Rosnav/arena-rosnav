@@ -9,39 +9,37 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     has_odom = false;
     has_goal = false;
 
+    nh.param("/train_mode", train_mode, false);
+
     /*  fsm param  */
-    nh.param("disable_intermediate_planner", disable_intermediate_planner, true);
+    nh.param("/disable_intermediate_planner", disable_intermediate_planner, false);
     nh.param("fsm/goal_tolerance", goal_tolerance, 0.5);
     nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 0.2);
     nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 0.5);
-    nh.param("fsm/planning_horizon", planning_horizon, 3.0);
+    nh.param("fsm/planning_horizon", planning_horizon, 5.0);
 
-    subgoal_timer = nh.createTimer(
-        ros::Duration(0.05), &SpacialHorizon::updateSubgoalCallback, this);
-    update_global_plan_timer = nh.createTimer(
-        ros::Duration(0.1), &SpacialHorizon::getGlobalPath, this);
+    if (!train_mode)
+    {
+        // if not in train mode, create timers
+        ROS_INFO_STREAM("Spacial Horizon: Not in train mode, creating timers");
+        subgoal_timer = nh.createTimer(
+            ros::Duration(subgoal_pub_period), &SpacialHorizon::updateSubgoalCallback, this
+        );
+        update_global_plan_timer = nh.createTimer(
+            ros::Duration(0.1), &SpacialHorizon::getGlobalPath, this
+        );
+    }
     
-
     /* ros communication with public node */
     ros::NodeHandle public_nh; // sim1/goal
     sub_goal =
-        public_nh.subscribe("goal", 1, &SpacialHorizon::goalCallback, this);
+        public_nh.subscribe("move_base_simple/goal", 1, &SpacialHorizon::goalCallback, this);
     sub_odom =
         public_nh.subscribe("odom", 1, &SpacialHorizon::odomCallback, this);
-
-    sub_initial_pose = public_nh.subscribe(
-        "initialpose", 0, &SpacialHorizon::initialPoseCallback, this);
 
     pub_subgoal =
         public_nh.advertise<geometry_msgs::PoseStamped>("subgoal", 10);
     pub_global_plan = public_nh.advertise<nav_msgs::Path>("global_plan", 10);
-}
-
-void SpacialHorizon::initialPoseCallback(
-    const geometry_msgs::PoseWithCovarianceStampedPtr &msg)
-{
-    initial_pos =
-        Eigen::Vector2d(msg->pose.pose.position.x, msg->pose.pose.position.y);
 }
 
 void SpacialHorizon::odomCallback(const nav_msgs::OdometryConstPtr &msg)
@@ -175,12 +173,12 @@ void SpacialHorizon::getGlobalPath()
 {
     /* get global path from move_base */
     ros::NodeHandle nh;
-    std::string service_name = "/move_base/NavfnROS/make_plan";
+    std::string service_name = ros::this_node::getNamespace() + "/move_base_flex/NavfnROS/make_plan";
 
     while (!ros::service::waitForService(service_name, ros::Duration(3.0)))
     {
-        ROS_INFO("[SpacialHorizon - GET_PATH] Waiting for service "
-                 "/move_base/NavfnROS/make_plan to become available");
+        ROS_INFO("[SpacialHorizon - GET_PATH] Waiting for service %s to become available",
+                service_name.c_str());
     }
 
     ros::ServiceClient serviceClient =

@@ -4,7 +4,6 @@
   <param name="SIMULATOR" value="flatland" />
   <param name="local_planner" value="rosnav" />
 
-
   <arg name="model" default="burger"      doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real]"/>
 
   <!-- Here are the argument that may be frequently changed -->
