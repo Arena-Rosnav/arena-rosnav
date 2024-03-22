@@ -8,8 +8,8 @@ collision:
   reward: -15
 
 approach_goal:
-  pos_factor: 0.4
-  neg_factor: 0.6
+  pos_factor: 0.6
+  neg_factor: 0.75
   _on_safe_dist_violation: true
 
 reverse_drive:
