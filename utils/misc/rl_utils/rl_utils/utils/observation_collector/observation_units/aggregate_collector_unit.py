@@ -112,9 +112,9 @@ class AggregateCollectorUnit(CollectorUnit):
                     observation_container = self.SemanticObservation(
                         pedsim_msgs.SemanticData()
                     )
-                    self._semantic_observations[
-                        semantic_attribute.value
-                    ] = observation_container
+                    self._semantic_observations[semantic_attribute.value] = (
+                        observation_container
+                    )
 
                     rospy.Subscriber(
                         self._ns.simulation_ns + observation_config.get("topic"),
