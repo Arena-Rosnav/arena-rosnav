@@ -268,8 +268,7 @@ class FlatlandEnv(gymnasium.Env):
 
         if self._is_train_mode:
             self.agent_action_pub.publish(Twist())
-            self.call_service_takeSimStep(t=0.1)
-
+            self.call_service_takeSimStep()
         obs_dict = self.observation_collector.get_observations()
         info_dict = {}
         return (

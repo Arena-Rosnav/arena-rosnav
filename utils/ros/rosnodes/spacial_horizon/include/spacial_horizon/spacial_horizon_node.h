@@ -40,6 +40,9 @@ private:
     // publisher
     ros::Publisher pub_subgoal, pub_global_plan;
 
+    // service
+    ros::ServiceClient global_planner_srv;
+
     // plan with global path from move base
     nav_msgs::GetPlan global_plan;
 
@@ -53,6 +56,9 @@ private:
 
     /* ROS utils */
     ros::Timer subgoal_timer, update_global_plan_timer;
+
+    /* init methods */
+    void initializeGlobalPlanningService();
 
     /* ros related callback*/
     void odomCallback(const nav_msgs::OdometryConstPtr &msg);
