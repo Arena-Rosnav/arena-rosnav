@@ -68,7 +68,7 @@ class GlobalplanCollectorUnit(CollectorUnit):
         """
         if len(self._globalplan) == 0:
             # publish goal to trigger global plan generation
-            self._goal_pub.publish(obs_dict[OBS_DICT_KEYS.GOAL])
+            self._goal_pub.publish(obs_dict[TOPICS.GOAL])
 
         obs_dict.update(
             {
