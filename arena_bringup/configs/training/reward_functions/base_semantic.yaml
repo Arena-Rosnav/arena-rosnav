@@ -17,8 +17,8 @@ reverse_drive:
   _on_safe_dist_violation: true
 
 approach_globalplan:
-  pos_factor: 0.15
-  neg_factor: 0.2
+  pos_factor: 0.1
+  neg_factor: 0.15
   _on_safe_dist_violation: false
 
 two_factor_velocity_difference:
