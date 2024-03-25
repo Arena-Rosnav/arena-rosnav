@@ -46,7 +46,7 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
 
 void SpacialHorizon::initializeGlobalPlanningService()
 {
-    ROS_INFO_STREAM("Spacial Horizon: Initializing MBF service client");
+    ROS_INFO_STREAM("[Spacial Horizon - INIT] Initializing MBF service client");
     ros::NodeHandle nh;
     std::string service_name = ros::this_node::getNamespace() + "/move_base_flex/NavfnROS/make_plan";
 

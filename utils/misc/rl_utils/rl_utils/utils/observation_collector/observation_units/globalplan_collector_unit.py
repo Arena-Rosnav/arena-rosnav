@@ -50,6 +50,9 @@ class GlobalplanCollectorUnit(CollectorUnit):
         self._subgoal_sub = rospy.Subscriber(
             self._ns(TOPICS.SUBGOAL), PoseStamped, self._cb_subgoal
         )
+        self._goal_pub = rospy.Publisher(
+            self._ns(TOPICS.GOAL), PoseStamped, queue_size=1
+        )
 
     def get_observations(
         self, obs_dict: Dict[str, Any], *args, **kwargs
@@ -63,6 +66,10 @@ class GlobalplanCollectorUnit(CollectorUnit):
         Returns:
             Dict[str, Any]: The updated observation dictionary.
         """
+        if len(self._globalplan) == 0:
+            # publish goal to trigger global plan generation
+            self._goal_pub.publish(obs_dict[OBS_DICT_KEYS.GOAL])
+
         obs_dict.update(
             {
                 OBS_DICT_KEYS.GLOBAL_PLAN: self._globalplan,
