@@ -29,6 +29,7 @@ class OBS_DICT_KEYS:
     LASER = "laser_scan"
     ROBOT_POSE = "robot_pose"
     SUBGOAL = "subgoal"
+    GOAL = "goal"
     GOAL_DIST_ANGLE = "goal_in_robot_frame"
     GOAL_LOCATION_IN_ROBOT_FRAME = "goal_location_in_robot_frame"
     GOAL_LOCATION = "goal_location"
