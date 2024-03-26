@@ -7,7 +7,7 @@ stages:
     tm_obstacles: random
     config:
       SCENARIO:
-        file: map_empty_1.json
+        file: 1.json
       RANDOM:
         static:
           min: 5
@@ -30,7 +30,7 @@ stages:
     tm_obstacles: random
     config:
       SCENARIO:
-        file: map_empty_1.json
+        file: 1.json
       RANDOM:
         static:
           min: 5
@@ -53,7 +53,7 @@ stages:
     tm_obstacles: random
     config:
       SCENARIO:
-        file: map_empty_1.json
+        file: 1.json
       RANDOM:
         static:
           min: 5
@@ -76,7 +76,7 @@ stages:
     tm_obstacles: random
     config:
       SCENARIO:
-        file: arena_corridor_1.json
+        file: 1.json
       RANDOM:
         static:
           min: 5
@@ -99,7 +99,7 @@ stages:
     tm_obstacles: random
     config:
       SCENARIO:
-        file: arena_corridor_1.json
+        file: 1.json
       RANDOM:
         static:
           min: 5
@@ -122,7 +122,7 @@ stages:
     tm_obstacles: random
     config:
       SCENARIO:
-        file: arena_corridor_1.json
+        file: 1.json
       RANDOM:
         static:
           min: 5
@@ -145,7 +145,7 @@ stages:
     tm_obstacles: random
     config:
       SCENARIO:
-        file: arena_hospital_small_1.json
+        file: 1.json
       RANDOM:
         static:
           min: 5
@@ -168,7 +168,7 @@ stages:
     tm_obstacles: random
     config:
       SCENARIO:
-        file: arena_hospital_small_1.json
+        file: 1.json
       RANDOM:
         static:
           min: 5
@@ -191,7 +191,7 @@ stages:
     tm_obstacles: random
     config:
       SCENARIO:
-        file: arena_hospital_small_1.json
+        file: 1.json
       RANDOM:
         static:
           min: 5

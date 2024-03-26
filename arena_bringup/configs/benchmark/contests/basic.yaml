@@ -1,6 +1,4 @@
 contestants:
   - name: teb
     local_planner: teb
-
-  - name: dwa
-    local_planner: dwa
+    inter_planner: bypass

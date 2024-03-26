@@ -255,9 +255,15 @@ class FlatlandEnv(gymnasium.Env):
 
         super().reset(seed=seed)
         self._episode += 1
-        self.agent_action_pub.publish(Twist())
+
+        # make sure all simulation components are ready before first episode
+        if self._episode <= 1:
+            for _ in range(6):
+                self.agent_action_pub.publish(Twist())
+                self.call_service_takeSimStep()
 
         first_map = self._episode <= 1 if "sim_1" in self.ns else False
+
         self.task.reset(
             first_map=first_map,
             reset_after_new_map=self._steps_curr_episode == 0,
@@ -267,8 +273,10 @@ class FlatlandEnv(gymnasium.Env):
         self._last_action = np.array([0, 0, 0])
 
         if self._is_train_mode:
-            self.agent_action_pub.publish(Twist())
-            self.call_service_takeSimStep(t=0.1)
+            # extra step for planning serivce to provide global plan
+            for _ in range(2):
+                self.agent_action_pub.publish(Twist())
+                self.call_service_takeSimStep()
 
         obs_dict = self.observation_collector.get_observations()
         info_dict = {}

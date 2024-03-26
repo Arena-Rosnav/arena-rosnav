@@ -50,19 +50,13 @@ def load_vec_normalize(config: dict, paths: dict, env: VecEnv, eval_env: VecEnv)
         eval_env = VecNormalize(eval_env, training=False, **normalization_conf)
         return env, eval_env
 
-    if config["rl_agent"]["normalize"]["enabled"]:
-        for name in possible_agent_names:
-            load_path = os.path.join(paths["model"], f"vec_normalize_{name}.pkl")
-            if os.path.isfile(load_path):
-                env = VecNormalize.load(load_path=load_path, venv=env)
-                eval_env = VecNormalize.load(load_path=load_path, venv=eval_env)
-                rospy.loginfo(
-                    "Succesfully loaded VecNormalize object from pickle file.."
-                )
-        return env, eval_env
-
-    rospy.logfatal("No VecNormalize object found to load..")
-    sys.exit()
+    for name in possible_agent_names:
+        load_path = os.path.join(paths["model"], f"vec_normalize_{name}.pkl")
+        if os.path.isfile(load_path):
+            env = VecNormalize.load(load_path=load_path, venv=env)
+            eval_env = VecNormalize.load(load_path=load_path, venv=eval_env)
+            rospy.loginfo("Succesfully loaded VecNormalize object from pickle file..")
+    return env, eval_env
 
 
 def load_vec_framestack(config: dict, env: VecEnv, eval_env: VecEnv):
@@ -78,11 +72,10 @@ def load_vec_framestack(config: dict, env: VecEnv, eval_env: VecEnv):
         Tuple[VecEnv, VecEnv]: Tuple containing the modified training and evaluation environments.
     """
     fs_cfg = config["rl_agent"]["frame_stacking"]
-    if fs_cfg["enabled"]:
-        env = VecFrameStack(env, n_stack=fs_cfg["stack_size"], channels_order="first")
-        eval_env = VecFrameStack(
-            eval_env, n_stack=fs_cfg["stack_size"], channels_order="first"
-        )
+    env = VecFrameStack(env, n_stack=fs_cfg["stack_size"], channels_order="first")
+    eval_env = VecFrameStack(
+        eval_env, n_stack=fs_cfg["stack_size"], channels_order="first"
+    )
     return env, eval_env
 
 
@@ -178,10 +171,12 @@ def make_envs(
     observation_manager = eval_env.envs[0].model_space_encoder.observation_space_manager
 
     # load vec wrappers
-    train_env, eval_env = load_vec_framestack(config, train_env, eval_env)
+    if config["rl_agent"]["frame_stacking"]["enabled"]:
+        train_env, eval_env = load_vec_framestack(config, train_env, eval_env)
 
     # load vec normalize
-    train_env, eval_env = load_vec_normalize(config, paths, train_env, eval_env)
+    if config["rl_agent"]["normalize"]["enabled"]:
+        train_env, eval_env = load_vec_normalize(config, paths, train_env, eval_env)
 
     # wrap env with statistics wrapper
     cmd_logging_cfg = config["monitoring"]["cmd_line_logging"]["episode_statistics"]

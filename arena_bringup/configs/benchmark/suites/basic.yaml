@@ -7,7 +7,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_hospital_small_4.json
+        file: 4.json
 
   - name: scenario_random
     episodes: 4
