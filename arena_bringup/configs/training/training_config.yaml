@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: true
 # number of parallel environments
-n_envs: 2
+n_envs: 1
 # gpu yes or no
 no_gpu: false
 
@@ -14,7 +14,7 @@ tm_modules: "staged"
 
 # number of simulation timesteps
 n_timesteps: 40000000
-max_num_moves_per_eps: 800
+max_num_moves_per_eps: 50
 goal_radius: 0.25
 safety_distance: 0.5
 
@@ -39,17 +39,17 @@ callbacks:
     # max number of steps per episode
     max_num_moves_per_eps: 1250
     # number of evaluation episodes
-    n_eval_episodes: 40
+    n_eval_episodes: 50
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 30000
+    eval_freq: 10000
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
   # can be either "succ" (success rate) or "rew" (reward)
   training_curriculum:
     # file for the robot's learning curriculum
-    training_curriculum_file: "default.yaml"
-    curr_stage: 0
+    training_curriculum_file: "semantic.yaml"
+    curr_stage: 5
     threshold_type: "succ"
     upper_threshold: 0.90
     lower_threshold: 0.65
@@ -63,7 +63,7 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "RosnavResNet_3"
+  architecture_name: "RosnavResNet_5_norm"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   checkpoint: "best_model" # gonna be ignored if resume is not null

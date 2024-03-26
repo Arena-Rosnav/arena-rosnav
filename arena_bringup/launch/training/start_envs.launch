@@ -3,10 +3,14 @@
   <arg name="num_envs" default="1" />
   <arg name="ns_prefix" default="sim" />
   <arg name="model"/>
+  <arg name="entity_manager" default="crowdsim"/>
+  <arg name="world_file" default=""/>
+  <arg name="sfm" default=""/>
 
   <include file="$(find arena_bringup)/launch/training/single_env_training.launch">
     <arg name="ns" value="$(arg ns_prefix)_$(arg num_envs)" />
     <arg name="model" value="$(arg model)" />
+    
   </include>
 
   <include file="$(find arena_bringup)/launch/training/start_envs.launch" if="$(eval arg('num_envs') > 1)">

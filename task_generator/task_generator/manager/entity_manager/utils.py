@@ -172,18 +172,18 @@ class YAMLUtil:
     def serialize(obj: Any):
         return yaml.dump(obj)
 
-    PLUGIN_PROPS_TO_CHANGE = {
-        "DiffDrive": {"odom_frame_id": lambda ns, robot_name: f"odom"}
-    }
-
     PLUGIN_PROPS_TO_EXTEND: Dict[str, List[str]] = {
-        "DiffDrive": ["odom_frame_id", "odom_pub", "twist_sub", "ground_truth_pub"],
+        "DiffDrive": ["odom_pub", "twist_sub", "ground_truth_pub"],
         "Laser": ["topic"],
     }
 
     PLUGIN_PROPS_DEFAULT_VAL = {
         "DiffDrive": {"ground_truth_pub": "odometry/ground_truth"}
     }
+
+    @staticmethod
+    def update_frame_id(namespace: Namespace, frame_id: str):
+        return f"{namespace.robot_ns}/{frame_id}"
 
     @staticmethod
     def update_plugins(namespace: Namespace, description: Any) -> Any:
@@ -208,13 +208,10 @@ class YAMLUtil:
                         ),
                     )
 
-                    if prop == "odom_frame_id" and plugin[prop][0] == "/":
-                        plugin[prop] = plugin[prop][1:]
-
-                # for prop in YAMLUtil.PLUGIN_PROPS_TO_CHANGE.get(plugin["type"], []):
-                #     plugin[prop] = YAMLUtil.PLUGIN_PROPS_TO_CHANGE[plugin["type"]][
-                #         prop
-                #     ](ns=namespace.simulation_ns, robot_name=namespace.robot_ns)
+                    # if plugin["type"] == "DiffDrive":
+                    #     plugin["odom_frame_id"] = YAMLUtil.update_frame_id(
+                    #         namespace, "odom"
+                    #     )
 
             return description
 

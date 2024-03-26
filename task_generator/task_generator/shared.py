@@ -27,14 +27,17 @@ _unspecified = rospy.client._Unspecified()
 _UNSPECIFIED = rospy.client._Unspecified
 _notfound = object()
 
-def rosparam_get(cast: Type[T], param_name: str, default:Union[U, _UNSPECIFIED]=_unspecified) -> Union[T, U]:
+
+def rosparam_get(
+    cast: Type[T], param_name: str, default: Union[U, _UNSPECIFIED] = _unspecified
+) -> Union[T, U]:
     """
     Get typed ros parameter (strict)
     @cast: Return type of function
     @param_name: Name of parameter on parameter server
     @default: Default value. Raise ValueError is default is unset and parameter can't be found.
     """
-    
+
     val = rospy.get_param(param_name=param_name, default=_notfound)
 
     if val == _notfound:
@@ -47,12 +50,15 @@ def rosparam_get(cast: Type[T], param_name: str, default:Union[U, _UNSPECIFIED]=
     except ValueError as e:
         raise ValueError(f"could not cast {val} to {cast} of param {param_name}") from e
 
+
 class Namespace(str):
     def __call__(self, *args: str) -> Namespace:
         return Namespace(os.path.join(self, *args))
 
     @property
     def simulation_ns(self) -> Namespace:
+        if len(self.split("/")) < 3:
+            return self
         return Namespace(os.path.dirname(self))
 
     @property
@@ -101,20 +107,13 @@ class Model:
         return dataclasses.replace(self, **kwargs)
 
 
-Position = collections.namedtuple(
-    "Position",
-    ("x", "y")
-)
+Position = collections.namedtuple("Position", ("x", "y"))
 
 PositionOrientation = collections.namedtuple(
-    "PositionOrientation",
-    ("x", "y", "orientation")
+    "PositionOrientation", ("x", "y", "orientation")
 )
 
-PositionRadius = collections.namedtuple(
-    "PositionRadius",
-    ("x", "y", "radius")
-)
+PositionRadius = collections.namedtuple("PositionRadius", ("x", "y", "radius"))
 
 
 class ModelWrapper:
@@ -162,8 +161,7 @@ class ModelWrapper:
         return clone
 
     @overload
-    def get(self, only: ModelType, **kwargs) -> Model:
-        ...
+    def get(self, only: ModelType, **kwargs) -> Model: ...
 
     """
         load specific model
@@ -171,8 +169,7 @@ class ModelWrapper:
     """
 
     @overload
-    def get(self, only: Collection[ModelType], **kwargs) -> Model:
-        ...
+    def get(self, only: Collection[ModelType], **kwargs) -> Model: ...
 
     """
         load specific model from collection
@@ -180,8 +177,7 @@ class ModelWrapper:
     """
 
     @overload
-    def get(self, **kwargs) -> Model:
-        ...
+    def get(self, **kwargs) -> Model: ...
 
     """
         load any available model
@@ -271,8 +267,7 @@ class EntityProps:
 
 
 @dataclasses.dataclass(frozen=True)
-class ObstacleProps(EntityProps):
-    ...
+class ObstacleProps(EntityProps): ...
 
 
 @dataclasses.dataclass(frozen=True)
@@ -311,8 +306,7 @@ class DynamicObstacle(DynamicObstacleProps):
     def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
         name = str(obj.get("name", ""))
         position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
-        waypoints = [PositionRadius(*waypoint)
-                     for waypoint in obj.get("waypoints", [])]
+        waypoints = [PositionRadius(*waypoint) for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
             name=name, position=position, model=model, waypoints=waypoints, extra=obj
@@ -348,10 +342,16 @@ class Robot(RobotProps):
     def parse(obj: Dict, model: ModelWrapper) -> "Robot":
         name = str(obj.get("name", ""))
         position = PositionOrientation(*obj.get("pos", next(gen_init_pos)))
-        inter_planner = str(obj.get("inter_planner", rosparam_get(str, "inter_planner", "")))
-        local_planner = str(obj.get("local_planner", rosparam_get(str, "local_planner", "")))
+        inter_planner = str(
+            obj.get("inter_planner", rosparam_get(str, "inter_planner", ""))
+        )
+        local_planner = str(
+            obj.get("local_planner", rosparam_get(str, "local_planner", ""))
+        )
         agent = str(obj.get("agent", rosparam_get(str, "agent_name", "")))
-        record_data = obj.get("record_data_dir", rospy.get_param("record_data_dir", None))
+        record_data = obj.get(
+            "record_data_dir", rospy.get_param("record_data_dir", None)
+        )
 
         return Robot(
             name=name,

@@ -6,11 +6,15 @@ repositories:
   arena/simulation-setup:
     type: git
     url: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: f093a8ef
+    version: da7ecb8
   arena/utils/3rd-party-robot-packages:
     type: git
     url: https://github.com/Arena-Rosnav/3rd-party-robot-packages
     version: 8b60c1169626568bf734a07c3b0f13b06d3e2871
+  arena/utils/crowdsim:
+    type: git
+    url: https://github.com/Arena-Rosnav/crowdsim
+    version: 85fb9f82
   arena/utils/flatland:
     type: git
     url: https://github.com/Arena-Rosnav/flatland.git
@@ -18,19 +22,19 @@ repositories:
   arena/utils/move_base_flex:
     type: git
     url: https://github.com/Arena-Rosnav/move_base_flex.git
-    version: c3613d87e3e7c65d85225feb3f90350023c1361a
+    version: 7bd11528
   arena/utils/navigation:
     type: git
     url: https://github.com/arena-rosnav/navigation.git
-    version: 17ba8f0dd36de563be0cfe1d02173eb45ae7daa0
+    version: 6172aaf0
   arena/utils/pedsim_ros:
     type: git
     url: https://github.com/arena-rosnav/pedsim_ros.git
-    version: 91bdce9d
+    version: f09987bd
   arena/utils/stable-baselines3:
     type: git
-    url: https://github.com/tuananhroman/stable-baselines3.git
-    version: 03cd2dfe9a3b56a3fea76443b6bb04fd8af7d295
+    url: https://github.com/Arena-Rosnav/stable-baselines3.git
+    version: c8255a59428af173c2c853880dffdadd120f1aa3
   arena/utils/unitree_ros:
     type: git
     url: https://github.com/voshch/unitree_ros
@@ -90,7 +94,7 @@ repositories:
   planners/rosnav:
     type: git
     url: https://github.com/Arena-Rosnav/rosnav-rl.git
-    version: 330ffa5fcaa6b122383be6590fbbed5c7eff5afa
+    version: dd7fcaf
   planners/sarl-star:
     type: git
     url: https://github.com/Arena-Rosnav/sarl-star.git

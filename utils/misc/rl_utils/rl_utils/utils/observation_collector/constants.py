@@ -1,5 +1,5 @@
 import enum
-from pedsim_agents.utils import SemanticAttribute
+from crowdsim_agents.utils import SemanticAttribute
 
 
 class DONE_REASONS(enum.Enum):
@@ -12,12 +12,13 @@ class TOPICS:
     LASER = "scan"
     FULL_RANGE_LASER = "full_scan"
     ROBOT_STATE = "odom"
-    GOAL = "goal"
+    GOAL = "move_base_simple/goal"
+    SUBGOAL = "subgoal"
 
-    GLOBALPLAN = "move_base_flex/get_path/goal"
+    GLOBALPLAN = "global_plan"
 
     PEDSIM_STATES = "pedsim_simulator/simulated_agents"
-    PEDSIM_SEMANTIC = "pedsim_agents/semantic"
+    PEDSIM_SEMANTIC = "crowdsim_agents/semantic"
 
 
 class OBS_DICT_KEYS:
@@ -27,6 +28,8 @@ class OBS_DICT_KEYS:
 
     LASER = "laser_scan"
     ROBOT_POSE = "robot_pose"
+    SUBGOAL = "subgoal"
+    GOAL = "goal"
     GOAL_DIST_ANGLE = "goal_in_robot_frame"
     GOAL_LOCATION_IN_ROBOT_FRAME = "goal_location_in_robot_frame"
     GOAL_LOCATION = "goal_location"
