@@ -1,5 +1,5 @@
 import enum
-from pedsim_agents.utils import SemanticAttribute
+from crowdsim_agents.utils import SemanticAttribute
 
 
 class DONE_REASONS(enum.Enum):
