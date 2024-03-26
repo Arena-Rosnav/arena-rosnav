@@ -21,10 +21,8 @@
   <env name="SIMULATOR" value="$(arg simulator)" />
   <param name="headless" value="$(arg headless)" /> 
 
-  <arg name="entity_manager" default="pedsim" doc="[pedsim]" />
-  <arg name="pedsim" value="$(eval entity_manager == 'pedsim')" />
-  <env name="PEDSIM" value="$(arg pedsim)" />
-  <arg name="sfm" default="passthrough" doc="sfm for pedsim [passthrough, moonwalk]"/>
+  <arg name="entity_manager" default="crowdsim" doc="[flatland, pedsim, crowdsim]" />
+  <arg name="sfm" default="" doc="sfm for crowdsim [passthrough, pysocial]"/>
 
   <arg name="complexity" default="1" doc="1 = Map known, Position known; 2 = Map known, Position unknown (AMCL); 3 = Map unknown, Position unknown (SLAM)" />
   
@@ -77,7 +75,6 @@
   <param name="tm_obstacles" value="$(arg tm_obstacles)" />
   <param name="tm_modules" value="$(arg tm_modules)" />
   <param name="/benchmark_resume" value="$(arg benchmark_resume)" />
-  <param name="pedsim" type="bool" value="$(arg pedsim)" />
   <param name="map_path" value="$(arg map_path)" />
   <param name="train_mode" value="false" />
   <param name="show_viz" value="$(arg show_rviz)"/>
@@ -108,6 +105,13 @@
   <arg name="odom_frame_id" value="odom" />
 
   <param name="robot_name" value="$(arg model)" />
+
+  <!-- Entity Manager -->
+  <include file="$(find arena_bringup)/launch/utils/entity_manager.launch">
+    <arg name="entity_manager" value="$(arg entity_manager)" />
+    <arg name="world_file" value="$(arg world_file)" />
+    <arg name="sfm" value="$(arg sfm)" />
+  </include>
 
   <!-- use simulator-->
 
@@ -146,15 +150,6 @@
 
   <include file="$(find arena_bringup)/launch/testing/task_generator.launch">
   </include>
-
-  <!-- Launch pedsim agent spawner  -->
-  <group if="$(eval arg('pedsim'))">
-    <include file="$(find pedsim_ros)/launch/pedsim.launch">
-      <arg name="sfm" value="$(arg sfm)"/>
-      <arg name="scene_file" value="$(find arena_simulation_setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world" />
-      <arg name="visualize" value="true" />
-    </include>
-  </group>
 
   <node type="create_config_file.py" pkg="rviz_utils" name="rviz_config_file_creator" />
   

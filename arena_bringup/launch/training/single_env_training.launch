@@ -8,7 +8,7 @@
 <launch>
   <arg name="ns" />
   <arg name="model" default="jackal"/>
-  <arg name="entity_manager" default="pedsim"/>
+  <arg name="entity_manager" default="crowdsim"/>
   <arg name="world_file" default=""/>
 
   <!-- use fake localization-->

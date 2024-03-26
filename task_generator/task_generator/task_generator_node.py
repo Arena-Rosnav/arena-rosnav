@@ -13,6 +13,8 @@ from task_generator.constants import Config, Constants
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
 from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
+from task_generator.manager.entity_manager.crowdsim_manager import CrowdsimManager
+
 from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
@@ -193,6 +195,10 @@ class TaskGenerator:
             )
         elif self._entity_mode == Constants.EntityManager.FLATLAND:
             self._entity_manager = FlatlandManager(
+                namespace=self._namespace, simulator=self._env_wrapper
+            )
+        elif self._entity_mode == Constants.EntityManager.CROWDSIM:
+            self._entity_manager = CrowdsimManager(
                 namespace=self._namespace, simulator=self._env_wrapper
             )
         else:
