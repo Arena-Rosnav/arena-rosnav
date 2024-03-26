@@ -7,7 +7,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_1.json
+        file: 1.json
 
   - name: arena_corridor_2_jackal
     episodes: 1
@@ -17,7 +17,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_2.json 
+        file: 2.json 
 
   - name: arena_corridor_3_jackal
     episodes: 1
@@ -27,7 +27,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_3.json
+        file: 3.json
 
   - name: arena_corridor_4_jackal
     episodes: 1
@@ -37,7 +37,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_4.json
+        file: 4.json
 
   - name: arena_corridor_5_jackal
     episodes: 1
@@ -47,7 +47,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_5.json
+        file: 5.json
         
   - name: arena_corridor_random_jackal
     episodes: 5
@@ -57,7 +57,7 @@ stages:
     tm_obstacles: random
     config:
       SCENARIO:
-        file: arena_corridor_1.json
+        file: 1.json
       RANDOM:
         static:
           min: 5
@@ -80,7 +80,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_1.json
+        file: 1.json
 
   - name: arena_corridor_2_agvota
     episodes: 1
@@ -90,7 +90,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_2.json 
+        file: 2.json 
 
   - name: arena_corridor_3_agvota
     episodes: 1
@@ -100,7 +100,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_3.json
+        file: 3.json
 
   - name: arena_corridor_4_agvota
     episodes: 1
@@ -110,7 +110,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_4.json
+        file: 4.json
 
   - name: arena_corridor_5_agvota
     episodes: 1
@@ -120,7 +120,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_5.json
+        file: 5.json
         
   - name: arena_corridor_random_agvota
     episodes: 5
@@ -130,7 +130,7 @@ stages:
     tm_obstacles: random
     config:
       SCENARIO:
-        file: arena_corridor_1.json
+        file: 1.json
       RANDOM:
         static:
           min: 5
@@ -153,7 +153,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_1.json
+        file: 1.json
 
   - name: arena_corridor_2_cob4
     episodes: 1
@@ -163,7 +163,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_2.json 
+        file: 2.json 
 
   - name: arena_corridor_3_cob4
     episodes: 1
@@ -173,7 +173,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_3.json
+        file: 3.json
 
   - name: arena_corridor_4_cob4
     episodes: 1
@@ -183,7 +183,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_4.json
+        file: 4.json
 
   - name: arena_corridor_5_cob4
     episodes: 1
@@ -193,7 +193,7 @@ stages:
     tm_obstacles: scenario
     config:
       SCENARIO:
-        file: arena_corridor_5.json
+        file: 5.json
         
   - name: arena_corridor_random_cob4
     episodes: 5
@@ -203,7 +203,7 @@ stages:
     tm_obstacles: random
     config:
       SCENARIO:
-        file: arena_corridor_1.json
+        file: 1.json
       RANDOM:
         static:
           min: 5
