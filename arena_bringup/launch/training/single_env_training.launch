@@ -11,9 +11,6 @@
   <arg name="entity_manager" default="pedsim"/>
   <arg name="world_file" default=""/>
 
-  <!-- TODO: make non-constant -->
-  <arg name="sfm" value="passthrough" />
-
   <!-- use fake localization-->
   <group ns="$(arg ns)" >
     <!-- use simulator and rviz-->
@@ -40,7 +37,6 @@
 
       <include file="$(find pedsim_ros)/launch/pedsim.launch" if="$(eval arg('entity_manager')=='pedsim')">
         <arg name="scene_file" value="$(find arena_simulation_setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world"/>
-        <arg name="sfm" value="$(eval arg('sfm'))" />
       </include>
     </group>
     
