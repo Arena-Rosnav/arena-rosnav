@@ -19,7 +19,11 @@
 
 #include <geometry_msgs/Twist.h>
 
-#define PI 3.14159265
+#define SUB_TOPIC_GOAL "move_base_simple/goal"
+#define SUB_TOPIC_ODOM "odom"
+#define PUB_TOPIC_SUBGOAL "subgoal"
+#define PUB_TOPIC_GLOBAL_PLAN "global_plan"
+#define SERVICE_GLOBAL_PLANNER "move_base_flex/NavfnROS/make_plan"
 
 class SpacialHorizon
 {
@@ -79,8 +83,6 @@ public:
     ~SpacialHorizon() {}
 
     void init(ros::NodeHandle &nh);
-
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 #endif

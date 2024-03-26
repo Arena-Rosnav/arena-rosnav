@@ -33,13 +33,13 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     /* ros communication with public node */
     ros::NodeHandle public_nh; // sim1/goal
     sub_goal =
-        public_nh.subscribe("move_base_simple/goal", 1, &SpacialHorizon::goalCallback, this);
+        public_nh.subscribe(SUB_TOPIC_GOAL, 1, &SpacialHorizon::goalCallback, this);
     sub_odom =
-        public_nh.subscribe("odom", 3, &SpacialHorizon::odomCallback, this);
+        public_nh.subscribe(SUB_TOPIC_ODOM, 1, &SpacialHorizon::odomCallback, this);
 
     pub_subgoal =
-        public_nh.advertise<geometry_msgs::PoseStamped>("subgoal", 10);
-    pub_global_plan = public_nh.advertise<nav_msgs::Path>("global_plan", 10);
+        public_nh.advertise<geometry_msgs::PoseStamped>(PUB_TOPIC_SUBGOAL, 10);
+    pub_global_plan = public_nh.advertise<nav_msgs::Path>(PUB_TOPIC_GLOBAL_PLAN, 10);
 
     initializeGlobalPlanningService();
 }
@@ -48,7 +48,7 @@ void SpacialHorizon::initializeGlobalPlanningService()
 {
     ROS_INFO_STREAM("[Spacial Horizon - INIT] Initializing MBF service client");
     ros::NodeHandle nh;
-    std::string service_name = ros::this_node::getNamespace() + "/move_base_flex/NavfnROS/make_plan";
+    std::string service_name = ros::this_node::getNamespace() + "/" + SERVICE_GLOBAL_PLANNER;
 
     while (!ros::service::waitForService(service_name, ros::Duration(3.0)))
     {
@@ -60,6 +60,7 @@ void SpacialHorizon::initializeGlobalPlanningService()
 
 void SpacialHorizon::odomCallback(const nav_msgs::OdometryConstPtr &msg)
 {
+    ROS_INFO_STREAM("[Spacial Horizon] Received new odom");
     odom_pos =
         Eigen::Vector2d(msg->pose.pose.position.x, msg->pose.pose.position.y);
     odom_vel =
@@ -149,34 +150,28 @@ void SpacialHorizon::updateSubgoalCallback(const ros::TimerEvent &e)
     }
     else
     {
-        std::cout << "GEN NEW SUBGOAL" << std::endl;
-
+        ROS_INFO_STREAM("[Spacial Horizon] Updating subgoal");
 
         if (!has_goal) {
-        std::cout << "NO GOAL" << std::endl;
-
+            ROS_WARN("[SpacialHorizon] No goal received yet");
             return;
-
         }
         Eigen::Vector2d subgoal;
         bool subgoal_success = getSubgoal(subgoal);
-        ;
 
         // if to far away from subgoal -> recompute global path and subgoal
         double dist_to_subgoal = (odom_pos - subgoal).norm();
         if (dist_to_subgoal > planning_horizon + 1.0)
         {
-            std::cout << "[Spacial Horizon]: Too far away from subgoal! Recomputing "
-                        "global path " << end_pos << " " << odom_pos
-                    << std::endl;
+            ROS_INFO_STREAM("[Spacial Horizon]: Too far away from subgoal! Recomputing global path: " 
+                            << end_pos << " " << odom_pos);
             getGlobalPath();
             subgoal_success = getSubgoal(subgoal);
         }
 
         if (!subgoal_success)
         {
-            std::cout << "SUBGOAL SUCCESS" << std::endl;
-            
+            ROS_WARN_STREAM("[Spacial Horizon] No subgoal found. No global plan received or goal reached!");
             return;
         }
 
@@ -187,7 +182,7 @@ void SpacialHorizon::updateSubgoalCallback(const ros::TimerEvent &e)
         pose_stamped.pose.position.y = subgoal(1);
         pose_stamped.pose.position.z = 0.0;
 
-        std::cout << "PUBLISHING NEW SUBGOAL" << std::endl;
+        ROS_INFO_STREAM("[Spacial Horizon] Publishing new subgoal");
 
         pub_subgoal.publish(pose_stamped);
     }
@@ -235,7 +230,7 @@ void SpacialHorizon::callPlanningService(ros::ServiceClient &serviceClient,
     {
         if (srv.response.plan.poses.empty())
         {
-            ROS_WARN("[SpacialHorizon - GET_PATH] Got empty plan");
+            ROS_WARN("[SpacialHorizon - GET_PATH] Global plan was empty!");
             return;
         }
 
