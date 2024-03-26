@@ -10,6 +10,7 @@
   <arg name="model" default="jackal"/>
   <arg name="entity_manager" default="crowdsim"/>
   <arg name="world_file" default=""/>
+  <arg name="sfm" default=""/>
 
   <!-- use fake localization-->
   <group ns="$(arg ns)" >
@@ -35,8 +36,11 @@
       <remap from="/reset_end" to="/$(arg ns)/reset_end" />
       <remap from="/reset_start" to="/$(arg ns)/reset_start" />
 
-      <include file="$(find pedsim_ros)/launch/pedsim.launch" if="$(eval arg('entity_manager')=='pedsim')">
-        <arg name="scene_file" value="$(find arena_simulation_setup)/worlds/$(arg world_file)/worlds/$(arg world_file).world"/>
+      <!-- Entity Manager -->
+      <include file="$(find arena_bringup)/launch/utils/entity_manager.launch">
+        <arg name="entity_manager" value="$(arg entity_manager)" />
+        <arg name="world_file" value="$(arg world_file)" />
+        <arg name="sfm" value="$(arg sfm)" />
       </include>
     </group>
     
