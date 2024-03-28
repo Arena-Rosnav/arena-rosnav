@@ -83,6 +83,9 @@ class FlatlandEnv(gymnasium.Env):
         reward_fnc: str,
         max_steps_per_episode=100,
         trigger_init: bool = False,
+        obs_unit_kwargs=None,
+        reward_fnc_kwargs=None,
+        task_generator_kwargs=None,
         *args,
         **kwargs,
     ):
@@ -100,7 +103,11 @@ class FlatlandEnv(gymnasium.Env):
         self._step_size = rospy.get_param_cached("/step_size")
 
         self._reward_fnc = reward_fnc
-        self._kwargs = kwargs
+        self._reward_fnc_kwargs = reward_fnc_kwargs if reward_fnc_kwargs else {}
+        self._obs_unit_kwargs = obs_unit_kwargs if obs_unit_kwargs else {}
+        self._task_generator_kwargs = (
+            task_generator_kwargs if task_generator_kwargs else {}
+        )
 
         self._steps_curr_episode = 0
         self._episode = 0
@@ -124,7 +131,9 @@ class FlatlandEnv(gymnasium.Env):
         )
 
         if self._is_train_mode:
-            self._setup_env_for_training(self._reward_fnc, **self._kwargs)
+            self._setup_env_for_training(
+                self._reward_fnc, **self._task_generator_kwargs
+            )
 
         # observation collector
         self.observation_collector = ObservationManager(
@@ -134,6 +143,7 @@ class FlatlandEnv(gymnasium.Env):
                 GlobalplanCollectorUnit,
                 SemanticAggregateUnit,
             ],
+            obs_unit_kwargs=self._obs_unit_kwargs,
         )
         return True
 
@@ -157,6 +167,7 @@ class FlatlandEnv(gymnasium.Env):
             robot_radius=self.task.robot_managers[0]._robot_radius,
             safe_dist=self.task.robot_managers[0].safe_distance,
             goal_radius=rosparam_get(float, "goal_radius", 0.3),
+            **self._reward_fnc_kwargs,
         )
 
         self.agent_action_pub = rospy.Publisher(self.ns("cmd_vel"), Twist, queue_size=1)

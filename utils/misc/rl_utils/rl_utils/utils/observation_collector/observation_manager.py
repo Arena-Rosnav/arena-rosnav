@@ -24,7 +24,12 @@ class ObservationManager:
     _obs_structur: List[Type[CollectorUnit]]
     _observation_units: List[CollectorUnit]
 
-    def __init__(self, ns: Namespace, obs_structur: List[CollectorUnit] = None) -> None:
+    def __init__(
+        self,
+        ns: Namespace,
+        obs_structur: List[CollectorUnit] = None,
+        obs_unit_kwargs: dict = None,
+    ) -> None:
         """
         Initialize ObservationManager with namespace and observation structure.
 
@@ -38,10 +43,10 @@ class ObservationManager:
             GlobalplanCollectorUnit,
             SemanticAggregateUnit,
         ]
-        self._observation_units = self._instantiate_units()
+        self._observation_units = self._instantiate_units(**obs_unit_kwargs)
         self._inititialize_units()
 
-    def _instantiate_units(self) -> List[CollectorUnit]:
+    def _instantiate_units(self, **kwargs) -> List[CollectorUnit]:
         """
         Instantiate observation units based on the provided structure.
 
@@ -49,7 +54,7 @@ class ObservationManager:
             List[CollectorUnit]: List of instantiated observation units.
         """
         return [
-            collector_class(ns=self._ns, observation_manager=self)
+            collector_class(ns=self._ns, observation_manager=self, **kwargs)
             for collector_class in self._obs_structur
         ]
 
