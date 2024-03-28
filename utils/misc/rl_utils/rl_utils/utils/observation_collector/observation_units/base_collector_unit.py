@@ -59,7 +59,14 @@ class BaseCollectorUnit(CollectorUnit):
 
     _first_reset: bool
 
-    def __init__(self, ns: Namespace, observation_manager) -> None:
+    def __init__(
+        self,
+        ns: Namespace,
+        observation_manager,
+        subgoal_mode: bool = False,
+        *args,
+        **kwargs
+    ) -> None:
         """
         Initialize the BaseCollectorUnit.
 
@@ -87,6 +94,8 @@ class BaseCollectorUnit(CollectorUnit):
         self._received_scan = False
         self._received_goal = False
 
+        self._subgoal_mode = subgoal_mode
+
         self._first_reset = True
 
     def init_subs(self):
@@ -113,7 +122,11 @@ class BaseCollectorUnit(CollectorUnit):
             tcp_nodelay=True,
         )
         self._goal_sub = rospy.Subscriber(
-            self._ns(TOPICS.GOAL),
+            (
+                self._ns(TOPICS.GOAL)
+                if not self._subgoal_mode
+                else self._ns(TOPICS.SUBGOAL)
+            ),
             PoseStamped,
             self._cb_goal,
             tcp_nodelay=True,

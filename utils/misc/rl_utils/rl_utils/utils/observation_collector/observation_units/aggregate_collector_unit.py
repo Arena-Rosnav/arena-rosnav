@@ -73,7 +73,13 @@ class AggregateCollectorUnit(CollectorUnit):
     _laser_observations: List[LaserObservation]
     _semantic_observations: Dict[Constants.OBS_DICT_KEYS.SEMANTIC, SemanticObservation]
 
-    def __init__(self, ns: Namespace, observation_manager: "ObservationCollector"):
+    def __init__(
+        self,
+        ns: Namespace,
+        observation_manager: "ObservationCollector",
+        *args,
+        **kwargs
+    ):
         super().__init__(Namespace(ns), observation_manager)
 
         self._laser_observations = []
