@@ -25,7 +25,11 @@ class GlobalplanCollectorUnit(CollectorUnit):
     _globalplan_sub: rospy.Subscriber
 
     def __init__(
-        self, ns: Namespace, observation_manager: "ObservationCollector"
+        self,
+        ns: Namespace,
+        observation_manager: "ObservationCollector",
+        *args,
+        **kwargs
     ) -> None:
         """
         Initializes a GlobalplanCollectorUnit instance.
@@ -49,9 +53,6 @@ class GlobalplanCollectorUnit(CollectorUnit):
         )
         self._subgoal_sub = rospy.Subscriber(
             self._ns(TOPICS.SUBGOAL), PoseStamped, self._cb_subgoal
-        )
-        self._goal_pub = rospy.Publisher(
-            self._ns(TOPICS.GOAL), PoseStamped, queue_size=1
         )
 
     def get_observations(

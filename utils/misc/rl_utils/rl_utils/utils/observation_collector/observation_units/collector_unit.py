@@ -23,7 +23,11 @@ class CollectorUnit(ABC):
     _observation_manager = "ObservationCollector"
 
     def __init__(
-        self, ns: Namespace, observation_manager: "ObservationCollector"
+        self,
+        ns: Namespace,
+        observation_manager: "ObservationCollector",
+        *args,
+        **kwargs
     ) -> None:
         """
         Initializes the collector unit with the provided namespace and observation manager.

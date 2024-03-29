@@ -53,6 +53,7 @@ class RewardFunction:
         goal_radius: float,
         safe_dist: float,
         internal_state_updates: List[InternalStateInfoUpdate] = None,
+        reward_unit_kwargs: dict = None,
         *args,
         **kwargs,
     ):
@@ -80,13 +81,17 @@ class RewardFunction:
         self._info = {}
 
         self._rew_fnc_dict = load_rew_fnc(self._rew_func_name)
-        self._reward_units: List["RewardUnit"] = self._setup_reward_function()
+
+        reward_unit_kwargs = reward_unit_kwargs or {}
+        self._reward_units: List["RewardUnit"] = self._setup_reward_function(
+            **reward_unit_kwargs
+        )
 
         self._goal_radius_updater = DynamicParameter(
             cls=self, key="goal_radius", message_type=Float32
         )
 
-    def _setup_reward_function(self) -> List["RewardUnit"]:
+    def _setup_reward_function(self, **kwargs) -> List["RewardUnit"]:
         """Sets up the reward function.
 
         Returns:
@@ -96,9 +101,9 @@ class RewardFunction:
 
         return [
             rew_pkg.RewardUnitFactory.instantiate(unit_name)(
-                reward_function=self, **kwargs
+                reward_function=self, **kwargs, **params
             )
-            for unit_name, kwargs in self._rew_fnc_dict.items()
+            for unit_name, params in self._rew_fnc_dict.items()
         ]
 
     def add_reward(self, value: float):

@@ -73,6 +73,13 @@ rl_agent:
     stack_size: 6
 
   reward_fnc: "base_semantic"
+  reward_fnc_kwargs: 
+    placeholder: 0 # placeholder kwarg
+  
+  # subgoal mode: if true, the agent follows the subgoal given by the spcial horizon planner
+  # if false, the agent follows the global goal
+  # (intermediate planner params are located in robot-specific simulation setup directory)
+  subgoal_mode: true
 
   normalize:
     enabled: true
