@@ -179,6 +179,12 @@ class UnityCollectorUnit(CollectorUnit):
                     OBS_DICT_KEYS.IMAGE_DEPTH: self._image_depth
                 }
             )
+        
+        self._received_collision = False
+        self._received_image_color = False
+        self._received_image_depth = False
+        self._received_obs_safe_dist = False
+        self._received_ped_safe_dist = False
 
         return obs_dict
 
