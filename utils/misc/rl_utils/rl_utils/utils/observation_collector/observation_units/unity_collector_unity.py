@@ -229,7 +229,7 @@ class UnityCollectorUnit(CollectorUnit):
         cv_mat = self._image_bridge.imgmsg_to_cv2(image_msg)
         self._image_color = np.asarray(cv_mat)
         # let the channel dim be the first dim and remove a-channel
-        self._image_color = (np.asarray(cv_mat)[:,:,0:3]).transpose((2, 0, 1))
+        self._image_color = (np.asarray(cv_mat, dtype=np.float32)[:,:,0:3]).transpose((2, 0, 1))
 
     def _cb_image_depth(self, image_msg: Image):
         """Callback function for receiving depth data. Converts image msg to cv Mat to np ndarray.
@@ -239,4 +239,4 @@ class UnityCollectorUnit(CollectorUnit):
         """
         self._received_image_depth = True
         cv_mat = self._image_bridge.imgmsg_to_cv2(image_msg)
-        self._image_depth = np.asarray(cv_mat)
+        self._image_depth = np.asarray(cv_mat, dtype=np.float32)
