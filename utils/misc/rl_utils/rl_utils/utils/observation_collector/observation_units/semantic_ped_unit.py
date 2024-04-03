@@ -74,16 +74,18 @@ class SemanticAggregateUnit(AggregateCollectorUnit):
         robot_R_map = np.linalg.inv(map_R_robot)
 
         # x/y velocity
-        ped_vel = np.stack(
-            [
-                [data_x.evidence, data_y.evidence]
-                for data_x, data_y in zip(
-                    semantic_data_x.points, semantic_data_y.points
-                )
-            ]
-        )
-        rel_vel = np.matmul(robot_R_map, ped_vel.T)
-        return rel_vel[0, :].T, rel_vel[1, :].T
+        if len(semantic_data_x.points) > 0 and len(semantic_data_y.points) > 0:
+            ped_vel = np.stack(
+                [
+                    [data_x.evidence, data_y.evidence]
+                    for data_x, data_y in zip(
+                        semantic_data_x.points, semantic_data_y.points
+                    )
+                ]
+            )
+            rel_vel = np.matmul(robot_R_map, ped_vel.T)
+            return rel_vel[0, :].T, rel_vel[1, :].T
+        return np.array([])
 
     def get_observations(
         self, obs_dict: Dict[str, Any], *args, **kwargs

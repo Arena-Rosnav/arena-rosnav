@@ -79,7 +79,7 @@ rl_agent:
   # subgoal mode: if true, the agent follows the subgoal given by the spcial horizon planner
   # if false, the agent follows the global goal
   # (intermediate planner params are located in robot-specific simulation setup directory)
-  subgoal_mode: true
+  subgoal_mode: false
 
   normalize:
     enabled: true
