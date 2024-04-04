@@ -130,7 +130,6 @@
     <arg name="rviz_file" value="$(arg rviz_file)" />
     <arg name="show_rviz" default="$(arg show_rviz)" />
     <arg name="world" value="$(arg world_file)"/>
-    <arg name="pedsim" value="$(arg pedsim)"/>
     <arg name="headless" value="$(arg headless)" />
   </include>
 
