@@ -688,7 +688,7 @@ class PedsimManager(EntityManager):
                 # )
 
             else:
-                rospy.loginfo("Spawning dynamic obstacle: actor_id = %s", actor_id)
+                # rospy.loginfo("Spawning dynamic obstacle: actor_id = %s", actor_id)
 
                 self._simulator.spawn_entity(
                     entity=Obstacle(

@@ -77,7 +77,7 @@ class UnitySimulator(BaseSimulator):
         request = SpawnModelRequest()
 
         model = entity.model.get(self.MODEL_TYPES)
-        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Spawn Request for " + entity.name)
+        # rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Spawn Request for " + entity.name)
 
         request.model_name = model.name
         request.model_xml = model.description
@@ -132,13 +132,13 @@ class UnitySimulator(BaseSimulator):
         self._move_model_srv(request)
 
     def delete_entity(self, name):
-        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Delete Request for " + name)
+        # rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Delete Request for " + name)
         res: DeleteModelResponse = self._remove_model_srv(
             DeleteModelRequest(model_name=name))
         return bool(res.success)
 
     def _publish_goal(self, goal):
-        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Goal Request")
+        # rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Goal Request")
 
         goal_msg = PoseStamped()
         goal_msg.header.seq = 0
@@ -155,7 +155,7 @@ class UnitySimulator(BaseSimulator):
         self._goal_pub.publish(goal_msg)
 
     def spawn_walls(self, walls: WorldWalls):
-        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Spawn Wall Request")
+        # rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Spawn Wall Request")
         
         # send a spawn request to unity for all walls
         request = SpawnWallsRequest()
@@ -168,4 +168,4 @@ class UnitySimulator(BaseSimulator):
             )
             request.walls.append(wall_req)
         self._spawn_walls_srv(request)
-        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Sent Spawn Wall Request")
+        # rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Sent Spawn Wall Request")

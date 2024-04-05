@@ -226,7 +226,7 @@ class ArenaUnityEnv(gymnasium.Env):
             tuple: A tuple containing the encoded observation and an empty info dictionary.
 
         """
-        rospy.loginfo("[Unity Env ns:" + self.ns + "]: Resetting.")
+        # rospy.loginfo("[Unity Env ns:" + self.ns + "]: Resetting.")
         super().reset(seed=seed)
         self._episode += 1
         self.agent_action_pub.publish(Twist())
