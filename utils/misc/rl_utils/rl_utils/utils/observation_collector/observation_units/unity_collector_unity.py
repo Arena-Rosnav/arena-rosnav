@@ -195,8 +195,8 @@ class UnityCollectorUnit(CollectorUnit):
         Args:
             collision_msg (Collision): Collision state data.
         """
-        self._received_collision = True
         self._collision = collsion_msg.collision
+        self._received_collision = True
 
     def _cb_ped_safe_dist(self, collsion_msg: Collision):
         """
@@ -205,8 +205,8 @@ class UnityCollectorUnit(CollectorUnit):
         Args:
             collision_msg (Collision): Safe distance state data.
         """
-        self._received_ped_safe_dist = True
         self._ped_safe_dist = collsion_msg.collision
+        self._received_ped_safe_dist = True
 
     def _cb_obs_safe_dist(self, collsion_msg: Collision):
         """
@@ -215,8 +215,8 @@ class UnityCollectorUnit(CollectorUnit):
         Args:
             collision_msg (Collision): Safe distance state data.
         """
-        self._received_obs_safe_dist = True
         self._obs_safe_dist = collsion_msg.collision
+        self._received_obs_safe_dist = True
 
     def _cb_image_color(self, image_msg: Image):
         """
@@ -225,11 +225,10 @@ class UnityCollectorUnit(CollectorUnit):
         Args:
             image_msg (Image): Received rgb image message.
         """
-        self._received_image_color = True
         cv_mat = self._image_bridge.imgmsg_to_cv2(image_msg)
-        self._image_color = np.asarray(cv_mat)
         # let the channel dim be the first dim and remove a-channel
         self._image_color = (np.asarray(cv_mat, dtype=np.float32)[:,:,0:3]).transpose((2, 0, 1))
+        self._received_image_color = True
 
     def _cb_image_depth(self, image_msg: Image):
         """Callback function for receiving depth data. Converts image msg to cv Mat to np ndarray.
@@ -237,6 +236,6 @@ class UnityCollectorUnit(CollectorUnit):
         Args:
             image_msg (Image): Received depth image message.
         """
-        self._received_image_depth = True
         cv_mat = self._image_bridge.imgmsg_to_cv2(image_msg)
         self._image_depth = np.asarray(cv_mat, dtype=np.float32)
+        self._received_image_depth = True
