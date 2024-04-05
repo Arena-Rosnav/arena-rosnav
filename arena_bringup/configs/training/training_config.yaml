@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: true
 # number of parallel environments
-n_envs: 1
+n_envs: 2
 # gpu yes or no
 no_gpu: false
 
@@ -13,8 +13,8 @@ tm_obstacles: "random"
 tm_modules: "staged"
 
 # number of simulation timesteps
-n_timesteps: 40000000
-max_num_moves_per_eps: 50
+n_timesteps: 4000000
+max_num_moves_per_eps: 500
 goal_radius: 0.25
 safety_distance: 0.5
 
@@ -63,7 +63,7 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "RosnavResNet_3"
+  architecture_name: "ArenaUnityResNet_1"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   checkpoint: "best_model" # gonna be ignored if resume is not null
