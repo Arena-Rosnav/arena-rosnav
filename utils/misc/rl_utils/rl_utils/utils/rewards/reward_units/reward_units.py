@@ -966,3 +966,37 @@ class RewardPedTypeVelocityConstraint(RewardUnit):
 
     def reset(self):
         pass
+
+
+from geometry_msgs.msg import Pose2D
+
+
+@RewardUnitFactory.register("angular_vel_constraint")
+class RewardAngularVelocityConstraint(RewardUnit):
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        penalty_factor: float = 0.05,
+        threshold: float = None,
+        _on_safe_dist_violation: bool = True,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+        self._penalty_factor = penalty_factor
+        self._threshold = threshold
+
+        self._time_step_size = rospy.get_param("step_size")
+        self._last_theta = None
+
+    def __call__(self, robot_pose: Pose2D, *args: Any, **kwargs: Any) -> None:
+        if self._last_theta is not None:
+            rotational_vel = (
+                abs(robot_pose.theta - self._last_theta) / self._time_step_size
+            )
+            if self._threshold and rotational_vel > self._threshold:
+                self.add_reward(-self._penalty_factor * rotational_vel)
+        self._last_theta = robot_pose.theta
+
+    def reset(self):
+        self._last_theta = None
