@@ -43,6 +43,7 @@ class ObservationManager:
             GlobalplanCollectorUnit,
             SemanticAggregateUnit,
         ]
+        obs_unit_kwargs = obs_unit_kwargs or {}
         self._observation_units = self._instantiate_units(**obs_unit_kwargs)
         self._inititialize_units()
 
