@@ -65,7 +65,7 @@ rl_agent:
   # name of architecture defined in the Policy factory
   architecture_name: "RosnavResNet_5_norm"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  resume: jackal_RosnavResNet_5_norm_2024_03_23__21_02_24 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   checkpoint: "best_model" # gonna be ignored if resume is not null
 
   frame_stacking:
@@ -103,7 +103,7 @@ rl_agent:
       # number of buckets for each action dimension
       # (only non-holonomic robots with 2D action space supported)
       buckets_linear_vel: 8
-      buckets_angular_vel: 11
+      buckets_angular_vel: 9
 
   lr_schedule:
     # learning rate schedule
