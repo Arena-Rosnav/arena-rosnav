@@ -44,8 +44,16 @@ class ObservationManager:
             SemanticAggregateUnit,
         ]
         obs_unit_kwargs = obs_unit_kwargs or {}
-        self._observation_units = self._instantiate_units(**obs_unit_kwargs)
-        self._inititialize_units()
+        self._inititialize_units(**obs_unit_kwargs)
+
+    def _inititialize_units(self, **kwargs) -> None:
+        """
+        Initialize all observation units.
+        """
+        self._observation_units = self._instantiate_units(**kwargs)
+
+        for unit in self._observation_units:
+            unit.init_subs()
 
     def _instantiate_units(self, **kwargs) -> List[CollectorUnit]:
         """
@@ -58,13 +66,6 @@ class ObservationManager:
             collector_class(ns=self._ns, observation_manager=self, **kwargs)
             for collector_class in self._obs_structur
         ]
-
-    def _inititialize_units(self) -> None:
-        """
-        Initialize all observation units.
-        """
-        for unit in self._observation_units:
-            unit.init_subs()
 
     def get_observations(self, *args, **kwargs) -> Dict[str, Any]:
         """
