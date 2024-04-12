@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 20
+n_envs: 32
 # gpu yes or no
 no_gpu: false
 
@@ -13,8 +13,8 @@ tm_obstacles: "random"
 tm_modules: "staged"
 
 # number of simulation timesteps
-n_timesteps: 8000000
-max_num_moves_per_eps: 300
+n_timesteps: 10000000
+max_num_moves_per_eps: 175
 goal_radius: 0.3
 safety_distance: 1
 
@@ -37,11 +37,11 @@ callbacks:
   ### Periodic Eval
   periodic_eval:
     # max number of steps per episode
-    max_num_moves_per_eps: 500
+    max_num_moves_per_eps: 250
     # number of evaluation episodes
-    n_eval_episodes: 20
+    n_eval_episodes: 30
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 25000
+    eval_freq: 15000
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
@@ -63,16 +63,19 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "RosnavResNet_5"
+  architecture_name: "LSTM_ResNet_5_norm"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
-  checkpoint: "best_model"
+  checkpoint: "last_model"
 
   frame_stacking:
     enabled: false
     stack_size: 6
 
+  subgoal_mode: false
   reward_fnc: "base_semantic"
+  reward_fnc_kwargs:
+    placeholder: 0
 
   normalize:
     enabled: true
@@ -95,8 +98,8 @@ rl_agent:
       enabled: true
       # number of buckets for each action dimension
       # (only non-holonomic robots with 2D action space supported)
-      buckets_linear_vel: 8
-      buckets_angular_vel: 9
+      buckets_linear_vel: 12
+      buckets_angular_vel: 16
 
   lr_schedule:
     # learning rate schedule
@@ -107,7 +110,7 @@ rl_agent:
       final_value: 0.0001
 
   ppo:
-    batch_size: 2560
+    batch_size: 1536
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
@@ -115,6 +118,6 @@ rl_agent:
     vf_coef: 0.22
     max_grad_norm: 0.5
     gae_lambda: 0.95
-    m_batch_size: 256
+    m_batch_size: 64
     n_epochs: 3
     clip_range: 0.2
