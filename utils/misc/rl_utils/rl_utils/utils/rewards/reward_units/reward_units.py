@@ -232,6 +232,7 @@ class RewardCollision(RewardUnit):
         self,
         reward_function: RewardFunction,
         reward: float = DEFAULTS.COLLISION.REWARD,
+        bumper_zone: float = DEFAULTS.COLLISION.BUMPER_ZONE,
         *args,
         **kwargs,
     ):
@@ -243,6 +244,7 @@ class RewardCollision(RewardUnit):
         """
         super().__init__(reward_function, True, *args, **kwargs)
         self._reward = reward
+        self._bumper_zone = bumper_zone + self.robot_radius
 
     def check_parameters(self, *args, **kwargs):
         if self._reward > 0.0:
@@ -258,7 +260,7 @@ class RewardCollision(RewardUnit):
         if "full_laser_scan" in kwargs:
             if len(kwargs["full_laser_scan"]) > 0:
                 coll_in_blind_spots = (
-                    kwargs["full_laser_scan"].min() <= self.robot_radius
+                    kwargs["full_laser_scan"].min() <= self._bumper_zone
                 )
 
         laser_min = self.get_internal_state_info("min_dist_laser")
@@ -882,12 +884,14 @@ class RewardPedTypeCollision(RewardUnit):
         reward_function: RewardFunction,
         ped_type: int = DEFAULTS.PED_TYPE_SPECIFIC_COLLISION.TYPE,
         reward: float = DEFAULTS.PED_TYPE_SPECIFIC_COLLISION.REWARD,
+        bumper_zone: float = DEFAULTS.PED_TYPE_SPECIFIC_COLLISION.BUMPER_ZONE,
         *args,
         **kwargs,
     ):
         super().__init__(reward_function, True, *args, **kwargs)
         self._type = ped_type
         self._reward = reward
+        self._bumper_zone = self.robot_radius + bumper_zone
 
     def __call__(self, *args: Any, **kwargs: Any) -> None:
         """
@@ -916,7 +920,7 @@ class RewardPedTypeCollision(RewardUnit):
             )
             return
 
-        if ped_type_min_distances[self._type] <= self.robot_radius:
+        if ped_type_min_distances[self._type] <= self._bumper_zone:
             self.add_reward(self._reward)
 
     def reset(self):
