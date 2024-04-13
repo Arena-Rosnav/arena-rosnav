@@ -14,6 +14,7 @@ empy = "^3.3.4"
 defusedxml = "^0.7.1"
 lxml = "^4.9.1"
 netifaces = "^0.11.0"
+watchdog = "^3.0.0"
 
 # all planners except rosnav and aio
 [tool.poetry.group.planner.dependencies]
@@ -32,7 +33,7 @@ opencv-python = "^4.8" # applr
 [tool.poetry.group.training]
 optional = true
 [tool.poetry.group.training.dependencies]
-stable-baselines3 = {path = "../../arena/utils/stable-baselines3", develop = true}
+stable-baselines3 = {path = "../utils/stable-baselines3", develop = true}
 torch = "^1.11.0"
 wandb = "^0.13.9"
 tensorboard = "^2.12.2"
@@ -48,12 +49,12 @@ opencv-python = "^4.8"
 sb3-contrib = "^2.1.0"
 shimmy = "^1.3.0"
 
-# pedsim-waypoint-plugin deps
+# crowdsim deps
 [tool.poetry.group.social.dependencies]
 pysocialforce = "^1.1.2"
 socialforce = "^0.2.3"
-watchdog = "^3.0.0"
 pyinstrument = "^4.6.1"
+sismic = "^1.6.6"
 
 [tool.poetry.dev-dependencies]
 

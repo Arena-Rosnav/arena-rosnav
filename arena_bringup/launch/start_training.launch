@@ -7,7 +7,6 @@
   <param name="simulator" value="$(arg SIMULATOR)" />
   <param name="local_planner" value="rosnav" />
 
-
   <arg name="model" default="burger"      doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real]"/>
 
   <!-- Here are the argument that may be frequently changed -->
@@ -28,13 +27,16 @@
   <param name="map_file" value="$(arg map_folder_name)" />
   <param name="map_layer_path" value="$(find arena_simulation_setup)/worlds/$(arg map_folder_name)/map/map.world.yaml" />
 
-  <arg name="entity_manager" default="flatland" doc="[flatland, pedsim]" />
+  <arg name="entity_manager" default="crowdsim" doc="[flatland, pedsim, crowdsim]" />
+  <arg name="sfm" default="" doc="sfm for crowdsim [passthrough, pysocial]"/>
+  <arg name="world_file" default=""/>
   <param name="entity_manager" value="$(arg entity_manager)" />
 
   <!-- if it's false flatland server will not publish any debug related infomation and you will not able to visuzalize e.g robot, dynamic obstacles  -->
-  <!-- <param name="space_encoder" value="UniformEncoder" /> -->
   <rosparam file="$(find arena_bringup)/configs/task_generator.yaml" command="load" ns="configuration"/>
-  <rosparam command="load" file="$(find arena_simulation_setup)/entities/robots/$(arg model)/model_params.yaml" /> 
+  <rosparam command="load" file="$(find arena_simulation_setup)/entities/robots/$(arg model)/model_params.yaml" />
+  <rosparam command="load" file="$(find arena_simulation_setup)/entities/robots/$(arg model)/configs/mbf/plan_fsm_param.yaml"/> 
+
   <rosparam command="load" file="$(find arena_bringup)/params/flatland.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/drl.yaml" />
   <rosparam command="load" file="$(find arena_bringup)/params/map_generator.yaml" ns="map_generator" />
@@ -67,6 +69,9 @@
     <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
     <arg name="time_scale" value="$(arg time_scale)" />
     <arg name="headless" value="$(arg headless)" />
+    <arg name="entity_manager" value="$(arg entity_manager)" />
+    <arg name="sfm" value="$(arg sfm)" />
+    <arg name="world_file" value="$(arg world_file)" />
   </include>
 
   <include file="$(find arena_bringup)/launch/training/start_envs.launch">
@@ -76,6 +81,8 @@
     <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
     <arg name="time_scale" value="$(arg time_scale)" />
     <arg name="headless" value="$(arg headless)" />
+    <arg name="entity_manager" value="$(arg entity_manager)" />
+    <arg name="sfm" value="$(arg sfm)" />
   </include> 
   
   <node pkg="task_generator" name="task_generator_server" type="server.py" output="screen"/>

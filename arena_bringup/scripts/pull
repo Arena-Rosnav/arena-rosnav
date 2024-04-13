@@ -1,0 +1,36 @@
+#! /usr/bin/sh
+
+WARN='\033[0;93m'
+WHITE='\033[0;37m'
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+RESET='\033[0m'
+
+FATAL=0
+
+run(){
+    tst='$(('${2:-'$?'}'))'
+    if [ $FATAL -eq 0 ]; then
+        (eval $1)
+        (exit $(eval echo $tst))
+        FATAL=$?
+    fi
+}
+
+run '(cd src/arena/arena-rosnav && git pull);'
+run '(vcs import src < src/arena/arena-rosnav/.repos);' '$? > 1'
+run '(rosdep update && rosdep install --from-paths src --ignore-src -r -y)'
+run '(cd src/arena/arena-rosnav && poetry install --no-root);'
+
+
+if [ $FATAL -ne 0 ] ;
+then
+    echo $RED
+    echo 'encountered fatal error while updating'
+else
+    echo $GREEN
+    echo 'updated successfully'
+    echo "${RED}don't forget to rebuild!"
+fi
+
+echo $RESET

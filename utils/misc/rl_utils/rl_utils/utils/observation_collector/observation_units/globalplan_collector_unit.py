@@ -9,7 +9,7 @@ from ..constants import OBS_DICT_KEYS, TOPICS
 from ..utils import pose3d_to_pose2d
 from .collector_unit import CollectorUnit
 
-from mbf_msgs.msg import GetPathActionGoal
+from geometry_msgs.msg import PoseStamped
 
 
 class GlobalplanCollectorUnit(CollectorUnit):
@@ -25,7 +25,11 @@ class GlobalplanCollectorUnit(CollectorUnit):
     _globalplan_sub: rospy.Subscriber
 
     def __init__(
-        self, ns: Namespace, observation_manager: "ObservationCollector"
+        self,
+        ns: Namespace,
+        observation_manager: "ObservationCollector",
+        *args,
+        **kwargs
     ) -> None:
         """
         Initializes a GlobalplanCollectorUnit instance.
@@ -37,14 +41,19 @@ class GlobalplanCollectorUnit(CollectorUnit):
         super().__init__(ns, observation_manager)
         self._globalplan = np.array([])
         self._globalplan_sub: rospy.Subscriber = None
+        self._subgoal = np.array([])
+        self._subgoal_sub: rospy.Subscriber = None
 
     def init_subs(self):
         """
         Initializes the subscriber for the global plan topic.
         """
-        # self._globalplan_sub = rospy.Subscriber(
-        #     self._ns(TOPICS.GLOBALPLAN), GetPathActionGoal, self._cb_globalplan
-        # )
+        self._globalplan_sub = rospy.Subscriber(
+            self._ns(TOPICS.GLOBALPLAN), Path, self._cb_globalplan
+        )
+        self._subgoal_sub = rospy.Subscriber(
+            self._ns(TOPICS.SUBGOAL), PoseStamped, self._cb_subgoal
+        )
 
     def get_observations(
         self, obs_dict: Dict[str, Any], *args, **kwargs
@@ -58,9 +67,12 @@ class GlobalplanCollectorUnit(CollectorUnit):
         Returns:
             Dict[str, Any]: The updated observation dictionary.
         """
-        return obs_dict
-        obs_dict = super().get_observations(obs_dict=obs_dict)
-        obs_dict.update({OBS_DICT_KEYS.GLOBAL_PLAN: self._globalplan})
+        obs_dict.update(
+            {
+                OBS_DICT_KEYS.GLOBAL_PLAN: self._globalplan,
+                OBS_DICT_KEYS.SUBGOAL: self._subgoal,
+            }
+        )
         return obs_dict
 
     def _cb_globalplan(self, globalplan_msg: Path):
@@ -72,6 +84,17 @@ class GlobalplanCollectorUnit(CollectorUnit):
         """
         self._globalplan = GlobalplanCollectorUnit.process_global_plan_msg(
             globalplan_msg
+        )
+
+    def _cb_subgoal(self, subgoal_msg: PoseStamped):
+        """
+        Callback function for processing the received subgoal message.
+
+        Args:
+            subgoal_msg (PoseStamped): The received subgoal message.
+        """
+        self._subgoal = np.array(
+            [subgoal_msg.pose.position.x, subgoal_msg.pose.position.y, 0.0]
         )
 
     @staticmethod

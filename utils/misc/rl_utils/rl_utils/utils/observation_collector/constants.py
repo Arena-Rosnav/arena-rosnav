@@ -1,5 +1,5 @@
 import enum
-from pedsim_agents.utils import SemanticAttribute
+from crowdsim_agents.utils import SemanticAttribute
 
 MAX_WAIT = 2  # in seconds
 SLEEP = 0.05  # in seconds
@@ -14,12 +14,13 @@ class TOPICS:
     LASER = "scan"
     FULL_RANGE_LASER = "full_scan"
     ROBOT_STATE = "odom"
-    GOAL = "goal"
+    GOAL = "move_base_simple/goal"
+    SUBGOAL = "subgoal"
 
-    GLOBALPLAN = "move_base_flex/get_path/goal"
+    GLOBALPLAN = "global_plan"
 
     PEDSIM_STATES = "pedsim_simulator/simulated_agents"
-    PEDSIM_SEMANTIC = "pedsim_agents/semantic"
+    PEDSIM_SEMANTIC = "crowdsim_agents/semantic"
     
     PED_SAFE_DIST = "ped_safe_dist"
     OBS_SAFE_DIST = "obs_safe_dist"
@@ -34,6 +35,8 @@ class OBS_DICT_KEYS:
     """
     LASER = "laser_scan"
     ROBOT_POSE = "robot_pose"
+    SUBGOAL = "subgoal"
+    GOAL = "goal"
     GOAL_DIST_ANGLE = "goal_in_robot_frame"
     GOAL_LOCATION_IN_ROBOT_FRAME = "goal_location_in_robot_frame"
     GOAL_LOCATION = "goal_location"
@@ -56,6 +59,7 @@ class OBS_DICT_KEYS:
         PEDESTRIAN_MOVING = SemanticAttribute.IS_PEDESTRIAN_MOVING.value
         PEDESTRIAN_VEL_X = SemanticAttribute.PEDESTRIAN_VEL_X.value
         PEDESTRIAN_VEL_Y = SemanticAttribute.PEDESTRIAN_VEL_Y.value
+        PEDESTRIAN_SOCIAL_STATE = SemanticAttribute.SOCIAL_STATE.value
 
         RELATIVE_LOCATION = "relative_location"
         RELATIVE_X_VEL = "relative_x_vel"

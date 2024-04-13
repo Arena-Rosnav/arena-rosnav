@@ -7,8 +7,8 @@ from rl_utils.utils.rewards.utils import distances_from_pointcloud
 from task_generator.shared import Namespace
 
 import sensor_msgs.msg as sensor_msgs
-import pedsim_msgs.msg as pedsim_msgs
-from pedsim_agents.utils import SemanticAttribute
+import crowdsim_msgs.msg as crowdsim_msgs
+from crowdsim_agents.utils import SemanticAttribute
 
 from rl_utils.utils.observation_collector.observation_units.collector_unit import (
     CollectorUnit,
@@ -68,17 +68,23 @@ class AggregateCollectorUnit(CollectorUnit):
             self._stale = False
 
     LaserObservation = Observation[sensor_msgs.LaserScan]
-    SemanticObservation = Observation[pedsim_msgs.SemanticData]
+    SemanticObservation = Observation[crowdsim_msgs.SemanticData]
 
     _laser_observations: List[LaserObservation]
     _semantic_observations: Dict[Constants.OBS_DICT_KEYS.SEMANTIC, SemanticObservation]
 
-    def __init__(self, ns: Namespace, observation_manager: "ObservationCollector"):
+    def __init__(
+        self,
+        ns: Namespace,
+        observation_manager: "ObservationCollector",
+        *args,
+        **kwargs
+    ):
         super().__init__(Namespace(ns), observation_manager)
 
         self._laser_observations = []
         self._semantic_observations = {
-            semantic_type.value: self.SemanticObservation(pedsim_msgs.SemanticData())
+            semantic_type.value: self.SemanticObservation(crowdsim_msgs.SemanticData())
             for semantic_type in SemanticAttribute
         }
 
@@ -110,15 +116,15 @@ class AggregateCollectorUnit(CollectorUnit):
                     observation_config = config.get(observation, {})
 
                     observation_container = self.SemanticObservation(
-                        pedsim_msgs.SemanticData()
+                        crowdsim_msgs.SemanticData()
                     )
-                    self._semantic_observations[
-                        semantic_attribute.value
-                    ] = observation_container
+                    self._semantic_observations[semantic_attribute.value] = (
+                        observation_container
+                    )
 
                     rospy.Subscriber(
                         self._ns.simulation_ns + observation_config.get("topic"),
-                        pedsim_msgs.SemanticData,
+                        crowdsim_msgs.SemanticData,
                         functools.partial(observation_container.update),
                     )
 

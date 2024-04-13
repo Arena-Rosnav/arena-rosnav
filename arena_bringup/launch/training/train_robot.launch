@@ -29,8 +29,9 @@
       file="$(find arena_simulation_setup)/entities/robots/$(arg model)/model_params.yaml" />
 
 
-    <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster"
-      args="0 0 0 0 0 0 1 map $(arg name)/odom" />
+    <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="transform_broadcaster"
+      args="0 0 0 0 0 0 1 map $(arg name)/odom" /> -->
+    
     
     <!-- move_base plan manager: which provide basic global planner and cost map -->
     <group>
@@ -47,7 +48,7 @@
         <arg name="model" value="$(arg model)" />
         <arg name="agent_name" value="$(arg agent_name)" if="$(eval arg('local_planner') == 'rosnav')" />
 
-        <arg name="namespace" value="$(arg namespace)" />
+        <arg name="namespace" value="$(arg sim_namespace)" />
         <arg name="frame" value="$(arg name)/" />
 
       </include>
@@ -57,7 +58,7 @@
       <arg name="ns" value="$(arg sim_namespace)" />
       <arg name="robot_name" value="$(arg model)" />
       <arg name="global_frame_id" value="map" />
-      <arg name="odom_frame_id" value="$(arg namespace)/odom" />
+      <arg name="odom_frame_id" value="$(arg name)/odom" />
     </include>
 
   </group>

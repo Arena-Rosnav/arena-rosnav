@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: true
 # number of parallel environments
-n_envs: 2
+n_envs: 1
 # gpu yes or no
 no_gpu: false
 
@@ -39,17 +39,17 @@ callbacks:
     # max number of steps per episode
     max_num_moves_per_eps: 1250
     # number of evaluation episodes
-    n_eval_episodes: 40
+    n_eval_episodes: 50
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 30000
+    eval_freq: 10000
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
   # can be either "succ" (success rate) or "rew" (reward)
   training_curriculum:
     # file for the robot's learning curriculum
-    training_curriculum_file: "default.yaml"
-    curr_stage: 0
+    training_curriculum_file: "semantic.yaml"
+    curr_stage: 5
     threshold_type: "succ"
     upper_threshold: 0.90
     lower_threshold: 0.65
@@ -76,6 +76,13 @@ rl_agent:
   # whether unity collider-based or laser-based safety distance is used
   # if true, reward_fnc must include ped_safe_dist and obs_safe_dist
   distinguished_safe_dist: true
+  reward_fnc_kwargs: 
+    placeholder: 0 # placeholder kwarg
+  
+  # subgoal mode: if true, the agent follows the subgoal given by the spcial horizon planner
+  # if false, the agent follows the global goal
+  # (intermediate planner params are located in robot-specific simulation setup directory)
+  subgoal_mode: false
 
   normalize:
     enabled: true

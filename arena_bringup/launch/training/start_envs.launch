@@ -7,6 +7,9 @@
   <!-- unity specific -->
   <arg name="time_scale" default="1" />
   <arg name="headless" default="true" />
+  <arg name="entity_manager" default="crowdsim"/>
+  <arg name="world_file" default=""/>
+  <arg name="sfm" default=""/>
 
   <include file="$(find arena_bringup)/launch/training/single_env_training.launch">
     <arg name="ns" value="$(arg ns_prefix)_$(arg num_envs)" />
