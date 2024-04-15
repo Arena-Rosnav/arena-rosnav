@@ -28,7 +28,7 @@
         corridor_radius: 3 # total corridor diameter = 1+2*corridor_radius
         iterations: 50 # number of nodes for the indoor map algorithm
   static: 0
-  dynamic: 20
+  dynamic: 15
 - #1
   goal_radius: 0.75
   map_generator:

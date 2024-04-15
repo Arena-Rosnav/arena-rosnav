@@ -11,7 +11,7 @@
   <arg name="inter_planner" default="bypass" />
   <arg name="local_planner" default="rosnav" />
 
-  <arg name="train_mode" default="false" doc="If false, start the Rosnav Deployment Nodes"/>
+  <arg name="train_mode" default="true" doc="If false, start the Rosnav Deployment Nodes"/>
   <arg name="agent_name" default="$(arg name)" doc="DRL agent name to be deployed"/>
 
   <param name="model" value="$(arg model)" />
