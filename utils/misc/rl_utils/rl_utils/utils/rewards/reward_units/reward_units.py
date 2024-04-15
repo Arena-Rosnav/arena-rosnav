@@ -850,8 +850,9 @@ class RewardPedTypeSafetyDistance(RewardUnit):
             )
 
         if self._type not in ped_type_min_distances:
-            rospy.logwarn(
-                f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {self._type} not found."
+            rospy.logwarn_throttle(
+                60,
+                f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {self._type} not found.",
             )
             return
 
@@ -915,8 +916,9 @@ class RewardPedTypeCollision(RewardUnit):
             )
 
         if self._type not in ped_type_min_distances:
-            rospy.logwarn(
-                f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {self._type} not found."
+            rospy.logwarn_throttle(
+                60,
+                f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {self._type} not found.",
             )
             return
 
@@ -960,8 +962,9 @@ class RewardPedTypeVelocityConstraint(RewardUnit):
             )
 
         if self._type not in ped_type_min_distances:
-            rospy.logwarn(
-                f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {self._type} not found."
+            rospy.logwarn_throttle(
+                60,
+                f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {self._type} not found.",
             )
             return
 
