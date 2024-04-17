@@ -141,13 +141,13 @@ class BaseCollectorUnit(CollectorUnit):
             return
 
         for _ in range(int(MAX_WAIT / SLEEP)):
-            if self._received_odom and self._received_scan and self._received_subgoal:
+            if self._received_odom and self._received_scan and self._received_goal:
                 return
 
             sleep(SLEEP)
 
         raise TimeoutError(
-            f"Couldn't retrieve data for: {false_params(odom=self._received_odom, laser=self._received_scan, subgoal=self._received_subgoal)}"
+            f"Couldn't retrieve data for: {false_params(odom=self._received_odom, laser=self._received_scan, subgoal=self._received_goal)}"
         )
 
     def get_observations(
