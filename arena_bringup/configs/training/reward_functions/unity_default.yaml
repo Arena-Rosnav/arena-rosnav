@@ -29,6 +29,6 @@ reverse_drive:
 two_factor_velocity_difference:
   _on_safe_dist_violation: true
 
-active_heading_direction:
-  r_angle: 0.6
-  _on_safe_dist_violation: true
+# active_heading_direction:
+#   r_angle: 0.6
+#   _on_safe_dist_violation: true

@@ -105,7 +105,7 @@ class ArenaUnityEnv(gymnasium.Env):
             obs_structur=[
                 BaseCollectorUnit,
                 GlobalplanCollectorUnit,
-                SemanticAggregateUnit,
+                # SemanticAggregateUnit,
                 UnityCollectorUnit
             ]
         )
