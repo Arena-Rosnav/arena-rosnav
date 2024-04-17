@@ -65,7 +65,7 @@ rl_agent:
   # name of architecture defined in the Policy factory
   architecture_name: "ArenaUnityResNet_1"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  resume: jackal_ArenaUnityResNet_1_2024_04_09__01_26_59 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   checkpoint: "best_model" # gonna be ignored if resume is not null
 
   frame_stacking:
