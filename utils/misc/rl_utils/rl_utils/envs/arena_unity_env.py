@@ -143,7 +143,8 @@ class ArenaUnityEnv(gymnasium.Env):
         self._unity_timer = UnityTimer(
             self._step_size,
             rospy.Time(clock_msg.clock.secs, clock_msg.clock.nsecs),
-            clock_topic
+            clock_topic,
+            self.ns
         )
 
     def _pub_action(self, action: np.ndarray) -> Twist:

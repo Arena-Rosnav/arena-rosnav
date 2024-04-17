@@ -9,7 +9,8 @@ class UnityTimer:
         self,
         update_duration: float,
         start_time: rospy.Time,
-        clock_topic: str = "clock"
+        clock_topic: str = "clock",
+        ns: str = ""
     ):
         """Initializes Arena Unity oriented timer.
 
@@ -25,6 +26,7 @@ class UnityTimer:
         self._update_offset = rospy.Duration(secs=self._update_duration, nsecs=0)
         self._next_update = self._current_time + self._update_offset
         self._clock_subscrition = rospy.Subscriber(clock_topic, Clock, self._clock_callback)
+        self._ns = ns
 
         self._event = Event()
         self._waiting = False
@@ -42,7 +44,7 @@ class UnityTimer:
                 if duration.secs == 0:
                     # only warn if update was shorter than 1s
                     # everything bigger is likely an epsiode reset
-                    rospy.logwarn(f"Training loop missed rate of {1.0 / self._update_duration} Hz. Took {duration.secs}.{millisecs:03.0f}s in Unity-Time")
+                    rospy.logwarn(f"[Unity Env ns: {self.ns}]: Training loop missed rate of {1.0 / self._update_duration} Hz. Took {duration.secs}.{millisecs:03.0f}s in Unity-Time")
                 self._next_update = self._current_time + self._update_offset
             else:
                 self._next_update = self._next_update + self._update_offset
