@@ -39,7 +39,10 @@ class UnityTimer:
             if self._current_time >= self._next_update + self._update_offset:
                 duration = self._current_time - self._last_update
                 millisecs = duration.nsecs / 1e6
-                rospy.logwarn(f"Training loop missed rate of {1.0 / self._update_duration} Hz. Took {duration.secs}.{millisecs:03.0f}s in Unity-Time")
+                if duration.secs == 0:
+                    # only warn if update was shorter than 1s
+                    # everything bigger is likely an epsiode reset
+                    rospy.logwarn(f"Training loop missed rate of {1.0 / self._update_duration} Hz. Took {duration.secs}.{millisecs:03.0f}s in Unity-Time")
                 self._next_update = self._current_time + self._update_offset
             else:
                 self._next_update = self._next_update + self._update_offset
