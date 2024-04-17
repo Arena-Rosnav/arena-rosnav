@@ -256,6 +256,7 @@ class ArenaUnityEnv(gymnasium.Env):
         Close the environment.
 
         """
+        rospy.loginfo("[Unity Env ns:" + self.ns + "]: Closing environment.")
         pass
 
     def _determine_termination(
