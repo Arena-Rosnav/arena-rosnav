@@ -53,7 +53,7 @@ class UnityTimer:
         """Waits until the unity clock has passed one update interval since the last one.
         """
         self._waiting = True
-        success = self._event.wait(timeout=10)
+        success = self._event.wait(timeout=20)
         
         if not success:
             raise RuntimeError("Timeout of 10 seconds reached, when waiting for Unity to make a step!")
