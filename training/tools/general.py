@@ -41,9 +41,6 @@ def initialize_config(
     config["rl_agent"]["ppo"]["n_steps"] = int(
         config["rl_agent"]["ppo"]["batch_size"] / n_envs
     )
-    config["rl_agent"]["space_encoder"] = rospy.get_param(
-        "space_encoder", "RobotSpecificEncoder"
-    )
 
     if not debug_mode:
         write_config_yaml(config, paths)
@@ -179,6 +176,26 @@ def generate_agent_name(config: dict) -> str:
     """
     if config["rl_agent"]["resume"] is None:
         agent_name = TRAINING_CONSTANTS.generate_agent_name(
+            architecture_name=config["rl_agent"]["architecture_name"]
+        )
+        config["agent_name"] = agent_name
+        return agent_name
+    else:
+        config["agent_name"] = config["rl_agent"]["resume"]
+        return config["rl_agent"]["resume"]
+
+
+def generate_switch_agent_name(config: dict) -> str:
+    """Function to get agent name to save to/load from file system
+
+    Example names:
+    "MLP_B_64-64_P_32-32_V_32-32_relu_2021_01_07__10_32"
+    "DRL_LOCAL_PLANNER_2021_01_08__7_14"
+
+    :param config (dict): Dict containing the program arguments
+    """
+    if config["rl_agent"]["resume"] is None:
+        agent_name = "switch_" + TRAINING_CONSTANTS.generate_agent_name(
             architecture_name=config["rl_agent"]["architecture_name"]
         )
         config["agent_name"] = agent_name

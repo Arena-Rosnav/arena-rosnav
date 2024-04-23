@@ -1,0 +1,19 @@
+# teb, dwa, mpc
+planners:
+  - name: rosnav
+    config: 
+      agent: "jackal_RosnavResNet_5_norm_2024_03_23__21_02_24"
+
+  - name: teb
+    alias: teb risky
+    config: 
+        min_obstacle_dist: 0.5
+        weight_obstacle: 125
+
+  - name: teb
+    alias: teb standard
+    config: null
+
+  - name: dwa
+    alias: dwa
+    config: null
