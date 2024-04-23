@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 import numpy as np
 import rospy
-from geometry_msgs.msg import Pose, Pose2D, PoseStamped
+from geometry_msgs.msg import Pose, Pose2D, PoseStamped, Twist
 from nav_msgs.msg import Odometry
 from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import (
     SemanticAggregateUnit,
@@ -195,6 +195,17 @@ class BaseCollectorUnit(CollectorUnit):
             obs_dict.update({"full_laser_scan": self._full_range_laser})
 
         return obs_dict
+
+    def _cb_last_action(self, action_msg: Twist):
+        """
+        Callback function for receiving last action data.
+
+        Args:
+            action_msg (Twist): Last action message.
+        """
+        self._last_action = np.array(
+            [action_msg.linear.x, action_msg.linear.y, action_msg.angular.z]
+        )
 
     def _cb_laser(self, laser_msg: LaserScan):
         """
