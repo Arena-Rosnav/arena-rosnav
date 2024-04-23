@@ -9,6 +9,7 @@ class DONE_REASONS(enum.Enum):
 
 
 class TOPICS:
+    ACTION = "cmd_vel"
     LASER = "scan"
     FULL_RANGE_LASER = "full_scan"
     ROBOT_STATE = "odom"
@@ -34,6 +35,7 @@ class OBS_DICT_KEYS:
     GOAL_LOCATION_IN_ROBOT_FRAME = "goal_location_in_robot_frame"
     GOAL_LOCATION = "goal_location"
     DISTANCE_TO_GOAL = "distance_to_goal"
+    CURR_ACTION = "current_action"
     LAST_ACTION = "last_action"
     GLOBAL_PLAN = "global_plan"
     DONE = "is_done"
