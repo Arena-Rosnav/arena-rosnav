@@ -9,6 +9,8 @@
   <arg name="ns" />
   <arg name="model" default="jackal"/>
   <arg name="entity_manager" default="crowdsim"/>
+  <arg name="inter_planner" default="bypass"/>
+  <arg name="local_planner" default="rosnav"/>
   <arg name="world_file" default=""/>
   <arg name="sfm" default=""/>
 
@@ -22,6 +24,9 @@
     <include file="$(find arena_bringup)/launch/training/train_robot.launch">
       <arg name="namespace" value="/$(arg ns)/$(arg ns)_$(arg model)" />
       <arg name="sim_namespace" value="/$(arg ns)" />
+
+      <arg name="inter_planner" value="$(arg inter_planner)" />
+      <arg name="local_planner" value="$(arg local_planner)" />
 
       <arg name="name" value="$(arg ns)_$(arg model)" />
       <arg name="model" value="$(arg model)" />

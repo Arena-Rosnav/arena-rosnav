@@ -15,6 +15,9 @@
   <!-- train mode  -->
   <arg name="train_mode" default="true"/>
 
+  <arg name="inter_planner" default="bypass"/>
+  <arg name="local_planner" default="rosnav"/>
+
   <!-- the folder name under the path simulator_setup/maps  -->
   <arg name="map_folder_name" default="map_empty" />
   <param name="map_file" value="$(arg map_folder_name)" />
@@ -62,6 +65,8 @@
     <arg name="entity_manager" value="$(arg entity_manager)" />
     <arg name="sfm" value="$(arg sfm)" />
     <arg name="world_file" value="$(arg world_file)" />
+    <arg name="inter_planner" value="$(arg inter_planner)" />
+    <arg name="local_planner" value="$(arg local_planner)" />
   </include>
 
   <include file="$(find arena_bringup)/launch/training/start_envs.launch">
@@ -70,6 +75,8 @@
     <arg name="model" value="$(arg model)" />
     <arg name="entity_manager" value="$(arg entity_manager)" />
     <arg name="sfm" value="$(arg sfm)" />
+    <arg name="inter_planner" value="$(arg inter_planner)" />
+    <arg name="local_planner" value="$(arg local_planner)" />
   </include> 
   
   <node pkg="task_generator" name="task_generator_server" type="server.py" output="screen"/>

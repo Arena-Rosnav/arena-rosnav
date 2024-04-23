@@ -3,6 +3,8 @@
   <arg name="num_envs" default="1" />
   <arg name="ns_prefix" default="sim" />
   <arg name="model"/>
+  <arg name="inter_planner" default="bypass"/>
+  <arg name="local_planner" default="rosnav"/>
   <arg name="entity_manager" default="crowdsim"/>
   <arg name="world_file" default=""/>
   <arg name="sfm" default=""/>
@@ -10,12 +12,20 @@
   <include file="$(find arena_bringup)/launch/training/single_env_training.launch">
     <arg name="ns" value="$(arg ns_prefix)_$(arg num_envs)" />
     <arg name="model" value="$(arg model)" />
-    
+    <arg name="entity_manager" value="$(arg entity_manager)" />
+    <arg name="sfm" value="$(arg sfm)" />
+    <arg name="world_file" value="$(arg world_file)" />
+    <arg name="inter_planner" value="$(arg inter_planner)" />
+    <arg name="local_planner" value="$(arg local_planner)" />
   </include>
 
   <include file="$(find arena_bringup)/launch/training/start_envs.launch" if="$(eval arg('num_envs') > 1)">
     <arg name="num_envs" value="$(eval arg('num_envs') - 1)" />
     <arg name="ns_prefix" value="$(arg ns_prefix)" />
     <arg name="model" value="$(arg model)" />
+    <arg name="entity_manager" value="$(arg entity_manager)" />
+    <arg name="sfm" value="$(arg sfm)" />
+    <arg name="inter_planner" value="$(arg inter_planner)" />
+    <arg name="local_planner" value="$(arg local_planner)" />
   </include>
 </launch>
