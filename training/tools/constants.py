@@ -55,6 +55,5 @@ class TRAINING_CONSTANTS(object):
     def generate_agent_name(architecture_name: str):
         START_TIME = dt.now().strftime("%Y_%m_%d__%H_%M_%S")
         robot_model = rospy.get_param("robot_model")
-        encoder_name = rospy.get_param("space_encoder", "RobotSpecificEncoder")
         agent_name = f"{robot_model}_{architecture_name}_{START_TIME}"
         return agent_name

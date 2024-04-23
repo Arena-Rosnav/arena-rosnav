@@ -7,7 +7,6 @@ from rosnav.utils.utils import get_actions_from_robot_yaml
 from .general import generate_discrete_action_dict
 
 
-
 def populate_ros_params(params: dict, paths: dict):
     # general params
     rospy.set_param("tm_robots", params["tm_robots"])
@@ -16,19 +15,19 @@ def populate_ros_params(params: dict, paths: dict):
 
     rospy.set_param("training_config_path", paths["config"])
 
-    is_discrete = params["rl_agent"]["action_space"]["discrete"]
-    rospy.set_param(
-        "is_action_space_discrete",
-        is_discrete,
-    )
-
     robot_name = rospy.get_param("model")
     rospy.set_param("goal_radius", params["goal_radius"])
     rospy.set_param(f"{robot_name}/safety_distance", params["safety_distance"])
 
     # discrete actions
-    if is_discrete:
-        populate_discrete_action_space(params)
+    if "action_space" in params["rl_agent"]:
+        is_discrete = params["rl_agent"]["action_space"]["discrete"]
+        rospy.set_param(
+            "is_action_space_discrete",
+            is_discrete,
+        )
+        if is_discrete:
+            populate_discrete_action_space(params)
 
     tmp_params: dict = params["rl_agent"].copy()
     tmp_params.pop("resume")
@@ -37,14 +36,18 @@ def populate_ros_params(params: dict, paths: dict):
     # populate laser params
     populate_laser_params(params)
 
-    curriculum_file = params["callbacks"]["training_curriculum"]["training_curriculum_file"]
+    curriculum_file = params["callbacks"]["training_curriculum"][
+        "training_curriculum_file"
+    ]
     staged_idx = params["callbacks"]["training_curriculum"]["curr_stage"]
-    
+
     # shell command
-    os.system(f"rosrun dynamic_reconfigure dynparam set /task_generator_server STAGED_curriculum {curriculum_file}")
-    os.system(f"rosrun dynamic_reconfigure dynparam set /task_generator_server STAGED_index {staged_idx}")
-    
-    
+    os.system(
+        f"rosrun dynamic_reconfigure dynparam set /task_generator_server STAGED_curriculum {curriculum_file}"
+    )
+    os.system(
+        f"rosrun dynamic_reconfigure dynparam set /task_generator_server STAGED_index {staged_idx}"
+    )
 
 
 def populate_laser_params(params: dict):
@@ -109,7 +112,9 @@ def populate_ros_configs(config):
 def set_space_encoder(config):
     rospy.set_param(
         "space_encoder",
-        "StackedEncoder"
-        if config["rl_agent"]["frame_stacking"]["enabled"]
-        else "DefaultEncoder",
+        (
+            "StackedEncoder"
+            if config["rl_agent"]["frame_stacking"]["enabled"]
+            else "DefaultEncoder"
+        ),
     )

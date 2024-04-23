@@ -29,14 +29,6 @@ from task_generator.task_generator_node import TaskGenerator
 from task_generator.utils import rosparam_get
 
 
-def get_ns_idx(ns: str):
-    try:
-        return int(re.search(r"\d+", ns)[0])
-    except Exception:
-        return random.uniform(0, 3)
-        # return 0.5
-
-
 class FlatlandEnv(gymnasium.Env):
     """
     FlatlandEnv is an environment class that represents a Flatland environment for reinforcement learning.

@@ -103,7 +103,6 @@ def _init_env_fnc(
     Returns:
         Union[gym.Env, gym.Wrapper]: The initialized environment.
     """
-    reward_fnc_kwargs = reward_fnc_kwargs or {}
 
     def _init() -> Union[gym.Env, gym.Wrapper]:
         return FlatlandEnv(
@@ -125,6 +124,8 @@ def make_envs(
     agent_description: BaseAgent,
     config: dict,
     paths: dict,
+    env_fnc: callable = _init_env_fnc,
+    env_fnc_kwargs: dict = None,
 ):
     """
     Create training and evaluation environments.
@@ -146,32 +147,35 @@ def make_envs(
 
     obs_unit_kwargs = {"subgoal_mode": config["rl_agent"]["subgoal_mode"]}
 
+    env_fnc_kwargs = env_fnc_kwargs or {}
+    _env_fnc_kwargs = {
+        "agent_description": agent_description,
+        "reward_fnc": config["rl_agent"]["reward_fnc"],
+        "obs_unit_kwargs": obs_unit_kwargs,
+        "reward_fnc_kwargs": config["rl_agent"]["reward_fnc_kwargs"],
+    }
+    _env_fnc_kwargs.update(env_fnc_kwargs)
+
+    _train_env_fnc_kwargs = lambda idx: {
+        "ns": train_ns(idx),
+        "max_steps_per_episode": config["max_num_moves_per_eps"],
+        "trigger_init": True if not config["debug_mode"] else False,
+    }
+
+    _eval_env_fnc_kwargs = {
+        "ns": eval_ns,
+        "max_steps_per_episode": config["callbacks"]["periodic_eval"][
+            "max_num_moves_per_eps"
+        ],
+        "trigger_init": False,
+    }
+
     train_env_fncs = [
-        _init_env_fnc(
-            ns=train_ns(idx),
-            agent_description=agent_description,
-            reward_fnc=config["rl_agent"]["reward_fnc"],
-            max_steps_per_episode=config["max_num_moves_per_eps"],
-            trigger_init=True if not config["debug_mode"] else False,
-            obs_unit_kwargs=obs_unit_kwargs,
-            reward_fnc_kwargs=config["rl_agent"]["reward_fnc_kwargs"],
-        )
+        env_fnc(**_train_env_fnc_kwargs(idx), **_env_fnc_kwargs)
         for idx in range(config["n_envs"])
     ]
 
-    eval_env_fncs = [
-        _init_env_fnc(
-            ns=eval_ns,
-            agent_description=agent_description,
-            reward_fnc=config["rl_agent"]["reward_fnc"],
-            max_steps_per_episode=config["callbacks"]["periodic_eval"][
-                "max_num_moves_per_eps"
-            ],
-            trigger_init=False,
-            obs_unit_kwargs=obs_unit_kwargs,
-            reward_fnc_kwargs=config["rl_agent"]["reward_fnc_kwargs"],
-        )
-    ]
+    eval_env_fncs = [env_fnc(**_eval_env_fnc_kwargs, **_env_fnc_kwargs)]
 
     # vectorize environments
     train_env = (
