@@ -12,8 +12,6 @@
 
   <arg name="visualization" default="" />
 
-  <arg name="pedsim" />
-
   <!-- <node name="generate_world" pkg="gazebo_utils" type="generate_world.py">
     <param name="world" value="$(arg world)"/>
   </node> -->
