@@ -138,14 +138,17 @@ class Mod_DynamicMap(TM_Module):
 
         self.__map_request_pub.publish("")
 
-        rospy.wait_for_message(self.TOPIC_MAP, nav_msgs.OccupancyGrid)
-        rospy.wait_for_message(self.TOPIC_SIGNAL_MAP, std_msgs.String)
+        try:
+            rospy.wait_for_message(self.TOPIC_MAP, nav_msgs.OccupancyGrid, timeout=60)
+            rospy.wait_for_message(self.TOPIC_SIGNAL_MAP, std_msgs.String, timeout=120)
+        except rospy.ROSException:
+            rospy.logwarn("[Map Generator] Timeout while waiting for new map.")
+        else:
+            rospy.loginfo("===================")
+            rospy.loginfo("+++ Got new map +++")
+            rospy.loginfo("===================")
 
         self.__task_reset_pub.publish("")
-
-        rospy.loginfo("===================")
-        rospy.loginfo("+++ Got new map +++")
-        rospy.loginfo("===================")
 
     @property
     def _episodes(self) -> float:
