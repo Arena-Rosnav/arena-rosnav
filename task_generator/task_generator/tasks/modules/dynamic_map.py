@@ -142,7 +142,9 @@ class Mod_DynamicMap(TM_Module):
             rospy.wait_for_message(self.TOPIC_MAP, nav_msgs.OccupancyGrid, timeout=60)
             rospy.wait_for_message(self.TOPIC_SIGNAL_MAP, std_msgs.String, timeout=120)
         except rospy.ROSException:
-            rospy.logwarn("[Map Generator] Timeout while waiting for new map.")
+            rospy.logwarn(
+                "[Map Generator] Timeout while waiting for new map. Continue with current map."
+            )
         else:
             rospy.loginfo("===================")
             rospy.loginfo("+++ Got new map +++")
