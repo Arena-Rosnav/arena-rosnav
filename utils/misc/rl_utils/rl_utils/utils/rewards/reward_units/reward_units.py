@@ -1007,3 +1007,72 @@ class RewardAngularVelocityConstraint(RewardUnit):
 
     def reset(self):
         self._last_theta = None
+
+
+@RewardUnitFactory.register("max_steps_exceeded")
+class RewardMaxStepsExceeded(RewardUnit):
+    """
+    A reward unit that penalizes the agent when the maximum number of steps is exceeded.
+
+    Args:
+        reward_function (RewardFunction): The reward function to which this unit belongs.
+        penalty (float, optional): The penalty value to be applied when the maximum steps are exceeded. Defaults to 10.
+        _on_safe_dist_violation (bool, optional): Whether to apply the penalty on safe distance violation. Defaults to True.
+        *args: Variable length argument list.
+        **kwargs: Arbitrary keyword arguments.
+
+    Attributes:
+        _penalty (float): The penalty value to be applied when the maximum steps are exceeded.
+        _steps (int): The current number of steps taken.
+
+    Methods:
+        __call__(*args, **kwargs): Updates the step count and applies the penalty if the maximum steps are exceeded.
+        reset(): Resets the step count to zero.
+    """
+
+    DONE_INFO = {
+        "is_done": True,
+        "done_reason": DONE_REASONS.STEP_LIMIT.name,
+        "is_success": 0,
+    }
+
+    @check_params
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        penalty: float = 10,
+        _on_safe_dist_violation: bool = True,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+        self._penalty = penalty
+        self._steps = 0
+
+    def check_parameters(self, *args, **kwargs):
+        if self._penalty < 0.0:
+            warn_msg = (
+                f"[{self.__class__.__name__}] Reconsider this reward. "
+                f"The penalty should be a positive value as it is going to be subtracted from the total reward."
+                f"Current value: {self._penalty}"
+            )
+            warn(warn_msg)
+
+    def __call__(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Updates the step count and applies the penalty if the maximum steps are exceeded.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
+        self._steps += 1
+        if self._steps >= self._reward_function.max_steps:
+            self.add_reward(-self._penalty)
+            self.add_info(self.DONE_INFO)
+
+    def reset(self):
+        """
+        Resets the step count to zero.
+        """
+        self._steps = 0
