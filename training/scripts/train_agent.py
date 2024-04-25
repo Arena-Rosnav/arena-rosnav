@@ -41,12 +41,7 @@ def main():
     print("________ STARTING TRAINING WITH:  %s ________\n" % config["agent_name"])
 
     # initialize hyperparameters (save to/ load from json)
-    config = initialize_config(
-        paths=paths,
-        config=config,
-        n_envs=config["n_envs"],
-        debug_mode=config["debug_mode"],
-    )
+    config = initialize_config(paths=paths, config=config)
 
     populate_ros_params(config, paths)
 
