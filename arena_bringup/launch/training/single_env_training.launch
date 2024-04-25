@@ -8,7 +8,6 @@
 <launch>
   <arg name="ns" />
   <arg name="model" default="jackal"/>
-  <arg name="entity_manager" default="pedsim"/>
   <arg name="world_file" default="map_empty"/>
   <arg name="SIMULATOR" />
   <arg name="env_num" default="0" />
@@ -17,10 +16,8 @@
   <arg name="headless" default="true" />
 
   <!-- TODO: make non-constant -->
-  <arg name="sfm" value="passthrough" />
+  <arg name="sfm" default="" />
   <arg name="entity_manager" default="crowdsim"/>
-  <arg name="world_file" default=""/>
-  <arg name="sfm" default=""/>
 
   <!-- use fake localization-->
   <group ns="$(arg ns)" >
