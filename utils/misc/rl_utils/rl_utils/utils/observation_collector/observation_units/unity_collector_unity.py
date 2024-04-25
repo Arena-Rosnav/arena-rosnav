@@ -60,7 +60,7 @@ class UnityCollectorUnit(CollectorUnit):
 
     _first_reset: bool
 
-    def __init__(self, ns: Namespace, observation_manager) -> None:
+    def __init__(self, ns: Namespace, observation_manager, *args, **kwargs) -> None:
         """
         Initialize the UnityCollectorUnit.
 
