@@ -3,7 +3,7 @@ FROM mzahana/base-ubuntu20-cuda11.4.2:latest
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
-ENV ARENA_BRANCH master
+ENV ARENA_BRANCH drl_subgoal_mode
 ENV ARENA_ROOT /root
 ENV ARENA_WS arena_ws
 
@@ -122,4 +122,5 @@ RUN apt-get update && apt-get install -y libopencv-dev liblua5.2-dev libarmadill
     rosdep update && rosdep install --from-paths src --ignore-src -r -y
 
 WORKDIR $ARENA_ROOT/$ARENA_WS/src/arena/arena-rosnav/training/docker/
+RUN chmod +x entrypoint.sh
 ENTRYPOINT ./entrypoint.sh

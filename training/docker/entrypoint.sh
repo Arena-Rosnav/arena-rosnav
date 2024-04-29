@@ -37,4 +37,4 @@ arena_ws="${ARENA_WS:-catkin_ws}"
 arena_root="${ARENA_ROOT:-$HOME}"
 
 cd $arena_root/$arena_root/src/arena/arena-rosnav/scripts
-./train_agent.sh	
+./train_agent.sh
