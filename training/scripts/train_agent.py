@@ -9,7 +9,7 @@ from rosnav.model.base_agent import BaseAgent
 from tools.argsparser import parse_training_args
 from tools.env_utils import make_envs
 from tools.general import generate_agent_name, get_paths, initialize_config, load_config
-from tools.model_utils import get_ppo_instance, init_callbacks, save_model
+from tools.model_utils import get_ppo_instance, init_callbacks, save_model, transfer_feature_extractor_weights, PPO
 from tools.ros_param_distributor import populate_ros_params
 
 
@@ -56,6 +56,11 @@ def main():
     model = get_ppo_instance(
         agent_description, observation_manager, config, train_env, paths
     )
+    
+    # transfer_feature_extractor_weights(
+    #     model1=model, 
+    #     model2=PPO.load("/home/linh2/arena_drl_ws/src/planners/rosnav/agents/jackal_RosnavResNet_5_norm_2024_03_23__21_02_24/best_model.zip")
+    # )
 
     rospy.on_shutdown(lambda: on_shutdown(model, paths))
 

@@ -295,3 +295,16 @@ def init_callbacks(
     )
 
     return eval_cb
+
+def transfer_feature_extractor_weights(model1: PPO, model2: PPO):
+    state_dict_model1 = model1.policy.state_dict()
+    state_dict_model2 = model2.policy.state_dict()
+
+    features_extractor_weights = {
+        key: value
+        for key, value in state_dict_model2.items()
+        if "features_extractor" in key[:18]
+    }
+
+    state_dict_model1.update(features_extractor_weights)
+    model1.policy.load_state_dict(state_dict_model1, strict=True)
