@@ -1,5 +1,4 @@
 #!/bin/bsh
-
 echo "[ARENA-ROSNAV] Starting training shell script..."
 
 # Check if the shell is bash or zsh
