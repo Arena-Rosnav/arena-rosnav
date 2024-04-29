@@ -29,6 +29,7 @@ fi
 # Check if the shell is bash or zsh
 if [[ -n "$SHELL" ]]; then
     shell=$(basename $SHELL)
+fi
 
 echo "[ARENA-ROSNAV] Using $shell as the shell."
 
