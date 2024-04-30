@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 echo "[ARENA-ROSNAV] Starting training shell script..."
 

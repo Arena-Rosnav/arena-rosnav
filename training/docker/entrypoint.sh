@@ -15,17 +15,6 @@ if [ -n "${ROS_DISTRO}" ]; then
     source "/opt/ros/$ROS_DISTRO/setup.bash"
 fi
 
-# Use the LOCAL_USER_ID if passed in at runtime
-if [ -n "${LOCAL_USER_ID}" ]; then
-    echo "Starting with UID : $LOCAL_USER_ID"
-    # modify existing user's id
-    usermod -u $LOCAL_USER_ID user
-    # run as user
-    exec gosu user "$@"
-else
-    exec "$@"
-fi
-
 # Check if the shell is bash or zsh
 if [[ -n "$SHELL" ]]; then
     shell=$(basename $SHELL)
@@ -38,4 +27,9 @@ arena_ws="${ARENA_WS:-catkin_ws}"
 arena_root="${ARENA_ROOT:-$HOME}"
 
 cd $arena_root/$arena_ws/src/arena/arena-rosnav/training/scripts
-/bin/bash train_agent.sh
+
+if [[ "$shell" == "bash" ]]; then
+    bash train_agent.sh
+else
+    zsh train_agent.zsh
+fi
