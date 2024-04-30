@@ -28,6 +28,7 @@ echo "[ARENA-ROSNAV] Sourced the workspace."
 # Activate the poetry environment
 POETRY_ENV_PATH=$(poetry env info --path)
 echo "[ARENA-ROSNAV] Activated the poetry environment at $POETRY_ENV_PATH"
+source $POETRY_ENV_PATH/bin/activate
 
 # Load config
 source $arena_dir/arena_bringup/configs/training/train_from_sh.cfg
