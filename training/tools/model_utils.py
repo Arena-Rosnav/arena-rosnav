@@ -108,7 +108,8 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
         model.tensorboard_log = None
         model._logger = None
 
-    model._setup_rollout_buffer()
+    if not isinstance(model, RecurrentPPO):
+        model._setup_rollout_buffer()
 
     print("--------------------------------\n")
 
@@ -152,7 +153,7 @@ def get_ppo_instance(
             agent_description, observation_manager, config, train_env, paths
         )
     else:
-        model = load_model(config, train_env, paths)
+        model = load_model(config, train_env, paths, agent_description)
         update_hyperparam_model(model, paths, config)
 
     wandb_logging: bool = not config["debug_mode"] and config["monitoring"]["use_wandb"]
@@ -225,7 +226,9 @@ sys.modules["rl_agent"] = sys.modules["rosnav"]
 sys.modules["rl_utils.rl_utils.utils"] = sys.modules["rosnav.utils"]
 
 
-def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
+def load_model(
+    config: dict, train_env: VecEnv, PATHS: dict, agent_discription: BaseAgent
+) -> PPO:
     agent_name = config["agent_name"]
     checkpoint = config["rl_agent"]["checkpoint"]
     possible_agent_names = [
@@ -240,6 +243,9 @@ def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
         target_path = os.path.join(PATHS["model"], f"{checkpoint}.zip")
         if os.path.isfile(target_path):
             rospy.loginfo(f"Loading model from {target_path}")
+            if "lstm" in agent_discription.type.value.lower():
+                model = RecurrentPPO.load(os.path.join(PATHS["model"], name), train_env)
+                break
             model = PPO.load(os.path.join(PATHS["model"], name), train_env)
             break
 
@@ -295,6 +301,7 @@ def init_callbacks(
     )
 
     return eval_cb
+
 
 def transfer_feature_extractor_weights(model1: PPO, model2: PPO):
     state_dict_model1 = model1.policy.state_dict()
