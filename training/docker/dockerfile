@@ -127,7 +127,7 @@ RUN apt-get update && apt-get install -y libopencv-dev liblua5.2-dev libarmadill
 
 # Build Arena-Rosnav
 WORKDIR $ARENA_ROOT/$ARENA_WS
-RUN . /opt/ros/$ROS_DISTRO/setup.sh && catkin_make
+RUN . /opt/ros/$ROS_DISTRO/setup.sh && catkin_make -DPYTHON_EXECUTABLE=$(which python)
 
 WORKDIR $ARENA_ROOT/$ARENA_WS/src/arena/arena-rosnav/training/docker/
 RUN chmod +x entrypoint.sh
