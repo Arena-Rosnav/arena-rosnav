@@ -17,6 +17,7 @@ from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.utils import configure_logger
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
+import re
 
 
 def setup_wandb(config: dict, agent: PPO) -> None:
@@ -164,7 +165,7 @@ def get_ppo_instance(
     if config["rl_agent"]["weight_transfer"]["model_path"]:
         transfer_feature_extractor_weights(
             model1=model,
-            model2=config["rl_agent"]["weight_transfer"]["model_path"],
+            model2=PPO.load(config["rl_agent"]["weight_transfer"]["model_path"]),
             include=config["rl_agent"]["weight_transfer"]["include"],
             exclude=config["rl_agent"]["weight_transfer"]["exclude"],
         )
@@ -325,9 +326,11 @@ def transfer_feature_extractor_weights(
     weights_dict = {
         key: value
         for key, value in state_dict_model2.items()
-        if any(item in key for item in include)
+        if any(re.match(_key, key) for _key in include)
         and not any(item in key for item in exclude)
     }
+
+    rospy.loginfo(f"Transferring weights for keys {len(weights_dict.keys())}!")
 
     state_dict_model1.update(weights_dict)
     model1.policy.load_state_dict(state_dict_model1, strict=True)
