@@ -107,11 +107,10 @@ RUN if [ -d $ARENA_ROOT/$ARENA_WS/src/arena ]; then \
     fi 
 
 WORKDIR $ARENA_ROOT/$ARENA_WS
-ENV NONE=none
 
 # Clone Arena-Rosnav
 RUN git clone --branch $ARENA_BRANCH https://github.com/Arena-Rosnav/arena-rosnav.git src/arena/arena-rosnav
-RUN vcs import src < src/arena/arena-rosnav/.repos --retry 10
+RUN until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to update, retrying..." ; done
 
 # Setup and activate Poetry Env
 WORKDIR $ARENA_ROOT/$ARENA_WS/src/arena/arena-rosnav
@@ -126,8 +125,10 @@ RUN apt-get update && apt-get install -y libopencv-dev liblua5.2-dev libarmadill
     rosdep update && rosdep install --from-paths src --ignore-src -r -y
 
 # Build Arena-Rosnav
+SHELL ["/bin/bash", "-c"]
 WORKDIR $ARENA_ROOT/$ARENA_WS
-RUN . /opt/ros/$ROS_DISTRO/setup.sh && catkin_make -DPYTHON_EXECUTABLE=$(which python)
+RUN rm -r src/arena/utils/pedsim_ros/pedsim_engine/2ndparty/spencer_tracking_rviz_plugin
+RUN source /opt/ros/$ROS_DISTRO/setup.bash && catkin build -DPYTHON_EXECUTABLE=$(which python)
 
 WORKDIR $ARENA_ROOT/$ARENA_WS/src/arena/arena-rosnav/training/docker/
 RUN chmod +x entrypoint.sh
