@@ -63,13 +63,6 @@ def main():
         agent_description, observation_manager, config, train_env, paths
     )
 
-    transfer_feature_extractor_weights(
-        model1=model,
-        model2=PPO.load(
-            "/home/tar/catkin_ws/src/planners/rosnav/agents/jackal_RosnavResNet_5_norm_2024_03_23__21_02_24/last_model.zip"
-        ),
-    )
-
     rospy.on_shutdown(lambda: on_shutdown(model, paths))
 
     # start training
