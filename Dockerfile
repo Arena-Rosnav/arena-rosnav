@@ -1,86 +1,140 @@
-# Main Dockerfile
+FROM mzahana/base-ubuntu20-cuda11.4.2:latest
 
-FROM osrf/ros:noetic-desktop-full
+ARG FROM_LOCAL=true
+ARG ARENA_BRANCH=drl_subgoal_mode
+ARG ARENA_ROOT=/root
+ARG ARENA_WS=arena_ws
+
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
 
 SHELL ["/bin/bash", "-c"]
 
-RUN apt-get -y update \
-    && apt-get install -y \
-    apt-utils \
+RUN wget --quiet http://packages.osrfoundation.org/gazebo.key -O - | apt-key add - \
+    && sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -sc` main" > /etc/apt/sources.list.d/gazebo-stable.list' \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends install \
     software-properties-common \
-    git \
-    wget \
-    ros-noetic-tf2 \
-    ros-noetic-tf \
-    ros-noetic-tf2-geometry-msgs \
-    ffmpeg \
-    python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential \
-    libsm6 \
-    libxext6  \
-    && add-apt-repository ppa:deadsnakes/ppa \
-    && apt-get -y update \
-    && apt-get -y install \
+    apt-utils \
+    ant \
+    binutils \
+    bc \
+    net-tools \
+    bash-completion \
+    dirmngr \
+    gazebo11 \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-ugly \
+    libeigen3-dev \
+    libgazebo11-dev \
+    libgstreamer-plugins-base1.0-dev \
+    libimage-exiftool-perl \
     libopencv-dev \
-    liblua5.2-dev \
-    screen \
-    python3 \
-    python3-dev \
-    libpython3-dev \
-    python3-catkin-pkg-modules \
-    python3-rospkg-modules \
-    python3-empy \
-    python3-setuptools \
-    ros-noetic-navigation \
-    ros-noetic-teb-local-planner \
-    ros-noetic-mpc-local-planner \
-    libarmadillo-dev \
-    ros-noetic-nlopt \
-    python3 \
-    python3-pip \
-    tk \
-    ros-noetic-turtlebot3-description \
-    ros-noetic-turtlebot3-navigation \
-    python-tk \
-    python3-tk \
-    tk-dev \
-    ros-noetic-lms1xx \
-    ros-noetic-velodyne-description \ 
-    ros-noetic-hector-gazebo \
-    ros-noetic-ira-laser-tools
+    libxml2-utils \
+    mesa-utils \
+    protobuf-compiler \
+    x-window-system \
+    ignition-edifice \
+    && apt-get -y autoremove \
+    && apt-get clean autoclean \
+    && rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
 
-#   Install Poetry
-RUN pip3 install poetry \
-    && pip3 install --upgrade pip
+# Some QT-Apps/Gazebo don't not show controls without this
+ENV QT_X11_NO_MITSHM 1
 
-#   Install PyEnv
-WORKDIR /root/
-RUN git clone --depth=1 https://github.com/pyenv/pyenv.git .pyenv
-ENV PYENV_ROOT="/root/.pyenv"
-ENV PATH="${PYENV_ROOT}/shims:${PYENV_ROOT}/bin:${PATH}"
+ENV ROS_DISTRO noetic
 
-RUN echo 'eval "$(pyenv init -)"' >> /root/.bashrc
-RUN sed -Ei -e '/^([^#]|$)/ {a export PYENV_ROOT="$HOME/.pyenv" \nexport PATH="$PYENV_ROOT/bin:$PATH"' -e ':a' -e '$!{n;ba};}' /root/.profile
-RUN echo 'eval "$(pyenv init --path)"' >> /root/.profile
+# setup ros keys
+RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
 
-RUN mkdir -p /root/src/
-WORKDIR /root/src/
-COPY . /root/src/arena-rosnav
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-latest.list' \
+    && sh -c 'echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-latest.list' \
+    && sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-shadow.list' \
+    && apt-get update \
+    && apt-get -y --quiet --no-install-recommends install \
+    geographiclib-tools \
+    libeigen3-dev \
+    libgeographic-dev \
+    libopencv-dev \
+    libyaml-cpp-dev \
+    python3-rosdep \
+    python3-catkin-tools \
+    python3-catkin-lint \
+    ros-$ROS_DISTRO-gazebo-ros-pkgs \
+    ros-$ROS_DISTRO-mavlink \
+    ros-$ROS_DISTRO-mavros \
+    ros-$ROS_DISTRO-mavros-extras \
+    ros-$ROS_DISTRO-octomap \
+    ros-$ROS_DISTRO-octomap-msgs \
+    ros-$ROS_DISTRO-pcl-conversions \
+    ros-$ROS_DISTRO-pcl-msgs \
+    ros-$ROS_DISTRO-pcl-ros \
+    ros-$ROS_DISTRO-ros-base \
+    ros-$ROS_DISTRO-rostest \
+    ros-$ROS_DISTRO-rosunit \
+    ros-$ROS_DISTRO-tf-conversions \
+    ros-$ROS_DISTRO-rqt-tf-tree \
+    ros-$ROS_DISTRO-rviz \
+    xvfb \
+    && geographiclib-get-geoids egm96-5 \
+    && apt-get -y autoremove \
+    && apt-get clean autoclean \
+    && rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
 
-RUN echo -e "source /opt/ros/noetic/setup.sh" >> /root/.bashrc
-RUN echo -e "source /root/devel/setup.sh" >> /root/.bashrc
+RUN pip3 install -U \
+    osrf-pycommon
 
-RUN pip install scipy PyQt5 empy defusedxml 
-RUN pip install wandb
+# bootstrap rosdep
+RUN rosdep init && rosdep update
 
-WORKDIR /root/src/arena-rosnav
-RUN rosws update
+# Install dependencies
+RUN echo "Installing Deps...:" && \
+    apt-get install -y python3 python-is-python3 git python3-rosdep python3-pip python3-rosinstall-generator python3-vcstool build-essential python3-catkin-tools
 
-WORKDIR /root/
-RUN source /root/.bashrc \
-    && source /opt/ros/noetic/setup.sh \
-    && catkin_make
+# Auto completion in terminal
+RUN apt install bash-completion
+RUN echo "source /etc/profile.d/bash_completion.sh" >> $HOME/.bashrc
 
-# WORKDIR /root/src/utils/stable-baselines3
-# RUN pip install -e .
+# Install poetry separated from system interpreter
+RUN curl -sSL https://install.python-poetry.org | python3 -
+ENV PATH "$ARENA_ROOT/.local/bin:$PATH"
 
-WORKDIR /root/
+# Install Arena-Rosnav
+RUN if [ -d $ARENA_ROOT/$ARENA_WS/src/arena ]; then \
+    echo \"Install Folder $ARENA_ROOT/arena_ws/src/arena/arena-rosnav already exists.\" && \
+    echo \"This indicates Arena Rosnav is already installed.\" && \
+    echo \"If you wish to reinstall, please delete $ARENA_ROOT/arena_ws\" && \
+    exit 1; \
+    fi 
+
+WORKDIR $ARENA_ROOT/$ARENA_WS
+ADD . src/arena/arena-rosnav
+
+# Clone Arena-Rosnav
+RUN if [ "$FROM_LOCAL" = "false" ]; then \
+    rm -rf src/arena/arena-rosnav && \
+    git clone --branch $ARENA_BRANCH https://github.com/Arena-Rosnav/arena-rosnav.git src/arena/arena-rosnav; \
+    fi
+
+RUN until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to update, retrying..." ; done
+
+# Setup and activate Poetry Env
+WORKDIR $ARENA_ROOT/$ARENA_WS/src/arena/arena-rosnav
+RUN poetry config virtualenvs.create true && \
+    poetry install --no-root --no-interaction --no-ansi --with training && \
+    poetry env use python3.8
+
+WORKDIR $ARENA_ROOT/$ARENA_WS
+# Install necessary dependencies
+RUN apt-get update && apt-get install -y libopencv-dev liblua5.2-dev libarmadillo-dev ros-noetic-nlopt liblcm-dev psmisc && \
+    rosdep update && rosdep install --from-paths src --ignore-src -r -y
+
+# Build Arena-Rosnav
+RUN rm -r src/arena/utils/pedsim_ros/pedsim_engine/2ndparty/spencer_tracking_rviz_plugin
+# RUN source /opt/ros/$ROS_DISTRO/setup.sh && catkin_make -DPYTHON_EXECUTABLE=$POETRY_ENV
+
+WORKDIR $ARENA_ROOT/$ARENA_WS/src/arena/arena-rosnav/training/docker/
+RUN chmod +x entrypoint.sh
+ENTRYPOINT ./entrypoint.sh
