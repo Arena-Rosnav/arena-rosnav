@@ -67,6 +67,12 @@ rl_agent:
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   checkpoint: "last_model"
+  weight_transfer:
+    model_path: "/home/tar/catkin_ws/src/planners/rosnav/agents/jackal_RosnavResNet_5_norm_2024_03_23__21_02_24/last_model.zip"
+    include: # regex to include layers
+      - "^features_extractor"
+    exclude:
+      - "linear"
 
   frame_stacking:
     enabled: false
