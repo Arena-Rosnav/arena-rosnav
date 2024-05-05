@@ -6,7 +6,7 @@ Stage: spython-base
 . src/arena/arena-rosnav
 %post
 
-FROM_LOCAL=true
+FROM_LOCAL=false
 ARENA_BRANCH=drl_subgoal_mode
 ARENA_ROOT=/root
 ARENA_WS=arena_ws
