@@ -63,10 +63,16 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "RosnavResNet_5_norm"
+  architecture_name: "LSTM_ResNet_5_norm"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: jackal_RosnavResNet_5_norm_2024_03_23__21_02_24 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   checkpoint: "best_model" # gonna be ignored if resume is not null
+  weight_transfer:
+    model_path: "/home/tar/catkin_ws/src/planners/rosnav/agents/jackal_RosnavResNet_5_norm_2024_03_23__21_02_24/last_model.zip"
+    include: # regex to include layers
+      - "^features_extractor"
+    exclude:
+      - "linear"
 
   frame_stacking:
     enabled: false
