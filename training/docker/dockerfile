@@ -121,14 +121,13 @@ RUN poetry config virtualenvs.create true && \
 
 WORKDIR $ARENA_ROOT/$ARENA_WS
 # Install necessary dependencies
-RUN apt-get update && apt-get install -y libopencv-dev liblua5.2-dev libarmadillo-dev ros-noetic-nlopt liblcm-dev && \
+RUN apt-get update && apt-get install -y libopencv-dev liblua5.2-dev libarmadillo-dev ros-noetic-nlopt liblcm-dev psmisc && \
     rosdep update && rosdep install --from-paths src --ignore-src -r -y
 
 # Build Arena-Rosnav
 SHELL ["/bin/bash", "-c"]
-WORKDIR $ARENA_ROOT/$ARENA_WS
 RUN rm -r src/arena/utils/pedsim_ros/pedsim_engine/2ndparty/spencer_tracking_rviz_plugin
-RUN source /opt/ros/$ROS_DISTRO/setup.bash && catkin build -DPYTHON_EXECUTABLE=$(which python)
+# RUN source /opt/ros/$ROS_DISTRO/setup.sh && catkin_make -DPYTHON_EXECUTABLE=$POETRY_ENV
 
 WORKDIR $ARENA_ROOT/$ARENA_WS/src/arena/arena-rosnav/training/docker/
 RUN chmod +x entrypoint.sh
