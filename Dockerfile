@@ -1,6 +1,6 @@
 FROM mzahana/base-ubuntu20-cuda11.4.2:latest
 
-ARG FROM_LOCAL=true
+ARG FROM_LOCAL=false
 ARG ARENA_BRANCH=drl_subgoal_mode
 ARG ARENA_ROOT=/root
 ARG ARENA_WS=arena_ws
@@ -128,8 +128,8 @@ RUN poetry config virtualenvs.create true && \
 
 WORKDIR $ARENA_ROOT/$ARENA_WS
 # Install necessary dependencies
-RUN apt-get update && apt-get install -y libopencv-dev liblua5.2-dev libarmadillo-dev ros-noetic-nlopt liblcm-dev psmisc && \
-    rosdep update && rosdep install --from-paths src --ignore-src -r -y
+RUN apt-get update && apt-get install -y libopencv-dev liblua5.2-dev libarmadillo-dev ros-noetic-nlopt liblcm-dev psmisc
+RUN rosdep update && rosdep install --from-paths src --ignore-src -r -y
 
 # Build Arena-Rosnav
 RUN rm -r src/arena/utils/pedsim_ros/pedsim_engine/2ndparty/spencer_tracking_rviz_plugin
