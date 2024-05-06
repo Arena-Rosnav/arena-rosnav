@@ -111,6 +111,8 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
 
     if not isinstance(model, RecurrentPPO):
         model._setup_rollout_buffer()
+    else:
+        model._setup_model()
 
     print("--------------------------------\n")
 
