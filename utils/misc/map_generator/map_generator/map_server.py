@@ -73,6 +73,14 @@ def main():
         )
         create_yaml_files(map_name=MAP_FOLDER_NAME, dir_path=ROSNAV_MAP_FOLDER)
 
+        # delete distance_map.png
+        distance_map_path = (
+            ROSNAV_MAP_FOLDER / MAP_FOLDER_NAME / "map" / "distance_map.png"
+        )
+
+        if distance_map_path.exists():
+            distance_map_path.unlink()
+
         start_map_server()
 
 
