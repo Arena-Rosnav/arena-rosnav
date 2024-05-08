@@ -9,7 +9,7 @@
 # (will carry on training on last stage when threshhold reached)
 
 - #0
-  goal_radius: 1.5
+  goal_radius: 1.
   map_generator:
     algorithm: "rosnav"
     algorithm_config:
