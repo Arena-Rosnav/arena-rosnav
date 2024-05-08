@@ -23,7 +23,7 @@ approach_globalplan:
 
 two_factor_velocity_difference:
   alpha: 0.0075
-  beta: 0.0025
+  beta: 0.01
   _on_safe_dist_violation: true
 
 # active_heading_direction:
@@ -43,3 +43,6 @@ ped_type_safety_distance:
 # angular_vel_constraint:
 #   penalty_factor: 0.05
 #   threshold: 1.0
+
+max_steps_exceeded:
+  reward: -7.5
