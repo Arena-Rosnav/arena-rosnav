@@ -20,7 +20,7 @@
   <param name="map_layer_path" value="$(find arena_simulation_setup)/worlds/$(arg map_folder_name)/map/map.world.yaml" />
 
   <arg name="entity_manager" default="crowdsim" doc="[flatland, pedsim, crowdsim]" />
-  <arg name="sfm" default="" doc="sfm for crowdsim [passthrough, pysocial]"/>
+  <arg name="sfm" default="pysocial" doc="sfm for crowdsim [passthrough, pysocial]"/>
   <arg name="world_file" default=""/>
 
   <param name="entity_manager" value="$(arg entity_manager)" />
