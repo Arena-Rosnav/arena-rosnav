@@ -112,7 +112,9 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
     if not isinstance(model, RecurrentPPO):
         model._setup_rollout_buffer()
     else:
-        model._setup_model()
+        # model._setup_model()
+        # should reinit rolloutbuffer incase hyperparams change
+        pass
 
     print("--------------------------------\n")
 
@@ -165,7 +167,7 @@ def get_ppo_instance(
         setup_wandb(config, model)
 
     model2_path = config["rl_agent"]["weight_transfer"]["model_path"]
-    if model2_path and type(model2_path) is str and len(model2_path) > 0:
+    if type(model2_path) is str and len(model2_path) > 0:
         transfer_feature_extractor_weights(
             model1=model,
             model2=PPO.load(config["rl_agent"]["weight_transfer"]["model_path"]),
