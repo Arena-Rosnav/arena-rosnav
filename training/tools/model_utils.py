@@ -164,7 +164,8 @@ def get_ppo_instance(
     if wandb_logging:
         setup_wandb(config, model)
 
-    if config["rl_agent"]["weight_transfer"]["model_path"]:
+    model2_path = config["rl_agent"]["weight_transfer"]["model_path"]
+    if model2_path and type(model2_path) is str and len(model2_path) > 0:
         transfer_feature_extractor_weights(
             model1=model,
             model2=PPO.load(config["rl_agent"]["weight_transfer"]["model_path"]),
