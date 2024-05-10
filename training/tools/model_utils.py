@@ -5,7 +5,7 @@ from typing import Callable, List
 import rospy
 import wandb
 from rl_utils.utils.eval_callbacks.staged_train_callback import InitiateNewTrainStage
-from rl_utils.utils.learning_rate_schedules.linear import linear_decay
+from rl_utils.utils.learning_rate_schedules import linear_decay, square_root_decay
 from rosnav.model.base_agent import BaseAgent
 from sb3_contrib import RecurrentPPO
 from stable_baselines3 import PPO
@@ -121,14 +121,14 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
 
 def load_lr_schedule(config: dict) -> Callable:
     lr_schedule_cfg = config["rl_agent"]["lr_schedule"]
-    lr_schedule = None
     if lr_schedule_cfg["type"] == "linear":
-        lr_schedule = linear_decay(**lr_schedule_cfg["settings"])
+        return linear_decay(**lr_schedule_cfg["settings"])
+    elif lr_schedule_cfg["type"] == "square_root":
+        return square_root_decay(**lr_schedule_cfg["settings"])
     else:
         raise NotImplementedError(
             f"Learning rate schedule '{lr_schedule_cfg['type']}' not implemented!"
         )
-    return lr_schedule
 
 
 def save_model(model: PPO, paths: dict, file_name: str = "best_model") -> None:
