@@ -125,6 +125,7 @@ class FlatlandEnv(gymnasium.Env):
             bool: True if the initialization is successful, False otherwise.
         """
         self.model_space_encoder = RosnavSpaceManager(
+            simulation_ns=self.ns,
             space_encoder_class=self._agent_description.space_encoder_class,
             observation_spaces=self._agent_description.observation_spaces,
             observation_space_kwargs=self._agent_description.observation_space_kwargs,
