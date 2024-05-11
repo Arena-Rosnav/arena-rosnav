@@ -26,7 +26,7 @@
       # indoor parameters
       indoor:
         corridor_radius: 3 # total corridor diameter = 1+2*corridor_radius
-        iterations: 40 # number of nodes for the indoor map algorithm
+        iterations: 50 # number of nodes for the indoor map algorithm
   static: 0
   dynamic: 10
 - #1
