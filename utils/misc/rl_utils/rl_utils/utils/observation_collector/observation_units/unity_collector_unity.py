@@ -74,6 +74,7 @@ class UnityCollectorUnit(CollectorUnit):
         if self._enable_rgbd:
             self._image_bridge = CvBridge()
 
+        self._train_mode = rospy.get_param("train_mode", True)
         self._collision = False
         self._ped_safe_dist = False
         self._obs_safe_dist = False
@@ -92,24 +93,27 @@ class UnityCollectorUnit(CollectorUnit):
         """
         Initialize the subscribers for robot state and sensor data.
         """
-        self._collision_sub = rospy.Subscriber(
-            self._ns(TOPICS.COLLISION),
-            Collision,
-            self._cb_collision,
-            tcp_nodelay=True,
-        )
-        self._ped_safe_dist_sub = rospy.Subscriber(
-            self._ns(TOPICS.PED_SAFE_DIST),
-            Collision,
-            self._cb_ped_safe_dist,
-            tcp_nodelay=True,
-        )
-        self._obs_safe_dist_sub = rospy.Subscriber(
-            self._ns(TOPICS.OBS_SAFE_DIST),
-            Collision,
-            self._cb_obs_safe_dist,
-            tcp_nodelay=True,
-        )
+        if self._train_mode:
+            # only use these observations in train mode since they
+            # are only used for reward calculation
+            self._collision_sub = rospy.Subscriber(
+                self._ns(TOPICS.COLLISION),
+                Collision,
+                self._cb_collision,
+                tcp_nodelay=True,
+            )
+            self._ped_safe_dist_sub = rospy.Subscriber(
+                self._ns(TOPICS.PED_SAFE_DIST),
+                Collision,
+                self._cb_ped_safe_dist,
+                tcp_nodelay=True,
+            )
+            self._obs_safe_dist_sub = rospy.Subscriber(
+                self._ns(TOPICS.OBS_SAFE_DIST),
+                Collision,
+                self._cb_obs_safe_dist,
+                tcp_nodelay=True,
+            )
         if self._enable_rgbd:
             self._image_color_sub = rospy.Subscriber(
                 self._ns(TOPICS.IMAGE_COLOR),
@@ -126,9 +130,19 @@ class UnityCollectorUnit(CollectorUnit):
             
     def _rgbd_wait_condition(self):
         return (
-                    not self._enable_rgbd or 
-                    (self._received_image_color and self._received_image_depth)
-                )
+            not self._enable_rgbd or 
+            (self._received_image_color and self._received_image_depth)
+        )
+    
+    def _train_mode_wait_condition(self):
+        return (
+            not self._train_mode or
+            (
+                self._received_collision 
+                and self._received_obs_safe_dist 
+                and self._received_ped_safe_dist
+            )
+        )
 
     def wait(self):
         """
@@ -139,16 +153,25 @@ class UnityCollectorUnit(CollectorUnit):
             return
 
         for _ in range(int(MAX_WAIT / SLEEP)):
-            if (self._received_collision and
-                self._received_ped_safe_dist and
-                self._received_obs_safe_dist and
-                self._rgbd_wait_condition()):
+            if self._train_mode_wait_condition and self._rgbd_wait_condition():
                 return
 
             sleep(SLEEP)
 
         raise TimeoutError(
-            f"Couldn't retrieve data for: {false_params(odom=self._received_collision, laser=self._received_ped_safe_dist, subgoal=self._received_obs_safe_dist)}"
+            f"""Couldn't retrieve data for: {false_params(
+                    collision=self._received_collision, 
+                    ped_safe_dist=self._received_ped_safe_dist, 
+                    obs_safe_dist=self._received_obs_safe_dist
+                )}"""
+            if not self._enable_rgbd else
+            f"""Couldn't retrieve data for: {false_params(
+                    collision=self._received_collision, 
+                    ped_safe_dist=self._received_ped_safe_dist, 
+                    obs_safe_dist=self._received_obs_safe_dist, 
+                    image_color=self._received_image_color,
+                    image_depth=self._received_image_depth
+                )}"""
         )
 
     def get_observations(
@@ -165,13 +188,14 @@ class UnityCollectorUnit(CollectorUnit):
         """
         obs_dict = super().get_observations(obs_dict)
 
-        obs_dict.update(
-            {
-                OBS_DICT_KEYS.COLLSION: self._collision,
-                OBS_DICT_KEYS.PED_SAFE_DIST: self._ped_safe_dist,
-                OBS_DICT_KEYS.OBS_SAFE_DIST: self._obs_safe_dist
-            }
-        )
+        if self._train_mode:
+            obs_dict.update(
+                {
+                    OBS_DICT_KEYS.COLLSION: self._collision,
+                    OBS_DICT_KEYS.PED_SAFE_DIST: self._ped_safe_dist,
+                    OBS_DICT_KEYS.OBS_SAFE_DIST: self._obs_safe_dist
+                }
+            )
         if self._enable_rgbd:
             obs_dict.update(
                 {
