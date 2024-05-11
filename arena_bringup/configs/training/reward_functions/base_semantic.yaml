@@ -22,7 +22,7 @@ approach_globalplan:
   _on_safe_dist_violation: false
 
 two_factor_velocity_difference:
-  alpha: 0.0075
+  alpha: 0.01
   beta: 0.01
   _on_safe_dist_violation: true
 
