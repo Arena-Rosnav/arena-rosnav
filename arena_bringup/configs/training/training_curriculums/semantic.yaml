@@ -25,6 +25,27 @@
 
       # indoor parameters
       indoor:
+        corridor_radius: 10 # total corridor diameter = 1+2*corridor_radius
+        iterations: 0 # number of nodes for the indoor map algorithm
+  static: 0
+  dynamic: 10
+- #0
+  goal_radius: 1.5
+  map_generator:
+    algorithm: "rosnav"
+    algorithm_config:
+      # rosnav:
+      #   map_type: indoor
+      #   indoor:
+      #     corridor_radius: 5
+      #     iterations: 100
+      #   outdoor:
+      #     obstacle_num: 5
+      #     obstacle_extra_radius: 1
+      map_type: indoor # chose between 'indoor' and 'outdoor'
+
+      # indoor parameters
+      indoor:
         corridor_radius: 3 # total corridor diameter = 1+2*corridor_radius
         iterations: 40 # number of nodes for the indoor map algorithm
   static: 0
