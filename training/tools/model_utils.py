@@ -325,7 +325,7 @@ def transfer_feature_extractor_weights(
         rospy.logwarn("No include list provided. Skipping weight transfer.")
         return model1
 
-    if exclude[0] == "None":
+    if exclude[0].lower() == "none" or exclude[0] == "":
         exclude = ["---"]
 
     state_dict_model1 = model1.policy.state_dict()
