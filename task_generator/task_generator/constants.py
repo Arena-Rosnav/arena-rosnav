@@ -15,7 +15,7 @@ class Constants:
 
     DEFAULT_PEDESTRIAN_MODEL = "actor1"
 
-    TASK_GENERATOR_SERVER_NODE = Namespace("task_generator_server")
+    TASK_GENERATOR_SERVER_NODE = Namespace("/task_generator_server")
 
     class Simulator(Enum):
         FLATLAND = "flatland"
