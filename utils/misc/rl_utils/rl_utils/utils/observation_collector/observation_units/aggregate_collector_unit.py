@@ -77,10 +77,14 @@ class AggregateCollectorUnit(CollectorUnit):
         self,
         ns: Namespace,
         observation_manager: "ObservationCollector",
+        ns_to_semantic_topic: bool = True,
         *args,
         **kwargs
     ):
-        super().__init__(Namespace(ns), observation_manager)
+        super().__init__(
+            Namespace(ns) if ns_to_semantic_topic else Namespace(""),
+            observation_manager,
+        )
 
         self._laser_observations = []
         self._semantic_observations = {
