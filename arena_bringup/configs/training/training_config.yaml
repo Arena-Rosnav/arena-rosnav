@@ -95,6 +95,7 @@ rl_agent:
 
   laser:
     full_range_laser: false # additional laser covering 360° covering blind spots -> additional collision check
+    # NOTE: full range laser is not supported by Arena Unity
     reduce_num_beams:
       enabled: false
       num_beams: 200
