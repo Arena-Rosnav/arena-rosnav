@@ -12,7 +12,7 @@ from geometry_msgs.msg import Twist
 from rl_utils.utils.observation_collector.constants import DONE_REASONS
 from rl_utils.utils.observation_collector.observation_manager import ObservationManager
 from rl_utils.utils.observation_collector.observation_units.base_collector_unit import BaseCollectorUnit
-from rl_utils.utils.observation_collector.observation_units.unity_collector_unity import UnityCollectorUnit
+from rl_utils.utils.observation_collector.observation_units.unity_collector_unit import UnityCollectorUnit
 from rl_utils.utils.observation_collector.observation_units.globalplan_collector_unit import GlobalplanCollectorUnit
 from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import SemanticAggregateUnit
 from rl_utils.utils.rewards.reward_function import RewardFunction
