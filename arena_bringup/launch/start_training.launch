@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
   <!-- CONSTANTS -->
-  <!-- <param name="SIMULATOR" value="flatland" /> -->
-  <arg name="SIMULATOR" value="unity" />
-  <param name="SIMULATOR" value="$(arg SIMULATOR)" />
-  <param name="simulator" value="$(arg SIMULATOR)" />
   <param name="local_planner" value="rosnav" />
+
+  <arg name="simulator" default="flatland" doc="[flatland, unity]" />
+  <param name="SIMULATOR" value="$(arg simulator)" />
+  <param name="simulator" value="$(arg simulator)" />
 
   <arg name="model" default="burger"      doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real]"/>
 

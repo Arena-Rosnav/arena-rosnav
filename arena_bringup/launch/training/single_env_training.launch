@@ -23,14 +23,16 @@
   <group ns="$(arg ns)" >
     <!-- use simulator and rviz-->
 
-    <include file="$(find arena_bringup)/launch/training/flatland_simulator.launch" if="$(eval arg('SIMULATOR') == 'flatland')">
-      <arg name="ns" value="$(arg ns)" />
-    </include>
+    <group if="$(eval arg('SIMULATOR') == 'flatland')">
+      <include file="$(find arena_bringup)/launch/training/flatland_simulator.launch">
+        <arg name="ns" value="$(arg ns)" />
+      </include>
+    </group>
 
       <!-- Unity -->
-    <group>
+    <group if="$(eval arg('SIMULATOR') == 'unity')">
       <!-- not required <remap from="clock" to="/$(arg ns)/clock"/> -->
-      <include file="$(find arena_bringup)/launch/testing/simulators/unity.launch" if="$(eval arg('SIMULATOR') == 'unity')">
+      <include file="$(find arena_bringup)/launch/testing/simulators/unity.launch">
         <!--<arg name="world" default="$(arg world_file)" />-->
         <arg name="development_mode" value="false" />
         <arg name="headless" value="$(arg headless)" />
