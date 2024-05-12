@@ -77,16 +77,22 @@ class AggregateCollectorUnit(CollectorUnit):
         self,
         ns: Namespace,
         observation_manager: "ObservationCollector",
+        ns_to_semantic_topic: bool = True,
         *args,
         **kwargs
     ):
-        super().__init__(Namespace(ns), observation_manager)
+        super().__init__(
+            Namespace(ns),
+            observation_manager,
+        )
 
         self._laser_observations = []
         self._semantic_observations = {
             semantic_type.value: self.SemanticObservation(crowdsim_msgs.SemanticData())
             for semantic_type in SemanticAttribute
         }
+
+        self.__ns_to_semantic_topic = ns_to_semantic_topic
 
     def init_subs(self):
         local_costmap_conf = rospy.get_param(
@@ -122,8 +128,14 @@ class AggregateCollectorUnit(CollectorUnit):
                         observation_container
                     )
 
+                    _topic = (
+                        self._ns + observation_config.get("topic")
+                        if self.__ns_to_semantic_topic
+                        else observation_config.get("topic")
+                    )
+
                     rospy.Subscriber(
-                        self._ns.simulation_ns + observation_config.get("topic"),
+                        _topic,
                         crowdsim_msgs.SemanticData,
                         functools.partial(observation_container.update),
                     )

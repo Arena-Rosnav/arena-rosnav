@@ -23,3 +23,4 @@ class MBF_COMPATIBLE_TYPE:
         teb = "TebLocalPlannerROS"
         dwa = "DwaLocalPlannerROS"
         mpc = "MpcLocalPlannerROS"
+        rosnav = "RosnavLocalPlanner"

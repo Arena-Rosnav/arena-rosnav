@@ -19,7 +19,9 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 
 
-def setup_wandb(config: dict, agent: PPO) -> None:
+def setup_wandb(
+    config: dict, agent: PPO, wb_name: str = None, wb_group: str = None
+) -> None:
     wandb.login(key="58b5a2040f5cc9d5c3a7d6102877515716298192")
     wandb.init(
         project="Arena-RL",
@@ -28,6 +30,8 @@ def setup_wandb(config: dict, agent: PPO) -> None:
         monitor_gym=True,
         save_code=True,
         config=config,
+        name=wb_name,
+        group=wb_group,
     )
     wandb.watch(agent.policy)
 
@@ -160,10 +164,6 @@ def get_ppo_instance(
     if wandb_logging:
         setup_wandb(config, model)
 
-    ## Save model once
-
-    if not rospy.get_param("debug_mode") and new_model:
-        save_model(model, paths)
     return model
 
 

@@ -145,7 +145,10 @@ def make_envs(
     )
     eval_ns = f"/{EVAL_PREFIX}/{EVAL_PREFIX}_{rospy.get_param('model')}"
 
-    obs_unit_kwargs = {"subgoal_mode": config["rl_agent"]["subgoal_mode"]}
+    obs_unit_kwargs = {
+        "subgoal_mode": config["rl_agent"]["subgoal_mode"],
+        "ns_to_semantic_topic": False,
+    }
 
     env_fnc_kwargs = env_fnc_kwargs or {}
     _env_fnc_kwargs = {
