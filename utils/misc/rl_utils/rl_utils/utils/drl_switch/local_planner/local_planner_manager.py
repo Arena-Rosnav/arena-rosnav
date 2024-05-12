@@ -1,4 +1,5 @@
 from .planner.mbf_base import MBFLocalPlanner
+from .planner.mbf_rosnav import MBFRosnavLocalPlanner
 from ..constants import DMRC_SERVER, DMRC_SERVER_ACTION, MBF_COMPATIBLE_TYPE
 
 from task_generator.shared import Namespace
@@ -66,26 +67,27 @@ class LocalPlannerManager:
             for _ in range(10):
                 time.sleep(0.1)
                 self._step_world_srv()
+
                 try:
                     rospy.wait_for_service(mbf_server_service, timeout=0.1)
                     rospy.wait_for_service(mbf_action_service, timeout=0.1)
                 except rospy.ROSException:
                     continue
 
-        self._planners = [
-            MBFLocalPlanner(
-                ns=self._ns,
-                name=(
-                    planner_config["alias"]
-                    if "alias" in planner_config
-                    else planner_config["name"]
-                ),
-                planner=MBF_COMPATIBLE_TYPE.LOCAL[planner_config["name"]],
-                config=planner_config["config"],
+        self._planners = []
+        for planner_config in self._config:
+            if not planner_config["name"] in MBF_COMPATIBLE_TYPE.LOCAL.__members__:
+                rospy.logfatal(
+                    f"Local planner '{planner_config['name']}' not supported."
+                )
+                rospy.signal_shutdown("Local planner not supported.")
+                raise ValueError(
+                    f"Local planner '{planner_config['name']}' not supported."
+                )
+
+            self._planners.append(
+                LocalPlannerManager.initialize_local_planner(self._ns, planner_config)
             )
-            for planner_config in self._config
-            if planner_config["name"] in MBF_COMPATIBLE_TYPE.LOCAL.__members__
-        ]
 
     @property
     def num_planners(self) -> int:
@@ -105,3 +107,20 @@ class LocalPlannerManager:
             index (int): The index of the MBFLocalPlanner instance to activate.
         """
         self[index].activate()
+
+    @staticmethod
+    def initialize_local_planner(ns: Namespace, config: dict) -> MBFLocalPlanner:
+        if config["name"] == "rosnav":
+            return MBFRosnavLocalPlanner(
+                ns=ns,
+                name=config["config"]["agent"],
+                planner=MBF_COMPATIBLE_TYPE.LOCAL[config["name"]],
+                config=config["config"],
+            )
+
+        return MBFLocalPlanner(
+            ns=ns,
+            name=(config["alias"] if "alias" in config else config["name"]),
+            planner=MBF_COMPATIBLE_TYPE.LOCAL[config["name"]],
+            config=config["config"],
+        )

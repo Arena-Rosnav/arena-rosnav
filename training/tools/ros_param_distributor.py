@@ -3,6 +3,7 @@ import os
 
 import rospy
 from rosnav.utils.utils import get_actions_from_robot_yaml
+from task_generator.shared import Namespace
 
 from .general import generate_discrete_action_dict
 
@@ -50,24 +51,28 @@ def populate_ros_params(params: dict, paths: dict):
     )
 
 
-def populate_laser_params(params: dict):
+def populate_laser_params(params: dict, agent_namespace: str = None):
+    agent_topic_prefix = f"{agent_namespace}" if agent_namespace else ""
+    agent_topic_prefix = Namespace(agent_topic_prefix)
+
     with contextlib.suppress(KeyError):
         rospy.set_param(
-            "laser/reduce_num_beams",
+            agent_topic_prefix("laser/reduce_num_beams"),
             params["rl_agent"]["laser"]["reduce_num_beams"]["enabled"],
         )
     with contextlib.suppress(KeyError):
         rospy.set_param(
-            "laser/full_range_laser", params["rl_agent"]["laser"]["full_range_laser"]
+            agent_topic_prefix("laser/full_range_laser"),
+            params["rl_agent"]["laser"]["full_range_laser"],
         )
     with contextlib.suppress(KeyError):
         rospy.set_param(
-            "laser/reduced_num_laser_beams",
+            agent_topic_prefix("laser/reduced_num_laser_beams"),
             params["rl_agent"]["laser"]["reduce_num_beams"]["num_beams"],
         )
 
 
-def populate_discrete_action_space(params: dict):
+def populate_discrete_action_space(params: dict, agent_namespace: str = None):
     robot_model = rospy.get_param("model")
     actions = get_actions_from_robot_yaml(robot_model)
 
@@ -90,7 +95,8 @@ def populate_discrete_action_space(params: dict):
     else:
         discrete_actions_dict = actions["discrete"]
 
-    rospy.set_param("actions/discrete", discrete_actions_dict)
+    agent_topic_prefix = f"{agent_namespace}/" if agent_namespace else ""
+    rospy.set_param(f"{agent_topic_prefix}actions/discrete", discrete_actions_dict)
 
 
 def determine_space_encoder(frame_stacking: bool, reduced_laser: bool):

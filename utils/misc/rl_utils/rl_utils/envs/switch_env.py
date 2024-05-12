@@ -136,6 +136,7 @@ class SwitchFlatlandEnv(gymnasium.Env):
             bool: True if the initialization is successful, False otherwise.
         """
         self.model_space_encoder = SwitchSpaceManager(
+            simulation_ns=self.ns,
             action_space_kwargs={
                 "num_planners": count_planner_num(self._planner_configuration)
             },
@@ -197,6 +198,9 @@ class SwitchFlatlandEnv(gymnasium.Env):
             self._service_name_step, Empty, persistent=True
         )
 
+        clear_costmap_srv = self.ns("move_base_flex")("clear_costmaps")
+        self._clear_costmap_service = rospy.ServiceProxy(clear_costmap_srv, Empty)
+
     def _encode_observation(self, observation, *args, **kwargs):
         return self.model_space_encoder.encode_observation(observation, **kwargs)
 
@@ -211,7 +215,7 @@ class SwitchFlatlandEnv(gymnasium.Env):
             tuple: A tuple containing the encoded observation, reward, done flag, info dictionary, and False flag.
 
         """
-        # chose local planner via action
+        # chose local planner via action | action = planner_id
         self.local_planner_manager.activate(action)
 
         if self._is_train_mode:
@@ -276,15 +280,19 @@ class SwitchFlatlandEnv(gymnasium.Env):
 
         first_map = self._episode <= 1 if "sim_1" in self.ns else False
 
+        reset_after_new_map = self._steps_curr_episode == 0
         self.task.reset(
             first_map=first_map,
-            reset_after_new_map=self._steps_curr_episode == 0,
+            reset_after_new_map=reset_after_new_map,
         )
         self.reward_calculator.reset()
         self._steps_curr_episode = 0
         self._last_action = np.array([0, 0, 0])
 
         if self._is_train_mode:
+            if reset_after_new_map:
+                self._clear_costmap_service()
+
             # extra step for planning serivce to provide global plan
             for _ in range(2):
                 self.call_service_takeSimStep()
