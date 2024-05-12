@@ -66,7 +66,7 @@
   <include file="$(find arena_bringup)/launch/training/single_env_training.launch">
     <arg name="ns" value="eval_sim" />
     <arg name="model" value="$(arg model)" />
-    <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
+    <arg name="SIMULATOR" value="$(arg simulator)" />
     <arg name="time_scale" value="$(arg time_scale)" />
     <arg name="headless" value="$(arg headless)" />
     <arg name="entity_manager" value="$(arg entity_manager)" />
@@ -78,7 +78,7 @@
     <arg name="num_envs" value="$(arg num_envs)" />
     <arg name="ns_prefix" value="$(arg ns_prefix)" />
     <arg name="model" value="$(arg model)" />
-    <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
+    <arg name="SIMULATOR" value="$(arg simulator)" />
     <arg name="time_scale" value="$(arg time_scale)" />
     <arg name="headless" value="$(arg headless)" />
     <arg name="entity_manager" value="$(arg entity_manager)" />
