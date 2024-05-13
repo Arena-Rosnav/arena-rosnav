@@ -6,9 +6,12 @@ import gym
 import rospy
 from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
 from rl_utils.utils.vec_wrapper.delayed_subproc_vec_env import DelayedSubprocVecEnv
-from rl_utils.utils.vec_wrapper.vec_stats_recorder import VecStatsRecorder
 from rl_utils.utils.vec_wrapper.profiler import ProfilingVecEnv
+from rl_utils.utils.vec_wrapper.vec_stats_recorder import VecStatsRecorder
 from rosnav.model.base_agent import BaseAgent
+from rosnav.utils.observation_space.observation_space_manager import (
+    ObservationSpaceManager,
+)
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import (
     DummyVecEnv,
@@ -181,7 +184,9 @@ def make_envs(
     )
     eval_env = DummyVecEnv(eval_env_fncs)
 
-    observation_manager = eval_env.envs[0].model_space_encoder.observation_space_manager
+    observation_manager: ObservationSpaceManager = eval_env.envs[
+        0
+    ].model_space_encoder.observation_space_manager
 
     # load vec wrappers
     if config["rl_agent"]["frame_stacking"]["enabled"]:

@@ -5,7 +5,7 @@ from typing import Callable, List
 import rospy
 import wandb
 from rl_utils.utils.eval_callbacks.staged_train_callback import InitiateNewTrainStage
-from rl_utils.utils.learning_rate_schedules.linear import linear_decay
+from rl_utils.utils.learning_rate_schedules import linear_decay, square_root_decay
 from rosnav.model.base_agent import BaseAgent
 from sb3_contrib import RecurrentPPO
 from stable_baselines3 import PPO
@@ -111,20 +111,24 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
 
     if not isinstance(model, RecurrentPPO):
         model._setup_rollout_buffer()
+    else:
+        # model._setup_model()
+        # should reinit rolloutbuffer incase hyperparams change
+        pass
 
     print("--------------------------------\n")
 
 
 def load_lr_schedule(config: dict) -> Callable:
     lr_schedule_cfg = config["rl_agent"]["lr_schedule"]
-    lr_schedule = None
     if lr_schedule_cfg["type"] == "linear":
-        lr_schedule = linear_decay(**lr_schedule_cfg["settings"])
+        return linear_decay(**lr_schedule_cfg["settings"])
+    elif lr_schedule_cfg["type"] == "square_root":
+        return square_root_decay(**lr_schedule_cfg["settings"])
     else:
         raise NotImplementedError(
             f"Learning rate schedule '{lr_schedule_cfg['type']}' not implemented!"
         )
-    return lr_schedule
 
 
 def save_model(model: PPO, paths: dict, file_name: str = "best_model") -> None:
@@ -162,7 +166,8 @@ def get_ppo_instance(
     if wandb_logging:
         setup_wandb(config, model)
 
-    if config["rl_agent"]["weight_transfer"]["model_path"]:
+    model2_path = config["rl_agent"]["weight_transfer"]["model_path"]
+    if type(model2_path) is str and len(model2_path) > 0:
         transfer_feature_extractor_weights(
             model1=model,
             model2=PPO.load(config["rl_agent"]["weight_transfer"]["model_path"]),
@@ -319,6 +324,9 @@ def transfer_feature_extractor_weights(
     if include is None:
         rospy.logwarn("No include list provided. Skipping weight transfer.")
         return model1
+
+    if exclude[0].lower() == "none" or exclude[0] == "":
+        exclude = ["---"]
 
     state_dict_model1 = model1.policy.state_dict()
     state_dict_model2 = model2.policy.state_dict()

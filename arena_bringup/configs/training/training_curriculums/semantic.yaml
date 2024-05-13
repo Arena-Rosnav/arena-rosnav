@@ -1,29 +1,29 @@
-# Training Curriculum 
+# Training Curriculum
 # this yaml serves as container of the learning curriculum for the agent
 # by determining the number of static/dynamic obstacles per stage
 # (will carry on training on last stage when threshhold reached)
 
-# Training Curriculum 
+# Training Curriculum
 # this yaml serves as container of the learning curriculum for the agent
 # by determining the number of static/dynamic obstacles per stage
 # (will carry on training on last stage when threshhold reached)
 
 - #0
-  goal_radius: 1.5
+  goal_radius: 1.
   map_generator:
     algorithm: "rosnav"
     algorithm_config:
-    # rosnav:
-    #   map_type: indoor
-    #   indoor:
-    #     corridor_radius: 5
-    #     iterations: 100
-    #   outdoor:
-    #     obstacle_num: 5
-    #     obstacle_extra_radius: 1
+      # rosnav:
+      #   map_type: indoor
+      #   indoor:
+      #     corridor_radius: 5
+      #     iterations: 100
+      #   outdoor:
+      #     obstacle_num: 5
+      #     obstacle_extra_radius: 1
       map_type: indoor # chose between 'indoor' and 'outdoor'
 
-  # indoor parameters
+      # indoor parameters
       indoor:
         corridor_radius: 3 # total corridor diameter = 1+2*corridor_radius
         iterations: 50 # number of nodes for the indoor map algorithm
@@ -36,7 +36,7 @@
     algorithm_config:
       map_type: indoor # chose between 'indoor' and 'outdoor'
 
-    # indoor parameters
+      # indoor parameters
       indoor:
         corridor_radius: 3 # total corridor diameter = 1+2*corridor_radius
         iterations: 50
@@ -49,7 +49,7 @@
     algorithm_config:
       map_type: indoor # chose between 'indoor' and 'outdoor'
 
-    # indoor parameters
+      # indoor parameters
       indoor:
         corridor_radius: 3 # total corridor diameter = 1+2*corridor_radius
         iterations: 50
@@ -62,7 +62,7 @@
     algorithm_config:
       map_type: indoor # chose between 'indoor' and 'outdoor'
 
-    # indoor parameters
+      # indoor parameters
       indoor:
         corridor_radius: 3 # total corridor diameter = 1+2*corridor_radius
         iterations: 50
@@ -75,7 +75,7 @@
     algorithm_config:
       map_type: indoor # chose between 'indoor' and 'outdoor'
 
-    # indoor parameters
+      # indoor parameters
       indoor:
         corridor_radius: 3 # total corridor diameter = 1+2*corridor_radius
         iterations: 50
@@ -87,7 +87,7 @@
     algorithm_config:
       map_type: indoor # chose between 'indoor' and 'outdoor'
 
-    # indoor parameters
+      # indoor parameters
       indoor:
         corridor_radius: 3 # total corridor diameter = 1+2*corridor_radius
         iterations: 50
@@ -99,7 +99,7 @@
     algorithm_config:
       map_type: indoor # chose between 'indoor' and 'outdoor'
 
-    # indoor parameters
+      # indoor parameters
       indoor:
         corridor_radius: 3 # total corridor diameter = 1+2*corridor_radius
         iterations: 45

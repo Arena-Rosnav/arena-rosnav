@@ -28,29 +28,3 @@ def linear_decay(initial_value: float, final_value: float) -> Callable[[float], 
         return initial_value - (initial_value - final_value) * (1 - progress_remaining)
 
     return func
-
-
-def linear_schedule(initial_value: float) -> Callable[[float], float]:
-    """
-    Linear learning rate schedule.
-
-    Args:
-        initial_value (float): Initial learning rate.
-
-    Returns:
-        Callable[[float], float]: Schedule that computes current learning rate depending on remaining progress.
-    """
-
-    def func(progress_remaining: float) -> float:
-        """
-        Compute the current learning rate.
-
-        Args:
-            progress_remaining (float): Remaining progress.
-
-        Returns:
-            float: Current learning rate.
-        """
-        return progress_remaining * initial_value
-
-    return func
