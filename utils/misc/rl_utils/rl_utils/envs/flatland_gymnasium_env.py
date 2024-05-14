@@ -125,6 +125,7 @@ class FlatlandEnv(gymnasium.Env):
             bool: True if the initialization is successful, False otherwise.
         """
         self.model_space_encoder = RosnavSpaceManager(
+            simulation_ns=self.ns,
             space_encoder_class=self._agent_description.space_encoder_class,
             observation_spaces=self._agent_description.observation_spaces,
             observation_space_kwargs=self._agent_description.observation_space_kwargs,
@@ -167,8 +168,12 @@ class FlatlandEnv(gymnasium.Env):
             robot_radius=self.task.robot_managers[0]._robot_radius,
             safe_dist=self.task.robot_managers[0].safe_distance,
             goal_radius=rosparam_get(float, "goal_radius", 0.3),
+<<<<<<< HEAD
             distinguished_safe_dist=rosparam_get(bool, "rl_agent/distinguished_safe_dist", False),
             ns=self.ns,
+=======
+            max_steps=self._max_steps_per_episode,
+>>>>>>> master
             **self._reward_fnc_kwargs,
         )
 

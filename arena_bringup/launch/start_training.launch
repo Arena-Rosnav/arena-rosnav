@@ -7,13 +7,13 @@
   <param name="SIMULATOR" value="$(arg simulator)" />
   <param name="simulator" value="$(arg simulator)" />
 
-  <arg name="model" default="burger"      doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real]"/>
+  <param name="single_env" value="false" />
 
   <!-- Here are the argument that may be frequently changed -->
+  <arg name="cfg" default="" doc="File name of the config file."/>
+
   <arg name="ns_prefix" default="sim" />
   <arg name="num_envs" default="1" />
-
-  <param name="single_env" value="false" />
 
   <!-- unity specific -->
   <arg name="time_scale" default="1" />
@@ -22,14 +22,17 @@
   <!-- train mode  -->
   <arg name="train_mode" default="true"/>
 
+  <arg name="model" default="burger"      doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real]"/>
   <!-- the folder name under the path simulator_setup/maps  -->
   <arg name="map_folder_name" default="map_empty" />
+
   <param name="map_file" value="$(arg map_folder_name)" />
   <param name="map_layer_path" value="$(find arena_simulation_setup)/worlds/$(arg map_folder_name)/map/map.world.yaml" />
 
   <arg name="entity_manager" default="crowdsim" doc="[flatland, pedsim, crowdsim]" />
-  <arg name="sfm" default="" doc="sfm for crowdsim [passthrough, pysocial]"/>
+  <arg name="sfm" default="pysocial" doc="sfm for crowdsim [passthrough, pysocial]"/>
   <arg name="world_file" default=""/>
+
   <param name="entity_manager" value="$(arg entity_manager)" />
 
   <!-- if it's false flatland server will not publish any debug related infomation and you will not able to visuzalize e.g robot, dynamic obstacles  -->
@@ -88,4 +91,11 @@
   <node pkg="task_generator" name="task_generator_server" type="server.py" output="screen"/>
   <node pkg="task_generator" name="task_generator_filewatcher" type="filewatcher.py" output="screen"/>
 
+  <group if="$(eval arg('cfg') != '')">
+    <node 
+      pkg="training" name="training" type="train_agent.py" output="screen" 
+      args="$(find arena_bringup)/configs/training/$(arg cfg)"
+    />
+    <param name="LEVERAGE_SIMS" value="true"/>
+  </group>
 </launch>

@@ -11,7 +11,7 @@ STAGED:
 RANDOM:
   seed: -1
   static:
-    min: 5
+    min: 10
     max: 10
     models: ["shelf"]
   interactive:
@@ -19,6 +19,6 @@ RANDOM:
     max: 0
     models: ["shelf"]
   dynamic:
-    min: 3
-    max: 15
+    min: 35
+    max: 40
     models: ["actor1"]

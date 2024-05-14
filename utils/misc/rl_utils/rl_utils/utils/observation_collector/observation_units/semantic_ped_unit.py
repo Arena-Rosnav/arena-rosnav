@@ -85,7 +85,7 @@ class SemanticAggregateUnit(AggregateCollectorUnit):
             )
             rel_vel = np.matmul(robot_R_map, ped_vel.T)
             return rel_vel[0, :].T, rel_vel[1, :].T
-        return np.array([])
+        return np.array([]), np.array([])
 
     def get_observations(
         self, obs_dict: Dict[str, Any], *args, **kwargs

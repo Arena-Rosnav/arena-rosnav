@@ -23,25 +23,48 @@ class RewardFunction:
         _robot_radius (float): Radius of the robot.
         _safe_dist (float): Safe distance of the agent.
         _goal_radius (float): Radius of the goal.
-        
+
         _distinguished_safe_dist: If true, the unity-based collider approach is used for safe dist.
+        _max_steps (int): Maximum number of steps allowed in the environment.
 
         _internal_state_info (Dict[str, Any]): Centralized internal state info for the reward units.
-            E.g. to avoid computing same parameter in a single step multiple times.
+            E.g. to avoid computing the same parameter multiple times in a single step.
 
         _curr_reward (float): Current reward value.
         _info (Dict[str, Any]): Dictionary containing reward function information.
 
         _rew_fnc_dict (Dict[str, Dict[str, Any]]): Dictionary containing reward function specifications.
         _reward_units (List[RewardUnit]): List of reward units for calculating the reward.
+
+    Methods:
+        __init__: Initializes the RewardFunction object.
+        _setup_reward_function: Sets up the reward function.
+        add_reward: Adds the specified value to the current reward.
+        add_info: Adds the specified information to the reward function's info dictionary.
+        add_internal_state_info: Adds internal state information to the reward function.
+        get_internal_state_info: Retrieves internal state information based on the specified key.
+        update_internal_state_info: Updates the internal state info after each time step.
+        reset_internal_state_info: Resets all global state information.
+        _reset: Reset on every environment step.
+        reset: Reset before each episode.
+        calculate_reward: Calculates the reward based on several observations.
+        get_reward: Retrieves the current reward and info dictionary.
+
+    Properties:
+        robot_radius: Getter for the robot radius.
+        goal_radius: Getter and setter for the goal radius.
+        safe_dist: Getter for the safe distance.
+        safe_dist_breached: Getter for the safe distance breached flag.
     """
 
     _rew_func_name: str
     _robot_radius: float
     _safe_dist: float
     _goal_radius: float
-    
+
     _distinguished_safe_dist: bool
+
+    _max_steps: int
 
     _internal_state_info: Dict[str, Any]
 
@@ -56,6 +79,7 @@ class RewardFunction:
         rew_func_name: str,
         robot_radius: float,
         goal_radius: float,
+        max_steps: int,
         safe_dist: float,
         distinguished_safe_dist: bool,
         ns: Namespace,
@@ -64,18 +88,24 @@ class RewardFunction:
         *args,
         **kwargs,
     ):
-        """This class represents a reward function for a reinforcement learning environment.
+        """Initialize a reward function for a reinforcement learning environment.
 
         Args:
             rew_func_name (str): Name of the yaml file that contains the reward function specifications.
             robot_radius (float): Radius of the robot.
             goal_radius (float): Radius of the goal.
+            max_steps (int): Maximum number of steps in the environment.
             safe_dist (float): Safe distance of the agent.
+            internal_state_updates (List[InternalStateInfoUpdate], optional): List of internal state updates. Defaults to None.
+            reward_unit_kwargs (dict, optional): Keyword arguments for reward units. Defaults to None.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
         """
         self._rew_func_name = rew_func_name
         self._robot_radius = robot_radius
         self._safe_dist = safe_dist
         self._goal_radius = goal_radius
+        self._max_steps = max_steps
 
         self._distinguished_safe_dist = distinguished_safe_dist
         self._ns = ns
@@ -236,6 +266,10 @@ class RewardFunction:
     @property
     def goal_radius(self) -> float:
         return self._goal_radius
+
+    @property
+    def max_steps(self) -> int:
+        return self._max_steps
 
     @goal_radius.setter
     def goal_radius(self, value) -> None:
