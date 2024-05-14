@@ -28,7 +28,8 @@ class RosnavActionNode:
             ns (str, optional):
                 Simulation specific ROS namespace. Defaults to None.
         """
-        self.ns = Namespace(ns)
+        self.ns = Namespace(ns) if ns else Namespace(rospy.get_namespace()[:-1])
+        rospy.loginfo(f"Starting Rosnav-Action-Node on {self.ns}")
 
         self._action_pub = rospy.Publisher(f"{self.ns}/cmd_vel", Twist, queue_size=1)
         rospy.wait_for_service(f"{self.ns}/rosnav/get_action")
@@ -65,7 +66,7 @@ class RosnavActionNode:
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-ns", "--namespace", type=str)
+    parser.add_argument("-ns", "--namespace", type=str, default="")
 
     return parser.parse_known_args()[0]
 

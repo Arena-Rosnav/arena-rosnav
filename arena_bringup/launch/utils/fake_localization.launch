@@ -6,7 +6,6 @@
   <arg name="global_frame_id"/>
   <arg name="odom_frame_id"/>
 
-  
   <!-- send fake static transform map_to_odom, which will be used to get localization from odom to map -->
   <!-- <group ns="$(arg robot_name)" > -->
   <node 

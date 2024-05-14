@@ -30,6 +30,7 @@ then
 else
     echo $GREEN
     echo 'updated successfully'
+    echo "${RED}don't forget to rebuild!"
 fi
 
 echo $RESET

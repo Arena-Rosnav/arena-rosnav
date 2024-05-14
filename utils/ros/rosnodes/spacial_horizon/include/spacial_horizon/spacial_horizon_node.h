@@ -19,7 +19,11 @@
 
 #include <geometry_msgs/Twist.h>
 
-#define PI 3.14159265
+#define SUB_TOPIC_GOAL "move_base_simple/goal"
+#define SUB_TOPIC_ODOM "odom"
+#define PUB_TOPIC_SUBGOAL "subgoal"
+#define PUB_TOPIC_GLOBAL_PLAN "global_plan"
+#define SERVICE_GLOBAL_PLANNER "move_base_flex/NavfnROS/make_plan"
 
 class SpacialHorizon
 {
@@ -40,10 +44,14 @@ private:
     // publisher
     ros::Publisher pub_subgoal, pub_global_plan;
 
+    // service
+    ros::ServiceClient global_planner_srv;
+
     // plan with global path from move base
     nav_msgs::GetPlan global_plan;
 
     /* parameters */
+    bool train_mode;
     bool disable_intermediate_planner;
     double goal_tolerance;    // meter
     double subgoal_tolerance; // meter
@@ -52,6 +60,9 @@ private:
 
     /* ROS utils */
     ros::Timer subgoal_timer, update_global_plan_timer;
+
+    /* init methods */
+    void initializeGlobalPlanningService();
 
     /* ros related callback*/
     void odomCallback(const nav_msgs::OdometryConstPtr &msg);
@@ -72,8 +83,6 @@ public:
     ~SpacialHorizon() {}
 
     void init(ros::NodeHandle &nh);
-
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 #endif

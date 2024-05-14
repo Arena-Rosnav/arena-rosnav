@@ -22,6 +22,7 @@ class DEFAULTS:
 
     class COLLISION:
         REWARD: float = -10.0
+        BUMPER_ZONE: float = 0.05
 
     class DISTANCE_TRAVELLED:
         CONSUMPTION_FACTOR: float = 0.005
@@ -64,3 +65,4 @@ class DEFAULTS:
     class PED_TYPE_SPECIFIC_COLLISION:
         TYPE: int = 1
         REWARD: float = -10.0
+        BUMPER_ZONE: float = 0.05

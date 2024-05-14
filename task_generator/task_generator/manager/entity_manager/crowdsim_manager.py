@@ -41,6 +41,13 @@ from task_generator.utils import Utils, rosparam_get
 
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
+# TODO retrieve this from pedsim registry
+def _get_ped_type() -> str:
+    return Config.General.RNG.choice(
+        ["human/adult", "human/elder"],
+        p=[0.8, 0.2]
+    )
+
 # TODO structure these together
 def process_SDF(name: str, base_model: Model) -> Model:
     base_desc = SDFUtil.parse(sdf=base_model.description)
@@ -81,7 +88,7 @@ def process_SDF(name: str, base_model: Model) -> Model:
     return new_model
 
 
-class PedsimManager(EntityManager):
+class CrowdsimManager(EntityManager):
     _spawn_peds_srv: rospy.ServiceProxy
     _remove_peds_srv: rospy.ServiceProxy
     _reset_peds_srv: rospy.ServiceProxy
@@ -367,80 +374,12 @@ class PedsimManager(EntityManager):
             msg.type = obstacle.extra.get("type")
             msg.yaml_file = obstacle.model.get(ModelType.YAML).path
 
-            msg.type = "adult"
+            msg.type = _get_ped_type()
             msg.number_of_peds = 1
             msg.vmax = Pedsim.VMAX(obstacle.extra.get("vmax", None))
-            msg.start_up_mode = Pedsim.START_UP_MODE(
-                obstacle.extra.get("start_up_mode", None)
-            )
-            msg.wait_time = Pedsim.WAIT_TIME(obstacle.extra.get("wait_time", None))
-            msg.trigger_zone_radius = Pedsim.TRIGGER_ZONE_RADIUS(
-                obstacle.extra.get("std_srvs.Trigger_zone_radius", None)
-            )
-            msg.chatting_probability = Pedsim.CHATTING_PROBABILITY(
-                obstacle.extra.get("chatting_probability", None)
-            )
-            msg.tell_story_probability = Pedsim.TELL_STORY_PROBABILITY(
-                obstacle.extra.get("tell_story_probability", None)
-            )
-            msg.group_talking_probability = Pedsim.GROUP_TALKING_PROBABILITY(
-                obstacle.extra.get("group_talking_probability", None)
-            )
-            msg.talking_and_walking_probability = (
-                Pedsim.TALKING_AND_WALKING_PROBABILITY(
-                    obstacle.extra.get("talking_and_walking_probability", None)
-                )
-            )
-            msg.requesting_service_probability = Pedsim.REQUESTING_SERVICE_PROBABILITY(
-                obstacle.extra.get("requesting_service_probability", None)
-            )
-            msg.requesting_guide_probability = Pedsim.REQUESTING_GUIDE_PROBABILITY(
-                obstacle.extra.get("requesting_guide_probability", None)
-            )
-            msg.requesting_follower_probability = (
-                Pedsim.REQUESTING_FOLLOWER_PROBABILITY(
-                    obstacle.extra.get("requesting_follower_probability", None)
-                )
-            )
-            msg.max_talking_distance = Pedsim.MAX_TALKING_DISTANCE(
-                obstacle.extra.get("max_talking_distance", None)
-            )
-            msg.max_servicing_radius = Pedsim.MAX_SERVICING_RADIUS(
-                obstacle.extra.get("max_servicing_radius", None)
-            )
-            msg.talking_base_time = Pedsim.TALKING_BASE_TIME(
-                obstacle.extra.get("talking_base_time", None)
-            )
-            msg.tell_story_base_time = Pedsim.TELL_STORY_BASE_TIME(
-                obstacle.extra.get("tell_story_base_time", None)
-            )
-            msg.group_talking_base_time = Pedsim.GROUP_TALKING_BASE_TIME(
-                obstacle.extra.get("group_talking_base_time", None)
-            )
-            msg.talking_and_walking_base_time = Pedsim.TALKING_AND_WALKING_BASE_TIME(
-                obstacle.extra.get("talking_and_walking_base_time", None)
-            )
-            msg.receiving_service_base_time = Pedsim.RECEIVING_SERVICE_BASE_TIME(
-                obstacle.extra.get("receiving_service_base_time", None)
-            )
-            msg.requesting_service_base_time = Pedsim.REQUESTING_SERVICE_BASE_TIME(
-                obstacle.extra.get("requesting_service_base_time", None)
-            )
-            msg.force_factor_desired = Pedsim.FORCE_FACTOR_DESIRED(
-                obstacle.extra.get("force_factor_desired", None)
-            )
-            msg.force_factor_obstacle = Pedsim.FORCE_FACTOR_OBSTACLE(
-                obstacle.extra.get("force_factor_obstacle", None)
-            )
-            msg.force_factor_social = Pedsim.FORCE_FACTOR_SOCIAL(
-                obstacle.extra.get("force_factor_social", None)
-            )
-            msg.force_factor_robot = Pedsim.FORCE_FACTOR_ROBOT(
-                obstacle.extra.get("force_factor_robot", None)
-            )
-            msg.waypoint_mode = Pedsim.WAYPOINT_MODE(
-                obstacle.extra.get("waypoint_mode", None)
-            )
+
+            # TODO
+            msg.configuration = json.dumps({})
 
             msg.waypoints = [
                 geometry_msgs.Point(*waypoint) for waypoint in obstacle.waypoints

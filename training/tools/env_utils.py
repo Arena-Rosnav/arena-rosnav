@@ -6,9 +6,12 @@ import gym
 import rospy
 from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
 from rl_utils.utils.vec_wrapper.delayed_subproc_vec_env import DelayedSubprocVecEnv
-from rl_utils.utils.vec_wrapper.vec_stats_recorder import VecStatsRecorder
 from rl_utils.utils.vec_wrapper.profiler import ProfilingVecEnv
+from rl_utils.utils.vec_wrapper.vec_stats_recorder import VecStatsRecorder
 from rosnav.model.base_agent import BaseAgent
+from rosnav.utils.observation_space.observation_space_manager import (
+    ObservationSpaceManager,
+)
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import (
     DummyVecEnv,
@@ -50,19 +53,13 @@ def load_vec_normalize(config: dict, paths: dict, env: VecEnv, eval_env: VecEnv)
         eval_env = VecNormalize(eval_env, training=False, **normalization_conf)
         return env, eval_env
 
-    if config["rl_agent"]["normalize"]["enabled"]:
-        for name in possible_agent_names:
-            load_path = os.path.join(paths["model"], f"vec_normalize_{name}.pkl")
-            if os.path.isfile(load_path):
-                env = VecNormalize.load(load_path=load_path, venv=env)
-                eval_env = VecNormalize.load(load_path=load_path, venv=eval_env)
-                rospy.loginfo(
-                    "Succesfully loaded VecNormalize object from pickle file.."
-                )
-        return env, eval_env
-
-    rospy.logfatal("No VecNormalize object found to load..")
-    sys.exit()
+    for name in possible_agent_names:
+        load_path = os.path.join(paths["model"], f"vec_normalize_{name}.pkl")
+        if os.path.isfile(load_path):
+            env = VecNormalize.load(load_path=load_path, venv=env)
+            eval_env = VecNormalize.load(load_path=load_path, venv=eval_env)
+            rospy.loginfo("Succesfully loaded VecNormalize object from pickle file..")
+    return env, eval_env
 
 
 def load_vec_framestack(config: dict, env: VecEnv, eval_env: VecEnv):
@@ -78,11 +75,10 @@ def load_vec_framestack(config: dict, env: VecEnv, eval_env: VecEnv):
         Tuple[VecEnv, VecEnv]: Tuple containing the modified training and evaluation environments.
     """
     fs_cfg = config["rl_agent"]["frame_stacking"]
-    if fs_cfg["enabled"]:
-        env = VecFrameStack(env, n_stack=fs_cfg["stack_size"], channels_order="first")
-        eval_env = VecFrameStack(
-            eval_env, n_stack=fs_cfg["stack_size"], channels_order="first"
-        )
+    env = VecFrameStack(env, n_stack=fs_cfg["stack_size"], channels_order="first")
+    eval_env = VecFrameStack(
+        eval_env, n_stack=fs_cfg["stack_size"], channels_order="first"
+    )
     return env, eval_env
 
 
@@ -93,6 +89,9 @@ def _init_env_fnc(
     max_steps_per_episode: int,
     seed: int = 0,
     trigger_init: bool = False,
+    obs_unit_kwargs: dict = None,
+    reward_fnc_kwargs: dict = None,
+    task_generator_kwargs: dict = None,
 ):
     """
     Initialize the environment function.
@@ -107,6 +106,7 @@ def _init_env_fnc(
     Returns:
         Union[gym.Env, gym.Wrapper]: The initialized environment.
     """
+    reward_fnc_kwargs = reward_fnc_kwargs or {}
 
     def _init() -> Union[gym.Env, gym.Wrapper]:
         return FlatlandEnv(
@@ -115,6 +115,9 @@ def _init_env_fnc(
             reward_fnc=reward_fnc,
             max_steps_per_episode=max_steps_per_episode,
             trigger_init=trigger_init,
+            obs_unit_kwargs=obs_unit_kwargs,
+            reward_fnc_kwargs=reward_fnc_kwargs,
+            task_generator_kwargs=task_generator_kwargs,
         )
 
     set_random_seed(seed)
@@ -144,6 +147,8 @@ def make_envs(
     )
     eval_ns = f"/{EVAL_PREFIX}/{EVAL_PREFIX}_{rospy.get_param('model')}"
 
+    obs_unit_kwargs = {"subgoal_mode": config["rl_agent"]["subgoal_mode"]}
+
     train_env_fncs = [
         _init_env_fnc(
             ns=train_ns(idx),
@@ -151,6 +156,8 @@ def make_envs(
             reward_fnc=config["rl_agent"]["reward_fnc"],
             max_steps_per_episode=config["max_num_moves_per_eps"],
             trigger_init=True if not config["debug_mode"] else False,
+            obs_unit_kwargs=obs_unit_kwargs,
+            reward_fnc_kwargs=config["rl_agent"]["reward_fnc_kwargs"],
         )
         for idx in range(config["n_envs"])
     ]
@@ -164,6 +171,8 @@ def make_envs(
                 "max_num_moves_per_eps"
             ],
             trigger_init=False,
+            obs_unit_kwargs=obs_unit_kwargs,
+            reward_fnc_kwargs=config["rl_agent"]["reward_fnc_kwargs"],
         )
     ]
 
@@ -175,13 +184,17 @@ def make_envs(
     )
     eval_env = DummyVecEnv(eval_env_fncs)
 
-    observation_manager = eval_env.envs[0].model_space_encoder.observation_space_manager
+    observation_manager: ObservationSpaceManager = eval_env.envs[
+        0
+    ].model_space_encoder.observation_space_manager
 
     # load vec wrappers
-    train_env, eval_env = load_vec_framestack(config, train_env, eval_env)
+    if config["rl_agent"]["frame_stacking"]["enabled"]:
+        train_env, eval_env = load_vec_framestack(config, train_env, eval_env)
 
     # load vec normalize
-    train_env, eval_env = load_vec_normalize(config, paths, train_env, eval_env)
+    if config["rl_agent"]["normalize"]["enabled"]:
+        train_env, eval_env = load_vec_normalize(config, paths, train_env, eval_env)
 
     # wrap env with statistics wrapper
     cmd_logging_cfg = config["monitoring"]["cmd_line_logging"]["episode_statistics"]

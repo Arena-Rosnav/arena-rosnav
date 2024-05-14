@@ -100,11 +100,13 @@ class RobotManager:
 
         self._entity_manager.spawn_robot(self._robot)
 
-        _gen_goal_topic = (
-            self.namespace("goal")
-            if Utils.get_arena_type() == Constants.ArenaType.TRAINING
-            else self.namespace("move_base_simple", "goal")
-        )
+        # _gen_goal_topic = (
+        #     self.namespace("goal")
+        #     if Utils.get_arena_type() == Constants.ArenaType.TRAINING
+        #     else self.namespace("move_base_simple", "goal")
+        # )
+
+        _gen_goal_topic = self.namespace("move_base_simple", "goal")
 
         self._move_base_goal_pub = rospy.Publisher(
             _gen_goal_topic, geometry_msgs.PoseStamped, queue_size=10
@@ -122,11 +124,7 @@ class RobotManager:
         #     return
 
         self._launch_robot()
-        self._robot_radius = (
-            float(rospy.get_param_cached("robot_radius"))
-            if Utils.get_arena_type() == Constants.ArenaType.TRAINING
-            else rosparam_get(float, self.namespace("robot_radius"))
-        )
+        self._robot_radius = rosparam_get(float, self.namespace("robot_radius"))
 
         # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
         self._clear_costmaps_srv = rospy.ServiceProxy(
@@ -176,14 +174,18 @@ class RobotManager:
             self.move_robot_to_pos(start_pos)
 
             if self._robot.record_data_dir is not None:
-                rospy.set_param(self.namespace("start"), [float(v) for v in self._start_pos])
+                rospy.set_param(
+                    self.namespace("start"), [float(v) for v in self._start_pos]
+                )
 
         if goal_pos is not None:
             self._goal_pos = goal_pos
             self._publish_goal(self._goal_pos)
 
             if self._robot.record_data_dir is not None:
-                rospy.set_param(self.namespace("goal"), [float(v) for v in self._goal_pos])
+                rospy.set_param(
+                    self.namespace("goal"), [float(v) for v in self._goal_pos]
+                )
 
         try:
             self._clear_costmaps_srv()
@@ -245,7 +247,14 @@ class RobotManager:
                 f"inter_planner:={self._robot.inter_planner}",
                 f"local_planner:={self._robot.local_planner}",
                 f"complexity:={rosparam_get(int, 'complexity', 1)}",
-                *(["record_data:=true", f"record_data_dir:={self._robot.record_data_dir}"] if self._robot.record_data_dir is not None else []),
+                *(
+                    [
+                        "record_data:=true",
+                        f"record_data_dir:={self._robot.record_data_dir}",
+                    ]
+                    if self._robot.record_data_dir is not None
+                    else []
+                ),
                 f"train_mode:={rosparam_get(bool, 'train_mode', False)}",
                 f"agent_name:={self._robot.agent}",
             ]

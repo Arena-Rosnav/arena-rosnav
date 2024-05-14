@@ -1,11 +1,11 @@
 import os
 import sys
-from typing import Callable
+from typing import Callable, List
 
 import rospy
 import wandb
 from rl_utils.utils.eval_callbacks.staged_train_callback import InitiateNewTrainStage
-from rl_utils.utils.learning_rate_schedules.linear import linear_decay
+from rl_utils.utils.learning_rate_schedules import linear_decay, square_root_decay
 from rosnav.model.base_agent import BaseAgent
 from sb3_contrib import RecurrentPPO
 from stable_baselines3 import PPO
@@ -17,6 +17,7 @@ from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.utils import configure_logger
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
+import re
 
 
 def setup_wandb(config: dict, agent: PPO) -> None:
@@ -108,27 +109,35 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
         model.tensorboard_log = None
         model._logger = None
 
-    model._setup_rollout_buffer()
+    if not isinstance(model, RecurrentPPO):
+        model._setup_rollout_buffer()
+    else:
+        # model._setup_model()
+        # should reinit rolloutbuffer incase hyperparams change
+        pass
 
     print("--------------------------------\n")
 
 
 def load_lr_schedule(config: dict) -> Callable:
     lr_schedule_cfg = config["rl_agent"]["lr_schedule"]
-    lr_schedule = None
     if lr_schedule_cfg["type"] == "linear":
-        lr_schedule = linear_decay(**lr_schedule_cfg["settings"])
+        return linear_decay(**lr_schedule_cfg["settings"])
+    elif lr_schedule_cfg["type"] == "square_root":
+        return square_root_decay(**lr_schedule_cfg["settings"])
     else:
         raise NotImplementedError(
             f"Learning rate schedule '{lr_schedule_cfg['type']}' not implemented!"
         )
-    return lr_schedule
 
 
 def save_model(model: PPO, paths: dict, file_name: str = "best_model") -> None:
     print("Saving model to: ", paths["model"])
     model.save(os.path.join(paths["model"], file_name))
-    if isinstance(model.env.venv, VecNormalize):
+
+    if isinstance(model.env, VecNormalize):
+        model.env.save(os.path.join(paths["model"], f"vec_normalize_{file_name}.pkl"))
+    elif isinstance(model.env.venv, VecNormalize):
         model.env.venv.save(
             os.path.join(paths["model"], f"vec_normalize_{file_name}.pkl")
         )
@@ -149,7 +158,7 @@ def get_ppo_instance(
             agent_description, observation_manager, config, train_env, paths
         )
     else:
-        model = load_model(config, train_env, paths)
+        model = load_model(config, train_env, paths, agent_description)
         update_hyperparam_model(model, paths, config)
 
     wandb_logging: bool = not config["debug_mode"] and config["monitoring"]["use_wandb"]
@@ -157,10 +166,20 @@ def get_ppo_instance(
     if wandb_logging:
         setup_wandb(config, model)
 
+    model2_path = config["rl_agent"]["weight_transfer"]["model_path"]
+    if type(model2_path) is str and len(model2_path) > 0:
+        transfer_feature_extractor_weights(
+            model1=model,
+            model2=PPO.load(config["rl_agent"]["weight_transfer"]["model_path"]),
+            include=config["rl_agent"]["weight_transfer"]["include"],
+            exclude=config["rl_agent"]["weight_transfer"]["exclude"],
+        )
+
     ## Save model once
 
     if not rospy.get_param("debug_mode") and new_model:
         save_model(model, paths)
+
     return model
 
 
@@ -222,7 +241,9 @@ sys.modules["rl_agent"] = sys.modules["rosnav"]
 sys.modules["rl_utils.rl_utils.utils"] = sys.modules["rosnav.utils"]
 
 
-def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
+def load_model(
+    config: dict, train_env: VecEnv, PATHS: dict, agent_discription: BaseAgent
+) -> PPO:
     agent_name = config["agent_name"]
     checkpoint = config["rl_agent"]["checkpoint"]
     possible_agent_names = [
@@ -237,6 +258,9 @@ def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
         target_path = os.path.join(PATHS["model"], f"{checkpoint}.zip")
         if os.path.isfile(target_path):
             rospy.loginfo(f"Loading model from {target_path}")
+            if "lstm" in agent_discription.type.value.lower():
+                model = RecurrentPPO.load(os.path.join(PATHS["model"], name), train_env)
+                break
             model = PPO.load(os.path.join(PATHS["model"], name), train_env)
             break
 
@@ -292,3 +316,29 @@ def init_callbacks(
     )
 
     return eval_cb
+
+
+def transfer_feature_extractor_weights(
+    model1: PPO, model2: PPO, include: List[str] = None, exclude: List[str] = None
+):
+    if include is None:
+        rospy.logwarn("No include list provided. Skipping weight transfer.")
+        return model1
+
+    if exclude[0].lower() == "none" or exclude[0] == "":
+        exclude = ["---"]
+
+    state_dict_model1 = model1.policy.state_dict()
+    state_dict_model2 = model2.policy.state_dict()
+
+    weights_dict = {
+        key: value
+        for key, value in state_dict_model2.items()
+        if any(re.match(_key, key) for _key in include)
+        and not any(item in key for item in exclude)
+    }
+
+    rospy.loginfo(f"Transferring weights for keys {len(weights_dict.keys())}!")
+
+    state_dict_model1.update(weights_dict)
+    model1.policy.load_state_dict(state_dict_model1, strict=True)

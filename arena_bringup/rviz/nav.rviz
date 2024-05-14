@@ -7,7 +7,6 @@ Panels:
         - /Global Options1
         - /Odometry1
         - /Marker1
-        - /my_robot1
         - /my_robot1/Namespaces1
         - /TF1/Frames1
         - /Goal1
@@ -18,7 +17,7 @@ Panels:
         - /Odometry2
         - /LaserScan4
       Splitter Ratio: 0.32637855410575867
-    Tree Height: 814
+    Tree Height: 528
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -93,7 +92,7 @@ Visualization Manager:
         Shaft Length: 1
         Shaft Radius: 0.05000000074505806
         Value: Arrow
-      Topic: /sim_1/jackal/odometry/ground_truth
+      Topic: /sim_1/sim_1_jackal/odom
       Unreliable: false
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -182,7 +181,7 @@ Visualization Manager:
       Draw Behind: false
       Enabled: true
       Name: Global_costmap
-      Topic: /jackal_2_2/move_base/global_costmap/costmap
+      Topic: /map
       Unreliable: false
       Use Timestamp: false
       Value: true
@@ -387,7 +386,7 @@ Visualization Manager:
       Value: false
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /flatland_server/debug/model/myrobot
+      Marker Topic: /eval_sim/flatland_server/debug/model/eval_sim_jackal
       Name: my_robot
       Namespaces:
         {}
@@ -400,9 +399,17 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        jackal/odom:
+        eval_sim_jackal/odom:
           Value: true
         map:
+          Value: true
+        sim_1_jackal/base_link:
+          Value: true
+        sim_1_jackal/front_laser:
+          Value: true
+        sim_1_jackal/full_laser:
+          Value: true
+        sim_1_jackal/odom:
           Value: true
       Marker Alpha: 1
       Marker Scale: 1
@@ -412,8 +419,14 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          jackal/odom:
+          eval_sim_jackal/odom:
             {}
+          sim_1_jackal/odom:
+            sim_1_jackal/base_link:
+              sim_1_jackal/front_laser:
+                {}
+              sim_1_jackal/full_laser:
+                {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -485,7 +498,7 @@ Visualization Manager:
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
-      Topic: /subgoal
+      Topic: /sim_1/sim_1_jackal/subgoal
       Unreliable: false
       Value: true
     - Class: rviz/Marker
@@ -509,7 +522,7 @@ Visualization Manager:
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Axes
-      Topic: /sim_1/jackal/goal
+      Topic: /sim_1/sim_1_jackal/move_base_simple/goal
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -717,7 +730,7 @@ Visualization Manager:
       Radius: 0.029999999329447746
       Shaft Diameter: 0.10000000149011612
       Shaft Length: 0.10000000149011612
-      Topic: /jackal_1_7/global_plan
+      Topic: /sim_1/sim_1_jackal/global_plan
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -1193,7 +1206,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: false
+      Enabled: true
       Keep: 1
       Name: Odometry
       Position Tolerance: 0.10000000149011612
@@ -1208,9 +1221,9 @@ Visualization Manager:
         Shaft Length: 1
         Shaft Radius: 0.05000000074505806
         Value: Axes
-      Topic: /sim_1/jackal/odom
+      Topic: /sim_1/sim_1_jackal/odom
       Unreliable: false
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: false
       Autocompute Value Bounds:
@@ -1236,7 +1249,7 @@ Visualization Manager:
       Size (Pixels): 5
       Size (m): 0.009999999776482582
       Style: Points
-      Topic: /sim_1/jackal/scan
+      Topic: /sim_1/sim_1_jackal/scan
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: false
@@ -1277,18 +1290,18 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: -36.97104263305664
+      Scale: -18.760068893432617
       Target Frame: <Fixed Frame>
-      X: 9.729456901550293
-      Y: 8.993311882019043
+      X: 21.053001403808594
+      Y: 23.168968200683594
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1043
+  Height: 757
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001a4000003b9fc0200000005fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000198000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000003b9000000c900ffffff000000010000010f00000270fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000002800000270000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004a00000003efc0100000002fb0000000800540069006d00650000000000000004a00000041800fffffffb0000000800540069006d00650100000000000004500000000000000000000005d6000003b900000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000002c80000029bfc0200000005fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000198000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000029b000000c900ffffff000000010000010f00000270fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000002800000270000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004a00000003efc0100000002fb0000000800540069006d00650000000000000004a00000041800fffffffb0000000800540069006d00650100000000000004500000000000000000000002d20000029b00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -1297,6 +1310,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1920
-  X: 0
-  Y: 0
+  Width: 1440
+  X: 2272
+  Y: 131

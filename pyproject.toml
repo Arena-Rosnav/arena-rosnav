@@ -14,13 +14,10 @@ empy = "^3.3.4"
 defusedxml = "^0.7.1"
 lxml = "^4.9.1"
 netifaces = "^0.11.0"
-sismic = "^1.6.6"
-shapely = "^2.0.3"
-pydantic = "^2.6.3"
-regex = "^2023.12.25"
+watchdog = "^3.0.0"
 
-[tool.poetry.group.planner.dependencies]
 # all planners except rosnav and aio
+[tool.poetry.group.planner.dependencies]
 torch = "^1.11.0" # applr, crowdnav, lflh, rlca, sarl, trail
 seaborn = "^0.12.2" # lflh
 tensorboard = "^2.12.2" # lflh
@@ -52,12 +49,12 @@ opencv-python = "^4.8"
 sb3-contrib = "^2.1.0"
 shimmy = "^1.3.0"
 
-# pedsim-waypoint-plugin deps
+# crowdsim deps
 [tool.poetry.group.social.dependencies]
 pysocialforce = "^1.1.2"
 socialforce = "^0.2.3"
-watchdog = "^3.0.0"
 pyinstrument = "^4.6.1"
+sismic = "^1.6.6"
 
 [tool.poetry.dev-dependencies]
 
