@@ -309,7 +309,7 @@ class SwitchFlatlandEnv(gymnasium.Env):
         Close the environment.
 
         """
-        pass
+        self.local_planner_manager.close()
 
     def _determine_termination(
         self,
