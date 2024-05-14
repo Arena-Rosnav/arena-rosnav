@@ -1,3 +1,4 @@
+from typing import List, Union
 from .planner.mbf_base import MBFLocalPlanner
 from .planner.mbf_rosnav import MBFRosnavLocalPlanner
 from ..constants import DMRC_SERVER, DMRC_SERVER_ACTION, MBF_COMPATIBLE_TYPE
@@ -74,7 +75,7 @@ class LocalPlannerManager:
                 except rospy.ROSException:
                     continue
 
-        self._planners = []
+        self._planners: List[MBFLocalPlanner] = []
         for planner_config in self._config:
             if not planner_config["name"] in MBF_COMPATIBLE_TYPE.LOCAL.__members__:
                 rospy.logfatal(
@@ -107,6 +108,13 @@ class LocalPlannerManager:
             index (int): The index of the MBFLocalPlanner instance to activate.
         """
         self[index].activate()
+
+    def close(self) -> None:
+        """
+        Close the LocalPlannerManager.
+        """
+        for planner in self._planners:
+            planner.close()
 
     @staticmethod
     def initialize_local_planner(ns: Namespace, config: dict) -> MBFLocalPlanner:
