@@ -35,13 +35,16 @@ class MBFLocalPlanner:
         self._planner = planner
         self._config = config if config is not None else {}
 
-        self._dmrc_params = Client(
+        # Dynamic reconfigure clients
+        # dmrc_mblegacy: Client for move_base_legacy_relay - contains planner specific parameters
+        # dmrc_mbf: Client for move_base_flex - contains the active local planner
+        self._dmrc_mblegacy = Client(
             self._ns(DMRC_SERVER)(self._planner.value),
-            # config_callback=self._reconfigure,
+            config_callback=self._mblegay_reconfigure,
         )
-        self._dmrc_action = Client(
+        self._dmrc_mbf = Client(
             self._ns(DMRC_SERVER_ACTION),
-            config_callback=self._reconfigure,
+            config_callback=self._mbf_reconfigure,
         )
 
         self._active_planner = ""
@@ -75,7 +78,7 @@ class MBFLocalPlanner:
         """
         return self.planner
 
-    def _reconfigure(self, config: dict):
+    def _mbf_reconfigure(self, config: dict):
         """
         Callback function for reconfiguring the local planner.
 
@@ -85,6 +88,15 @@ class MBFLocalPlanner:
         self._active_planner = config["base_local_planner"]
         self.deactivate()
 
+    def _mblegay_reconfigure(self, config: dict):
+        """
+        Callback function for reconfiguring the local planner.
+
+        Args:
+            config (dict): The new configuration parameters for the local planner.
+        """
+        pass
+
     def activate(self):
         """
         Activate the local planner.
@@ -93,11 +105,14 @@ class MBFLocalPlanner:
             return
         loginfo_throttle(1, f"[LOCAL PLANNER] Activating '{self.name}'...")
 
-        self._dmrc_action.update_configuration({"base_local_planner": self.planner})
-        self._dmrc_params.update_configuration(self._config)
+        self._dmrc_mbf.update_configuration({"base_local_planner": self.planner})
+        self._dmrc_mblegacy.update_configuration(self._config)
 
     def deactivate(self):
         """
         Deactivate the local planner.
         """
+        pass
+
+    def close(self):
         pass
