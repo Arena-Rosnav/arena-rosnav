@@ -68,6 +68,13 @@ rl_agent:
   resume: null # "jackal_ArenaUnityResNet_1_10M-steps"
   checkpoint: "best_model" # gonna be ignored if resume is not null
 
+  weight_transfer:
+    model_path: ""
+    include: # regex to include layers
+      - "^features_extractor"
+    exclude:
+      - "linear"
+
   frame_stacking:
     enabled: false
     stack_size: 6
