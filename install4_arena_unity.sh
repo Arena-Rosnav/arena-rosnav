@@ -22,7 +22,9 @@ if [ -d $build_path ]; then
 fi
 
 # Download Arena-Unity-Build.tar.gz
-url="https://github.com/Arena-Rosnav/arena-unity/releases/latest/download/$file_name"
+# TODO: Change this link once the arena-unity PR is accepted and the new release made official
+url="https://github.com/Arena-Rosnav/arena-unity/releases/download/v1.0/$file_name"
+# url="https://github.com/Arena-Rosnav/arena-unity/releases/latest/download/$file_name"
 echo "*** Downloading latest release"
 wget $url || { echo "Error: Download failed"; exit 1; }
 
