@@ -10,7 +10,6 @@ from geometry_msgs.msg import Twist
 from rl_utils.utils.observation_collector.observation_manager import ObservationManager
 from rosgraph_msgs.msg import Clock
 from rosnav import *
-from rosnav.msg import ResetStackedObs
 from rosnav.srv import GetAction, GetActionRequest
 from task_generator.shared import Namespace
 
