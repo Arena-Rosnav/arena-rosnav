@@ -16,6 +16,14 @@
   <arg name="num_envs" default="1" />
 
   <!-- unity specific -->
+  <!-- DISCLAIMER: The time_scale is currently not supported. 
+       Enable it by:
+          pedsim_engine/pedsim_simulator/src/simulator.cpp:184: change 'WallRate' to 'Rate'
+       Why it is not enabled:
+          Making pedsim use Rate breaks Flatland and Gazebo. Can be fixed for Flatland but didn't
+          find how to fix it for Gazebo.
+       Only enable it temporarily for training with Unity if desired but do not push it.
+  -->
   <arg name="time_scale" default="1" />
   <arg name="headless" default="true" />
 
