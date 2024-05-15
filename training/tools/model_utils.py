@@ -167,7 +167,7 @@ def get_ppo_instance(
         setup_wandb(config, model)
 
     model2_path = config["rl_agent"]["weight_transfer"]["model_path"]
-    if type(model2_path) is str and len(model2_path) > 0:
+    if type(model2_path) is str and len(model2_path) > 0 and new_model:
         transfer_feature_extractor_weights(
             model1=model,
             model2=PPO.load(config["rl_agent"]["weight_transfer"]["model_path"]),
@@ -336,6 +336,7 @@ def transfer_feature_extractor_weights(
         for key, value in state_dict_model2.items()
         if any(re.match(_key, key) for _key in include)
         and not any(item in key for item in exclude)
+        and key in state_dict_model1
     }
 
     rospy.loginfo(f"Transferring weights for keys {len(weights_dict.keys())}!")

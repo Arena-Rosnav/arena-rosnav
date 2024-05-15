@@ -18,12 +18,12 @@ reverse_drive:
 
 approach_globalplan:
   pos_factor: 0.1
-  neg_factor: 0.2
-  _on_safe_dist_violation: false
+  neg_factor: 0.1
+  _on_safe_dist_violation: true
 
 two_factor_velocity_difference:
-  alpha: 0.01
-  beta: 0.01
+  alpha: 0.005
+  beta: 0.005
   _on_safe_dist_violation: true
 
 # active_heading_direction:
