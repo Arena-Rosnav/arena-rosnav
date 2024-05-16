@@ -463,6 +463,7 @@ class RewardReverseDrive(RewardUnit):
         self,
         reward_function: RewardFunction,
         reward: float = DEFAULTS.REVERSE_DRIVE.REWARD,
+        threshold: float = None,
         _on_safe_dist_violation: bool = DEFAULTS.REVERSE_DRIVE._ON_SAFE_DIST_VIOLATION,
         *args,
         **kwargs,
@@ -470,6 +471,7 @@ class RewardReverseDrive(RewardUnit):
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
 
         self._reward = reward
+        self._threshold = threshold if threshold else 0.0
 
     def check_parameters(self, *args, **kwargs):
         """
@@ -491,7 +493,7 @@ class RewardReverseDrive(RewardUnit):
             action (np.ndarray): The action taken.
 
         """
-        if action is not None and action[0] < 0:
+        if action is not None and action[0] < 0 and action[0] < self._threshold:
             self.add_reward(self._reward)
 
 

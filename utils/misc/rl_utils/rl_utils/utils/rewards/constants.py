@@ -42,6 +42,7 @@ class DEFAULTS:
 
     class REVERSE_DRIVE:
         REWARD: float = 0.01
+        THRESHOLD: float = -0.5
         _ON_SAFE_DIST_VIOLATION: bool = True
 
     class ABRUPT_VEL_CHANGE:
