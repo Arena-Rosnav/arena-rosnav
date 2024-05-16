@@ -19,6 +19,7 @@ from task_generator.shared import (
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 from task_generator.tasks.task_factory import TaskFactory
+from task_generator.tasks import Props_
 
 import dynamic_reconfigure.client
 import dataclasses
@@ -47,7 +48,7 @@ def try_parse(_as: typing.Type[T], default: U, chain: typing.Iterable[typing.Cal
 
 
 # const | (min,max) -> (const, const) | (min, max)
-_ConstantOrRange = typing_extensions.Annotated[
+ConstantOrRange = typing_extensions.Annotated[
     typing.Tuple[T, T],
     pydantic.functional_validators.BeforeValidator(
         try_parse(
@@ -62,7 +63,7 @@ _ConstantOrRange = typing_extensions.Annotated[
 ]
 
 # single | [multiple, ...] -> [single] | [multiple, ...]
-_ConstantOrList = typing_extensions.Annotated[
+ConstantOrList = typing_extensions.Annotated[
     typing.List[T],
     pydantic.functional_validators.BeforeValidator(
         lambda v: v if isinstance(v, list) else [v]
@@ -72,7 +73,7 @@ _ConstantOrList = typing_extensions.Annotated[
 
 
 # polygon | [polygon, ...] -> shapely.MultiPolygon
-_Multipolygon = typing_extensions.Annotated[
+Multipolygon = typing_extensions.Annotated[
     shapely.MultiPolygon,
     pydantic.functional_validators.BeforeValidator(
         try_parse(
@@ -87,7 +88,7 @@ _Multipolygon = typing_extensions.Annotated[
 ]
 
 
-def _rekey(d: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
+def rekey(d: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
     """
     Convert dict keys to valid python identifiers
     """
@@ -107,28 +108,75 @@ def _rekey(d: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
 
 
 @dataclasses.dataclass
-class _Config:
+class Configuration:
 
     @pydantic.dataclasses.dataclass
     class Entity:
         name: str
         type: str
-        model: _ConstantOrList[str]
+        model: ConstantOrList[str]
         waypoints_in: typing.Union[typing.Literal["*"], typing.Set[str]]
-        number_of_waypoints: _ConstantOrRange[pydantic.types.PositiveInt]
-        amount: _ConstantOrRange[pydantic.types.NonNegativeInt]
+        number_of_waypoints: ConstantOrRange[pydantic.types.PositiveInt]
+        amount: ConstantOrRange[pydantic.types.NonNegativeInt]
+    
+    @pydantic.dataclasses.dataclass
+    class Role:
+        name: str
+        waypoints_in: typing.Union[typing.Literal["*"], typing.Set[str]]
 
     @pydantic.dataclasses.dataclass(config={"arbitrary_types_allowed":True})
     class Zone:
         label: str
-        category: _ConstantOrList[str]
-        polygon: _Multipolygon
+        category: ConstantOrList[str]
+        polygon: Multipolygon
 
-    SCENARIO: typing.List[Entity] = dataclasses.field(default_factory=list)
+    ENTITIES: typing.List[Entity] = dataclasses.field(default_factory=list)
+    ROLES: typing.List[Role] = dataclasses.field(default_factory=list)
     ZONES: typing.List[Zone] = dataclasses.field(default_factory=list)
 
     SCENARIO_FILE: pydantic.FilePath = pathlib.Path()
     ZONES_FILE: pydantic.FilePath = pathlib.Path()
+
+def getPositions(config: Configuration, props: Props_, claims: Dict[int, int], safe_dist: float = 0) -> List[Position]:
+    all_positions: typing.List[Position] = list()
+
+    for zone_index, n in claims.items():
+        zone_positions: typing.List[Position] = list()
+
+        zone = config.ZONES[zone_index]
+        poly = shapely.MultiPolygon(zone.polygon)
+
+        min_x, min_y, max_x, max_y = shapely.bounds(poly)
+        bounds = props.world_manager.Bounds(
+            min_x = min_y,
+            min_y = min_x,
+            max_x = max_y,
+            max_y = max_x
+        )
+
+        for _ in range(1):
+            if (to_produce := n - len(zone_positions)) <= 0:
+                break
+
+            zone_positions += [
+                point
+                for point
+                in props.world_manager.positions_on_map(
+                    n=to_produce,
+                    safe_dist= safe_dist,
+                    forbid=False,
+                    bounds=bounds
+                )
+                if print(shapely.contains_xy(poly, point.x, point.y), poly, point) or shapely.contains_xy(poly, point.x, point.y)
+            ]
+        else:
+            # lost cause
+            to_produce = n - len(zone_positions)
+            # rospy.logwarn(f"{to_produce} waypoints could not be placed")
+            zone_positions += props.world_manager.garbage_positions(to_produce)
+
+        all_positions += zone_positions[:n]
+    return all_positions
 
 
 @TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.ZONES)
@@ -149,7 +197,7 @@ class TM_Zones(TM_Obstacles):
 
     """
 
-    _config: _Config
+    _config: Configuration
 
     @classmethod
     def prefix(cls, *args):
@@ -158,7 +206,7 @@ class TM_Zones(TM_Obstacles):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self._config = _Config()
+        self._config = Configuration()
 
         dynamic_reconfigure.client.Client(
             name=self.NODE_CONFIGURATION, config_callback=self.reconfigure
@@ -183,7 +231,7 @@ class TM_Zones(TM_Obstacles):
         if self._config.ZONES_FILE != zones_file:
             try:
                 with open(zones_file) as f:
-                    zones = [_Config.Zone(**_rekey(z)) for z in yaml.safe_load(f)]
+                    zones = [Configuration.Zone(**rekey(z)) for z in yaml.safe_load(f)]
             except (pydantic.ValidationError, FileNotFoundError, yaml.YAMLError) as e:
                 rospy.logerr(e)
                 rospy.logwarn(
@@ -199,14 +247,15 @@ class TM_Zones(TM_Obstacles):
         if self._config.SCENARIO_FILE != scenario_file:
             try:
                 with open(scenario_file) as f:
-                    scenario = [_Config.Entity(**_rekey(e)) for e in yaml.safe_load(f)]
+                    scenario : Dict[str, List] = yaml.safe_load(f)
+                    entities = [Configuration.Entity(**rekey(e)) for e in scenario.get("pedestrians")]
             except (pydantic.ValidationError, FileNotFoundError, yaml.YAMLError) as e:
                 rospy.logerr(e)
                 rospy.logwarn(
                     f"failed to change scenario (remains {self._config.SCENARIO_FILE})")
             else:
                 self._config.SCENARIO_FILE = scenario_file
-                self._config.SCENARIO = scenario
+                self._config.ENTITIES = entities
                 rospy.loginfo(
                     f"zones scenario changed to {self._config.SCENARIO_FILE}")
 
@@ -275,7 +324,7 @@ class TM_Zones(TM_Obstacles):
         n_waypoints: List[int] = list()
 
         # RNG number of entites & waypoints, lay claims on zones
-        for entity in self._config.SCENARIO:
+        for entity in self._config.ENTITIES:
             n_entities.append(n_entity := rng.integers(
                 *entity.amount, endpoint=True))
 
@@ -288,45 +337,8 @@ class TM_Zones(TM_Obstacles):
                     claims[categories.random(category)] += 1
 
         # fit waypoints
-        all_positions: typing.List[Position] = list()
-
-        for zone_index, n in claims.items():
-            zone_positions: typing.List[Position] = list()
-
-            zone = self._config.ZONES[zone_index]
-            poly = shapely.MultiPolygon(zone.polygon)
-
-            min_x, min_y, max_x, max_y = shapely.bounds(poly)
-            bounds = self._PROPS.world_manager.Bounds(
-                min_x = min_y,
-                min_y = min_x,
-                max_x = max_y,
-                max_y = max_x
-            )
-
-            for _ in range(1):
-                if (to_produce := n - len(zone_positions)) <= 0:
-                    break
-
-                zone_positions += [
-                    point
-                    for point
-                    in self._PROPS.world_manager.positions_on_map(
-                        n=to_produce,
-                        safe_dist=0,
-                        forbid=False,
-                        bounds=bounds
-                    )
-                    if print(shapely.contains_xy(poly, point.x, point.y), poly, point) or shapely.contains_xy(poly, point.x, point.y)
-                ]
-            else:
-                # lost cause
-                to_produce = n - len(zone_positions)
-                # rospy.logwarn(f"{to_produce} waypoints could not be placed")
-                zone_positions += self._PROPS.world_manager.garbage_positions(to_produce)
-
-            all_positions += zone_positions[:n]
-
+        all_positions = getPositions(self._config, self._PROPS, claims)
+        
         # assign obstacles
         i_waypoints = iter(n_waypoints)
         i_positions = iter(all_positions)
@@ -334,7 +346,7 @@ class TM_Zones(TM_Obstacles):
         index = indexer()
         dynamic_obstacles: List[DynamicObstacle] = []
 
-        for entity, n_entity in zip(self._config.SCENARIO, n_entities):
+        for entity, n_entity in zip(self._config.ENTITIES, n_entities):
 
             dynamic_obstacles += [
                 ITF_Obstacle.create_dynamic_obstacle(

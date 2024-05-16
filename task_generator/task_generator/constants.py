@@ -47,6 +47,7 @@ class Constants:
             EXPLORE = "explore"
             RANDOM = "random"
             SCENARIO = "scenario"
+            ZONES = "zones"
 
             @classmethod
             def prefix(cls, *args):

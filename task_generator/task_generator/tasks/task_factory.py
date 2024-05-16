@@ -323,6 +323,7 @@ from .robots.random import TM_Random # noqa
 from .robots.guided import TM_Guided # noqa
 from .robots.explore import TM_Explore # noqa
 from .robots.scenario import TM_Scenario # noqa
+from .robots.zones import TM_Zones #noqa
 
 from .modules.clear_forbidden_zones import Mod_ClearForbiddenZones # noqa
 from .modules.dynamic_map import Mod_DynamicMap # noqa
