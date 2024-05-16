@@ -54,3 +54,7 @@ __pycache__/
 #dolphin
 
 /**/__pycache__
+
+*.lock
+*.bkup
+*.log
