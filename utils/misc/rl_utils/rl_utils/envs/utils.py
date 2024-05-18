@@ -19,17 +19,12 @@ def get_obs_structure():
     structure.append(SemanticAggregateUnit)
 
     train_mode = rospy.get_param("train_mode", True)
-    rospy.logerr(f"$$$$$$$$$$$$$$$$$$$$$$$$ Train mode: {train_mode}")
     if sim_is_unity() and train_mode:
         structure.append(UnityCollectorUnit)
 
     enable_rgbd = rospy.get_param("rgbd/enabled", False)
-    rospy.logerr(f"$$$$$$$$$$$$$$$$$$$$$$$$ Rrbd: {enable_rgbd}")
     if enable_rgbd:
         structure.append(RgbdCollectorUnit)
-    
-    rospy.logerr(f"$$$$$$$$$$$$$$$$$$$$$$$$ sim_is_unity: {sim_is_unity()}")
-    rospy.logerr(f"$$$$$$$$$$$$$$$$$$$$$$$$ sim_is_flatland: {sim_is_flatland()}")
     
     return structure
 
