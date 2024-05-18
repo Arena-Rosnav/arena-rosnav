@@ -9,10 +9,12 @@ import numpy as np
 import rospy
 from rosgraph_msgs.msg import Clock
 from geometry_msgs.msg import Twist
+from rl_utils.envs.utils import get_obs_structure
 from rl_utils.utils.observation_collector.constants import DONE_REASONS
 from rl_utils.utils.observation_collector.observation_manager import ObservationManager
 from rl_utils.utils.observation_collector.observation_units.base_collector_unit import BaseCollectorUnit
 from rl_utils.utils.observation_collector.observation_units.unity_collector_unit import UnityCollectorUnit
+from rl_utils.utils.observation_collector.observation_units.rgbd_collector_unit import RgbdCollectorUnit
 from rl_utils.utils.observation_collector.observation_units.globalplan_collector_unit import GlobalplanCollectorUnit
 from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import SemanticAggregateUnit
 from rl_utils.utils.rewards.reward_function import RewardFunction
@@ -110,14 +112,10 @@ class ArenaUnityEnv(gymnasium.Env):
             self._setup_env_for_training(self._reward_fnc, **self._task_generator_kwargs)
 
         # observation collectors including the Unity-specific observation collector
+        obs_structure = get_obs_structure()
         self.observation_collector = ObservationManager(
             ns=self.ns,
-            obs_structur=[
-                BaseCollectorUnit,
-                GlobalplanCollectorUnit,
-                SemanticAggregateUnit,
-                UnityCollectorUnit
-            ],
+            obs_structur=obs_structure,
             obs_unit_kwargs=self._obs_unit_kwargs
         )
         return True

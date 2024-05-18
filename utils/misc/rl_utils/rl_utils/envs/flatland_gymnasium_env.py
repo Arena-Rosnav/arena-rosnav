@@ -9,6 +9,7 @@ import numpy as np
 import rospy
 from flatland_msgs.msg import StepWorld
 from geometry_msgs.msg import Twist
+from rl_utils.envs.utils import get_obs_structure
 from rl_utils.utils.observation_collector.constants import DONE_REASONS
 from rl_utils.utils.observation_collector.observation_manager import ObservationManager
 from rl_utils.utils.observation_collector.observation_units.base_collector_unit import (
@@ -137,13 +138,10 @@ class FlatlandEnv(gymnasium.Env):
             )
 
         # observation collector
+        obs_structure=get_obs_structure()
         self.observation_collector = ObservationManager(
             ns=self.ns,
-            obs_structur=[
-                BaseCollectorUnit,
-                GlobalplanCollectorUnit,
-                SemanticAggregateUnit,
-            ],
+            obs_structur=obs_structure,
             obs_unit_kwargs=self._obs_unit_kwargs,
         )
         return True
