@@ -16,7 +16,6 @@ from task_generator.tasks.robots import TM_Robots
 
 import std_msgs.msg as std_msgs
 import rosgraph_msgs.msg as rosgraph_msgs
-import training.srv as training_srvs
 
 from task_generator.utils import ModelLoader
 
@@ -315,17 +314,19 @@ class TaskFactory:
         return CombinedTask
 
 
-from .obstacles.random import TM_Random
-from .obstacles.scenario import TM_Scenario
-from .obstacles.parametrized import TM_Parametrized
+from .obstacles.random import TM_Random # noqa
+from .obstacles.scenario import TM_Scenario # noqa
+from .obstacles.parametrized import TM_Parametrized # noqa
+from .obstacles.zones import TM_Zones # noqa
 
-from .robots.random import TM_Random
-from .robots.guided import TM_Guided
-from .robots.explore import TM_Explore
-from .robots.scenario import TM_Scenario
+from .robots.random import TM_Random # noqa
+from .robots.guided import TM_Guided # noqa
+from .robots.explore import TM_Explore # noqa
+from .robots.scenario import TM_Scenario # noqa
+from .robots.zones import TM_Zones #noqa
 
-from .modules.clear_forbidden_zones import Mod_ClearForbiddenZones
-from .modules.dynamic_map import Mod_DynamicMap
-from .modules.rviz_ui import Mod_OverrideRobot
-from .modules.staged import Mod_Staged
-from .modules.benchmark import Mod_Benchmark
+from .modules.clear_forbidden_zones import Mod_ClearForbiddenZones # noqa
+from .modules.dynamic_map import Mod_DynamicMap # noqa
+from .modules.rviz_ui import Mod_OverrideRobot # noqa
+from .modules.staged import Mod_Staged # noqa
+from .modules.benchmark import Mod_Benchmark # noqa
