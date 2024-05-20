@@ -5,7 +5,7 @@ repositories:
     version: 1ec926c52f3288468d110e1365ce69a175cbc4f2
   arena/simulation-setup:
     type: git
-    url: https://github.com/ddiaz-0/arena-simulation-setup.git
+    url: https://github.com/Arena-Rosnav/arena-simulation-setup.git
     version: a5128eda
   arena/utils/3rd-party-robot-packages:
     type: git
