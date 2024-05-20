@@ -4,6 +4,7 @@ import numpy as np
 import rospy
 from std_msgs.msg import Float32
 from tools.dynamic_parameter import DynamicParameter
+from task_generator.shared import Namespace
 
 from .constants import REWARD_CONSTANTS
 from .utils import (
@@ -22,6 +23,8 @@ class RewardFunction:
         _robot_radius (float): Radius of the robot.
         _safe_dist (float): Safe distance of the agent.
         _goal_radius (float): Radius of the goal.
+
+        _distinguished_safe_dist: If true, the unity-based collider approach is used for safe dist.
         _max_steps (int): Maximum number of steps allowed in the environment.
 
         _internal_state_info (Dict[str, Any]): Centralized internal state info for the reward units.
@@ -58,6 +61,9 @@ class RewardFunction:
     _robot_radius: float
     _safe_dist: float
     _goal_radius: float
+
+    _distinguished_safe_dist: bool
+
     _max_steps: int
 
     _internal_state_info: Dict[str, Any]
@@ -75,6 +81,8 @@ class RewardFunction:
         goal_radius: float,
         max_steps: int,
         safe_dist: float,
+        distinguished_safe_dist: bool,
+        ns: Namespace,
         internal_state_updates: List[InternalStateInfoUpdate] = None,
         reward_unit_kwargs: dict = None,
         *args,
@@ -98,6 +106,9 @@ class RewardFunction:
         self._safe_dist = safe_dist
         self._goal_radius = goal_radius
         self._max_steps = max_steps
+
+        self._distinguished_safe_dist = distinguished_safe_dist
+        self._ns = ns
 
         # globally accessible and required information for RewardUnits
         self._internal_state_info: Dict[str, Any] = {}
@@ -276,6 +287,14 @@ class RewardFunction:
     @property
     def safe_dist_breached(self) -> bool:
         return self.get_internal_state_info("safe_dist_breached")
+
+    @property
+    def distinguished_safe_dist(self) -> bool:
+        return self._distinguished_safe_dist
+    
+    @property
+    def ns(self) -> Namespace:
+        return self._ns
 
     def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("

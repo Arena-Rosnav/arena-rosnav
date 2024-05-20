@@ -8,16 +8,40 @@
 <launch>
   <arg name="ns" />
   <arg name="model" default="jackal"/>
+  <arg name="world_file" default="map_empty"/>
+  <arg name="SIMULATOR" />
+  <arg name="env_num" default="0" />
+  <!-- unity specific -->
+  <arg name="time_scale" default="1" />
+  <arg name="headless" default="true" />
+
+  <!-- TODO: make non-constant -->
+  <arg name="sfm" default="" />
   <arg name="entity_manager" default="crowdsim"/>
-  <arg name="world_file" default=""/>
-  <arg name="sfm" default=""/>
 
   <!-- use fake localization-->
   <group ns="$(arg ns)" >
     <!-- use simulator and rviz-->
-    <include file="$(find arena_bringup)/launch/training/flatland_simulator.launch">
-      <arg name="ns" value="$(arg ns)" />
-    </include>
+
+    <group if="$(eval arg('SIMULATOR') == 'flatland')">
+      <include file="$(find arena_bringup)/launch/training/flatland_simulator.launch">
+        <arg name="ns" value="$(arg ns)" />
+      </include>
+    </group>
+
+      <!-- Unity -->
+    <group if="$(eval arg('SIMULATOR') == 'unity')">
+      <!-- not required <remap from="clock" to="/$(arg ns)/clock"/> -->
+      <include file="$(find arena_bringup)/launch/testing/simulators/unity.launch">
+        <!--<arg name="world" default="$(arg world_file)" />-->
+        <arg name="development_mode" value="false" />
+        <arg name="headless" value="$(arg headless)" />
+        <arg name="namespace" value="$(arg ns)" />
+        <arg name="tcp_port" value="$(eval arg('env_num') + 10000)" />
+        <arg name="time_scale" value="$(arg time_scale)" />
+        <arg name="training" value="true" />
+      </include>
+    </group>
 
     <include file="$(find arena_bringup)/launch/training/train_robot.launch">
       <arg name="namespace" value="/$(arg ns)/$(arg ns)_$(arg model)" />

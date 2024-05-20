@@ -5,6 +5,7 @@ from typing import Tuple, Union
 import gym
 import rospy
 from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
+from rl_utils.envs.arena_unity_env import ArenaUnityEnv
 from rl_utils.utils.vec_wrapper.delayed_subproc_vec_env import DelayedSubprocVecEnv
 from rl_utils.utils.vec_wrapper.profiler import ProfilingVecEnv
 from rl_utils.utils.vec_wrapper.vec_stats_recorder import VecStatsRecorder
@@ -21,6 +22,8 @@ from stable_baselines3.common.vec_env import (
 )
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from task_generator.shared import Namespace
+from task_generator.utils import Utils
+from task_generator.constants import Constants
 
 
 def load_vec_normalize(config: dict, paths: dict, env: VecEnv, eval_env: VecEnv):
@@ -107,8 +110,20 @@ def _init_env_fnc(
         Union[gym.Env, gym.Wrapper]: The initialized environment.
     """
     reward_fnc_kwargs = reward_fnc_kwargs or {}
-
-    def _init() -> Union[gym.Env, gym.Wrapper]:
+        
+    def _init_arena_unity_env() -> Union[gym.Env, gym.Wrapper]:
+        return ArenaUnityEnv(
+            ns=ns,
+            agent_description=agent_description,
+            reward_fnc=reward_fnc,
+            max_steps_per_episode=max_steps_per_episode,
+            trigger_init=trigger_init,
+            obs_unit_kwargs=obs_unit_kwargs,
+            reward_fnc_kwargs=reward_fnc_kwargs,
+            task_generator_kwargs=task_generator_kwargs,
+        )
+        
+    def _init_flatland_env() -> Union[gym.Env, gym.Wrapper]:
         return FlatlandEnv(
             ns=ns,
             agent_description=agent_description,
@@ -121,7 +136,14 @@ def _init_env_fnc(
         )
 
     set_random_seed(seed)
-    return _init
+    
+    sim = Utils.get_simulator() 
+    if sim == Constants.Simulator.UNITY:
+        return _init_arena_unity_env
+    elif sim == Constants.Simulator.FLATLAND:
+        return _init_flatland_env
+    else:
+        raise RuntimeError(f"Training only supports simulators Arena Unity and Flatland but got {sim}")
 
 
 def make_envs(

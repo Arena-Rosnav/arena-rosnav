@@ -11,8 +11,8 @@ from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit im
 from sensor_msgs.msg import LaserScan
 from task_generator.shared import Namespace
 
-from ..constants import OBS_DICT_KEYS, TOPICS
-from ..utils import get_goal_pose_in_robot_frame, pose3d_to_pose2d
+from ..constants import OBS_DICT_KEYS, TOPICS, MAX_WAIT, SLEEP
+from ..utils import get_goal_pose_in_robot_frame, pose3d_to_pose2d, false_params
 from .collector_unit import CollectorUnit
 
 
@@ -136,20 +136,19 @@ class BaseCollectorUnit(CollectorUnit):
         """
         Wait for the required data to be received.
         """
-        pass
-        # if self._first_reset:
-        #     self._first_reset = False
-        #     return
+        if self._first_reset:
+            self._first_reset = False
+            return
 
-        # for _ in range(int(MAX_WAIT / SLEEP)):
-        #     if self._received_odom and self._received_scan and self._received_goal:
-        #         return
+        for _ in range(int(MAX_WAIT / SLEEP)):
+            if self._received_odom and self._received_scan and self._received_goal:
+                return
 
-        #     sleep(SLEEP)
+            sleep(SLEEP)
 
-        # raise TimeoutError(
-        #     f"Couldn't retrieve data for: {false_params(odom=self._received_odom, laser=self._received_scan, goal=self._received_goal)}"
-        # )
+        raise TimeoutError(
+            f"Couldn't retrieve data for: {false_params(odom=self._received_odom, laser=self._received_scan, subgoal=self._received_goal)}"
+        )
 
     def get_observations(
         self, obs_dict: Dict[str, Any], *args, **kwargs

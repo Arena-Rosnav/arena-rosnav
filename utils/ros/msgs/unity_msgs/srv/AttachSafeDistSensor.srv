@@ -1,0 +1,8 @@
+string robot_name
+string safe_dist_topic
+bool ped_safe_dist
+bool obs_safe_dist
+float64 safe_dist
+---
+bool success
+string message
