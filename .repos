@@ -98,7 +98,7 @@ repositories:
   planners/rosnav:
     type: git
     url: https://github.com/Arena-Rosnav/rosnav-rl.git
-    version: dev
+    version: 41c3496
   planners/sarl-star:
     type: git
     url: https://github.com/Arena-Rosnav/sarl-star.git
