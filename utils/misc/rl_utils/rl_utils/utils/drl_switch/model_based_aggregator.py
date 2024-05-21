@@ -65,7 +65,7 @@ def set_robot_specific_params(ns: str, config: dict):
         return
 
     for key, value in config.items():
-        params = rospy.get_param(f"{ns}{key}")
+        params = rospy.get_param(f"{ns}{key}", {})
         params.update(value)
         rospy.set_param(f"{ns}{key}", params)
 
