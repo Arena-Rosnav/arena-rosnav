@@ -103,7 +103,7 @@ class MBFLocalPlanner:
         """
         if self._active_planner == self.planner:
             return
-        loginfo_throttle(1, f"[LOCAL PLANNER] Activating '{self.name}'...")
+        rospy.loginfo(f"[LOCAL PLANNER] Activating '{self.name}'...")
 
         self._dmrc_mbf.update_configuration({"base_local_planner": self.planner})
         self._dmrc_mblegacy.update_configuration(self._config)
