@@ -1,5 +1,6 @@
 algorithm: rosnav
 episode_per_map: 10
+generation_timeout: 30
 
 map_properties:
   width: 60
