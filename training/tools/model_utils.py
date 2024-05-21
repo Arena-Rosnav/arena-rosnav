@@ -339,7 +339,7 @@ def transfer_feature_extractor_weights(
         and key in state_dict_model1
     }
 
-    rospy.loginfo(f"Transferring weights for keys {len(weights_dict.keys())}!")
+    rospy.loginfo(f"Transferring weights for {len(weights_dict.keys())} keys!")
 
     state_dict_model1.update(weights_dict)
     model1.policy.load_state_dict(state_dict_model1, strict=True)
