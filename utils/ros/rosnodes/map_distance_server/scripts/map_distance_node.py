@@ -146,7 +146,8 @@ class MapDistanceServer:
                     if coordinates_with_length[index] >= 0:
                         dist = min(coordinates_with_length[index] + 1, dist)
 
-            if np.isinf(dist): dist = 0 #regularize
+            if np.isinf(dist):
+                dist = 0  # regularize
 
             coordinates_length_dict.setdefault(dist, []).append((x, y))
             coordinates_with_length[self._get_index(x, y)] = dist

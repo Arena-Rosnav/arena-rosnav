@@ -896,13 +896,13 @@ class RewardPedTypeCollision(RewardUnit):
         self._reward = reward
         self._bumper_zone = self.robot_radius + bumper_zone
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None:
+    def __call__(self, *args: Any, **observation_dict: Any) -> None:
         """
         Checks if the robot has collided with the specific pedestrian type and adds the reward if a collision occurs.
 
         Args:
             *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
+            **observation_dict: Arbitrary keyword arguments.
         """
         ped_type_min_distances = self.get_internal_state_info(
             "min_distances_per_ped_type"
@@ -911,7 +911,7 @@ class RewardPedTypeCollision(RewardUnit):
         if ped_type_min_distances is None:
             self.add_internal_state_info(
                 key="min_distances_per_ped_type",
-                value=get_ped_type_min_distances(**kwargs),
+                value=get_ped_type_min_distances(**observation_dict),
             )
             ped_type_min_distances = self.get_internal_state_info(
                 "min_distances_per_ped_type"

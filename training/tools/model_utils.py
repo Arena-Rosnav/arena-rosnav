@@ -168,7 +168,7 @@ def get_ppo_instance(
 
     model2_path = config["rl_agent"]["weight_transfer"]["model_path"]
     if type(model2_path) is str and len(model2_path) > 0 and new_model:
-        transfer_feature_extractor_weights(
+        transfer_weights(
             model1=model,
             model2=PPO.load(config["rl_agent"]["weight_transfer"]["model_path"]),
             include=config["rl_agent"]["weight_transfer"]["include"],
@@ -318,7 +318,7 @@ def init_callbacks(
     return eval_cb
 
 
-def transfer_feature_extractor_weights(
+def transfer_weights(
     model1: PPO, model2: PPO, include: List[str] = None, exclude: List[str] = None
 ):
     if include is None:

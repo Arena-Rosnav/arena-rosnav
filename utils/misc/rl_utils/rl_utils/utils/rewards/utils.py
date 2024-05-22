@@ -89,13 +89,15 @@ def safe_dist_breached(reward_function: "RewardFunction", *args, **kwargs) -> No
     )
 
 
-def get_ped_type_min_distances(**kwargs):
+def get_ped_type_min_distances(**observation_dict):
     ped_distances = {}
 
-    relative_locations = kwargs.get(
+    relative_locations = observation_dict.get(
         OBS_DICT_KEYS.SEMANTIC.RELATIVE_LOCATION.value, None
     )
-    pedestrian_types = kwargs.get(OBS_DICT_KEYS.SEMANTIC.PEDESTRIAN_TYPE.value, None)
+    pedestrian_types = observation_dict.get(
+        OBS_DICT_KEYS.SEMANTIC.PEDESTRIAN_TYPE.value, None
+    )
 
     if relative_locations is None or pedestrian_types is None:
         return ped_distances

@@ -13,8 +13,6 @@ from tools.model_utils import (
     get_ppo_instance,
     init_callbacks,
     save_model,
-    transfer_feature_extractor_weights,
-    PPO,
 )
 from tools.ros_param_distributor import populate_ros_params
 
