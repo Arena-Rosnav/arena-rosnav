@@ -59,6 +59,7 @@ class RewardFunction:
     _safe_dist: float
     _goal_radius: float
     _max_steps: int
+    _subgoal_mode: bool
 
     _internal_state_info: Dict[str, Any]
 
@@ -75,6 +76,7 @@ class RewardFunction:
         goal_radius: float,
         max_steps: int,
         safe_dist: float,
+        subgoal_mode: bool = False,
         internal_state_updates: List[InternalStateInfoUpdate] = None,
         reward_unit_kwargs: dict = None,
         *args,
@@ -98,6 +100,7 @@ class RewardFunction:
         self._safe_dist = safe_dist
         self._goal_radius = goal_radius
         self._max_steps = max_steps
+        self._subgoal_mode = subgoal_mode
 
         # globally accessible and required information for RewardUnits
         self._internal_state_info: Dict[str, Any] = {}

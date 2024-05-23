@@ -219,6 +219,57 @@ class RewardApproachGoal(RewardUnit):
         self.last_goal_dist = None
 
 
+from geometry_msgs.msg import PoseStamped
+
+
+@RewardUnitFactory.register("approach_goal_2")
+class RewardApproachGoal2(RewardApproachGoal):
+    @check_params
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        pos_factor: float = DEFAULTS.APPROACH_GOAL.POS_FACTOR,
+        neg_factor: float = DEFAULTS.APPROACH_GOAL.NEG_FACTOR,
+        _on_safe_dist_violation: bool = DEFAULTS.APPROACH_GOAL._ON_SAFE_DIST_VIOLATION,
+        *args,
+        **kwargs,
+    ):
+        """Class for calculating the reward when approaching the goal.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            pos_factor (float, optional): Positive factor for approaching the goal. Defaults to DEFAULTS.APPROACH_GOAL.POS_FACTOR.
+            neg_factor (float, optional): Negative factor for distancing from the goal. Defaults to DEFAULTS.APPROACH_GOAL.NEG_FACTOR.
+            _on_safe_dist_violation (bool, optional): Flag to indicate if there is a violation of safe distance. Defaults to DEFAULTS.APPROACH_GOAL._ON_SAFE_DIST_VIOLATION.
+        """
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+        self._pos_factor = pos_factor
+        self._neg_factor = neg_factor
+        self._subgoal_mode = reward_function._subgoal_mode
+
+        self.last_goal: PoseStamped = None
+
+    def __call__(self, *args, **obs_dict):
+        curr_goal: PoseStamped = obs_dict[OBS_DICT_KEYS.GOAL]
+        robot_pose: Pose2D = obs_dict[OBS_DICT_KEYS.ROBOT_POSE]
+
+        if self.last_goal is not None:
+            last_goal_dist = np.linalg.norm(
+                curr_goal.pose.position.x - robot_pose.x,
+                curr_goal.pose.position.y - robot_pose.y,
+            )
+            curr_goal_dist = obs_dict[OBS_DICT_KEYS.GOAL_DIST_ANGLE][0]
+
+            term = last_goal_dist - curr_goal_dist
+            w = self._pos_factor if term > 0 else self._neg_factor
+            self.add_reward(w * term)
+
+        self.last_goal: PoseStamped = curr_goal
+
+    def reset(self):
+        self.last_goal = None
+
+
 @RewardUnitFactory.register("collision")
 class RewardCollision(RewardUnit):
     DONE_INFO = {
