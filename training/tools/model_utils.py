@@ -325,7 +325,7 @@ def transfer_weights(
         rospy.logwarn("No include list provided. Skipping weight transfer.")
         return model1
 
-    if exclude[0].lower() == "none" or exclude[0] == "":
+    if len(exclude) == 0 or exclude[0].lower() == "none" or exclude[0] == "":
         exclude = ["---"]
 
     state_dict_model1 = model1.policy.state_dict()
@@ -337,9 +337,13 @@ def transfer_weights(
         if any(re.match(_key, key) for _key in include)
         and not any(item in key for item in exclude)
         and key in state_dict_model1
+        and state_dict_model1[key].shape == value.shape
     }
 
     rospy.loginfo(f"Transferring weights for {len(weights_dict.keys())} keys!")
+
+    # num_params = sum(p.numel() for p in model1.policy.parameters())
+    # num_params2 = sum(p.numel() for p in model2.policy.parameters())
 
     state_dict_model1.update(weights_dict)
     model1.policy.load_state_dict(state_dict_model1, strict=True)
