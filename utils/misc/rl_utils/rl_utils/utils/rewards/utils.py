@@ -105,11 +105,11 @@ def get_ped_type_min_distances(**observation_dict):
     if len(relative_locations) == 0 or len(pedestrian_types.points) == 0:
         return ped_distances
 
-    for relative_loc, type_data in zip(relative_locations, pedestrian_types.points):
-        distance = np.linalg.norm(relative_loc)
-        evidence = int(type_data.evidence)
+    distances = np.linalg.norm(relative_locations, axis=1)
+    types = np.array([int(type_data.evidence) for type_data in pedestrian_types.points])
 
-        if evidence not in ped_distances or ped_distances[evidence] > distance:
-            ped_distances[evidence] = distance
+    # get the unique types
+    for _type in np.unique(types):
+        ped_distances[_type] = np.min(distances[types == _type])
 
     return ped_distances
