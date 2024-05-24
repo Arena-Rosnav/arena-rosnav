@@ -52,6 +52,7 @@ class Mod_DynamicMap(TM_Module):
 
         if self._episodes >= self._target_eps_num:
             self.request_new_map()
+            self._update_map()
 
     def __init__(self, **kwargs):
         """
