@@ -250,14 +250,13 @@ class RewardApproachGoal2(RewardApproachGoal):
         self.last_goal: PoseStamped = None
 
     def __call__(self, *args, **obs_dict):
-        curr_goal: PoseStamped = obs_dict[OBS_DICT_KEYS.GOAL]
+        curr_goal: PoseStamped = obs_dict[OBS_DICT_KEYS.GOAL].pose.position
         robot_pose: Pose2D = obs_dict[OBS_DICT_KEYS.ROBOT_POSE]
 
         if self.last_goal is not None:
-            last_goal_dist = np.linalg.norm(
-                curr_goal.pose.position.x - robot_pose.x,
-                curr_goal.pose.position.y - robot_pose.y,
-            )
+            last_goal_dist = (
+                (curr_goal.x - robot_pose.x) ** 2 + (curr_goal.y - robot_pose.y) ** 2
+            ) ** 0.5
             curr_goal_dist = obs_dict[OBS_DICT_KEYS.GOAL_DIST_ANGLE][0]
 
             term = last_goal_dist - curr_goal_dist
