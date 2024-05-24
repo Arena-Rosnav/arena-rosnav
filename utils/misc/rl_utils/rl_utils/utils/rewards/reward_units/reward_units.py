@@ -166,6 +166,62 @@ class RewardNoMovement(RewardUnit):
             self.add_reward(self._reward)
 
 
+# @RewardUnitFactory.register("approach_goal")
+# class RewardApproachGoal(RewardUnit):
+#     @check_params
+#     def __init__(
+#         self,
+#         reward_function: RewardFunction,
+#         pos_factor: float = DEFAULTS.APPROACH_GOAL.POS_FACTOR,
+#         neg_factor: float = DEFAULTS.APPROACH_GOAL.NEG_FACTOR,
+#         _on_safe_dist_violation: bool = DEFAULTS.APPROACH_GOAL._ON_SAFE_DIST_VIOLATION,
+#         *args,
+#         **kwargs,
+#     ):
+#         """Class for calculating the reward when approaching the goal.
+
+#         Args:
+#             reward_function (RewardFunction): The reward function object.
+#             pos_factor (float, optional): Positive factor for approaching the goal. Defaults to DEFAULTS.APPROACH_GOAL.POS_FACTOR.
+#             neg_factor (float, optional): Negative factor for distancing from the goal. Defaults to DEFAULTS.APPROACH_GOAL.NEG_FACTOR.
+#             _on_safe_dist_violation (bool, optional): Flag to indicate if there is a violation of safe distance. Defaults to DEFAULTS.APPROACH_GOAL._ON_SAFE_DIST_VIOLATION.
+#         """
+#         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+#         self._pos_factor = pos_factor
+#         self._neg_factor = neg_factor
+#         self.last_goal_dist = None
+
+#     def check_parameters(self, *args, **kwargs):
+#         if self._pos_factor < 0 or self._neg_factor < 0:
+#             warn_msg = (
+#                 f"[{self.__class__.__name__}] Both factors should be positive. "
+#                 f"Current values: [pos_factor={self._pos_factor}], [neg_factor={self._neg_factor}]"
+#             )
+#             warn(warn_msg)
+#         if self._pos_factor >= self._neg_factor:
+#             warn_msg = (
+#                 "'pos_factor' should be smaller than 'neg_factor' otherwise rotary trajectories will get rewarded. "
+#                 f"Current values: [pos_factor={self._pos_factor}], [neg_factor={self._neg_factor}]"
+#             )
+#             warn(warn_msg)
+
+#     def __call__(self, distance_to_goal, *args, **kwargs):
+#         if self.last_goal_dist is not None:
+#             w = (
+#                 self._pos_factor
+#                 if (self.last_goal_dist - distance_to_goal) > 0
+#                 else self._neg_factor
+#             )
+#             self.add_reward(w * (self.last_goal_dist - distance_to_goal))
+#         self.last_goal_dist = distance_to_goal
+
+#     def reset(self):
+#         self.last_goal_dist = None
+
+
+from geometry_msgs.msg import PoseStamped
+
+
 @RewardUnitFactory.register("approach_goal")
 class RewardApproachGoal(RewardUnit):
     @check_params
@@ -189,7 +245,9 @@ class RewardApproachGoal(RewardUnit):
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._pos_factor = pos_factor
         self._neg_factor = neg_factor
-        self.last_goal_dist = None
+        self._subgoal_mode = reward_function._subgoal_mode
+
+        self.last_robot_pose = None
 
     def check_parameters(self, *args, **kwargs):
         if self._pos_factor < 0 or self._neg_factor < 0:
@@ -205,65 +263,22 @@ class RewardApproachGoal(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, distance_to_goal, *args, **kwargs):
-        if self.last_goal_dist is not None:
-            w = (
-                self._pos_factor
-                if (self.last_goal_dist - distance_to_goal) > 0
-                else self._neg_factor
-            )
-            self.add_reward(w * (self.last_goal_dist - distance_to_goal))
-        self.last_goal_dist = distance_to_goal
-
-    def reset(self):
-        self.last_goal_dist = None
-
-
-from geometry_msgs.msg import PoseStamped
-
-
-@RewardUnitFactory.register("approach_goal_2")
-class RewardApproachGoal2(RewardApproachGoal):
-    @check_params
-    def __init__(
-        self,
-        reward_function: RewardFunction,
-        pos_factor: float = DEFAULTS.APPROACH_GOAL.POS_FACTOR,
-        neg_factor: float = DEFAULTS.APPROACH_GOAL.NEG_FACTOR,
-        _on_safe_dist_violation: bool = DEFAULTS.APPROACH_GOAL._ON_SAFE_DIST_VIOLATION,
-        *args,
-        **kwargs,
-    ):
-        """Class for calculating the reward when approaching the goal.
-
-        Args:
-            reward_function (RewardFunction): The reward function object.
-            pos_factor (float, optional): Positive factor for approaching the goal. Defaults to DEFAULTS.APPROACH_GOAL.POS_FACTOR.
-            neg_factor (float, optional): Negative factor for distancing from the goal. Defaults to DEFAULTS.APPROACH_GOAL.NEG_FACTOR.
-            _on_safe_dist_violation (bool, optional): Flag to indicate if there is a violation of safe distance. Defaults to DEFAULTS.APPROACH_GOAL._ON_SAFE_DIST_VIOLATION.
-        """
-        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
-        self._pos_factor = pos_factor
-        self._neg_factor = neg_factor
-        self._subgoal_mode = reward_function._subgoal_mode
-
-        self.last_goal: PoseStamped = None
-
     def __call__(self, *args, **obs_dict):
-        curr_goal: PoseStamped = obs_dict[OBS_DICT_KEYS.GOAL].pose.position
-        robot_pose: Pose2D = obs_dict[OBS_DICT_KEYS.ROBOT_POSE]
+        if self.last_robot_pose is not None:
+            goal_pose: PoseStamped = obs_dict[OBS_DICT_KEYS.GOAL].pose.position
 
-        if self.last_goal is not None:
             last_goal_dist = (
-                (curr_goal.x - robot_pose.x) ** 2 + (curr_goal.y - robot_pose.y) ** 2
+                (goal_pose.x - self.last_robot_pose.x) ** 2
+                + (goal_pose.y - self.last_robot_pose.y) ** 2
             ) ** 0.5
+
             curr_goal_dist = obs_dict[OBS_DICT_KEYS.GOAL_DIST_ANGLE][0]
 
             term = last_goal_dist - curr_goal_dist
             w = self._pos_factor if term > 0 else self._neg_factor
             self.add_reward(w * term)
 
-        self.last_goal: PoseStamped = curr_goal
+        self.last_robot_pose = obs_dict[OBS_DICT_KEYS.ROBOT_POSE]
 
     def reset(self):
         self.last_goal = None
