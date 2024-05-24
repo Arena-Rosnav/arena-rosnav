@@ -8,8 +8,8 @@ collision:
   reward: -20
 
 approach_goal:
-  pos_factor: 0.3
-  neg_factor: 0.4
+  pos_factor: 0.5
+  neg_factor: 0.6
   _on_safe_dist_violation: true
 
 reverse_drive:
@@ -17,10 +17,10 @@ reverse_drive:
   threshold: -0.5
   _on_safe_dist_violation: true
 
-approach_globalplan:
-  pos_factor: 0.05
-  neg_factor: 0.05
-  _on_safe_dist_violation: true
+# approach_globalplan:
+#   pos_factor: 0.05
+#   neg_factor: 0.05
+#   _on_safe_dist_violation: true
 
 two_factor_velocity_difference:
   alpha: 0.005
@@ -46,4 +46,4 @@ ped_type_safety_distance:
 #   threshold: 1.0
 
 max_steps_exceeded:
-  reward: -15
+  reward: -10
