@@ -143,10 +143,10 @@ class Mod_DynamicMap(TM_Module):
 
         try:
             rospy.wait_for_message(
-                self.TOPIC_MAP, nav_msgs.OccupancyGrid, timeout=self._generation_timeout
+                self.TOPIC_SIGNAL_MAP, std_msgs.String, timeout=self._generation_timeout
             )
             rospy.wait_for_message(
-                self.TOPIC_SIGNAL_MAP, std_msgs.String, timeout=self._generation_timeout
+                self.TOPIC_MAP, nav_msgs.OccupancyGrid, timeout=self._generation_timeout
             )
         except rospy.ROSException:
             rospy.logwarn(
