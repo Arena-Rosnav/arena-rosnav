@@ -36,6 +36,7 @@ class OBS_DICT_KEYS:
     DISTANCE_TO_GOAL = "distance_to_goal"
     LAST_ACTION = "last_action"
     GLOBAL_PLAN = "global_plan"
+    INTER_REPLAN = "inter_replan"
     DONE = "is_done"
 
     # why not have SEMANTIC = SemanticAttribute ?

@@ -44,6 +44,8 @@ class GlobalplanCollectorUnit(CollectorUnit):
         self._subgoal = np.array([])
         self._subgoal_sub: rospy.Subscriber = None
 
+        self._last_globalplan = None
+
     def init_subs(self):
         """
         Initializes the subscriber for the global plan topic.
@@ -73,6 +75,13 @@ class GlobalplanCollectorUnit(CollectorUnit):
                 OBS_DICT_KEYS.SUBGOAL: self._subgoal,
             }
         )
+
+        _inter_has_replanned = not np.array_equal(
+            self._globalplan, self._last_globalplan
+        )
+        obs_dict.update({OBS_DICT_KEYS.INTER_REPLAN: _inter_has_replanned})
+
+        self._last_globalplan = self._globalplan
         return obs_dict
 
     def _cb_globalplan(self, globalplan_msg: Path):
