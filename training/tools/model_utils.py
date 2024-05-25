@@ -2,6 +2,8 @@ import os
 import sys
 from typing import Callable, List
 
+import torch
+
 import rospy
 import wandb
 from rl_utils.utils.eval_callbacks.staged_train_callback import InitiateNewTrainStage
@@ -112,9 +114,7 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
     if not isinstance(model, RecurrentPPO):
         model._setup_rollout_buffer()
     else:
-        # model._setup_model()
-        # should reinit rolloutbuffer incase hyperparams change
-        pass
+        init_rppo_rollout_buffer(model)
 
     print("--------------------------------\n")
 
@@ -347,3 +347,51 @@ def transfer_weights(
 
     state_dict_model1.update(weights_dict)
     model1.policy.load_state_dict(state_dict_model1, strict=True)
+
+
+from sb3_contrib.common.recurrent.type_aliases import RNNStates
+from sb3_contrib.common.recurrent.buffers import (
+    RecurrentDictRolloutBuffer,
+    RecurrentRolloutBuffer,
+)
+from gymnasium import spaces
+
+
+def init_rppo_rollout_buffer(model: RecurrentPPO):
+    buffer_cls = (
+        RecurrentDictRolloutBuffer
+        if isinstance(model.observation_space, spaces.Dict)
+        else RecurrentRolloutBuffer
+    )
+    lstm = model.policy.lstm_actor
+
+    single_hidden_state_shape = (lstm.num_layers, model.n_envs, lstm.hidden_size)
+    # hidden and cell states for actor and critic
+    model._last_lstm_states = RNNStates(
+        (
+            torch.zeros(single_hidden_state_shape, device=model.device),
+            torch.zeros(single_hidden_state_shape, device=model.device),
+        ),
+        (
+            torch.zeros(single_hidden_state_shape, device=model.device),
+            torch.zeros(single_hidden_state_shape, device=model.device),
+        ),
+    )
+
+    hidden_state_buffer_shape = (
+        model.n_steps,
+        lstm.num_layers,
+        model.n_envs,
+        lstm.hidden_size,
+    )
+
+    model.rollout_buffer = buffer_cls(
+        model.n_steps,
+        model.observation_space,
+        model.action_space,
+        hidden_state_buffer_shape,
+        model.device,
+        gamma=model.gamma,
+        gae_lambda=model.gae_lambda,
+        n_envs=model.n_envs,
+    )
