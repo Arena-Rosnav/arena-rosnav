@@ -227,7 +227,7 @@ class RewardApproachGoal(RewardUnit):
         self.last_robot_pose = obs_dict[OBS_DICT_KEYS.ROBOT_POSE]
 
     def reset(self):
-        self.last_goal = None
+        self.last_robot_pose = None
 
 
 @RewardUnitFactory.register("collision")
