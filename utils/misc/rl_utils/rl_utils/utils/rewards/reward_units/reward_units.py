@@ -210,9 +210,9 @@ class RewardApproachGoal(RewardUnit):
             warn(warn_msg)
 
     def __call__(self, *args, **obs_dict):
-        _inter_has_replanned = obs_dict.get(OBS_DICT_KEYS.INTER_REPLAN, False)
+        # _inter_has_replanned = obs_dict.get(OBS_DICT_KEYS.INTER_REPLAN, False)
 
-        if self.last_robot_pose is not None and not _inter_has_replanned:
+        if self.last_robot_pose is not None:  # and not _inter_has_replanned:
             goal_pose: PoseStamped = obs_dict[OBS_DICT_KEYS.GOAL].pose.position
 
             last_goal_dist = (
@@ -226,9 +226,9 @@ class RewardApproachGoal(RewardUnit):
             w = self._pos_factor if term > 0 else self._neg_factor
             self.add_reward(w * term)
 
-        if _inter_has_replanned:
-            self.last_robot_pose = None
-            return
+        # if _inter_has_replanned:
+        #     self.last_robot_pose = None
+        #     return
 
         self.last_robot_pose = obs_dict[OBS_DICT_KEYS.ROBOT_POSE]
 
