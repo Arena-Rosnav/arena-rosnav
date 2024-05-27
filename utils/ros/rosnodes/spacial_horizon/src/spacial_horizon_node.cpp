@@ -16,16 +16,15 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     nh.param("fsm/goal_tolerance", goal_tolerance, 0.2);
     nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 0.2);
     nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 0.2);
+    nh.param("fsm/update_global_period", update_global_period, 1.0);
     nh.param("fsm/planning_horizon", planning_horizon, 5.0);
 
-    if (!train_mode)
-    {
-        // if not in train mode, create timers
-        ROS_INFO_STREAM("Spacial Horizon: Creating Global Plan Timer");
-        update_global_plan_timer = nh.createTimer(
-            ros::Duration(0.1), &SpacialHorizon::getGlobalPath, this
-        );
-    }
+    // if not in train mode, create timers
+    ROS_INFO_STREAM("Spacial Horizon: Creating Global Plan Timer");
+    update_global_plan_timer = nh.createTimer(
+        ros::Duration(0.2), &SpacialHorizon::getGlobalPath, this
+    );
+
     subgoal_timer = nh.createTimer(
             ros::Duration(subgoal_pub_period), &SpacialHorizon::updateSubgoalCallback, this
     );

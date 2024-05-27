@@ -57,6 +57,7 @@ private:
     double subgoal_tolerance; // meter
     double subgoal_pub_period;
     double planning_horizon;
+    double update_global_period;
 
     /* ROS utils */
     ros::Timer subgoal_timer, update_global_plan_timer;
