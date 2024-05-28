@@ -9,7 +9,7 @@ import numpy as np
 import rospy
 from flatland_msgs.msg import StepWorld
 from geometry_msgs.msg import Twist
-from rl_utils.utils.observation_collector.constants import DONE_REASONS
+from rl_utils.utils.observation_collector.constants import DONE_REASONS, OBS_DICT_KEYS
 from rl_utils.utils.observation_collector.observation_manager import ObservationManager
 from rl_utils.utils.observation_collector.observation_units.base_collector_unit import (
     BaseCollectorUnit,
@@ -238,7 +238,7 @@ class FlatlandEnv(gymnasium.Env):
         )
 
         return (
-            self._encode_observation(obs_dict, is_done=done),
+            self._encode_observation(obs_dict),
             reward,
             done,
             False,
@@ -292,6 +292,7 @@ class FlatlandEnv(gymnasium.Env):
                 self.call_service_takeSimStep()
 
         obs_dict = self.observation_collector.get_observations()
+        obs_dict.update({OBS_DICT_KEYS.DONE: True})
         info_dict = {}
         return (
             self._encode_observation(obs_dict),
