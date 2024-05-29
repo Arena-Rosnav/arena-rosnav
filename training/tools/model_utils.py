@@ -177,8 +177,8 @@ def get_ppo_instance(
 
     ## Save model once
 
-    if not rospy.get_param("debug_mode") and new_model:
-        save_model(model, paths)
+    # if not rospy.get_param("debug_mode") and new_model:
+    #     save_model(model, paths)
 
     return model
 
