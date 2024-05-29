@@ -71,7 +71,7 @@ class MapGeneratorNode:
         delete_distance_map()
 
         rospy.Subscriber("/map", OccupancyGrid, self._get_occupancy_grid)
-        rospy.Subscriber("/request_new_map", String, self._callback_new_map, 1)
+        rospy.Subscriber("/request_new_map", String, self._callback_new_map, queue_size=1)
         self._map_pub = rospy.Publisher("/map", OccupancyGrid, queue_size=1)
 
         self._default_config = load_map_generator_config()
