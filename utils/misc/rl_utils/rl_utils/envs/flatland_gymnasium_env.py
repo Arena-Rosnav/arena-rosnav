@@ -287,7 +287,7 @@ class FlatlandEnv(gymnasium.Env):
 
         if self._is_train_mode:
             # extra step for planning serivce to provide global plan
-            for _ in range(2):
+            for _ in range(3):
                 self.agent_action_pub.publish(Twist())
                 self.call_service_takeSimStep()
 
