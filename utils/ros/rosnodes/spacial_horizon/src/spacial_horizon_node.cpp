@@ -6,6 +6,7 @@
 
 void SpacialHorizon::init(ros::NodeHandle &nh)
 {
+    has_timers = false;
     has_odom = false;
     has_goal = false;
 
@@ -18,27 +19,16 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 0.2);
     nh.param("fsm/update_global_period", update_global_period, 2.5);
     nh.param("fsm/planning_horizon", planning_horizon, 5.0);
-
-    // if not in train mode, create timers
-    ROS_INFO_STREAM("Spacial Horizon: Creating Global Plan Timer");
-    update_global_plan_timer = nh.createTimer(
-        ros::Duration(update_global_period), &SpacialHorizon::getGlobalPath, this
-    );
-
-    subgoal_timer = nh.createTimer(
-            ros::Duration(subgoal_pub_period), &SpacialHorizon::updateSubgoalCallback, this
-    );
     
     /* ros communication with public node */
-    ros::NodeHandle public_nh; // sim1/goal
     sub_goal =
-        public_nh.subscribe(SUB_TOPIC_GOAL, 1, &SpacialHorizon::goalCallback, this);
+        nh_.subscribe(SUB_TOPIC_GOAL, 1, &SpacialHorizon::goalCallback, this);
     sub_odom =
-        public_nh.subscribe(SUB_TOPIC_ODOM, 1, &SpacialHorizon::odomCallback, this);
+        nh_.subscribe(SUB_TOPIC_ODOM, 1, &SpacialHorizon::odomCallback, this);
 
     pub_subgoal =
-        public_nh.advertise<geometry_msgs::PoseStamped>(PUB_TOPIC_SUBGOAL, 10);
-    pub_global_plan = public_nh.advertise<nav_msgs::Path>(PUB_TOPIC_GLOBAL_PLAN, 10);
+        nh_.advertise<geometry_msgs::PoseStamped>(PUB_TOPIC_SUBGOAL, 10);
+    pub_global_plan = nh_.advertise<nav_msgs::Path>(PUB_TOPIC_GLOBAL_PLAN, 10);
 
     initializeGlobalPlanningService();
 }
@@ -46,7 +36,6 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
 void SpacialHorizon::initializeGlobalPlanningService()
 {
     ROS_INFO_STREAM("[Spacial Horizon - INIT] Initializing MBF service client");
-    ros::NodeHandle nh;
     std::string service_name = ros::this_node::getNamespace() + "/" + SERVICE_GLOBAL_PLANNER;
 
     while (!ros::service::waitForService(service_name, ros::Duration(3.0)))
@@ -54,7 +43,26 @@ void SpacialHorizon::initializeGlobalPlanningService()
         ROS_INFO("[SpacialHorizon - INIT] Waiting for service %s to become available",
                 service_name.c_str());
     }
-    global_planner_srv = nh.serviceClient<nav_msgs::GetPlan>(service_name, true);
+    global_planner_srv = nh_.serviceClient<nav_msgs::GetPlan>(service_name, true);
+}
+
+void SpacialHorizon::initializeTimers()
+{
+    if (has_goal && !has_timers && has_odom)
+    {
+        return;
+    }
+    // if not in train mode, create timers
+    ROS_INFO_STREAM("Spacial Horizon: Creating Global Plan Timer");
+    update_global_plan_timer = nh_.createTimer(
+        ros::Duration(update_global_period), &SpacialHorizon::getGlobalPath, this
+    );
+
+    subgoal_timer = nh_.createTimer(
+        ros::Duration(subgoal_pub_period), &SpacialHorizon::updateSubgoalCallback, this
+    );
+
+    has_timers = true;
 }
 
 void SpacialHorizon::odomCallback(const nav_msgs::OdometryConstPtr &msg)
@@ -66,6 +74,8 @@ void SpacialHorizon::odomCallback(const nav_msgs::OdometryConstPtr &msg)
         Eigen::Vector2d(msg->twist.twist.linear.x, msg->twist.twist.linear.y);
 
     has_odom = true;
+
+    initializeTimers();
 }
 
 void SpacialHorizon::goalCallback(const geometry_msgs::PoseStampedPtr &msg)
@@ -180,6 +190,7 @@ void SpacialHorizon::updateSubgoalCallback(const ros::TimerEvent &e)
         pose_stamped.pose.position.x = subgoal(0);
         pose_stamped.pose.position.y = subgoal(1);
         pose_stamped.pose.position.z = 0.0;
+
 
         ROS_INFO_STREAM("[Spacial Horizon] Publishing new subgoal");
 

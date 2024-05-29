@@ -28,9 +28,10 @@
 class SpacialHorizon
 {
 private:
+    ros::NodeHandle nh_;
     // enum FSM_EXEC_STATE {INIT, WAIT_GOAL};
     /* planning data */
-    bool has_goal, has_odom;
+    bool has_timers, has_goal, has_odom;
 
     geometry_msgs::PoseStamped ps_odom;
 
@@ -64,6 +65,7 @@ private:
 
     /* init methods */
     void initializeGlobalPlanningService();
+    void initializeTimers();
 
     /* ros related callback*/
     void odomCallback(const nav_msgs::OdometryConstPtr &msg);
