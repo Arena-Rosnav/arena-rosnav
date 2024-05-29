@@ -22,7 +22,7 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     // if not in train mode, create timers
     ROS_INFO_STREAM("Spacial Horizon: Creating Global Plan Timer");
     update_global_plan_timer = nh.createTimer(
-        ros::Duration(0.2), &SpacialHorizon::getGlobalPath, this
+        ros::Duration(update_global_period), &SpacialHorizon::getGlobalPath, this
     );
 
     subgoal_timer = nh.createTimer(
