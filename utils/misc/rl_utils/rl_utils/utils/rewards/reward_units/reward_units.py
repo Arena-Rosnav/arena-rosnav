@@ -177,6 +177,7 @@ class RewardApproachGoal(RewardUnit):
         reward_function: RewardFunction,
         pos_factor: float = DEFAULTS.APPROACH_GOAL.POS_FACTOR,
         neg_factor: float = DEFAULTS.APPROACH_GOAL.NEG_FACTOR,
+        _term_threshold: float = DEFAULTS.APPROACH_GOAL._TERM_THRESHOLD,
         _on_safe_dist_violation: bool = DEFAULTS.APPROACH_GOAL._ON_SAFE_DIST_VIOLATION,
         *args,
         **kwargs,
@@ -192,6 +193,7 @@ class RewardApproachGoal(RewardUnit):
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._pos_factor = pos_factor
         self._neg_factor = neg_factor
+        self._term_threshold = _term_threshold
 
         self.last_robot_pose = None
 
@@ -223,6 +225,10 @@ class RewardApproachGoal(RewardUnit):
             curr_goal_dist = obs_dict[OBS_DICT_KEYS.GOAL_DIST_ANGLE][0]
 
             term = last_goal_dist - curr_goal_dist
+
+            if abs(term) > self._term_threshold:
+                term = 0.0
+
             w = self._pos_factor if term > 0 else self._neg_factor
             self.add_reward(w * term)
 
