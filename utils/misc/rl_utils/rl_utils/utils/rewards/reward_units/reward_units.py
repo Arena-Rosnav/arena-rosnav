@@ -68,13 +68,13 @@ class RewardGoalReached(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, distance_to_goal: float, *args: Any, **kwargs: Any) -> None:
+    def __call__(self, *args: Any, **obs_dict: Any) -> None:
         """Calculates the reward and updates the information when the goal is reached.
 
         Args:
             distance_to_goal (float): Distance to the goal in m.
         """
-        if distance_to_goal < self._reward_function.goal_radius:
+        if obs_dict[OBS_DICT_KEYS.DISTANCE_TO_GOAL] < self._reward_function.goal_radius:
             self.add_reward(self._reward)
             self.add_info(self.DONE_INFO)
         else:
@@ -115,10 +115,12 @@ class RewardSafeDistance(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, *args: Any, **kwargs: Any):
+    def __call__(self, *args: Any, **obs_dict: Any):
         violation_in_blind_spot = False
-        if "full_laser_scan" in kwargs and len(kwargs["full_laser_scan"]) > 0:
-            violation_in_blind_spot = kwargs["full_laser_scan"].min() <= self._safe_dist
+        if "full_laser_scan" in obs_dict and len(obs_dict["full_laser_scan"]) > 0:
+            violation_in_blind_spot = (
+                obs_dict["full_laser_scan"].min() <= self._safe_dist
+            )
 
         if (
             self.get_internal_state_info("safe_dist_breached")
@@ -158,7 +160,8 @@ class RewardNoMovement(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, action: np.ndarray, *args: Any, **kwargs: Any):
+    def __call__(self, *args: Any, **obs_dict: Any):
+        action = obs_dict.get(OBS_DICT_KEYS.LAST_ACTION, None)
         if (
             action is not None
             and abs(action[0]) <= REWARD_CONSTANTS.NO_MOVEMENT_TOLERANCE
@@ -318,9 +321,12 @@ class RewardDistanceTravelled(RewardUnit):
         self._lin_vel_scalar = lin_vel_scalar
         self._ang_vel_scalar = ang_vel_scalar
 
-    def __call__(self, action: np.ndarray, *args: Any, **kwargs: Any) -> Any:
+    def __call__(self, *args: Any, **obs_dict: Any) -> Any:
+        action = obs_dict.get(OBS_DICT_KEYS.LAST_ACTION, None)
+
         if action is None:
             return
+
         lin_vel, ang_vel = action[0], action[-1]
         reward = (
             (lin_vel * self._lin_vel_scalar) + (ang_vel * self._ang_vel_scalar)
@@ -370,10 +376,11 @@ class RewardApproachGlobalplan(GlobalplanRewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(
-        self, global_plan: np.ndarray, robot_pose, *args: Any, **kwargs: Any
-    ) -> Any:
-        super().__call__(global_plan=global_plan, robot_pose=robot_pose)
+    def __call__(self, *args: Any, **obs_dict: Any) -> Any:
+        super().__call__(
+            global_plan=obs_dict[OBS_DICT_KEYS.GLOBAL_PLAN],
+            robot_pose=obs_dict[OBS_DICT_KEYS.ROBOT_POSE],
+        )
 
         if self.curr_dist_to_path and self.last_dist_to_path:
             self.add_reward(self._calc_reward())
