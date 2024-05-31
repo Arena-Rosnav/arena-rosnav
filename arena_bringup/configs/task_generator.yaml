@@ -11,14 +11,18 @@ STAGED:
 RANDOM:
   seed: -1
   static:
-    min: 10
-    max: 10
+    min: 0
+    max: 0
     models: ["shelf"]
   interactive:
     min: 0
     max: 0
     models: ["shelf"]
   dynamic:
-    min: 35
-    max: 40
+    min: 20
+    max: 20
     models: ["actor1"]
+
+ZONES:
+  file: "zones.yaml"
+  scenario: "default.yaml"

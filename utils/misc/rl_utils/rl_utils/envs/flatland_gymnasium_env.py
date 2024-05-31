@@ -9,17 +9,9 @@ import numpy as np
 import rospy
 from flatland_msgs.msg import StepWorld
 from geometry_msgs.msg import Twist
+from rl_utils.envs.utils import get_obs_structure
 from rl_utils.utils.observation_collector.constants import DONE_REASONS, OBS_DICT_KEYS
 from rl_utils.utils.observation_collector.observation_manager import ObservationManager
-from rl_utils.utils.observation_collector.observation_units.base_collector_unit import (
-    BaseCollectorUnit,
-)
-from rl_utils.utils.observation_collector.observation_units.globalplan_collector_unit import (
-    GlobalplanCollectorUnit,
-)
-from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import (
-    SemanticAggregateUnit,
-)
 from rl_utils.utils.rewards.reward_function import RewardFunction
 from rosnav.model.base_agent import BaseAgent
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
@@ -27,14 +19,8 @@ from std_srvs.srv import Empty
 from task_generator.shared import Namespace
 from task_generator.task_generator_node import TaskGenerator
 from task_generator.utils import rosparam_get
-
-
-def get_ns_idx(ns: str):
-    try:
-        return int(re.search(r"\d+", ns)[0])
-    except Exception:
-        return random.uniform(0, 3)
-        # return 0.5
+from task_generator.tasks import Task
+from typing import Type
 
 
 class FlatlandEnv(gymnasium.Env):
@@ -137,13 +123,10 @@ class FlatlandEnv(gymnasium.Env):
             )
 
         # observation collector
+        obs_structure = get_obs_structure()
         self.observation_collector = ObservationManager(
             ns=self.ns,
-            obs_structur=[
-                BaseCollectorUnit,
-                GlobalplanCollectorUnit,
-                SemanticAggregateUnit,
-            ],
+            obs_structur=obs_structure,
             obs_unit_kwargs=self._obs_unit_kwargs,
         )
         return True
@@ -159,7 +142,7 @@ class FlatlandEnv(gymnasium.Env):
     def _setup_env_for_training(self, reward_fnc: str, **kwargs):
         # instantiate task manager
         task_generator = TaskGenerator(self.ns.simulation_ns)
-        self.task = task_generator._get_predefined_task(**kwargs)
+        self.task: Type[Task] = task_generator._get_predefined_task(**kwargs)
 
         # reward calculator
         self.reward_calculator = RewardFunction(
@@ -168,6 +151,10 @@ class FlatlandEnv(gymnasium.Env):
             robot_radius=self.task.robot_managers[0]._robot_radius,
             safe_dist=self.task.robot_managers[0].safe_distance,
             goal_radius=rosparam_get(float, "goal_radius", 0.3),
+            distinguished_safe_dist=rosparam_get(
+                bool, "rl_agent/distinguished_safe_dist", False
+            ),
+            ns=self.ns,
             max_steps=self._max_steps_per_episode,
             **self._reward_fnc_kwargs,
         )

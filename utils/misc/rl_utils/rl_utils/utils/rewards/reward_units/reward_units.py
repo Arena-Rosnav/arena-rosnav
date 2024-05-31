@@ -3,9 +3,13 @@ from typing import Any, Callable, Dict
 from warnings import warn
 
 import numpy as np
+import random
+from rl_utils.utils.observation_collector.constants import DONE_REASONS, OBS_DICT_KEYS, TOPICS
 import rospy
-from rl_utils.utils.observation_collector.constants import DONE_REASONS, OBS_DICT_KEYS
 
+from unity_msgs.srv import AttachSafeDistSensorRequest, AttachSafeDistSensor
+
+from task_generator.constants import Config, UnityConstants
 from ..constants import DEFAULTS, REWARD_CONSTANTS
 from ..reward_function import RewardFunction
 from ..utils import check_params, get_ped_type_min_distances
@@ -68,13 +72,13 @@ class RewardGoalReached(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, distance_to_goal: float, *args: Any, **kwargs: Any) -> None:
+    def __call__(self, *args: Any, **obs_dict: Any) -> None:
         """Calculates the reward and updates the information when the goal is reached.
 
         Args:
             distance_to_goal (float): Distance to the goal in m.
         """
-        if distance_to_goal < self._reward_function.goal_radius:
+        if obs_dict[OBS_DICT_KEYS.DISTANCE_TO_GOAL] < self._reward_function.goal_radius:
             self.add_reward(self._reward)
             self.add_info(self.DONE_INFO)
         else:
@@ -115,10 +119,12 @@ class RewardSafeDistance(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, *args: Any, **kwargs: Any):
+    def __call__(self, *args: Any, **obs_dict: Any):
         violation_in_blind_spot = False
-        if "full_laser_scan" in kwargs and len(kwargs["full_laser_scan"]) > 0:
-            violation_in_blind_spot = kwargs["full_laser_scan"].min() <= self._safe_dist
+        if "full_laser_scan" in obs_dict and len(obs_dict["full_laser_scan"]) > 0:
+            violation_in_blind_spot = (
+                obs_dict["full_laser_scan"].min() <= self._safe_dist
+            )
 
         if (
             self.get_internal_state_info("safe_dist_breached")
@@ -158,7 +164,8 @@ class RewardNoMovement(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, action: np.ndarray, *args: Any, **kwargs: Any):
+    def __call__(self, *args: Any, **obs_dict: Any):
+        action = obs_dict.get(OBS_DICT_KEYS.LAST_ACTION, None)
         if (
             action is not None
             and abs(action[0]) <= REWARD_CONSTANTS.NO_MOVEMENT_TOLERANCE
@@ -279,6 +286,14 @@ class RewardCollision(RewardUnit):
             warn(warn_msg)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        # quick Unity-specific check
+        if (self._reward_function.distinguished_safe_dist and 
+            OBS_DICT_KEYS.COLLSION in kwargs and
+            kwargs[OBS_DICT_KEYS.COLLSION]):
+            self.add_reward(self._reward)
+            self.add_info(self.DONE_INFO)
+            return
+
         coll_in_blind_spots = False
         if "full_laser_scan" in kwargs:
             if len(kwargs["full_laser_scan"]) > 0:
@@ -318,9 +333,12 @@ class RewardDistanceTravelled(RewardUnit):
         self._lin_vel_scalar = lin_vel_scalar
         self._ang_vel_scalar = ang_vel_scalar
 
-    def __call__(self, action: np.ndarray, *args: Any, **kwargs: Any) -> Any:
+    def __call__(self, *args: Any, **obs_dict: Any) -> Any:
+        action = obs_dict.get(OBS_DICT_KEYS.LAST_ACTION, None)
+
         if action is None:
             return
+
         lin_vel, ang_vel = action[0], action[-1]
         reward = (
             (lin_vel * self._lin_vel_scalar) + (ang_vel * self._ang_vel_scalar)
@@ -370,10 +388,11 @@ class RewardApproachGlobalplan(GlobalplanRewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(
-        self, global_plan: np.ndarray, robot_pose, *args: Any, **kwargs: Any
-    ) -> Any:
-        super().__call__(global_plan=global_plan, robot_pose=robot_pose)
+    def __call__(self, *args: Any, **obs_dict: Any) -> Any:
+        super().__call__(
+            global_plan=obs_dict[OBS_DICT_KEYS.GLOBAL_PLAN],
+            robot_pose=obs_dict[OBS_DICT_KEYS.ROBOT_POSE],
+        )
 
         if self.curr_dist_to_path and self.last_dist_to_path:
             self.add_reward(self._calc_reward())
@@ -819,6 +838,134 @@ class RewardActiveHeadingDirection(RewardUnit):
             d_theta = theta_pre
 
         return self._r_angle * (self._theta_m - abs(d_theta))
+
+
+@RewardUnitFactory.register("ped_safe_distance")
+class RewardPedSafeDistance(RewardUnit):
+    SAFE_DIST_VIOLATION_INFO = {"safe_dist_violation": True}
+
+    @check_params
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        reward: float = DEFAULTS.PED_SAFE_DISTANCE.REWARD,
+        safe_dist: float = DEFAULTS.PED_SAFE_DISTANCE.SAFE_DIST,
+        *args,
+        **kwargs,
+    ):
+        """Unity-specific class for calculating the reward when violating the ped-specific safe 
+        distance.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            reward (float, optional): The reward value for violating the safe distance. Defaults to 
+                DEFAULTS.PED_SAFE_DISTANCE.REWARD.
+            safe_dist (bool, optional): Safety distance which should not be passed. The value should
+                not include the radius of the robot body. Defaults to 
+                DEFAULTS.PED_SAFE_DISTANCE.SAFE_DIST.
+        """
+        super().__init__(reward_function, True, *args, **kwargs)
+        self._reward = reward
+        self._safe_dist = safe_dist
+        
+        # Send request to Unity to attach sensor
+        service_topic = reward_function.ns.simulation_ns(
+            "unity", 
+            UnityConstants.ATTACH_SAFE_DIST_SENSOR_TOPIC
+        )
+        rospy.wait_for_service(
+            service_topic,
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
+        )
+        request = AttachSafeDistSensorRequest(
+            robot_name=reward_function.ns.robot_ns,
+            safe_dist_topic=TOPICS.PED_SAFE_DIST,
+            ped_safe_dist=True,
+            obs_safe_dist=False,
+            safe_dist=self._safe_dist
+        )
+        response = rospy.ServiceProxy(service_topic, AttachSafeDistSensor)(request)
+        # Check success
+        if not response.success:
+            raise rospy.ServiceException(response.message)
+
+    def check_parameters(self, *args, **kwargs):
+        if self._reward > 0.0:
+            warn_msg = (
+                f"[{self.__class__.__name__}] Reconsider this reward. "
+                f"Positive rewards may lead to unfavorable behaviors. "
+                f"Current value: {self._reward}"
+            )
+            warn(warn_msg)
+
+    def __call__(self, *args: Any, **kwargs: Any):
+        if OBS_DICT_KEYS.PED_SAFE_DIST in kwargs and kwargs[OBS_DICT_KEYS.PED_SAFE_DIST]:
+            self.add_reward(self._reward)
+            self.add_info(self.SAFE_DIST_VIOLATION_INFO)
+
+
+@RewardUnitFactory.register("obs_safe_distance")
+class RewardObsSafeDistance(RewardUnit):
+    SAFE_DIST_VIOLATION_INFO = {"safe_dist_violation": True}
+
+    @check_params
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        reward: float = DEFAULTS.OBS_SAFE_DISTANCE.REWARD,
+        safe_dist: float = DEFAULTS.OBS_SAFE_DISTANCE.SAFE_DIST,
+        *args,
+        **kwargs,
+    ):
+        """Unity-specific class for calculating the reward when violating the obs-specific safe 
+        distance.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            reward (float, optional): The reward value for violating the safe distance. Defaults to 
+                DEFAULTS.OBS_SAFE_DISTANCE.REWARD.
+            safe_dist (bool, optional): Safety distance which should not be passed. The value should
+                not include the radius of the robot body. Defaults to
+                DEFAULTS.OBS_SAFE_DISTANCE.SAFE_DIST.
+        """
+        super().__init__(reward_function, True, *args, **kwargs)
+        self._reward = reward
+        self._safe_dist = safe_dist
+        
+        # Send request to Unity to attach sensor
+        service_topic = reward_function.ns.simulation_ns(
+            "unity", 
+            UnityConstants.ATTACH_SAFE_DIST_SENSOR_TOPIC
+        )
+        rospy.wait_for_service(
+            service_topic,
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
+        )
+        request = AttachSafeDistSensorRequest(
+            robot_name=reward_function.ns.robot_ns,
+            safe_dist_topic=TOPICS.OBS_SAFE_DIST,
+            ped_safe_dist=False,
+            obs_safe_dist=True,
+            safe_dist=self._safe_dist
+        )
+        response = rospy.ServiceProxy(service_topic, AttachSafeDistSensor)(request)
+        # Check success
+        if not response.success:
+            raise rospy.ServiceException(response.message)
+
+    def check_parameters(self, *args, **kwargs):
+        if self._reward > 0.0:
+            warn_msg = (
+                f"[{self.__class__.__name__}] Reconsider this reward. "
+                f"Positive rewards may lead to unfavorable behaviors. "
+                f"Current value: {self._reward}"
+            )
+            warn(warn_msg)
+
+    def __call__(self, *args: Any, **kwargs: Any):
+        if OBS_DICT_KEYS.OBS_SAFE_DIST in kwargs and kwargs[OBS_DICT_KEYS.OBS_SAFE_DIST]:
+            self.add_reward(self._reward)
+            self.add_info(self.SAFE_DIST_VIOLATION_INFO)
 
 
 @RewardUnitFactory.register("ped_type_safety_distance")

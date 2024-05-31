@@ -49,54 +49,167 @@ class WorldOccupancy:
     _grid: np.ndarray
 
     def __init__(self, grid: np.ndarray):
+        """
+        Take a raw grid within (EMPTY, FULL) range and wrap it in a WorldOccupancy instance.
+
+        Args:
+            grid: grid to be wrapped
+
+        Returns:
+            WorldOccupancy
+        """
         self._grid = grid
 
-    @staticmethod
-    def from_map(input_map: np.ndarray) -> "WorldOccupancy":
-        remap = scipy.interpolate.interp1d([input_map.max(), input_map.min()], [
-                                           WorldOccupancy.EMPTY, WorldOccupancy.FULL])
-        return WorldOccupancy(remap(input_map))
+    @classmethod
+    def from_map(cls, input_map: np.ndarray) -> "WorldOccupancy":
+        """
+        Take an input_map with any value range, linearly remap it to (EMPTY, FULL) range. Returns a WorldOccupancy instance.
 
-    @staticmethod
-    def empty(grid: np.ndarray) -> np.ndarray:
-        return np.isclose(grid, WorldOccupancy.EMPTY)
+        Args:
+            input_map: map to be converted
+
+        Returns:
+            WorldOccupancy
+        """
+        remap = scipy.interpolate.interp1d(
+            [input_map.max(), input_map.min()],
+            [cls.EMPTY, cls.FULL]
+        )
+        return cls(remap(input_map))
+
+    @classmethod
+    def empty(cls, grid: np.ndarray) -> np.ndarray:
+        """
+        check where grid is empty (= grid ≈ EMPTY)
+
+        Args:
+            grid: grid to analyze
+
+        Returns:
+            np.ndarray
+        """
+        return np.isclose(grid, cls.EMPTY)
     
-    @staticmethod
-    def not_empty(grid: np.ndarray) -> np.ndarray:
-        return np.invert(WorldOccupancy.empty(grid))
+    @classmethod
+    def not_empty(cls, grid: np.ndarray) -> np.ndarray:
+        """
+        check where grid is not empty (= invert(empty(grid)))
 
-    @staticmethod
-    def emptyish(grid: np.ndarray, thresh: Optional[float] = None) -> np.ndarray:
+        Args:
+            grid: grid to analyze
+
+        Returns:
+            np.ndarray
+        """
+        return np.invert(cls.empty(grid))
+
+    @classmethod
+    def emptyish(cls, grid: np.ndarray, thresh: Optional[float] = None) -> np.ndarray:
+        """
+        check where grid is empty-ish (= grid >= thresh)
+
+        Args:
+            grid: grid to analyze
+            thresh: treshold value (default: mean(FULL, EMPTY))
+
+        Returns:
+            np.ndarray
+        """
         if thresh is None:
-            thresh = float((int(WorldOccupancy.FULL) + int(WorldOccupancy.EMPTY)) / 2)
+            thresh = float((int(cls.FULL) + int(cls.EMPTY)) / 2)
         return grid >= thresh
 
-    @staticmethod
-    def full(grid: np.ndarray) -> np.ndarray:
-        return np.isclose(grid, WorldOccupancy.FULL)
+    @classmethod
+    def full(cls, grid: np.ndarray) -> np.ndarray:
+        """
+        check where grid is full (= grid ≈ FULL)
 
-    @staticmethod
-    def not_full(grid: np.ndarray) -> np.ndarray:
-        return np.invert(WorldOccupancy.full(grid))
+        Args:
+            grid: grid to analyze
 
-    @staticmethod
-    def fullish(grid: np.ndarray, thresh: Optional[float] = None) -> np.ndarray:
-        return np.invert(WorldOccupancy.emptyish(grid, thresh))
+        Returns:
+            np.ndarray
+        """
+        return np.isclose(grid, cls.FULL)
+
+    @classmethod
+    def not_full(cls, grid: np.ndarray) -> np.ndarray:
+        """
+        check where grid is not full (= invert(full(grid)))
+
+        Args:
+            grid: grid to analyze
+
+        Returns:
+            np.ndarray
+        """
+        return np.invert(cls.full(grid))
+
+    @classmethod
+    def fullish(cls, grid: np.ndarray, thresh: Optional[float] = None) -> np.ndarray:
+        """
+        check where grid is not empty-ish (= invert(emptyish(grid)))
+
+        Args:
+            grid: grid to analyze
+            thresh: treshold value (default: mean(FULL, EMPTY))
+
+        Returns:
+            np.ndarray
+        """
+        return np.invert(cls.emptyish(grid, thresh))
 
     @property
     def grid(self) -> np.ndarray:
+        """
+        get current grid (reference)
+
+        Args:
+            None
+
+        Returns:
+            np.ndarray
+        """
         return self._grid
 
     def clear(self):
-        self.grid.fill(WorldOccupancy.EMPTY)
+        """
+        clear occupation
 
-    def occupy(self, lo:Tuple[int, int], hi: Tuple[int, int]):
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        self.grid.fill(self.EMPTY)
+
+    def occupy(self, lo: Tuple[int, int], hi: Tuple[int, int], inv: bool = False):
+        """
+        occupy the rectangle spanned by (lo,hi)
+
+        Args:
+            lo: (min_x, min_y)
+            hi: (max_x, max_y)
+            inv: invert (occupy everything _except_ rectangle)
+
+        Returns:
+            None
+        """
+
         ly, hy = np.clip(np.array([lo[1], hi[1]]), 0, self._grid.shape[0] - 1)
         lx, hx = np.clip(np.array([lo[0], hi[0]]), 0, self._grid.shape[1] - 1)
-        self._grid[
-            int(ly):int(hy),
-            int(lx):int(hx)
-        ] = WorldOccupancy.FULL
+
+        if inv:
+            self._grid[:int(ly),:] = self.FULL
+            self._grid[int(hy):,:] = self.FULL
+            self._grid[:,:int(lx)] = self.FULL
+            self._grid[:,int(hx):] = self.FULL
+        else:
+            self._grid[
+                int(ly):int(hy),
+                int(lx):int(hx)
+            ] = self.FULL
 
 
 class WorldLayers:
@@ -164,8 +277,8 @@ class WorldLayers:
             self._base._forbidden = self._grid
             self._base._invalidate_combined_cache()
 
-        def occupy(self, lo:Tuple[int, int], hi: Tuple[int, int]):
-            self._grid.occupy(lo, hi)
+        def occupy(self, lo:Tuple[int, int], hi: Tuple[int, int], **kwargs):
+            self._grid.occupy(lo, hi, **kwargs)
 
         @property
         def grid(self):
@@ -204,10 +317,10 @@ class WorldMap:
         return self.occupancy._walls.grid.shape
 
     def tf_pos2grid(self, position: Position) -> Tuple[int, int]:
-        return np.round((position.y - self.origin.y) / self.resolution), np.round(self.shape[1] - (position.x - self.origin.x) / self.resolution)
+        return np.round((position.y - self.origin.y) / self.resolution), np.round((position.x - self.origin.x) / self.resolution)
 
     def tf_grid2pos(self, grid_pos: Tuple[int, int]) -> Position:
-        return Position(x=grid_pos[1] * self.resolution + self.origin.y, y=(grid_pos[0]) * self.resolution + self.origin.x)
+        return Position(x = grid_pos[1] * self.resolution + self.origin.y, y = grid_pos[0] * self.resolution + self.origin.x)
 
     def tf_posr2rect(self, posr: PositionRadius) -> Tuple[Tuple[int, int], Tuple[int, int]]:
         lo = self.tf_pos2grid(Position(posr.x - posr.radius, posr.y - posr.radius))

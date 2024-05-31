@@ -15,8 +15,8 @@ algorithm_config:
 
   # indoor parameters
   indoor:
-    corridor_radius: 1 # total corridor diameter = 1+2*corridor_radius
-    iterations: 10 # number of nodes for the indoor map algorithm
+    corridor_radius: 4 # total corridor diameter = 1+2*corridor_radius
+    iterations: 50 # number of nodes for the indoor map algorithm
   
   # outdoor parameters
   outdoor:

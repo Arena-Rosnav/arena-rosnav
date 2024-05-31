@@ -15,9 +15,9 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     /*  fsm param  */
     nh.param("/disable_intermediate_planner", disable_intermediate_planner, false);
     nh.param("fsm/goal_tolerance", goal_tolerance, 0.2);
-    nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 0.5);
+    nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 0.2);
     nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 0.2);
-    nh.param("fsm/update_global_period", update_global_period, 2.5);
+    nh.param("fsm/update_global_period", update_global_period, 0.5);
     nh.param("fsm/planning_horizon", planning_horizon, 5.0);
     
     /* ros communication with public node */
@@ -31,6 +31,7 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     pub_global_plan = nh_.advertise<nav_msgs::Path>(PUB_TOPIC_GLOBAL_PLAN, 10);
 
     initializeGlobalPlanningService();
+    initializeTimers();
 }
 
 void SpacialHorizon::initializeGlobalPlanningService()
@@ -48,10 +49,10 @@ void SpacialHorizon::initializeGlobalPlanningService()
 
 void SpacialHorizon::initializeTimers()
 {
-    if (has_goal && !has_timers && has_odom)
-    {
-        return;
-    }
+    // if (has_goal && !has_timers && has_odom)
+    // {
+    //     return;
+    // }
     // if not in train mode, create timers
     ROS_INFO_STREAM("Spacial Horizon: Creating Global Plan Timer");
     update_global_plan_timer = nh_.createTimer(
@@ -61,8 +62,6 @@ void SpacialHorizon::initializeTimers()
     subgoal_timer = nh_.createTimer(
         ros::Duration(subgoal_pub_period), &SpacialHorizon::updateSubgoalCallback, this
     );
-
-    has_timers = true;
 }
 
 void SpacialHorizon::odomCallback(const nav_msgs::OdometryConstPtr &msg)
@@ -74,8 +73,6 @@ void SpacialHorizon::odomCallback(const nav_msgs::OdometryConstPtr &msg)
         Eigen::Vector2d(msg->twist.twist.linear.x, msg->twist.twist.linear.y);
 
     has_odom = true;
-
-    initializeTimers();
 }
 
 void SpacialHorizon::goalCallback(const geometry_msgs::PoseStampedPtr &msg)
