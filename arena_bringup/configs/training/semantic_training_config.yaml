@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: false
 # number of parallel environments
-n_envs: 32
+n_envs: 16
 # gpu yes or no
 no_gpu: false
 
@@ -13,7 +13,7 @@ tm_obstacles: "random"
 tm_modules: "staged"
 
 # number of simulation timesteps
-n_timesteps: 10000000
+n_timesteps: 2000000
 max_num_moves_per_eps: 175
 goal_radius: 0.3
 safety_distance: 1
@@ -39,9 +39,9 @@ callbacks:
     # max number of steps per episode
     max_num_moves_per_eps: 250
     # number of evaluation episodes
-    n_eval_episodes: 30
+    n_eval_episodes: 20
     # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 15000
+    eval_freq: 10000
 
   ### Training Curriculum
   # threshold metric to be considered during evaluation
@@ -63,28 +63,28 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "LSTM_ResNet_5_norm"
+  architecture_name: "LaserTest"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   checkpoint: "last_model"
   weight_transfer:
-    model_path: "/home/tar/catkin_ws/src/planners/rosnav/agents/jackal_RosnavResNet_5_norm_2024_03_23__21_02_24/last_model.zip"
+    model_path: "/home/tar/catkin_ws/src/planners/rosnav/agents/jackal_RosnavResNet_simple_2024_05_27__15_29_28/last_model.zip"
     include: # regex to include layers
-      - "^features_extractor"
+      - ".*"
     exclude:
-      - "linear"
+      - ""
 
   frame_stacking:
     enabled: false
     stack_size: 6
 
-  subgoal_mode: false
+  subgoal_mode: true
   reward_fnc: "base_semantic"
   reward_fnc_kwargs:
     placeholder: 0
 
   normalize:
-    enabled: true
+    enabled: false
     settings:
       norm_obs: true
       norm_reward: true # Whether to normalize rewards or not
@@ -116,7 +116,7 @@ rl_agent:
       final_value: 0.0001
 
   ppo:
-    batch_size: 1536
+    batch_size: 512
     gamma: 0.99
     n_steps: 1200
     ent_coef: 0.005
@@ -125,5 +125,5 @@ rl_agent:
     max_grad_norm: 0.5
     gae_lambda: 0.95
     m_batch_size: 64
-    n_epochs: 3
-    clip_range: 0.2
+    n_epochs: 5
+    clip_range: 0.25

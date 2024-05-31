@@ -4,10 +4,7 @@
   <param name="local_planner" value="rosnav" />
 
   <arg name="simulator" default="flatland" doc="[flatland, unity]" />
-  <param name="SIMULATOR" value="$(arg simulator)" />
   <param name="simulator" value="$(arg simulator)" />
-
-  <param name="single_env" value="false" />
 
   <!-- Here are the argument that may be frequently changed -->
   <arg name="cfg" default="" doc="File name of the config file."/>

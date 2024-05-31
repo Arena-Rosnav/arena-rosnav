@@ -291,7 +291,7 @@ class RewardFunction:
     @property
     def distinguished_safe_dist(self) -> bool:
         return self._distinguished_safe_dist
-    
+
     @property
     def ns(self) -> Namespace:
         return self._ns

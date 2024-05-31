@@ -52,6 +52,7 @@ class Mod_DynamicMap(TM_Module):
 
         if self._episodes >= self._target_eps_num:
             self.request_new_map()
+            self._update_map()
 
     def __init__(self, **kwargs):
         """
@@ -81,6 +82,9 @@ class Mod_DynamicMap(TM_Module):
         )
         self._target_eps_num = (
             rosparam_get(int, MAP_GENERATOR_NS("episode_per_map"), 1) * num_envs
+        )
+        self._generation_timeout = rosparam_get(
+            float, MAP_GENERATOR_NS("generation_timeout"), 60
         )
 
     def _set_config(self, config: DynamicMapConfiguration):
@@ -139,8 +143,12 @@ class Mod_DynamicMap(TM_Module):
         self.__map_request_pub.publish("")
 
         try:
-            rospy.wait_for_message(self.TOPIC_MAP, nav_msgs.OccupancyGrid, timeout=60)
-            rospy.wait_for_message(self.TOPIC_SIGNAL_MAP, std_msgs.String, timeout=120)
+            rospy.wait_for_message(
+                self.TOPIC_SIGNAL_MAP, std_msgs.String, timeout=self._generation_timeout
+            )
+            rospy.wait_for_message(
+                self.TOPIC_MAP, nav_msgs.OccupancyGrid, timeout=self._generation_timeout
+            )
         except rospy.ROSException:
             rospy.logwarn(
                 "[Map Generator] Timeout while waiting for new map. Continue with current map."

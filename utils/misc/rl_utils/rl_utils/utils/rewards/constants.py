@@ -18,6 +18,7 @@ class DEFAULTS:
     class APPROACH_GOAL:
         POS_FACTOR: float = 0.3
         NEG_FACTOR: float = 0.5
+        _TERM_THRESHOLD: float = 2.0
         _ON_SAFE_DIST_VIOLATION: bool = True
 
     class COLLISION:
@@ -42,6 +43,7 @@ class DEFAULTS:
 
     class REVERSE_DRIVE:
         REWARD: float = 0.01
+        THRESHOLD: float = -0.5
         _ON_SAFE_DIST_VIOLATION: bool = True
 
     class ABRUPT_VEL_CHANGE:

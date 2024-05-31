@@ -2,43 +2,20 @@ goal_reached:
   reward: 15
 
 safe_distance:
-  reward: -0.2
+  reward: -0.25
 
 collision:
-  reward: -10
-
-no_movement:
-  reward: -0.01
-  _on_safe_dist_violation: true
+  reward: -20
 
 approach_goal:
   pos_factor: 0.5
-  neg_factor: 0.6
+  neg_factor: 0.8
   _on_safe_dist_violation: true
-
-distance_travelled:
-  consumption_factor: 0.005
-  lin_vel_scalar: 1.0
-  ang_vel_scalar: 0.001
-  _on_safe_dist_violation: false
 
 reverse_drive:
-  reward: -0.0001
+  reward: -0.1
+  threshold: -0.5
   _on_safe_dist_violation: true
 
-approach_globalplan:
-  pos_factor: 0.3
-  neg_factor: 0.5
-  _on_safe_dist_violation: false
-
-follow_globalplan:
-  min_dist_to_path: 0.5
-  reward_factor: 0.1
-  _on_safe_dist_violation: false
-
-abrupt_velocity_change:
-  vel_factors:
-    "0": 0.3
-    "1": 0.07
-    "2": 0.07
-  _on_safe_dist_violation: true
+max_steps_exceeded:
+  reward: -10

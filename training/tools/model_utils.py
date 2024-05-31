@@ -2,6 +2,8 @@ import os
 import sys
 from typing import Callable, List
 
+import torch
+
 import rospy
 import wandb
 from rl_utils.utils.eval_callbacks.staged_train_callback import InitiateNewTrainStage
@@ -112,9 +114,7 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
     if not isinstance(model, RecurrentPPO):
         model._setup_rollout_buffer()
     else:
-        # model._setup_model()
-        # should reinit rolloutbuffer incase hyperparams change
-        pass
+        init_rppo_rollout_buffer(model)
 
     print("--------------------------------\n")
 
@@ -167,8 +167,8 @@ def get_ppo_instance(
         setup_wandb(config, model)
 
     model2_path = config["rl_agent"]["weight_transfer"]["model_path"]
-    if type(model2_path) is str and len(model2_path) > 0:
-        transfer_feature_extractor_weights(
+    if type(model2_path) is str and len(model2_path) > 0 and new_model:
+        transfer_weights(
             model1=model,
             model2=PPO.load(config["rl_agent"]["weight_transfer"]["model_path"]),
             include=config["rl_agent"]["weight_transfer"]["include"],
@@ -177,8 +177,8 @@ def get_ppo_instance(
 
     ## Save model once
 
-    if not rospy.get_param("debug_mode") and new_model:
-        save_model(model, paths)
+    # if not rospy.get_param("debug_mode") and new_model:
+    #     save_model(model, paths)
 
     return model
 
@@ -318,14 +318,14 @@ def init_callbacks(
     return eval_cb
 
 
-def transfer_feature_extractor_weights(
+def transfer_weights(
     model1: PPO, model2: PPO, include: List[str] = None, exclude: List[str] = None
 ):
     if include is None:
         rospy.logwarn("No include list provided. Skipping weight transfer.")
         return model1
 
-    if exclude[0].lower() == "none" or exclude[0] == "":
+    if len(exclude) == 0 or exclude[0].lower() == "none" or exclude[0] == "":
         exclude = ["---"]
 
     state_dict_model1 = model1.policy.state_dict()
@@ -336,9 +336,62 @@ def transfer_feature_extractor_weights(
         for key, value in state_dict_model2.items()
         if any(re.match(_key, key) for _key in include)
         and not any(item in key for item in exclude)
+        and key in state_dict_model1
+        and state_dict_model1[key].shape == value.shape
     }
 
-    rospy.loginfo(f"Transferring weights for keys {len(weights_dict.keys())}!")
+    rospy.loginfo(f"Transferring weights for {len(weights_dict.keys())} keys!")
+
+    # num_params = sum(p.numel() for p in model1.policy.parameters())
+    # num_params2 = sum(p.numel() for p in model2.policy.parameters())
 
     state_dict_model1.update(weights_dict)
     model1.policy.load_state_dict(state_dict_model1, strict=True)
+
+
+from sb3_contrib.common.recurrent.type_aliases import RNNStates
+from sb3_contrib.common.recurrent.buffers import (
+    RecurrentDictRolloutBuffer,
+    RecurrentRolloutBuffer,
+)
+from gymnasium import spaces
+
+
+def init_rppo_rollout_buffer(model: RecurrentPPO):
+    buffer_cls = (
+        RecurrentDictRolloutBuffer
+        if isinstance(model.observation_space, spaces.Dict)
+        else RecurrentRolloutBuffer
+    )
+    lstm = model.policy.lstm_actor
+
+    single_hidden_state_shape = (lstm.num_layers, model.n_envs, lstm.hidden_size)
+    # hidden and cell states for actor and critic
+    model._last_lstm_states = RNNStates(
+        (
+            torch.zeros(single_hidden_state_shape, device=model.device),
+            torch.zeros(single_hidden_state_shape, device=model.device),
+        ),
+        (
+            torch.zeros(single_hidden_state_shape, device=model.device),
+            torch.zeros(single_hidden_state_shape, device=model.device),
+        ),
+    )
+
+    hidden_state_buffer_shape = (
+        model.n_steps,
+        lstm.num_layers,
+        model.n_envs,
+        lstm.hidden_size,
+    )
+
+    model.rollout_buffer = buffer_cls(
+        model.n_steps,
+        model.observation_space,
+        model.action_space,
+        hidden_state_buffer_shape,
+        model.device,
+        gamma=model.gamma,
+        gae_lambda=model.gae_lambda,
+        n_envs=model.n_envs,
+    )

@@ -1,22 +1,20 @@
 import os
 from typing import Dict, List, Type
 
+import rosgraph_msgs.msg as rosgraph_msgs
 import rospy
+import std_msgs.msg as std_msgs
 from rospkg import RosPack
-
+from std_srvs.srv import Empty
 from task_generator.constants import Constants
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.world_manager import WorldManager
-from task_generator.shared import PositionOrientation, rosparam_get
+from task_generator.shared import Namespace, PositionOrientation, rosparam_get
 from task_generator.tasks import Task
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.robots import TM_Robots
-
-import std_msgs.msg as std_msgs
-import rosgraph_msgs.msg as rosgraph_msgs
-
 from task_generator.utils import ModelLoader
 
 
@@ -92,7 +90,7 @@ class TaskFactory:
                 obstacle_manager: ObstacleManager,
                 robot_managers: List[RobotManager],
                 world_manager: WorldManager,
-                namespace: str = "",
+                namespace: Namespace = "",
                 *args,
                 **kwargs,
             ):
@@ -153,9 +151,14 @@ class TaskFactory:
                     cls.registry_module[module](task=self) for module in modules
                 ]
 
+                self._step_world_srv = None
                 if self._train_mode:
-                    self.set_tm_robots(Constants.TaskMode.TM_Robots(rospy.get_param("tm_robots")))
-                    self.set_tm_obstacles(Constants.TaskMode.TM_Obstacles(rospy.get_param("tm_obstacles")))
+                    self.set_tm_robots(
+                        Constants.TaskMode.TM_Robots(rospy.get_param("tm_robots"))
+                    )
+                    self.set_tm_obstacles(
+                        Constants.TaskMode.TM_Obstacles(rospy.get_param("tm_obstacles"))
+                    )
 
             def set_tm_robots(self, tm_robots: Constants.TaskMode.TM_Robots):
                 """
@@ -314,19 +317,17 @@ class TaskFactory:
         return CombinedTask
 
 
-from .obstacles.random import TM_Random # noqa
-from .obstacles.scenario import TM_Scenario # noqa
-from .obstacles.parametrized import TM_Parametrized # noqa
-from .obstacles.zones import TM_Zones # noqa
-
-from .robots.random import TM_Random # noqa
-from .robots.guided import TM_Guided # noqa
-from .robots.explore import TM_Explore # noqa
-from .robots.scenario import TM_Scenario # noqa
-from .robots.zones import TM_Zones #noqa
-
-from .modules.clear_forbidden_zones import Mod_ClearForbiddenZones # noqa
-from .modules.dynamic_map import Mod_DynamicMap # noqa
-from .modules.rviz_ui import Mod_OverrideRobot # noqa
-from .modules.staged import Mod_Staged # noqa
-from .modules.benchmark import Mod_Benchmark # noqa
+from .modules.benchmark import Mod_Benchmark  # noqa
+from .modules.clear_forbidden_zones import Mod_ClearForbiddenZones  # noqa
+from .modules.dynamic_map import Mod_DynamicMap  # noqa
+from .modules.rviz_ui import Mod_OverrideRobot  # noqa
+from .modules.staged import Mod_Staged  # noqa
+from .obstacles.parametrized import TM_Parametrized  # noqa
+from .obstacles.random import TM_Random  # noqa
+from .obstacles.scenario import TM_Scenario  # noqa
+from .obstacles.zones import TM_Zones  # noqa
+from .robots.explore import TM_Explore  # noqa
+from .robots.guided import TM_Guided  # noqa
+from .robots.random import TM_Random  # noqa
+from .robots.scenario import TM_Scenario  # noqa
+from .robots.zones import TM_Zones  # noqa
