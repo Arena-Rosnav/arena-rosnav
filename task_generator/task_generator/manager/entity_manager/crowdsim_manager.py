@@ -37,6 +37,7 @@ from task_generator.simulators.flatland_simulator import FlatlandSimulator
 from typing import Callable, List
 
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
+from task_generator.simulators.unity_simulator import UnitySimulator
 from task_generator.utils import Utils, rosparam_get
 
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
@@ -465,7 +466,7 @@ class CrowdsimManager(EntityManager):
 
             for obstacle_id, obstacle in self._known_obstacles.items():
                 if purge >= obstacle.layer:
-                    if isinstance(self._simulator, GazeboSimulator):
+                    if isinstance(self._simulator, GazeboSimulator) or isinstance(self._simulator, UnitySimulator):
                         # TODO remove this once actors can be deleted properly
                         if isinstance(obstacle.obstacle, DynamicObstacle):
 

@@ -57,6 +57,14 @@ class DEFAULTS:
     class TWO_FACTOR_VEL_DIFF:
         ALPHA = 0.002
         BETA = 0.005
+        
+    class PED_SAFE_DISTANCE:
+        REWARD: float = -0.14
+        SAFE_DIST: float = 0.51
+
+    class OBS_SAFE_DISTANCE:
+        REWARD: float = -0.14
+        SAFE_DIST: float = 0.21
 
     class PED_TYPE_SPECIFIC_SAFETY_DISTANCE:
         TYPE: int = 1

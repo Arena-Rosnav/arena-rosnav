@@ -16,10 +16,9 @@
   <arg name="model" default="burger" doc="robot model type [burger, jackal, ridgeback, agvota, rto, ...]" />
   <arg name="inter_planner" default="bypass" doc="inter planner type [bypass, shortsighted, polite, aggressive, sideways]" />
   <arg name="local_planner" default="teb" doc="local planner type [teb, dwa, mpc, rlca, arena, rosnav, cohan]" />
-  <arg name="simulator" default="flatland" doc="[flatland, gazebo]" />
+  <arg name="simulator" default="flatland" doc="[flatland, gazebo, unity]" />
   <arg name="headless" default="0" doc="0 = show all, 1 = show only rviz, 2 = show nothing" />
   <env name="SIMULATOR" value="$(arg simulator)" />
-  <param name="headless" value="$(arg headless)" /> 
 
   <arg name="entity_manager" default="crowdsim" doc="[flatland, pedsim, crowdsim]" />
   <arg name="sfm" default="" doc="sfm for crowdsim [passthrough, pysocial]"/>
@@ -131,6 +130,17 @@
     <arg name="show_rviz" default="$(arg show_rviz)" />
     <arg name="world" value="$(arg world_file)"/>
     <arg name="headless" value="$(arg headless)" />
+  </include>
+
+  <!-- Unity -->
+  <arg name="development_mode" default="false" />
+  <arg name="headless_unity" default="false" />
+  <arg name="time_scale" default="1" />
+  <include file="$(find arena_bringup)/launch/testing/simulators/unity.launch" if="$(eval arg('simulator') == 'unity')">
+    <!--<arg name="world" default="$(arg world_file)" />-->
+    <arg name="development_mode" value="$(arg development_mode)" />
+    <arg name="headless" value="$(arg headless_unity)" />
+    <arg name="time_scale" value="$(arg time_scale)" />
   </include>
 
   <!-- map server-->

@@ -11,8 +11,8 @@ from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit im
 from sensor_msgs.msg import LaserScan
 from task_generator.shared import Namespace
 
-from ..constants import OBS_DICT_KEYS, TOPICS
-from ..utils import get_goal_pose_in_robot_frame, pose3d_to_pose2d
+from ..constants import OBS_DICT_KEYS, TOPICS, MAX_WAIT, SLEEP
+from ..utils import get_goal_pose_in_robot_frame, pose3d_to_pose2d, false_params
 from .collector_unit import CollectorUnit
 
 
@@ -137,6 +137,10 @@ class BaseCollectorUnit(CollectorUnit):
         Wait for the required data to be received.
         """
         pass
+
+        # NEED A MECHANISM TO WAIT FOR THE SIMULATION TO BE FULLY LOADED
+        # AND THEN WAIT FOR THE DATA TO BE RECEIVED
+
         # if self._first_reset:
         #     self._first_reset = False
         #     return
@@ -148,7 +152,7 @@ class BaseCollectorUnit(CollectorUnit):
         #     sleep(SLEEP)
 
         # raise TimeoutError(
-        #     f"Couldn't retrieve data for: {false_params(odom=self._received_odom, laser=self._received_scan, goal=self._received_goal)}"
+        #     f"Couldn't retrieve data for: {false_params(odom=self._received_odom, laser=self._received_scan, subgoal=self._received_goal)}"
         # )
 
     def get_observations(

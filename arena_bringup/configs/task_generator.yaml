@@ -22,3 +22,7 @@ RANDOM:
     min: 20
     max: 20
     models: ["actor1"]
+
+ZONES:
+  file: "zones.yaml"
+  scenario: "default.yaml"

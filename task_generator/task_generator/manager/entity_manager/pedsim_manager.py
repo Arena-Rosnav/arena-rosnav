@@ -37,8 +37,8 @@ from task_generator.simulators.flatland_simulator import FlatlandSimulator
 from typing import Callable, List
 
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
+from task_generator.simulators.unity_simulator import UnitySimulator
 from task_generator.utils import Utils, rosparam_get
-
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
 # TODO structure these together
@@ -526,7 +526,7 @@ class PedsimManager(EntityManager):
 
             for obstacle_id, obstacle in self._known_obstacles.items():
                 if purge >= obstacle.layer:
-                    if isinstance(self._simulator, GazeboSimulator):
+                    if isinstance(self._simulator, GazeboSimulator) or isinstance(self._simulator, UnitySimulator):
                         # TODO remove this once actors can be deleted properly
                         if isinstance(obstacle.obstacle, DynamicObstacle):
 
@@ -592,6 +592,9 @@ class PedsimManager(EntityManager):
             return
 
         if Utils.get_simulator() in [Constants.Simulator.FLATLAND]:
+            return
+        
+        if isinstance(self._simulator, UnitySimulator):
             return
 
         entity = self._known_obstacles.get(self.WALLS_ENTITY)
@@ -684,7 +687,7 @@ class PedsimManager(EntityManager):
                 # )
 
             else:
-                rospy.loginfo("Spawning dynamic obstacle: actor_id = %s", actor_id)
+                # rospy.loginfo("Spawning dynamic obstacle: actor_id = %s", actor_id)
 
                 self._simulator.spawn_entity(
                     entity=Obstacle(

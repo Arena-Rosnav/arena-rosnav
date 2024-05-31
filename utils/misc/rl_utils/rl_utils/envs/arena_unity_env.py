@@ -1,65 +1,44 @@
 #! /usr/bin/env python3
-import random
 import re
-import time
+import random
+
 from typing import Tuple
 
 import gymnasium
 import numpy as np
 import rospy
-from flatland_msgs.msg import StepWorld
+from rosgraph_msgs.msg import Clock
 from geometry_msgs.msg import Twist
 from rl_utils.envs.utils import get_obs_structure
-from rl_utils.utils.observation_collector.constants import DONE_REASONS, OBS_DICT_KEYS
+from rl_utils.utils.observation_collector.constants import DONE_REASONS
 from rl_utils.utils.observation_collector.observation_manager import ObservationManager
+from rl_utils.utils.observation_collector.observation_units.base_collector_unit import BaseCollectorUnit
+from rl_utils.utils.observation_collector.observation_units.unity_collector_unit import UnityCollectorUnit
+from rl_utils.utils.observation_collector.observation_units.rgbd_collector_unit import RgbdCollectorUnit
+from rl_utils.utils.observation_collector.observation_units.globalplan_collector_unit import GlobalplanCollectorUnit
+from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import SemanticAggregateUnit
 from rl_utils.utils.rewards.reward_function import RewardFunction
+from rl_utils.utils.arena_unity_utils.unity_timer import UnityTimer
 from rosnav.model.base_agent import BaseAgent
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
 from std_srvs.srv import Empty
 from task_generator.shared import Namespace
 from task_generator.task_generator_node import TaskGenerator
 from task_generator.utils import rosparam_get
-from task_generator.tasks import Task
-from typing import Type
 
 
-class FlatlandEnv(gymnasium.Env):
+def get_ns_idx(ns: str):
+    try:
+        return int(re.search(r"\d+", ns)[0])
+    except Exception:
+        return random.uniform(0, 3)
+        # return 0.5
+
+
+class ArenaUnityEnv(gymnasium.Env):
+    """That's an environment for Arena Unity
     """
-    FlatlandEnv is an environment class that represents a Flatland environment for reinforcement learning.
-
-    Args:
-        ns (str): The namespace of the environment.
-        agent_description (BaseAgent): The agent description.
-        reward_fnc (str): The name of the reward function.
-        max_steps_per_episode (int): The maximum number of steps per episode.
-        trigger_init (bool): Whether to trigger the initialization of the environment.
-        *args: Additional positional arguments.
-        **kwargs: Additional keyword arguments.
-
-    Attributes:
-        metadata (dict): The metadata of the environment.
-        ns (str): The namespace of the environment.
-        _agent_description (BaseAgent): The agent description.
-        _debug_mode (bool): Whether the environment is in debug mode.
-        _is_train_mode (bool): Whether the environment is in train mode.
-        _step_size (float): The step size of the environment.
-        _reward_fnc (str): The name of the reward function.
-        _kwargs (dict): Additional keyword arguments.
-        _steps_curr_episode (int): The current number of steps in the episode.
-        _episode (int): The current episode number.
-        _max_steps_per_episode (int): The maximum number of steps per episode.
-        _last_action (np.ndarray): The last action taken in the environment.
-        model_space_encoder (RosnavSpaceManager): The space encoder for the model.
-        task (BaseTask): The task manager for the environment.
-        reward_calculator (RewardFunction): The reward calculator for the environment.
-        agent_action_pub (rospy.Publisher): The publisher for agent actions.
-        _service_name_step (str): The name of the step world service.
-        _step_world_publisher (rospy.Publisher): The publisher for the step world service.
-        _step_world_srv (rospy.ServiceProxy): The service proxy for the step world service.
-        observation_collector (ObservationManager): The observation collector for the environment.
-
-    """
-
+    
     metadata = {"render_modes": ["human"]}
 
     def __init__(
@@ -75,7 +54,12 @@ class FlatlandEnv(gymnasium.Env):
         *args,
         **kwargs,
     ):
-        super(FlatlandEnv, self).__init__()
+        """
+        Just sets all the given parameters as properties
+        """
+        rospy.loginfo("[Unity Env ns:" + ns + "]: Starting intialization")
+        
+        super(ArenaUnityEnv, self).__init__()
 
         self.ns = Namespace(ns)
         self._agent_description = agent_description
@@ -87,47 +71,52 @@ class FlatlandEnv(gymnasium.Env):
 
         self._is_train_mode = rospy.get_param_cached("/train_mode", default=True)
         self._step_size = rospy.get_param_cached("/step_size")
+        rospy.loginfo("[Unity Env ns:" + ns + "]: Step size " + str(self._step_size))
 
         self._reward_fnc = reward_fnc
-        self._reward_fnc_kwargs = reward_fnc_kwargs if reward_fnc_kwargs else {}
-        self._obs_unit_kwargs = obs_unit_kwargs if obs_unit_kwargs else {}
-        self._task_generator_kwargs = (
-            task_generator_kwargs if task_generator_kwargs else {}
-        )
 
         self._steps_curr_episode = 0
         self._episode = 0
         self._max_steps_per_episode = max_steps_per_episode
         self._last_action = np.array([0, 0, 0])  # linear x, linear y, angular z
+        
+        self._reward_fnc_kwargs = reward_fnc_kwargs if reward_fnc_kwargs else {}
+        self._obs_unit_kwargs = obs_unit_kwargs if obs_unit_kwargs else {}
+        self._task_generator_kwargs = (
+            task_generator_kwargs if task_generator_kwargs else {}
+        )
+        
+        self._obs_unit_kwargs = obs_unit_kwargs if obs_unit_kwargs else {}
 
         if not trigger_init:
             self.init()
+            
+        rospy.loginfo("[Unity Env ns:" + self.ns + "]: Intialization done")
 
     def init(self):
         """
         Initializes the environment.
+        Intializes space encoders.
 
         Returns:
             bool: True if the initialization is successful, False otherwise.
         """
         self.model_space_encoder = RosnavSpaceManager(
-            simulation_ns=self.ns,
             space_encoder_class=self._agent_description.space_encoder_class,
             observation_spaces=self._agent_description.observation_spaces,
             observation_space_kwargs=self._agent_description.observation_space_kwargs,
         )
 
         if self._is_train_mode:
-            self._setup_env_for_training(
-                self._reward_fnc, **self._task_generator_kwargs
-            )
+            rospy.loginfo("[Unity Env ns:" + self.ns + "]: Setting up env for training")
+            self._setup_env_for_training(self._reward_fnc, **self._task_generator_kwargs)
 
-        # observation collector
+        # observation collectors including the Unity-specific observation collector
         obs_structure = get_obs_structure()
         self.observation_collector = ObservationManager(
             ns=self.ns,
             obs_structur=obs_structure,
-            obs_unit_kwargs=self._obs_unit_kwargs,
+            obs_unit_kwargs=self._obs_unit_kwargs
         )
         return True
 
@@ -142,7 +131,7 @@ class FlatlandEnv(gymnasium.Env):
     def _setup_env_for_training(self, reward_fnc: str, **kwargs):
         # instantiate task manager
         task_generator = TaskGenerator(self.ns.simulation_ns)
-        self.task: Type[Task] = task_generator._get_predefined_task(**kwargs)
+        self.task = task_generator._get_predefined_task(**kwargs)
 
         # reward calculator
         self.reward_calculator = RewardFunction(
@@ -151,23 +140,21 @@ class FlatlandEnv(gymnasium.Env):
             robot_radius=self.task.robot_managers[0]._robot_radius,
             safe_dist=self.task.robot_managers[0].safe_distance,
             goal_radius=rosparam_get(float, "goal_radius", 0.3),
-            distinguished_safe_dist=rosparam_get(
-                bool, "rl_agent/distinguished_safe_dist", False
-            ),
+            distinguished_safe_dist=rosparam_get(bool, "rl_agent/distinguished_safe_dist", False),
             ns=self.ns,
             max_steps=self._max_steps_per_episode,
-            **self._reward_fnc_kwargs,
+            **self._reward_fnc_kwargs
         )
 
         self.agent_action_pub = rospy.Publisher(self.ns("cmd_vel"), Twist, queue_size=1)
 
-        # service clients
-        self._service_name_step = self.ns.simulation_ns("step_world")
-        self._step_world_publisher = rospy.Publisher(
-            self._service_name_step, StepWorld, queue_size=10
-        )
-        self._step_world_srv = rospy.ServiceProxy(
-            self._service_name_step, Empty, persistent=True
+        # Unity specific 
+        clock_topic = self.ns.simulation_ns("clock")
+        clock_msg = rospy.wait_for_message(clock_topic, Clock, timeout=30)
+        self._unity_timer = UnityTimer(
+            self._step_size,
+            rospy.Time(clock_msg.clock.secs, clock_msg.clock.nsecs),
+            clock_topic
         )
 
     def _pub_action(self, action: np.ndarray) -> Twist:
@@ -197,19 +184,22 @@ class FlatlandEnv(gymnasium.Env):
             tuple: A tuple containing the encoded observation, reward, done flag, info dictionary, and False flag.
 
         """
+        if self._is_train_mode:
+            self._unity_timer.wait_for_next_update()
 
         decoded_action = self._decode_action(action)
+        # rospy.loginfo("[Unity Env ns:" + self.ns + "]: Publishing action.")
         self._pub_action(decoded_action)
-
-        if self._is_train_mode:
-            self.call_service_takeSimStep()
 
         obs_dict = self.observation_collector.get_observations(
             last_action=self._last_action
         )
+        # rospy.loginfo("[Unity Env ns:" + self.ns + "]: Observations: " + str(obs_dict))
+        
         self._last_action = decoded_action
 
         # calculate reward
+        # rospy.loginfo("[Unity Env ns:" + self.ns + "]: Calculating Rewards.")
         reward, reward_info = self.reward_calculator.get_reward(
             action=decoded_action,
             **obs_dict,
@@ -225,20 +215,15 @@ class FlatlandEnv(gymnasium.Env):
         )
 
         return (
-            self._encode_observation(obs_dict),
+            self._encode_observation(obs_dict, is_done=done),
             reward,
             done,
             False,
             info,
         )
 
-    def call_service_takeSimStep(self, t: float = None, srv_call: bool = True):
-        if srv_call:
-            self._step_world_srv()
-        request = StepWorld()
-        request.required_time = self._step_size if t is None else t
-
-        self._step_world_publisher.publish(request)
+    def unity_clock_cb(self, time_msg: Clock):
+        pass
 
     def reset(self, seed=None, options=None):
         """
@@ -252,18 +237,12 @@ class FlatlandEnv(gymnasium.Env):
             tuple: A tuple containing the encoded observation and an empty info dictionary.
 
         """
-
+        # rospy.loginfo("[Unity Env ns:" + self.ns + "]: Resetting.")
         super().reset(seed=seed)
         self._episode += 1
-
-        # make sure all simulation components are ready before first episode
-        if self._episode <= 1:
-            for _ in range(6):
-                self.agent_action_pub.publish(Twist())
-                self.call_service_takeSimStep()
+        self.agent_action_pub.publish(Twist())
 
         first_map = self._episode <= 1 if "sim_1" in self.ns else False
-
         self.task.reset(
             first_map=first_map,
             reset_after_new_map=self._steps_curr_episode == 0,
@@ -273,13 +252,10 @@ class FlatlandEnv(gymnasium.Env):
         self._last_action = np.array([0, 0, 0])
 
         if self._is_train_mode:
-            # extra step for planning serivce to provide global plan
-            for _ in range(3):
-                self.agent_action_pub.publish(Twist())
-                self.call_service_takeSimStep()
+            self.agent_action_pub.publish(Twist())
+            self._unity_timer.wait_for_next_update()
 
         obs_dict = self.observation_collector.get_observations()
-        obs_dict.update({OBS_DICT_KEYS.DONE: True})
         info_dict = {}
         return (
             self._encode_observation(obs_dict),
@@ -291,6 +267,7 @@ class FlatlandEnv(gymnasium.Env):
         Close the environment.
 
         """
+        rospy.loginfo("[Unity Env ns:" + self.ns + "]: Closing environment.")
         pass
 
     def _determine_termination(
@@ -310,7 +287,8 @@ class FlatlandEnv(gymnasium.Env):
             info (dict): Additional information.
 
         Returns:
-            tuple: A tuple containing the info dictionary and a boolean flag indicating if the episode should terminate.
+            tuple: A tuple containing the info dictionary and a boolean flag indicating if 
+            the episode should terminate.
 
         """
 
@@ -331,3 +309,6 @@ class FlatlandEnv(gymnasium.Env):
             info["episode_length"] = self._steps_curr_episode
 
         return info, terminated
+    
+    def render(self):
+        pass
