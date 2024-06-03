@@ -9,7 +9,7 @@ collision:
 
 approach_goal:
   pos_factor: 0.5
-  neg_factor: 0.6
+  neg_factor: 0.75
   _on_safe_dist_violation: true
 
 reverse_drive:
@@ -23,8 +23,8 @@ reverse_drive:
 #   _on_safe_dist_violation: true
 
 two_factor_velocity_difference:
-  alpha: 0.005
-  beta: 0.005
+  alpha: 0.002
+  beta: 0.0025
   _on_safe_dist_violation: true
 
 # active_heading_direction:
