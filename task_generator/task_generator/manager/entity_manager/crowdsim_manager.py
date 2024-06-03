@@ -465,8 +465,8 @@ class CrowdsimManager(EntityManager):
 
     def remove_obstacles(self, purge):
         # unused not always previously called
-        if Utils.get_simulator() in [Constants.Simulator.FLATLAND]:
-            return
+        # if Utils.get_simulator() in [Constants.Simulator.FLATLAND]:
+        #     return
 
         if not self._is_paused:
             self._is_paused = True
