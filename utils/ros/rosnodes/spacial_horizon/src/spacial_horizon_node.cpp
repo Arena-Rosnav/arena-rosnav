@@ -14,6 +14,7 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
 
     /*  fsm param  */
     nh.param("/disable_intermediate_planner", disable_intermediate_planner, false);
+    nh.param("fsm/publish_goal_on_subgoal_fail", publish_goal_on_subgoal_fail, true);
     nh.param("fsm/goal_tolerance", goal_tolerance, 0.2);
     nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 1.0);
     nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 0.1);
@@ -144,6 +145,11 @@ bool SpacialHorizon::getSubgoal(Eigen::Vector2d &subgoal)
 
             return true;
         }
+    }
+
+    if (publish_goal_on_subgoal_fail)
+    {
+        subgoal = end_pos;
     }
 
     return false;
