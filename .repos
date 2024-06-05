@@ -30,7 +30,7 @@ repositories:
   arena/utils/pedsim_ros:
     type: git
     url: https://github.com/arena-rosnav/pedsim_ros.git
-    version: f09987bd
+    version: 233165b
   arena/utils/stable-baselines3:
     type: git
     url: https://github.com/Arena-Rosnav/stable-baselines3.git
