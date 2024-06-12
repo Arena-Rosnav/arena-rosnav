@@ -1,35 +1,42 @@
-import rospy
+from typing import Tuple
 
-from task_generator.utils import Utils
-from task_generator.constants import Constants
-
-from rl_utils.utils.observation_collector.observation_units.base_collector_unit import BaseCollectorUnit
-from rl_utils.utils.observation_collector.observation_units.unity_collector_unit import UnityCollectorUnit
-from rl_utils.utils.observation_collector.observation_units.rgbd_collector_unit import RgbdCollectorUnit
-from rl_utils.utils.observation_collector.observation_units.globalplan_collector_unit import GlobalplanCollectorUnit
-from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import SemanticAggregateUnit
+from rl_utils.utils.observation_collector.constants import DONE_REASONS
 
 
-def get_obs_structure():
-    structure = []
-    
-    # default units
-    structure.append(BaseCollectorUnit)
-    structure.append(GlobalplanCollectorUnit)
-    structure.append(SemanticAggregateUnit)
+def determine_termination(
+    reward_info: dict,
+    curr_steps: int,
+    max_steps: int,
+    info: dict = None,
+) -> Tuple[dict, bool]:
+    """
+    Determine if the episode should terminate.
 
-    train_mode = rospy.get_param("train_mode", True)
-    if sim_is_unity() and train_mode:
-        structure.append(UnityCollectorUnit)
+    Args:
+        reward_info (dict): The reward information.
+        curr_steps (int): The current number of steps in the episode.
+        max_steps (int): The maximum number of steps per episode.
+        info (dict): Additional information.
 
-    enable_rgbd = rospy.get_param("rgbd/enabled", False)
-    if enable_rgbd:
-        structure.append(RgbdCollectorUnit)
-    
-    return structure
+    Returns:
+        tuple: A tuple containing the info dictionary and a boolean flag indicating if the episode should terminate.
 
-def sim_is_flatland():
-    return Utils.get_simulator() == Constants.Simulator.FLATLAND
+    """
 
-def sim_is_unity():
-    return Utils.get_simulator() == Constants.Simulator.UNITY
+    if info is None:
+        info = {}
+
+    terminated = reward_info["is_done"]
+
+    if terminated:
+        info["done_reason"] = reward_info["done_reason"]
+        info["is_success"] = reward_info["is_success"]
+        info["episode_length"] = curr_steps
+
+    if curr_steps >= max_steps:
+        terminated = True
+        info["done_reason"] = DONE_REASONS.STEP_LIMIT.name
+        info["is_success"] = 0
+        info["episode_length"] = curr_steps
+
+    return info, terminated
