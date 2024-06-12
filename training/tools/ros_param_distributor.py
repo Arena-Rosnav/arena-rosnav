@@ -36,7 +36,7 @@ def populate_ros_params(params: dict, paths: dict):
 
     # populate laser params
     populate_laser_params(params)
-    
+
     # populate rgbd params
     populate_rgbd_params(params)
 
@@ -69,14 +69,11 @@ def populate_laser_params(params: dict):
             "laser/reduced_num_laser_beams",
             params["rl_agent"]["laser"]["reduce_num_beams"]["num_beams"],
         )
-        
+
 
 def populate_rgbd_params(params: dict):
     with contextlib.suppress(KeyError):
-        rospy.set_param(
-            "rgbd/enabled",
-            params["rl_agent"]["rgbd"]["enabled"]
-        )
+        rospy.set_param("rgbd/enabled", params["rl_agent"]["rgbd"]["enabled"])
 
 
 def populate_discrete_action_space(params: dict):
@@ -103,18 +100,6 @@ def populate_discrete_action_space(params: dict):
         discrete_actions_dict = actions["discrete"]
 
     rospy.set_param("actions/discrete", discrete_actions_dict)
-
-
-def determine_space_encoder(frame_stacking: bool, reduced_laser: bool):
-    return "SemanticResNetSpaceEncoder"
-    if frame_stacking and not reduced_laser:
-        return "StackedEncoder"
-    elif not frame_stacking and reduced_laser:
-        return "ReducedLaserEncoder"
-    elif frame_stacking and reduced_laser:
-        return "StackedReducedLaserEncoder"
-    else:
-        return "DefaultEncoder"
 
 
 def populate_ros_configs(config):

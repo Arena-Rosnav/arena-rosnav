@@ -145,7 +145,7 @@ def save_model(model: PPO, paths: dict, file_name: str = "best_model") -> None:
 
 def get_ppo_instance(
     agent_description: BaseAgent,
-    observation_manager,
+    observation_space_manager,
     config: dict,
     train_env: VecEnv,
     paths: dict,
@@ -155,7 +155,7 @@ def get_ppo_instance(
     )
     if new_model:
         model = instantiate_new_model(
-            agent_description, observation_manager, config, train_env, paths
+            agent_description, observation_space_manager, config, train_env, paths
         )
     else:
         model = load_model(config, train_env, paths, agent_description)
@@ -185,7 +185,7 @@ def get_ppo_instance(
 
 def instantiate_new_model(
     agent_description: BaseAgent,
-    observation_manager,
+    observation_space_manager,
     config: dict,
     train_env: VecEnv,
     PATHS: dict,
@@ -218,7 +218,7 @@ def instantiate_new_model(
         policy_kwargs = agent_description.get_kwargs()
         policy_kwargs["features_extractor_kwargs"][
             "observation_space_manager"
-        ] = observation_manager
+        ] = observation_space_manager
         policy_kwargs["features_extractor_kwargs"]["stacked_obs"] = config["rl_agent"][
             "frame_stacking"
         ]["enabled"]
