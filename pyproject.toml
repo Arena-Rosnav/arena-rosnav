@@ -66,5 +66,6 @@ requires = ["setuptools==62.2.0", "wheel==0.38.4"]
 build-backend = "setuptools.build_meta"
 
 [[tool.poetry.source]]
-name = "pypi-public"
-url = "https://pypi.org/simple/"
+name = "PyPI"
+priority = "primary"
+
