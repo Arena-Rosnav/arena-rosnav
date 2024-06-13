@@ -219,11 +219,9 @@ def instantiate_new_model(
         ppo_kwargs["policy"] = agent_description.type.value
 
         # get policy description kwargs
-        policy_kwargs = agent_description.get_kwargs()
-        update_features_extractor_kwargs(
-            config=config,
-            features_extractor_kwargs=policy_kwargs["features_extractor_kwargs"],
+        policy_kwargs = agent_description.get_kwargs(
             observation_space_manager=observation_space_manager,
+            stacked=config["rl_agent"]["frame_stacking"]["enabled"],
         )
         ppo_kwargs["policy_kwargs"] = policy_kwargs
     elif issubclass(agent_description, ActorCriticPolicy):
@@ -238,28 +236,6 @@ def instantiate_new_model(
 
     is_lstm = "LSTM" in agent_description.type.name
     return RecurrentPPO(**ppo_kwargs) if is_lstm else PPO(**ppo_kwargs)
-
-
-def update_features_extractor_kwargs(
-    config: dict, features_extractor_kwargs: dict, **kwargs
-):
-    """
-    This method updates dynamic components and parameters that should be parsed to the features extractor.
-
-    Args:
-        config (dict): The configuration dictionary.
-        features_extractor_kwargs (dict): The dictionary containing the features extractor keyword arguments.
-        **kwargs: Additional keyword arguments.
-
-    Returns:
-        None
-    """
-    features_extractor_kwargs["observation_space_manager"] = kwargs[
-        "observation_space_manager"
-    ]
-    features_extractor_kwargs["stacked_obs"] = config["rl_agent"]["frame_stacking"][
-        "enabled"
-    ]
 
 
 def load_model(
@@ -281,15 +257,12 @@ def load_model(
 
     # DYNAMIC POLICY UPDATE WHEN LOADING MODEL
     # (keeps package paths and module names flexible during deserilization)
-    custom_objects = {"policy_kwargs": agent_description.get_kwargs()}
-    # update feature extractor kwargs
-    update_features_extractor_kwargs(
-        config=config,
-        features_extractor_kwargs=custom_objects["policy_kwargs"][
-            "features_extractor_kwargs"
-        ],
-        observation_space_manager=observation_space_manager,
-    )
+    custom_objects = {
+        "policy_kwargs": agent_description.get_kwargs(
+            observation_space_manager=observation_space_manager,
+            stacked=config["rl_agent"]["frame_stacking"]["enabled"],
+        )
+    }
 
     for name in possible_agent_names:
         target_path = os.path.join(PATHS["model"], f"{checkpoint}.zip")
