@@ -158,7 +158,9 @@ def get_ppo_instance(
             agent_description, observation_space_manager, config, train_env, paths
         )
     else:
-        model = load_model(config, train_env, paths, agent_description)
+        model = load_model(
+            config, train_env, paths, agent_description, observation_space_manager
+        )
         update_hyperparam_model(model, paths, config)
 
     wandb_logging: bool = not config["debug_mode"] and config["monitoring"]["use_wandb"]
@@ -215,13 +217,14 @@ def instantiate_new_model(
 
     if isinstance(agent_description, BaseAgent):
         ppo_kwargs["policy"] = agent_description.type.value
+
+        # get policy description kwargs
         policy_kwargs = agent_description.get_kwargs()
-        policy_kwargs["features_extractor_kwargs"][
-            "observation_space_manager"
-        ] = observation_space_manager
-        policy_kwargs["features_extractor_kwargs"]["stacked_obs"] = config["rl_agent"][
-            "frame_stacking"
-        ]["enabled"]
+        update_features_extractor_kwargs(
+            config=config,
+            features_extractor_kwargs=policy_kwargs["features_extractor_kwargs"],
+            observation_space_manager=observation_space_manager,
+        )
         ppo_kwargs["policy_kwargs"] = policy_kwargs
     elif issubclass(agent_description, ActorCriticPolicy):
         raise NotImplementedError("ActorCriticPolicy not implemented yet!")
@@ -237,12 +240,34 @@ def instantiate_new_model(
     return RecurrentPPO(**ppo_kwargs) if is_lstm else PPO(**ppo_kwargs)
 
 
-sys.modules["rl_agent"] = sys.modules["rosnav"]
-sys.modules["rl_utils.rl_utils.utils"] = sys.modules["rosnav.utils"]
+def update_features_extractor_kwargs(
+    config: dict, features_extractor_kwargs: dict, **kwargs
+):
+    """
+    This method updates dynamic components and parameters that should be parsed to the features extractor.
+
+    Args:
+        config (dict): The configuration dictionary.
+        features_extractor_kwargs (dict): The dictionary containing the features extractor keyword arguments.
+        **kwargs: Additional keyword arguments.
+
+    Returns:
+        None
+    """
+    features_extractor_kwargs["observation_space_manager"] = kwargs[
+        "observation_space_manager"
+    ]
+    features_extractor_kwargs["stacked_obs"] = config["rl_agent"]["frame_stacking"][
+        "enabled"
+    ]
 
 
 def load_model(
-    config: dict, train_env: VecEnv, PATHS: dict, agent_discription: BaseAgent
+    config: dict,
+    train_env: VecEnv,
+    PATHS: dict,
+    agent_description: BaseAgent,
+    observation_space_manager,
 ) -> PPO:
     agent_name = config["agent_name"]
     checkpoint = config["rl_agent"]["checkpoint"]
@@ -254,14 +279,35 @@ def load_model(
         "model",
     ]
 
+    # DYNAMIC POLICY UPDATE WHEN LOADING MODEL
+    # (keeps package paths and module names flexible during deserilization)
+    custom_objects = {"policy_kwargs": agent_description.get_kwargs()}
+    # update feature extractor kwargs
+    update_features_extractor_kwargs(
+        config=config,
+        features_extractor_kwargs=custom_objects["policy_kwargs"][
+            "features_extractor_kwargs"
+        ],
+        observation_space_manager=observation_space_manager,
+    )
+
     for name in possible_agent_names:
         target_path = os.path.join(PATHS["model"], f"{checkpoint}.zip")
         if os.path.isfile(target_path):
             rospy.loginfo(f"Loading model from {target_path}")
-            if "lstm" in agent_discription.type.value.lower():
-                model = RecurrentPPO.load(os.path.join(PATHS["model"], name), train_env)
+
+            if "lstm" in agent_description.type.value.lower():
+                model = RecurrentPPO.load(
+                    os.path.join(PATHS["model"], name),
+                    train_env,
+                    custom_objects=custom_objects,
+                )
                 break
-            model = PPO.load(os.path.join(PATHS["model"], name), train_env)
+            model = PPO.load(
+                os.path.join(PATHS["model"], name),
+                train_env,
+                custom_objects=custom_objects,
+            )
             break
 
     if not model:
