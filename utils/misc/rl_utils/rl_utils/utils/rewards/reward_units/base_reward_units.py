@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Type
 
 import numpy as np
-from rl_utils.utils.observation_collector import ObservationCollectorUnit
+from rl_utils.utils.observation_collector import TypeObservationGeneric
 from scipy.spatial import cKDTree
 
 from ..reward_function import RewardFunction
@@ -21,7 +21,7 @@ class RewardUnit(ABC):
         _on_safe_dist_violation (bool): Whether the unit is applied on safe distance violation.
     """
 
-    required_observations: List[Type[ObservationCollectorUnit]]
+    required_observations: List[TypeObservationGeneric]
 
     def __init__(
         self,
@@ -74,7 +74,7 @@ class RewardUnit(ABC):
         Args:
             value (float): _description_
         """
-        self._reward_function.add_reward(value=value)
+        self._reward_function.add_reward(value=value, called_by=self.__class__.__name__)
 
     def add_info(self, info: dict):
         """Adds the given information to the episode's info dict.
