@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-from typing import Type
+from typing import Tuple, Type
 
 import gymnasium
 import numpy as np
@@ -15,6 +15,7 @@ from rl_utils.utils.observation_collector.observation_manager import Observation
 from rl_utils.utils.rewards.reward_function import RewardFunction
 from rosnav.model.base_agent import BaseAgent
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
+from rosnav.utils.observation_space import EncodedObservationDict
 from std_srvs.srv import Empty
 from task_generator.shared import Namespace
 from task_generator.task_generator_node import TaskGenerator
@@ -53,7 +54,7 @@ class FlatlandEnv(gymnasium.Env):
         agent_description: BaseAgent,
         reward_fnc: str,
         max_steps_per_episode=100,
-        trigger_init: bool = False,
+        init_by_call: bool = False,
         obs_unit_kwargs=None,
         reward_fnc_kwargs=None,
         task_generator_kwargs=None,
@@ -68,7 +69,7 @@ class FlatlandEnv(gymnasium.Env):
             agent_description (BaseAgent): The agent description.
             reward_fnc (str): The reward function.
             max_steps_per_episode (int, optional): The maximum number of steps per episode. Defaults to 100.
-            trigger_init (bool, optional): Whether to trigger initialization from outside. Defaults to False.
+            init_by_call (bool, optional): Whether to trigger initialization from outside. Defaults to False.
             obs_unit_kwargs (dict, optional): Additional keyword arguments for the observation unit. Defaults to None.
             reward_fnc_kwargs (dict, optional): Additional keyword arguments for the reward function. Defaults to None.
             task_generator_kwargs (dict, optional): Additional keyword arguments for the task generator. Defaults to None.
@@ -99,7 +100,7 @@ class FlatlandEnv(gymnasium.Env):
         self._episode = 0
         self._max_steps_per_episode = max_steps_per_episode
 
-        if not trigger_init:
+        if not init_by_call:
             self.init()
 
     def init(self):
@@ -238,7 +239,9 @@ class FlatlandEnv(gymnasium.Env):
         """
         return self.model_space_encoder.encode_observation(observation, **kwargs)
 
-    def step(self, action: np.ndarray):
+    def step(
+        self, action: np.ndarray
+    ) -> Tuple[EncodedObservationDict, float, bool, bool, dict]:
         """
         Take a step in the environment.
 
@@ -278,7 +281,7 @@ class FlatlandEnv(gymnasium.Env):
             info,
         )
 
-    def reset(self, seed=None, options=None):
+    def reset(self, seed=None, options=None) -> Tuple[EncodedObservationDict, dict]:
         """
         Reset the environment.
 

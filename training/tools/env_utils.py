@@ -89,7 +89,7 @@ def _init_env_fnc(
     reward_fnc: str,
     max_steps_per_episode: int,
     seed: int = 0,
-    trigger_init: bool = False,
+    init_by_call: bool = False,
     obs_unit_kwargs: dict = None,
     reward_fnc_kwargs: dict = None,
     task_generator_kwargs: dict = None,
@@ -125,7 +125,7 @@ def _init_env_fnc(
             agent_description=agent_description,
             reward_fnc=reward_fnc,
             max_steps_per_episode=max_steps_per_episode,
-            trigger_init=trigger_init,
+            init_by_call=init_by_call,
             obs_unit_kwargs=obs_unit_kwargs,
             reward_fnc_kwargs=reward_fnc_kwargs,
             task_generator_kwargs=task_generator_kwargs,
@@ -164,7 +164,7 @@ def make_envs(
             agent_description=agent_description,
             reward_fnc=config["rl_agent"]["reward_fnc"],
             max_steps_per_episode=config["max_num_moves_per_eps"],
-            trigger_init=True if not config["debug_mode"] else False,
+            init_by_call=True if not config["debug_mode"] else False,
             obs_unit_kwargs=None,
             reward_fnc_kwargs=config["rl_agent"]["reward_fnc_kwargs"],
         )
@@ -179,7 +179,7 @@ def make_envs(
             max_steps_per_episode=config["callbacks"]["periodic_eval"][
                 "max_num_moves_per_eps"
             ],
-            trigger_init=False,
+            init_by_call=False,
             obs_unit_kwargs=None,
             reward_fnc_kwargs=config["rl_agent"]["reward_fnc_kwargs"],
         )
