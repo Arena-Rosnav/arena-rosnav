@@ -56,7 +56,7 @@ class UnityEnv(FlatlandEnv):
 
         """
         rospy.loginfo("[Unity Env ns:" + self.ns + "]: Closing environment.")
-        pass
+        rospy.signal_shutdown("Closing Unity environment.")
 
     def _before_task_reset(self):
         """

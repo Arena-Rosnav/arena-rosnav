@@ -323,7 +323,7 @@ class FlatlandEnv(gymnasium.Env):
         Close the environment.
 
         """
-        pass
+        rospy.signal_shutdown("Closing environment...")
 
     def _before_task_reset(self):
         """
