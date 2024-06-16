@@ -4,6 +4,7 @@ from .collectors import *
 from .generators import *
 from .static import *
 
+
 # Type Variables
 ObservationGenerator = TypeVar("ObservationGenerator", bound=ObservationGeneratorUnit)
 ObservationCollector = TypeVar("ObservationCollector", bound=ObservationCollectorUnit)
@@ -15,6 +16,7 @@ ObservationGenericName = str
 ObservationGenericDataClass = Union[
     ObservationCollectorUnit.data_class, ObservationGeneratorUnit.data_class
 ]
+
 ObservationDict = Dict[ObservationGenericName, ObservationGenericDataClass]
 
 ObservationCollectorDataClass = TypeVar("ObservationCollectorDataClass")

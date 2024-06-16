@@ -3,7 +3,7 @@ OBSERVATIONS THAT ACTIVELY LISTEN TO TOPICS AND PREPROCESS MESSAGES
 """
 
 from abc import ABC
-from typing import Type
+from typing import Type, ClassVar
 
 import geometry_msgs.msg as geometry_msgs
 import nav_msgs.msg as nav_msgs
@@ -36,7 +36,7 @@ class LaserCollector(ObservationCollectorUnit):
         data_class (Type[np.ndarray]): The data class for storing the collected laser scan observations.
     """
 
-    name: str = "laser_scan"
+    name: ClassVar[str] = "laser_scan"
     topic: str = "scan"
     msg_data_class: Type[sensor_msgs.LaserScan] = sensor_msgs.LaserScan
     data_class: Type[np.ndarray] = np.ndarray

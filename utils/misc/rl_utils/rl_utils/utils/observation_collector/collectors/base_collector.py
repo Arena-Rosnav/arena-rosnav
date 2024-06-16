@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Type, TypeVar
+from typing import Type, TypeVar, ClassVar
 
 import rospy
 import numpy as np
@@ -9,7 +9,7 @@ D = TypeVar("D")
 
 
 class BaseUnit(ABC):
-    name: str
+    name: ClassVar[str]
 
     def __init__(self, *args, **kwargs) -> None:
         pass
@@ -35,7 +35,7 @@ class ObservationCollectorUnit(BaseUnit, ABC):
 
     """
 
-    name: str = ""
+    name: ClassVar[str] = ""
     topic: str = ""
     msg_data_class: Type[T] = T
     data_class: Type[D] = D
