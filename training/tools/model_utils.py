@@ -218,10 +218,13 @@ def instantiate_new_model(
     if isinstance(agent_description, BaseAgent):
         ppo_kwargs["policy"] = agent_description.type.value
 
+        frame_stacking_cfg = config["rl_agent"]["frame_stacking"]
         # get policy description kwargs
         policy_kwargs = agent_description.get_kwargs(
             observation_space_manager=observation_space_manager,
-            stacked=config["rl_agent"]["frame_stacking"]["enabled"],
+            stack_size=(
+                frame_stacking_cfg["stack_size"] if frame_stacking_cfg["enabled"] else 1
+            ),
         )
         ppo_kwargs["policy_kwargs"] = policy_kwargs
     elif issubclass(agent_description, ActorCriticPolicy):
@@ -235,7 +238,7 @@ def instantiate_new_model(
         )
 
     is_lstm = "LSTM" in agent_description.type.name
-    return RecurrentPPO(**ppo_kwargs) if is_lstm else PPO(**ppo_kwargs)
+    return RecurrentPPO(**ppo_kwargs)  # if is_lstm else PPO(**ppo_kwargs)
 
 
 def load_model(
@@ -255,12 +258,15 @@ def load_model(
         "model",
     ]
 
+    frame_stacking_cfg = config["rl_agent"]["frame_stacking"]
     # DYNAMIC POLICY UPDATE WHEN LOADING MODEL
     # (keeps package paths and module names flexible during deserilization)
     custom_objects = {
         "policy_kwargs": agent_description.get_kwargs(
             observation_space_manager=observation_space_manager,
-            stacked=config["rl_agent"]["frame_stacking"]["enabled"],
+            stack_size=(
+                frame_stacking_cfg["stack_size"] if frame_stacking_cfg["enabled"] else 1
+            ),
         )
     }
 
