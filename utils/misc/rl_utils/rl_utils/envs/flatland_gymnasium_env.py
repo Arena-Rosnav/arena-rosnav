@@ -229,13 +229,11 @@ class FlatlandEnv(gymnasium.Env):
         """
         Encodes the given observation using the model space encoder.
 
-        Parameters:
-        - observation: The observation to be encoded.
-        - *args: Additional positional arguments.
-        - **kwargs: Additional keyword arguments.
+        Args:
+            observation (ObservationDict): The observation to be encoded.
 
         Returns:
-        - The encoded observation.
+            The encoded observation.
 
         """
         return self.model_space_encoder.encode_observation(observation, **kwargs)
@@ -256,7 +254,7 @@ class FlatlandEnv(gymnasium.Env):
         self._pub_action(decoded_action)
 
         if self._is_train_mode:
-            self.call_service_takeSimStep()
+            self._call_service_takeSimStep()
 
         obs_dict: ObservationDict = self.observation_collector.get_observations()
 
@@ -280,14 +278,6 @@ class FlatlandEnv(gymnasium.Env):
             info,
         )
 
-    def call_service_takeSimStep(self, t: float = None, srv_call: bool = True):
-        if srv_call:
-            self._step_world_srv()
-        request = StepWorld()
-        request.required_time = self._step_size if t is None else t
-
-        self._step_world_publisher.publish(request)
-
     def reset(self, seed=None, options=None):
         """
         Reset the environment.
@@ -304,11 +294,7 @@ class FlatlandEnv(gymnasium.Env):
         super().reset(seed=seed)
         self._episode += 1
 
-        # make sure all simulation components are ready before first episode
-        if self._episode <= 1:
-            for _ in range(6):
-                self.agent_action_pub.publish(Twist())
-                self.call_service_takeSimStep()
+        self._before_task_reset()
 
         first_map = self._episode <= 1 if "sim_1" in self.ns else False
 
@@ -319,11 +305,7 @@ class FlatlandEnv(gymnasium.Env):
         self.reward_calculator.reset()
         self._steps_curr_episode = 0
 
-        if self._is_train_mode:
-            # extra step for planning serivce to provide global plan
-            for _ in range(3):
-                self.agent_action_pub.publish(Twist())
-                self.call_service_takeSimStep()
+        self._after_task_reset()
 
         obs_dict = self.observation_collector.get_observations()
         obs_dict.update({DoneObservation.name: True})
@@ -339,3 +321,33 @@ class FlatlandEnv(gymnasium.Env):
 
         """
         pass
+
+    def _before_task_reset(self):
+        """
+        Perform any necessary steps before resetting the task.
+
+        """
+        # make sure all simulation components are ready before first episode
+        if self._episode <= 1:
+            for _ in range(6):
+                self.agent_action_pub.publish(Twist())
+                self._call_service_takeSimStep()
+
+    def _after_task_reset(self):
+        """
+        Perform any necessary steps after resetting the task.
+
+        """
+        if self._is_train_mode:
+            # extra step for planning serivce to provide global plan
+            for _ in range(3):
+                self.agent_action_pub.publish(Twist())
+                self._call_service_takeSimStep()
+
+    def _call_service_takeSimStep(self, t: float = None, srv_call: bool = True):
+        if srv_call:
+            self._step_world_srv()
+        request = StepWorld()
+        request.required_time = self._step_size if t is None else t
+
+        self._step_world_publisher.publish(request)
