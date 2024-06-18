@@ -114,6 +114,17 @@ class ObservationManager:
         for collector in self._collectable_observations.values():
             collector.invalidate()
 
+    def _wait_for_observation(self, name: str):
+        rospy.wait_for_message(
+            get_topic(
+                self._ns,
+                self._collectors[name].topic,
+                self._collectors[name].is_topic_agent_specific,
+            ),
+            self._collectors[name].msg_data_class,
+            timeout=3,
+        )
+
     def _get_collectable_observations(
         self, obs_dict: ObservationDict
     ) -> ObservationDict:
@@ -122,15 +133,7 @@ class ObservationManager:
             if observation.stale:
                 rospy.logdebug_throttle(1, f"Observation '{name}' IS STALE.")
                 if self._wait_for_obs:
-                    rospy.wait_for_message(
-                        get_topic(
-                            self._ns,
-                            self._collectors[name].topic,
-                            self._collectors[name].is_topic_agent_specific,
-                        ),
-                        self._collectors[name].msg_data_class,
-                        timeout=3,
-                    )
+                    self._wait_for_observation(name)
             obs_dict[name] = observation.value
 
         self._invalidate_observations()
