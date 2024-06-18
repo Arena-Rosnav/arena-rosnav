@@ -55,6 +55,7 @@ class FlatlandEnv(gymnasium.Env):
         reward_fnc: str,
         max_steps_per_episode=100,
         init_by_call: bool = False,
+        wait_for_obs: bool = False,
         obs_unit_kwargs=None,
         reward_fnc_kwargs=None,
         task_generator_kwargs=None,
@@ -82,12 +83,11 @@ class FlatlandEnv(gymnasium.Env):
         self._agent_description = agent_description
 
         self._debug_mode = rospy.get_param("/debug_mode", False)
+        self._is_train_mode = rospy.get_param_cached("/train_mode", default=True)
+        self._step_size = rospy.get_param_cached("/step_size")
 
         if not self._debug_mode:
             rospy.init_node(f"env_{self.ns.simulation_ns}".replace("/", "_"))
-
-        self._is_train_mode = rospy.get_param_cached("/train_mode", default=True)
-        self._step_size = rospy.get_param_cached("/step_size")
 
         self._reward_fnc = reward_fnc
         self._reward_fnc_kwargs = reward_fnc_kwargs if reward_fnc_kwargs else {}
@@ -95,6 +95,8 @@ class FlatlandEnv(gymnasium.Env):
         self._task_generator_kwargs = (
             task_generator_kwargs if task_generator_kwargs else {}
         )
+
+        self._wait_for_obs = wait_for_obs
 
         self._steps_curr_episode = 0
         self._episode = 0
@@ -130,7 +132,7 @@ class FlatlandEnv(gymnasium.Env):
             ns=self.ns,
             obs_structur=list(obs_structure),
             obs_unit_kwargs=self._obs_unit_kwargs,
-            wait_for_obs=False,
+            wait_for_obs=self._wait_for_obs,
         )
         return True
 
