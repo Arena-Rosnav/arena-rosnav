@@ -130,6 +130,7 @@ class FlatlandEnv(gymnasium.Env):
             ns=self.ns,
             obs_structur=list(obs_structure),
             obs_unit_kwargs=self._obs_unit_kwargs,
+            wait_for_obs=False,
         )
         return True
 

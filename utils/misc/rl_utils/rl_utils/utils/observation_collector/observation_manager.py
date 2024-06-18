@@ -14,6 +14,8 @@ from . import (
     TypeObservationGeneric,
 )
 
+from .utils.topic import get_topic
+
 
 class ObservationManager:
     """
@@ -31,8 +33,8 @@ class ObservationManager:
 
     _ns: Namespace
     _obs_structur: List[TypeObservationGeneric]
-    _collectors: List[ObservationCollectorUnit]
-    _generators: List[ObservationGeneratorUnit]
+    _collectors: Dict[str, ObservationCollectorUnit]
+    _generators: Dict[str, ObservationGeneratorUnit]
     _collectable_observations: Dict[str, GenericObservation]
     _subscribers: Dict[str, rospy.Subscriber]
 
@@ -41,6 +43,7 @@ class ObservationManager:
         ns: Namespace,
         obs_structur: List[TypeObservationGeneric],
         obs_unit_kwargs: dict = None,
+        wait_for_obs: bool = True,
     ) -> None:
         """
         Initialize ObservationManager with namespace and observation structure.
@@ -60,6 +63,8 @@ class ObservationManager:
         self._inititialize_units(obs_unit_kwargs=obs_unit_kwargs)
         self._init_units()
 
+        self._wait_for_obs = wait_for_obs
+
     def _inititialize_units(self, obs_unit_kwargs: dict) -> None:
         """
         Initialize all observation units.
@@ -75,18 +80,20 @@ class ObservationManager:
             if issubclass(unit, ObservationGeneratorUnit)
         ]
 
-        self._collectors = [
-            collector_class(**obs_unit_kwargs) for collector_class in _collector_cls
-        ]
-        self._generators = [
-            generator_class(**obs_unit_kwargs) for generator_class in _generator_cls
-        ]
+        self._collectors = {
+            collector_class.name: collector_class(**obs_unit_kwargs)
+            for collector_class in _collector_cls
+        }
+        self._generators = {
+            generator_class.name: generator_class(**obs_unit_kwargs)
+            for generator_class in _generator_cls
+        }
 
     def _init_units(self) -> None:
         """
         Initialize observation units and subscribers.
         """
-        for collector in self._collectors:
+        for collector in self._collectors.values():
             observation_container = GenericObservation(
                 initial_msg=collector.msg_data_class(),
                 process_fnc=collector.preprocess,
@@ -94,14 +101,8 @@ class ObservationManager:
 
             self._collectable_observations[collector.name] = observation_container
 
-            _topic = (
-                self._ns(collector.topic)
-                if collector.is_topic_agent_specific
-                else self._ns.simulation_ns(collector.topic)
-            )
-
             self._subscribers[collector.name] = rospy.Subscriber(
-                _topic,
+                get_topic(self._ns, collector.topic, collector.is_topic_agent_specific),
                 collector.msg_data_class,
                 functools.partial(observation_container.update),
             )
@@ -113,6 +114,43 @@ class ObservationManager:
         for collector in self._collectable_observations.values():
             collector.invalidate()
 
+    def _get_collectable_observations(
+        self, obs_dict: ObservationDict
+    ) -> ObservationDict:
+        # Retrieve all observations from the collectors
+        for name, observation in self._collectable_observations.items():
+            if observation.stale:
+                rospy.logdebug_throttle(1, f"Observation '{name}' IS STALE.")
+                if self._wait_for_obs:
+                    rospy.wait_for_message(
+                        get_topic(
+                            self._ns,
+                            self._collectors[name].topic,
+                            self._collectors[name].is_topic_agent_specific,
+                        ),
+                        self._collectors[name].msg_data_class,
+                        timeout=3,
+                    )
+            obs_dict[name] = observation.value
+
+        self._invalidate_observations()
+        return obs_dict
+
+    def _get_generatable_observations(
+        self, obs_dict: ObservationDict
+    ) -> ObservationDict:
+        # Generate observations from the generators
+        for generator in self._generators:
+            try:
+                obs_dict[generator.name] = generator.generate(obs_dict=obs_dict)
+            except KeyError as e:
+                rospy.logwarn_once(
+                    f"{e} \n Could not generate observation for '{generator.name}'."
+                )
+                obs_dict[generator.name] = None
+
+        return obs_dict
+
     def get_observations(self, *args, **kwargs) -> ObservationDict:
         """
         Get observations from all observation units.
@@ -122,25 +160,7 @@ class ObservationManager:
         """
         obs_dict = {}
 
-        # Retrieve all observations from the collectors
-        for name, observation in self._collectable_observations.items():
-            if observation.stale:
-                # TODO: IMPLEMENT WAITING FOR OBSERVATION
-                rospy.logdebug_throttle(1, f"Observation '{name}' IS STALE.")
-            obs_dict[name] = observation.value
-
-        self._invalidate_observations()
-
-        # Generate observations from the generators
-        for generator in self._generators:
-            try:
-                obs_dict[generator.name] = generator.generate(
-                    obs_dict=obs_dict, *args, **kwargs
-                )
-            except KeyError:
-                rospy.logwarn_once(
-                    f"Could not generate observation for '{generator.name}'."
-                )
-                obs_dict[generator.name] = None
+        self._get_collectable_observations(obs_dict)
+        self._get_generatable_observations(obs_dict)
 
         return obs_dict
