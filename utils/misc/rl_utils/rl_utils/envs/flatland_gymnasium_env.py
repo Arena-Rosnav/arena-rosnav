@@ -4,7 +4,7 @@ from typing import Tuple, Type
 import gymnasium
 import numpy as np
 import rospy
-from flatland_msgs.msg import StepWorld
+from flatland_msgs.msg import StepWorld  # type: ignore
 from geometry_msgs.msg import Twist
 from rl_utils.utils.observation_collector import (
     DoneObservation,
@@ -226,7 +226,9 @@ class FlatlandEnv(gymnasium.Env):
         """
         return self.model_space_encoder.decode_action(action)
 
-    def _encode_observation(self, observation: ObservationDict, *args, **kwargs):
+    def _encode_observation(
+        self, observation: ObservationDict, *args, **kwargs
+    ) -> EncodedObservationDict:
         """
         Encodes the given observation using the model space encoder.
 
