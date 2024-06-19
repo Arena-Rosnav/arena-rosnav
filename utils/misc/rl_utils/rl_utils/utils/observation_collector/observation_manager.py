@@ -122,7 +122,7 @@ class ObservationManager:
                 self._collectors[name].is_topic_agent_specific,
             ),
             self._collectors[name].msg_data_class,
-            timeout=3,
+            timeout=5,
         )
 
     def _get_collectable_observations(
