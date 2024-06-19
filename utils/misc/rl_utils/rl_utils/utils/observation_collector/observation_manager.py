@@ -143,7 +143,7 @@ class ObservationManager:
         self, obs_dict: ObservationDict
     ) -> ObservationDict:
         # Generate observations from the generators
-        for generator in self._generators:
+        for generator in self._generators.values():
             try:
                 obs_dict[generator.name] = generator.generate(obs_dict=obs_dict)
             except KeyError as e:
