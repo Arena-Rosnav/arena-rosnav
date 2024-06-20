@@ -133,7 +133,7 @@ class ObservationManager:
             if observation.stale:
                 rospy.logdebug_throttle(1, f"Observation '{name}' IS STALE.")
                 if self._wait_for_obs:
-                    self._wait_for_observation(name)
+                    observation.wait_for_new_obs(name, timeout=10)
             obs_dict[name] = observation.value
 
         self._invalidate_observations()
