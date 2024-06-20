@@ -20,7 +20,8 @@ from std_srvs.srv import Empty
 from task_generator.shared import Namespace
 from task_generator.task_generator_node import TaskGenerator
 from task_generator.tasks import Task
-from task_generator.utils import rosparam_get
+from task_generator.utils import rosparam_get, Utils
+from task_generator.constants import Constants
 
 from .utils import determine_termination
 
@@ -127,7 +128,9 @@ class FlatlandEnv(gymnasium.Env):
         obs_structure = set(self.reward_calculator.required_observations).union(
             set(self.model_space_encoder.encoder.required_observations)
         )
-        obs_structure.add(FullRangeLaserCollector)
+
+        if Utils.get_simulator() != Constants.Simulator.UNITY:
+            obs_structure.add(FullRangeLaserCollector)
         self.observation_collector = ObservationManager(
             ns=self.ns,
             obs_structur=list(obs_structure),
