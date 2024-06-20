@@ -68,6 +68,9 @@ class ImageColorCollector(ImageCollector):
         Returns:
             np.ndarray: The processed image.
         """
+        if msg.data == b'':
+            # calling image bridge with empty message will crash program
+            return None
         cv_mat = self._image_bridge.imgmsg_to_cv2(msg)
         # let the channel dim be the first dim and remove a-channel
         return (np.asarray(cv_mat, dtype=np.float32)[:, :, 0:3]).transpose((2, 0, 1))
@@ -103,5 +106,8 @@ class ImageDepthCollector(ImageCollector):
             np.ndarray: The preprocessed depth image.
 
         """
+        if msg.data == b'':
+            # calling image bridge with empty message will crash program
+            return None
         cv_mat = self._image_bridge.imgmsg_to_cv2(msg)
         return np.asarray(cv_mat, dtype=np.float32)
