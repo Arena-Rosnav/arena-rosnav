@@ -115,7 +115,7 @@ class GenericObservation(Generic[ObservationCollectorDataClass]):
         self._stale = True
         self._stale_event.clear()
 
-    def wait_for_new_obs(self, timeout: float = 3.0):
+    def wait_for_new_obs(self, name: str, timeout: float = 3.0):
         """
         Waits for a new observation, i.e. that was not yet invalidated/used.
 
@@ -123,5 +123,5 @@ class GenericObservation(Generic[ObservationCollectorDataClass]):
             timeout (float): Timeout for waiting in seconds.
         """
         if not self._not_stale_event.wait(timeout):
-            raise TimeoutError(f"Timeout waiting for new message.")
+            raise TimeoutError(f"Timeout waiting for new message of {name}.")
 
