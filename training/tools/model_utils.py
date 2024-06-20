@@ -238,7 +238,7 @@ def instantiate_new_model(
         )
 
     is_lstm = "LSTM" in agent_description.type.name
-    return RecurrentPPO(**ppo_kwargs)  # if is_lstm else PPO(**ppo_kwargs)
+    return RecurrentPPO(**ppo_kwargs) if is_lstm else PPO(**ppo_kwargs)
 
 
 def load_model(

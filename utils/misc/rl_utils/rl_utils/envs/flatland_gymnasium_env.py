@@ -83,8 +83,8 @@ class FlatlandEnv(gymnasium.Env):
         self._agent_description = agent_description
 
         self._debug_mode = rospy.get_param("/debug_mode", False)
-        self._is_train_mode = rospy.get_param_cached("/train_mode", default=True)
-        self._step_size = rospy.get_param_cached("/step_size")
+        self._is_train_mode = rospy.get_param("/train_mode", default=True)
+        self._step_size = rospy.get_param("/step_size")
 
         if not self._debug_mode:
             rospy.init_node(f"env_{self.ns.simulation_ns}".replace("/", "_"))
