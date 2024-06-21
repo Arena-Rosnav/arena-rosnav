@@ -49,6 +49,7 @@ class ImageColorCollector(ImageCollector):
         topic (str): The topic to subscribe to for image messages.
         msg_data_class (Type[sensor_msgs.Image]): The message data class for image messages.
         data_class (Type[np.ndarray]): The data class for the collected images.
+        up_to_date_required (bool): Specifies whether value should be kept up to date, i.e. a new message is required for every step.
 
     Methods:
         __init__(*args, **kwargs): Initializes the ImageColorCollector object.
@@ -57,6 +58,7 @@ class ImageColorCollector(ImageCollector):
 
     name: str = "image_color"
     topic: str = "rgbd/image"
+    up_to_date_required: bool = True
 
     def preprocess(self, msg: sensor_msgs.Image) -> np.ndarray:
         """
@@ -85,15 +87,16 @@ class ImageDepthCollector(ImageCollector):
         topic (str): The topic to subscribe to for depth images.
         msg_data_class (Type[sensor_msgs.Image]): The ROS message data class for depth images.
         data_class (Type[np.ndarray]): The data class for depth images.
+        up_to_date_required (bool): Specifies whether value should be kept up to date, i.e. a new message is required for every step.
 
     Methods:
         __init__(*args, **kwargs): Initializes the ImageDepthCollector object.
         preprocess(msg: sensor_msgs.Image) -> np.ndarray: Preprocesses the depth image message.
-
     """
 
     name: str = "image_depth"
     topic: str = "rgbd/depth"
+    up_to_date_required: bool = True
 
     def preprocess(self, msg: sensor_msgs.Image) -> np.ndarray:
         """
