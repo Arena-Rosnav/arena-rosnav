@@ -1,9 +1,16 @@
 import os
+from pathlib import Path
 import sys
-from typing import Callable, List
+from typing import Callable, List, Union
 
 import torch
 
+from rl_utils.utils.observation_collector.traversal import get_required_observations
+from rosnav.model.agent_factory import AgentFactory
+from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
+from rosnav.utils.observation_space.observation_space_manager import (
+    ObservationSpaceManager,
+)
 import rospy
 import wandb
 from rl_utils.utils.eval_callbacks.staged_train_callback import InitiateNewTrainStage
@@ -20,6 +27,8 @@ from stable_baselines3.common.utils import configure_logger
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 import re
+
+from task_generator.shared import Namespace
 
 
 def setup_wandb(config: dict, agent: PPO) -> None:
@@ -158,8 +167,11 @@ def get_ppo_instance(
             agent_description, observation_space_manager, config, train_env, paths
         )
     else:
+        model_path = Path(paths["model"]) / f"{config['rl_agent']['checkpoint']}.zip"
         model = load_model(
-            config, train_env, paths, agent_description, observation_space_manager
+            path=model_path,
+            env=train_env,
+            observation_space_manager=observation_space_manager,
         )
         update_hyperparam_model(model, paths, config)
 
@@ -169,10 +181,15 @@ def get_ppo_instance(
         setup_wandb(config, model)
 
     model2_path = config["rl_agent"]["weight_transfer"]["model_path"]
+
     if type(model2_path) is str and len(model2_path) > 0 and new_model:
         transfer_weights(
             model1=model,
-            model2=PPO.load(config["rl_agent"]["weight_transfer"]["model_path"]),
+            model2=load_model(
+                path=model2_path,
+                # env=train_env,
+                observation_space_manager=observation_space_manager,
+            ),
             include=config["rl_agent"]["weight_transfer"]["include"],
             exclude=config["rl_agent"]["weight_transfer"]["exclude"],
         )
@@ -242,25 +259,29 @@ def instantiate_new_model(
 
 
 def load_model(
-    config: dict,
-    train_env: VecEnv,
-    PATHS: dict,
-    agent_description: BaseAgent,
-    observation_space_manager,
-) -> PPO:
-    agent_name = config["agent_name"]
-    checkpoint = config["rl_agent"]["checkpoint"]
-    possible_agent_names = [
-        checkpoint,
-        "best_model",
-        "last_model",
-        f"{agent_name}",
-        "model",
-    ]
+    path: str,
+    env: VecEnv = None,
+    observation_space_manager: ObservationSpaceManager = None,
+) -> Union[RecurrentPPO, PPO]:
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"Model file {path} not found!")
+
+    config_path = path[: path.rfind("/") + 1] + "training_config.yaml"
+    # read yaml config
+    with open(config_path, "r") as file:
+        config = yaml.safe_load(file)
+
+    agent_description = AgentFactory.instantiate(
+        config["rl_agent"]["architecture_name"]
+    )
 
     frame_stacking_cfg = config["rl_agent"]["frame_stacking"]
+
+    # Instantiate ObservationSpaceManager
+    if observation_space_manager is None:
+        raise ValueError("ObservationSpaceManager must be provided!")
+
     # DYNAMIC POLICY UPDATE WHEN LOADING MODEL
-    # (keeps package paths and module names flexible during deserilization)
     custom_objects = {
         "policy_kwargs": agent_description.get_kwargs(
             observation_space_manager=observation_space_manager,
@@ -270,34 +291,13 @@ def load_model(
         )
     }
 
-    for name in possible_agent_names:
-        target_path = os.path.join(PATHS["model"], f"{checkpoint}.zip")
-        if os.path.isfile(target_path):
-            rospy.loginfo(f"Loading model from {target_path}")
-
-            if "lstm" in agent_description.type.value.lower():
-                model = RecurrentPPO.load(
-                    os.path.join(PATHS["model"], name),
-                    train_env,
-                    custom_objects=custom_objects,
-                )
-                break
-            model = PPO.load(
-                os.path.join(PATHS["model"], name),
-                train_env,
-                custom_objects=custom_objects,
-            )
-            break
-
-    if not model:
-        raise FileNotFoundError(
-            f"Could not find model file for agent {agent_name}!"
-            "You might need to change the 'checkpoint' in the config file "
-            "accordingly."
-        )
-
-    update_hyperparam_model(model, PATHS, config)
-    return model
+    # load model
+    is_lstm = "LSTM" in agent_description.type.name
+    return (
+        RecurrentPPO.load(path, env=env, custom_objects=custom_objects)
+        if is_lstm
+        else PPO.load(path, env=env, custom_objects=custom_objects)
+    )
 
 
 def init_callbacks(
@@ -380,6 +380,7 @@ from sb3_contrib.common.recurrent.buffers import (
     RecurrentRolloutBuffer,
 )
 from gymnasium import spaces
+import yaml
 
 
 def init_rppo_rollout_buffer(model: RecurrentPPO):
