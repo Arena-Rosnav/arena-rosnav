@@ -4,8 +4,6 @@ from .collectors import *
 from .generators import *
 from .static import *
 
-from threading import Event
-
 
 # Type Variables
 ObservationGenerator = TypeVar("ObservationGenerator", bound=ObservationGeneratorUnit)
@@ -38,12 +36,10 @@ class GenericObservation(Generic[ObservationCollectorDataClass]):
     Attributes:
         _value (ObservationCollectorDataClass): The processed observation value.
         _stale (bool): Indicates whether the observation is stale or not.
-        _not_stale_event (Event): Threading event when waiting for new messages.
     """
 
     _value: ObservationCollectorDataClass
     _stale: bool
-    _not_stale_event: Event
 
     def __init__(
         self, initial_msg: T, process_fnc: ProcessingFunction = lambda x: x
@@ -61,7 +57,6 @@ class GenericObservation(Generic[ObservationCollectorDataClass]):
 
         self._value = process_fnc(initial_msg)
         self._stale = True
-        self._not_stale_event = Event()
 
     @property
     def stale(self) -> bool:
@@ -82,10 +77,6 @@ class GenericObservation(Generic[ObservationCollectorDataClass]):
             value (bool): The value to set for the stale flag.
         """
         self._stale = value
-        if value:
-            self._not_stale_event.clear()
-        else:
-            self._not_stale_event.set()
 
     @property
     def value(self) -> ObservationCollectorDataClass:
@@ -113,15 +104,4 @@ class GenericObservation(Generic[ObservationCollectorDataClass]):
         Invalidates the observation by setting the stale flag to True.
         """
         self._stale = True
-        self._stale_event.clear()
-
-    def wait_for_new_obs(self, name: str, timeout: float = 3.0):
-        """
-        Waits for a new observation, i.e. that was not yet invalidated/used.
-
-        Args:
-            timeout (float): Timeout for waiting in seconds.
-        """
-        if not self._not_stale_event.wait(timeout):
-            raise TimeoutError(f"Timeout waiting for new message of {name}.")
 
