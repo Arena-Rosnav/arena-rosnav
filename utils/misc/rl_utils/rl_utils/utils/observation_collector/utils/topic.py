@@ -14,3 +14,9 @@ def get_topic(ns: Namespace, topic: str, agent_specific: bool) -> str:
 
     """
     return ns(topic) if agent_specific else ns.simulation_ns(topic)
+
+
+if __name__ == "__main__":
+    ns = Namespace("/test/test_robot")
+    print(get_topic(ns, "/test_topic", False))  # expect "/test/test_topic"
+    print(get_topic(ns, "test_topic", False))  # expect "/test/test_topic"
