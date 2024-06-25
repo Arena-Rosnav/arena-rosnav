@@ -266,6 +266,7 @@ def load_model(
     if not os.path.isfile(path):
         raise FileNotFoundError(f"Model file {path} not found!")
 
+    path = str(path)
     config_path = path[: path.rfind("/") + 1] + "training_config.yaml"
     # read yaml config
     with open(config_path, "r") as file:
