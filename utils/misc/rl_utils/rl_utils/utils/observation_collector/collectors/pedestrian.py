@@ -36,7 +36,7 @@ class PedestrianLocationCollector(SemanticLayerCollector):
     """
 
     name: str = SemanticAttribute.IS_PEDESTRIAN.value
-    topic: str = f"crowdsim_agents/semantic/{SemanticAttribute.IS_PEDESTRIAN.value}"
+    topic: str = f"/crowdsim_agents/semantic/{SemanticAttribute.IS_PEDESTRIAN.value}"
     is_topic_agent_specific: bool = False
 
 
@@ -51,7 +51,7 @@ class PedestrianTypeCollector(SemanticLayerCollector):
     """
 
     name: str = SemanticAttribute.PEDESTRIAN_TYPE.value
-    topic: str = f"crowdsim_agents/semantic/{SemanticAttribute.PEDESTRIAN_TYPE.value}"
+    topic: str = f"/crowdsim_agents/semantic/{SemanticAttribute.PEDESTRIAN_TYPE.value}"
     is_topic_agent_specific: bool = False
 
 
@@ -66,7 +66,7 @@ class PedestrianVelXCollector(SemanticLayerCollector):
     """
 
     name: str = SemanticAttribute.PEDESTRIAN_VEL_X.value
-    topic: str = f"crowdsim_agents/semantic/{SemanticAttribute.PEDESTRIAN_VEL_X.value}"
+    topic: str = f"/crowdsim_agents/semantic/{SemanticAttribute.PEDESTRIAN_VEL_X.value}"
     is_topic_agent_specific: bool = False
 
 
@@ -81,7 +81,7 @@ class PedestrianVelYCollector(SemanticLayerCollector):
     """
 
     name: str = SemanticAttribute.PEDESTRIAN_VEL_Y.value
-    topic: str = f"crowdsim_agents/semantic/{SemanticAttribute.PEDESTRIAN_VEL_Y.value}"
+    topic: str = f"/crowdsim_agents/semantic/{SemanticAttribute.PEDESTRIAN_VEL_Y.value}"
     is_topic_agent_specific: bool = False
 
 
@@ -96,5 +96,5 @@ class PedestrianSocialStateCollector(SemanticLayerCollector):
     """
 
     name: str = SemanticAttribute.SOCIAL_STATE.value
-    topic: str = f"crowdsim_agents/semantic/{SemanticAttribute.SOCIAL_STATE.value}"
+    topic: str = f"/crowdsim_agents/semantic/{SemanticAttribute.SOCIAL_STATE.value}"
     is_topic_agent_specific: bool = False
