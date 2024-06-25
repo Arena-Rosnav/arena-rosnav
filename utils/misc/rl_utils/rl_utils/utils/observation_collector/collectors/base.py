@@ -193,7 +193,7 @@ class LastActionCollector(ObservationCollectorUnit):
     topic: str = "cmd_vel"
     msg_data_class: Type[geometry_msgs.Twist] = geometry_msgs.Twist
     data_class: Type[np.ndarray] = np.ndarray
-    up_to_date_required: bool = True
+    up_to_date_required: bool = False
 
     def preprocess(self, msg: geometry_msgs.Twist) -> np.ndarray:
         """
