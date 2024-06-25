@@ -16,12 +16,14 @@ class CollisionCollector(ObservationCollectorUnit):
         topic (str): The topic to subscribe to for collision messages.
         msg_data_class (Type[unity_msgs.Collision]): The data class for collision messages.
         data_class (Type[bool]): The data class for the collected collision observations.
+        up_to_date_required (bool): Specifies whether value should be kept up to date, i.e. a new message is required for every step.
     """
 
     name: str = "collision"
     topic: str = "collision"
     msg_data_class: Type[unity_msgs.Collision] = unity_msgs.Collision
     data_class: Type[bool] = bool
+    up_to_date_required: bool = True
 
     def preprocess(self, msg: unity_msgs.Collision) -> bool:
         """
@@ -33,8 +35,7 @@ class CollisionCollector(ObservationCollectorUnit):
         Returns:
             bool: The preprocessed collision observation.
         """
-        super().preprocess(msg)
-        return True
+        return msg.collision
 
 
 class PedSafeDistCollector(ObservationCollectorUnit):
@@ -46,12 +47,14 @@ class PedSafeDistCollector(ObservationCollectorUnit):
         topic (str): The topic to subscribe to for receiving collision messages.
         msg_data_class (Type[unity_msgs.Collision]): The data class for collision messages.
         data_class (Type[bool]): The data class for the collected observations.
+        up_to_date_required (bool): Specifies whether value should be kept up to date, i.e. a new message is required for every step.
     """
 
     name: str = "ped_safe_dist"
     topic: str = "ped_safe_dist"
     msg_data_class: Type[unity_msgs.Collision] = unity_msgs.Collision
     data_class: Type[bool] = bool
+    up_to_date_required: bool = True
 
     def preprocess(self, msg: unity_msgs.Collision) -> bool:
         """
@@ -63,8 +66,7 @@ class PedSafeDistCollector(ObservationCollectorUnit):
         Returns:
             bool: The preprocessed observation value.
         """
-        super().preprocess(msg)
-        return True
+        return msg.collision
 
 
 class ObsSafeDistCollector(ObservationCollectorUnit):
@@ -76,12 +78,14 @@ class ObsSafeDistCollector(ObservationCollectorUnit):
         topic (str): The topic to subscribe to for collision messages.
         msg_data_class (Type[unity_msgs.Collision]): The data class for collision messages.
         data_class (Type[bool]): The data class for safe distance observations.
+        up_to_date_required (bool): Specifies whether value should be kept up to date, i.e. a new message is required for every step.
     """
 
     name: str = "obs_safe_dist"
     topic: str = "obs_safe_dist"
     msg_data_class: Type[unity_msgs.Collision] = unity_msgs.Collision
     data_class: Type[bool] = bool
+    up_to_date_required: bool = True
 
     def preprocess(self, msg: unity_msgs.Collision) -> bool:
         """
@@ -93,5 +97,4 @@ class ObsSafeDistCollector(ObservationCollectorUnit):
         Returns:
             bool: The preprocessed boolean value.
         """
-        super().preprocess(msg)
-        return True
+        return msg.collision

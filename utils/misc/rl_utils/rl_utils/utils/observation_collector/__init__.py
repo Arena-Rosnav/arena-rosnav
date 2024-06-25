@@ -104,3 +104,4 @@ class GenericObservation(Generic[ObservationCollectorDataClass]):
         Invalidates the observation by setting the stale flag to True.
         """
         self._stale = True
+

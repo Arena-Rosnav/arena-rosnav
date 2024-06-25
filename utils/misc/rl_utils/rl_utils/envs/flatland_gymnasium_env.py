@@ -128,6 +128,7 @@ class FlatlandEnv(gymnasium.Env):
             set(self.model_space_encoder.encoder.required_observations)
         )
         obs_structure.add(FullRangeLaserCollector)
+
         self.observation_collector = ObservationManager(
             ns=self.ns,
             obs_structur=list(obs_structure),

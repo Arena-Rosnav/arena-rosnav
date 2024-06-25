@@ -101,7 +101,7 @@ class RewardGoalReached(RewardUnit):
 
 @RewardUnitFactory.register("safe_distance")
 class RewardSafeDistance(RewardUnit):
-    required_observations = [LaserCollector, FullRangeLaserCollector]
+    required_observations = [LaserCollector]
     SAFE_DIST_VIOLATION_INFO = {"safe_dist_violation": True}
 
     @check_params
@@ -294,7 +294,7 @@ class RewardApproachGoal(RewardUnit):
 
 @RewardUnitFactory.register("collision")
 class RewardCollision(RewardUnit):
-    required_observations = [LaserCollector, FullRangeLaserCollector]
+    required_observations = [LaserCollector]
     DONE_INFO = {
         "is_done": True,
         "done_reason": DONE_REASONS.COLLISION.name,

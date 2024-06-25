@@ -4,11 +4,17 @@ import numpy as np
 import rospy
 from geometry_msgs.msg import Twist
 from rl_utils.utils.arena_unity_utils.unity_timer import UnityTimer
-from rl_utils.utils.observation_collector import ObservationDict
+from rl_utils.utils.observation_collector import (
+    CollisionCollector,
+    ObservationDict
+)
 from rosgraph_msgs.msg import Clock
 from rosnav.utils.observation_space import EncodedObservationDict
+from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
+from rl_utils.utils.observation_collector.observation_manager import ObservationManager
 
 from .flatland_gymnasium_env import BaseAgent, FlatlandEnv, determine_termination
+
 
 
 class UnityEnv(FlatlandEnv):
@@ -52,6 +58,38 @@ class UnityEnv(FlatlandEnv):
         )
         rospy.loginfo("[Unity Env ns:" + ns + "]: Step size " + str(self._step_size))
         rospy.loginfo("[Unity Env ns:" + self.ns + "]: Intialization done")
+
+    def init(self):
+        """
+        Initializes the environment.
+
+        Returns:
+            bool: True if the initialization is successful, False otherwise.
+        """
+        self.model_space_encoder = RosnavSpaceManager(
+            ns=self.ns,
+            space_encoder_class=self._agent_description.space_encoder_class,
+            observation_spaces=self._agent_description.observation_spaces,
+            observation_space_kwargs=self._agent_description.observation_space_kwargs,
+        )
+
+        if self._is_train_mode:
+            self._setup_env_for_training(
+                self._reward_fnc, **self._task_generator_kwargs
+            )
+
+        obs_structure = set(self.reward_calculator.required_observations).union(
+            set(self.model_space_encoder.encoder.required_observations)
+        )
+        obs_structure.add(CollisionCollector)
+
+        self.observation_collector = ObservationManager(
+            ns=self.ns,
+            obs_structur=list(obs_structure),
+            obs_unit_kwargs=self._obs_unit_kwargs,
+            wait_for_obs=self._wait_for_obs,
+        )
+        return True
 
     def _setup_env_for_training(self, reward_fnc: str, **kwargs):
         """

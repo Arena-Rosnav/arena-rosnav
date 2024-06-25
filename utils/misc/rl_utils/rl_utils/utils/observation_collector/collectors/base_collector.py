@@ -28,6 +28,7 @@ class ObservationCollectorUnit(BaseUnit, ABC):
         msg_data_class (Type[T]): The type of the message data expected by the collector unit.
         data_class (Type[D]): The type of the preprocessed data returned by the collector unit.
         is_topic_agent_specific (bool): Indicates whether the topic is agent-specific. If yes, the agent ns is appended to the topic.
+        up_to_date_required (bool): Specifies whether value should be kept up to date, i.e. a new message is required for every step.
 
     Methods:
         preprocess(msg: T) -> D:
@@ -41,6 +42,7 @@ class ObservationCollectorUnit(BaseUnit, ABC):
     data_class: Type[D] = D
 
     is_topic_agent_specific: bool = True
+    up_to_date_required: bool = False
 
     @abstractmethod
     def preprocess(self, msg: T) -> D:

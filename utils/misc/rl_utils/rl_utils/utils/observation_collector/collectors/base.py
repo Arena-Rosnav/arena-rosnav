@@ -34,12 +34,14 @@ class LaserCollector(ObservationCollectorUnit):
         topic (str): The topic to subscribe to for laser scan messages.
         msg_data_class (Type[sensor_msgs.LaserScan]): The message data class for laser scan messages.
         data_class (Type[np.ndarray]): The data class for storing the collected laser scan observations.
+        up_to_date_required (bool): Specifies whether value should be kept up to date, i.e. a new message is required for every step.
     """
 
     name: ClassVar[str] = "laser_scan"
     topic: str = "scan"
     msg_data_class: Type[sensor_msgs.LaserScan] = sensor_msgs.LaserScan
     data_class: Type[np.ndarray] = np.ndarray
+    up_to_date_required: bool = True
 
     def preprocess(self, msg: sensor_msgs.LaserScan) -> np.ndarray:
         """
@@ -94,12 +96,14 @@ class RobotPoseCollector(PoseCollector):
         topic (str): The ROS topic to subscribe to for pose messages.
         msg_data_class (Type[nav_msgs.Odometry]): The ROS message data class for pose messages.
         data_class (Type[np.ndarray]): The data class for storing the collected pose observations.
+        up_to_date_required (bool): Specifies whether value should be kept up to date, i.e. a new message is required for every step.
     """
 
     name: str = "robot_pose"
     topic: str = "odom"
     msg_data_class: Type[nav_msgs.Odometry] = nav_msgs.Odometry
     data_class: Type[np.ndarray] = np.ndarray
+    up_to_date_required: bool = True
 
     def preprocess(self, msg: nav_msgs.Odometry) -> np.ndarray:
         """
@@ -182,12 +186,14 @@ class LastActionCollector(ObservationCollectorUnit):
         topic (str): The ROS topic to subscribe to for action messages.
         msg_data_class (Type[geometry_msgs.Twist]): The ROS message data class for action messages.
         data_class (Type[np.ndarray]): The data class for the preprocessed action.
+        up_to_date_required (bool): Specifies whether value should be kept up to date, i.e. a new message is required for every step.
     """
 
     name: str = "last_action"
     topic: str = "cmd_vel"
     msg_data_class: Type[geometry_msgs.Twist] = geometry_msgs.Twist
     data_class: Type[np.ndarray] = np.ndarray
+    up_to_date_required: bool = True
 
     def preprocess(self, msg: geometry_msgs.Twist) -> np.ndarray:
         """
