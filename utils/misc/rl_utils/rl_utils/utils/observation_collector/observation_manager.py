@@ -44,6 +44,7 @@ class ObservationManager:
         obs_structur: List[TypeObservationGeneric],
         obs_unit_kwargs: dict = None,
         wait_for_obs: bool = True,
+        is_single_env: bool = False,
     ) -> None:
         """
         Initialize ObservationManager with namespace and observation structure.
@@ -60,10 +61,11 @@ class ObservationManager:
         self._collectable_observations = {}
         self._subscribers = {}
 
+        self._wait_for_obs = wait_for_obs
+        self._is_single_env = is_single_env
+
         self._inititialize_units(obs_unit_kwargs=obs_unit_kwargs)
         self._init_units()
-
-        self._wait_for_obs = wait_for_obs
 
     def _inititialize_units(self, obs_unit_kwargs: dict) -> None:
         """
@@ -102,7 +104,13 @@ class ObservationManager:
             self._collectable_observations[collector.name] = observation_container
 
             self._subscribers[collector.name] = rospy.Subscriber(
-                get_topic(self._ns, collector.topic, collector.is_topic_agent_specific),
+                (
+                    collector.topic
+                    if "crowdsim_agents" in collector.topic and self._is_single_env
+                    else get_topic(
+                        self._ns, collector.topic, collector.is_topic_agent_specific
+                    )
+                ),
                 collector.msg_data_class,
                 functools.partial(observation_container.update),
             )
@@ -122,7 +130,7 @@ class ObservationManager:
                 self._collectors[name].is_topic_agent_specific,
             ),
             self._collectors[name].msg_data_class,
-            timeout=5,
+            timeout=10,
         )
 
     def _get_collectable_observations(
