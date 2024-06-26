@@ -1,11 +1,10 @@
 import os
-import sys
-from typing import Tuple, Union
+from typing import Union
 
 import gym
 import rospy
 from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
-from rl_utils.envs.arena_unity_env import ArenaUnityEnv
+from rl_utils.envs.unity import UnityEnv
 from rl_utils.utils.vec_wrapper.delayed_subproc_vec_env import DelayedSubprocVecEnv
 from rl_utils.utils.vec_wrapper.profiler import ProfilingVecEnv
 from rl_utils.utils.vec_wrapper.vec_stats_recorder import VecStatsRecorder
@@ -16,14 +15,13 @@ from rosnav.utils.observation_space.observation_space_manager import (
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import (
     DummyVecEnv,
-    SubprocVecEnv,
     VecFrameStack,
     VecNormalize,
 )
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
+from task_generator.constants import Constants
 from task_generator.shared import Namespace
 from task_generator.utils import Utils
-from task_generator.constants import Constants
 
 
 def load_vec_normalize(config: dict, paths: dict, env: VecEnv, eval_env: VecEnv):
@@ -91,7 +89,7 @@ def _init_env_fnc(
     reward_fnc: str,
     max_steps_per_episode: int,
     seed: int = 0,
-    trigger_init: bool = False,
+    init_by_call: bool = False,
     obs_unit_kwargs: dict = None,
     reward_fnc_kwargs: dict = None,
     task_generator_kwargs: dict = None,
@@ -110,40 +108,31 @@ def _init_env_fnc(
         Union[gym.Env, gym.Wrapper]: The initialized environment.
     """
     reward_fnc_kwargs = reward_fnc_kwargs or {}
-        
-    def _init_arena_unity_env() -> Union[gym.Env, gym.Wrapper]:
-        return ArenaUnityEnv(
-            ns=ns,
-            agent_description=agent_description,
-            reward_fnc=reward_fnc,
-            max_steps_per_episode=max_steps_per_episode,
-            trigger_init=trigger_init,
-            obs_unit_kwargs=obs_unit_kwargs,
-            reward_fnc_kwargs=reward_fnc_kwargs,
-            task_generator_kwargs=task_generator_kwargs,
+
+    sim = Utils.get_simulator()
+    if sim == Constants.Simulator.UNITY:
+        env_cls = UnityEnv
+    elif sim == Constants.Simulator.FLATLAND:
+        env_cls = FlatlandEnv
+    else:
+        raise RuntimeError(
+            f"Training only supports simulators Arena Unity and Flatland but got {sim}"
         )
-        
-    def _init_flatland_env() -> Union[gym.Env, gym.Wrapper]:
-        return FlatlandEnv(
+
+    def _init_env() -> Union[gym.Env, gym.Wrapper]:
+        return env_cls(
             ns=ns,
             agent_description=agent_description,
             reward_fnc=reward_fnc,
             max_steps_per_episode=max_steps_per_episode,
-            trigger_init=trigger_init,
+            init_by_call=init_by_call,
             obs_unit_kwargs=obs_unit_kwargs,
             reward_fnc_kwargs=reward_fnc_kwargs,
             task_generator_kwargs=task_generator_kwargs,
         )
 
     set_random_seed(seed)
-    
-    sim = Utils.get_simulator() 
-    if sim == Constants.Simulator.UNITY:
-        return _init_arena_unity_env
-    elif sim == Constants.Simulator.FLATLAND:
-        return _init_flatland_env
-    else:
-        raise RuntimeError(f"Training only supports simulators Arena Unity and Flatland but got {sim}")
+    return _init_env
 
 
 def make_envs(
@@ -169,16 +158,14 @@ def make_envs(
     )
     eval_ns = f"/{EVAL_PREFIX}/{EVAL_PREFIX}_{rospy.get_param('model')}"
 
-    obs_unit_kwargs = {"subgoal_mode": config["rl_agent"]["subgoal_mode"]}
-
     train_env_fncs = [
         _init_env_fnc(
             ns=train_ns(idx),
             agent_description=agent_description,
             reward_fnc=config["rl_agent"]["reward_fnc"],
             max_steps_per_episode=config["max_num_moves_per_eps"],
-            trigger_init=True if not config["debug_mode"] else False,
-            obs_unit_kwargs=obs_unit_kwargs,
+            init_by_call=True if not config["debug_mode"] else False,
+            obs_unit_kwargs=None,
             reward_fnc_kwargs=config["rl_agent"]["reward_fnc_kwargs"],
         )
         for idx in range(config["n_envs"])
@@ -192,8 +179,8 @@ def make_envs(
             max_steps_per_episode=config["callbacks"]["periodic_eval"][
                 "max_num_moves_per_eps"
             ],
-            trigger_init=False,
-            obs_unit_kwargs=obs_unit_kwargs,
+            init_by_call=False,
+            obs_unit_kwargs=None,
             reward_fnc_kwargs=config["rl_agent"]["reward_fnc_kwargs"],
         )
     ]

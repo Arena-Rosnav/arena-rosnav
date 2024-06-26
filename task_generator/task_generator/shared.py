@@ -53,17 +53,21 @@ def rosparam_get(
 
 class Namespace(str):
     def __call__(self, *args: str) -> Namespace:
+        args = list(args)
+        for i, arg in enumerate(args):
+            if arg.startswith("/"):
+                args[i] = arg[1:]
         return Namespace(os.path.join(self, *args))
 
     @property
     def simulation_ns(self) -> Namespace:
         if len(self.split("/")) < 3:
             return self
-        return Namespace(os.path.dirname(self))
+        return Namespace(os.path.dirname(self)).remove_double_slash()
 
     @property
     def robot_ns(self) -> Namespace:
-        return Namespace(os.path.basename(os.path.normpath(self)))
+        return Namespace(os.path.basename(os.path.normpath(self))).remove_double_slash()
 
     def remove_double_slash(self) -> Namespace:
         return Namespace(self.replace("//", "/"))

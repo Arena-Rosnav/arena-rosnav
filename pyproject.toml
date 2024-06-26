@@ -65,3 +65,7 @@ sismic = "^1.6.6"
 requires = ["setuptools==62.2.0", "wheel==0.38.4"]
 build-backend = "setuptools.build_meta"
 
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
+

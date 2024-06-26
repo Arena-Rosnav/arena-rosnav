@@ -50,7 +50,7 @@ class InternalStateInfoUpdate:
         self.key = key
         self.func = func
 
-    def __call__(self, reward_function: "RewardFunction", **kwargs):
+    def __call__(self, reward_function: "RewardFunction", obs_dict, *args, **kwargs):
         """
         Updates the internal state information in the given reward function.
 
@@ -59,34 +59,30 @@ class InternalStateInfoUpdate:
             **kwargs: Additional keyword arguments to pass to the internal state update function.
         """
         reward_function.add_internal_state_info(
-            self.key, self.func(reward_function=reward_function, **kwargs)
+            self.key,
+            self.func(reward_function=reward_function, obs_dict=obs_dict),
         )
 
 
-def min_dist_laser(
-    laser_scan: np.ndarray,
-    point_cloud: np.ndarray,
-    from_aggregate_obs: bool,
-    *args,
-    **kwargs
-):
-    if laser_scan is None and not point_cloud:
+def min_dist_laser(obs_dict, *args, **kwargs):
+    laser_scan = obs_dict.get(LaserCollector.name, [])
+    if laser_scan is None:
         raise ValueError("Neither LaserScan nor PointCloud data was provided!")
 
     if len(laser_scan) == 0:
         return np.inf
 
-    if not from_aggregate_obs:
-        return laser_scan.min()
-    else:
-        return min_distance_from_pointcloud(point_cloud)
+    # if not from_aggregate_obs:
+    return laser_scan.min()
+    # else:
+    #     return min_distance_from_pointcloud(point_cloud)
 
 
-def safe_dist_breached(reward_function: "RewardFunction", *args, **kwargs) -> None:
+def safe_dist_breached(
+    reward_function: "RewardFunction", obs_dict, *args, **kwargs
+) -> None:
     if reward_function.distinguished_safe_dist:
-        return (
-            kwargs["ped_safe_dist"] or kwargs["obs_safe_dist"]
-        )
+        return obs_dict["ped_safe_dist"] or obs_dict["obs_safe_dist"]
     else:
         return (
             reward_function.get_internal_state_info("min_dist_laser")
@@ -94,15 +90,14 @@ def safe_dist_breached(reward_function: "RewardFunction", *args, **kwargs) -> No
         )
 
 
-def get_ped_type_min_distances(**observation_dict):
+from rl_utils.utils.observation_collector import *
+
+
+def get_ped_type_min_distances(observation_dict):
     ped_distances = {}
 
-    relative_locations = observation_dict.get(
-        OBS_DICT_KEYS.SEMANTIC.RELATIVE_LOCATION.value, None
-    )
-    pedestrian_types = observation_dict.get(
-        OBS_DICT_KEYS.SEMANTIC.PEDESTRIAN_TYPE.value, None
-    )
+    relative_locations = observation_dict.get(PedestrianRelativeLocation.name, None)
+    pedestrian_types = observation_dict.get(PedestrianTypeCollector.name, None)
 
     if relative_locations is None or pedestrian_types is None:
         return ped_distances

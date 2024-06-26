@@ -42,12 +42,11 @@ from task_generator.utils import Utils, rosparam_get
 
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
+
 # TODO retrieve this from pedsim registry
 def _get_ped_type() -> str:
-    return Config.General.RNG.choice(
-        ["human/adult", "human/elder"],
-        p=[0.8, 0.2]
-    )
+    return Config.General.RNG.choice(["human/adult", "human/elder"], p=[0.8, 0.2])
+
 
 # TODO structure these together
 def process_SDF(name: str, base_model: Model) -> Model:
@@ -167,23 +166,49 @@ class CrowdsimManager(EntityManager):
 
         self._known_obstacles = KnownObstacles()
 
-        rospy.wait_for_service(self._namespace(self.SERVICE_SPAWN_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-        rospy.wait_for_service(self._namespace(self.SERVICE_RESPAWN_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-        rospy.wait_for_service(self._namespace(self.SERVICE_RESET_ALL_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-        rospy.wait_for_service(self._namespace(self.SERVICE_REMOVE_ALL_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-
-        rospy.wait_for_service(self._namespace(self.SERVICE_ADD_WALLS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-        rospy.wait_for_service(self._namespace(self.SERVICE_CLEAR_WALLS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-
-        rospy.wait_for_service(self._namespace(self.SERVICE_SPAWN_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
         rospy.wait_for_service(
-            self._namespace(self.SERVICE_RESPAWN_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
+            self._namespace(self.SERVICE_SPAWN_PEDS),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
         )
         rospy.wait_for_service(
-            self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
+            self._namespace(self.SERVICE_RESPAWN_PEDS),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_RESET_ALL_PEDS),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_REMOVE_ALL_PEDS),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
         )
 
-        rospy.wait_for_service(self._namespace(self.SERVICE_REGISTER_ROBOT), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_ADD_WALLS),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_CLEAR_WALLS),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_SPAWN_OBSTACLES),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_RESPAWN_OBSTACLES),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_REGISTER_ROBOT),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
 
         self._spawn_peds_srv = rospy.ServiceProxy(
             self._namespace(self.SERVICE_SPAWN_PEDS),
@@ -440,6 +465,9 @@ class CrowdsimManager(EntityManager):
 
     def remove_obstacles(self, purge):
         # unused not always previously called
+        # if Utils.get_simulator() in [Constants.Simulator.FLATLAND]:
+        #     return
+
         if not self._is_paused:
             self._is_paused = True
             self._pause_simulation_srv.call(std_srvs.EmptyRequest())
@@ -466,7 +494,9 @@ class CrowdsimManager(EntityManager):
 
             for obstacle_id, obstacle in self._known_obstacles.items():
                 if purge >= obstacle.layer:
-                    if isinstance(self._simulator, GazeboSimulator) or isinstance(self._simulator, UnitySimulator):
+                    if isinstance(self._simulator, GazeboSimulator) or isinstance(
+                        self._simulator, UnitySimulator
+                    ):
                         # TODO remove this once actors can be deleted properly
                         if isinstance(obstacle.obstacle, DynamicObstacle):
 

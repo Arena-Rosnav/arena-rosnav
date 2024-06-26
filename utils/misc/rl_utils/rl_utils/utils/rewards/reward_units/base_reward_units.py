@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, List, Type
 
 import numpy as np
+from rl_utils.utils.observation_collector import TypeObservationGeneric
 from scipy.spatial import cKDTree
 
 from ..reward_function import RewardFunction
@@ -19,6 +20,8 @@ class RewardUnit(ABC):
         _reward_function (RewardFunction): The RewardFunction instance holding this unit.
         _on_safe_dist_violation (bool): Whether the unit is applied on safe distance violation.
     """
+
+    required_observations: List[TypeObservationGeneric]
 
     def __init__(
         self,
@@ -71,7 +74,7 @@ class RewardUnit(ABC):
         Args:
             value (float): _description_
         """
-        self._reward_function.add_reward(value=value)
+        self._reward_function.add_reward(value=value, called_by=self.__class__.__name__)
 
     def add_info(self, info: dict):
         """Adds the given information to the episode's info dict.
@@ -149,7 +152,7 @@ class GlobalplanRewardUnit(RewardUnit, ABC):
         if self._kdtree is None:
             self._kdtree = cKDTree(global_plan)
 
-        dist, _ = self._kdtree.query([robot_pose.x, robot_pose.y])
+        dist, _ = self._kdtree.query([robot_pose["x"], robot_pose["y"]])
         return dist
 
     def reset(self):

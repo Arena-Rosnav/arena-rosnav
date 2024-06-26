@@ -100,6 +100,7 @@ def get_paths(config: dict) -> dict:
     elif (
         not os.path.isfile(os.path.join(PATHS["model"], f"{agent_name}.zip"))
         and not os.path.isfile(os.path.join(PATHS["model"], "best_model.zip"))
+        and not os.path.isfile(os.path.join(PATHS["model"], "last_model.zip"))
         and not config["debug_mode"]
     ):
         raise FileNotFoundError(

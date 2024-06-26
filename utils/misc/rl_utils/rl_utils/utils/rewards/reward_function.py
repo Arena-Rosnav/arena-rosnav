@@ -2,9 +2,11 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import rospy
+from rl_utils.utils.observation_collector import ObservationDict
+from rl_utils.utils.observation_collector.traversal import get_required_observations
 from std_msgs.msg import Float32
-from tools.dynamic_parameter import DynamicParameter
 from task_generator.shared import Namespace
+from tools.dynamic_parameter import DynamicParameter
 
 from .constants import REWARD_CONSTANTS
 from .utils import (
@@ -85,6 +87,7 @@ class RewardFunction:
         ns: Namespace,
         internal_state_updates: List[InternalStateInfoUpdate] = None,
         reward_unit_kwargs: dict = None,
+        verbose: bool = False,
         *args,
         **kwargs,
     ):
@@ -131,6 +134,9 @@ class RewardFunction:
             cls=self, key="goal_radius", message_type=Float32
         )
 
+        self._verbose = verbose
+        self._reward_overview = {}
+
     def _setup_reward_function(self, **kwargs) -> List["RewardUnit"]:
         """Sets up the reward function.
 
@@ -146,13 +152,16 @@ class RewardFunction:
             for unit_name, params in self._rew_fnc_dict.items()
         ]
 
-    def add_reward(self, value: float):
+    def add_reward(self, value: float, *args, **kwargs):
         """Adds the specified value to the current reward.
 
         Args:
             value (float): Reward to be added. Typically called by the RewardUnit.
         """
         self._curr_reward += value
+
+        if "called_by" in kwargs:
+            self._reward_overview[kwargs["called_by"]] = value
 
     def add_info(self, info: Dict[str, Any]):
         """Adds the specified information to the reward function's info dictionary.
@@ -187,6 +196,7 @@ class RewardFunction:
 
     def update_internal_state_info(
         self,
+        obs_dict: ObservationDict,
         *args,
         **kwargs,
     ):
@@ -202,7 +212,7 @@ class RewardFunction:
                 Defaults to False.
         """
         for update in self._internal_state_updates:
-            update(reward_function=self, **kwargs)
+            update(reward_function=self, obs_dict=obs_dict, **kwargs)
 
     def reset_internal_state_info(self):
         """Resets all global state information (after each environment step)."""
@@ -213,6 +223,7 @@ class RewardFunction:
         """Reset on every environment step."""
         self._curr_reward = 0
         self._info = {}
+        self._reward_overview = {}
         self.reset_internal_state_info()
 
     def reset(self):
@@ -220,7 +231,7 @@ class RewardFunction:
         for reward_unit in self._reward_units:
             reward_unit.reset()
 
-    def calculate_reward(self, laser_scan: np.ndarray, *args, **kwargs) -> None:
+    def calculate_reward(self, obs_dict: ObservationDict, *args, **kwargs) -> None:
         """Calculates the reward based on several observations.
 
         Args:
@@ -229,13 +240,11 @@ class RewardFunction:
         for reward_unit in self._reward_units:
             if self.safe_dist_breached and not reward_unit.on_safe_dist_violation:
                 continue
-            reward_unit(laser_scan=laser_scan, **kwargs)
+            reward_unit(obs_dict, **kwargs)
 
     def get_reward(
         self,
-        laser_scan: np.ndarray = None,
-        point_cloud: np.ndarray = None,
-        from_aggregate_obs: bool = False,
+        obs_dict: ObservationDict,
         *args,
         **kwargs,
     ) -> Tuple[float, Dict[str, Any]]:
@@ -251,13 +260,22 @@ class RewardFunction:
         """
         self._reset()
         self.update_internal_state_info(
-            laser_scan=laser_scan,
-            point_cloud=point_cloud,
-            from_aggregate_obs=from_aggregate_obs,
+            obs_dict=obs_dict,
             **kwargs,
         )
-        self.calculate_reward(laser_scan=laser_scan, **kwargs)
+        self.calculate_reward(obs_dict=obs_dict, **kwargs)
+        if self._verbose:
+            self.print_reward_overview()
         return self._curr_reward, self._info
+
+    def print_reward_overview(self):
+        rospy.loginfo("_____________________________")
+        rospy.loginfo("Reward Overview:")
+        for key, value in self._reward_overview.items():
+            rospy.loginfo(f"{key}: {value}")
+        rospy.loginfo("-----------------------------")
+        rospy.loginfo(f"Total Reward: {self._curr_reward}")
+        rospy.loginfo("_____________________________")
 
     @property
     def robot_radius(self) -> float:
@@ -296,6 +314,10 @@ class RewardFunction:
     def ns(self) -> Namespace:
         return self._ns
 
+    @property
+    def units(self) -> List["RewardUnit"]:
+        return self._reward_units
+
     def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
         for name, params in self._rew_fnc_dict.items():
@@ -303,3 +325,7 @@ class RewardFunction:
             format_string += f"{name}: {params}"
         format_string += "\n)"
         return format_string
+
+    @property
+    def required_observations(self):
+        return get_required_observations(self._reward_units)
