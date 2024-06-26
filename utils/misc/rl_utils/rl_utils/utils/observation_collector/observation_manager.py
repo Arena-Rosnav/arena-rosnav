@@ -123,15 +123,20 @@ class ObservationManager:
             collector.invalidate()
 
     def _wait_for_observation(self, name: str):
-        rospy.wait_for_message(
-            get_topic(
-                self._ns,
-                self._collectors[name].topic,
-                self._collectors[name].is_topic_agent_specific,
-            ),
-            self._collectors[name].msg_data_class,
-            timeout=10,
-        )
+        try:
+            rospy.wait_for_message(
+                get_topic(
+                    self._ns,
+                    self._collectors[name].topic,
+                    self._collectors[name].is_topic_agent_specific,
+                ),
+                self._collectors[name].msg_data_class,
+                timeout=10,
+            )
+        except rospy.ROSException:
+            rospy.logwarn_once(
+                f"Waiting for observation '{name}' timed out. The observation may be stale."
+            )
 
     def _get_collectable_observations(
         self, obs_dict: ObservationDict
