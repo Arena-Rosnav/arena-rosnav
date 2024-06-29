@@ -772,8 +772,9 @@ class RewardTwoFactorVelocityDifference(RewardUnit):
         )
 
         if self.last_action is not None:
-            diff = (action - self.last_action) ** 2
-            self.add_reward(-(diff[0] * self._alpha + diff[-1] * self._beta))
+            diff = abs((action - self.last_action))
+            reward = -(diff[0] * self._alpha + diff[-1] * self._beta)
+            self.add_reward(reward)
         self.last_action = action
 
     def reset(self):
