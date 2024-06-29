@@ -8,7 +8,7 @@ collision:
   reward: -20
 
 approach_goal:
-  pos_factor: 0.5
+  pos_factor: 0.55
   neg_factor: 0.75
   _on_safe_dist_violation: true
 
