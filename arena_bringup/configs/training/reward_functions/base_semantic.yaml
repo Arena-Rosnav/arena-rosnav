@@ -23,8 +23,8 @@ reverse_drive:
 #   _on_safe_dist_violation: true
 
 two_factor_velocity_difference:
-  alpha: 0.01
-  beta: 0.025
+  alpha: 0.0025
+  beta: 0.0075
   _on_safe_dist_violation: true
 
 # active_heading_direction:
