@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Dict
 import map_distance_server.srv as map_distance_server_srvs
@@ -14,6 +15,8 @@ from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils import rosparam_get
 
 from map_generator.constants import MAP_GENERATOR_NS
+
+import dynamic_reconfigure.client
 
 # DYNAMIC MAP INTERFACE
 
@@ -36,6 +39,9 @@ class Mod_DynamicMap(TM_Module):
     PARAM_GENERATOR = "generator"
     PARAM_GENERATOR_CONFIGS = "/generator_configs"
 
+    PARAM_ALGORITHM = MAP_GENERATOR_NS("algorithm")
+    PARAM_ALGORITHM_CONFIG = MAP_GENERATOR_NS("algorithm_config")
+
     TOPIC_REQUEST_MAP = "/request_new_map"
     TOPIC_RESET = "/dynamic_map/task_reset"
     TOPIC_MAP = "/map"
@@ -48,6 +54,14 @@ class Mod_DynamicMap(TM_Module):
         This method is called before resetting the task.
         It increments the number of episodes and requests a new map if the episode count exceeds the threshold.
         """
+
+        self._target_eps_num = (
+            rosparam_get(int, MAP_GENERATOR_NS("episode_per_map"), 1) * self._num_envs
+        )
+        self._generation_timeout = rosparam_get(
+            float, MAP_GENERATOR_NS("generation_timeout"), 60
+        )
+
         self._episodes += 1
 
         if self._episodes >= self._target_eps_num:
@@ -75,23 +89,36 @@ class Mod_DynamicMap(TM_Module):
             self.SERVICE_DISTANCE_MAP, map_distance_server_srvs.GetDistanceMap
         )
 
-        num_envs: int = (
+        self._num_envs: int = (
             rosparam_get(int, "num_envs", 1)
             if "eval_sim" not in self._TASK.robot_managers[0].namespace
             else 1
         )
-        self._target_eps_num = (
-            rosparam_get(int, MAP_GENERATOR_NS("episode_per_map"), 1) * num_envs
+
+        dynamic_reconfigure.client.Client(
+            name=self.NODE_CONFIGURATION,
+            config_callback=self.reconfigure
         )
-        self._generation_timeout = rosparam_get(
-            float, MAP_GENERATOR_NS("generation_timeout"), 60
-        )
+
+    def reconfigure(self, config):
+
+        rospy.set_param(MAP_GENERATOR_NS("episode_per_map"), config["DYNAMICMAP_episodes"])
+        rospy.set_param(MAP_GENERATOR_NS("generation_timeout"), config["DYNAMICMAP_timeout"])
+
+        algorithm = str(config["DYNAMICMAP_algorithm"])
+        rospy.set_param(self.PARAM_ALGORITHM, algorithm)
+        
+        config = json.loads(config["DYNAMICMAP_config"])
+        assert isinstance(config, dict)
+
+        for k,v in config.items():
+            rospy.set_param(self.PARAM_ALGORITHM_CONFIG(k), v)
 
     def _set_config(self, config: DynamicMapConfiguration):
         """
         Sets the configuration for the map generator based on the provided DynamicMapConfiguration object.
         """
-        generator = rosparam_get(str, self.PARAM_GENERATOR)
+        generator = rosparam_get(str, MAP_GENERATOR_NS(self.PARAM_GENERATOR))
 
         log = f"Setting [Map Generator: {generator}] parameters"
 

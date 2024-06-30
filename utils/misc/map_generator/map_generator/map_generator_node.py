@@ -146,6 +146,8 @@ class MapGeneratorNode:
 
         rospy.loginfo("New random map published and costmap cleared.")
 
+        self._map_generator.idle()
+
     def _preprocess_map_data(self, grid_map: np.ndarray) -> np.ndarray:
         """Preprocesses the grid map data.
 

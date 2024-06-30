@@ -53,7 +53,7 @@ class BaseMapGenerator(ABC):
         return height, width, map_res
 
     @abstractmethod
-    def update_params(self, height: int, width: int, map_res: float):
+    def update_params(self, height: int, width: int, map_res: float, *args, **kwargs):
         """
         Updates the map parameters.
 
@@ -66,3 +66,6 @@ class BaseMapGenerator(ABC):
         self.height = height
         self.width = width
         self.map_resolution = map_res
+
+    def idle(self):
+        pass

@@ -9,6 +9,7 @@ from task_generator.shared import Namespace
 class MapGenerators(enum.Enum):
     BARN = "barn"
     ROSNAV = "rosnav"
+    AIRCHITECT = "airchitect"
 
 
 MAP_GENERATOR_NS = Namespace("/map_generator")

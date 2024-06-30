@@ -26,3 +26,9 @@ RANDOM:
 ZONES:
   file: "zones.yaml"
   scenario: "default.yaml"
+
+DYNAMICMAP:
+  algorithm: airchitect
+  config: '{"prompt":5}'
+  episodes: 1
+  timeout: 60
