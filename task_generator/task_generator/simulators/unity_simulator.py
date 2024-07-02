@@ -89,7 +89,7 @@ class UnitySimulator(BaseSimulator):
             position=Point(
                 x=entity.position[0],
                 y=entity.position[1],
-                z=0.35
+                z=0.0
             ),
             orientation=Quaternion(
                 *quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz"))
@@ -120,7 +120,7 @@ class UnitySimulator(BaseSimulator):
             position=Point(
                 x=position[0],
                 y=position[1],
-                z=0.35
+                z=0.0
             ),
             orientation=Quaternion(
                 *quaternion_from_euler(0.0, 0.0, position[2], axes="sxyz")
