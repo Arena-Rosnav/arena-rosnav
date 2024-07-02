@@ -1,34 +1,33 @@
-SCENARIO:
-  file: default.json
-
-PARAMETRIZED:
-  file: default.xml 
-
-STAGED:
-  curriculum: "default.yaml"
-  index: 0
-
-RANDOM:
-  seed: -1
-  static:
-    min: 0
-    max: 0
-    models: ["shelf"]
-  interactive:
-    min: 0
-    max: 0
-    models: ["shelf"]
-  dynamic:
-    min: 20
-    max: 20
-    models: ["actor1"]
-
-ZONES:
-  file: "zones.yaml"
-  scenario: "default.yaml"
-
 DYNAMICMAP:
   algorithm: airchitect
-  config: '{"prompt":5}'
+  config: '{"prompt":4}'
   episodes: 1
   timeout: 60
+PARAMETRIZED:
+  file: default.xml
+RANDOM:
+  dynamic:
+    max: 8
+    min: 5
+    models:
+    - actor1
+  interactive:
+    max: 0
+    min: 0
+    models:
+    - shelf
+  seed: 1944895261
+  static:
+    max: 0
+    min: 0
+    models:
+    - shelf
+SCENARIO:
+  file: default.json
+STAGED:
+  curriculum: default.yaml
+  index: 0
+ZONES:
+  file: zones.yaml
+  scenario: default.yaml
+episodes: -1

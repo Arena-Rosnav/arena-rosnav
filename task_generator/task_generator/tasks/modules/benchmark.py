@@ -357,7 +357,7 @@ class Mod_Benchmark(TM_Module):
 
             new_config = self._suite.config(self._suite_index)
 
-            if new_config.map != old_config.map:
+            if new_config.map != old_config.map or new_config.map == "dynamic_map":
                 self._logger.debug(f"map change requires restart")
                 self._requires_restart = True
                 

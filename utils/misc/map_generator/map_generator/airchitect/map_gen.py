@@ -123,15 +123,17 @@ class AIrchitectMapGenerator(BaseMapGenerator):
 
         import cv2
 
+        gray = np.array(cv2.blur(gray, (int(1/self.map_resolution), int(1/self.map_resolution)))!=0, dtype=int)
+
         if self.width/gray.shape[1] < self.height/gray.shape[0]:
             gray = cv2.resize(gray, dsize=(int(self.width/gray.shape[1] * gray.shape[0]), self.width), interpolation=cv2.INTER_NEAREST)
             to_pad = self.width-gray.shape[1]
-            gray = cv2.copyMakeBorder(gray, 0, 0, to_pad//2, to_pad//2 + to_pad%2, cv2.BORDER_CONSTANT, value=[1])
+            gray = cv2.copyMakeBorder(gray, 0, 0, to_pad//2, to_pad//2 + to_pad%2, cv2.BORDER_CONSTANT, value=[0])
         else:
             gray = cv2.resize(gray, dsize=(self.height, int(self.height/gray.shape[0] * gray.shape[1])), interpolation=cv2.INTER_NEAREST)
             to_pad = self.height-gray.shape[0]
-            gray = cv2.copyMakeBorder(gray, to_pad//2, to_pad//2 + to_pad%2, 0, 0, cv2.BORDER_CONSTANT, value=[1])
-            
+            gray = cv2.copyMakeBorder(gray, to_pad//2, to_pad//2 + to_pad%2, 0, 0, cv2.BORDER_CONSTANT, value=[0])
+        
         return gray
     
     def idle(self):

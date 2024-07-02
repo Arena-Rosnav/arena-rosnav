@@ -3,9 +3,9 @@ episode_per_map: 5
 generation_timeout: 10
 
 map_properties:
-  width: 60
-  height: 60
-  resolution: 0.5 # should stay fixed during runtime
+  width: 240
+  height: 240
+  resolution: 0.125 # should stay fixed during runtime
 
 algorithm_config:
   fill_pct: 0.15 # initial fill percentage
