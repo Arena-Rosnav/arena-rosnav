@@ -44,7 +44,7 @@ class ObservationManager:
         obs_structur: List[TypeObservationGeneric],
         obs_unit_kwargs: dict = None,
         wait_for_obs: bool = True,
-        is_single_env: bool = False,
+        is_single_env: bool = None,
     ) -> None:
         """
         Initialize ObservationManager with namespace and observation structure.
@@ -53,6 +53,8 @@ class ObservationManager:
             ns (Namespace): The namespace object.
             obs_structur (List[ObservationCollectorUnit], optional): The list of observation unit types. Defaults to None.
             obs_unit_kwargs (dict, optional): Additional keyword arguments for observation units. Defaults to None.
+            wait_for_obs (bool, optional): Whether to wait for observations to be available. Defaults to True.
+            is_single_env (bool, optional): Whether the simulation environment is a single environment. Defaults to None.
         """
         self._ns = ns
         self._obs_structur = list(explore_hierarchy(obs_structur).keys())
@@ -62,7 +64,7 @@ class ObservationManager:
         self._subscribers = {}
 
         self._wait_for_obs = wait_for_obs
-        self._is_single_env = is_single_env
+        self._is_single_env = is_single_env or "sim" in ns
 
         self._inititialize_units(obs_unit_kwargs=obs_unit_kwargs)
         self._init_units()
