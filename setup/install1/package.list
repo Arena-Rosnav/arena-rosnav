@@ -1,0 +1,9 @@
+git
+ros-humble-desktop
+python3
+python-is-python3
+python3-rosdep
+python3-rosdep-modules
+python3-pip
+python3-rosinstall-generator
+python3-vcstool

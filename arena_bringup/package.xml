@@ -32,10 +32,10 @@
   <!-- Dependencies can be catkin packages or system dependencies -->
   <!-- Examples: -->
   <!-- Use depend as a shortcut for packages that are both build and exec dependencies -->
-  <!--   <depend>roscpp</depend> -->
+  <!--   <depend>rclcpp</depend> -->
   <!--   Note that this is equivalent to the following: -->
-  <!--   <build_depend>roscpp</build_depend> -->
-  <!--   <exec_depend>roscpp</exec_depend> -->
+  <!--   <build_depend>rclcpp</build_depend> -->
+  <!--   <exec_depend>rclcpp</exec_depend> -->
   <!-- Use build_depend for packages you need at compile time: -->
   <!--   <build_depend>message_generation</build_depend> -->
   <!-- Use build_export_depend for packages you need in order to build against this package: -->
@@ -48,8 +48,9 @@
   <!--   <test_depend>gtest</test_depend> -->
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
-  <buildtool_depend>catkin</buildtool_depend>
-
+  
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
   <depend>mbf_costmap_nav</depend>
   <depend>navigation</depend>
   <depend>teb_local_planner</depend>
@@ -61,13 +62,12 @@
   <depend>velodyne_description</depend>
   <depend>hector_gazebo</depend>
   <depend>ira_laser_tools</depend>
-
   <depend>pedsim_ros</depend>
   <depend>crowdsim</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
-
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

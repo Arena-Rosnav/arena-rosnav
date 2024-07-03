@@ -37,8 +37,8 @@ class DynamicParameter:
 
         self._callback = lambda msg: setattr(cls, f"{key}", msg.data)
 
-        self._sub = rospy.Subscriber(
-            f"{self._topic_prefix}{self._key}", message_type, self._callback
+        self._sub = node.create_subscription(message_type, 
+            f"{self._topic_prefix}{self._key}", self._callback
         )
 
 
@@ -63,9 +63,9 @@ class DynamicParameterPublisher:
         self._key = key
         self._topic_prefix = topic_prefix
 
-        self._pub = rospy.Publisher(
-            f"{self._topic_prefix}{self._key}", message_type, queue_size=1
-        )
+        self._pub = node.create_publisher(message_type, queue_size=1
+        , 
+            f"{self._topic_prefix}{self._key}")
 
     def __call__(self, value: Any):
         """

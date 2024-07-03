@@ -7,6 +7,7 @@ from rosnav.utils.utils import get_actions_from_robot_yaml
 from .general import generate_discrete_action_dict
 
 
+
 def populate_ros_params(params: dict, paths: dict):
     # general params
     rospy.set_param("tm_robots", params["tm_robots"])
@@ -31,27 +32,19 @@ def populate_ros_params(params: dict, paths: dict):
 
     tmp_params: dict = params["rl_agent"].copy()
     tmp_params.pop("resume")
-    if tmp_params:
-        rospy.set_param("rl_agent", tmp_params)
+    rospy.set_param("rl_agent", tmp_params)
 
     # populate laser params
     populate_laser_params(params)
 
-    # populate rgbd params
-    populate_rgbd_params(params)
-
-    curriculum_file = params["callbacks"]["training_curriculum"][
-        "training_curriculum_file"
-    ]
+    curriculum_file = params["callbacks"]["training_curriculum"]["training_curriculum_file"]
     staged_idx = params["callbacks"]["training_curriculum"]["curr_stage"]
-
+    
     # shell command
-    os.system(
-        f"rosrun dynamic_reconfigure dynparam set /task_generator_server STAGED_curriculum {curriculum_file}"
-    )
-    os.system(
-        f"rosrun dynamic_reconfigure dynparam set /task_generator_server STAGED_index {staged_idx}"
-    )
+    os.system(f"rosrun dynamic_reconfigure dynparam set /task_generator_server STAGED_curriculum {curriculum_file}")
+    os.system(f"rosrun dynamic_reconfigure dynparam set /task_generator_server STAGED_index {staged_idx}")
+    
+    
 
 
 def populate_laser_params(params: dict):
@@ -69,11 +62,6 @@ def populate_laser_params(params: dict):
             "laser/reduced_num_laser_beams",
             params["rl_agent"]["laser"]["reduce_num_beams"]["num_beams"],
         )
-
-
-def populate_rgbd_params(params: dict):
-    with contextlib.suppress(KeyError):
-        rospy.set_param("rgbd/enabled", params["rl_agent"]["rgbd"]["enabled"])
 
 
 def populate_discrete_action_space(params: dict):
@@ -102,6 +90,18 @@ def populate_discrete_action_space(params: dict):
     rospy.set_param("actions/discrete", discrete_actions_dict)
 
 
+def determine_space_encoder(frame_stacking: bool, reduced_laser: bool):
+    return "SemanticResNetSpaceEncoder"
+    if frame_stacking and not reduced_laser:
+        return "StackedEncoder"
+    elif not frame_stacking and reduced_laser:
+        return "ReducedLaserEncoder"
+    elif frame_stacking and reduced_laser:
+        return "StackedReducedLaserEncoder"
+    else:
+        return "DefaultEncoder"
+
+
 def populate_ros_configs(config):
     rospy.set_param("debug_mode", config["debug_mode"])
 
@@ -109,9 +109,7 @@ def populate_ros_configs(config):
 def set_space_encoder(config):
     rospy.set_param(
         "space_encoder",
-        (
-            "StackedEncoder"
-            if config["rl_agent"]["frame_stacking"]["enabled"]
-            else "DefaultEncoder"
-        ),
+        "StackedEncoder"
+        if config["rl_agent"]["frame_stacking"]["enabled"]
+        else "DefaultEncoder",
     )

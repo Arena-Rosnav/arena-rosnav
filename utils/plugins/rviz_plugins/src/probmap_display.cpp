@@ -35,9 +35,9 @@
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreTextureManager.h>
 
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.h"
 
-#include <tf/transform_listener.h>
+#include "tf2_ros/transform_listener.h"
 
 #include "rviz/frame_manager.h"
 #include "rviz/ogre_helpers/grid.h"

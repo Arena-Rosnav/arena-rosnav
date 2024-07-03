@@ -1,5 +1,5 @@
 #include <tf2/LinearMath/Quaternion.h>
-#include <geometry_msgs/Pose.h>
+#include "geometry_msgs/msg/pose.hpp"
 #include <common/zVector2d.h>
 
 struct Transform2D{
@@ -36,7 +36,7 @@ struct Transform2D{
 	void setTheta(float angle){
 		theta = angle;	
 	}
-	void setFromMsg(const geometry_msgs::Pose & pose){
+	void setFromMsg(const geometry_msgs::msg::Pose & pose){
 		position.x = pose.position.x;
 		position.y = pose.position.y;
 		tf2::Quaternion q(

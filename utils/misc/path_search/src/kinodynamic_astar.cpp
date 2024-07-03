@@ -11,7 +11,7 @@ KinodynamicAstar::~KinodynamicAstar()
 }
 
 /* Initialization */
-void KinodynamicAstar::setParam(ros::NodeHandle& private_nh)
+void KinodynamicAstar::setParam(rclcpp::Node& private_nh)
 {
   
   private_nh.param("kino_astar/max_tau", max_tau_,  0.6);               // max step time
@@ -62,7 +62,7 @@ void KinodynamicAstar::init(){
   iter_num_ = 0;
 }
 
-void KinodynamicAstar::init(ros::NodeHandle& private_nh, const GridMap::Ptr& env)
+void KinodynamicAstar::init(rclcpp::Node& private_nh, const GridMap::Ptr& env)
 { 
   /* ---------- get ros params & set env---------- */
   setParam(private_nh);
@@ -174,7 +174,7 @@ int KinodynamicAstar::search(Eigen::Vector2d start_pt, Eigen::Vector2d start_v, 
         estimateHeuristic(cur_node->state, end_state, time_to_goal);
         computeShotTraj(cur_node->state, end_state, time_to_goal);
         if (init_search)
-          ROS_ERROR("Shot in first search loop!");
+          RCLCPP_ERROR(rclcpp::get_logger("PathSearch"), "Shot in first search loop!");
       }
     }
     if (reach_horizon)

@@ -214,9 +214,3 @@ class FlatlandManager(EntityManager):
             if is_dynamic
             else f"{STATIC_OBS_BASENAME}{count}"
         )
-        
-    def spawn_walls(self, walls, heightmap):
-        """
-        Adds walls to the simulator.
-        """
-        pass

@@ -27,7 +27,8 @@ def parse_args():
 
 
 if __name__ == "__main__":
-    rospy.init_node("odom_pub")
+    rclpy.init()
+    node = rclpy.create_node("odom_pub")
 
     args = parse_args()
     namespace = args.robot_namespace
@@ -43,7 +44,7 @@ if __name__ == "__main__":
         
 
     rate = rospy.Rate(50)  # ROS Rate at 50Hz
-    pub = rospy.Publisher("odom", Odometry, queue_size=10)
+    pub = node.create_publisher(Odometry, queue_size=10, "odom")
 
     rospy.wait_for_service("/gazebo/get_model_state")
     caller = rospy.ServiceProxy("/gazebo/get_model_state", GetModelState)

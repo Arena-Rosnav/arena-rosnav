@@ -4,20 +4,13 @@ from warnings import warn
 
 import numpy as np
 import rospy
-from rl_utils.utils.observation_collector.constants import DONE_REASONS
-from task_generator.constants import Config, UnityConstants
-from unity_msgs.srv import (
-    AttachSafeDistSensor,  # type: ignore
-    AttachSafeDistSensorRequest,
-)
+from rl_utils.utils.observation_collector.constants import DONE_REASONS, OBS_DICT_KEYS
 
 from ..constants import DEFAULTS, REWARD_CONSTANTS
 from ..reward_function import RewardFunction
 from ..utils import check_params, get_ped_type_min_distances
 from .base_reward_units import GlobalplanRewardUnit, RewardUnit
 from .reward_unit_factory import RewardUnitFactory
-
-from rl_utils.utils.observation_collector import *
 
 # UPDATE WHEN ADDING A NEW UNIT
 __all__ = [
@@ -39,7 +32,6 @@ __all__ = [
 
 @RewardUnitFactory.register("goal_reached")
 class RewardGoalReached(RewardUnit):
-    required_observations = [DistAngleToGoal, DistAngleToSubgoal]
     DONE_INFO = {
         "is_done": True,
         "done_reason": DONE_REASONS.SUCCESS.name,
@@ -52,7 +44,6 @@ class RewardGoalReached(RewardUnit):
         self,
         reward_function: RewardFunction,
         reward: float = DEFAULTS.GOAL_REACHED.REWARD,
-        _following_subgoal: bool = False,
         _on_safe_dist_violation: bool = DEFAULTS.GOAL_REACHED._ON_SAFE_DIST_VIOLATION,
         *args,
         **kwargs,
@@ -67,12 +58,6 @@ class RewardGoalReached(RewardUnit):
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._reward = reward
         self._goal_radius = self._reward_function.goal_radius
-        self._goal_key = (
-            DistAngleToSubgoal.name
-            if _following_subgoal
-            or rospy.get_param(f"{reward_function.ns('follow_subgoal')}", False)
-            else DistAngleToGoal.name
-        )
 
     def check_parameters(self, *args, **kwargs):
         if self._reward < 0.0:
@@ -83,13 +68,13 @@ class RewardGoalReached(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> None:
+    def __call__(self, distance_to_goal: float, *args: Any, **kwargs: Any) -> None:
         """Calculates the reward and updates the information when the goal is reached.
 
         Args:
             distance_to_goal (float): Distance to the goal in m.
         """
-        if obs_dict[self._goal_key][0] < self._reward_function.goal_radius:
+        if distance_to_goal < self._reward_function.goal_radius:
             self.add_reward(self._reward)
             self.add_info(self.DONE_INFO)
         else:
@@ -101,7 +86,6 @@ class RewardGoalReached(RewardUnit):
 
 @RewardUnitFactory.register("safe_distance")
 class RewardSafeDistance(RewardUnit):
-    required_observations = [LaserCollector]
     SAFE_DIST_VIOLATION_INFO = {"safe_dist_violation": True}
 
     @check_params
@@ -131,12 +115,10 @@ class RewardSafeDistance(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any):
+    def __call__(self, *args: Any, **kwargs: Any):
         violation_in_blind_spot = False
-        if len(obs_dict.get(FullRangeLaserCollector.name, [])) > 0:
-            violation_in_blind_spot = (
-                obs_dict[FullRangeLaserCollector.name].min() <= self._safe_dist
-            )
+        if "full_laser_scan" in kwargs and len(kwargs["full_laser_scan"]) > 0:
+            violation_in_blind_spot = kwargs["full_laser_scan"].min() <= self._safe_dist
 
         if (
             self.get_internal_state_info("safe_dist_breached")
@@ -148,8 +130,6 @@ class RewardSafeDistance(RewardUnit):
 
 @RewardUnitFactory.register("no_movement")
 class RewardNoMovement(RewardUnit):
-    required_observations = [LastActionCollector]
-
     @check_params
     def __init__(
         self,
@@ -178,10 +158,7 @@ class RewardNoMovement(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any):
-        action: LastActionCollector.data_class = obs_dict.get(
-            LastActionCollector.name, None
-        )
+    def __call__(self, action: np.ndarray, *args: Any, **kwargs: Any):
         if (
             action is not None
             and abs(action[0]) <= REWARD_CONSTANTS.NO_MOVEMENT_TOLERANCE
@@ -191,20 +168,12 @@ class RewardNoMovement(RewardUnit):
 
 @RewardUnitFactory.register("approach_goal")
 class RewardApproachGoal(RewardUnit):
-    required_observations = [
-        GoalCollector,
-        SubgoalCollector,
-        RobotPoseCollector,
-    ]
-
     @check_params
     def __init__(
         self,
         reward_function: RewardFunction,
         pos_factor: float = DEFAULTS.APPROACH_GOAL.POS_FACTOR,
         neg_factor: float = DEFAULTS.APPROACH_GOAL.NEG_FACTOR,
-        _goal_update_threshold: float = DEFAULTS.APPROACH_GOAL._GOAL_UPDATE_THRESHOLD,
-        _follow_subgoal: bool = False,
         _on_safe_dist_violation: bool = DEFAULTS.APPROACH_GOAL._ON_SAFE_DIST_VIOLATION,
         *args,
         **kwargs,
@@ -220,21 +189,7 @@ class RewardApproachGoal(RewardUnit):
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
         self._pos_factor = pos_factor
         self._neg_factor = neg_factor
-        self._goal_update_threshold = _goal_update_threshold
-
-        self._goal_key = (
-            SubgoalCollector.name
-            if _follow_subgoal
-            or rospy.get_param(reward_function.ns("follow_subgoal"), False)
-            else GoalCollector.name
-        )
-
-        self.euclidean_distance = lambda a, b: np.sqrt(
-            (a["x"] - b["x"]) ** 2 + (a["y"] - b["y"]) ** 2
-        )
-
-        self.last_robot_pose = None
-        self.last_goal_pose = None
+        self.last_goal_dist = None
 
     def check_parameters(self, *args, **kwargs):
         if self._pos_factor < 0 or self._neg_factor < 0:
@@ -250,51 +205,22 @@ class RewardApproachGoal(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, obs_dict: ObservationDict, *args, **kwargs):
-        if (
-            self.last_robot_pose is not None and self.last_goal_pose is not None
-        ):  # and not _inter_has_replanned:
-
-            goal_location_diff = self.euclidean_distance(
-                obs_dict[self._goal_key], self.last_goal_pose
+    def __call__(self, distance_to_goal, *args, **kwargs):
+        if self.last_goal_dist is not None:
+            w = (
+                self._pos_factor
+                if (self.last_goal_dist - distance_to_goal) > 0
+                else self._neg_factor
             )
-            if goal_location_diff >= self._goal_update_threshold:
-                self.last_goal_pose: Union[
-                    GoalCollector.data_class, SubgoalCollector.data_class
-                ] = obs_dict[self._goal_key]
-                self.last_robot_pose: RobotPoseCollector.data_class = obs_dict[
-                    RobotPoseCollector.name
-                ]
-                return
-
-            robot_pose: RobotPoseCollector.data_class = obs_dict[
-                RobotPoseCollector.name
-            ]
-
-            last_goal_dist = self.euclidean_distance(
-                self.last_goal_pose, self.last_robot_pose
-            )
-            curr_goal_dist = self.euclidean_distance(self.last_goal_pose, robot_pose)
-
-            term = last_goal_dist - curr_goal_dist
-            w = self._pos_factor if term > 0 else self._neg_factor
-            self.add_reward(w * term)
-
-        self.last_robot_pose: RobotPoseCollector.data_class = obs_dict[
-            RobotPoseCollector.name
-        ]
-        self.last_goal_pose: Union[
-            GoalCollector.data_class, SubgoalCollector.data_class
-        ] = obs_dict[self._goal_key]
+            self.add_reward(w * (self.last_goal_dist - distance_to_goal))
+        self.last_goal_dist = distance_to_goal
 
     def reset(self):
-        self.last_robot_pose = None
-        self.last_goal_pose = None
+        self.last_goal_dist = None
 
 
 @RewardUnitFactory.register("collision")
 class RewardCollision(RewardUnit):
-    required_observations = [LaserCollector]
     DONE_INFO = {
         "is_done": True,
         "done_reason": DONE_REASONS.COLLISION.name,
@@ -329,31 +255,22 @@ class RewardCollision(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> Any:
-        # quick Unity-specific check
-        if self._reward_function.distinguished_safe_dist and obs_dict.get(
-            CollisionCollector.name, False
-        ):
-            self.add_reward(self._reward)
-            self.add_info(self.DONE_INFO)
-            return
-
-        coll_in_blind_spot = False
-        if len(obs_dict.get(FullRangeLaserCollector.name, [])) > 0:
-            coll_in_blind_spot = (
-                obs_dict[FullRangeLaserCollector.name].min() <= self._bumper_zone
-            )
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        coll_in_blind_spots = False
+        if "full_laser_scan" in kwargs:
+            if len(kwargs["full_laser_scan"]) > 0:
+                coll_in_blind_spots = (
+                    kwargs["full_laser_scan"].min() <= self._bumper_zone
+                )
 
         laser_min = self.get_internal_state_info("min_dist_laser")
-        if laser_min <= self.robot_radius or coll_in_blind_spot:
+        if laser_min <= self.robot_radius or coll_in_blind_spots:
             self.add_reward(self._reward)
             self.add_info(self.DONE_INFO)
 
 
 @RewardUnitFactory.register("distance_travelled")
 class RewardDistanceTravelled(RewardUnit):
-    required_observations = [LastActionCollector]
-
     def __init__(
         self,
         reward_function: RewardFunction,
@@ -378,12 +295,9 @@ class RewardDistanceTravelled(RewardUnit):
         self._lin_vel_scalar = lin_vel_scalar
         self._ang_vel_scalar = ang_vel_scalar
 
-    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> Any:
-        action = obs_dict.get(LastActionCollector.name, None)
-
+    def __call__(self, action: np.ndarray, *args: Any, **kwargs: Any) -> Any:
         if action is None:
             return
-
         lin_vel, ang_vel = action[0], action[-1]
         reward = (
             (lin_vel * self._lin_vel_scalar) + (ang_vel * self._ang_vel_scalar)
@@ -393,8 +307,6 @@ class RewardDistanceTravelled(RewardUnit):
 
 @RewardUnitFactory.register("approach_globalplan")
 class RewardApproachGlobalplan(GlobalplanRewardUnit):
-    required_observations = [GlobalPlanCollector, RobotPoseCollector]
-
     @check_params
     def __init__(
         self,
@@ -435,11 +347,10 @@ class RewardApproachGlobalplan(GlobalplanRewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> Any:
-        super().__call__(
-            global_plan=obs_dict[GlobalPlanCollector.name],
-            robot_pose=obs_dict[RobotPoseCollector.name],
-        )
+    def __call__(
+        self, global_plan: np.ndarray, robot_pose, *args: Any, **kwargs: Any
+    ) -> Any:
+        super().__call__(global_plan=global_plan, robot_pose=robot_pose)
 
         if self.curr_dist_to_path and self.last_dist_to_path:
             self.add_reward(self._calc_reward())
@@ -481,8 +392,6 @@ class RewardFollowGlobalplan(GlobalplanRewardUnit):
         __call__(self, action, global_plan, robot_pose, *args, **kwargs): Calculates the reward based on the agent's distance to the global plan and its action.
     """
 
-    required_observations = [LastActionCollector]
-
     def __init__(
         self,
         reward_function: RewardFunction,
@@ -499,7 +408,9 @@ class RewardFollowGlobalplan(GlobalplanRewardUnit):
 
     def __call__(
         self,
-        obs_dict: ObservationDict,
+        action: np.ndarray,
+        global_plan: np.ndarray,
+        robot_pose,
         *args: Any,
         **kwargs: Any,
     ) -> Any:
@@ -516,12 +427,7 @@ class RewardFollowGlobalplan(GlobalplanRewardUnit):
         Returns:
             Any: The calculated reward.
         """
-        super().__call__(
-            global_plan=obs_dict[GlobalPlanCollector.name],
-            robot_pose=obs_dict[RobotPoseCollector.name],
-        )
-
-        action = obs_dict.get(LastActionCollector.name, None)
+        super().__call__(global_plan=global_plan, robot_pose=robot_pose)
 
         if (
             self.curr_dist_to_path
@@ -552,14 +458,11 @@ class RewardReverseDrive(RewardUnit):
 
     """
 
-    required_observations = [LastActionCollector]
-
     @check_params
     def __init__(
         self,
         reward_function: RewardFunction,
         reward: float = DEFAULTS.REVERSE_DRIVE.REWARD,
-        threshold: float = None,
         _on_safe_dist_violation: bool = DEFAULTS.REVERSE_DRIVE._ON_SAFE_DIST_VIOLATION,
         *args,
         **kwargs,
@@ -567,7 +470,6 @@ class RewardReverseDrive(RewardUnit):
         super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
 
         self._reward = reward
-        self._threshold = threshold if threshold else 0.0
 
     def check_parameters(self, *args, **kwargs):
         """
@@ -581,7 +483,7 @@ class RewardReverseDrive(RewardUnit):
             )
             warn(warn_msg)
 
-    def __call__(self, obs_dict: ObservationDict, *args, **kwargs):
+    def __call__(self, action: np.ndarray, *args, **kwargs):
         """
         Adds the reward value to the total reward if the action is not None and the first element of the action is less than 0.
 
@@ -589,10 +491,7 @@ class RewardReverseDrive(RewardUnit):
             action (np.ndarray): The action taken.
 
         """
-        action: LastActionCollector.data_class = obs_dict.get(
-            LastActionCollector.name, None
-        )
-        if action is not None and action[0] < 0 and action[0] < self._threshold:
+        if action is not None and action[0] < 0:
             self.add_reward(self._reward)
 
 
@@ -617,8 +516,6 @@ class RewardAbruptVelocityChange(RewardUnit):
         __call__(action: np.ndarray, *args, **kwargs): Calculates the reward based on the action taken.
         reset(): Resets the last action to None.
     """
-
-    required_observations = [LastActionCollector]
 
     def __init__(
         self,
@@ -651,9 +548,7 @@ class RewardAbruptVelocityChange(RewardUnit):
 
         return vel_change_fct
 
-    def __call__(self, obs_dict: ObservationDict, *args, **kwargs):
-        action = obs_dict.get(LastActionCollector.name, None)
-
+    def __call__(self, action: np.ndarray, *args, **kwargs):
         if self.last_action is not None:
             for rew_fct in self._vel_change_fcts:
                 rew_fct(action)
@@ -686,8 +581,6 @@ class RewardRootVelocityDifference(RewardUnit):
         reset(self): Resets the last action to None.
     """
 
-    required_observations = [LastActionCollector]
-
     def __init__(
         self,
         reward_function: RewardFunction,
@@ -701,7 +594,7 @@ class RewardRootVelocityDifference(RewardUnit):
         self._k = k
         self.last_action = None
 
-    def __call__(self, obs_dict: ObservationDict, *args, **kwargs):
+    def __call__(self, action: np.ndarray, *args, **kwargs):
         """
         Calculates and adds the reward based on the given action.
 
@@ -711,10 +604,6 @@ class RewardRootVelocityDifference(RewardUnit):
         Returns:
             None
         """
-        action: LastActionCollector.data_class = obs_dict.get(
-            LastActionCollector.name, None
-        )
-
         if self.last_action is not None:
             vel_diff = np.linalg.norm((action - self.last_action) ** 2)
             if vel_diff < self._k:
@@ -740,8 +629,6 @@ class RewardTwoFactorVelocityDifference(RewardUnit):
         **kwargs: Arbitrary keyword arguments.
     """
 
-    required_observations = [LastActionCollector]
-
     def __init__(
         self,
         reward_function: RewardFunction,
@@ -757,7 +644,7 @@ class RewardTwoFactorVelocityDifference(RewardUnit):
         self._beta = beta
         self.last_action = None
 
-    def __call__(self, obs_dict: ObservationDict, *args, **kwargs):
+    def __call__(self, action: np.ndarray, *args, **kwargs):
         """
         Calculates and adds the reward based on the difference between the current action and the last action.
 
@@ -767,10 +654,6 @@ class RewardTwoFactorVelocityDifference(RewardUnit):
         Returns:
             None
         """
-        action: LastActionCollector.data_class = obs_dict.get(
-            LastActionCollector.name, None
-        )
-
         if self.last_action is not None:
             diff = (action - self.last_action) ** 2
             self.add_reward(-(diff[0] * self._alpha + diff[-1] * self._beta))
@@ -804,15 +687,6 @@ class RewardActiveHeadingDirection(RewardUnit):
         _iters (int): Number of iterations to find a reachable available theta.
     """
 
-    required_observations = [
-        DistAngleToGoal,
-        DistAngleToSubgoal,
-        LastActionCollector,
-        PedestrianRelativeLocation,
-        PedestrianRelativeVelX,
-        PedestrianRelativeVelY,
-    ]
-
     def __init__(
         self,
         reward_function: RewardFunction,
@@ -821,7 +695,6 @@ class RewardActiveHeadingDirection(RewardUnit):
         theta_min: int = 1000,
         ped_min_dist: float = 8.0,
         iters: int = 60,
-        _following_subgoal: bool = False,
         _on_safe_dist_violation: bool = True,
         *args,
         **kwargs,
@@ -833,18 +706,13 @@ class RewardActiveHeadingDirection(RewardUnit):
         self._ped_min_dist = ped_min_dist
         self._iters = iters
 
-        self._goal_key = (
-            DistAngleToSubgoal.name if _following_subgoal else DistAngleToGoal.name
-        )
-
     def __call__(
         self,
-        # dist_angle_to_goal: np.ndarray,
-        # action: np.ndarray,
-        # relative_location: np.ndarray,
-        # relative_x_vel: np.ndarray,
-        # relative_y_vel: np.ndarray,
-        obs_dict: ObservationDict,
+        goal_in_robot_frame: np.ndarray,
+        action: np.ndarray,
+        relative_location: np.ndarray,
+        relative_x_vel: np.ndarray,
+        relative_y_vel: np.ndarray,
         *args,
         **kwargs,
     ) -> float:
@@ -852,7 +720,7 @@ class RewardActiveHeadingDirection(RewardUnit):
         Calculates the reward based on the active heading direction of the robot.
 
         Args:
-            dist_angle_to_goal (np.ndarray): The goal position in the robot's frame of reference.
+            goal_in_robot_frame (np.ndarray): The goal position in the robot's frame of reference.
             action (np.ndarray): The last action taken by the robot.
             relative_location (np.ndarray): The relative location of the pedestrians.
             relative_x_vel (np.ndarray): The relative x-velocity of the pedestrians.
@@ -863,22 +731,6 @@ class RewardActiveHeadingDirection(RewardUnit):
         Returns:
             float: The calculated reward based on the active heading direction.
         """
-        dist_angle_to_goal: Union[
-            DistAngleToGoal.data_class, DistAngleToSubgoal.name
-        ] = obs_dict[self._goal_key]
-        action: LastActionCollector.data_class = obs_dict.get(
-            LastActionCollector.name, None
-        )
-        relative_location: PedestrianRelativeLocation.data_class = obs_dict.get(
-            PedestrianRelativeLocation.name, None
-        )
-        relative_x_vel: PedestrianRelativeVelX.data_class = obs_dict.get(
-            PedestrianRelativeVelX.name, None
-        )
-        relative_y_vel: PedestrianRelativeVelY.data_class = obs_dict.get(
-            PedestrianRelativeVelY.name, None
-        )
-
         if (
             relative_location is None
             or relative_x_vel is None
@@ -887,7 +739,7 @@ class RewardActiveHeadingDirection(RewardUnit):
             return 0.0
 
         # prefer goal theta:
-        theta_pre = dist_angle_to_goal[1]
+        theta_pre = goal_in_robot_frame[1]
         d_theta = theta_pre
 
         v_x = action[0]
@@ -944,138 +796,6 @@ class RewardActiveHeadingDirection(RewardUnit):
         return self._r_angle * (self._theta_m - abs(d_theta))
 
 
-@RewardUnitFactory.register("ped_safe_distance")
-class RewardPedSafeDistance(RewardUnit):
-    required_observations = [PedSafeDistCollector]
-    SAFE_DIST_VIOLATION_INFO = {"safe_dist_violation": True}
-
-    @check_params
-    def __init__(
-        self,
-        reward_function: RewardFunction,
-        reward: float = DEFAULTS.PED_SAFE_DISTANCE.REWARD,
-        safe_dist: float = DEFAULTS.PED_SAFE_DISTANCE.SAFE_DIST,
-        *args,
-        **kwargs,
-    ):
-        """Unity-specific class for calculating the reward when violating the ped-specific safe
-        distance.
-
-        Args:
-            reward_function (RewardFunction): The reward function object.
-            reward (float, optional): The reward value for violating the safe distance. Defaults to
-                DEFAULTS.PED_SAFE_DISTANCE.REWARD.
-            safe_dist (bool, optional): Safety distance which should not be passed. The value should
-                not include the radius of the robot body. Defaults to
-                DEFAULTS.PED_SAFE_DISTANCE.SAFE_DIST.
-        """
-        super().__init__(reward_function, True, *args, **kwargs)
-        self._reward = reward
-        self._safe_dist = safe_dist
-
-        # Send request to Unity to attach sensor
-        service_topic = reward_function.ns.simulation_ns(
-            "unity", UnityConstants.ATTACH_SAFE_DIST_SENSOR_TOPIC
-        )
-        rospy.wait_for_service(
-            service_topic, timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
-        )
-        request = AttachSafeDistSensorRequest(
-            robot_name=reward_function.ns.robot_ns,
-            safe_dist_topic=PedSafeDistCollector.topic,
-            ped_safe_dist=True,
-            obs_safe_dist=False,
-            safe_dist=self._safe_dist,
-        )
-        response = rospy.ServiceProxy(service_topic, AttachSafeDistSensor)(request)
-        # Check success
-        if not response.success:
-            raise rospy.ServiceException(response.message)
-
-    def check_parameters(self, *args, **kwargs):
-        if self._reward > 0.0:
-            warn_msg = (
-                f"[{self.__class__.__name__}] Reconsider this reward. "
-                f"Positive rewards may lead to unfavorable behaviors. "
-                f"Current value: {self._reward}"
-            )
-            warn(warn_msg)
-
-    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any):
-        if (
-            PedSafeDistCollector.name in obs_dict
-            and obs_dict[PedSafeDistCollector.name]
-        ):
-            self.add_reward(self._reward)
-            self.add_info(self.SAFE_DIST_VIOLATION_INFO)
-
-
-@RewardUnitFactory.register("obs_safe_distance")
-class RewardObsSafeDistance(RewardUnit):
-    required_observations = [ObsSafeDistCollector]
-    SAFE_DIST_VIOLATION_INFO = {"safe_dist_violation": True}
-
-    @check_params
-    def __init__(
-        self,
-        reward_function: RewardFunction,
-        reward: float = DEFAULTS.OBS_SAFE_DISTANCE.REWARD,
-        safe_dist: float = DEFAULTS.OBS_SAFE_DISTANCE.SAFE_DIST,
-        *args,
-        **kwargs,
-    ):
-        """Unity-specific class for calculating the reward when violating the obs-specific safe
-        distance.
-
-        Args:
-            reward_function (RewardFunction): The reward function object.
-            reward (float, optional): The reward value for violating the safe distance. Defaults to
-                DEFAULTS.OBS_SAFE_DISTANCE.REWARD.
-            safe_dist (bool, optional): Safety distance which should not be passed. The value should
-                not include the radius of the robot body. Defaults to
-                DEFAULTS.OBS_SAFE_DISTANCE.SAFE_DIST.
-        """
-        super().__init__(reward_function, True, *args, **kwargs)
-        self._reward = reward
-        self._safe_dist = safe_dist
-
-        # Send request to Unity to attach sensor
-        service_topic = reward_function.ns.simulation_ns(
-            "unity", UnityConstants.ATTACH_SAFE_DIST_SENSOR_TOPIC
-        )
-        rospy.wait_for_service(
-            service_topic, timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
-        )
-        request = AttachSafeDistSensorRequest(
-            robot_name=reward_function.ns.robot_ns,
-            safe_dist_topic=ObsSafeDistCollector.topic,
-            ped_safe_dist=False,
-            obs_safe_dist=True,
-            safe_dist=self._safe_dist,
-        )
-        response = rospy.ServiceProxy(service_topic, AttachSafeDistSensor)(request)
-        # Check success
-        if not response.success:
-            raise rospy.ServiceException(response.message)
-
-    def check_parameters(self, *args, **kwargs):
-        if self._reward > 0.0:
-            warn_msg = (
-                f"[{self.__class__.__name__}] Reconsider this reward. "
-                f"Positive rewards may lead to unfavorable behaviors. "
-                f"Current value: {self._reward}"
-            )
-            warn(warn_msg)
-
-    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any):
-        if (
-            ObsSafeDistCollector.name in obs_dict
-            and obs_dict[ObsSafeDistCollector.name]
-        ):
-            self.add_reward(self._reward)
-            self.add_info(self.SAFE_DIST_VIOLATION_INFO)
-
-
 @RewardUnitFactory.register("ped_type_safety_distance")
 class RewardPedTypeSafetyDistance(RewardUnit):
     """
@@ -1100,8 +820,6 @@ class RewardPedTypeSafetyDistance(RewardUnit):
         reset(): Resets the reward unit.
     """
 
-    required_observations = [PedestrianRelativeLocation, RobotPoseCollector]
-
     def __init__(
         self,
         reward_function: RewardFunction,
@@ -1117,7 +835,7 @@ class RewardPedTypeSafetyDistance(RewardUnit):
         self._reward = reward
         self._safety_distance = safety_distance
 
-    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> None:
+    def __call__(self, *args: Any, **kwargs: Any) -> None:
         ped_type_min_distances = self.get_internal_state_info(
             "min_distances_per_ped_type"
         )
@@ -1125,7 +843,7 @@ class RewardPedTypeSafetyDistance(RewardUnit):
         if ped_type_min_distances is None:
             self.add_internal_state_info(
                 key="min_distances_per_ped_type",
-                value=get_ped_type_min_distances(obs_dict),
+                value=get_ped_type_min_distances(**kwargs),
             )
             ped_type_min_distances = self.get_internal_state_info(
                 "min_distances_per_ped_type"
@@ -1162,8 +880,6 @@ class RewardPedTypeCollision(RewardUnit):
         _reward (float): The reward value to be added when a collision with the specific pedestrian type occurs.
     """
 
-    required_observations = [PedestrianRelativeLocation, RobotPoseCollector]
-
     def __init__(
         self,
         reward_function: RewardFunction,
@@ -1178,13 +894,13 @@ class RewardPedTypeCollision(RewardUnit):
         self._reward = reward
         self._bumper_zone = self.robot_radius + bumper_zone
 
-    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> None:
+    def __call__(self, *args: Any, **kwargs: Any) -> None:
         """
         Checks if the robot has collided with the specific pedestrian type and adds the reward if a collision occurs.
 
         Args:
             *args: Variable length argument list.
-            **observation_dict: Arbitrary keyword arguments.
+            **kwargs: Arbitrary keyword arguments.
         """
         ped_type_min_distances = self.get_internal_state_info(
             "min_distances_per_ped_type"
@@ -1193,7 +909,7 @@ class RewardPedTypeCollision(RewardUnit):
         if ped_type_min_distances is None:
             self.add_internal_state_info(
                 key="min_distances_per_ped_type",
-                value=get_ped_type_min_distances(obs_dict),
+                value=get_ped_type_min_distances(**kwargs),
             )
             ped_type_min_distances = self.get_internal_state_info(
                 "min_distances_per_ped_type"
@@ -1216,12 +932,6 @@ class RewardPedTypeCollision(RewardUnit):
 @RewardUnitFactory.register("ped_type_vel_constraint")
 class RewardPedTypeVelocityConstraint(RewardUnit):
 
-    required_observations = [
-        PedestrianRelativeLocation,
-        RobotPoseCollector,
-        LastActionCollector,
-    ]
-
     def __init__(
         self,
         reward_function: RewardFunction,
@@ -1237,21 +947,15 @@ class RewardPedTypeVelocityConstraint(RewardUnit):
         self._penalty_factor = penalty_factor
         self._active_distance = active_distance
 
-    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> None:
+    def __call__(self, action: np.ndarray, *args: Any, **kwargs: Any) -> None:
         ped_type_min_distances = self.get_internal_state_info(
             "min_distances_per_ped_type"
         )
-        action: LastActionCollector.data_class = obs_dict.get(
-            LastActionCollector.name, None
-        )
-
-        if action is None:
-            return
 
         if ped_type_min_distances is None:
             self.add_internal_state_info(
                 key="min_distances_per_ped_type",
-                value=get_ped_type_min_distances(obs_dict),
+                value=get_ped_type_min_distances(**kwargs),
             )
             ped_type_min_distances = self.get_internal_state_info(
                 "min_distances_per_ped_type"
@@ -1276,8 +980,6 @@ from geometry_msgs.msg import Pose2D
 
 @RewardUnitFactory.register("angular_vel_constraint")
 class RewardAngularVelocityConstraint(RewardUnit):
-    required_observations = [RobotPoseCollector]
-
     def __init__(
         self,
         reward_function: RewardFunction,
@@ -1294,11 +996,7 @@ class RewardAngularVelocityConstraint(RewardUnit):
         self._time_step_size = rospy.get_param("step_size")
         self._last_theta = None
 
-    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> None:
-        robot_pose: RobotPoseCollector.data_class = obs_dict.get(
-            RobotPoseCollector.name, None
-        )
-
+    def __call__(self, robot_pose: Pose2D, *args: Any, **kwargs: Any) -> None:
         if self._last_theta is not None:
             rotational_vel = (
                 abs(robot_pose.theta - self._last_theta) / self._time_step_size
@@ -1331,8 +1029,6 @@ class RewardMaxStepsExceeded(RewardUnit):
         __call__(*args, **kwargs): Updates the step count and applies the penalty if the maximum steps are exceeded.
         reset(): Resets the step count to zero.
     """
-
-    required_observations = []
 
     DONE_INFO = {
         "is_done": True,

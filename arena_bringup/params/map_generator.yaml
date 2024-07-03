@@ -1,26 +1,18 @@
-algorithm: rosnav
-episode_per_map: 5
-generation_timeout: 10
-
-map_properties:
-  width: 60
-  height: 60
-  resolution: 0.5 # should stay fixed during runtime
-
-algorithm_config:
-  fill_pct: 0.15 # initial fill percentage
-  smooth_iter: 5 # smoothing iterations
-  # seed: 0 # for reproducing maps
-  map_type: indoor # chose between 'indoor' and 'outdoor'
-
-  # indoor parameters
-  indoor:
-    corridor_radius: 4 # total corridor diameter = 1+2*corridor_radius
-    iterations: 50 # number of nodes for the indoor map algorithm
-  
-  # outdoor parameters
-  outdoor:
-    obstacle_num: 15 # number of outdoor obstacles
-    obstacle_extra_radius: 1 # total obstacle diameter = 1+2*obstacle_extra_radius
-
-    
+/**:
+  ros__parameters:
+    algorithm: rosnav
+    algorithm_config:
+      fill_pct: 0.15
+      indoor:
+        corridor_radius: 5
+        iterations: 60
+      map_type: indoor
+      outdoor:
+        obstacle_extra_radius: 1
+        obstacle_num: 15
+      smooth_iter: 5
+    episode_per_map: 12
+    map_properties:
+      height: 80
+      resolution: 0.5
+      width: 80

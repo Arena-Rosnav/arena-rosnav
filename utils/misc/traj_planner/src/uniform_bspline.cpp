@@ -1,5 +1,5 @@
 #include "traj_planner/uniform_bspline.h"
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 
 
 // control points for B-spline with different dimensions.

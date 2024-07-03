@@ -2,7 +2,7 @@
 #include <plan_manager/plan_collector.h>
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.h"
 
 
 bool generate_global_plan(ros::ServiceClient global_plan_client){
@@ -50,22 +50,22 @@ bool generate_global_plan(ros::ServiceClient global_plan_client){
 
 
 int main(int argc, char** argv) {
-    ros::init(argc, argv, "abc");
+    rclcpp::init(argc, argv, "abc");
     
     
-    ros::NodeHandle nh("");
+    auto nh = std::make_shared<rclcpp::Node>("nh");"");
     //ros::WallRate r(100);
     std::string global_plan_service_name = "/sim_01/global_kino_make_plan";///move_base/NavfnROS/make_plan"; 
     ros::service::waitForService(global_plan_service_name); 
     ros::ServiceClient global_plan_client_= nh.serviceClient<plan_msgs::MakeGlobalPlan>(global_plan_service_name);
     
-    ros::Rate r(10);
+    rclcpp::Rate r(10);
     ros::Time ros_time;
     while (ros::ok())
     {   std::cout<<"start--------------"<<std::endl;
         RobotStatePtr s_start, s_end;
         std::cout<<generate_global_plan(global_plan_client_)<<std::endl;
-        ros_time=ros::Time::now();
+        ros_time=node->now();
         std::cout<<ros_time<<std::endl;
         std::cout<<"end--------------"<<std::endl;
         ros::spinOnce();                   // Handle ROS events

@@ -1,94 +1,102 @@
 #include "mapping/mapping.h"
 
 /*init*/
-void GridMap::initMap(ros::NodeHandle& nh){
+void GridMap::initMap(rclcpp::Node::SharedPtr nh){
     node_ = nh;
 
     /* get parameters*/
-    std::string static_map_service_name = "/static_map";  
-    ros::service::waitForService(static_map_service_name); // important
-    static_map_client_= nh.serviceClient<nav_msgs::GetMap>(static_map_service_name);  
-    bool is_static_map_avail=get_static_map();
-    if (!is_static_map_avail){ROS_ERROR("No static map available, please check map_server.");}
+    std::string static_map_service_name = "/static_map";
+
+    // Create the static map client
+    static_map_client_ = nh->create_client<nav_msgs::srv::GetMap>(static_map_service_name);
+
+    // Wait for the static map service to be available
+    bool service_available = static_map_client_->wait_for_service();
+    if (!service_available) {
+        RCLCPP_ERROR(nh->get_logger(), "Service static_map is not available");
+        return;
+    }
+
+    bool is_static_map_avail = get_static_map();
+    if (!is_static_map_avail) {
+        RCLCPP_ERROR(nh->get_logger(), "No static map available, please check map_server.");
+    }
     
-    // check if use esdf
-    node_.param("sdf_map/use_occ_esdf", mp_.use_occ_esdf_, true);
-    
-    // local map size
-    node_.param("sdf_map/local_update_range_x", mp_.local_update_range_(0), 5.5);
-    node_.param("sdf_map/local_update_range_y", mp_.local_update_range_(1), 5.5);
+    // Check if use esdf
+    nh->get_parameter_or("sdf_map.use_occ_esdf", mp_.use_occ_esdf_, true);
 
-    // occupancy map
-    node_.param("sdf_map/p_hit", mp_.p_hit_, 0.55);
-    node_.param("sdf_map/p_miss", mp_.p_miss_, 0.2);
-    node_.param("sdf_map/p_min", mp_.p_min_, 0.12);
-    node_.param("sdf_map/p_max", mp_.p_max_, 0.80);
-    node_.param("sdf_map/p_occ", mp_.p_occ_, 0.70);
+    // Local map size
+    nh->get_parameter_or("sdf_map.local_update_range_x", mp_.local_update_range_(0), 5.5);
+    nh->get_parameter_or("sdf_map.local_update_range_y", mp_.local_update_range_(1), 5.5);
 
-    // laser ray length
-    node_.param("sdf_map/min_ray_length", mp_.min_ray_length_, 0.5);
-    node_.param("sdf_map/max_ray_length", mp_.max_ray_length_, 3.5);
+    // Occupancy map
+    nh->get_parameter_or("sdf_map.p_hit", mp_.p_hit_, 0.55);
+    nh->get_parameter_or("sdf_map.p_miss", mp_.p_miss_, 0.2);
+    nh->get_parameter_or("sdf_map.p_min", mp_.p_min_, 0.12);
+    nh->get_parameter_or("sdf_map.p_max", mp_.p_max_, 0.80);
+    nh->get_parameter_or("sdf_map.p_occ", mp_.p_occ_, 0.70);
 
-    //show time
-    node_.param("sdf_map/show_occ_time", mp_.show_occ_time_, false);
-    node_.param("sdf_map/show_esdf_time", mp_.show_esdf_time_, false);
+    // Laser ray length
+    nh->get_parameter_or("sdf_map.min_ray_length", mp_.min_ray_length_, 0.5);
+    nh->get_parameter_or("sdf_map.max_ray_length", mp_.max_ray_length_, 3.5);
 
-    // local map
-    node_.param("sdf_map/frame_id", mp_.frame_id_, std::string("map"));
-    node_.param("sdf_map/obstacles_inflation", mp_.obstacles_inflation_, 0.01);
-    node_.param("sdf_map/local_bound_inflate", mp_.local_bound_inflate_, 0.0);
-    node_.param("sdf_map/local_map_margin", mp_.local_map_margin_, 50);
+    // Show time
+    nh->get_parameter_or("sdf_map.show_occ_time", mp_.show_occ_time_, false);
+    nh->get_parameter_or("sdf_map.show_esdf_time", mp_.show_esdf_time_, false);
+
+    // Local map
+    nh->get_parameter_or("sdf_map.frame_id", mp_.frame_id_, std::string("map"));
+    nh->get_parameter_or("sdf_map.obstacles_inflation", mp_.obstacles_inflation_, 0.01);
+    nh->get_parameter_or("sdf_map.local_bound_inflate", mp_.local_bound_inflate_, 0.0);
+    nh->get_parameter_or("sdf_map.local_map_margin", mp_.local_map_margin_, 50);
 
     /* map size*/
-    // resolution
-    mp_.resolution_=static_map_.info.resolution;
+    // Resolution
+    mp_.resolution_ = static_map_.info.resolution;
     mp_.resolution_inv_ = 1 / mp_.resolution_;
 
-    // size in meter
+    // Size in meter
     double x_size, y_size, x_origin, y_origin;
-    x_size=static_map_.info.width*static_map_.info.resolution;                // width in meter
-    y_size=static_map_.info.height*static_map_.info.resolution;               // height in meter
-    mp_.map_size_ = Eigen::Vector2d(x_size, y_size);                          // in meter
+    x_size = static_map_.info.width * static_map_.info.resolution;                // Width in meter
+    y_size = static_map_.info.height * static_map_.info.resolution;               // Height in meter
+    mp_.map_size_ = Eigen::Vector2d(x_size, y_size);                              // In meter
 
-    x_origin=static_map_.info.origin.position.x;                              // coordinate of left-bottom corner of the map, in meter
-    y_origin=static_map_.info.origin.position.y;                              // coordinate of left-bottom corner of the map, in meter
-    mp_.map_origin_ = Eigen::Vector2d(x_origin, y_origin);                    // left-bottom corner  w.r.t coordinate origin
-    
-   
-    // size in pixel of global map
-    //for (int i = 0; i < 2; ++i) mp_.map_pixel_num_(i) = ceil(mp_.map_size_(i) / mp_.resolution_);
-    mp_.map_pixel_num_(0)=static_map_.info.width;                             // pixel num: width
-    mp_.map_pixel_num_(1)=static_map_.info.height;                            // pixel num: height
+    x_origin = static_map_.info.origin.position.x;                                // Coordinate of left-bottom corner of the map, in meter
+    y_origin = static_map_.info.origin.position.y;                                // Coordinate of left-bottom corner of the map, in meter
+    mp_.map_origin_ = Eigen::Vector2d(x_origin, y_origin);                        // Left-bottom corner w.r.t coordinate origin
 
-    // global map boundary in pixel/index
-    mp_.map_min_idx_ = Eigen::Vector2i::Zero();                               // min pixel idx  (x_pixel_min,y_pixel_min)
-    mp_.map_max_idx_ = mp_.map_pixel_num_ - Eigen::Vector2i::Ones();          // max pixel idx  (x_pixel_max,y_pixel_max)
+    // Size in pixel of global map
+    mp_.map_pixel_num_(0) = static_map_.info.width;                               // Pixel num: width
+    mp_.map_pixel_num_(1) = static_map_.info.height;                              // Pixel num: height
 
-    // global map boundary in meter
-    mp_.map_min_boundary_ = mp_.map_origin_;                                  // map boundary (x_min,y_min) in meter
-    mp_.map_max_boundary_ = mp_.map_origin_ + mp_.map_size_;                  // map boundary (x_max,y_max) in meter
+    // Global map boundary in pixel/index
+    mp_.map_min_idx_ = Eigen::Vector2i::Zero();                                   // Min pixel idx (x_pixel_min, y_pixel_min)
+    mp_.map_max_idx_ = mp_.map_pixel_num_ - Eigen::Vector2i::Ones();              // Max pixel idx (x_pixel_max, y_pixel_max)
 
-    // local bound inflate
-    mp_.local_bound_inflate_ = std::max(mp_.resolution_, mp_.local_bound_inflate_);  // esdf inflation 
-    
-    // occupancy map probability param                    // odd(s+)=odd(s-)+prob_hit_log_ or odd(s+)=odd(s-)+likelihood
-    mp_.prob_hit_log_ = logit(mp_.p_hit_);                // log likelihood log[p(z=hit|s=occ)/p(m=hit|s=free)]
-    mp_.prob_miss_log_ =logit(mp_.p_miss_);               // log likelihood log[p(z=miss|s=occ)/p(m=miss|s=free)]
-    mp_.clamp_min_log_ = logit(mp_.p_min_);               // log min state prob  log[p(s=occ)/p(s=free)]
-    mp_.clamp_max_log_ = logit(mp_.p_max_);               // log max state prob  log[p(s=occ)/p(s=free)]
-    mp_.min_occupancy_log_ = logit(mp_.p_occ_);           // log of occupancy determined prob
+    // Global map boundary in meter
+    mp_.map_min_boundary_ = mp_.map_origin_;                                      // Map boundary (x_min, y_min) in meter
+    mp_.map_max_boundary_ = mp_.map_origin_ + mp_.map_size_;                      // Map boundary (x_max, y_max) in meter
+
+    // Local bound inflate
+    mp_.local_bound_inflate_ = std::max(mp_.resolution_, mp_.local_bound_inflate_);  // ESDF inflation
+
+    // Occupancy map probability param
+    mp_.prob_hit_log_ = logit(mp_.p_hit_);                // Log likelihood log[p(z=hit|s=occ)/p(m=hit|s=free)]
+    mp_.prob_miss_log_ = logit(mp_.p_miss_);              // Log likelihood log[p(z=miss|s=occ)/p(m=miss|s=free)]
+    mp_.clamp_min_log_ = logit(mp_.p_min_);               // Log min state prob log[p(s=occ)/p(s=free)]
+    mp_.clamp_max_log_ = logit(mp_.p_max_);               // Log max state prob log[p(s=occ)/p(s=free)]
+    mp_.min_occupancy_log_ = logit(mp_.p_occ_);           // Log of occupancy determined prob
     mp_.unknown_flag_ = 0.01;
 
     /* map data param */
     md_.occ_need_update_ = false;           // scan_odom_callback
     md_.local_updated_ = false;             // raycast process
-    md_.esdf_need_update_ = false;          // scan callback, occupancy updated 
-    //md_.has_first_depth_ = false;
+    md_.esdf_need_update_ = false;          // scan callback, occupancy updated
     md_.has_odom_ = false;                  // odom callback [not much use]
     md_.has_cloud_ = false;                 // scan callback [no use]
     md_.depth_cloud_cnt_ = 0;               // no use
-    md_.has_static_map_=false;
-    
+    md_.has_static_map_ = false;
+
     md_.esdf_time_ = 0.0;
     md_.fuse_time_ = 0.0;
     md_.update_num_ = 0;
@@ -157,59 +165,53 @@ void GridMap::initMap(ros::NodeHandle& nh){
     eng_ = default_random_engine(rd());
     */
 
-    ros::NodeHandle public_nh("");
+    rclcpp::Node public_nh("");
     // sensor sub: syn message filter
-    scan_sub_.reset(new message_filters::Subscriber<sensor_msgs::LaserScan>(public_nh, "scan", 50));
-    odom_sub_.reset(new message_filters::Subscriber<nav_msgs::Odometry>(public_nh, "odometry/ground_truth", 100));
-    sync_scan_odom_.reset(new message_filters::Synchronizer<SyncPolicyScanOdom>(SyncPolicyScanOdom(100), *scan_sub_, *odom_sub_));
-    sync_scan_odom_->registerCallback(boost::bind(&GridMap::scanOdomCallback, this, _1, _2));
+    scan_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(nh, "scan", 50);
+    odom_sub_ = std::make_shared<message_filters::Subscriber<nav_msgs::msg::Odometry>>(nh, "odometry/ground_truth", 100);
+    sync_scan_odom_ = std::make_shared<message_filters::Synchronizer<SyncPolicyScanOdom>>(SyncPolicyScanOdom(100), *scan_sub_, *odom_sub_);
+    sync_scan_odom_->registerCallback(std::bind(&GridMap::scanOdomCallback, this, std::placeholders::_1, std::placeholders::_2));
 
-    // sensor sub
-    indep_scan_sub_ =public_nh.subscribe<sensor_msgs::LaserScan>("scan", 10, &GridMap::scanCallback, this);
-    indep_odom_sub_ =public_nh.subscribe<nav_msgs::Odometry>("odometry/ground_truth", 10, &GridMap::odomCallback, this);
 
-    // timer callbacks
-    occ_timer_ = public_nh.createTimer(ros::Duration(0.05),   &GridMap::updateOccupancyCallback, this); // raycasting & setCacheOccupancy is the key
+    // Sensor subscribers
+    indep_scan_sub_ = nh->create_subscription<sensor_msgs::msg::LaserScan>("scan", 10, std::bind(&GridMap::scanCallback, this, std::placeholders::_1));
+    indep_odom_sub_ = nh->create_subscription<nav_msgs::msg::Odometry>("odometry/ground_truth", 10, std::bind(&GridMap::odomCallback, this, std::placeholders::_1));
+
+    // Timer callbacks
+    occ_timer_ = nh->create_wall_timer(std::chrono::milliseconds(50), std::bind(&GridMap::updateOccupancyCallback, this)); // Raycasting & setCacheOccupancy is the key
     if (mp_.use_occ_esdf_){
-      esdf_timer_ = public_nh.createTimer(ros::Duration(0.05), &GridMap::updateESDFCallback, this);
+        esdf_timer_ = nh->create_wall_timer(std::chrono::milliseconds(50), std::bind(&GridMap::updateESDFCallback, this));
     }
-    vis_timer_ = public_nh.createTimer(ros::Duration(0.05), &GridMap::visCallback, this);
-    
-    // publishers 
-    map_pub_ = public_nh.advertise<sensor_msgs::PointCloud2>("sdf_map/occupancy", 10);
-    static_map_pub_= public_nh.advertise<sensor_msgs::PointCloud2>("sdf_map/occupancy_static", 10);
-    dynamic_map_pub_= public_nh.advertise<sensor_msgs::PointCloud2>("sdf_map/occupancy_dynamic", 10);
-    
-    //map_inf_pub_ = node_.advertise<sensor_msgs::PointCloud2>("/sdf_map/occupancy_inflate", 10);
-    
-    esdf_pub_ = public_nh.advertise<sensor_msgs::PointCloud2>("sdf_map/esdf", 10);
-    esdf_static_pub_ = public_nh.advertise<sensor_msgs::PointCloud2>("sdf_map/esdf_static", 10);
-    update_range_pub_ = public_nh.advertise<visualization_msgs::Marker>("sdf_map/update_range", 10);
-    unknown_pub_ = public_nh.advertise<sensor_msgs::PointCloud2>("sdf_map/unknown", 10);
-    depth_pub_ = public_nh.advertise<sensor_msgs::PointCloud2>("sdf_map/depth_cloud", 10);
+    vis_timer_ = nh->create_wall_timer(std::chrono::milliseconds(50), std::bind(&GridMap::visCallback, this));
 
+    // Publishers 
+    map_pub_ = nh->create_publisher<sensor_msgs::msg::PointCloud2>("sdf_map/occupancy", 10);
+    static_map_pub_ = nh->create_publisher<sensor_msgs::msg::PointCloud2>("sdf_map/occupancy_static", 10);
+    dynamic_map_pub_ = nh->create_publisher<sensor_msgs::msg::PointCloud2>("sdf_map/occupancy_dynamic", 10);
+    esdf_pub_ = nh->create_publisher<sensor_msgs::msg::PointCloud2>("sdf_map/esdf", 10);
+    esdf_static_pub_ = nh->create_publisher<sensor_msgs::msg::PointCloud2>("sdf_map/esdf_static", 10);
+    update_range_pub_ = nh->create_publisher<visualization_msgs::msg::Marker>("sdf_map/update_range", 10);
+    unknown_pub_ = nh->create_publisher<sensor_msgs::msg::PointCloud2>("sdf_map/unknown", 10);
+    depth_pub_ = nh->create_publisher<sensor_msgs::msg::PointCloud2>("sdf_map/depth_cloud", 10);
 }
 
 /* static map */
-bool GridMap::get_static_map(){
-    nav_msgs::GetMap srv;
-    srv.request={}; //std_srvs::Empty::Request& request
-    
-    if (static_map_client_.call(srv))
-    {   
-      ROS_INFO_STREAM("Is stacic map available: "<<"True");
-      // set global_plan
-      static_map_=srv.response.map;
+bool GridMap::get_static_map() {
+    auto request = std::make_shared<nav_msgs::srv::GetMap::Request>();
+    auto result = static_map_client_->async_send_request(request);
 
-      
-      return true;
-    }
-    else{
-      ROS_INFO_STREAM("Is stacic map available: "<<"False");
-
-      return false;
+    // Wait for the result.
+    if (rclcpp::spin_until_future_complete(node_, result) == rclcpp::FutureReturnCode::SUCCESS) {
+        auto response = result.get();
+        RCLCPP_INFO(node_->get_logger(), "Is static map available: True");
+        static_map_ = response->map;
+        return true;
+    } else {
+        RCLCPP_INFO(node_->get_logger(), "Is static map available: False");
+        return false;
     }
 }
+
 
 void GridMap::get_static_buffer(std::vector<char> & static_buffer_inflate){
  
@@ -337,7 +339,7 @@ void GridMap::updateESDF2d_static(std::vector<char> & occ_buffer_inflate, std::v
         } else if (occ_buffer_inflate[idx] == 1) {
           occ_buffer_neg[idx] = 0;
         } else {
-          ROS_ERROR("what?");
+          RCLCPP_ERROR(rclcpp::get_logger("Mapping"), "what?");
         }
     }
 
@@ -371,7 +373,7 @@ void GridMap::updateESDF2d_static(std::vector<char> & occ_buffer_inflate, std::v
 }
 
 /* sensor callback */
-void GridMap::scanOdomCallback(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::OdometryConstPtr& odom) {
+void GridMap::scanOdomCallback(const sensor_msgs::msg::LaserScan::ConstSharedPtr& scan, const nav_msgs::msg::Odometry::ConstSharedPtr& odom) {
   /* get pose */
   md_.laser_pos_(0)=odom->pose.pose.position.x;
   md_.laser_pos_(1) = odom->pose.pose.position.y;
@@ -379,7 +381,7 @@ void GridMap::scanOdomCallback(const sensor_msgs::LaserScanConstPtr& scan, const
                                      odom->pose.pose.orientation.y, odom->pose.pose.orientation.z);
   
   /* preprocess laser scan */
-  sensor_msgs::LaserScan laser_scan=*scan;
+  sensor_msgs::msg::LaserScan laser_scan=*scan;
   //change range=nan to range=range_max, otherwise projection will negelect directions with range=nan
   for(unsigned int j=0;j< laser_scan.ranges.size();j++){
       if(std::isnan(laser_scan.ranges[j])){
@@ -388,13 +390,13 @@ void GridMap::scanOdomCallback(const sensor_msgs::LaserScanConstPtr& scan, const
   } 
   
   /* get depth pointCloud */
-  sensor_msgs::PointCloud2 cloud;
+  sensor_msgs::msg::PointCloud2 cloud;
   // wait for transform from robot_base to laser scan
   if(!tfListener_.waitForTransform(
         laser_scan.header.frame_id,
         mp_.frame_id_,
-        laser_scan.header.stamp + ros::Duration().fromSec(laser_scan.ranges.size()*laser_scan.time_increment),
-        ros::Duration(1.0))){return;}
+        laser_scan.header.stamp + rclcpp::Duration().fromSec(laser_scan.ranges.size()*laser_scan.time_increment),
+        rclcpp::Duration(1.0))){return;}
      //"/base_footprint",
 
   // High fidelity projection: suitable for laser that is moving
@@ -427,7 +429,7 @@ void GridMap::scanOdomCallback(const sensor_msgs::LaserScanConstPtr& scan, const
   md_.occ_need_update_ = true;  // occ only update when both odom(or tf) & point cloud is ready
 }
 
-void GridMap::odomCallback(const nav_msgs::OdometryConstPtr& odom) {
+void GridMap::odomCallback(const nav_msgs::msg::Odometry::ConstSharedPtr& odom) {
 
   md_.laser_pos_(0)=odom->pose.pose.position.x;
   md_.laser_pos_(1) = odom->pose.pose.position.y;
@@ -436,15 +438,15 @@ void GridMap::odomCallback(const nav_msgs::OdometryConstPtr& odom) {
   md_.has_odom_ = true;
 }
 
-void GridMap::scanCallback(const sensor_msgs::LaserScanConstPtr& scan) {
+void GridMap::scanCallback(const sensor_msgs::msg::LaserScan::ConstSharedPtr& scan) {
   
   /* scan to pcl cloud -----------------------------------*/
   // read scan to pcl cloud
   pcl::PointCloud<pcl::PointXYZ> latest_cloud;
-  sensor_msgs::PointCloud2 scan_cloud;
+  sensor_msgs::msg::PointCloud2 scan_cloud;
 
   /* preprocess laser scan */
-  sensor_msgs::LaserScan laser_scan=*scan;
+  sensor_msgs::msg::LaserScan laser_scan=*scan;
   //change range=nan to range=range_max, otherwise projection will negelect directions with range=nan
   for(unsigned int j=0;j< laser_scan.ranges.size();j++){
       if(std::isnan(laser_scan.ranges[j])){
@@ -456,8 +458,8 @@ void GridMap::scanCallback(const sensor_msgs::LaserScanConstPtr& scan) {
   if(!tfListener_.waitForTransform(
         laser_scan.header.frame_id,
         "/map",
-        laser_scan.header.stamp + ros::Duration().fromSec(laser_scan.ranges.size()*laser_scan.time_increment),
-        ros::Duration(1.0))){return;}
+        laser_scan.header.stamp + rclcpp::Duration().fromSec(laser_scan.ranges.size()*laser_scan.time_increment),
+        rclcpp::Duration(1.0))){return;}
 
 
   // High fidelity projection: suitable for laser that is moving
@@ -583,7 +585,7 @@ void GridMap::resetBuffer(Eigen::Vector2d min_pos, Eigen::Vector2d max_pos) {
 }
 
 /*Time event callback: occupancy update*/
-void GridMap::updateOccupancyCallback(const ros::TimerEvent& /*event*/) {
+void GridMap::updateOccupancyCallback(const rclcpp::TimerEvent& /*event*/) {
 
   if (!md_.occ_need_update_) {
     //std::cout<<"return"<<std::endl; 
@@ -606,7 +608,7 @@ void GridMap::updateOccupancyCallback(const ros::TimerEvent& /*event*/) {
   md_.max_fuse_time_ =std:: max(md_.max_fuse_time_, (t2 - t1).toSec());
   
   if (mp_.show_occ_time_)
-    ROS_WARN("Occupancy update: cur t = %lf, avg t = %lf, max t = %lf", (t2 - t1).toSec(),
+    RCLCPP_WARN(rclcpp::get_logger("Mapping"), "Occupancy update: cur t = %lf, avg t = %lf, max t = %lf", (t2 - t1).toSec(),
              md_.fuse_time_ / md_.update_num_, md_.max_fuse_time_);
 
   md_.occ_need_update_ = false;
@@ -642,7 +644,7 @@ void GridMap::raycastProcess() {
   // if (md_.proj_points_.size() == 0)
   if (md_.proj_points_cnt == 0) return;
 
-  ros::Time t1, t2;
+  rclcpp::Time t1, t2;
 
   md_.raycast_num_ += 1;
 
@@ -965,7 +967,7 @@ void GridMap::fuseOccupancyBuffer(){
 */
 
 /*Time event callback: ESDF update*/
-void GridMap::updateESDFCallback(const ros::TimerEvent& /*event*/) {
+void GridMap::updateESDFCallback(const rclcpp::TimerEvent& /*event*/) {
   // this is important otherwise will be neicun error
   if (!md_.esdf_need_update_) return;  // because of dynamic env, we need to update more often
 
@@ -981,7 +983,7 @@ void GridMap::updateESDFCallback(const ros::TimerEvent& /*event*/) {
   md_.max_esdf_time_ = std::max(md_.max_esdf_time_, (t2 - t1).toSec());
   md_.update_num_++;
   if (mp_.show_esdf_time_)
-    ROS_WARN("ESDF: cur t = %lf, avg t = %lf, max t = %lf", (t2 - t1).toSec(),
+    RCLCPP_WARN(rclcpp::get_logger("Mapping"), "ESDF: cur t = %lf, avg t = %lf, max t = %lf", (t2 - t1).toSec(),
              md_.esdf_time_ / md_.update_num_, md_.max_esdf_time_);
   
   md_.esdf_need_update_ = false;
@@ -1062,11 +1064,11 @@ void GridMap::updateESDF2d() {
         } else if (md_.occupancy_buffer_inflate_[idx] == 1) {
           md_.occupancy_buffer_neg_[idx] = 0;
         } else {
-          ROS_ERROR("what?");
+          RCLCPP_ERROR(rclcpp::get_logger("Mapping"), "what?");
         }
     }
 
-  ros::Time t1, t2;
+  rclcpp::Time t1, t2;
 
   for (int x = min_esdf[0]; x <= max_esdf[0]; x++) {
       fillESDF([&](int y) { return md_.occupancy_buffer_neg_[x * mp_.map_pixel_num_(1) +y] == 1 ?0 :std::numeric_limits<double>::max(); },
@@ -1211,10 +1213,10 @@ void GridMap::publishMap() {
 
   cloud.is_dense = true;
   cloud.header.frame_id = mp_.frame_id_;
-  sensor_msgs::PointCloud2 cloud_msg;
+  sensor_msgs::msg::PointCloud2 cloud_msg;
 
   pcl::toROSMsg(cloud, cloud_msg);
-  map_pub_.publish(cloud_msg);
+  map_pub_->publish(cloud_msg);
   
 }
 
@@ -1242,10 +1244,10 @@ void GridMap::publishStaticMap(){
 
   cloud.is_dense = true;
   cloud.header.frame_id = mp_.frame_id_;
-  sensor_msgs::PointCloud2 cloud_msg;
+  sensor_msgs::msg::PointCloud2 cloud_msg;
 
   pcl::toROSMsg(cloud, cloud_msg);
-  static_map_pub_.publish(cloud_msg);
+  static_map_pub_->publish(cloud_msg);
 }
 
 void GridMap::publishDynamicMap(){
@@ -1272,10 +1274,10 @@ void GridMap::publishDynamicMap(){
 
     cloud.is_dense = true;
     cloud.header.frame_id = mp_.frame_id_;
-    sensor_msgs::PointCloud2 cloud_msg;
+    sensor_msgs::msg::PointCloud2 cloud_msg;
 
     pcl::toROSMsg(cloud, cloud_msg);
-    dynamic_map_pub_.publish(cloud_msg);
+    dynamic_map_pub_->publish(cloud_msg);
 }
 
 void GridMap::publishESDF() {
@@ -1313,12 +1315,12 @@ void GridMap::publishESDF() {
   cloud.height = 1;
   cloud.is_dense = true;
   cloud.header.frame_id = mp_.frame_id_;
-  sensor_msgs::PointCloud2 cloud_msg;
+  sensor_msgs::msg::PointCloud2 cloud_msg;
   pcl::toROSMsg(cloud, cloud_msg);
 
-  esdf_pub_.publish(cloud_msg);
+  esdf_pub_->publish(cloud_msg);
 
-  // ROS_INFO("pub esdf");
+  // RCLCPP_INFO(rclcpp::get_logger("Mapping"), "pub esdf");
 }
 
 void GridMap::publishStaticESDF(){
@@ -1356,10 +1358,10 @@ void GridMap::publishStaticESDF(){
   cloud.height = 1;
   cloud.is_dense = true;
   cloud.header.frame_id = mp_.frame_id_;
-  sensor_msgs::PointCloud2 cloud_msg;
+  sensor_msgs::msg::PointCloud2 cloud_msg;
   pcl::toROSMsg(cloud, cloud_msg);
 
-  esdf_static_pub_.publish(cloud_msg);
+  esdf_static_pub_->publish(cloud_msg);
 
 }
 
@@ -1380,24 +1382,24 @@ void GridMap::publishDepth() {
   cloud.is_dense = true;
   cloud.header.frame_id = mp_.frame_id_;
 
-  sensor_msgs::PointCloud2 cloud_msg;
+  sensor_msgs::msg::PointCloud2 cloud_msg;
   pcl::toROSMsg(cloud, cloud_msg);
-  depth_pub_.publish(cloud_msg);
+  depth_pub_->publish(cloud_msg);
   
 }
 
 void GridMap::publishUpdateRange() {
   Eigen::Vector2d esdf_min_pos, esdf_max_pos, cube_pos, cube_scale;
-  visualization_msgs::Marker mk;
+  visualization_msgs::msg::Marker mk;
   indexToPos(md_.local_bound_min_, esdf_min_pos);
   indexToPos(md_.local_bound_max_, esdf_max_pos);
 
   cube_pos = 0.5 * (esdf_min_pos + esdf_max_pos);
   cube_scale = esdf_max_pos - esdf_min_pos;
   mk.header.frame_id = mp_.frame_id_;
-  mk.header.stamp = ros::Time::now();
-  mk.type = visualization_msgs::Marker::CUBE;
-  mk.action = visualization_msgs::Marker::ADD;
+  mk.header.stamp = this->now();
+  mk.type = visualization_msgs::msg::Marker::CUBE;
+  mk.action = visualization_msgs::msg::Marker::ADD;
   mk.id = 0;
 
   mk.pose.position.x = cube_pos(0);
@@ -1418,7 +1420,7 @@ void GridMap::publishUpdateRange() {
   mk.pose.orientation.y = 0.0;
   mk.pose.orientation.z = 0.0;
 
-  update_range_pub_.publish(mk);
+  update_range_pub_->publish(mk);
 }
 
 void GridMap::publishUnknown() {
@@ -1452,12 +1454,12 @@ void GridMap::publishUnknown() {
   // std::cout << "unknown ratio: " << cloud.width << "/" << sz(0) * sz(1) * sz(2) << "="
   //           << double(cloud.width) / (sz(0) * sz(1) * sz(2)) << std::endl;
 
-  sensor_msgs::PointCloud2 cloud_msg;
+  sensor_msgs::msg::PointCloud2 cloud_msg;
   pcl::toROSMsg(cloud, cloud_msg);
-  unknown_pub_.publish(cloud_msg);
+  unknown_pub_->publish(cloud_msg);
 }
 
-void GridMap::visCallback(const ros::TimerEvent& /*event*/) {
+void GridMap::visCallback(const rclcpp::TimerEvent& /*event*/) {
   publishMap();
   publishStaticMap();
   publishDynamicMap();
@@ -1474,42 +1476,15 @@ void GridMap::visCallback(const ros::TimerEvent& /*event*/) {
 
 int main(int argc, char **argv){
     
-    ros::init(argc, argv, "sdf_map");
+    rclcpp::init(argc, argv);
+    auto node = rclcpp::Node::make_shared("sdf_map");
     std::cout<<"start"<<std::endl;
-    ros::NodeHandle nh("~");
+    rclcpp::Node nh("~");
     //GridMap filter();
 
     GridMap::Ptr grid_map_;
     grid_map_.reset(new GridMap);
     grid_map_->initMap(nh);
-    ros::spin();
-    return 0;
+    rclcpp::spin(node);
+    return 0; 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

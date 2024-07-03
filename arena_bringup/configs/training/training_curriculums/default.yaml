@@ -1,79 +1,55 @@
-# Training Curriculum 
-# this yaml serves as container of the learning curriculum for the agent
-# by determining the number of static/dynamic obstacles per stage
-# (will carry on training on last stage when threshhold reached)
-
-# Training Curriculum 
-# this yaml serves as container of the learning curriculum for the agent
-# by determining the number of static/dynamic obstacles per stage
-# (will carry on training on last stage when threshhold reached)
-
-- #0
-  goal_radius: 1.0
-  map_generator:
-    algorithm: "barn"
-    algorithm_config:
-      fill_pct: 0.075
-      smooth_iter: 3
-    # rosnav:
-    #   map_type: indoor
-    #   indoor:
-    #     corridor_radius: 5
-    #     iterations: 100
-    #   outdoor:
-    #     obstacle_num: 5
-    #     obstacle_extra_radius: 1
-  static: 0
-  dynamic: 12
-- #1
-  goal_radius: 0.75
-  map_generator:
-    algorithm: "barn"
-    algorithm_config:
-      fill_pct: 0.10
-      smooth_iter: 8
-  static: 0
-  dynamic: 15
-- #2
-  goal_radius: 0.5
-  map_generator:
-    algorithm: "barn"
-    algorithm_config:
-      fill_pct: 0.10
-      smooth_iter: 2
-  static: 0
-  dynamic: 20
-- #3
-  goal_radius: 0.3
-  map_generator:
-    algorithm: "barn"
-    algorithm_config:
-      fill_pct: 0.125
-      smooth_iter: 5
-
-  static: 0
-  dynamic: 25
-- #4
-  map_generator:
-    algorithm: "barn"
-    algorithm_config:
-      fill_pct: 0.125
-      smooth_iter: 2
-  static: 0
-  dynamic: 30
-- #5
-  map_generator:
-    algorithm: "barn"
-    algorithm_config:
-      fill_pct: 0.15
-      smooth_iter: 2
-  static: 0
-  dynamic: 35
-- #6
-  map_generator:
-    algorithm: "barn"
-    algorithm_config:
-      fill_pct: 0.15
-      smooth_iter: 5
-  static: 0
-  dynamic: 40
+/**:
+  ros__parameters:
+  - dynamic: 12
+    goal_radius: 1.0
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.075
+        smooth_iter: 3
+    static: 0
+  - dynamic: 15
+    goal_radius: 0.75
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.1
+        smooth_iter: 8
+    static: 0
+  - dynamic: 20
+    goal_radius: 0.5
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.1
+        smooth_iter: 2
+    static: 0
+  - dynamic: 25
+    goal_radius: 0.3
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.125
+        smooth_iter: 5
+    static: 0
+  - dynamic: 30
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.125
+        smooth_iter: 2
+    static: 0
+  - dynamic: 35
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.15
+        smooth_iter: 2
+    static: 0
+  - dynamic: 40
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.15
+        smooth_iter: 5
+    static: 0

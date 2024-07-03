@@ -1,4 +1,0 @@
-unity_msgs/Wall[] walls
----
-bool success
-string message

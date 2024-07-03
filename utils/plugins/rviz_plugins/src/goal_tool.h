@@ -33,7 +33,7 @@
 #ifndef Q_MOC_RUN  // See: https://bugreports.qt-project.org/browse/QTBUG-22829
 # include <QObject>
 
-# include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 
 # include "pose_tool.h"
 #endif
@@ -59,7 +59,7 @@ private Q_SLOTS:
   void updateTopic();
 
 private:
-  ros::NodeHandle nh_;
+  auto nh_ = std::make_shared<rclcpp::Node>("nh_");;
   ros::Publisher pub_;
 
   StringProperty* topic_property_;

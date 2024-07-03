@@ -2,7 +2,7 @@
 #define RVIZ_TASK_TOOL_H
 
 
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 #include <rviz/tool.h>
 #include <std_srvs/Empty.h>
 
@@ -48,7 +48,7 @@ class TaskTool : public rviz::Tool {
 
   virtual int processMouseEvent( ViewportMouseEvent& event );
 
-  ros::NodeHandle nh_;  ///< NodeHandle to call the pause toggle service
+  auto nh_ = std::make_shared<rclcpp::Node>("nh_");;  ///< NodeHandle to call the pause toggle service
   ros::ServiceClient task_service_;  ///< ServiceClient that calls the pause toggle service
   Ogre::SceneNode *task_generator_node_;  // the node for task
 };

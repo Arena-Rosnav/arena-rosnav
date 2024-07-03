@@ -1,32 +1,27 @@
-contestants:
-  - name: teb-basic
-    local_planner: teb
-    inter_planner: bypass
-
-  - name: dwa-basic
-    local_planner: dwa
-    inter_planner: bypass
-
-  - name: dragon-basic
-    local_planner: dragon
-    inter_planner: bypass
-
-  - name: rosnav-basic
-    local_planner: rosnav
-    inter_planner: bypass
-
-  - name: applr-basic
-    local_planner: applr
-    inter_planner: bypass
-
-  - name: lflh-basic
-    local_planner: lflh
-    inter_planner: bypass
-
-  - name: trail-basic
-    local_planner: trail
-    inter_planner: bypass
-
-  - name: cohan-basic
-    local_planner: cohan
-    inter_planner: bypass
+/**:
+  ros__parameters:
+    contestants:
+    - inter_planner: bypass
+      local_planner: teb
+      name: teb-basic
+    - inter_planner: bypass
+      local_planner: dwa
+      name: dwa-basic
+    - inter_planner: bypass
+      local_planner: dragon
+      name: dragon-basic
+    - inter_planner: bypass
+      local_planner: rosnav
+      name: rosnav-basic
+    - inter_planner: bypass
+      local_planner: applr
+      name: applr-basic
+    - inter_planner: bypass
+      local_planner: lflh
+      name: lflh-basic
+    - inter_planner: bypass
+      local_planner: trail
+      name: trail-basic
+    - inter_planner: bypass
+      local_planner: cohan
+      name: cohan-basic

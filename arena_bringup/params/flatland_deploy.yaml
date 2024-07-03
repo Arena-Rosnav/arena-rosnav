@@ -1,3 +1,5 @@
-step_size: 0.1
-update_rate: 10
-viz_pub_rate: 30
+/**:
+  ros__parameters:
+    step_size: 0.1
+    update_rate: 10
+    viz_pub_rate: 30

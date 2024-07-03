@@ -1,207 +1,228 @@
-stages:
-  - name: map_empty_random_jackal
-    episodes: 5
-    robot: jackal
-    map: map_empty
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 5
-          max: 10
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 3
-          max: 5
-          models: ["actor1"]
-
-  - name: map_empty_random_agvota
-    episodes: 5
-    robot: agvota
-    map: map_empty
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 5
-          max: 10
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 3
-          max: 5
-          models: ["actor1"]
-
-  - name: map_empty_random_cob4
-    episodes: 5
-    robot: cob4
-    map: map_empty
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 5
-          max: 10
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 3
-          max: 5
-          models: ["actor1"]
-
-  - name: arena_corridor_random_jackal
-    episodes: 5
-    robot: jackal
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 5
-          max: 10
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 3
-          max: 5
-          models: ["actor1"]
-
-  - name: arena_corridor_random_agvota
-    episodes: 5
-    robot: agvota
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 5
-          max: 10
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 3
-          max: 5
-          models: ["actor1"]
-
-  - name: arena_corridor_random_cob4
-    episodes: 5
-    robot: cob4
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 5
-          max: 10
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 3
-          max: 5
-          models: ["actor1"]
-
-  - name: arena_hospital_small_random_jackal
-    episodes: 5
-    robot: jackal
-    map: arena_hospital_small
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 5
-          max: 10
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 3
-          max: 5
-          models: ["actor1"]
-
-  - name: arena_hospital_small_random_agvota
-    episodes: 5
-    robot: agvota
-    map: arena_hospital_small
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 5
-          max: 10
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 3
-          max: 5
-          models: ["actor1"]
-
-  - name: arena_hospital_small_random_cob4
-    episodes: 5
-    robot: cob4
-    map: arena_hospital_small
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 5
-          max: 10
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 3
-          max: 5
-          models: ["actor1"]
+/**:
+  ros__parameters:
+    stages:
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 3
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 10
+            min: 5
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: map_empty
+      name: map_empty_random_jackal
+      robot: jackal
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 3
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 10
+            min: 5
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: map_empty
+      name: map_empty_random_agvota
+      robot: agvota
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 3
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 10
+            min: 5
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: map_empty
+      name: map_empty_random_cob4
+      robot: cob4
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 3
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 10
+            min: 5
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_corridor
+      name: arena_corridor_random_jackal
+      robot: jackal
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 3
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 10
+            min: 5
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_corridor
+      name: arena_corridor_random_agvota
+      robot: agvota
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 3
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 10
+            min: 5
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_corridor
+      name: arena_corridor_random_cob4
+      robot: cob4
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 3
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 10
+            min: 5
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_hospital_small
+      name: arena_hospital_small_random_jackal
+      robot: jackal
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 3
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 10
+            min: 5
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_hospital_small
+      name: arena_hospital_small_random_agvota
+      robot: agvota
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 3
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 10
+            min: 5
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_hospital_small
+      name: arena_hospital_small_random_cob4
+      robot: cob4
+      tm_obstacles: random
+      tm_robots: scenario

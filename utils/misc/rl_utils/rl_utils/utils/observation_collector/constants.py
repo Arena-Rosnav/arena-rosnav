@@ -1,9 +1,6 @@
 import enum
 from crowdsim_agents.utils import SemanticAttribute
 
-MAX_WAIT = 5  # in seconds
-SLEEP = 0.05  # in seconds
-
 
 class DONE_REASONS(enum.Enum):
     STEP_LIMIT = 0
@@ -23,37 +20,23 @@ class TOPICS:
     PEDSIM_STATES = "pedsim_simulator/simulated_agents"
     PEDSIM_SEMANTIC = "crowdsim_agents/semantic"
 
-    PED_SAFE_DIST = "ped_safe_dist"
-    OBS_SAFE_DIST = "obs_safe_dist"
-    COLLISION = "collision"
-    IMAGE_DEPTH = "rgbd/depth"
-    IMAGE_COLOR = "rgbd/image"
-
 
 class OBS_DICT_KEYS:
     """
     Constants for observation dictionary keys.
     """
 
-    LASER = "laser_scan"  # check
-    FULL_RANGE_LASER = "full_range_laser_scan"
-    ROBOT_POSE = "robot_pose"  # check
-    SUBGOAL = "subgoal"  # check
-    GOAL = "goal"  # check
-    GOAL_DIST_ANGLE = "goal_in_robot_frame"  #
-    GOAL_LOCATION_IN_ROBOT_FRAME = "goal_location_in_robot_frame"  #
-    GOAL_LOCATION = "goal_location"  #
-    DISTANCE_TO_GOAL = "distance_to_goal"  #
-    LAST_ACTION = "last_action"  #
-    GLOBAL_PLAN = "global_plan"  #
-    INTER_REPLAN = "inter_replan"
-    DONE = "is_done"  #
-
-    PED_SAFE_DIST = "ped_safe_dist"  #
-    OBS_SAFE_DIST = "obs_safe_dist"  #
-    COLLSION = "collision"  #
-    IMAGE_DEPTH = "image_depth"
-    IMAGE_COLOR = "image_color"
+    LASER = "laser_scan"
+    ROBOT_POSE = "robot_pose"
+    SUBGOAL = "subgoal"
+    GOAL = "goal"
+    GOAL_DIST_ANGLE = "goal_in_robot_frame"
+    GOAL_LOCATION_IN_ROBOT_FRAME = "goal_location_in_robot_frame"
+    GOAL_LOCATION = "goal_location"
+    DISTANCE_TO_GOAL = "distance_to_goal"
+    LAST_ACTION = "last_action"
+    GLOBAL_PLAN = "global_plan"
+    DONE = "is_done"
 
     # why not have SEMANTIC = SemanticAttribute ?
     class SEMANTIC(enum.Enum):

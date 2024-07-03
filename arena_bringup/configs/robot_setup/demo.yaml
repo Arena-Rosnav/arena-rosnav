@@ -1,5 +1,7 @@
-robots:
-  - model: jackal
-    planner: teb
-    amount: 3
-    agent: jackal
+/**:
+  ros__parameters:
+    robots:
+    - agent: jackal
+      amount: 3
+      model: jackal
+      planner: teb

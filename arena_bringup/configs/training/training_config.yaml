@@ -1,140 +1,83 @@
-### General
-# in debug_mode no agent directories will be created and no models will be saved
-# further no wandb logging and fake (simulated) multiprocessing for traceback
-debug_mode: true
-# number of parallel environments
-n_envs: 4
-# gpu yes or no
-no_gpu: false
-
-### General Training
-tm_robots: "random"
-tm_obstacles: "random"
-tm_modules: ""
-
-# number of simulation timesteps
-n_timesteps: 4000000
-max_num_moves_per_eps: 500
-goal_radius: 0.25
-safety_distance: 0.5
-
-### Training Monitoring
-monitoring:
-  cmd_line_logging:
-    # display training metrics
-    training_metrics:
-      enabled: true
-    # display episode statistics (avg. success rate, reward, eps length..)
-    episode_statistics:
-      enabled: true
-      last_n_eps: 25
-  # weights and biases logging
-  use_wandb: false
-  # save evaluation stats during training in log file
-  eval_log: false
-
-callbacks:
-  ### Periodic Eval
-  periodic_eval:
-    # max number of steps per episode
-    max_num_moves_per_eps: 1250
-    # number of evaluation episodes
-    n_eval_episodes: 50
-    # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 10000
-
-  ### Training Curriculum
-  # threshold metric to be considered during evaluation
-  # can be either "succ" (success rate) or "rew" (reward)
-  training_curriculum:
-    # file for the robot's learning curriculum
-    training_curriculum_file: "semantic.yaml"
-    curr_stage: 0
-    threshold_type: "succ"
-    upper_threshold: 0.90
-    lower_threshold: 0.65
-
-  ### Stop Training on Threshold
-  # stops training when last stage reached and threshold satisfied
-  stop_training:
-    threshold_type: "succ"
-    threshold: 0.98
-
-### Agent Specs: Training Hyperparameter and Network Architecture
-rl_agent:
-  # name of architecture defined in the Policy factory
-  architecture_name: "RosnavResNet_simple"
-  # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
-  checkpoint: "last_model" # gonna be ignored if resume is not null
-  weight_transfer:
-    model_path: "" #"/home/tar/catkin_ws/src/planners/rosnav/agents/jackal_RosnavResNet_8_norm_2024_04_28__03_44_35/last_model.zip"
-    include: # regex to include layers
-      - "^features_extractor"
-    exclude:
-      - ""
-
-  frame_stacking:
-    enabled: false
-    stack_size: 6
-
-  reward_fnc: "base_semantic"
-  # whether unity collider-based or laser-based safety distance is used
-  # if true, reward_fnc must include ped_safe_dist and obs_safe_dist
-  distinguished_safe_dist: false
-  reward_fnc_kwargs: 
-    placeholder: 0 # placeholder kwarg
-  
-  # subgoal mode: if true, the agent follows the subgoal given by the spcial horizon planner
-  # if false, the agent follows the global goal
-  # (intermediate planner params are located in robot-specific simulation setup directory)
-  subgoal_mode: true
-
-  normalize:
-    enabled: true
-    settings:
-      norm_obs: true
-      norm_reward: false # Whether to normalize rewards or not
-      clip_obs: 30.0 # Max absolute value for observation
-      clip_reward: 20.0 # Max value absolute for discounted reward
-      gamma: 0.99 # discount factor
-
-  laser:
-    full_range_laser: true # additional laser covering 360° covering blind spots -> additional collision check
-    # NOTE: full range laser is not supported by Arena Unity
-    reduce_num_beams:
-      enabled: false
-      num_beams: 200
-  
-  rgbd:
-    enabled: false
-
-  action_space:
-    discrete: true
-    custom_discretization: # only used if discrete is true, otherwise ignored
-      enabled: true
-      # number of buckets for each action dimension
-      # (only non-holonomic robots with 2D action space supported)
-      buckets_linear_vel: 12
-      buckets_angular_vel: 16
-
-  lr_schedule:
-    # learning rate schedule
-    enabled: true
-    type: "linear"
-    settings:
-      initial_value: 0.001
-      final_value: 0.0001
-
-  ppo:
-    batch_size: 20480
-    gamma: 0.99
-    n_steps: 1200
-    ent_coef: 0.005
-    learning_rate: 0.0003
-    vf_coef: 0.22
-    max_grad_norm: 0.5
-    gae_lambda: 0.95
-    m_batch_size: 512
-    n_epochs: 3
-    clip_range: 0.25
+/**:
+  ros__parameters:
+    callbacks:
+      periodic_eval:
+        eval_freq: 10000
+        max_num_moves_per_eps: 1250
+        n_eval_episodes: 50
+      stop_training:
+        threshold: 0.98
+        threshold_type: succ
+      training_curriculum:
+        curr_stage: 5
+        lower_threshold: 0.65
+        threshold_type: succ
+        training_curriculum_file: semantic.yaml
+        upper_threshold: 0.9
+    debug_mode: true
+    goal_radius: 0.25
+    max_num_moves_per_eps: 50
+    monitoring:
+      cmd_line_logging:
+        episode_statistics:
+          enabled: true
+          last_n_eps: 25
+        training_metrics:
+          enabled: true
+      eval_log: false
+      use_wandb: false
+    n_envs: 1
+    n_timesteps: 40000000
+    no_gpu: false
+    rl_agent:
+      action_space:
+        custom_discretization:
+          buckets_angular_vel: 9
+          buckets_linear_vel: 8
+          enabled: true
+        discrete: true
+      architecture_name: RosnavResNet_5_norm
+      checkpoint: best_model
+      frame_stacking:
+        enabled: false
+        stack_size: 6
+      laser:
+        full_range_laser: true
+        reduce_num_beams:
+          enabled: false
+          num_beams: 200
+      lr_schedule:
+        enabled: true
+        settings:
+          final_value: 0.0001
+          initial_value: 0.001
+        type: linear
+      normalize:
+        enabled: true
+        settings:
+          clip_obs: 30.0
+          clip_reward: 20.0
+          gamma: 0.99
+          norm_obs: true
+          norm_reward: false
+      ppo:
+        batch_size: 20480
+        clip_range: 0.25
+        ent_coef: 0.005
+        gae_lambda: 0.95
+        gamma: 0.99
+        learning_rate: 0.0003
+        m_batch_size: 512
+        max_grad_norm: 0.5
+        n_epochs: 3
+        n_steps: 1200
+        vf_coef: 0.22
+      resume: jackal_RosnavResNet_5_norm_2024_03_23__21_02_24
+      reward_fnc: base_semantic
+      reward_fnc_kwargs:
+        placeholder: 0
+      subgoal_mode: false
+    safety_distance: 0.5
+    tm_modules: staged
+    tm_obstacles: random
+    tm_robots: random

@@ -146,8 +146,7 @@ class MapDistanceServer:
                     if coordinates_with_length[index] >= 0:
                         dist = min(coordinates_with_length[index] + 1, dist)
 
-            if np.isinf(dist):
-                dist = 0  # regularize
+            if np.isinf(dist): dist = 0 #regularize
 
             coordinates_length_dict.setdefault(dist, []).append((x, y))
             coordinates_with_length[self._get_index(x, y)] = dist
@@ -212,10 +211,10 @@ class DynamicMapDistanceServer(MapDistanceServer):
         if not os.path.exists(self._distance_map_path) or not self._first_map:
             # If the distance map does not exist or a new map is provided by map generator
             self.new_map_data = list(self._get_map_with_distances())
+            self.new_dist_map_pub.publish(String(""))
             self.save_distance_map(
                 self._distance_map_path, self.new_map_data, self.map.info
             )
-            self.new_dist_map_pub.publish(String(""))
         else:
             distance_map = self.get_distance_map(self._distance_map_path, self.map.info)
             self.new_map_data = distance_map

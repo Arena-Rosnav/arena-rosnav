@@ -1,140 +1,65 @@
-FROM mzahana/base-ubuntu20-cuda11.4.2:latest
+FROM ubuntu:22.04
 
-ARG FROM_LOCAL=false
-ARG ARENA_BRANCH=drl_subgoal_mode
-ARG ARENA_ROOT=/root
-ARG ARENA_WS=arena_ws
+ENV ARENA_DIR=/arena_ws
+ENV BRANCH=ros2
 
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
+ARG DEBIAN_FRONTEND=noninteractive
 
-SHELL ["/bin/bash", "-c"]
+SHELL [ "/usr/bin/bash", "-c" ]
 
-RUN wget --quiet http://packages.osrfoundation.org/gazebo.key -O - | apt-key add - \
-    && sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -sc` main" > /etc/apt/sources.list.d/gazebo-stable.list' \
-    && apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends install \
-    software-properties-common \
-    apt-utils \
-    ant \
-    binutils \
-    bc \
-    net-tools \
-    bash-completion \
-    dirmngr \
-    gazebo11 \
-    gstreamer1.0-plugins-bad \
-    gstreamer1.0-plugins-base \
-    gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-ugly \
-    libeigen3-dev \
-    libgazebo11-dev \
-    libgstreamer-plugins-base1.0-dev \
-    libimage-exiftool-perl \
-    libopencv-dev \
-    libxml2-utils \
-    mesa-utils \
-    protobuf-compiler \
-    x-window-system \
-    ignition-edifice \
-    && apt-get -y autoremove \
-    && apt-get clean autoclean \
-    && rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
+RUN apt update
+RUN apt install -y sudo
+RUN apt install -y tzdata && dpkg-reconfigure --frontend noninteractive tzdata
+RUN apt install -y software-properties-common curl
 
-# Some QT-Apps/Gazebo don't not show controls without this
-ENV QT_X11_NO_MITSHM 1
+#install
+    # apt
+        # add apt repos
+            RUN add-apt-repository universe
+            RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
+                echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
+            RUN add-apt-repository ppa:deadsnakes/ppa
 
-ENV ROS_DISTRO noetic
+        # update
+            RUN apt update
 
-# setup ros keys
-RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+        # install
+            RUN apt install -y git
+            RUN apt install -y ros-humble-desktop
+            RUN apt install -y python3 python-is-python3 python3-rosdep python3-pip python3-rosinstall-generator python3-vcstool build-essential python3-colcon-common-extensions
+            
+            # TEMP
+                RUN apt install -y python3.8 python3.8-distutils
+                # RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/1
 
-RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-latest.list' \
-    && sh -c 'echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-latest.list' \
-    && sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-shadow.list' \
-    && apt-get update \
-    && apt-get -y --quiet --no-install-recommends install \
-    geographiclib-tools \
-    libeigen3-dev \
-    libgeographic-dev \
-    libopencv-dev \
-    libyaml-cpp-dev \
-    python3-rosdep \
-    python3-catkin-tools \
-    python3-catkin-lint \
-    ros-$ROS_DISTRO-gazebo-ros-pkgs \
-    ros-$ROS_DISTRO-mavlink \
-    ros-$ROS_DISTRO-mavros \
-    ros-$ROS_DISTRO-mavros-extras \
-    ros-$ROS_DISTRO-octomap \
-    ros-$ROS_DISTRO-octomap-msgs \
-    ros-$ROS_DISTRO-pcl-conversions \
-    ros-$ROS_DISTRO-pcl-msgs \
-    ros-$ROS_DISTRO-pcl-ros \
-    ros-$ROS_DISTRO-ros-base \
-    ros-$ROS_DISTRO-rostest \
-    ros-$ROS_DISTRO-rosunit \
-    ros-$ROS_DISTRO-tf-conversions \
-    ros-$ROS_DISTRO-rqt-tf-tree \
-    ros-$ROS_DISTRO-rviz \
-    xvfb \
-    && geographiclib-get-geoids egm96-5 \
-    && apt-get -y autoremove \
-    && apt-get clean autoclean \
-    && rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
+    RUN rosdep init && rosdep update
 
-RUN pip3 install -U \
-    osrf-pycommon
+    # poetry
+        RUN curl -sSL https://install.python-poetry.org | python3 - && echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 
-# bootstrap rosdep
-RUN rosdep init && rosdep update
+#install2
+    WORKDIR ${ARENA_DIR}
 
-# Install dependencies
-RUN echo "Installing Deps...:" && \
-    apt-get install -y python3 python-is-python3 git python3-rosdep python3-pip python3-rosinstall-generator python3-vcstool build-essential python3-catkin-tools
+    # sources
+        RUN git clone --depth=1 --branch ${BRANCH} https://github.com/Arena-Rosnav/arena-rosnav.git src/arena/arena-rosnav
+        RUN until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to update, retrying..." ; done
 
-# Auto completion in terminal
-RUN apt install bash-completion
-RUN echo "source /etc/profile.d/bash_completion.sh" >> $HOME/.bashrc
+    # deps
+        # apt
+            RUN apt install -y libopencv-dev liblua5.2-dev libarmadillo-dev liblcm-dev
 
-# Install poetry separated from system interpreter
-RUN curl -sSL https://install.python-poetry.org | python3 -
-ENV PATH "$ARENA_ROOT/.local/bin:$PATH"
+        # poetry
+            ENV PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring
+            RUN cd src/arena/arena-rosnav && \
+                $HOME/.local/bin/poetry install --no-root && \
+                $HOME/.local/bin/poetry env use python3.8
 
-# Install Arena-Rosnav
-RUN if [ -d $ARENA_ROOT/$ARENA_WS/src/arena ]; then \
-    echo \"Install Folder $ARENA_ROOT/arena_ws/src/arena/arena-rosnav already exists.\" && \
-    echo \"This indicates Arena Rosnav is already installed.\" && \
-    echo \"If you wish to reinstall, please delete $ARENA_ROOT/arena_ws\" && \
-    exit 1; \
-    fi 
+        # rosdep
+#            RUN rosdep update && rosdep install --from-paths src --ignore-src -r -y
 
-WORKDIR $ARENA_ROOT/$ARENA_WS
-ADD . src/arena/arena-rosnav
-
-# Clone Arena-Rosnav
-RUN if [ "$FROM_LOCAL" = "false" ]; then \
-    rm -rf src/arena/arena-rosnav && \
-    git clone --branch $ARENA_BRANCH https://github.com/Arena-Rosnav/arena-rosnav.git src/arena/arena-rosnav; \
-    fi
-
-RUN until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to update, retrying..." ; done
-
-# Setup and activate Poetry Env
-WORKDIR $ARENA_ROOT/$ARENA_WS/src/arena/arena-rosnav
-RUN poetry config virtualenvs.create true && \
-    poetry install --no-root --no-interaction --no-ansi --with training && \
-    poetry env use python3.8
-
-WORKDIR $ARENA_ROOT/$ARENA_WS
-# Install necessary dependencies
-RUN apt-get update && apt-get install -y libopencv-dev liblua5.2-dev libarmadillo-dev ros-noetic-nlopt liblcm-dev psmisc
-RUN rosdep update && rosdep install --from-paths src --ignore-src -r -y
-
-# Build Arena-Rosnav
-RUN rm -r src/arena/utils/pedsim_ros/pedsim_engine/2ndparty/spencer_tracking_rviz_plugin
-# RUN source /opt/ros/$ROS_DISTRO/setup.sh && catkin_make -DPYTHON_EXECUTABLE=$POETRY_ENV
-
-WORKDIR $ARENA_ROOT/$ARENA_WS/src/arena/arena-rosnav/training/docker/
-RUN chmod +x entrypoint.sh
-ENTRYPOINT ./entrypoint.sh
+    # build and export
+#        RUN source "$(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate" && \
+#            source /opt/ros/humble/setup.bash && \
+#            colcon build --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)"
+#
+#        RUN echo "source $(pwd)/devel/setup.bash" >> ~/.bashrc

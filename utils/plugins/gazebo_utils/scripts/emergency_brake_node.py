@@ -25,9 +25,9 @@ class EmergencyBrakeNode:
         __init__ [The node expects the commanded velocity to be published on /nav_vel, then redirects to /cmd_vel]
 
         """
-        self.scan_sub = rospy.Subscriber("/scan", LaserScan, self.scan_callback)
-        self.nav_vel_sub = rospy.Subscriber("/nav_vel", Twist, self.nav_vel_callback)
-        self.cmd_vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1, latch=True)
+        self.scan_sub = node.create_subscription(LaserScan, "/scan", self.scan_callback)
+        self.nav_vel_sub = node.create_subscription(Twist, "/nav_vel", self.nav_vel_callback)
+        self.cmd_vel_pub = node.create_publisher(Twist, queue_size=1, latch=True, "/cmd_vel")
 
     def scan_callback(self, data):
         """
@@ -68,7 +68,8 @@ class EmergencyBrakeNode:
 
 
 if __name__ == "__main__":
-    rospy.init_node("emergency_break_node", anonymous=True)
+    rclpy.init()
+    node = rclpy.create_node("emergency_break_node", anonymous=True)
 
     args = parse_args()
 

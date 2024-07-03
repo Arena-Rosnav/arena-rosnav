@@ -35,9 +35,9 @@
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreTextureManager.h>
 
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.h"
 
-#include <tf/transform_listener.h>
+#include "tf2_ros/transform_listener.h"
 
 #include "rviz/frame_manager.h"
 #include "rviz/ogre_helpers/grid.h"
@@ -193,7 +193,7 @@ void MultiProbMapDisplay::update( float wall_dt, float ros_dt )
     int   height     = current_map_->maps[k].info.height;    
     
     // Load pixel
-    //t[0] = ros::Time::now(); 
+    //t[0] = node->now(); 
     unsigned int pixels_size = width * height;
     unsigned char* pixels = new unsigned char[pixels_size];
     memset(pixels, 255, pixels_size);
@@ -219,21 +219,21 @@ void MultiProbMapDisplay::update( float wall_dt, float ros_dt )
     memcpy(pixels, &current_map_->maps[k].data[0], pixels_size);
 */
     // Set texture
-    //t[1] = ros::Time::now();
+    //t[1] = node->now();
     Ogre::DataStreamPtr pixel_stream;
     pixel_stream.bind( new Ogre::MemoryDataStream( pixels, pixels_size ));
     static int tex_count = 0;
     std::stringstream ss1;
     ss1 << "MultiMapTexture" << tex_count++;
     Ogre::TexturePtr _texture_;
-    //t[2] = ros::Time::now();            
+    //t[2] = node->now();            
     _texture_ = Ogre::TextureManager::getSingleton().loadRawData( ss1.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
                                                                   pixel_stream, width, height, Ogre::PF_L8, Ogre::TEX_TYPE_2D, 0);   
-    //t[3] = ros::Time::now();                                                                                                                                                                                   
+    //t[3] = node->now();                                                                                                                                                                                   
     texture_.push_back(_texture_);                                                
     delete [] pixels;     
     setStatus( StatusProperty::Ok, "Map", "Map OK" );      
-    //t[4] = ros::Time::now();     
+    //t[4] = node->now();     
     
     // Set material
     static int material_count = 0;

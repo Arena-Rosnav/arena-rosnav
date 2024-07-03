@@ -1,27 +1,21 @@
-goal_reached:
-  reward: 15
-
-safe_dist:
-  punishment: 0.25
-
-collision:
-  punishment: 10
-
-goal_approached:
-  reward_factor: 0.3
-  penalty_factor: 0.4
-
-distance_traveled:
-  consumption_factor: 0.0075
-
-following_global_plan:
-  reward_factor: 0.15
-
-distance_global_plan:
-  reward_factor: 0.2
-  penalty_factor: 0.3
-
-abrupt_direction_change: null
-
-reverse_drive:
-  penalty: 0.01
+/**:
+  ros__parameters:
+    abrupt_direction_change: null
+    collision:
+      punishment: 10
+    distance_global_plan:
+      penalty_factor: 0.3
+      reward_factor: 0.2
+    distance_traveled:
+      consumption_factor: 0.0075
+    following_global_plan:
+      reward_factor: 0.15
+    goal_approached:
+      penalty_factor: 0.4
+      reward_factor: 0.3
+    goal_reached:
+      reward: 15
+    reverse_drive:
+      penalty: 0.01
+    safe_dist:
+      punishment: 0.25

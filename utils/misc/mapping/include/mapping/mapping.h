@@ -4,7 +4,7 @@
 //
 #include <Eigen/Eigen>
 #include <iostream>
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 
 //data structure
 #include <queue>
@@ -16,24 +16,25 @@
 #include <algorithm>
 
 // tf
-#include <tf/transform_listener.h>
-#include <geometry_msgs/TransformStamped.h>
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+#include <geometry_msgs/msg/transform_stamped.hpp>
 
 // Laser & PCL
-#include <sensor_msgs/PointCloud.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/LaserScan.h>
-#include <laser_geometry/laser_geometry.h>
+#include <sensor_msgs/msg/point_cloud.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/msg/laser_scan.hpp>
+#include <laser_geometry/laser_geometry.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 
 // Odom & Pose
-#include <geometry_msgs/PoseStamped.h>
-#include <nav_msgs/Odometry.h>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 
 // Map
-#include <nav_msgs/GetMap.h>
-#include <std_srvs/Empty.h>
-#include <nav_msgs/OccupancyGrid.h>
+#include <nav_msgs/srv/get_map.hpp>
+#include <std_srvs/srv/empty.hpp>
+#include <nav_msgs/msg/occupancy_grid.hpp>
 
 // message filter
 #include <message_filters/subscriber.h>
@@ -42,7 +43,7 @@
 #include <message_filters/time_synchronizer.h>
 
 // visual
-#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/msg/marker.hpp>
 
 // raycaster
 #include <mapping/raycast.h>
@@ -115,7 +116,7 @@ struct MappingData {
   bool has_static_map_;
 
   //[new] odom_depth_timeout_
-  ros::Time last_occ_update_time_;
+  rclcpp::Time last_occ_update_time_;
   bool flag_depth_odom_timeout_;
   bool flag_use_depth_fusion;
 
@@ -137,13 +138,17 @@ struct MappingData {
 
 class GridMap{
     public:
-        GridMap() {}
+      GridMap(rclcpp::Node::SharedPtr nh)
+          : node_(nh),
+            tfBuffer_(std::make_shared<tf2_ros::Buffer>(node_->get_clock())),
+            tfListener_(*tfBuffer_) {}
+
         ~GridMap() {}
         typedef std::shared_ptr<GridMap> Ptr;
 
         enum { INVALID_IDX = -10000 };
 
-        void initMap(ros::NodeHandle& nh);
+        void initMap(rclcpp::Node::SharedPtr nh);
 
         /* occupancy map management */
         // static map 
@@ -216,52 +221,59 @@ class GridMap{
 
 
     private:
-        ros::NodeHandle node_;
+        rclcpp::Node::SharedPtr node_;
+        std::shared_ptr<tf2_ros::Buffer> tfBuffer_;
+        tf2_ros::TransformListener tfListener_;
         MappingParameters mp_;
         MappingData md_;
 
         // scan to pointCloud2 projector
         laser_geometry::LaserProjection projector_;
-        tf::TransformListener tfListener_;
+
 
         // sensor: message filter
-        typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::LaserScan, nav_msgs::Odometry> SyncPolicyScanOdom;
+        typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::LaserScan, nav_msgs::msg::Odometry> SyncPolicyScanOdom;
         typedef std::shared_ptr<message_filters::Synchronizer<SyncPolicyScanOdom>> SynchronizerScanOdom;
         
-        std::shared_ptr<message_filters::Subscriber<sensor_msgs::LaserScan>> scan_sub_;
-        std::shared_ptr<message_filters::Subscriber<nav_msgs::Odometry>> odom_sub_;
+        std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> scan_sub_;
+        std::shared_ptr<message_filters::Subscriber<nav_msgs::msg::Odometry>> odom_sub_;
         SynchronizerScanOdom sync_scan_odom_;
 
         // sensor: subscriber
-        ros::Subscriber indep_scan_sub_, indep_odom_sub_;
+        rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr indep_scan_sub_;
+        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr indep_odom_sub_;
 
         // map server service
-        ros::ServiceClient static_map_client_;
-        nav_msgs::OccupancyGrid static_map_;
+        rclcpp::Client<nav_msgs::srv::GetMap>::SharedPtr static_map_client_;
+        nav_msgs::msg::OccupancyGrid static_map_;
 
-        // publiser
-        ros::Publisher map_pub_,static_map_pub_,dynamic_map_pub_;
-        ros::Publisher esdf_pub_,esdf_static_pub_;
-        ros::Publisher depth_pub_; //laser pointcloud2
-        ros::Publisher update_range_pub_;
-        ros::Publisher unknown_pub_;
-
+        // publisher
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr static_map_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr dynamic_map_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr esdf_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr esdf_static_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr depth_pub_;
+        rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr update_range_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr unknown_pub_;
 
         // timer
-        ros::Timer occ_timer_;
-        ros::Timer esdf_timer_;
-        ros::Timer vis_timer_;
+        rclcpp::TimerBase::SharedPtr occ_timer_;
+        rclcpp::TimerBase::SharedPtr esdf_timer_;
+        rclcpp::TimerBase::SharedPtr vis_timer_;
+
+
 
         
         /* Sensor Callbacks */
-        void scanOdomCallback(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::OdometryConstPtr& odom);
-        void scanCallback(const sensor_msgs::LaserScanConstPtr& scan);
-        void odomCallback(const nav_msgs::OdometryConstPtr& odom);
+        void scanOdomCallback(const sensor_msgs::msg::LaserScan::ConstSharedPtr& scan, const nav_msgs::msg::Odometry::ConstSharedPtr& odom);
+        void scanCallback(const sensor_msgs::msg::LaserScan::ConstSharedPtr& scan);
+        void odomCallback(const nav_msgs::msg::Odometry::ConstSharedPtr& odom);
 
         /* Time event callback: update occupancy by raycasting, and update ESDF*/
-        void updateOccupancyCallback(const ros::TimerEvent& /*event*/);
-        void updateESDFCallback(const ros::TimerEvent& /*event*/);
-        void visCallback(const ros::TimerEvent& /*event*/);  
+        void updateOccupancyCallback();
+        void updateESDFCallback();
+        void visCallback();  
         
         // main update process
         /* occupancy map update */

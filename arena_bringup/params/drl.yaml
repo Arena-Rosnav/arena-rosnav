@@ -1,3 +1,5 @@
-action_frequency: 4
-laser_update_rate: 10
-disable_intermediate_planner: false
+/**:
+  ros__parameters:
+    action_frequency: 4
+    disable_intermediate_planner: false
+    laser_update_rate: 10

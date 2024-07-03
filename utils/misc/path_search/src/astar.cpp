@@ -25,7 +25,7 @@ void Astar::reset() {
   iter_num_ = 0;
 }
 
-void Astar::setParam(ros::NodeHandle& private_nh) {
+void Astar::setParam(rclcpp::Node& private_nh) {
 
   private_nh.param("astar/resolution_astar", resolution_, 0.05);
   private_nh.param("astar/time_resolution", time_resolution_, 0.8);
@@ -62,7 +62,7 @@ void Astar::init(){
   iter_num_ = 0;
 }
 
-void Astar::init(ros::NodeHandle& private_nh,const GridMap::Ptr& env) {
+void Astar::init(rclcpp::Node& private_nh,const GridMap::Ptr& env) {
   
   /* ---------- get ros params & set env---------- */
   setParam(private_nh);
@@ -310,7 +310,7 @@ std::vector<NodePtr> Astar::getVisitedNodes() {
   return visited;
 }
 
-Eigen::Vector2d goalCallback(const geometry_msgs::PoseStampedPtr& msg){
+Eigen::Vector2d goalCallback(const geometry_msgs::msg::PoseStampedPtr& msg){
   Eigen::Vector2d end_pt;
   if(msg->pose.position.z !=0) return end_pt;
   

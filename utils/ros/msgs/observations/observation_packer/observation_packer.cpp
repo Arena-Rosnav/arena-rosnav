@@ -1,9 +1,9 @@
-#include <observations/Observation.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <sensor_msgs/LaserScan.h>
-#include <nav_msgs/Odometry.h>
-#include <ros/ros.h>
+#include "observations/msg/observation.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "Transform2D.h"
 #include <common/f_math.h>
 #include <signal.h>
@@ -43,7 +43,7 @@ void setAbsoluteGoal(const zVector2D &new_pos)
 	relative_goal_transform.toLocalOf(odom_transform);
 }
 
-void quaternionFromMsg(tf2::Quaternion &q, const geometry_msgs::Quaternion &q_msg)
+void quaternionFromMsg(tf2::Quaternion &q, const geometry_msgs::msg::Quaternion &q_msg)
 {
 	q[0] = q_msg.x;
 	q[1] = q_msg.y;
@@ -62,7 +62,7 @@ void updateAbsoluteGoal()
 	absolute_goal_transform = odom_transform.getLocalTranslate(relative_goal_transform.position);
 }
 
-void goal_callback(const geometry_msgs::PoseStampedPtr &msg)
+void goal_callback(const std::shared_ptr<geometry_msgs::msg::PoseStamped> &msg)
 {
 	float x = msg->pose.position.x - odom_transform.position.x;
 	float y = msg->pose.position.y - odom_transform.position.y;
@@ -91,7 +91,7 @@ void goal_callback(const geometry_msgs::PoseStampedPtr &msg)
 	// goal.set(msg->pose.position.x, msg->pose.position.y, 0);
 }
 
-void laser_callback(const sensor_msgs::LaserScan::ConstPtr &msg)
+void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
 {
 	for (int i = 0; i < msg->ranges.size(); i++)
 	{
@@ -117,14 +117,14 @@ void updateRelativeWithAbsoluteGoal()
 	relative_goal_transform = absolute_goal_transform.getToLocalOf(odom_transform);
 }
 
-void odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
+void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
 	odom_transform.setFromMsg(msg->pose.pose);
 	robot_state.setFromMsg(msg->pose.pose);
 	odom_callback_called = true;
 }
 
-void amcl_callback(const geometry_msgs::PoseWithCovarianceStampedPtr &msg)
+void amcl_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
 	odom_transform.setFromMsg(msg->pose.pose);
 	robot_state.setFromMsg(msg->pose.pose);
@@ -152,7 +152,7 @@ float cal_angle_to_goal()
 	return tmp - robot_state.theta + 4 * M_PI;
 }
 
-void packMsg(observations::Observation &obs)
+void packMsg(observations::msg::Observation &obs)
 {
 	// obs.observation[0] = distance_to_goal;
 	// obs.observation[1] = angle_to_goal;
@@ -173,8 +173,8 @@ int main(int argc, char **argv)
 {
 	puts("Initializing ros node...");
 	signal(SIGINT, sigint_handler);
-	ros::init(argc, argv, "observeration_packer", ros::init_options::NoSigintHandler);
-	ros::NodeHandle n;
+	rclcpp::init(argc, argv, "observeration_packer", ros::init_options::NoSigintHandler);
+	auto n = std::make_shared<rclcpp::Node>("n");;
 	puts("Subscribing to /subgoal ...");
 	ros::Subscriber sub_obj = n.subscribe("subgoal", 1, &goal_callback);
 	// puts("Subscribing to /initial_pose ...");
@@ -182,19 +182,19 @@ int main(int argc, char **argv)
 	// puts("Subscribing to /goal ...");
 	// ros::Subscriber sub_obj = n.subscribe("goal", 1, &goal_callback);
 	puts("Subscribing to /scan ...");
-	ros::Subscriber sub_scan = n.subscribe<sensor_msgs::LaserScan>("scan", 1, laser_callback);
+	auto sub_scan = n->create_subscription<sensor_msgs::LaserScan>("scan", 1, std::bind(laser_callback, std::placeholders::_1));
 	puts("Subscribing to /odom ...");
-	ros::Subscriber sub_odom = n.subscribe<nav_msgs::Odometry>("odom", 1, odom_callback);
+	auto sub_odom = n->create_subscription<nav_msgs::Odometry>("odom", 1, std::bind(odom_callback, std::placeholders::_1));
 	
 	// FROM NOETIC
 	// puts("Subscribing to /odom ...");
-	// ros::Subscriber sub_odom = n.subscribe<nav_msgs::Odometry>("odometry/ground_truth", 1, odom_callback);
+	// auto sub_odom = n->create_subscription<nav_msgs::Odometry>("odometry/ground_truth", 1, std::bind(odom_callback, std::placeholders::_1));
 	
 	// puts("Subscribing to /amcl_pose ...");
 	// ros::Subscriber sub_odom = n.subscribe("amcl_pose", 1, amcl_callback);
 	puts("Advertising /observation ...");
-	ros::Publisher pub = n.advertise<observations::Observation>("observation", 1);
-	ros::Rate publish_rate(10);
+	auto pub = n->create_publisher<observations::Observation>("observation", 1);
+	rclcpp::Rate publish_rate(10);
 	// init laser data
 	for (int i = 0; i < 360; i++)
 	{
@@ -228,7 +228,7 @@ int main(int argc, char **argv)
 			// packing current observation
 			observations::Observation msg;
 			packMsg(msg);
-			pub.publish(msg);
+			pub->publish(msg);
 		}
 
 		// slow down

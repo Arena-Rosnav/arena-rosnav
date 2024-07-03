@@ -2,13 +2,13 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/util/system.hh>
 
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 #include "ros/callback_queue.h"
 #include "ros/subscribe_options.h"
 #include <thread>
 
-#include <pedsim_msgs/TrackedPersons.h>
-#include <pedsim_msgs/AgentStates.h>
+#include <pedsim_msgs/msg/tracked_persons.hpp>
+#include <pedsim_msgs/msg/agent_states.hpp>
 
 namespace gazebo
 {
@@ -29,21 +29,21 @@ namespace gazebo
       this->actor->SetCustomTrajectory(this->trajectoryInfo);
       if (!ros::isInitialized())
       {
-        ROS_ERROR("ROS not initialized");
+        RCLCPP_ERROR(rclcpp::get_logger("GazeboUtils"), "ROS not initialized");
         return;
       }
-      rosNode.reset(new ros::NodeHandle(this->actor->GetName()));
+      rosNode.reset(new rclcpp::Node(this->actor->GetName()));
       this->actor_height = 1.1;
-      ros::SubscribeOptions so = ros::SubscribeOptions::create<pedsim_msgs::AgentStates>("/pedsim_simulator/simulated_agents", 1, boost::bind(&ActorPosePlugin::OnRosMsg, this, _1), ros::VoidPtr(), &rosQueue);
+      ros::SubscribeOptions so = ros::SubscribeOptions::create<pedsim_msgs::msg::AgentStates>("/pedsim_simulator/simulated_agents", 1, boost::bind(&ActorPosePlugin::OnRosMsg, this, _1), ros::VoidPtr(), &rosQueue);
       rosSub = rosNode->subscribe(so);
       rosQueueThread = std::thread(std::bind(&ActorPosePlugin::QueueThread, this));
     }
 
   public:
     // call back function when receive rosmsg
-    void OnRosMsg(const pedsim_msgs::AgentStatesConstPtr msg)
+    void OnRosMsg(const pedsim_msgs::msg::AgentStates::ConstSharedPtr msg)
     {
-      // ROS_ERROR(msg);
+      // RCLCPP_ERROR(rclcpp::get_logger("GazeboUtils"), msg);
       double distanceTraveled;
       bool actorFound = false;
       for (auto& actor : msg->agent_states)
@@ -80,7 +80,7 @@ namespace gazebo
       if (!actorFound)
       // Actor not found in pedsim simulation -> place him far away in Gazebo so it doesn't intervene
       {
-        ROS_WARN("Actor not found in pedsim simulation -> place him far away in Gazebo so it doesn't intervene");
+        RCLCPP_WARN(rclcpp::get_logger("GazeboUtils"), "Actor not found in pedsim simulation -> place him far away in Gazebo so it doesn't intervene");
         ignition::math::Pose3d pose = this->actor->WorldPose();
         pose.Pos().Z() = -20.0;
         this->actor->SetWorldPose(pose, true, false);
@@ -99,7 +99,7 @@ namespace gazebo
     }
 
   private:
-    std::unique_ptr<ros::NodeHandle> rosNode;
+    std::unique_ptr<rclcpp::Node> rosNode;
     ros::Subscriber rosSub;
     ros::CallbackQueue rosQueue;
     std::thread rosQueueThread;

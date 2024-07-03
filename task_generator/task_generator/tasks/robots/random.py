@@ -52,7 +52,7 @@ class TM_Random(TM_Robots):
             to_generate = 2*(len(self._PROPS.robot_managers) - len(ROBOT_POSITIONS))
 
             orientations = 2 * math.pi * Config.General.RNG.random(to_generate)
-            positions = self._PROPS.world_manager.positions_on_map(
+            positions = self._PROPS.world_manager.get_positions_on_map(
                 n= to_generate,
                 safe_dist=biggest_robot
             )

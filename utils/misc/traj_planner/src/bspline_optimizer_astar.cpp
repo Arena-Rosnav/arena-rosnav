@@ -2,7 +2,7 @@
 
 using namespace std;
 
-void BsplineOptimizerAstar::setParam(ros::NodeHandle &nh)
+void BsplineOptimizerAstar::setParam(rclcpp::Node &nh)
 {
     nh.param("optimization_astar/lambda_smooth", lambda1_, 1.0);
     nh.param("optimization_astar/lambda_collision", lambda2_, 0.5);
@@ -113,7 +113,7 @@ std::vector<std::vector<Eigen::Vector2d>> BsplineOptimizerAstar::initControlPoin
       }
       else
       {
-        ROS_ERROR("a star error, force return!");
+        RCLCPP_ERROR(rclcpp::get_logger("TrajPlanner"), "a star error, force return!");
         return a_star_pathes;
       }
     }
@@ -305,7 +305,7 @@ std::vector<std::vector<Eigen::Vector2d>> BsplineOptimizerAstar::initControlPoin
       else
       {
         // Just ignore, it does not matter ^_^.
-        // ROS_ERROR("Failed to generate direction! segment_id=%d", i);
+        // RCLCPP_ERROR(rclcpp::get_logger("TrajPlanner"), "Failed to generate direction! segment_id=%d", i);
       }
     }
 
@@ -358,7 +358,7 @@ bool BsplineOptimizerAstar::check_collision_and_rebound(void)
         }
         if (j < 0) // fail to get the obs free point
         {
-          ROS_ERROR("ERROR! the drone is in obstacle. This should not happen.");
+          RCLCPP_ERROR(rclcpp::get_logger("TrajPlanner"), "ERROR! the drone is in obstacle. This should not happen.");
           in_id = 0;
         }
 
@@ -374,7 +374,7 @@ bool BsplineOptimizerAstar::check_collision_and_rebound(void)
         }
         if (j >= cps_.size) // fail to get the obs free point
         {
-          ROS_WARN("WARN! terminal point of the current trajectory is in obstacle, skip this planning.");
+          RCLCPP_WARN(rclcpp::get_logger("TrajPlanner"), "WARN! terminal point of the current trajectory is in obstacle, skip this planning.");
 
           force_stop_type_ = STOP_FOR_ERROR;
           return false;
@@ -399,7 +399,7 @@ bool BsplineOptimizerAstar::check_collision_and_rebound(void)
         }
         else
         {
-          ROS_ERROR("a star error");
+          RCLCPP_ERROR(rclcpp::get_logger("TrajPlanner"), "a star error");
           segment_ids.erase(segment_ids.begin() + i);
           i--;
         }
@@ -490,7 +490,7 @@ bool BsplineOptimizerAstar::check_collision_and_rebound(void)
             }
         }
         else
-          ROS_WARN("Failed to generate direction. It doesn't matter.");
+          RCLCPP_WARN(rclcpp::get_logger("TrajPlanner"), "Failed to generate direction. It doesn't matter.");
       }
 
       force_stop_type_ = STOP_FOR_REBOUND;
@@ -543,7 +543,7 @@ bool BsplineOptimizerAstar::rebound_optimize()
     variable_num_ = 2 * (end_id - start_id);
     double final_cost;
 
-    ros::Time t0 = ros::Time::now(), t1, t2;
+    rclcpp::Time t0 = this->now(), t1, t2;
     int restart_nums = 0, rebound_times = 0;
     ;
     bool flag_force_return, flag_occ, success;
@@ -568,9 +568,9 @@ bool BsplineOptimizerAstar::rebound_optimize()
       lbfgs_params.g_epsilon = 0.01;
 
       /* ---------- optimize ---------- */
-      t1 = ros::Time::now();
+      t1 = this->now();
       int result = lbfgs::lbfgs_optimize(variable_num_, q, &final_cost, BsplineOptimizerAstar::costFunctionRebound, NULL, BsplineOptimizerAstar::earlyExit, this, &lbfgs_params);
-      t2 = ros::Time::now();
+      t2 = this->now();
       double time_ms = (t2 - t1).toSec() * 1000;
       double total_time_ms = (t2 - t0).toSec() * 1000;
 
@@ -580,7 +580,7 @@ bool BsplineOptimizerAstar::rebound_optimize()
           result == lbfgs::LBFGS_ALREADY_MINIMIZED ||
           result == lbfgs::LBFGS_STOP)
       {
-        //ROS_WARN("Solver error in planning!, return = %s", lbfgs::lbfgs_strerror(result));
+        //RCLCPP_WARN(rclcpp::get_logger("TrajPlanner"), "Solver error in planning!, return = %s", lbfgs::lbfgs_strerror(result));
         flag_force_return = false;
 
         UniformBspline traj = UniformBspline(cps_.points, 3, bspline_interval_);
@@ -600,7 +600,7 @@ bool BsplineOptimizerAstar::rebound_optimize()
                    << cps_.points.col(2).transpose() << "\n"
                    << cps_.points.col(3).transpose() << "\n"
                    << cps_.points.col(4).transpose() << endl;
-              ROS_WARN("First 3 control points in obstacles! return false, t=%f", t);
+              RCLCPP_WARN(rclcpp::get_logger("TrajPlanner"), "First 3 control points in obstacles! return false, t=%f", t);
               return false;
             }
 
@@ -630,8 +630,8 @@ bool BsplineOptimizerAstar::rebound_optimize()
       }
       else
       {
-        ROS_WARN("Solver error. Return = %d, %s. Skip this planning.", result, lbfgs::lbfgs_strerror(result));
-        // while (ros::ok());
+        RCLCPP_WARN(rclcpp::get_logger("TrajPlanner"), "Solver error. Return = %d, %s. Skip this planning.", result, lbfgs::lbfgs_strerror(result));
+        // while (rclcpp::ok());
       }
 
     } while ((flag_occ && restart_nums < MAX_RESART_NUMS_SET) ||
@@ -673,7 +673,7 @@ bool BsplineOptimizerAstar::refine_optimize()
       }
       else
       {
-        ROS_ERROR("Solver error in refining!, return = %d, %s", result, lbfgs::lbfgs_strerror(result));
+        RCLCPP_ERROR(rclcpp::get_logger("TrajPlanner"), "Solver error in refining!, return = %d, %s", result, lbfgs::lbfgs_strerror(result));
       }
 
       UniformBspline traj = UniformBspline(cps_.points, 3, bspline_interval_);
@@ -770,7 +770,7 @@ void BsplineOptimizerAstar::combineCostRefine(const double *x, double *grad, dou
     Eigen::MatrixXd g_fitness = Eigen::MatrixXd::Zero(2, cps_.points.cols());
     Eigen::MatrixXd g_feasibility = Eigen::MatrixXd::Zero(2, cps_.points.cols());
 
-    //time_satrt = ros::Time::now();
+    //time_satrt = this->now();
 
     calcSmoothnessCost(cps_.points, f_smoothness, g_smoothness);
     calcFitnessCost(cps_.points, f_fitness, g_fitness);

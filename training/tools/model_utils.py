@@ -1,20 +1,11 @@
 import os
-from pathlib import Path
 import sys
-from typing import Callable, List, Union
+from typing import Callable
 
-import torch
-
-from rl_utils.utils.observation_collector.traversal import get_required_observations
-from rosnav.model.agent_factory import AgentFactory
-from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
-from rosnav.utils.observation_space.observation_space_manager import (
-    ObservationSpaceManager,
-)
 import rospy
 import wandb
 from rl_utils.utils.eval_callbacks.staged_train_callback import InitiateNewTrainStage
-from rl_utils.utils.learning_rate_schedules import linear_decay, square_root_decay
+from rl_utils.utils.learning_rate_schedules.linear import linear_decay
 from rosnav.model.base_agent import BaseAgent
 from sb3_contrib import RecurrentPPO
 from stable_baselines3 import PPO
@@ -26,9 +17,6 @@ from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.utils import configure_logger
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
-import re
-
-from task_generator.shared import Namespace
 
 
 def setup_wandb(config: dict, agent: PPO) -> None:
@@ -120,24 +108,21 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
         model.tensorboard_log = None
         model._logger = None
 
-    if not isinstance(model, RecurrentPPO):
-        model._setup_rollout_buffer()
-    else:
-        init_rppo_rollout_buffer(model)
+    model._setup_rollout_buffer()
 
     print("--------------------------------\n")
 
 
 def load_lr_schedule(config: dict) -> Callable:
     lr_schedule_cfg = config["rl_agent"]["lr_schedule"]
+    lr_schedule = None
     if lr_schedule_cfg["type"] == "linear":
-        return linear_decay(**lr_schedule_cfg["settings"])
-    elif lr_schedule_cfg["type"] == "square_root":
-        return square_root_decay(**lr_schedule_cfg["settings"])
+        lr_schedule = linear_decay(**lr_schedule_cfg["settings"])
     else:
         raise NotImplementedError(
             f"Learning rate schedule '{lr_schedule_cfg['type']}' not implemented!"
         )
+    return lr_schedule
 
 
 def save_model(model: PPO, paths: dict, file_name: str = "best_model") -> None:
@@ -154,7 +139,7 @@ def save_model(model: PPO, paths: dict, file_name: str = "best_model") -> None:
 
 def get_ppo_instance(
     agent_description: BaseAgent,
-    observation_space_manager,
+    observation_manager,
     config: dict,
     train_env: VecEnv,
     paths: dict,
@@ -164,15 +149,10 @@ def get_ppo_instance(
     )
     if new_model:
         model = instantiate_new_model(
-            agent_description, observation_space_manager, config, train_env, paths
+            agent_description, observation_manager, config, train_env, paths
         )
     else:
-        model_path = Path(paths["model"]) / f"{config['rl_agent']['checkpoint']}.zip"
-        model = load_model(
-            path=model_path,
-            env=train_env,
-            observation_space_manager=observation_space_manager,
-        )
+        model = load_model(config, train_env, paths)
         update_hyperparam_model(model, paths, config)
 
     wandb_logging: bool = not config["debug_mode"] and config["monitoring"]["use_wandb"]
@@ -180,31 +160,16 @@ def get_ppo_instance(
     if wandb_logging:
         setup_wandb(config, model)
 
-    model2_path = config["rl_agent"]["weight_transfer"]["model_path"]
-
-    if type(model2_path) is str and len(model2_path) > 0 and new_model:
-        transfer_weights(
-            model1=model,
-            model2=load_model(
-                path=model2_path,
-                # env=train_env,
-                observation_space_manager=observation_space_manager,
-            ),
-            include=config["rl_agent"]["weight_transfer"]["include"],
-            exclude=config["rl_agent"]["weight_transfer"]["exclude"],
-        )
-
     ## Save model once
 
-    # if not rospy.get_param("debug_mode") and new_model:
-    #     save_model(model, paths)
-
+    if not rospy.get_param("debug_mode") and new_model:
+        save_model(model, paths)
     return model
 
 
 def instantiate_new_model(
     agent_description: BaseAgent,
-    observation_space_manager,
+    observation_manager,
     config: dict,
     train_env: VecEnv,
     PATHS: dict,
@@ -234,15 +199,13 @@ def instantiate_new_model(
 
     if isinstance(agent_description, BaseAgent):
         ppo_kwargs["policy"] = agent_description.type.value
-
-        frame_stacking_cfg = config["rl_agent"]["frame_stacking"]
-        # get policy description kwargs
-        policy_kwargs = agent_description.get_kwargs(
-            observation_space_manager=observation_space_manager,
-            stack_size=(
-                frame_stacking_cfg["stack_size"] if frame_stacking_cfg["enabled"] else 1
-            ),
-        )
+        policy_kwargs = agent_description.get_kwargs()
+        policy_kwargs["features_extractor_kwargs"][
+            "observation_space_manager"
+        ] = observation_manager
+        policy_kwargs["features_extractor_kwargs"]["stacked_obs"] = config["rl_agent"][
+            "frame_stacking"
+        ]["enabled"]
         ppo_kwargs["policy_kwargs"] = policy_kwargs
     elif issubclass(agent_description, ActorCriticPolicy):
         raise NotImplementedError("ActorCriticPolicy not implemented yet!")
@@ -258,47 +221,37 @@ def instantiate_new_model(
     return RecurrentPPO(**ppo_kwargs) if is_lstm else PPO(**ppo_kwargs)
 
 
-def load_model(
-    path: str,
-    env: VecEnv = None,
-    observation_space_manager: ObservationSpaceManager = None,
-) -> Union[RecurrentPPO, PPO]:
-    if not os.path.isfile(path):
-        raise FileNotFoundError(f"Model file {path} not found!")
+sys.modules["rl_agent"] = sys.modules["rosnav"]
+sys.modules["rl_utils.rl_utils.utils"] = sys.modules["rosnav.utils"]
 
-    path = str(path)
-    config_path = path[: path.rfind("/") + 1] + "training_config.yaml"
-    # read yaml config
-    with open(config_path, "r") as file:
-        config = yaml.safe_load(file)
 
-    agent_description = AgentFactory.instantiate(
-        config["rl_agent"]["architecture_name"]
-    )
+def load_model(config: dict, train_env: VecEnv, PATHS: dict) -> PPO:
+    agent_name = config["agent_name"]
+    checkpoint = config["rl_agent"]["checkpoint"]
+    possible_agent_names = [
+        checkpoint,
+        "best_model",
+        "last_model",
+        f"{agent_name}",
+        "model",
+    ]
 
-    frame_stacking_cfg = config["rl_agent"]["frame_stacking"]
+    for name in possible_agent_names:
+        target_path = os.path.join(PATHS["model"], f"{checkpoint}.zip")
+        if os.path.isfile(target_path):
+            rospy.loginfo(f"Loading model from {target_path}")
+            model = PPO.load(os.path.join(PATHS["model"], name), train_env)
+            break
 
-    # Instantiate ObservationSpaceManager
-    if observation_space_manager is None:
-        raise ValueError("ObservationSpaceManager must be provided!")
-
-    # DYNAMIC POLICY UPDATE WHEN LOADING MODEL
-    custom_objects = {
-        "policy_kwargs": agent_description.get_kwargs(
-            observation_space_manager=observation_space_manager,
-            stack_size=(
-                frame_stacking_cfg["stack_size"] if frame_stacking_cfg["enabled"] else 1
-            ),
+    if not model:
+        raise FileNotFoundError(
+            f"Could not find model file for agent {agent_name}!"
+            "You might need to change the 'checkpoint' in the config file "
+            "accordingly."
         )
-    }
 
-    # load model
-    is_lstm = "LSTM" in agent_description.type.name
-    return (
-        RecurrentPPO.load(path, env=env, custom_objects=custom_objects)
-        if is_lstm
-        else PPO.load(path, env=env, custom_objects=custom_objects)
-    )
+    update_hyperparam_model(model, PATHS, config)
+    return model
 
 
 def init_callbacks(
@@ -342,83 +295,3 @@ def init_callbacks(
     )
 
     return eval_cb
-
-
-def transfer_weights(
-    model1: PPO, model2: PPO, include: List[str] = None, exclude: List[str] = None
-):
-    if include is None:
-        rospy.logwarn("No include list provided. Skipping weight transfer.")
-        return model1
-
-    if len(exclude) == 0 or exclude[0].lower() == "none" or exclude[0] == "":
-        exclude = ["---"]
-
-    state_dict_model1 = model1.policy.state_dict()
-    state_dict_model2 = model2.policy.state_dict()
-
-    weights_dict = {
-        key: value
-        for key, value in state_dict_model2.items()
-        if any(re.match(_key, key) for _key in include)
-        and not any(item in key for item in exclude)
-        and key in state_dict_model1
-        and state_dict_model1[key].shape == value.shape
-    }
-
-    rospy.loginfo(f"Transferring weights for {len(weights_dict.keys())} keys!")
-
-    # num_params = sum(p.numel() for p in model1.policy.parameters())
-    # num_params2 = sum(p.numel() for p in model2.policy.parameters())
-
-    state_dict_model1.update(weights_dict)
-    model1.policy.load_state_dict(state_dict_model1, strict=True)
-
-
-from sb3_contrib.common.recurrent.type_aliases import RNNStates
-from sb3_contrib.common.recurrent.buffers import (
-    RecurrentDictRolloutBuffer,
-    RecurrentRolloutBuffer,
-)
-from gymnasium import spaces
-import yaml
-
-
-def init_rppo_rollout_buffer(model: RecurrentPPO):
-    buffer_cls = (
-        RecurrentDictRolloutBuffer
-        if isinstance(model.observation_space, spaces.Dict)
-        else RecurrentRolloutBuffer
-    )
-    lstm = model.policy.lstm_actor
-
-    single_hidden_state_shape = (lstm.num_layers, model.n_envs, lstm.hidden_size)
-    # hidden and cell states for actor and critic
-    model._last_lstm_states = RNNStates(
-        (
-            torch.zeros(single_hidden_state_shape, device=model.device),
-            torch.zeros(single_hidden_state_shape, device=model.device),
-        ),
-        (
-            torch.zeros(single_hidden_state_shape, device=model.device),
-            torch.zeros(single_hidden_state_shape, device=model.device),
-        ),
-    )
-
-    hidden_state_buffer_shape = (
-        model.n_steps,
-        lstm.num_layers,
-        model.n_envs,
-        lstm.hidden_size,
-    )
-
-    model.rollout_buffer = buffer_cls(
-        model.n_steps,
-        model.observation_space,
-        model.action_space,
-        hidden_state_buffer_shape,
-        model.device,
-        gamma=model.gamma,
-        gae_lambda=model.gae_lambda,
-        n_envs=model.n_envs,
-    )

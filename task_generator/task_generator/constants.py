@@ -10,17 +10,15 @@ import rospy
 from task_generator.shared import Namespace, rosparam_get
 import dynamic_reconfigure.client
 
-
 class Constants:
 
     DEFAULT_PEDESTRIAN_MODEL = "actor1"
 
-    TASK_GENERATOR_SERVER_NODE = Namespace("/task_generator_server")
+    TASK_GENERATOR_SERVER_NODE = Namespace("task_generator_server")
 
     class Simulator(Enum):
         FLATLAND = "flatland"
         GAZEBO = "gazebo"
-        UNITY = "unity"
 
     class ArenaType(Enum):
         TRAINING = "training"
@@ -37,7 +35,6 @@ class Constants:
             PARAMETRIZED = "parametrized"
             RANDOM = "random"
             SCENARIO = "scenario"
-            ZONES = "zones"
 
             @classmethod
             def prefix(cls, *args):
@@ -49,7 +46,6 @@ class Constants:
             EXPLORE = "explore"
             RANDOM = "random"
             SCENARIO = "scenario"
-            ZONES = "zones"
 
             @classmethod
             def prefix(cls, *args):
@@ -164,6 +160,7 @@ class FlatlandRandomModel:
 pedsim_ns = Namespace(
     "task_generator_node/configuration/pedsim/default_actor_config")
 
+
 # TODO make everything dynamic_reconfigure
 def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     """
@@ -173,12 +170,11 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     # load once at the start
     val = rospy.get_param(pedsim_ns(parameter), fallback)
 
-    def gen(): return val
+    gen = lambda: val
 
     if isinstance(val, list):
         lo, hi = val[:2]
-
-        def gen(): return min(
+        gen = lambda: min(
             hi,
             max(
                 lo,
@@ -217,8 +213,3 @@ class Pedsim:
     FORCE_FACTOR_SOCIAL = lp("FORCE_FACTOR_SOCIAL", 5.0)
     FORCE_FACTOR_ROBOT = lp("FORCE_FACTOR_ROBOT", 0.0)
     WAYPOINT_MODE = lp("WAYPOINT_MODE", 0)
-
-
-class UnityConstants:
-    WALL_HEIGHT = 4.0
-    ATTACH_SAFE_DIST_SENSOR_TOPIC = "attach_safe_dist_sensor"

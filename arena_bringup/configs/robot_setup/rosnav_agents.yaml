@@ -1,22 +1,10 @@
-robots:
-  # - model: ridgeback
-  #   planner: teb
-  #   amount: 1
-  # - model: ridgeback
-  #   planner: rosnav
-  #   amount: 1
-  #   agent: ridgeback
-  # - model: rto_lab
-  #   planner: teb
-  #   amount: 1
-  - model: jackal
-    planner: rosnav
-    amount: 3
-    agent: jackal
-  - model: rto
-    planner: teb
-    amount: 3
-  # - model: jackal
-  #   planner: rosnav
-  #   amount: 1
-  #   agent: new_jackal
+/**:
+  ros__parameters:
+    robots:
+    - agent: jackal
+      amount: 3
+      model: jackal
+      planner: rosnav
+    - amount: 3
+      model: rto
+      planner: teb

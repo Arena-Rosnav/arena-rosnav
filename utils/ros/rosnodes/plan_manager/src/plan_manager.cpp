@@ -8,7 +8,7 @@ void PlanManager::init(ros::NodeHandle &nh)
 
   /*  plan param  */
   bool train_mode;
-  ros::NodeHandle n;
+  auto n = std::make_shared<rclcpp::Node>("n");;
   // not global param, because we want to set it in the launch file
   n.param("/train_mode", train_mode, true);
   mode_ = train_mode ? TRAIN : TEST;
@@ -80,7 +80,7 @@ void PlanManager::goalCallback(const geometry_msgs::PoseStampedPtr &msg)
   visualization_->drawGoal(end_state_->to_PoseStampted(), 0.5, Eigen::Vector4d(1, 1, 1, 1.0));
   cout << ros::this_node::getNamespace()<<"Goal drawed!" << endl;
   // init start_time for this task
-  start_time_ = ros::Time::now();
+  start_time_ = node->now();
 }
 
 void PlanManager::odometryCallback(const nav_msgs::OdometryConstPtr &msg)
@@ -89,7 +89,7 @@ void PlanManager::odometryCallback(const nav_msgs::OdometryConstPtr &msg)
   cur_state_.reset(new RobotState(*msg));
 
   // publish robot state
-  robot_state_pub_.publish(cur_state_->toRobotStateStamped());
+  robot_state_pub_->publish(cur_state_->toRobotStateStamped());
 
   // set have_odom(means localization system is ready)
   have_odom_ = true;
@@ -142,7 +142,7 @@ void PlanManager::odometryCallback(const nav_msgs::OdometryConstPtr &msg)
       start_state_.reset(new RobotState(cur_state_->pose2d, cur_state_->theta, cur_state_->vel2d, cur_state_->w));
       bool global_plan_success = planner_collector_->generate_global_plan(*start_state_, *end_state_);
       if(global_plan_success){
-        global_plan_pub_.publish(planner_collector_->global_path_);
+        global_plan_pub_->publish(planner_collector_->global_path_);
         changeFSMExecState(REPLAN_MID, "FSM");
       }else{
         changeFSMExecState(GEN_NEW_GLOBAL, "FSM");
@@ -179,7 +179,7 @@ void PlanManager::odometryCallback(const nav_msgs::OdometryConstPtr &msg)
       // start_state_.reset(new RobotState(cur_state_->pose2d, cur_state_->theta, cur_state_->vel2d, cur_state_->w));
       // bool global_plan_success = planner_collector_->generate_global_plan(*start_state_, *end_state_);
       // if(global_plan_success){
-      //   global_plan_pub_.publish(planner_collector_->global_path_);
+      //   global_plan_pub_->publish(planner_collector_->global_path_);
       return;
     }
 
@@ -202,8 +202,8 @@ void PlanManager::odometryCallback(const nav_msgs::OdometryConstPtr &msg)
     dist_to_subgoal = (cur_state_->pose2d - planner_collector_->subgoal_state_->pose2d).norm();
 
     // calculate: timecot to avoid task takes too much time
-    double time_cost_goal = ros::Time::now().toSec() - start_time_.toSec();
-    double time_cost_subgoal = ros::Time::now().toSec() - subgoal_start_time_.toSec();
+    double time_cost_goal = node->now().toSec() - start_time_.toSec();
+    double time_cost_subgoal = node->now().toSec() - subgoal_start_time_.toSec();
 
     /* check state_transfer: Goal Criterion */
     // check if reached goal
@@ -267,7 +267,7 @@ void PlanManager::odometryCallback(const nav_msgs::OdometryConstPtr &msg)
     if (mode_ == TRAIN)
     {
       
-      subgoal_pub_.publish(end_state_->to_PoseStampted());
+      subgoal_pub_->publish(end_state_->to_PoseStampted());
       ROS_DEBUG_STREAM(ros::this_node::getNamespace()<<"subgoal= "<<end_state_->to_PoseStampted());
       //visualization_->drawSubgoal(end_state_->to_PoseStampted(), 0.3, Eigen::Vector4d(0, 0, 0, 1.0));
       ROS_DEBUG("MID_REPLAN Success");
@@ -285,10 +285,10 @@ void PlanManager::odometryCallback(const nav_msgs::OdometryConstPtr &msg)
     if (get_subgoal_success)
     {
       // success: publish new subgoal & going to state EXEC_LOCAL
-      subgoal_pub_.publish(planner_collector_->subgoal_);
+      subgoal_pub_->publish(planner_collector_->subgoal_);
       visualization_->drawSubgoal(planner_collector_->subgoal_, 0.3, Eigen::Vector4d(0, 0, 0, 1.0));
       // reset subgoal start time(be used for timeout criterion)
-      subgoal_start_time_ = ros::Time::now();
+      subgoal_start_time_ = node->now();
       ROS_DEBUG_STREAM(ros::this_node::getNamespace()<<"MID_REPLAN Success");
 
       changeFSMExecState(EXEC_LOCAL, "FSM");
@@ -356,7 +356,7 @@ void PlanManager::execFSMCallback(const ros::TimerEvent &e)
       start_state_.reset(new RobotState(cur_state_->pose2d, cur_state_->theta, cur_state_->vel2d, cur_state_->w));
       bool global_plan_success = planner_collector_->generate_global_plan(*start_state_, *end_state_);
       if(global_plan_success){
-        global_plan_pub_.publish(planner_collector_->global_path_);
+        global_plan_pub_->publish(planner_collector_->global_path_);
         changeFSMExecState(REPLAN_MID, "FSM");
       }else{
         changeFSMExecState(GEN_NEW_GLOBAL, "FSM");
@@ -393,7 +393,7 @@ void PlanManager::execFSMCallback(const ros::TimerEvent &e)
       // start_state_.reset(new RobotState(cur_state_->pose2d, cur_state_->theta, cur_state_->vel2d, cur_state_->w));
       // bool global_plan_success = planner_collector_->generate_global_plan(*start_state_, *end_state_);
       // if(global_plan_success){
-      //   global_plan_pub_.publish(planner_collector_->global_path_);
+      //   global_plan_pub_->publish(planner_collector_->global_path_);
       return;
     }
 
@@ -416,8 +416,8 @@ void PlanManager::execFSMCallback(const ros::TimerEvent &e)
     dist_to_subgoal = (cur_state_->pose2d - planner_collector_->subgoal_state_->pose2d).norm();
 
     // calculate: timecot to avoid task takes too much time
-    double time_cost_goal = ros::Time::now().toSec() - start_time_.toSec();
-    double time_cost_subgoal = ros::Time::now().toSec() - subgoal_start_time_.toSec();
+    double time_cost_goal = node->now().toSec() - start_time_.toSec();
+    double time_cost_subgoal = node->now().toSec() - subgoal_start_time_.toSec();
 
     /* check state_transfer: Goal Criterion */
     // check if reached goal
@@ -481,7 +481,7 @@ void PlanManager::execFSMCallback(const ros::TimerEvent &e)
     if (mode_ == TRAIN)
     {
       
-      subgoal_pub_.publish(end_state_->to_PoseStampted());
+      subgoal_pub_->publish(end_state_->to_PoseStampted());
       ROS_DEBUG_STREAM(ros::this_node::getNamespace()<<"subgoal= "<<end_state_->to_PoseStampted());
       //visualization_->drawSubgoal(end_state_->to_PoseStampted(), 0.3, Eigen::Vector4d(0, 0, 0, 1.0));
       ROS_DEBUG("MID_REPLAN Success");
@@ -499,10 +499,10 @@ void PlanManager::execFSMCallback(const ros::TimerEvent &e)
     if (get_subgoal_success)
     {
       // success: publish new subgoal & going to state EXEC_LOCAL
-      subgoal_pub_.publish(planner_collector_->subgoal_);
+      subgoal_pub_->publish(planner_collector_->subgoal_);
       visualization_->drawSubgoal(planner_collector_->subgoal_, 0.3, Eigen::Vector4d(0, 0, 0, 1.0));
       // reset subgoal start time(be used for timeout criterion)
-      subgoal_start_time_ = ros::Time::now();
+      subgoal_start_time_ = node->now();
       ROS_DEBUG_STREAM(ros::this_node::getNamespace()<<"MID_REPLAN Success");
 
       changeFSMExecState(EXEC_LOCAL, "FSM");

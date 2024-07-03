@@ -1,9 +1,9 @@
-#include <observations/Observation.h>
-#include <geometry_msgs/PoseStamped.h>
+#include "observations/msg/observation.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <sensor_msgs/LaserScan.h>
-#include <nav_msgs/Odometry.h>
-#include <ros/ros.h>
+#include "sensor_msgs/msg/laser_scan.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "rclcpp/rclcpp.h"
 #include "Transform2D.h"
 #include <common/f_math.h>
 #include <signal.h>
@@ -150,8 +150,8 @@ int main(int argc, char ** argv)
 {
 	puts("Initializing ros node...");
 	signal(SIGINT, sigint_handler);
-	ros::init(argc, argv, "observeration_packer", ros::init_options::NoSigintHandler);
-	ros::NodeHandle n;
+	rclcpp::init(argc, argv, "observeration_packer", ros::init_options::NoSigintHandler);
+	auto n = std::make_shared<rclcpp::Node>("n");;
 	puts("Subscribing to /subgoal ...");
 	ros::Subscriber sub_obj = n.subscribe("subgoal", 1, &goal_callback);
 	// puts("Subscribing to /initial_pose ...");
@@ -159,14 +159,14 @@ int main(int argc, char ** argv)
 	// puts("Subscribing to /goal ...");
 	// ros::Subscriber sub_obj = n.subscribe("goal", 1, &goal_callback);
 	puts("Subscribing to /scan ...");
-	ros::Subscriber sub_scan = n.subscribe<sensor_msgs::LaserScan>("scan", 1, laser_callback);
+	auto sub_scan = n->create_subscription<sensor_msgs::LaserScan>("scan", 1, std::bind(laser_callback, std::placeholders::_1));
 	// puts("Subscribing to /odom ...");
-	// ros::Subscriber sub_odom = n.subscribe<nav_msgs::Odometry>("odom", 1, odom_callback);
+	// auto sub_odom = n->create_subscription<nav_msgs::Odometry>("odom", 1, std::bind(odom_callback, std::placeholders::_1));
 	puts("Subscribing to /amcl_pose ...");
 	ros::Subscriber sub_odom = n.subscribe("amcl_pose", 1, amcl_callback);
 	puts("Advertising /observation ...");
-	ros::Publisher pub = n.advertise<observations::Observation>("observation", 1);
-	ros::Rate publish_rate(10);
+	auto pub = n->create_publisher<observations::Observation>("observation", 1);
+	rclcpp::Rate publish_rate(10);
 	// init laser data
 	for(int i = 0; i < 360; i++){
 		laser_data[i] = MAX_LASER_DISTANCE;
@@ -195,7 +195,7 @@ int main(int argc, char ** argv)
 			// packing current observation
 			observations::Observation msg;
 			packMsg(msg);
-			pub.publish(msg);
+			pub->publish(msg);
 		}
 
 		// slow down

@@ -2,15 +2,15 @@
 #define _ROBOT_STATE_H_
 
 #include <Eigen/Eigen>
-#include <geometry_msgs/Pose.h>
-#include <nav_msgs/Odometry.h>
+#include "geometry_msgs/msg/pose.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
-#include <geometry_msgs/Quaternion.h>
-#include "tf/transform_datatypes.h"
+#include "geometry_msgs/msg/quaternion.hpp"
+#include "tf2/transform_datatypes.h"
 
-#include <plan_msgs/RobotStateStamped.h>
+#include <plan_msgs/msg/RobotStateStamped.h>
 #include <plan_msgs/RobotState.h>
 
 struct RobotState
@@ -60,7 +60,7 @@ struct RobotState
     geometry_msgs::PoseStamped to_PoseStampted(){
         geometry_msgs::PoseStamped pose_stamped;
        
-        pose_stamped.header.stamp=ros::Time::now();
+        pose_stamped.header.stamp=node->now();
         pose_stamped.header.frame_id = "map";
         pose_stamped.pose.position.x=pose2d(0);
         pose_stamped.pose.position.y=pose2d(1);
@@ -76,7 +76,7 @@ struct RobotState
         plan_msgs::RobotStateStamped state_stamped;
         plan_msgs::RobotState state;
         //header
-        state_stamped.header.stamp=ros::Time::now();
+        state_stamped.header.stamp=node->now();
         state_stamped.header.frame_id = "map";
         
         // pose

@@ -124,7 +124,11 @@ class RobotManager:
         #     return
 
         self._launch_robot()
-        self._robot_radius = rosparam_get(float, self.namespace("robot_radius"))
+        self._robot_radius = (
+            float(rospy.get_param_cached("robot_radius"))
+            if Utils.get_arena_type() == Constants.ArenaType.TRAINING
+            else rosparam_get(float, self.namespace("robot_radius"))
+        )
 
         # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
         self._clear_costmaps_srv = rospy.ServiceProxy(

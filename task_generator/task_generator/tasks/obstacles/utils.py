@@ -38,7 +38,7 @@ class ITF_Obstacle:
             waypoints = [PositionRadius(setup.position.x, setup.position.y, 1)]
             safe_distance = 0.1  # the other waypoints don't need to avoid robot
 
-            waypoints += [PositionRadius(*pos, 1) for pos in props.world_manager.positions_on_map(n=n_waypoints, safe_dist=safe_distance)]
+            waypoints += [PositionRadius(*pos, 1) for pos in props.world_manager.get_positions_on_map(n=n_waypoints, safe_dist=safe_distance)]
 
         return DynamicObstacle(**{
             **dataclasses.asdict(setup),
@@ -67,7 +67,7 @@ class ITF_Obstacle:
         safe_distance = 1
 
         if position is None:
-            point = props.world_manager.position_on_map(safe_distance)
+            point = props.world_manager.get_position_on_map(safe_distance)
             position = PositionOrientation(point.x, point.y, Config.General.RNG.random() * 2*math.pi)
 
         if extra is None:

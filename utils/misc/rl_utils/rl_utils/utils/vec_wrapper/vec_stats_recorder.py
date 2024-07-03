@@ -88,13 +88,13 @@ class VecStatsRecorder(VecEnvWrapper):
         print("-" * 40, sep="", end="\n")  # Print 40 dashes as a line separator
         print(f"Episode {self.num_episodes} / Step {self.num_steps}:")
         print(
-            f"Average step time: {sum(self.step_times) / len(self.step_times):.4f} seconds"
+            f"Average step time: {sum(self.step_times) / self.after_x_eps:.4f} seconds"
         )
         print(
-            f"Average episode return: {sum(self.episode_returns) / len(self.episode_returns):.3f} pts"
+            f"Average episode return: {sum(self.episode_returns) / self.after_x_eps:.3f} pts"
         )
         print(
-            f"Mean episode length: {sum(self.episode_lengths) / len(self.episode_lengths):.1f} steps"
+            f"Mean episode length: {sum(self.episode_lengths) / self.after_x_eps:.1f} steps"
         )
         print(f"Done reasons: {self.done_reasons}")
         print("-" * 40, sep="", end="\n")  # Print another line separator

@@ -1,53 +1,15 @@
-robots:
-  # - model: rto
-  #   planner: rosnav
-  #   amount: 6
-  #   agent: rto_tlabs_marl
-  - model: jackal
-    planner: rosnav
-    amount: 2
-    agent: jackal_marl
-  - model: rto
-    planner: rosnav
-    amount: 2
-    agent: rto_marl
-  - model: ridgeback
-    planner: rosnav
-    amount: 2
-    agent: ridgeback_marl
-  # - model: cob4
-  #   planner: teb
-  #   amount: 1
-  #   agent: new_jackal
-  # - model: dingo
-  #   planner: teb
-  #   amount: 1
-  #   agent: new_jackal
-  # - model: jackal
-  #   planner: teb
-  #   amount: 1
-  #   agent: new_jackal
-  # - model: ridgeback
-  #   planner: teb
-  #   amount: 1
-  #   agent: new_jackal
-  # - model: rto
-  #   planner: teb
-  #   amount: 1
-  #   agent: new_jackal
-  # - model: rto_lab
-  #   planner: teb
-  #   amount: 1
-  #   agent: new_jackal
-  # - model: tiago
-  #   planner: teb
-  #   amount: 1
-  #   agent: new_jackal
-  # - model: waffle
-  #   planner: teb
-  #   amount: 1
-  #   agent: new_jackal
-  # - model: youbot
-  #   planner: teb
-  #   amount: 1
-  #   agent: new_jackal
+/**:
+  ros__parameters:
+    robots:
+    - agent: jackal_marl
+      amount: 2
+      model: jackal
+      planner: rosnav
+    - agent: rto_marl
+      amount: 2
+      model: rto
+      planner: rosnav
+    - agent: ridgeback_marl
+      amount: 2
+      model: ridgeback
+      planner: rosnav

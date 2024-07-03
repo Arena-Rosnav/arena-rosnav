@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- I ONLY EXIST FOR COMPATIBILITY REASONS, O CRUEL WORLD -->
-<launch>
-    <include file="$(find task_generator)/launch/task_generator.launch" />
-</launch>

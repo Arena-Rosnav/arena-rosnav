@@ -1,219 +1,213 @@
-stages:
-  - name: arena_corridor_1_jackal
-    episodes: 1
-    robot: jackal
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 1.json
-
-  - name: arena_corridor_2_jackal
-    episodes: 1
-    robot: jackal
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 2.json 
-
-  - name: arena_corridor_3_jackal
-    episodes: 1
-    robot: jackal
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 3.json
-
-  - name: arena_corridor_4_jackal
-    episodes: 1
-    robot: jackal
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 4.json
-
-  - name: arena_corridor_5_jackal
-    episodes: 1
-    robot: jackal
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 5.json
-        
-  - name: arena_corridor_random_jackal
-    episodes: 5
-    robot: jackal
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 5
-          max: 10
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 3
-          max: 5
-          models: ["actor1"]
-
-  - name: arena_corridor_1_agvota
-    episodes: 1
-    robot: agvota
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 1.json
-
-  - name: arena_corridor_2_agvota
-    episodes: 1
-    robot: agvota
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 2.json 
-
-  - name: arena_corridor_3_agvota
-    episodes: 1
-    robot: agvota
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 3.json
-
-  - name: arena_corridor_4_agvota
-    episodes: 1
-    robot: agvota
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 4.json
-
-  - name: arena_corridor_5_agvota
-    episodes: 1
-    robot: agvota
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 5.json
-        
-  - name: arena_corridor_random_agvota
-    episodes: 5
-    robot: agvota
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 5
-          max: 10
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 3
-          max: 5
-          models: ["actor1"]
-
-  - name: arena_corridor_1_cob4
-    episodes: 1
-    robot: cob4
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 1.json
-
-  - name: arena_corridor_2_cob4
-    episodes: 1
-    robot: cob4
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 2.json 
-
-  - name: arena_corridor_3_cob4
-    episodes: 1
-    robot: cob4
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 3.json
-
-  - name: arena_corridor_4_cob4
-    episodes: 1
-    robot: cob4
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 4.json
-
-  - name: arena_corridor_5_cob4
-    episodes: 1
-    robot: cob4
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: scenario
-    config:
-      SCENARIO:
-        file: 5.json
-        
-  - name: arena_corridor_random_cob4
-    episodes: 5
-    robot: cob4
-    map: arena_corridor
-    tm_robots: scenario
-    tm_obstacles: random
-    config:
-      SCENARIO:
-        file: 1.json
-      RANDOM:
-        static:
-          min: 5
-          max: 10
-          models: ["shelf"]
-        interactive:
-          min: 0
-          max: 0
-          models: ["shelf"]
-        dynamic:
-          min: 3
-          max: 5
-          models: ["actor1"]
+/**:
+  ros__parameters:
+    stages:
+    - config:
+        SCENARIO:
+          file: 1.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_1_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 2.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_2_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 3.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_3_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 4.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_4_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 5.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_5_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 3
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 10
+            min: 5
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_corridor
+      name: arena_corridor_random_jackal
+      robot: jackal
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 1.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_1_agvota
+      robot: agvota
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 2.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_2_agvota
+      robot: agvota
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 3.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_3_agvota
+      robot: agvota
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 4.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_4_agvota
+      robot: agvota
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 5.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_5_agvota
+      robot: agvota
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 3
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 10
+            min: 5
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_corridor
+      name: arena_corridor_random_agvota
+      robot: agvota
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 1.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_1_cob4
+      robot: cob4
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 2.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_2_cob4
+      robot: cob4
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 3.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_3_cob4
+      robot: cob4
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 4.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_4_cob4
+      robot: cob4
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 5.json
+      episodes: 1
+      map: arena_corridor
+      name: arena_corridor_5_cob4
+      robot: cob4
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 3
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 10
+            min: 5
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_corridor
+      name: arena_corridor_random_cob4
+      robot: cob4
+      tm_obstacles: random
+      tm_robots: scenario

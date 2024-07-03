@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<launch>
-    <!--  ************** task generator  ***************  -->
-
-    <node pkg="task_generator" name="task_generator_node" type="main.py" output="screen"/>
-    <node pkg="task_generator" name="task_generator_server" type="server.py" output="screen"/>
-    <node pkg="task_generator" name="task_generator_filewatcher" type="filewatcher.py" output="screen"/>
-
-</launch>

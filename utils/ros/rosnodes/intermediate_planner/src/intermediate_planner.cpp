@@ -69,7 +69,7 @@ void InterPlanner::init(ros::NodeHandle & nh){
   // odom
   have_odom_=false;
 
-  ros::NodeHandle public_nh("");
+  auto public_nh = std::make_shared<rclcpp::Node>("public_nh");"");
   // subscriber
   goal_sub_ =public_nh.subscribe("goal", 1, &InterPlanner::goalCallback,this);
   odom_sub_ = public_nh.subscribe("odometry/ground_truth", 1, &InterPlanner::odomCallback, this);
@@ -177,7 +177,7 @@ bool InterPlanner::makeGlobalPlan(plan_msgs::MakeGlobalPlan::Request  &req, plan
 
     for(int i=0;i<global_path.size();i++){
       geometry_msgs::PoseStamped pose;
-      pose.header.stamp = ros::Time::now();
+      pose.header.stamp = node->now();
       pose.header.frame_id = "map"; //global_frame_;
       pose.pose.position.x = global_path[i](0);
       pose.pose.position.y = global_path[i](1);
@@ -189,7 +189,7 @@ bool InterPlanner::makeGlobalPlan(plan_msgs::MakeGlobalPlan::Request  &req, plan
       plan.push_back(pose);
     }
     res.plan.poses=plan;
-    res.plan.header.stamp = ros::Time::now();
+    res.plan.header.stamp = node->now();
     res.plan.header.frame_id = "map";//global_frame_;
 
   return true;
@@ -385,7 +385,7 @@ void InterPlanner::reparamBspline(UniformBspline &bspline, vector<Eigen::Vector2
 void InterPlanner::visualize_path(std::vector<Eigen::Vector2d> path, const ros::Publisher & pub){
 
   //create a path message
-  ros::Time plan_time = ros::Time::now();
+  ros::Time plan_time = node->now();
   std::string global_frame="/map";
   
   nav_msgs::Path gui_path;
@@ -408,7 +408,7 @@ void InterPlanner::visualize_path(std::vector<Eigen::Vector2d> path, const ros::
       gui_path.poses[i]=pose;               //plan.push_back(pose);
   }
   
-  pub.publish(gui_path);
+  pub->publish(gui_path);
 }
 
 
@@ -433,16 +433,16 @@ void InterPlanner::visualize_path(std::vector<Eigen::Vector2d> path, const ros::
 
 int main(int argc, char **argv){
     
-    ros::init(argc, argv, "inter");
+    rclcpp::init(argc, argv, "inter");
     std::cout<<"start"<<std::endl;
-    ros::NodeHandle nh("~");
+    auto nh = std::make_shared<rclcpp::Node>("nh");"~");
 
     InterPlanner::Ptr gp;
 
     gp.reset(new InterPlanner);
     gp->init(nh);
 
-    ros::spin();
+    rclcpp::spin(node);
     return 0;
 }
 

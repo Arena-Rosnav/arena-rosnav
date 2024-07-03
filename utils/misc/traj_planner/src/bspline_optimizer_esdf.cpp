@@ -13,7 +13,7 @@ const int BsplineOptimizerESDF::GUIDE_PHASE     = BsplineOptimizerESDF::SMOOTHNE
 const int BsplineOptimizerESDF::NORMAL_PHASE    = BsplineOptimizerESDF::SMOOTHNESS | BsplineOptimizerESDF::DISTANCE | BsplineOptimizerESDF::FEASIBILITY;
 
 /* main API */
-void BsplineOptimizerESDF::setParam(ros::NodeHandle& nh) {
+void BsplineOptimizerESDF::setParam(rclcpp::Node& nh) {
     nh.param("optimization_ESDF/lambda1", lambda1_, 10.0);
     nh.param("optimization_ESDF/lambda2", lambda2_, 5.0);
     nh.param("optimization_ESDF/lambda3", lambda3_, 0.00001);
@@ -152,7 +152,7 @@ void BsplineOptimizerESDF::optimize() {
     // cout << fixed << setprecision(7);
     // vec_time_.clear();
     // vec_cost_.clear();
-    // time_start_ = ros::Time::now();
+    // time_start_ = this->now();
 
     double        final_cost;
     nlopt::result result = opt.optimize(q, final_cost);
@@ -160,7 +160,7 @@ void BsplineOptimizerESDF::optimize() {
     /* retrieve the optimization result */
     // cout << "Min cost:" << min_cost_ << endl;
   } catch (std::exception& e) {
-    ROS_WARN("[Optimization]: nlopt exception");
+    RCLCPP_WARN(rclcpp::get_logger("TrajPlanner"), "[Optimization]: nlopt exception");
     std::cout << e.what() << std::endl;
   }
 
@@ -442,7 +442,7 @@ double BsplineOptimizerESDF::costFunction(const std::vector<double>& x, std::vec
   return cost;
 
   // /* evaluation */
-  // ros::Time te1 = ros::Time::now();
+  // rclcpp::Time te1 = this->now();
   // double time_now = (te1 - opt->time_start_).toSec();
   // opt->vec_time_.push_back(time_now);
   // if (opt->vec_cost_.size() == 0)
