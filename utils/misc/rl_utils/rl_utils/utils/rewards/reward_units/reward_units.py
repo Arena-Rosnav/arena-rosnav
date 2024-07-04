@@ -1302,11 +1302,11 @@ class RewardAngularVelocityConstraint(RewardUnit):
 
         if self._last_theta is not None:
             rotational_vel = (
-                abs(robot_pose.theta - self._last_theta) / self._time_step_size
+                abs(robot_pose["yaw"] - self._last_theta) / self._time_step_size
             )
             if self._threshold and rotational_vel > self._threshold:
                 self.add_reward(-self._penalty_factor * rotational_vel)
-        self._last_theta = robot_pose.theta
+        self._last_theta = robot_pose["yaw"]
 
     def reset(self):
         self._last_theta = None
