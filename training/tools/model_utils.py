@@ -283,22 +283,21 @@ def load_model(
         raise ValueError("ObservationSpaceManager must be provided!")
 
     # DYNAMIC POLICY UPDATE WHEN LOADING MODEL
+    is_lstm = "LSTM" in agent_description.type.name
+
     custom_objects = {
         "policy_kwargs": agent_description.get_kwargs(
             observation_space_manager=observation_space_manager,
             stack_size=(
-                frame_stacking_cfg["stack_size"] if frame_stacking_cfg["enabled"] else 1
+                frame_stacking_cfg["stack_size"]
+                if frame_stacking_cfg["enabled"] and not is_lstm
+                else 1
             ),
         )
     }
 
     # load model
-    is_lstm = "LSTM" in agent_description.type.name
-    return (
-        RecurrentPPO.load(path, env=env, custom_objects=custom_objects)
-        if is_lstm
-        else PPO.load(path, env=env, custom_objects=custom_objects)
-    )
+    return RecurrentPPO.load(path, env=env) if is_lstm else PPO.load(path, env=env)
 
 
 def init_callbacks(
