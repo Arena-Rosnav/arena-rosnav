@@ -60,8 +60,8 @@ RUN apt install -y software-properties-common curl
             RUN apt install -y $(awk '{print $1}' src/arena/arena-rosnav/setup/install2/package.list)
             
     # build and export
-       RUN source "$(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate" && \
-           source /opt/ros/humble/setup.bash && \
-           colcon build --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)"
-
-       RUN echo "source $(pwd)/install/local_setup.bash" >> ~/.bashrc
+#        RUN source "$(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate" && \
+#            source /opt/ros/humble/setup.bash && \
+#            colcon build --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)"
+#
+#        RUN echo "source $(pwd)/install/local_setup.bash" >> ~/.bashrc

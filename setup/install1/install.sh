@@ -6,7 +6,6 @@ set -e
 current_dir="$(pwd)"
 
 TARGET_DIR=${1:-~/arena_ws}
-
 echo $TARGET_DIR
 
 # Check if the system is not running Ubuntu 22.04
@@ -25,6 +24,7 @@ if [[ $(lsb_release -rs) != "22.04" ]]; then
     exit 1
   fi
 fi
+
 # Check if Folder Empty
 if [[ -d ${TARGET_DIR} ]]; then
   echo "Install Folder ${TARGET_DIR} already exists."
@@ -34,26 +34,28 @@ if [[ -d ${TARGET_DIR} ]]; then
 fi
 
 sudo add-apt-repository universe
-sudo apt update
-sudo apt install -y curl
+sudo apt-get update
+sudo apt-get install -y curl
+
+echo "Installing tzdata...:"
+export DEBIAN_FRONTEND=noninteractive
+apt install -y tzdata && dpkg-reconfigure --frontend noninteractive tzdata
 
 # ROS
-echo "Installing ROS2 Humble...:"
+echo "Setting up ROS2 Humble...:"
 
 sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
-sudo apt update
-sudo apt install -y ros-humble-desktop
+# Getting Packages
+echo "Installing Deps...:"
+
+sudo apt install -y $(curl https://raw.githubusercontent.com/Jokrasa1011/ros2-migration/fix_installs/arena/arena-rosnav/setup/install1/package.list)
+
 if ! grep -q "source /opt/ros/humble/setup.bash" ~/.bashrc; then
   echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 fi
 source ~/.bashrc
-
-# Getting Packages
-echo "Installing Deps...:"
-
-sudo apt install -y $(curl https://raw.githubusercontent.com/Arena-Rosnav/arena-rosnav/ros2/setup/install1/package.list)
 
 # Poetry
 echo "Installing Poetry...:"
@@ -61,7 +63,6 @@ curl -sSL https://install.python-poetry.org | python3 -
 if ! grep -q 'export PATH="$HOME/.local/bin"' ~/.bashrc; then
   echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 fi
-
 
 # Check if the default ROS sources.list file already exists
 ros_sources_list="/etc/ros/rosdep/sources.list.d/20-default.list"
@@ -80,8 +81,8 @@ if [[ -f "$ros_sources_list" ]]; then
     sudo rm "$ros_sources_list"
     sudo rosdep init
   fi
-  else
-    sudo rosdep init
+else
+  sudo rosdep init
 fi
 
 rosdep update

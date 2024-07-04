@@ -1,7 +1,7 @@
 #!/bin/bash -i
 
 TARGET_DIR=${1:-~/arena_ws}
-branch=${2:-master}
+branch=${2:-ros2}
 
 set -e
  
@@ -18,42 +18,38 @@ cd ${TARGET_DIR}
 # clone arena-rosnav
 if [[ -d ${TARGET_DIR}/src/arena/arena-rosnav ]]; then
   cd ${TARGET_DIR}/src/arena/arena-rosnav
-  git pull https://github.com/Arena-Rosnav/arena-rosnav.git ${branch}
+  git pull https://github.com/jokrasa1011/arena-rosnav.git ${branch}
   cd ${TARGET_DIR}
 else
-  git clone --branch ${branch} https://github.com/Arena-Rosnav/arena-rosnav.git src/arena/arena-rosnav
+  git clone --branch ${branch} https://github.com/jokrasa1011/arena-rosnav.git src/arena/arena-rosnav
 fi
 
 until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to update, retrying..." ; done
 #
 
 #compat
-ln -s src/arena/arena-rosnav/setup/install2/* src/arena/arena-rosnav/
- 
+ln -rs src/arena/arena-rosnav/setup/install2/* src/arena/arena-rosnav/
 #python env init
 cd src/arena/arena-rosnav
-export PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring # resolve faster
-poetry run poetry install --no-root
-poetry env use python3.8
-. "$(poetry env info -p)/bin/activate"
-cd ${TARGET_DIR}
+export PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring 
+$HOME/.local/bin/poetry install || \
+                ($HOME/.local/bin/poetry lock --no-update && $HOME/.local/bin/poetry install)
 #
- 
+ cd ${TARGET_DIR}
 # Missing Deps
 echo "Installing Missing Deps...:"
 
 rosdep update && rosdep install --from-paths src --ignore-src -r -y
- 
+apt install -y $(awk '{print $1}' src/arena/arena-rosnav/setup/install2/package.list)
+
 # Project Install
 echo "Installing Project...:"
 
-exit 1
+exit 12
 #TODO
 
-catkin build
+colcon build
 
-export ROS_MASTER_URI=http://127.0.0.1:11311/
-export ROS_IP=127.0.0.1
  
 
 MARKER="# ARENA-ROSNAV"
@@ -67,9 +63,9 @@ do
       echo "Adding to $SHELL"
       echo '' >> "$SHELL"
       echo "$MARKER" >> "$SHELL"
-      echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$SHELL"
+#      echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$SHELL"
 #      echo '. "$(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate"' >> "$SHELL"
-      echo 'source ${TARGET_DIR}/devel/setup.bash' >> "$SHELL"
+      echo 'source ${TARGET_DIR}/install/local_setup.bash' >> "$SHELL"
       echo '' >> "$SHELL"
     fi
   fi
