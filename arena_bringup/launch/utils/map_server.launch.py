@@ -3,7 +3,8 @@ import sys
 
 import launch
 import launch_ros.actions
-
+from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition, UnlessCondition
 
 def generate_launch_description():
     ld = launch.LaunchDescription([
@@ -17,15 +18,13 @@ def generate_launch_description():
             package='map_server',
             executable='map_server',
             name='map_server',
-            condition=launch.conditions.IfCondition(
-                "$(eval arg('map_file') != 'dynamic_map')")
+            condition=UnlessCondition(LaunchConfiguration('map_file').perform == 'dynamic_map')
         ),
         launch_ros.actions.Node(
             package='map_generator',
             executable='map_generator_node.py',
             name='map_generator_node',
-            condition=launch.conditions.IfCondition(
-                "$(eval arg('map_file') == 'dynamic_map')")
+            condition=IfCondition(LaunchConfiguration('map_file').perform == 'dynamic_map')
         ),
         launch_ros.actions.Node(
             package='map_generator',
@@ -47,6 +46,6 @@ def generate_launch_description():
     ])
     return ld
 
-
 if __name__ == '__main__':
     generate_launch_description()
+
