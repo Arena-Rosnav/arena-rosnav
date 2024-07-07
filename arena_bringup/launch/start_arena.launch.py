@@ -134,6 +134,189 @@ def generate_launch_description():
             name='odom_frame_id',
             default_value='odom'
         ),
+        # launch_ros.actions.Node(
+        #     package='rviz_utils',
+        #     executable='create_config_file.py',
+        #     name='rviz_config_file_creator',
+        #     parameters=[
+        #         {
+        #             'debug_mode': 'true'
+        #         },
+        #         {
+        #             'desired_resets': launch.substitutions.LaunchConfiguration('desired_resets')
+        #         },
+        #         {
+        #             'task_generator_server/timeout': launch.substitutions.LaunchConfiguration('timeout')
+        #         },
+        #         {
+        #             'headless': launch.substitutions.LaunchConfiguration('headless')
+        #         },
+        #         {
+        #             'record_data_dir': launch.substitutions.LaunchConfiguration('record_data_dir')
+        #         },
+        #         {
+        #             'robot_setup_file': launch.substitutions.LaunchConfiguration('robot_setup_file')
+        #         },
+        #         {
+        #             'model': launch.substitutions.LaunchConfiguration('model')
+        #         },
+        #         {
+        #             'inter_planner': launch.substitutions.LaunchConfiguration('inter_planner')
+        #         },
+        #         {
+        #             'local_planner': launch.substitutions.LaunchConfiguration('local_planner')
+        #         },
+        #         {
+        #             'agent_name': launch.substitutions.LaunchConfiguration('agent_name')
+        #         },
+        #         {
+        #             'complexity': launch.substitutions.LaunchConfiguration('complexity')
+        #         },
+        #         {
+        #             'reset_remove_all': launch.substitutions.LaunchConfiguration('reset_remove_all')
+        #         },
+        #         {
+        #             'use_sim_time': 'true'
+        #         },
+        #         {
+        #             'rosnav_move_base': 'true'
+        #         },
+        #         {
+        #             'model': launch.substitutions.LaunchConfiguration('model')
+        #         },
+        #         {
+        #             'simulator': launch.substitutions.LaunchConfiguration('simulator')
+        #         },
+        #         {
+        #             'tm_robots': launch.substitutions.LaunchConfiguration('tm_robots')
+        #         },
+        #         {
+        #             'tm_obstacles': launch.substitutions.LaunchConfiguration('tm_obstacles')
+        #         },
+        #         {
+        #             'tm_modules': launch.substitutions.LaunchConfiguration('tm_modules')
+        #         },
+        #         {
+        #             '/benchmark_resume': launch.substitutions.LaunchConfiguration('benchmark_resume')
+        #         },
+        #         {
+        #             'map_path': launch.substitutions.LaunchConfiguration('map_path')
+        #         },
+        #         {
+        #             'train_mode': 'false'
+        #         },
+        #         {
+        #             'show_viz': launch.substitutions.LaunchConfiguration('show_rviz')
+        #         },
+        #         {
+        #             'entity_manager': launch.substitutions.LaunchConfiguration('entity_manager')
+        #         },
+        #         {
+        #             'world_path': launch.substitutions.LaunchConfiguration('map_file')
+        #         },
+        #         {
+        #             'map_layer_path': launch.substitutions.LaunchConfiguration('map_file')
+        #         },
+        #         {
+        #             'map_file': launch.substitutions.LaunchConfiguration('map_file')
+        #         },
+        #         {
+        #             'robot_name': launch.substitutions.LaunchConfiguration('model')
+        #         }
+        #     ]
+        # ),
+        # launch_ros.actions.Node(
+        #     package='rviz_utils',
+        #     executable='visualize_robot_model.py',
+        #     name='visualize_robot_model',
+        #     output='screen',
+        #     parameters=[
+        #         {
+        #             'debug_mode': 'true'
+        #         },
+        #         {
+        #             'desired_resets': launch.substitutions.LaunchConfiguration('desired_resets')
+        #         },
+        #         {
+        #             'task_generator_server/timeout': launch.substitutions.LaunchConfiguration('timeout')
+        #         },
+        #         {
+        #             'headless': launch.substitutions.LaunchConfiguration('headless')
+        #         },
+        #         {
+        #             'record_data_dir': launch.substitutions.LaunchConfiguration('record_data_dir')
+        #         },
+        #         {
+        #             'robot_setup_file': launch.substitutions.LaunchConfiguration('robot_setup_file')
+        #         },
+        #         {
+        #             'model': launch.substitutions.LaunchConfiguration('model')
+        #         },
+        #         {
+        #             'inter_planner': launch.substitutions.LaunchConfiguration('inter_planner')
+        #         },
+        #         {
+        #             'local_planner': launch.substitutions.LaunchConfiguration('local_planner')
+        #         },
+        #         {
+        #             'agent_name': launch.substitutions.LaunchConfiguration('agent_name')
+        #         },
+        #         {
+        #             'complexity': launch.substitutions.LaunchConfiguration('complexity')
+        #         },
+        #         {
+        #             'reset_remove_all': launch.substitutions.LaunchConfiguration('reset_remove_all')
+        #         },
+        #         {
+        #             'use_sim_time': 'true'
+        #         },
+        #         {
+        #             'rosnav_move_base': 'true'
+        #         },
+        #         {
+        #             'model': launch.substitutions.LaunchConfiguration('model')
+        #         },
+        #         {
+        #             'simulator': launch.substitutions.LaunchConfiguration('simulator')
+        #         },
+        #         {
+        #             'tm_robots': launch.substitutions.LaunchConfiguration('tm_robots')
+        #         },
+        #         {
+        #             'tm_obstacles': launch.substitutions.LaunchConfiguration('tm_obstacles')
+        #         },
+        #         {
+        #             'tm_modules': launch.substitutions.LaunchConfiguration('tm_modules')
+        #         },
+        #         {
+        #             '/benchmark_resume': launch.substitutions.LaunchConfiguration('benchmark_resume')
+        #         },
+        #         {
+        #             'map_path': launch.substitutions.LaunchConfiguration('map_path')
+        #         },
+        #         {
+        #             'train_mode': 'false'
+        #         },
+        #         {
+        #             'show_viz': launch.substitutions.LaunchConfiguration('show_rviz')
+        #         },
+        #         {
+        #             'entity_manager': launch.substitutions.LaunchConfiguration('entity_manager')
+        #         },
+        #         {
+        #             'world_path': launch.substitutions.LaunchConfiguration('map_file')
+        #         },
+        #         {
+        #             'map_layer_path': launch.substitutions.LaunchConfiguration('map_file')
+        #         },
+        #         {
+        #             'map_file': launch.substitutions.LaunchConfiguration('map_file')
+        #         },
+        #         {
+        #             'robot_name': launch.substitutions.LaunchConfiguration('model')
+        #         }
+        #     ]
+        # ),
         launch.actions.IncludeLaunchDescription(
             launch.launch_description_sources.PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory(
@@ -145,6 +328,42 @@ def generate_launch_description():
                 'sfm': launch.substitutions.LaunchConfiguration('sfm')
             }.items()
         ),
+        # launch.actions.IncludeLaunchDescription(
+        #     launch.launch_description_sources.PythonLaunchDescriptionSource(
+        #         os.path.join(get_package_share_directory(
+        #             'arena_bringup'), 'launch/testing/simulators/flatland.launch.py')
+        #     ),
+        #     launch_arguments={
+        #         'visualization': launch.substitutions.LaunchConfiguration('visualization'),
+        #         'rviz_file': launch.substitutions.LaunchConfiguration('rviz_file'),
+        #         'model': launch.substitutions.LaunchConfiguration('model'),
+        #         'show_rviz': launch.substitutions.LaunchConfiguration('show_rviz'),
+        #         'headless': launch.substitutions.LaunchConfiguration('headless')
+        #     }.items()
+        # ),
+        # launch.actions.IncludeLaunchDescription(
+        #     launch.launch_description_sources.PythonLaunchDescriptionSource(
+        #         os.path.join(get_package_share_directory(
+        #             'arena_bringup'), 'launch/testing/simulators/gazebo.launch.py')
+        #     ),
+        #     launch_arguments={
+        #         'model': launch.substitutions.LaunchConfiguration('model'),
+        #         'rviz_file': launch.substitutions.LaunchConfiguration('rviz_file'),
+        #         'show_rviz': launch.substitutions.LaunchConfiguration('show_rviz'),
+        #         'world': launch.substitutions.LaunchConfiguration('world_file'),
+        #         'headless': launch.substitutions.LaunchConfiguration('headless')
+        #     }.items()
+        # ),
+        # launch.actions.IncludeLaunchDescription(
+        #     launch.launch_description_sources.PythonLaunchDescriptionSource(
+        #         os.path.join(get_package_share_directory(
+        #             'arena_bringup'), 'launch/utils/map_server.launch.py')
+        #     ),
+        #     launch_arguments={
+        #         'map_file': launch.substitutions.LaunchConfiguration('map_file'),
+        #         'map_path': launch.substitutions.LaunchConfiguration('map_path')
+        #     }.items()
+        # ),
         launch.actions.IncludeLaunchDescription(
             launch.launch_description_sources.PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory(
@@ -157,12 +376,12 @@ def generate_launch_description():
                 'odom_frame_id': launch.substitutions.LaunchConfiguration('odom_frame_id')
             }.items()
         ),
-       launch.actions.IncludeLaunchDescription(
+        launch.actions.IncludeLaunchDescription(
             launch.launch_description_sources.PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory(
                     'arena_bringup'), 'launch/testing/task_generator.launch.py')
             )
-       )
+        )
     ])
     return ld
 
