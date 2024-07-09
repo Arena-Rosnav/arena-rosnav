@@ -107,10 +107,12 @@ class ObservationManager:
 
             self._subscribers[collector.name] = rospy.Subscriber(
                 (
-                    collector.topic
+                    str(collector.topic)
                     if "crowdsim_agents" in collector.topic and self._is_single_env
-                    else get_topic(
-                        self._ns, collector.topic, collector.is_topic_agent_specific
+                    else str(
+                        get_topic(
+                            self._ns, collector.topic, collector.is_topic_agent_specific
+                        )
                     )
                 ),
                 collector.msg_data_class,
@@ -127,16 +129,18 @@ class ObservationManager:
     def _wait_for_observation(self, name: str):
         try:
             rospy.wait_for_message(
-                get_topic(
-                    self._ns,
-                    self._collectors[name].topic,
-                    self._collectors[name].is_topic_agent_specific,
+                str(
+                    get_topic(
+                        self._ns,
+                        self._collectors[name].topic,
+                        self._collectors[name].is_topic_agent_specific,
+                    )
                 ),
                 self._collectors[name].msg_data_class,
                 timeout=10,
             )
         except rospy.ROSException:
-            rospy.logwarn_once(
+            rospy.logwarn(
                 f"Waiting for observation '{name}' timed out. The observation may be stale."
             )
 
