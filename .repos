@@ -2,7 +2,7 @@ repositories:
   arena/airchitect:
     type: git
     url: git@github.com:Arena-Rosnav/airchitect.git
-    version: 546daaa7
+    version: 771f5d4e
   arena/evaluation:
     type: git
     url: https://github.com/voshch/arena-evaluation.git
