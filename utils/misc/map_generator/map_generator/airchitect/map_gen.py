@@ -1,11 +1,12 @@
 import itertools
-import math
-import typing
 
+import typing
 import cv2
 import numpy as np
-import requests
 import rospy
+
+import requests
+import shapely
 
 from map_generator.base_map_gen import BaseMapGenerator
 from map_generator.factory import MapGeneratorFactory
@@ -16,138 +17,91 @@ from map_generator.constants import (
 
 import sys
 
-def _pairwise(iterable):
-    iterator = iter(iterable)
-    a = next(iterator, None)
-    for b in iterator:
-        yield a, b
-        a = b
-
 class Floorplan:
-
-    lines: typing.List[
-        typing.Tuple[
-            typing.Tuple[int, int],
-            typing.Tuple[int, int]
-        ]
-    ]
-    gridmap: np.ndarray
-
-    def _compute_lines(self, rooms, doors):
-        lines: typing.Dict[int, typing.List] = {}
-        
-        for room in rooms:
-            for point_from, point_to in _pairwise(room + [room[0]]):
-                angle = np.angle(complex(*np.array(point_to) - np.array(point_from)))
-                angle = int(np.trunc(180/np.pi * angle)) % 180
-                lines.setdefault(angle, []).append((point_from, point_to))
-
-        for door in doors:
-            
-            door = np.array(door)
-
-            diagonal = np.abs(door[0]-door[2])
-            is_horizontal = diagonal[0] > diagonal[1]
-            long_neighbor = 1 if is_horizontal else -1
-
-            angle = np.angle(complex(*door[long_neighbor] - door[0]))
-            index_angle = int(np.trunc(180/np.pi * angle)) % 180
-            target = lines.setdefault(index_angle, [])
-
-            TF = np.array([
-                [np.cos(angle), -np.sin(angle)],
-                [np.sin(angle), np.cos(angle)]
-            ])
-            FT = np.flip(TF, (0,1)) # "anti"-transpose for right multiplying
-
-            door = door.dot(TF)
-            targets = np.array(target).dot(TF)
-
-            long_0, short_0 = np.min([door[0], door[2]], axis=0)
-            long_1, short_1 = np.max([door[0], door[2]], axis=0)
-            tolerance = (short_1 - short_0)/2
-
-            crosses_door = np.logical_and.reduce([
-                -tolerance <= np.mean(targets[:,:,1], axis=1) - short_0,
-                -tolerance <= short_1 - np.mean(targets[:,:,1], axis=1),
-                long_0 < np.max(targets[:,:,0], axis=1),
-                long_1 > np.min(targets[:,:,0], axis=1)
-            ])
-
-            for hit in reversed(np.where(crosses_door)[0]):
-
-                to_split = np.array(target.pop(hit)).dot(TF)
-                to_split = np.array(sorted(to_split.tolist(), key=lambda x: x[0]))
-                
-                short = np.mean(to_split[:,1]) # though short1==short2 is implicitly assumed already
-
-                if (end:=to_split[0][0]) < long_0:
-                    target.append(
-                        np.array([
-                            np.array([end, short]),
-                            np.array([long_0, short])
-                        ]).dot(FT)
-                    )
-            
-                if (end:=to_split[1][0]) > long_1:
-                    target.append(
-                        np.array([
-                            np.array([long_1, short]),
-                            np.array([end, short])
-                        ]).dot(FT)
-                    )
-       
-        self.lines = [
-            (
-                (int(line[0][0]), int(line[0][1])),
-                (int(line[1][0]), int(line[1][1])),
-            )
-            for line
-            in itertools.chain(*lines.values())
-        ]
-
-    def _draw_gridmap(self, lines, resolution):
-        canvas = np.zeros(resolution)
-        for point_from, point_to in lines:
-            cv2.line(canvas, point_from, point_to, 1, 1)
-        
-        self.gridmap = canvas
-
-    def _compute_zones(self):
-        ...
-
-    def __init__(self, floorplan, crop=False):
+    def __init__(self, floorplan, crop=True, gridmap=None) -> None:
+        import shapely
 
         resolution = (floorplan['resolution'], floorplan['resolution'])
-        rooms = [room['corners'] for room in floorplan['rooms'] if room['category'] not in (0,)]
-        doors = [door['corners'] for door in floorplan['doors'] if door['category'] not in (11,13)]
+        rooms = shapely.MultiPolygon([
+            shapely.Polygon(room['corners']).normalize()
+            for room
+            in floorplan['rooms']
+            if room['category'] not in (0,)
+        ])
+        doors = shapely.MultiPolygon([
+            shapely.Polygon(door['corners'])
+            for door
+            in floorplan['doors']
+            if door['category']
+            not in (11,13)
+        ])
 
         if crop:
-            vertices = np.array(rooms)
-            min_x, min_y = vertices.reshape((-1,2)).min(axis=0)
-            max_x, max_y = vertices.reshape((-1,2)).max(axis=0)
+            bounds = rooms.bounds
+            resolution = (int(bounds[3]-bounds[1]), int(bounds[2]-bounds[0]))
+            anchor = np.array([bounds[0], bounds[1]])
 
-            anchor =  np.array([min_x, min_y])
+            rooms = shapely.transform(rooms, lambda x: x-anchor)
+            doors = shapely.transform(doors, lambda x: x-anchor)
 
-            rooms = vertices - anchor[None, :]
-            doors = np.array(doors) - anchor[None, :]
-            resolution = (math.ceil(max_y - min_y), math.ceil(max_x - min_x))
 
-        self._compute_lines(
-            rooms,
-            doors,
-        )
+        if gridmap is None: gridmap = np.zeros(resolution)
+        
+        transform = np.eye(2)
 
-        self._draw_gridmap(self.lines, resolution)
+         # orient both vertical
+        if (gridmap_flipped := gridmap.shape[0] < gridmap.shape[1]):
+            gridmap = gridmap.T
 
-        self._compute_zones()
+        if resolution[0] < resolution[1]:
+            resolution = resolution[::-1]
+            transform = np.array([[0,1],[1,0]]) @ transform
 
+        scaling = min(1, gridmap.shape[0] / resolution[0], gridmap.shape[1] / resolution[1])
+
+        transform = np.array([[scaling, 0], [0, scaling]])
+
+        rooms = shapely.transform(rooms, lambda x: x.dot(transform))
+        doors = shapely.transform(doors, lambda x: x.dot(transform))
+        
+        canvas = np.zeros(resolution, dtype=np.int32)
+
+        for room in rooms.geoms:
+            cv2.fillConvexPoly(
+                canvas,
+                np.array(room.boundary.coords).astype(np.int32),
+                (0,)
+            )
+
+        for room in rooms.geoms:
+            cv2.polylines(
+                canvas,
+                [np.array(room.boundary.coords).astype(np.int32).reshape((-1,1,2))],
+                False,
+                (1,),
+                1
+            )
+
+        for door in doors.geoms:
+            cv2.fillConvexPoly(
+                canvas,
+                np.array(door.boundary.coords).astype(np.int32),
+                (0,)
+            )
+
+        gridmap[:,:] = 1
+        gridmap[:canvas.shape[0], :canvas.shape[1]] = canvas
+
+        if gridmap_flipped:
+            gridmap = gridmap.T
+
+        self.gridmap = gridmap
 
 @MapGeneratorFactory.register(MapGenerators.AIRCHITECT)
 class AIrchitectMapGenerator(BaseMapGenerator):
 
     prompt: str
-    _preload: typing.Optional[str]
+    _preload: typing.Optional[typing.Dict]
 
     def __init__(
         self,
@@ -177,7 +131,7 @@ class AIrchitectMapGenerator(BaseMapGenerator):
 
         return *params, prompt
 
-    def _load(self) -> str:
+    def _load(self) -> typing.Dict:
         class Config:
             class Room:
                 ID = (f'{i}' for i in itertools.count())
@@ -220,32 +174,28 @@ class AIrchitectMapGenerator(BaseMapGenerator):
             "metrics": False # If True provides the length and width of rooms in pixels
         }
 
-        return requests.post('http://0.0.0.0:8000/generate', json=payload).json()['floorplan'][0][0]
+        return requests.post('http://0.0.0.0:8000/generate', json=payload).json()
 
-    def generate_grid_map(self) -> np.ndarray:
+    def generate_grid_map(self):
         super().generate_grid_map()
 
         floorplan = self._preload
         self._preload = None
         if floorplan is None: floorplan = self._load()
 
-        rospy.logwarn('loaded')
-        
-        computed = Floorplan(floorplan, crop=True)
-        gridmap = computed.gridmap
+        computed = Floorplan(
+            floorplan['floorplan'][0][0],
+            crop=True,
+            gridmap=np.zeros((self.height, self.width))
+        )
 
-        import cv2
+        extras = {}
 
-        if self.width/gridmap.shape[1] < self.height/gridmap.shape[0]:
-            gridmap = cv2.resize(gridmap, dsize=(int(self.width/gridmap.shape[1] * gridmap.shape[0]), self.width), interpolation=cv2.INTER_NEAREST)
-            to_pad = self.width-gridmap.shape[1]
-            gridmap = cv2.copyMakeBorder(gridmap, 0, 0, to_pad//2, to_pad//2 + to_pad%2, cv2.BORDER_CONSTANT, value=[1])
-        else:
-            gridmap = cv2.resize(gridmap, dsize=(self.height, int(self.height/gridmap.shape[0] * gridmap.shape[1])), interpolation=cv2.INTER_NEAREST)
-            to_pad = self.height-gridmap.shape[0]
-            gridmap = cv2.copyMakeBorder(gridmap, to_pad//2, to_pad//2 + to_pad%2, 0, 0, cv2.BORDER_CONSTANT, value=[1])
-        
-        return gridmap
+        import urllib.request
+        svg = urllib.request.urlopen(floorplan['dataUri'][0])
+        extras['artifacts/floorplan.svg'] = svg.read()
+
+        return computed.gridmap, extras
     
     def idle(self):
         self._preload = self._load()
@@ -259,4 +209,4 @@ def test(prompt):
 
 
 if __name__ == "__main__":
-    test(sys.argv[1] if len(sys.argv) >= 2 else '5 rooms')
+    test(sys.argv[1] if len(sys.argv) >= 2 else '5')

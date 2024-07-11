@@ -7,18 +7,30 @@ contestants:
     local_planner: teb
     inter_planner: aggressive
 
-  - name: rosnav-polite
-    local_planner: rosnav
+  - name: teb-sideways
+    local_planner: teb
+    inter_planner: sideways
+
+  - name: dwa-polite
+    local_planner: dwa
     inter_planner: polite
 
-  - name: rosnav-aggressive
-    local_planner: rosnav
+  - name: dwa-aggressive
+    local_planner: dwa
     inter_planner: aggressive
-    
-  - name: cohan-polite
-    local_planner: cohan
+
+  - name: dwa-sideways
+    local_planner: dwa
+    inter_planner: sideways
+
+  - name: mpc-polite
+    local_planner: mpc
     inter_planner: polite
 
-  - name: cohan-aggressive
-    local_planner: cohan
+  - name: mpc-aggressive
+    local_planner: mpc
     inter_planner: aggressive
+
+  - name: mpc-sideways
+    local_planner: mpc
+    inter_planner: sideways

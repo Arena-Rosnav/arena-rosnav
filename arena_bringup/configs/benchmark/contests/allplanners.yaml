@@ -6,14 +6,6 @@ contestants:
   - name: teb-aggressive
     local_planner: teb
     inter_planner: aggressive
-
-  - name: rosnav-polite
-    local_planner: rosnav
-    inter_planner: polite
-
-  - name: rosnav-aggressive
-    local_planner: rosnav
-    inter_planner: aggressive
     
   - name: cohan-polite
     local_planner: cohan
@@ -29,14 +21,6 @@ contestants:
 
   - name: dwa-basic
     local_planner: dwa
-    inter_planner: bypass
-
-  - name: dragon-basic
-    local_planner: dragon
-    inter_planner: bypass
-
-  - name: rosnav-basic
-    local_planner: rosnav
     inter_planner: bypass
 
   - name: applr-basic

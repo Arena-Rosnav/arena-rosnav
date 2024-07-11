@@ -1,6 +1,6 @@
 DYNAMICMAP:
   algorithm: airchitect
-  config: '{"prompt":4}'
+  config: '{"prompt":5}'
   episodes: 1
   timeout: 60
 PARAMETRIZED:

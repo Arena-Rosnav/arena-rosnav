@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import subprocess
 from typing import List
 
@@ -132,8 +133,14 @@ class MapGeneratorNode:
         if self.generator_name != rospy.get_param(MAP_GENERATOR_NS("algorithm")):
             self._map_generator = self._initialize_map_generator()
 
-        grid_map = self._map_generator.generate_grid_map()
+        grid_map, extras = self._map_generator.generate_grid_map()
         self._save_map(grid_map)
+
+        for path, content in extras.items():
+            full_path = ROSNAV_MAP_FOLDER / MAP_FOLDER_NAME / path
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+            with open(full_path, 'w' if isinstance(content, str) else 'wb') as f:
+                f.write(content)
 
         self._occupancy_grid.data = self._preprocess_map_data(grid_map)
 

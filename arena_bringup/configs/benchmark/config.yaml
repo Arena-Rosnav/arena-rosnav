@@ -1,9 +1,9 @@
 suite:
-  config: meta_suite.yaml
-  scale_episodes: 1
+  config: airchitect.yaml
+  scale_episodes: 25
 
 contest:
-  config: basic.yaml
+  config: inter.yaml
 
 general:
   simulator: flatland

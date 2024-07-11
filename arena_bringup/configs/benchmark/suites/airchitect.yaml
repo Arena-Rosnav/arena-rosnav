@@ -1,0 +1,61 @@
+stages:
+  - name: 4_rooms
+    episodes: 1
+    robot: jackal
+    map: dynamic_map
+    tm_robots: random
+    tm_obstacles: random
+    config:
+      DYNAMICMAP:
+        algorithm: airchitect
+        config: '{"prompt":4}'
+        episodes: 1
+
+  - name: 5_rooms
+    episodes: 1
+    robot: jackal
+    map: dynamic_map
+    tm_robots: random
+    tm_obstacles: random
+    config:
+      DYNAMICMAP:
+        algorithm: airchitect
+        config: '{"prompt":5}'
+        episodes: 1
+
+  - name: 6_rooms
+    episodes: 1
+    robot: jackal
+    map: dynamic_map
+    tm_robots: random
+    tm_obstacles: random
+    config:
+      DYNAMICMAP:
+        algorithm: airchitect
+        config: '{"prompt":6}'
+        episodes: 1
+
+  - name: 7_rooms
+    episodes: 1
+    robot: jackal
+    map: dynamic_map
+    tm_robots: random
+    tm_obstacles: random
+    config:
+      DYNAMICMAP:
+        algorithm: airchitect
+        config: '{"prompt":7}'
+        episodes: 1
+
+
+  - name: 8_rooms
+    episodes: 1
+    robot: jackal
+    map: dynamic_map
+    tm_robots: random
+    tm_obstacles: random
+    config:
+      DYNAMICMAP:
+        algorithm: airchitect
+        config: '{"prompt":8}'
+        episodes: 1

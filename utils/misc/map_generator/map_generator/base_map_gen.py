@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Iterable, Union
+import typing
 
 import numpy as np
 import rospy
@@ -22,7 +23,7 @@ class BaseMapGenerator(ABC):
         self.map_resolution = map_resolution
 
     @abstractmethod
-    def generate_grid_map(self) -> np.ndarray:
+    def generate_grid_map(self) -> typing.Tuple[np.ndarray, typing.Dict[str, typing.Union[str, bytes]]]:
         """Updates parameters (retrieved from ROS) and generates a grid map.
 
         Raises:
