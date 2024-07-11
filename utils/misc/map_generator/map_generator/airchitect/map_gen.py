@@ -1,12 +1,14 @@
 import itertools
 
+import json
 import typing
 import cv2
 import numpy as np
+import shapely.affinity
 import rospy
 
 import requests
-import shapely
+import shapely, shapely.affinity
 
 from map_generator.base_map_gen import BaseMapGenerator
 from map_generator.factory import MapGeneratorFactory
@@ -53,7 +55,7 @@ class Floorplan:
         if (gridmap_flipped := gridmap.shape[0] < gridmap.shape[1]):
             gridmap = gridmap.T
 
-        if resolution[0] < resolution[1]:
+        if (canvas_flipped := resolution[0] < resolution[1]):
             resolution = resolution[::-1]
             transform = np.array([[0,1],[1,0]]) @ transform
 
@@ -92,8 +94,48 @@ class Floorplan:
         gridmap[:,:] = 1
         gridmap[:canvas.shape[0], :canvas.shape[1]] = canvas
 
-        if gridmap_flipped:
+        # affine
+        ros_transform = np.eye(3)
+
+        if gridmap_flipped != canvas_flipped:
             gridmap = gridmap.T
+            ros_transform = np.array([
+                [0,1,0],
+                [1,0,0],
+                [0,0,1]
+            ]) @ ros_transform
+
+        # ros_transform = np.array([
+        #     [-1, 0, gridmap.shape[1]],
+        #     [0, 1, 0],
+        #     [0, 0, 1]
+        # ])
+
+        room_label = {
+            1:  'Living Room',
+            2:  'Kitchen',
+            3:  'Bedroom',
+            4:  'Bathroom',
+            5:  'Balcony',
+            6:  'Entrance',
+            7:  'Dining Room',
+            8:  'Study Room',
+            10: 'Storage',
+            11: 'Front Door',
+            13: 'Unknown',
+            12: 'Interior Door',
+        }
+
+        self.zones = []
+        for polygon, category in zip(
+            rooms.geoms,
+            (room['category'] for room in floorplan['rooms'] if room['category'] not in (0,))
+        ):
+            self.zones.append({
+                'label': room_label[category],
+                'category': [room_label[category].lower()], #todo
+                'polygon': list(shapely.affinity.affine_transform(polygon, list(ros_transform[:2,:].flat)).boundary.coords)[:-1]
+            })
 
         self.gridmap = gridmap
 
@@ -194,6 +236,8 @@ class AIrchitectMapGenerator(BaseMapGenerator):
         import urllib.request
         svg = urllib.request.urlopen(floorplan['dataUri'][0])
         extras['artifacts/floorplan.svg'] = svg.read()
+
+        extras['map/zones.yaml'] = json.dumps(computed.zones)
 
         return computed.gridmap, extras
     
