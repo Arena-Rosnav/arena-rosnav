@@ -22,6 +22,7 @@ shapely = "^2.0.4"
 pydantic = "^2.7.2"
 cairosvg = "^2.7.1"
 igraph = "^0.11.5"
+drawsvg = "^2.4.0"
 [tool.poetry.group.planner.dependencies]
 torch = "^1.11.0" # applr, crowdnav, lflh, rlca, sarl, trail
 seaborn = "^0.12.2" # lflh

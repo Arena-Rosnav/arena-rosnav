@@ -2,15 +2,15 @@ repositories:
   arena/airchitect:
     type: git
     url: git@github.com:Arena-Rosnav/airchitect.git
-    version: 771f5d4e
+    version: cd200245
   arena/evaluation:
     type: git
     url: https://github.com/voshch/arena-evaluation.git
-    version: 1ec926c52f3288468d110e1365ce69a175cbc4f2
+    version: 82a60c94
   arena/simulation-setup:
     type: git
     url: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: 9a24fce
+    version: 9a24fce3
   arena/utils/3rd-party-robot-packages:
     type: git
     url: https://github.com/Arena-Rosnav/3rd-party-robot-packages
