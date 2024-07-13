@@ -2,6 +2,7 @@
 name = "arena-rosnav"
 version = "0.1.0"
 description = ""
+package-mode = false
 authors = ["ReykCS <reyk-carstens@web.de>", "Volodymyr Shcherbyna <edu@vshch.com>"]
 
 [tool.poetry.dependencies]

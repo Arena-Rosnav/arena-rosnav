@@ -21,7 +21,7 @@ if [ -n $1 ]; then run "(cd src/arena/arena-rosnav && git checkout $1);"; fi
 run '(cd src/arena/arena-rosnav && git pull);'
 run '(vcs import src < src/arena/arena-rosnav/.repos);' '$? > 1'
 run '(rosdep update && rosdep install --from-paths src --ignore-src -r -y)'
-run '(cd src/arena/arena-rosnav && (poetry run poetry install --no-root || (poetry run poetry lock --no-update && poetry run poetry install --no-root)));'
+run '(cd src/arena/arena-rosnav && (poetry run poetry install || (poetry run poetry lock --no-update && poetry run poetry install)));'
 
 
 if [ $FATAL -ne 0 ] ;

@@ -123,7 +123,7 @@ RUN until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to up
 # Setup and activate Poetry Env
 WORKDIR $ARENA_ROOT/$ARENA_WS/src/arena/arena-rosnav
 RUN poetry config virtualenvs.create true && \
-    poetry install --no-root --no-interaction --no-ansi --with training && \
+    poetry install --no-interaction --no-ansi --with training && \
     poetry env use python3.8
 
 WORKDIR $ARENA_ROOT/$ARENA_WS
