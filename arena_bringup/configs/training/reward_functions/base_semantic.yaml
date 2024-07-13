@@ -8,14 +8,14 @@ collision:
   reward: -20
 
 approach_goal:
-  pos_factor: 0.8
-  neg_factor: 0.9
+  pos_factor: 0.6
+  neg_factor: 0.7
   _goal_update_threshold: 5.0
   _on_safe_dist_violation: true
 
 reverse_drive:
-  reward: -0.01
-  threshold: -0.5
+  reward: -0.025
+  threshold: -1.0
   _on_safe_dist_violation: true
 
 # approach_globalplan:
@@ -23,10 +23,10 @@ reverse_drive:
 #   neg_factor: 0.05
 #   _on_safe_dist_violation: true
 
-two_factor_velocity_difference:
-  alpha: 0.0025
-  beta: 0.0
-  _on_safe_dist_violation: true
+# two_factor_velocity_difference:
+#   alpha: 0.0025
+#   beta: 0.0
+#   _on_safe_dist_violation: true
 
 # active_heading_direction:
 #   r_angle: 0.7
@@ -50,5 +50,5 @@ max_steps_exceeded:
   reward: -10
 
 angular_vel_constraint:
-  penalty_factor: 0.05
+  penalty_factor: 0.025
   threshold: 1.5
