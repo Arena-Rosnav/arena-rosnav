@@ -2,13 +2,13 @@ import dataclasses
 from typing import Optional
 
 import numpy as np
-import rospy
+from rosros import rospify as rospy
 import roslaunch
 import os
 import scipy.spatial.transform
 
 import roslaunch
-import rospy
+from rosros import rospify as rospy
 from task_generator.constants import Constants, Config
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil

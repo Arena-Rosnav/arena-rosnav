@@ -3,7 +3,7 @@ from math import floor
 from typing import Collection, List, Optional, Tuple
 import numpy as np
 import scipy.signal
-import rospy
+from rosros import rospify as rospy
 from task_generator.constants import Config
 
 from task_generator.manager.utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls

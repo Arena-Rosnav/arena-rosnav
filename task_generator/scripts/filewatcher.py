@@ -8,7 +8,7 @@ from typing import Any, Callable, List, Optional
 import rospkg
 import yaml
 
-import rospy
+from rosros import rospify as rospy
 
 import watchdog.observers
 import watchdog.events
@@ -129,7 +129,7 @@ def run(namespace: Optional[str] = None):
         for observer in observers:
             observer.join()
 
-    rospy.on_shutdown(cleanup)
+    rospy.on_shutdown(cleanup)##will be called after function shutdown in ros2, instead of before (ros1)
 
     try:
         while len(active_observers := [observer for observer in observers if observer.is_alive()]):

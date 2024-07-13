@@ -1,4 +1,4 @@
-import rospy
+from rosros import rospify as rospy
 
 import gazebo_msgs.msg as gazebo_msgs
 import gazebo_msgs.srv as gazebo_srvs

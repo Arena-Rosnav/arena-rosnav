@@ -4,7 +4,7 @@ import json
 import math
 import time
 
-import rospy
+from rosros import rospify as rospy
 
 
 import pedsim_msgs.msg as pedsim_msgs

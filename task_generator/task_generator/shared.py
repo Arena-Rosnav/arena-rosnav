@@ -19,7 +19,7 @@ from typing import (
 
 import enum
 import yaml
-import rospy
+from rosros import rospify as rospy
 
 T = TypeVar("T")
 U = TypeVar("U")

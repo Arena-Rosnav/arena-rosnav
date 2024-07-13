@@ -8,7 +8,7 @@ from task_generator.constants import Constants
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import WorldMap
 
-import rospy
+from rosros import rospify as rospy
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils import rosparam_get

@@ -1,7 +1,7 @@
 import dataclasses
 import os
 from typing import Any, List, Type
-import rospy
+from rosros import rospify as rospy
 from task_generator.constants import Constants
 
 from task_generator.manager.obstacle_manager import ObstacleManager

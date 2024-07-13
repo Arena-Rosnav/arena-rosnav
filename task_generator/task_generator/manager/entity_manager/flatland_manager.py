@@ -1,5 +1,5 @@
 from typing import Collection
-import rospy
+from rosros import rospify as rospy
 import yaml
 from task_generator.constants import Config, FlatlandRandomModel
 from task_generator.shared import (

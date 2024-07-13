@@ -6,7 +6,7 @@ import traceback
 from typing import Dict, List
 
 import rospkg
-import rospy
+from rosros import rospify as rospy
 import yaml
 from rospkg import RosPack
 from task_generator.constants import Config, Constants

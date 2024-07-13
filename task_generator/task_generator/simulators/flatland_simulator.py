@@ -1,5 +1,5 @@
 import time
-import rospy
+from rosros import rospify as rospy
 import flatland_msgs.srv as flatland_srvs
 import std_srvs.srv as std_srvs
 

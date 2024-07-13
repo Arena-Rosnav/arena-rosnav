@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-import rospy
+from rosros import rospify as rospy
 import nav_msgs.srv as nav_msgs_srv
 import numpy as np
 

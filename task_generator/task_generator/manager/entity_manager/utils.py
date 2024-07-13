@@ -9,7 +9,7 @@ import numpy as np
 import rospkg
 
 import yaml
-import rospy
+from rosros import rospify as rospy
 from task_generator.constants import Constants, Config
 from task_generator.manager.utils import WorldMap, WorldOccupancy
 

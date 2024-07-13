@@ -3,7 +3,7 @@ import subprocess
 from typing import Callable, Collection, Dict, Iterator, List, Optional, Set, Tuple, Type, TypeVar
 
 
-import rospy
+from rosros import rospify as rospy
 import os
 import numpy as np
 

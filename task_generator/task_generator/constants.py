@@ -6,7 +6,7 @@ from typing import Any, Callable, Optional
 
 import numpy as np
 
-import rospy
+from rosros import rospify as rospy
 from task_generator.shared import Namespace, rosparam_get
 import dynamic_reconfigure.client
 

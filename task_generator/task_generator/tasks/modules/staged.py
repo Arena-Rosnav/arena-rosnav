@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional
 
 import dynamic_reconfigure.client
 import rospkg
-import rospy
+from rosros import rospify as rospy
 import std_msgs.msg as std_msgs
 import yaml
 from filelock import FileLock

@@ -13,7 +13,7 @@ import yaml
 import subprocess
 
 import rospkg
-import rospy
+from rosros import rospify as rospy
 import arena_evaluation_msgs.srv as arena_evaluation_srvs
 
 import logging

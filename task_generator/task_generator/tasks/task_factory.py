@@ -1,7 +1,7 @@
 import os
 from typing import Dict, List, Type
 
-import rospy
+from rosros import rospify as rospy
 from rospkg import RosPack
 
 from task_generator.constants import Constants

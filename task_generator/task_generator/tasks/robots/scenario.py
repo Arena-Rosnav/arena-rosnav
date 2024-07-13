@@ -4,7 +4,7 @@ import os
 from typing import List, NamedTuple
 
 import rospkg
-import rospy
+from rosros import rospify as rospy
 from task_generator.constants import Constants
 from task_generator.shared import PositionOrientation, PositionRadius, rosparam_get
 from task_generator.tasks.robots import TM_Robots

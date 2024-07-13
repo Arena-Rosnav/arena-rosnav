@@ -3,7 +3,7 @@
 
 import os
 from typing import Optional
-import rospy
+from rosros import rospify as rospy
 
 import dynamic_reconfigure.server
 from task_generator.cfg import TaskGeneratorConfig

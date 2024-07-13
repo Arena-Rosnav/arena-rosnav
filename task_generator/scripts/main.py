@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-import rospy
+from rosros import rospify as rospy
 from task_generator.task_generator_node import TaskGenerator
 
 if __name__ == "__main__":

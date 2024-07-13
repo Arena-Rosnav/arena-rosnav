@@ -1,5 +1,5 @@
 from typing import Dict, List
-import rospy
+from rosros import rospify as rospy
 from task_generator.constants import Constants
 from task_generator.shared import PositionOrientation
 from task_generator.tasks.robots.random import TM_Random
