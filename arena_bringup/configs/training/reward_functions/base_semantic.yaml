@@ -39,7 +39,7 @@ ped_type_collision:
 
 ped_type_safety_distance:
   type: 1
-  reward: -0.1
+  reward: -0.15
   safety_distance: 1.5
 
 # angular_vel_constraint:
