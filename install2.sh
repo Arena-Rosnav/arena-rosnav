@@ -11,8 +11,14 @@ current_dir="$(pwd)"
 if [[ -d ~/arena_ws/src/arena ]]; then
   echo "Install Folder ~/arena_ws/src/arena/arena-rosnav already exists."
   echo "This indicates Arena Rosnav is already installed."
-  echo "If you wish to reinstall, please delete ~/arena_ws"
-  exit 1
+  read -p "Do you want to continue anyway? (Y/n): " choice
+  choice="${choice:-Y}"
+  if [[ "$choice" =~ ^[Yy] ]]; then
+    echo "Continuing..."
+  else
+    echo "Exiting script."
+    exit 1
+  fi
 fi
  
 sudo echo ""
@@ -23,7 +29,7 @@ mkdir -p ~/arena_ws
 cd ~/arena_ws
 
 # clone arena-rosnav
-git clone --branch ${branch} https://github.com/Arena-Rosnav/arena-rosnav.git src/arena/arena-rosnav
+(cd src/arena/arena-rosnav && git checkout ${branch} && git pull) || git clone --branch ${branch} https://github.com/Arena-Rosnav/arena-rosnav.git src/arena/arena-rosnav
 until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to update, retrying..." ; done
 #
  
