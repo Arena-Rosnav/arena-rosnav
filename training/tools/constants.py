@@ -4,6 +4,8 @@ import os
 
 from datetime import datetime as dt
 
+from rl_utils.topic import Topic, Namespace
+
 
 class TRAINING_CONSTANTS(object):
     class PATHS(object):
@@ -58,3 +60,12 @@ class TRAINING_CONSTANTS(object):
         encoder_name = rospy.get_param("space_encoder", "RobotSpecificEncoder")
         agent_name = f"{robot_model}_{architecture_name}_{START_TIME}"
         return agent_name
+
+
+class SIMULATION_NAMESPACES:
+    SIM_PREFIX = "sim_"
+    EVAL_PREFIX = "eval_sim"
+    TRAIN_NS = lambda idx: Namespace(
+        f"/{SIMULATION_NAMESPACES.SIM_PREFIX}{idx + 1}/{SIMULATION_NAMESPACES.SIM_PREFIX}{idx + 1}_{rospy.get_param('model')}"
+    )
+    EVAL_NS = Namespace(f"/{EVAL_PREFIX}/{EVAL_PREFIX}_{rospy.get_param('model')}")

@@ -17,8 +17,8 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     nh.param("fsm/publish_goal_on_subgoal_fail", publish_goal_on_subgoal_fail, true);
     nh.param("fsm/goal_tolerance", goal_tolerance, 0.2);
     nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 1.0);
-    nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 3.0);
-    nh.param("fsm/update_global_period", update_global_period, 1.0);
+    nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 1.0);
+    nh.param("fsm/update_global_period", update_global_period, 2.0);
     nh.param("fsm/planning_horizon", planning_horizon, 5.0);
     
     /* ros communication with public node */

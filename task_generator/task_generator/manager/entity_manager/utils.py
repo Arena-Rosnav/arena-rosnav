@@ -200,12 +200,14 @@ class YAMLUtil:
                         default_val = YAMLUtil.PLUGIN_PROPS_DEFAULT_VAL[plugin["type"]][
                             prop
                         ]
-                    plugin[prop] = namespace(
-                        (
-                            plugin.get(prop, "")
-                            if not default_val
-                            else plugin.get(prop, default_val)
-                        ),
+                    plugin[prop] = str(
+                        namespace(
+                            (
+                                plugin.get(prop, "")
+                                if not default_val
+                                else plugin.get(prop, default_val)
+                            ),
+                        )
                     )
 
                     # if plugin["type"] == "DiffDrive":
@@ -217,7 +219,7 @@ class YAMLUtil:
 
         for plugin in plugins:
             for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
-                plugin[prop] = os.path.join(namespace, plugin.get(prop, ""))
+                plugin[prop] = os.path.join(str(namespace), plugin.get(prop, ""))
         return description
 
 

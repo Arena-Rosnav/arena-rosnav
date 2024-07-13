@@ -23,6 +23,8 @@ from task_generator.constants import Constants
 from task_generator.shared import Namespace
 from task_generator.utils import Utils
 
+from .constants import SIMULATION_NAMESPACES
+
 
 def load_vec_normalize(config: dict, paths: dict, env: VecEnv, eval_env: VecEnv):
     """
@@ -151,16 +153,9 @@ def make_envs(
     Returns:
         tuple: A tuple containing the training environment and evaluation environment.
     """
-    SIM_PREFIX = "sim_"
-    EVAL_PREFIX = "eval_sim"
-    train_ns = (
-        lambda idx: f"/{SIM_PREFIX}{idx + 1}/{SIM_PREFIX}{idx + 1}_{rospy.get_param('model')}"
-    )
-    eval_ns = f"/{EVAL_PREFIX}/{EVAL_PREFIX}_{rospy.get_param('model')}"
-
     train_env_fncs = [
         _init_env_fnc(
-            ns=train_ns(idx),
+            ns=SIMULATION_NAMESPACES.TRAIN_NS(idx),
             agent_description=agent_description,
             reward_fnc=config["rl_agent"]["reward_fnc"],
             max_steps_per_episode=config["max_num_moves_per_eps"],
@@ -173,7 +168,7 @@ def make_envs(
 
     eval_env_fncs = [
         _init_env_fnc(
-            ns=eval_ns,
+            ns=SIMULATION_NAMESPACES.EVAL_NS,
             agent_description=agent_description,
             reward_fnc=config["rl_agent"]["reward_fnc"],
             max_steps_per_episode=config["callbacks"]["periodic_eval"][

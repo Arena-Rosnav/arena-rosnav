@@ -17,7 +17,7 @@ from rosnav.model.base_agent import BaseAgent
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
 from rosnav.utils.observation_space import EncodedObservationDict
 from std_srvs.srv import Empty
-from task_generator.shared import Namespace
+from rl_utils.topic import Namespace, Topic
 from task_generator.task_generator_node import TaskGenerator
 from task_generator.tasks import Task
 from task_generator.utils import rosparam_get
@@ -187,10 +187,12 @@ class FlatlandEnv(gymnasium.Env):
             **self._reward_fnc_kwargs,
         )
 
-        self.agent_action_pub = rospy.Publisher(self.ns("cmd_vel"), Twist, queue_size=1)
+        self.agent_action_pub = rospy.Publisher(
+            str(self.ns("cmd_vel")), Twist, queue_size=1
+        )
 
         # service clients
-        self._service_name_step = self.ns.simulation_ns("step_world")
+        self._service_name_step = str(self.ns.simulation_ns("step_world"))
         self._step_world_publisher = rospy.Publisher(
             self._service_name_step, StepWorld, queue_size=10
         )
