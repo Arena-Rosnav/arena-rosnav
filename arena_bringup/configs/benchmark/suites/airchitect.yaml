@@ -6,10 +6,9 @@ stages:
     tm_robots: random
     tm_obstacles: random
     config:
-      DYNAMICMAP:
+      MICMAP:
         algorithm: airchitect
-        config: '{"prompt":4}'
-        episodes: 1
+        config: 4
 
   - name: 5_rooms
     episodes: 1
@@ -18,10 +17,10 @@ stages:
     tm_robots: random
     tm_obstacles: random
     config:
-      DYNAMICMAP:
+      MICMAP:
         algorithm: airchitect
-        config: '{"prompt":5}'
-        episodes: 1
+        config: 5
+
 
   - name: 6_rooms
     episodes: 1
@@ -30,10 +29,9 @@ stages:
     tm_robots: random
     tm_obstacles: random
     config:
-      DYNAMICMAP:
+      MICMAP:
         algorithm: airchitect
-        config: '{"prompt":6}'
-        episodes: 1
+        config: 6
 
   - name: 7_rooms
     episodes: 1
@@ -42,11 +40,9 @@ stages:
     tm_robots: random
     tm_obstacles: random
     config:
-      DYNAMICMAP:
+      MICMAP:
         algorithm: airchitect
-        config: '{"prompt":7}'
-        episodes: 1
-
+        config: 7
 
   - name: 8_rooms
     episodes: 1
@@ -55,7 +51,6 @@ stages:
     tm_robots: random
     tm_obstacles: random
     config:
-      DYNAMICMAP:
+      MAP:
         algorithm: airchitect
-        config: '{"prompt":8}'
-        episodes: 1
+        config: 8

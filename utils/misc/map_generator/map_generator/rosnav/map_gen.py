@@ -95,8 +95,8 @@ class RosnavMapGenerator(BaseMapGenerator):
             obstacle_extra_radius,
         )
 
-    def generate_grid_map(self):
-        super().generate_grid_map()
+    def generate_map(self):
+        super().generate_map()
         return (
             create_indoor_map(
                 height=self.height,
@@ -118,7 +118,7 @@ def test():
     map_gen = RosnavMapGenerator(
         height=100, width=100, map_type="indoor", corridor_radius=5, iterations=100
     )
-    grid_map = map_gen.generate_grid_map()
+    grid_map = map_gen.generate_map()
 
 
 if __name__ == "__main__":

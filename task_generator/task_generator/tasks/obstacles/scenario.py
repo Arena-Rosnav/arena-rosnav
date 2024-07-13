@@ -39,9 +39,7 @@ class TM_Scenario(TM_Obstacles):
 
         with open(
             os.path.join(
-                rospkg.RosPack().get_path("arena_simulation_setup"),
-                "worlds",
-                rosparam_get(str, "map_file"),
+                Constants.MapGenerator.WORLD_FOLDER,
                 "scenarios",
                 config["SCENARIO_file"]
             )

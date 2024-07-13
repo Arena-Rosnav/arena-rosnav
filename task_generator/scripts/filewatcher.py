@@ -42,6 +42,8 @@ def safe_callback(fn: Callable):
 def recursive_get(obj: Any, property: List[str], fallback: Any = None) -> Any:
     if not len(property):
         return fallback if obj is None else obj
+    if property[0] == 'json':
+        return json.dumps(dict(obj))
     try:
         return recursive_get(dict(obj).get(property[0]), property[1:])
     except:

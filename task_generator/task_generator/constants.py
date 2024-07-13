@@ -2,9 +2,11 @@ import dataclasses
 from enum import Enum
 import enum
 import math
+import os
 from typing import Any, Callable, Optional
 
 import numpy as np
+import rospkg
 
 import rospy
 from task_generator.shared import Namespace, rosparam_get
@@ -57,6 +59,7 @@ class Constants:
 
         @enum.unique
         class TM_Module(enum.Enum):
+            MAP = "map"
             STAGED = "staged"
             DYNAMIC_MAP = "dynamic_map"
             CLEAR_FORBIDDEN_ZONES = "clear_forbidden_zones"
@@ -69,7 +72,11 @@ class Constants:
 
     class MapGenerator:
         NODE_NAME = "map_generator"
-        MAP_FOLDER_NAME = "dynamic_map"
+        WORLD_FOLDER = os.path.join(
+            rospkg.RosPack().get_path('arena_simulation_setup'),
+            'worlds',
+            'dynamic_map'
+        )
 
     PLUGIN_FULL_RANGE_LASER = {
         "type": "Laser",
@@ -173,7 +180,7 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     # load once at the start
     val = rospy.get_param(pedsim_ns(parameter), fallback)
 
-    def gen(): return val
+    gen = lambda: val
 
     if isinstance(val, list):
         lo, hi = val[:2]

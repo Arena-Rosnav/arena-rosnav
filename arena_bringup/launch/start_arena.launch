@@ -59,8 +59,8 @@
   <arg name="reset_remove_all" default="true" />
   <param name="reset_remove_all" value="$(arg reset_remove_all)" />
 
-  <arg name="map_file" default="map_empty" doc="[map1, floor, indoor, indoor_map1, map_small, map_empty]" />
-  <arg name="map_path" default="$(find arena_simulation_setup)/worlds/$(arg map_file)/map/map.yaml" />
+  <arg name="map_file" value="dynamic_map"/>
+  <arg name="map_path" value="$(find arena_simulation_setup)/worlds/$(arg map_file)/map/map.yaml" />
 
   <arg name="world_file" default="$(arg map_file)" doc="set to generated_world to replace occupancy map with obstacles and walls (NOT IMPLEMENTED YET)"/>
 

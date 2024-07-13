@@ -124,7 +124,7 @@ class BarnMapGenerator(BaseMapGenerator):
 
         return height, width, fill_pct, smooth_iter, map_res
 
-    def generate_grid_map(self, call_depth: int = 0):
+    def generate_map(self, call_depth: int = 0):
         """
         Generate a grid map for the barn environment.
 
@@ -138,7 +138,7 @@ class BarnMapGenerator(BaseMapGenerator):
             raise RecursionError(
                 "[Barn] Recursion depth exceeded, please check your parameters!"
             )
-        super().generate_grid_map()
+        super().generate_map()
 
         # sourcery skip: assign-if-exp, reintroduce-else, swap-if-expression
         obstacle_map_obj = ObstacleMap(
@@ -155,12 +155,12 @@ class BarnMapGenerator(BaseMapGenerator):
                 obstacle_map, self.robot_radius_extra_cells, self.infl_radius_cells
             ):
                 rospy.loginfo("[Barn] No path found, regenerating map!")
-                return self.generate_grid_map(call_depth + 1)
+                return self.generate_map(call_depth + 1)
         except IndexError:
             rospy.loginfo(
                 "[Barn] Index out of bound during 'check_for_paths', regenerating map!"
             )
-            return self.generate_grid_map(call_depth + 1)
+            return self.generate_map(call_depth + 1)
 
         # add side walls as the map was initially open on both sides for barn
         np_obs_map = np.array(obstacle_map)
@@ -194,7 +194,7 @@ def test():
     map_gen = BarnMapGenerator(
         height=70, width=50, robot_infl_radius=0.3, map_resolution=0.25
     )
-    grid_map = map_gen.generate_grid_map()
+    grid_map = map_gen.generate_map()
     None
 
 

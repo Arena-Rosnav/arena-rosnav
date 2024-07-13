@@ -23,7 +23,7 @@ class BaseMapGenerator(ABC):
         self.map_resolution = map_resolution
 
     @abstractmethod
-    def generate_grid_map(self) -> typing.Tuple[np.ndarray, typing.Dict[str, typing.Union[str, bytes]]]:
+    def generate_map(self) -> typing.Tuple[np.ndarray, typing.Dict[str, typing.Union[str, bytes]]]:
         """Updates parameters (retrieved from ROS) and generates a grid map.
 
         Raises:

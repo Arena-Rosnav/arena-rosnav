@@ -1,3 +1,4 @@
+from .constants import MapGenerators
 from .base_map_gen import BaseMapGenerator
 
 
@@ -30,7 +31,7 @@ class MapGeneratorFactory:
         return inner_wrapper
 
     @classmethod
-    def instantiate(cls, name: str, *args, **kwargs):
+    def instantiate(cls, name: MapGenerators, *args, **kwargs):
         """
         Instantiate a map generator with the given name.
 

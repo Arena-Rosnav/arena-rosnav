@@ -2,11 +2,17 @@ import math
 from typing import List, Dict, Tuple
 
 import genpy
+import rospy
+import pathlib
+import pydantic
+import yaml
+import dynamic_reconfigure.client
+
 from task_generator.constants import Config, Constants
 from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.tasks.robots import TM_Robots
-from task_generator.tasks.obstacles.zones import *
+from task_generator.tasks.obstacles.zones import Configuration, getPositions, rekey
 
 @TaskFactory.register_robots(Constants.TaskMode.TM_Robots.ZONES)
 class TM_Zones(TM_Robots):
@@ -63,7 +69,7 @@ class TM_Zones(TM_Robots):
             None
         """
 
-        world_dir = pathlib.Path(rospkg.RosPack().get_path("arena_simulation_setup")) / "worlds" / rosparam_get(str, "map_file")
+        world_dir = pathlib.Path(Constants.MapGenerator.WORLD_FOLDER)
 
         # updated zones file if changed
         zones_file = world_dir / "map" / "zones" / config.get("ZONES_file", "../zones.yaml")
@@ -88,7 +94,7 @@ class TM_Zones(TM_Robots):
             try:
                 with open(scenario_file) as f:
                     scenario : Dict[str, List] = yaml.safe_load(f)
-                    roles = [Configuration.Role(**rekey(e)) for e in scenario.get("robots")]
+                    roles = [Configuration.Role(**rekey(e)) for e in scenario.get("robots", [])]
             except (pydantic.ValidationError, FileNotFoundError, yaml.YAMLError) as e:
                 rospy.logerr(e)
                 rospy.logwarn(
@@ -181,7 +187,7 @@ class TM_Zones(TM_Robots):
         Args:
             index (int): The index of the robot.
         """
-        self._roles[index] = Config.General.RNG.choice(self._config.ROLES)
+        self._roles[index] = self._config.ROLES[Config.General.RNG.integers(0, len(self._config.ROLES))]
         print(index, self._roles[index])
     
     def _get_position(self, index: int) -> PositionOrientation:

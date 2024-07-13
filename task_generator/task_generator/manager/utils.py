@@ -16,7 +16,7 @@ from task_generator.shared import Obstacle, Position, PositionOrientation, Posit
 from genpy.rostime import Time
 from task_generator.utils import ModelLoader
 
-import map_distance_server.srv as map_distance_server_srvs
+import nav_msgs.srv as nav_srvs
 
 # TYPES
 
@@ -296,20 +296,20 @@ class WorldMap:
     time: Time
 
     @staticmethod
-    def from_distmap(distmap: map_distance_server_srvs.GetDistanceMapResponse) -> "WorldMap":
+    def from_distmap(distmap: nav_srvs.GetMapResponse) -> "WorldMap":
         return WorldMap(
             occupancy=WorldLayers(
                 walls=WorldOccupancy.from_map(
-                    np.array(distmap.data).reshape(
-                        (distmap.info.height, distmap.info.width))
+                    np.array(distmap.map.data).reshape(
+                        (distmap.map.info.height, distmap.map.info.width))
                 )
             ),
             origin=Position(
-                distmap.info.origin.position.y,
-                distmap.info.origin.position.x
+                distmap.map.info.origin.position.y,
+                distmap.map.info.origin.position.x
             ),
-            resolution=distmap.info.resolution,
-            time=distmap.info.map_load_time
+            resolution=distmap.map.info.resolution,
+            time=distmap.map.info.map_load_time
         )
 
     @property

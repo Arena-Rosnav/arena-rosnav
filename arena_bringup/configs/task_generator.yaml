@@ -1,33 +1,40 @@
-DYNAMICMAP:
-  algorithm: airchitect
-  config: '{"prompt":5}'
-  episodes: 1
+episodes: -1
+
+map:
+  algorithm: none
+  config:
+    dir: arena_hospital_small
+    prompt: 5
   timeout: 60
-PARAMETRIZED:
-  file: default.xml
-RANDOM:
-  dynamic:
-    max: 8
-    min: 5
-    models:
-    - actor1
-  interactive:
-    max: 0
-    min: 0
-    models:
-    - shelf
-  seed: 1944895261
-  static:
-    max: 0
-    min: 0
-    models:
-    - shelf
+
 SCENARIO:
   file: default.json
+
+PARAMETRIZED:
+  file: default.xml 
+
 STAGED:
-  curriculum: default.yaml
+  curriculum: "default.yaml"
   index: 0
+
+RANDOM:
+  seed: -1
+  static:
+    min: 0
+    max: 0
+    models: ["shelf"]
+  interactive:
+    min: 0
+    max: 0
+    models: ["shelf"]
+  dynamic:
+    min: 5
+    max: 8
+    models: ["actor1"]
+
 ZONES:
-  file: zones.yaml
-  scenario: default.yaml
-episodes: -1
+  file: "zones.yaml"
+  scenario: "default.yaml"
+
+DYNAMICMAP:
+  episodes: 1

@@ -41,6 +41,7 @@ from task_generator.manager.obstacle_manager import ObstacleManager
 import map_distance_server.srv as map_distance_server_srvs
 import std_msgs.msg as std_msgs
 import std_srvs.srv as std_srvs
+import nav_msgs.srv as nav_srvs
 
 
 def create_default_robot_list(
@@ -177,13 +178,15 @@ class TaskGenerator:
                 self._namespace
             )
 
-        rospy.wait_for_service("/distance_map")
+        SERVICE_MAP = "/static_map"
+
+        rospy.wait_for_service(SERVICE_MAP)
 
         service_client_get_map = rospy.ServiceProxy(
-            "/distance_map", map_distance_server_srvs.GetDistanceMap
+            SERVICE_MAP, nav_srvs.GetMap
         )
 
-        map_response: map_distance_server_srvs.GetDistanceMapResponse = (
+        map_response: nav_srvs.GetMapResponse = (
             service_client_get_map()
         )
         world_manager = WorldManager(
@@ -236,11 +239,9 @@ class TaskGenerator:
             )
         )
 
+        tm_modules.append(Constants.TaskMode.TM_Module.MAP)
         tm_modules.append(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
         tm_modules.append(Constants.TaskMode.TM_Module.RVIZ_UI)
-
-        if rosparam_get(str, "map_file", "") == "dynamic_map":
-            tm_modules.append(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
 
         rospy.logdebug("utils calls task factory")
         task = TaskFactory.combine(

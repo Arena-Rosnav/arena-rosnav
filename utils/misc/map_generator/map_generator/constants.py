@@ -10,6 +10,7 @@ class MapGenerators(enum.Enum):
     BARN = "barn"
     ROSNAV = "rosnav"
     AIRCHITECT = "airchitect"
+    NONE = "none"
 
 
 MAP_GENERATOR_NS = Namespace("/map_generator")

@@ -3,13 +3,15 @@
 Node that resets the map (amp folder: dynamic_map) to a blank state according to the parameters.
 Then starts the map_server node.
 """
+import numpy as np
 import rospy
 import roslaunch
 
 from map_generator.constants import MAP_FOLDER_NAME, ROSNAV_MAP_FOLDER, MAP_GENERATOR_NS
-from map_generator.utils.map import create_empty_map, create_yaml_files
+from map_generator.utils.map import MapPublisher
 from map_generator.utils.general import load_map_generator_config
 
+import std_msgs.msg
 
 def start_map_server():
     """
@@ -24,7 +26,6 @@ def start_map_server():
     Returns:
         None
     """
-    rospy.init_node("map_server_starter", anonymous=False)
 
     pkg = "map_server"
     executable = "map_server"
@@ -42,14 +43,17 @@ def start_map_server():
     )
 
     launch = roslaunch.scriptapi.ROSLaunch()
+
     launch.start()
 
     process = launch.launch(node)
 
+    rospy.set_param('map_server_node', node.name)
+
     while not rospy.is_shutdown():
         rospy.spin()
 
-    process.stop()
+    launch.stop()
 
 
 def main():
@@ -58,29 +62,23 @@ def main():
     It loads the map generator configuration, creates an empty map,
     generates YAML files, and starts the map server.
     """
-    if rospy.get_param("map_file", "") == MAP_FOLDER_NAME:
-        cfg = load_map_generator_config()
-        map_properties = rospy.get_param(
-            MAP_GENERATOR_NS("map_properties"), cfg["map_properties"]
-        )
 
-        create_empty_map(
-            height=map_properties["height"],
-            width=map_properties["width"],
-            map_name=MAP_FOLDER_NAME,
-            dir_path=ROSNAV_MAP_FOLDER,
-        )
-        create_yaml_files(map_name=MAP_FOLDER_NAME, dir_path=ROSNAV_MAP_FOLDER)
+    rospy.init_node("map_server_starter", anonymous=False)
 
-        # delete distance_map.png
-        distance_map_path = (
-            ROSNAV_MAP_FOLDER / MAP_FOLDER_NAME / "map" / "distance_map.png"
-        )
+    cfg = load_map_generator_config()
+    map_properties = rospy.get_param(
+        MAP_GENERATOR_NS("map_properties"), cfg["map_properties"]
+    )
 
-        if distance_map_path.exists():
-            distance_map_path.unlink()
+    resolution: float = map_properties['resolution']
 
-        start_map_server()
+    MapPublisher().publish_map(
+        np.zeros((int(100/resolution),int(100/resolution))),
+        {'resolution':resolution},
+        {}
+    )
+
+    start_map_server()
 
 
 if __name__ == "__main__":

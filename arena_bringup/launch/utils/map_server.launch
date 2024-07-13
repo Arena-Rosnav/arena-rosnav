@@ -11,8 +11,6 @@
       <remap from="/clock" to="/clock_simulation" />
     </node>
   </group>
-
-  <node name="distance_server" pkg="map_distance_server" type="map_distance_node.py" output="screen" />
   
   <!-- launch map generator if training with random map-->
   <group if="$(eval arg('map_file') == 'dynamic_map')">

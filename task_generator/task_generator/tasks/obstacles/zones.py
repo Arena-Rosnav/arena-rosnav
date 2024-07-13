@@ -223,7 +223,7 @@ class TM_Zones(TM_Obstacles):
             None
         """
 
-        world_dir = pathlib.Path(rospkg.RosPack().get_path("arena_simulation_setup")) / "worlds" / rosparam_get(str, "map_file")
+        world_dir = pathlib.Path(Constants.MapGenerator.WORLD_FOLDER)
 
         # updated zones file if changed
         zones_file = world_dir / "map" / "zones" / config.get("ZONES_file", "../zones.yaml")
@@ -248,7 +248,7 @@ class TM_Zones(TM_Obstacles):
             try:
                 with open(scenario_file) as f:
                     scenario : Dict[str, List] = yaml.safe_load(f)
-                    entities = [Configuration.Entity(**rekey(e)) for e in scenario.get("pedestrians")]
+                    entities = [Configuration.Entity(**rekey(e)) for e in scenario.get("pedestrians", [])]
             except (pydantic.ValidationError, FileNotFoundError, yaml.YAMLError) as e:
                 rospy.logerr(e)
                 rospy.logwarn(

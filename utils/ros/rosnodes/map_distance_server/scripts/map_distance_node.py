@@ -25,17 +25,22 @@ def print_map(map):
 
 
 class MapDistanceServer:
+
+    SERVICE_STATIC_MAP = '/static_map'
+
+    def _call_map_service(self):
+        rospy.wait_for_service(self.SERVICE_STATIC_MAP)
+        service = rospy.ServiceProxy(self.SERVICE_STATIC_MAP, GetMap, persistent=False)
+        return service().map
+
     def __init__(self):
         self._distance_map_path = os.path.join(
-            Path(rospkg.RosPack().get_path("arena_simulation_setup")),
-            "worlds",
-            rospy.get_param("map_file"),
-            "map",
+            rospy.get_param("map_path"),
+            "..",
             "distance_map.png",
         )
 
-        rospy.wait_for_service("/static_map")
-        self.map_service = rospy.ServiceProxy("/static_map", GetMap)
+        rospy.wait_for_service(self.SERVICE_STATIC_MAP)
 
         self.produce_distance_map()
 
@@ -45,9 +50,10 @@ class MapDistanceServer:
 
     def produce_distance_map(self):
         """Generates and saves or loads the distance map."""
-        self.map = self.map_service().map
+        
+        self.map = self._call_map_service()
 
-        if not os.path.exists(self._distance_map_path):
+        if True or not os.path.exists(self._distance_map_path):
             # If the distance map does not exist or a new map is provided by map generator
             distance_map = None
             self.new_map_data = list(self._get_map_with_distances())
@@ -108,7 +114,12 @@ class MapDistanceServer:
     def _get_map_with_distances(self):
         width_in_cell, height_in_cell = self.map.info.width, self.map.info.height
 
+        map_properties = rospy.get_param(MAP_GENERATOR_NS("map_properties"))
+        width_in_cell = int(map_properties['width'])
+        height_in_cell = int(map_properties['height'])
+
         map_2d = np.reshape(self.map.data, (height_in_cell, width_in_cell))
+        
 
         free_space_indices = np.where(map_2d == 0)
         free_space_coordinates = np.array(free_space_indices).transpose()
@@ -207,7 +218,8 @@ class DynamicMapDistanceServer(MapDistanceServer):
         if self._first_map:
             # only update the map if it is the first map
             # as static server only contains the first map
-            self.map = self.map_service().map
+            rospy.wait_for_service(self.SERVICE_STATIC_MAP)
+            self.map = self._call_map_service()
 
         if not os.path.exists(self._distance_map_path) or not self._first_map:
             # If the distance map does not exist or a new map is provided by map generator
@@ -274,7 +286,8 @@ if __name__ == "__main__":
     while not rospy.is_shutdown():
         rospy.spin()
 
-    # map = map_service().map
+    # rospy.wait_for_service(self.SERVICE_STATIC_MAP)
+    # map = self._call_map_service()
 
     # width_in_cell, height_in_cell = map.info.width, map.info.height
 

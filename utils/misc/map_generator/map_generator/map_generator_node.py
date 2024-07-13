@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
-import os
 import subprocess
 from typing import List
 
-import map_generator
-import numpy as np
 import rospy
 from map_generator.base_map_gen import BaseMapGenerator
 from map_generator.constants import (
-    MAP_FOLDER_NAME,
-    ROSNAV_MAP_FOLDER,
     MapGenerators,
     MAP_GENERATOR_NS,
 )
@@ -19,17 +14,16 @@ from map_generator.utils.general import (
     load_map_generator_config,
     load_robot_config,
 )
-from map_generator.utils.map import make_image
-from nav_msgs.msg import OccupancyGrid
+from map_generator.utils.map import PARAM_MAP_PROPERTIES, MapPublisher
 from std_msgs.msg import String
-
+from nav_msgs.msg import OccupancyGrid
 
 def get_generator_params(default_dict: dict) -> tuple:
     generator = rospy.get_param(
         MAP_GENERATOR_NS("algorithm"), default_dict["algorithm"]
     )
     map_properties = rospy.get_param(
-        MAP_GENERATOR_NS("map_properties"), default_dict["map_properties"]
+        PARAM_MAP_PROPERTIES, default_dict["map_properties"]
     )
     gen_cfg = rospy.get_param(
         MAP_GENERATOR_NS("algorithm_config"), default_dict["algorithm_config"]
@@ -52,9 +46,7 @@ class MapGeneratorNode:
         map_pub (rospy.Publisher): Publisher for the "/map" topic.
         robot_namespaces (List[str]): List of all robot namespaces.
 
-    Methods:
-        _get_occupancy_grid(occgrid_msg: OccupancyGrid): Saves the most recent occupancy grid.
-        callback_new_map(msg: String): Procedure to publish a new map.
+    Methods:createsnew_map(msg: String): Procedure to publish a new map.
         preprocess_map_data(grid_map: np.ndarray) -> np.ndarray: Preprocesses the grid map data.
         save_map(grid_map: np.ndarray, map_path: str, map_name: str): Saves the grid map as a PNG file.
         get_all_robot_topics() -> List[str]: Retrieves all robot namespaces.
@@ -66,18 +58,16 @@ class MapGeneratorNode:
             "robot_radius"
         ]
 
-        # initialize occupancy grid
-        self._occupancy_grid = OccupancyGrid()
-
         delete_distance_map()
 
         rospy.Subscriber("/map", OccupancyGrid, self._get_occupancy_grid)
         rospy.Subscriber("/request_new_map", String, self._callback_new_map, queue_size=1)
-        self._map_pub = rospy.Publisher("/map", OccupancyGrid, queue_size=1)
 
         self._default_config = load_map_generator_config()
         self._robot_namespaces = MapGeneratorNode.get_all_robot_topics()
         self._map_generator = self._initialize_map_generator()
+
+        self._map_publisher = MapPublisher()
 
     def _initialize_map_generator(self) -> BaseMapGenerator:
         self._generator_name, map_properties, gen_cfg = get_generator_params(
@@ -133,19 +123,14 @@ class MapGeneratorNode:
         if self.generator_name != rospy.get_param(MAP_GENERATOR_NS("algorithm")):
             self._map_generator = self._initialize_map_generator()
 
-        grid_map, extras = self._map_generator.generate_grid_map()
-        self._save_map(grid_map)
+        grid_map, extras = self._map_generator.generate_map()
 
-        for path, content in extras.items():
-            full_path = ROSNAV_MAP_FOLDER / MAP_FOLDER_NAME / path
-            os.makedirs(os.path.dirname(full_path), exist_ok=True)
-            with open(full_path, 'w' if isinstance(content, str) else 'wb') as f:
-                f.write(content)
+        map_properties = dict(
+            resolution = self._map_generator.map_resolution 
+        )
 
-        self._occupancy_grid.data = self._preprocess_map_data(grid_map)
-
-        self._map_pub.publish(self._occupancy_grid)
-
+        self._map_publisher.publish_map(grid_map, map_properties, extras)
+        
         if not self._train_mode:
             for robot_ns in self._robot_namespaces:
                 bashCommand = f"rosservice call /{robot_ns}/move_base/clear_costmaps"
@@ -154,32 +139,6 @@ class MapGeneratorNode:
         rospy.loginfo("New random map published and costmap cleared.")
 
         self._map_generator.idle()
-
-    def _preprocess_map_data(self, grid_map: np.ndarray) -> np.ndarray:
-        """Preprocesses the grid map data.
-
-        Flips the grid map from [height, width] to [width, height] and flattens it for publishing OccupancyGrid.data.
-
-        Args:
-            grid_map (np.ndarray): The grid map to be preprocessed.
-
-        Returns:
-            np.ndarray: The preprocessed grid map data.
-        """
-        # flip from [height, width] to [width, height]
-        grid_map = np.flip(grid_map, axis=0)
-        # map currently [0,1] 2D np array needs to be flattened for publishing OccupancyGrid.data
-        return (grid_map * 100).flatten().astype(np.int8)
-
-    def _save_map(self, grid_map: np.ndarray):
-        """Saves the grid map as a PNG file.
-
-        Args:
-            grid_map (np.ndarray): The grid map to be saved.
-            map_path (str): The path to save the map.
-            map_name (str): The name of the map file.
-        """
-        make_image(map=grid_map, map_name=MAP_FOLDER_NAME, dir_path=ROSNAV_MAP_FOLDER)
 
     @staticmethod
     def get_all_robot_topics() -> List[str]:

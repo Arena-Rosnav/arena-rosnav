@@ -318,8 +318,8 @@ class AIrchitectMapGenerator(BaseMapGenerator):
 
         return requests.post('http://0.0.0.0:8000/generate', json=payload).json()
 
-    def generate_grid_map(self):
-        super().generate_grid_map()
+    def generate_map(self):
+        super().generate_map()
 
         floorplan = self._preload
         self._preload = None
@@ -342,6 +342,9 @@ class AIrchitectMapGenerator(BaseMapGenerator):
 
         extras['artifacts/zones.svg'] = computed.zones_visu.as_svg()
 
+        self.height, self.width = computed.gridmap.shape
+        self.map_resolution = 0.125
+
         return computed.gridmap, extras
     
     def idle(self):
@@ -352,7 +355,7 @@ def test(prompt):
     map_gen = AIrchitectMapGenerator(
         height=70, width=50, map_resolution=0.25, prompt=prompt
     )
-    grid_map = map_gen.generate_grid_map()
+    grid_map = map_gen.generate_map()
 
 
 if __name__ == "__main__":
