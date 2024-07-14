@@ -9,7 +9,7 @@ collision:
 
 approach_goal:
   pos_factor: 0.6
-  neg_factor: 0.7
+  neg_factor: 0.8
   _goal_update_threshold: 5.0
   _on_safe_dist_violation: true
 
@@ -50,5 +50,5 @@ max_steps_exceeded:
   reward: -10
 
 angular_vel_constraint:
-  penalty_factor: 0.025
+  penalty_factor: 0.005
   threshold: 1.5
