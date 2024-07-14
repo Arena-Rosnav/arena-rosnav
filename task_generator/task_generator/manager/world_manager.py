@@ -502,12 +502,12 @@ class WorldManager:
             fillvalue=int(WorldOccupancy.FULL)
         )
 
-        import cv2
-        i = '_world'
-        cv2.imwrite(f"/home/arena/_debug{i}_1.png", occupancy)
-        cv2.imwrite(f"/home/arena/_debug{i}_2.png", WorldOccupancy.not_full(occupancy).astype(np.uint8) * np.iinfo(np.uint8).max)
-        cv2.imwrite(f"/home/arena/_debug{i}_3.png", spread)
-        rospy.logwarn(spread.min())
-        cv2.imwrite(f"/home/arena/_debug{i}_4.png", WorldOccupancy.empty(spread).astype(np.uint8) * np.iinfo(np.uint8).max)
+        # import cv2
+        # i = '_world'
+        # cv2.imwrite(f"/home/arena/_debug{i}_1.png", occupancy)
+        # cv2.imwrite(f"/home/arena/_debug{i}_2.png", WorldOccupancy.not_full(occupancy).astype(np.uint8) * np.iinfo(np.uint8).max)
+        # cv2.imwrite(f"/home/arena/_debug{i}_3.png", spread)
+        # rospy.logwarn(spread.min())
+        # cv2.imwrite(f"/home/arena/_debug{i}_4.png", WorldOccupancy.empty(spread).astype(np.uint8) * np.iinfo(np.uint8).max)
 
         return np.transpose(np.where(WorldOccupancy.empty(spread)))
