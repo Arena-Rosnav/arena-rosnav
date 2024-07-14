@@ -102,6 +102,10 @@ class TM_Map(TM_Module):
     _dirty: bool
 
     def before_reset(self):
+
+        # demo
+        self._dirty = True
+
         if self._dirty:
             if Utils.get_arena_type() != Constants.ArenaType.TRAINING:
                 self._map_interface.request_new_map(self._configuration.timeout)
@@ -127,6 +131,7 @@ class TM_Map(TM_Module):
         assert isinstance(config, dict)
         for k,v in config.items():
             rospy.set_param(self.PARAM_ALGORITHM_CONFIG(k), v)
+
 
     def __init__(self, **kwargs):
         """
