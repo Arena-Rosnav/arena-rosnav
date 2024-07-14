@@ -73,3 +73,6 @@ build-backend = "setuptools.build_meta"
 name = "PyPI"
 priority = "primary"
 
+[[tool.poetry.source]]
+name = "pypi-public"
+url = "https://pypi.org/simple/"

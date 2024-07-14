@@ -31,7 +31,9 @@ then
 else
     echo $GREEN
     echo 'updated successfully'
-    echo "${RED}don't forget to rebuild!"
+    echo 'rebuildind'
+    catkin build
+    echo "${RED}don't forget to resource!"
 fi
 
 echo $RESET
