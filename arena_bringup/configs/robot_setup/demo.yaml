@@ -3,3 +3,7 @@ robots:
     planner: teb
     amount: 3
     agent: jackal
+  - model: burger
+    planner: teb
+    amount: 3
+    agent: burger

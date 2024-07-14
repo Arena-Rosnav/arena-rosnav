@@ -489,27 +489,25 @@ class WorldManager:
     def position_on_map(self, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> Position:
         return self.positions_on_map(n=1, safe_dist=safe_dist, forbidden_zones=forbidden_zones)[0]
 
-    # id_gen = itertools.count()
-
     def _occupancy_to_available(self, occupancy: np.ndarray, safe_dist: float) -> np.ndarray:
 
         filt_size = int(2 * safe_dist + 1)
         filt = np.full((filt_size, filt_size), 1) / (filt_size ** 2)
 
         spread = scipy.signal.convolve2d(
-            WorldOccupancy.not_full(occupancy).astype(
-                np.uint8) * np.iinfo(np.uint8).max,
+            WorldOccupancy.not_empty(occupancy) * WorldOccupancy.SCALE,
             filt,
             mode="full",
             boundary="fill",
             fillvalue=int(WorldOccupancy.FULL)
         )
 
-        # import cv2
-        # i = next(self.id_gen)
-        # cv2.imwrite(f"~/_debug{i}_1.png", occupancy)
-        # cv2.imwrite(f"~/_debug{i}_2.png", WorldOccupancy.not_full(occupancy).astype(np.uint8) * np.iinfo(np.uint8).max)
-        # cv2.imwrite(f"~/_debug{i}_3.png", spread)
-        # cv2.imwrite(f"~/_debug{i}_4.png", WorldOccupancy.empty(spread).astype(np.uint8) * np.iinfo(np.uint8).max)
+        import cv2
+        i = '_world'
+        cv2.imwrite(f"/home/arena/_debug{i}_1.png", occupancy)
+        cv2.imwrite(f"/home/arena/_debug{i}_2.png", WorldOccupancy.not_full(occupancy).astype(np.uint8) * np.iinfo(np.uint8).max)
+        cv2.imwrite(f"/home/arena/_debug{i}_3.png", spread)
+        rospy.logwarn(spread.min())
+        cv2.imwrite(f"/home/arena/_debug{i}_4.png", WorldOccupancy.empty(spread).astype(np.uint8) * np.iinfo(np.uint8).max)
 
         return np.transpose(np.where(WorldOccupancy.empty(spread)))

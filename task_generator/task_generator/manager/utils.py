@@ -43,8 +43,9 @@ class WorldEntities:
 
 
 class WorldOccupancy:
-    FULL: np.uint8 = np.uint8(np.iinfo(np.uint8).min)
-    EMPTY: np.uint8 = np.uint8(np.iinfo(np.uint8).max)
+    FULL: float = 0
+    EMPTY: float = 100
+    SCALE: float = 100
 
     _grid: np.ndarray
 
@@ -72,10 +73,10 @@ class WorldOccupancy:
             WorldOccupancy
         """
         remap = scipy.interpolate.interp1d(
-            [input_map.max(), input_map.min()],
+            [100, 0],
             [cls.EMPTY, cls.FULL]
         )
-        return cls(remap(input_map))
+        return cls(input_map)
 
     @classmethod
     def empty(cls, grid: np.ndarray) -> np.ndarray:
@@ -115,9 +116,7 @@ class WorldOccupancy:
         Returns:
             np.ndarray
         """
-        if thresh is None:
-            thresh = float((int(cls.FULL) + int(cls.EMPTY)) / 2)
-        return grid >= thresh
+        return np.abs(grid - cls.EMPTY) < np.abs(grid - cls.FULL)
 
     @classmethod
     def full(cls, grid: np.ndarray) -> np.ndarray:

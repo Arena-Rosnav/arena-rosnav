@@ -1,6 +1,7 @@
 import dataclasses
 import json
 
+from task_generator.shared import rosparam_get
 from task_generator.utils import Utils
 
 import rospy
@@ -9,7 +10,7 @@ from task_generator.constants import Constants
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.task_factory import TaskFactory
 
-from map_generator.constants import MAP_GENERATOR_NS
+import map_generator.constants
 
 import nav_msgs.srv as nav_srvs
 import std_msgs.msg as std_msgs
@@ -63,7 +64,11 @@ class MapInterface:
         """
         # set current eps immediately to 0 so that only one task
         # requests a new map
-        self.__map_request_pub.publish("")
+
+        triggered_by_me = not rosparam_get(bool, map_generator.constants.PARAM_GENERATING, False)
+
+        if triggered_by_me:
+            self.__map_request_pub.publish("")
 
         try:
             rospy.wait_for_message(
@@ -74,9 +79,10 @@ class MapInterface:
                 "[Map Generator] Timeout while waiting for new map. Continue with current map."
             )
         else:
-            rospy.loginfo("===================")
-            rospy.loginfo("+++ Got new map +++")
-            rospy.loginfo("===================")
+            if triggered_by_me:
+                rospy.loginfo("===================")
+                rospy.loginfo("+++ Got new map +++")
+                rospy.loginfo("===================")
 
 @TaskFactory.register_module(Constants.TaskMode.TM_Module.MAP)
 class TM_Map(TM_Module):
@@ -87,9 +93,9 @@ class TM_Map(TM_Module):
         algorithm: str = ''
         config_json: str = ''
 
-    PARAM_ALGORITHM = MAP_GENERATOR_NS("algorithm")
-    PARAM_ALGORITHM_CONFIG = MAP_GENERATOR_NS("algorithm_config")
-    PARAM_TIMEOUT = MAP_GENERATOR_NS("generation_timeout")
+    PARAM_ALGORITHM = map_generator.constants.MAP_GENERATOR_NS("algorithm")
+    PARAM_ALGORITHM_CONFIG = map_generator.constants.MAP_GENERATOR_NS("algorithm_config")
+    PARAM_TIMEOUT = map_generator.constants.MAP_GENERATOR_NS("generation_timeout")
 
     _map_interface: MapInterface
     _configuration: "Configuration"
@@ -130,10 +136,10 @@ class TM_Map(TM_Module):
 
         self._configuration = self.Configuration()
 
+        self._map_interface = MapInterface(self._TASK)
+
         dynamic_reconfigure.client.Client(
             name=self.NODE_CONFIGURATION,
             config_callback=self.reconfigure
         )
-
-        self._map_interface = MapInterface(self._TASK)
         self._dirty = True

@@ -7,6 +7,7 @@ from map_generator.base_map_gen import BaseMapGenerator
 from map_generator.factory import MapGeneratorFactory
 from map_generator.constants import (
     ROSNAV_MAP_FOLDER,
+    CellValue,
     MapGenerators,
     MAP_GENERATOR_NS,
 )
@@ -17,7 +18,7 @@ import rospy
 
 
 @MapGeneratorFactory.register(MapGenerators.NONE)
-class AIrchitectMapGenerator(BaseMapGenerator):
+class NoneMapGenerator(BaseMapGenerator):
 
     dir: str
 
@@ -33,18 +34,20 @@ class AIrchitectMapGenerator(BaseMapGenerator):
 
     def update_params(self, height: int, width: int, map_res: float, dir: str, **kwargs):
 
+        super().update_params(height, width, map_res, **kwargs)
+
         self.dir = dir
 
-        super().update_params(height, width, map_res, dir, **kwargs)
+        
 
     def retrieve_params(self):
 
         params = super().retrieve_params()
-        prompt = str(rospy.get_param(
+        dir = str(rospy.get_param(
             MAP_GENERATOR_NS("algorithm_config/dir"), self.dir
         ))
 
-        return *params, prompt
+        return *params, dir
 
 
     def generate_map(self):
@@ -63,15 +66,16 @@ class AIrchitectMapGenerator(BaseMapGenerator):
         if len(gridmap.shape) > 2:
             gridmap = gridmap.mean(axis=2)
 
-        if not map_yaml.get('negate', False):
+        if map_yaml.get('negate', False):
             gridmap = 1 - gridmap
 
         occ = gridmap > map_yaml['occupied_thresh']
         fre = gridmap < map_yaml['free_thresh']
 
         gridmap[:,:] = -1
-        gridmap[occ] = 1
-        gridmap[fre] = 0
+        gridmap[occ] = CellValue.FULL
+        gridmap[fre] = CellValue.EMPTY
+        #TODO switch btw ternary mode and continuous mode
 
         extras = {}
 

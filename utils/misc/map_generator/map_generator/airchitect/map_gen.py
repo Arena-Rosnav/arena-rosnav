@@ -16,6 +16,7 @@ import drawsvg
 from map_generator.base_map_gen import BaseMapGenerator
 from map_generator.factory import MapGeneratorFactory
 from map_generator.constants import (
+    CellValue,
     MapGenerators,
     MAP_GENERATOR_NS,
 )
@@ -88,13 +89,13 @@ class Floorplan:
             [0, 0, 1]
         ]) @ self._tf_floorplan_pixel
 
-        gridmap[:,:] = 1
+        gridmap[:,:] = CellValue.FULL
 
         for room in shapely.affinity.affine_transform(self._rooms, affine_matrix_to_shapely(self._tf_floorplan_pixel)).geoms:
             cv2.fillConvexPoly(
                 gridmap,
                 np.array(room.boundary.coords).astype(np.int32),
-                (0,)
+                (CellValue.EMPTY,)
             )
 
         for room in shapely.affinity.affine_transform(self._rooms, affine_matrix_to_shapely(self._tf_floorplan_pixel)).geoms:
@@ -102,7 +103,7 @@ class Floorplan:
                 gridmap,
                 [np.array(room.boundary.coords).astype(np.int32).reshape((-1,1,2))],
                 False,
-                (1,),
+                (CellValue.FULL,),
                 1
             )
 
@@ -110,7 +111,7 @@ class Floorplan:
             cv2.fillConvexPoly(
                 gridmap,
                 np.array(door.buffer(2).boundary.coords).astype(np.int32),
-                (0,)
+                (CellValue.EMPTY,)
             )
 
         if gridmap_flipped:
@@ -258,11 +259,12 @@ class AIrchitectMapGenerator(BaseMapGenerator):
 
     def update_params(self, height: int, width: int, map_res: float, prompt: str, **kwargs):
 
+        super().update_params(height, width, map_res, **kwargs)
+
         if self.prompt != prompt:
             self.prompt = prompt
             self._preload = None
 
-        super().update_params(height, width, map_res, prompt, **kwargs)
 
     def retrieve_params(self):
 

@@ -2,6 +2,8 @@ from typing import List
 
 import random
 
+from map_generator.constants import CellValue
+
 
 # class to generate occupancy grids using cellular automaton
 class ObstacleMap:
@@ -49,7 +51,7 @@ class ObstacleMap:
         seed: int = None,
         smooth_iter: int = 5,
     ):
-        self.map = [[0 for _ in range(cols)] for _ in range(rows)]
+        self.map = [[CellValue.EMPTY for _ in range(cols)] for _ in range(rows)]
         self.rows = rows
         self.cols = cols
         self.rand_fill_pct = rand_fill_pct
@@ -90,9 +92,9 @@ class ObstacleMap:
         for r in range(self.rows):
             for c in range(self.cols):
                 if r in [0, self.rows - 1]:
-                    self.map[r][c] = 1
+                    self.map[r][c] = CellValue.FULL
                 else:
-                    self.map[r][c] = 1 if random.random() < self.rand_fill_pct else 0
+                    self.map[r][c] = CellValue.FULL if random.random() < self.rand_fill_pct else 0
 
     def _smooth(self):
         """
@@ -103,9 +105,9 @@ class ObstacleMap:
         for r in range(self.rows):
             for c in range(self.cols):
                 if self._tile_neighbors(r, c) >= 5:
-                    newmap[r][c] = 1
+                    newmap[r][c] = CellValue.FULL
                 elif self._tile_neighbors(r, c) <= 1:
-                    newmap[r][c] = 0
+                    newmap[r][c] = CellValue.EMPTY
 
         self.map = newmap
 

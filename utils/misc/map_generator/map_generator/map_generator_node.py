@@ -5,6 +5,7 @@ from typing import List
 import rospy
 from map_generator.base_map_gen import BaseMapGenerator
 from map_generator.constants import (
+    PARAM_GENERATING,
     MapGenerators,
     MAP_GENERATOR_NS,
 )
@@ -120,25 +121,32 @@ class MapGeneratorNode:
         Args:
             msg (String): Empty message as the message is not used.
         """
-        if self.generator_name != rospy.get_param(MAP_GENERATOR_NS("algorithm")):
-            self._map_generator = self._initialize_map_generator()
+        while rospy.get_param(PARAM_GENERATING, False):
+            rospy.sleep(.1)
+        rospy.set_param(PARAM_GENERATING, True)
 
-        grid_map, extras = self._map_generator.generate_map()
+        try:
+            if self.generator_name != rospy.get_param(MAP_GENERATOR_NS("algorithm")):
+                self._map_generator = self._initialize_map_generator()
 
-        map_properties = dict(
-            resolution = self._map_generator.map_resolution 
-        )
+            grid_map, extras = self._map_generator.generate_map()
 
-        self._map_publisher.publish_map(grid_map, map_properties, extras)
-        
-        if not self._train_mode:
-            for robot_ns in self._robot_namespaces:
-                bashCommand = f"rosservice call /{robot_ns}/move_base/clear_costmaps"
-                subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+            map_properties = dict(
+                resolution = self._map_generator.map_resolution 
+            )
 
-        rospy.loginfo("New random map published and costmap cleared.")
+            self._map_publisher.publish_map(grid_map, map_properties, extras)
+            
+            if not self._train_mode:
+                for robot_ns in self._robot_namespaces:
+                    bashCommand = f"rosservice call /{robot_ns}/move_base/clear_costmaps"
+                    subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 
-        self._map_generator.idle()
+            rospy.loginfo("New random map published and costmap cleared.")
+
+        finally:
+            rospy.set_param(PARAM_GENERATING, False)
+            self._map_generator.idle()
 
     @staticmethod
     def get_all_robot_topics() -> List[str]:

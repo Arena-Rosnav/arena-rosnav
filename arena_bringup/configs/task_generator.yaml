@@ -1,9 +1,9 @@
 episodes: -1
 
 map:
-  algorithm: none
+  algorithm: airchitect
   config:
-    dir: arena_hospital_small
+    dir: map_empty
     prompt: 5
   timeout: 60
 

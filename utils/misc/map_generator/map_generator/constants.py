@@ -5,6 +5,10 @@ import rospkg
 
 from task_generator.shared import Namespace
 
+class CellValue(int, enum.Enum):
+    FULL = 100
+    EMPTY = 0
+    UNKNOWN = -1
 
 class MapGenerators(enum.Enum):
     BARN = "barn"
@@ -15,6 +19,8 @@ class MapGenerators(enum.Enum):
 
 MAP_GENERATOR_NS = Namespace("/map_generator")
 MAP_FOLDER_NAME = "dynamic_map"
+PARAM_GENERATING = MAP_GENERATOR_NS('generating')
+
 EMPTY_MAP_YAML = {
     "image": "map.png",
     "resolution": 0.25,

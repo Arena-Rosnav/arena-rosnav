@@ -11,7 +11,7 @@ import yaml
 from PIL import Image
 from matplotlib.ticker import FixedLocator
 
-from map_generator.constants import MAP_FOLDER_NAME, ROSNAV_MAP_FOLDER, DYNAMIC_MAP_YAML, MAP_GENERATOR_NS
+from map_generator.constants import MAP_FOLDER_NAME, ROSNAV_MAP_FOLDER, DYNAMIC_MAP_YAML, MAP_GENERATOR_NS, CellValue
 
 import nav_msgs.msg
 import std_msgs.msg
@@ -57,7 +57,12 @@ def create_empty_map(height: int, width: int, map_name: str, dir_path: str):
 def fill_extras(grid_map, map_properties, extras):
 
     if 'map/map.png' not in extras:
-        img = Image.fromarray(((grid_map - 1) ** 2 * 255).astype("uint8"))  # monochromatic image
+        grayscale_array = np.full(grid_map.shape, (CellValue.EMPTY+CellValue.FULL)/2, dtype=np.uint8)
+        grayscale_array[grid_map == CellValue.FULL] = 0
+        grayscale_array[grid_map == CellValue.EMPTY] = 255
+        
+
+        img = Image.fromarray(grayscale_array)  # monochromatic image
         imgrgb = img.convert("RGB")
         # map_name = "map_{}".format(now.strftime("%Y_%m_%d_%H_%M_%S")) # create mapname from current datetime
 
@@ -95,7 +100,7 @@ def preprocess_map_data(grid_map: np.ndarray) -> np.ndarray:
     # flip from [height, width] to [width, height]
     # grid_map = np.flip(grid_map, axis=0)
     # map currently [0,1] 2D np array needs to be flattened for publishing OccupancyGrid.data
-    return (grid_map * 100).flatten().astype(np.int8)
+    return (grid_map).flatten().astype(np.int8)
 
 
 PARAM_MAP_PROPERTIES = MAP_GENERATOR_NS("map_properties")

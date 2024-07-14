@@ -1,12 +1,14 @@
 import numpy as np
 
+from map_generator.constants import CellValue
+
 
 def initialize_map(height: int, width: int, type="indoor") -> np.ndarray:
     # create empty map with format given by height,width and initialize empty tree
     if type != "outdoor":
-        return np.tile(1, [height, width])
-    grid_map = np.tile(1, [height, width])
-    grid_map[slice(1, height - 1), slice(1, width - 1)] = 0
+        return np.tile(CellValue.FULL, [height, width])
+    grid_map = np.tile(CellValue.FULL, [height, width])
+    grid_map[slice(1, height - 1), slice(1, width - 1)] = CellValue.EMPTY
     return grid_map
 
 
@@ -17,14 +19,14 @@ def insert_root_node(
         int(np.floor(grid_map.shape[0] / 2)),
         int(np.floor(grid_map.shape[1] / 2)),
     ]
-    grid_map[root_node[0], root_node[1]] = 0
+    grid_map[root_node[0], root_node[1]] = CellValue.EMPTY
     tree.append(root_node)
 
 
 def insert_new_node(
     random_position, tree, map
 ):  # insert new node into the map and tree
-    map[random_position[0], random_position[1]] = 0
+    map[random_position[0], random_position[1]] = CellValue.EMPTY
     tree.append(random_position)
 
 
