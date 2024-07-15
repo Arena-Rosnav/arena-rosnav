@@ -71,7 +71,7 @@ class RobotManager:
         )  # + self._robot_radius
         self._goal_tolerance_angle = rosparam_get(
             float, "goal_tolerance_angle", Config.Robot.GOAL_TOLERANCE_ANGLE
-        )
+        ) * np.pi/180
 
         self._robot = robot
         self._safety_distance = rosparam_get(
