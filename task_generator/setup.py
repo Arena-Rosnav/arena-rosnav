@@ -23,8 +23,8 @@ setup(
     entry_points={
         'console_scripts': [
             'task_generator_node = task_generator.task_generator_node:main',
-            'server = scripts.server:main',
-            'filewatcher = scripts.filewatcher:main'
+            'server = task_generator.server:main',
+            'filewatcher = task_generator.filewatcher:main'
         ]    
     }
 )

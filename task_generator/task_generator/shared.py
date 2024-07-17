@@ -23,8 +23,8 @@ from rosros import rospify as rospy
 
 T = TypeVar("T")
 U = TypeVar("U")
-_unspecified = rospy.client._unspecified()
-_UNSPECIFIED = rospy.client._unspecified
+_unspecified = rospy.client._Unspecified()
+_UNSPECIFIED = rospy.client._Unspecified
 _notfound = object()
 
 
@@ -363,4 +363,3 @@ class Robot(RobotProps):
             record_data_dir=record_data,
             extra=obj,
         )
-
