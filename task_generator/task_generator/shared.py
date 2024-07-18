@@ -23,8 +23,8 @@ from rosros import rospify as rospy
 
 T = TypeVar("T")
 U = TypeVar("U")
-_unspecified = rospy.client._Unspecified()
-_UNSPECIFIED = rospy.client._Unspecified
+_unspecified = rospy.client._unspecified()
+_UNSPECIFIED = rospy.client._unspecified
 _notfound = object()
 
 

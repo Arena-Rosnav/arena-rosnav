@@ -5,10 +5,11 @@ import math
 from typing import Any, Callable, Optional
 
 import numpy as np
-
+import yaml 
+import os 
+import rospkg
 from rosros import rospify as rospy
 from task_generator.shared import Namespace, rosparam_get
-import dynamic_reconfigure.client
 
 class Constants:
 
@@ -81,17 +82,12 @@ class Constants:
         "update_rate": 10,
     }
 
-
-# TaskConfig
-
-
 @dataclasses.dataclass
 class TaskConfig_General:
     WAIT_FOR_SERVICE_TIMEOUT: float = dataclasses.field(default_factory=lambda:rosparam_get(float, "timeout_wait_for_service", 60))
     MAX_RESET_FAIL_TIMES: int = dataclasses.field(default_factory=lambda:rosparam_get(int, "max_reset_fail_times", 10))
     RNG: np.random.Generator = dataclasses.field(default_factory=lambda:np.random.default_rng())
     DESIRED_EPISODES: float = float("inf")
-
 
 @dataclasses.dataclass
 class TaskConfig_Robot:
@@ -100,11 +96,9 @@ class TaskConfig_Robot:
     SPAWN_ROBOT_SAFE_DIST: float = 0.25
     TIMEOUT: float = float("inf")
 
-
 @dataclasses.dataclass
 class TaskConfig_Obstacles:
     OBSTACLE_MAX_RADIUS: float = 15
-
 
 @dataclasses.dataclass
 class TaskConfig:
@@ -112,24 +106,35 @@ class TaskConfig:
     Robot: TaskConfig_Robot = dataclasses.field(default_factory=lambda:TaskConfig_Robot())
     Obstacles: TaskConfig_Obstacles = dataclasses.field(default_factory=lambda:TaskConfig_Obstacles())
 
-
 Config = TaskConfig()
 
 def _cb_reconfigure(config):
     global Config
 
-    Config.General.RNG=np.random.default_rng((lambda x: x if x >= 0 else None)(config["RANDOM_seed"]))
-    Config.General.DESIRED_EPISODES=(lambda x: float("inf") if x<0 else x)(config["episodes"])
+    Config.General.RNG = np.random.default_rng((lambda x: x if x >= 0 else None)(config["RANDOM_seed"]))
+    Config.General.DESIRED_EPISODES = (lambda x: float("inf") if x < 0 else x)(config["episodes"])
     
-    Config.Robot.GOAL_TOLERANCE_RADIUS=config["goal_radius"]
-    Config.Robot.GOAL_TOLERANCE_ANGLE=config["goal_tolerance_angle"]
-    Config.Robot.TIMEOUT=(lambda x: float("inf") if x<0 else x)(config["timeout"])
+    Config.Robot.GOAL_TOLERANCE_RADIUS = config["goal_radius"]
+    Config.Robot.GOAL_TOLERANCE_ANGLE = config["goal_tolerance_angle"]
+    Config.Robot.TIMEOUT = (lambda x: float("inf") if x < 0 else x)(config["timeout"])
 
-dynamic_reconfigure.client.Client(
-    name=Constants.TASK_GENERATOR_SERVER_NODE,
-    config_callback=_cb_reconfigure
-)
+def load_parameters_from_yaml(file_path: str):
+    with open(file_path, 'r') as file:
+        params = yaml.safe_load(file)
+    
+    if params and 'ros__parameters' in params:
+        for key, value in params['ros__parameters'].items():
+            rospy.set_param(key, value)
 
+    # Simulate the dynamic_reconfigure callback
+    config = {
+        "RANDOM_seed": rospy.get_param("RANDOM/seed", -1),
+        "episodes": rospy.get_param("episodes", -1),
+        "goal_radius": rospy.get_param("goal_radius", 1.0),
+        "goal_tolerance_angle": rospy.get_param("goal_tolerance_angle", 30 * math.pi / 180),
+        "timeout": rospy.get_param("timeout", 60)
+    }
+    _cb_reconfigure(config)
 
 class FlatlandRandomModel:
     BODY = {
@@ -155,13 +160,10 @@ class FlatlandRandomModel:
     LINEAR_VEL = 0.2
     ANGLUAR_VEL_MAX = 0.2
 
-
 # no ~configuration possible because node is not fully initialized at this point
 pedsim_ns = Namespace(
     "task_generator_node/configuration/pedsim/default_actor_config")
 
-
-# TODO make everything dynamic_reconfigure
 def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     """
     load pedsim param
@@ -181,10 +183,8 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
                 Config.General.RNG.normal((hi + lo) / 2, (hi - lo) / 6)
             )
         )
-        # gen = lambda: random.uniform(lo, hi)
 
     return lambda x: x if x is not None else gen()
-
 
 class Pedsim:
     VMAX = lp("VMAX", 0.3)
@@ -194,12 +194,10 @@ class Pedsim:
     CHATTING_PROBABILITY = lp("CHATTING_PROBABILITY", 0.0)
     TELL_STORY_PROBABILITY = lp("TELL_STORY_PROBABILITY", 0.0)
     GROUP_TALKING_PROBABILITY = lp("GROUP_TALKING_PROBABILITY", 0.0)
-    TALKING_AND_WALKING_PROBABILITY = lp(
-        "TALKING_AND_WALKING_PROBABILITY", 0.0)
+    TALKING_AND_WALKING_PROBABILITY = lp("TALKING_AND_WALKING_PROBABILITY", 0.0)
     REQUESTING_SERVICE_PROBABILITY = lp("REQUESTING_SERVICE_PROBABILITY", 0.0)
     REQUESTING_GUIDE_PROBABILITY = lp("REQUESTING_GUIDE_PROBABILITY", 0.0)
-    REQUESTING_FOLLOWER_PROBABILITY = lp(
-        "REQUESTING_FOLLOWER_PROBABILITY", 0.0)
+    REQUESTING_FOLLOWER_PROBABILITY = lp("REQUESTING_FOLLOWER_PROBABILITY", 0.0)
     MAX_TALKING_DISTANCE = lp("MAX_TALKING_DISTANCE", 5.0)
     MAX_SERVICING_RADIUS = lp("MAX_SERVICING_RADIUS", 5.0)
     TALKING_BASE_TIME = lp("TALKING_BASE_TIME", 10.0)
@@ -213,3 +211,13 @@ class Pedsim:
     FORCE_FACTOR_SOCIAL = lp("FORCE_FACTOR_SOCIAL", 5.0)
     FORCE_FACTOR_ROBOT = lp("FORCE_FACTOR_ROBOT", 0.0)
     WAYPOINT_MODE = lp("WAYPOINT_MODE", 0)
+
+# Entfernen der dynamic_reconfigure.client.Client-Instanzierung
+
+if __name__ == "__main__":
+    rospack = rospkg.RosPack()
+    config_file_path = os.path.join(rospack.get_path('arena_bringup'), 'configs', 'task_generator.yaml')
+    
+    rospy.init_node("task_generator_server")
+    load_parameters_from_yaml(config_file_path)
+    rospy.spin()
