@@ -38,6 +38,8 @@ private:
     Eigen::Vector2d odom_pos, odom_vel, initial_pos;
 
     Eigen::Vector2d end_pos;
+    Eigen::Vector2d subgoal_pos;
+
 
     // subscriber
     ros::Subscriber sub_goal, sub_odom, sub_initial_pose;
