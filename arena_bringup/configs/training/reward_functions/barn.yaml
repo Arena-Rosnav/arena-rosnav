@@ -2,14 +2,14 @@ goal_reached:
   reward: 20
 
 safe_distance:
-  reward: -0.1
+  reward: -0.12
 
 collision:
   reward: -20
 
 approach_goal:
   pos_factor: 0.32
-  neg_factor: 0.32
+  neg_factor: 0.48
   _goal_update_threshold: 5.0
   _on_safe_dist_violation: true
 
@@ -28,27 +28,23 @@ reverse_drive:
 #   beta: 0.005
 #   _on_safe_dist_violation: true
 
-active_heading_direction:
-  r_angle: 0.6
-  iters: 60
-  _on_safe_dist_violation: true
+# active_heading_direction:
+#   r_angle: 0.6
+#   iters: 60
+#   _on_safe_dist_violation: true
 
 # ped_type_collision:
 #   type: 1
 #   reward: -5
 
-# ped_type_safety_distance:
-#   type: 1
-#   reward: -0.15
-#   safety_distance: 1.5
-
-# angular_vel_constraint:
-#   penalty_factor: 0.05
-#   threshold: 1.0
+ped_type_safety_distance:
+  type: 1
+  reward: -0.05
+  safety_distance: 1.5
 
 max_steps_exceeded:
-  reward: -10
+  reward: -15
 
 angular_vel_constraint:
-  penalty_factor: 0.0025
+  penalty_factor: 0.005
   threshold: 1.0
