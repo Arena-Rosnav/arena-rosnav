@@ -18,9 +18,9 @@ netifaces = "^0.11.0"
 watchdog = "^3.0.0"
 
 # all planners except rosnav and aio
-[tool.poetry.group.planner]
+[tool.poetry.group.planners]
 optional = true
-[tool.poetry.group.planner.dependencies]
+[tool.poetry.group.planners.dependencies]
 torch = "^1.11.0" # applr, crowdnav, lflh, rlca, sarl, trail
 seaborn = "^0.12.2" # lflh
 tensorboard = "^2.12.2" # lflh
@@ -64,3 +64,6 @@ sismic = "^1.6.6"
 requires = ["setuptools==62.2.0", "wheel==0.38.4"]
 build-backend = "setuptools.build_meta"
 
+[[tool.poetry.source]]
+name = "pypi-public"
+url = "https://pypi.org/simple/"
