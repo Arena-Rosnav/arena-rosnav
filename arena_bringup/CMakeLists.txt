@@ -68,6 +68,13 @@ install(
 #   DESTINATION share/${PROJECT_NAME}
 # )
 
+# add scripts
+install(
+  PROGRAMS
+  scripts/pull
+  scripts/repos
+  DESTINATION lib/${PROJECT_NAME})
+
 # ament package
 ament_package()
 
