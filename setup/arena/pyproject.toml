@@ -58,7 +58,10 @@ socialforce = "^0.2.3"
 pyinstrument = "^4.6.1"
 sismic = "^1.6.6"
 
-[tool.poetry.dev-dependencies]
+
+[tool.poetry.group.dev.dependencies]
+catkin-pkg = "^1.0.0"
+lark = "^1.1.9"
 
 [build-system]
 requires = ["setuptools==62.2.0", "wheel==0.38.4"]

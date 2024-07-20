@@ -1181,6 +1181,28 @@ url = "https://pypi.org/simple"
 reference = "pypi-public"
 
 [[package]]
+name = "lark"
+version = "1.1.9"
+description = "a modern parsing library"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "lark-1.1.9-py3-none-any.whl", hash = "sha256:a0dd3a87289f8ccbb325901e4222e723e7d745dbfc1803eaf5f3d2ace19cf2db"},
+    {file = "lark-1.1.9.tar.gz", hash = "sha256:15fa5236490824c2c4aba0e22d2d6d823575dcaf4cdd1848e34b6ad836240fba"},
+]
+
+[package.extras]
+atomic-cache = ["atomicwrites"]
+interegular = ["interegular (>=0.3.1,<0.4.0)"]
+nearley = ["js2py"]
+regex = ["regex"]
+
+[package.source]
+type = "legacy"
+url = "https://pypi.org/simple"
+reference = "pypi-public"
+
+[[package]]
 name = "llvmlite"
 version = "0.41.1"
 description = "lightweight wrapper around basic LLVM functionality"
@@ -3493,4 +3515,4 @@ reference = "pypi-public"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8,<3.11"
-content-hash = "3917974e5a7c49f9e71637288f2b91fa15c2133568e05dee55e1d50f433b6572"
+content-hash = "94ab9da97a2d4ec2a1e0040676827f88b2202f68036e03c5838d30c3aa4266af"
