@@ -4,10 +4,21 @@ set -e
 PYTHON_VERSION=3.10
 
 sudo echo ""
- 
+
+# build ros2 from source
+sudo apt update && sudo apt install -y curl gnupg2 lsb-release
+curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+
+mkdir -p "${ARENA_WS_DIR}/src/ros2"
+cd "${ARENA_WS_DIR}"
+wget "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_VERSION}/ros2.repos"
+vcs import src < ros2.repos
+rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers"
+
 # Project Setup
 echo "Preparing Project...:"
-cd ${ARENA_WS_DIR}
+cd "${ARENA_WS_DIR}"
 
 until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to update, retrying..." ; done
 #

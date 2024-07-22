@@ -1,9 +1,8 @@
+build-essential
+cmake
 git
-ros-jazzy-desktop
-python3
-python-is-python3
-python3-rosdep
-python3-rosdep-modules
-python3-pip
-python3-rosinstall-generator
-python3-vcstool
+wget
+libasio-dev
+libtinyxml2-dev
+libcunit1-dev
+ros-dev-tools
