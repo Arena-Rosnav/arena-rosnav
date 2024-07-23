@@ -1,8 +1,0 @@
-build-essential
-cmake
-git
-wget
-libasio-dev
-libtinyxml2-dev
-libcunit1-dev
-ros-dev-tools

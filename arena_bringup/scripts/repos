@@ -18,7 +18,7 @@ DIR_SRC = os.path.join(os.getcwd(), "src")
 assert os.path.isdir(DIR_SRC), "Current dir does not appear to be a catkin workspace!"
 
 DIR_ARENA_ROSNAV = "arena/arena-rosnav"
-FILE_REPOS = os.path.join(DIR_SRC, args.get(1, os.path.join(DIR_ARENA_ROSNAV, ".repos")))
+FILE_REPOS = os.path.join(DIR_SRC, args.get(1, os.path.join(DIR_ARENA_ROSNAV, "arena.repos")))
 
 ws_repos = set()
 
