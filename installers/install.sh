@@ -3,16 +3,22 @@ set -e
 
 export ARENA_ROSNAV_REPO='voshch/arena-rosnav'
 export PYTHON_VERSION='3.10'
+export ARENA_ROS_VERSION='jazzy'
+export ARENA_BRANCH='jazzy'
 
-export BUILD_EXCLUDES=' python_orocos_kdl_vendor qt_gui_cpp rqt_gui_cpp'
+export BUILD_EXCLUDES='python_orocos_kdl_vendor qt_gui_cpp rqt_gui_cpp qt_gui_core rqt'
 
 poetry_install(){
+  pyenv install -s "${PYTHON_VERSION}"
+  pyenv local "${PYTHON_VERSION}"
+  export PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring 
+  $HOME/.local/bin/poetry env use "${PYTHON_VERSION}"
   $HOME/.local/bin/poetry install || ($HOME/.local/bin/poetry lock --no-update && $HOME/.local/bin/poetry install)
 }
 
 colcon_build(){
   source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
-  colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)" --packages-skip "${BUILD_EXCLUDES}"
+  colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)" --packages-skip ${BUILD_EXCLUDES}
 }
 
 # == read inputs ==
@@ -21,14 +27,6 @@ echo 'Configuring arena-rosnav...'
 ARENA_WS_DIR=${ARENA_WS_DIR:-"~/arena_ws"}
 read -p "arena-rosnav workspace directory [${ARENA_WS_DIR}] " INPUT
 export ARENA_WS_DIR="$(eval echo ${INPUT:-${ARENA_WS_DIR}})"
-
-ARENA_ROS_VERSION=${ARENA_ROS_VERSION:-jazzy}
-read -p "ros version [${ARENA_ROS_VERSION}] " INPUT
-export ARENA_ROS_VERSION=${INPUT:-${ARENA_ROS_VERSION}}
-
-ARENA_BRANCH=${ARENA_BRANCH:-master}
-read -p "arena-rosnav branch [${ARENA_BRANCH}] " INPUT
-export ARENA_BRANCH=${INPUT:-${ARENA_BRANCH}}
 
 sudo echo ""
 
@@ -54,8 +52,8 @@ poetry config virtualenvs.in-project true
 # == compile ros ==
 
 
-sudo add-apt-repository universe
-sudo apt-get update
+sudo add-apt-repository universe -y
+sudo apt-get update || echo 0
 sudo apt-get install -y curl
 
 echo "Installing tzdata...:"
@@ -68,17 +66,11 @@ echo "Setting up ROS2 ${ARENA_ROS_VERSION}..."
 sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
-# set up env
-
-mkdir -p "${ARENA_WS_DIR}/src/arena/arena-rosnav"
-cd "${ARENA_WS_DIR}/src/arena/arena-rosnav"
 
 #python env
-pyenv install -s "${PYTHON_VERSION}"
-pyenv local "${PYTHON_VERSION}"
+mkdir -p "${ARENA_WS_DIR}/src/arena/arena-rosnav"
+cd "${ARENA_WS_DIR}/src/arena/arena-rosnav"
 curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/pyproject.toml" > pyproject.toml
-$HOME/.local/bin/poetry env use "${PYTHON_VERSION}"
-export PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring 
 poetry_install
 
 
@@ -129,7 +121,7 @@ until vcs import src/ros2 < ros2.repos ; do echo "failed to update, retrying..."
 rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers"
 
 cd "${ARENA_WS_DIR}"
-colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)"
+colcon_build
 
 # == install arena on top of ros2 ==
 
@@ -138,7 +130,7 @@ echo "cloning Arena-Rosnav into ${ARENA_WS_DIR}..."
 git clone --branch "${ARENA_BRANCH}" "https://github.com/${ARENA_ROSNAV_REPO}.git" "${ARENA_WS_DIR}/src/arena/arena-rosnav"
 
 cd "${ARENA_WS_DIR}/src/arena/arena-rosnav"
-$HOME/.local/bin/poetry install || ($HOME/.local/bin/poetry lock --no-update && $HOME/.local/bin/poetry install)
+poetry_install
 
 cd "${ARENA_WS_DIR}"
 until vcs import src < src/arena/arena-rosnav/arena.repos ; do echo "failed to update, retrying..." ; done
