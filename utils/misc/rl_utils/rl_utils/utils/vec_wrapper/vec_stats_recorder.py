@@ -1,10 +1,12 @@
 import time
-from stable_baselines3.common.vec_env import VecEnvWrapper, VecEnv
 
 import numpy as np
-
+from rl_utils.utils.observation_collector import LastActionCollector
 from rl_utils.utils.observation_collector.constants import DONE_REASONS
+from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
 from stable_baselines3.common.vec_env.base_vec_env import VecEnvObs
+
+import rospy
 
 
 class VecStatsRecorder(VecEnvWrapper):
@@ -29,7 +31,22 @@ class VecStatsRecorder(VecEnvWrapper):
         self.num_steps = 0
         self.num_episodes = 0
 
+        np.set_printoptions(formatter={"float": "{:.2f}".format})
+        self.get_action_ranges()
         self.reset_stats()
+
+    def get_action_ranges(self):
+        linear_range = rospy.get_param("/actions/continuous/linear_range")
+        angular_range = rospy.get_param("/actions/continuous/angular_range")
+        translation_range = rospy.get_param(
+            "/actions/continuous/translation_range", [0, 0]
+        )
+        self._action_min = np.array(
+            [linear_range[0], translation_range[0], angular_range[0]]
+        )
+        self._action_max = np.array(
+            [linear_range[1], translation_range[1], angular_range[1]]
+        )
 
     def reset_stats(self):
         """
@@ -40,6 +57,7 @@ class VecStatsRecorder(VecEnvWrapper):
         self.episode_returns = []
         self.episode_lengths = []
         self.done_reasons = {done_reason.name: 0 for done_reason in DONE_REASONS}
+        self.actions = np.array([0, 0, 0], dtype=np.float32)
 
     def step_wait(self):
         """
@@ -54,6 +72,8 @@ class VecStatsRecorder(VecEnvWrapper):
 
         self.step_times.append(end_time - start_time)
 
+        mean_actions = obs[LastActionCollector.name.upper()][:, -1, :]
+        self.actions += np.mean(mean_actions, axis=0)
         self.cum_rewards += rewards
 
         for idx, done in enumerate(dones):
@@ -84,9 +104,15 @@ class VecStatsRecorder(VecEnvWrapper):
         """
         if len(self.episode_returns) == 0 or len(self.episode_lengths) == 0:
             return
-        # Use print function to add line separators
+
+        avg_actions = reverse_max_abs_scaling(
+            self.actions / self.num_steps,
+            min_value=self._action_min,
+            max_value=self._action_max,
+        )
         print("-" * 40, sep="", end="\n")  # Print 40 dashes as a line separator
         print(f"Episode {self.num_episodes} / Step {self.num_steps}:")
+        print(f"Average actions: {avg_actions} (linear, transversal, angular)")
         print(
             f"Average step time: {sum(self.step_times) / len(self.step_times):.4f} seconds"
         )
@@ -101,3 +127,11 @@ class VecStatsRecorder(VecEnvWrapper):
 
     def reset(self) -> VecEnvObs:
         return self.venv.reset()  # pytype:disable=annotation-type-mismatch
+
+
+def reverse_max_abs_scaling(
+    observation_arr: np.ndarray, min_value: np.ndarray, max_value: np.ndarray
+):
+    denominator = max_value - min_value
+    denominator = np.where(denominator == 0, 1e-10, denominator)
+    return (observation_arr + 1) * denominator / 2 + min_value
