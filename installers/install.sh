@@ -65,7 +65,7 @@ cd "${ARENA_WS_DIR}/src/arena/arena-rosnav"
 #python env
 pyenv install -s "${PYTHON_VERSION}"
 pyenv local "${PYTHON_VERSION}"
-wget "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/pyproject.toml"
+curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/pyproject.toml" > pyproject.toml
 $HOME/.local/bin/poetry env use "${PYTHON_VERSION}"
 export PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring 
 $HOME/.local/bin/poetry install || ($HOME/.local/bin/poetry lock --no-update && $HOME/.local/bin/poetry install)
@@ -113,7 +113,7 @@ rosdep update
 
 mkdir -p "${ARENA_WS_DIR}/src/ros2"
 cd "${ARENA_WS_DIR}"
-wget "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_VERSION}/ros2.repos"
+curl "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_VERSION}/ros2.repos" > ros2.repos
 until vcs import src/ros2 < ros2.repos ; do echo "failed to update, retrying..." ; done
 rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers"
 
@@ -155,6 +155,5 @@ if [[ "$choice" =~ ^[Yy] ]]; then
 fi
 
 cd "${ARENA_WS_DIR}"
-source "/opt/ros/${ARENA_ROS_VERSION}/setup.bash"
 source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
 colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)"
