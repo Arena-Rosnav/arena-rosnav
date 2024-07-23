@@ -118,7 +118,7 @@ until vcs import src/ros2 < ros2.repos ; do echo "failed to update, retrying..."
 rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers"
 
 cd "${ARENA_WS_DIR}"
-colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav/setup/arena && poetry env info -p)"
+colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)"
 
 # == install arena on top of ros2 ==
 
@@ -133,7 +133,7 @@ cd "${ARENA_WS_DIR}"
 until vcs import src < src/arena/arena-rosnav/arena.repos ; do echo "failed to update, retrying..." ; done
 
 rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers"
-colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav/setup/arena && poetry env info -p)"
+colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)"
 
 
 # == optinal installers ==
@@ -156,5 +156,5 @@ fi
 
 cd "${ARENA_WS_DIR}"
 source "/opt/ros/${ARENA_ROS_VERSION}/setup.bash"
-source $(cd src/arena/arena-rosnav/setup/arena && poetry env info -p)/bin/activate
-colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav/setup/arena && poetry env info -p)"
+source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
+colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)"
