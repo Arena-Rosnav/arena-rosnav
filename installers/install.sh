@@ -4,6 +4,17 @@ set -e
 export ARENA_ROSNAV_REPO='voshch/arena-rosnav'
 export PYTHON_VERSION='3.10'
 
+export BUILD_EXCLUDES=' python_orocos_kdl_vendor qt_gui_cpp rqt_gui_cpp'
+
+poetry_install(){
+  $HOME/.local/bin/poetry install || ($HOME/.local/bin/poetry lock --no-update && $HOME/.local/bin/poetry install)
+}
+
+colcon_build(){
+  source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
+  colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)" --packages-skip "${BUILD_EXCLUDES}"
+}
+
 # == read inputs ==
 echo 'Configuring arena-rosnav...'
 
@@ -68,7 +79,7 @@ pyenv local "${PYTHON_VERSION}"
 curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/pyproject.toml" > pyproject.toml
 $HOME/.local/bin/poetry env use "${PYTHON_VERSION}"
 export PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring 
-$HOME/.local/bin/poetry install || ($HOME/.local/bin/poetry lock --no-update && $HOME/.local/bin/poetry install)
+poetry_install
 
 
 # Getting Packages
@@ -115,7 +126,7 @@ mkdir -p "${ARENA_WS_DIR}/src/ros2"
 cd "${ARENA_WS_DIR}"
 curl "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_VERSION}/ros2.repos" > ros2.repos
 until vcs import src/ros2 < ros2.repos ; do echo "failed to update, retrying..." ; done
-rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers"
+rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers"
 
 cd "${ARENA_WS_DIR}"
 colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)"
@@ -134,8 +145,7 @@ until vcs import src < src/arena/arena-rosnav/arena.repos ; do echo "failed to u
 
 rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers"
 source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
-colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)"
-
+colcon_build
 
 # == optinal installers ==
 
@@ -157,4 +167,4 @@ fi
 
 cd "${ARENA_WS_DIR}"
 source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
-colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)"
+colcon_build
