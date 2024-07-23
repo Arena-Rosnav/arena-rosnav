@@ -114,7 +114,7 @@ rosdep update
 mkdir -p "${ARENA_WS_DIR}/src/ros2"
 cd "${ARENA_WS_DIR}"
 wget "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_VERSION}/ros2.repos"
-until vcs import src < ros2.repos ; do echo "failed to update, retrying..." ; done
+until vcs import src/ros2 < ros2.repos ; do echo "failed to update, retrying..." ; done
 rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers"
 
 cd "${ARENA_WS_DIR}"
