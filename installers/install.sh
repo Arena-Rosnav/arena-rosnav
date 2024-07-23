@@ -133,6 +133,7 @@ cd "${ARENA_WS_DIR}"
 until vcs import src < src/arena/arena-rosnav/arena.repos ; do echo "failed to update, retrying..." ; done
 
 rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers"
+source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
 colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)"
 
 
