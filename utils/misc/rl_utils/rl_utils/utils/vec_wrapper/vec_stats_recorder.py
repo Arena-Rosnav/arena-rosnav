@@ -8,6 +8,8 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnvObs
 
 import rospy
 
+BATCHED_ZERO_ACTION = np.array([[0.0, 0.0, 0.0]], dtype=np.float32)
+
 
 class VecStatsRecorder(VecEnvWrapper):
     """
@@ -19,7 +21,15 @@ class VecStatsRecorder(VecEnvWrapper):
         x (int, optional): The frequency of printing the statistics. Defaults to 100.
     """
 
-    def __init__(self, venv: VecEnv, verbose: bool = False, after_x_eps: int = 100):
+    def __init__(
+        self,
+        venv: VecEnv,
+        verbose: bool = False,
+        after_x_eps: int = 100,
+        is_action_normalized: bool = True,
+        *args,
+        **kwargs,
+    ):
         super(VecStatsRecorder, self).__init__(venv)
 
         assert after_x_eps > 0, "'after_x_eps' must be positive"
@@ -27,6 +37,7 @@ class VecStatsRecorder(VecEnvWrapper):
         self.verbose = verbose
         self.after_x_eps = after_x_eps
         self.num_envs = venv.num_envs
+        self.is_action_normalized = is_action_normalized
 
         self.num_steps = 0
         self.num_episodes = 0
@@ -72,7 +83,11 @@ class VecStatsRecorder(VecEnvWrapper):
 
         self.step_times.append(end_time - start_time)
 
-        mean_actions = obs[LastActionCollector.name.upper()][:, -1, :]
+        mean_actions = (
+            obs[LastActionCollector.name.upper()][:, -1, :]
+            if LastActionCollector.name.upper() in obs
+            else BATCHED_ZERO_ACTION
+        )
         self.actions += np.mean(mean_actions, axis=0)
         self.cum_rewards += rewards
 
@@ -105,10 +120,14 @@ class VecStatsRecorder(VecEnvWrapper):
         if len(self.episode_returns) == 0 or len(self.episode_lengths) == 0:
             return
 
-        avg_actions = reverse_max_abs_scaling(
-            self.actions / self.num_steps,
-            min_value=self._action_min,
-            max_value=self._action_max,
+        avg_actions = (
+            reverse_max_abs_scaling(
+                self.actions / self.num_steps,
+                min_value=self._action_min,
+                max_value=self._action_max,
+            )
+            if self.is_action_normalized
+            else self.actions / self.num_steps
         )
         print("-" * 40, sep="", end="\n")  # Print 40 dashes as a line separator
         print(f"Episode {self.num_episodes} / Step {self.num_steps}:")
