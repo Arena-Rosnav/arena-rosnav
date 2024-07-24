@@ -64,18 +64,26 @@ class InternalStateInfoUpdate:
         )
 
 
-def min_dist_laser(obs_dict, *args, **kwargs):
-    laser_scan = obs_dict.get(LaserCollector.name, [])
-    if laser_scan is None:
+from rl_utils.utils.observation_collector import (
+    ObservationDict,
+    LaserCollector,
+    FullRangeLaserCollector,
+)
+
+
+def min_dist_laser(obs_dict: ObservationDict, *args, **kwargs):
+    full_range_laser_scan: FullRangeLaserCollector.data_class = obs_dict.get(
+        FullRangeLaserCollector.name, None
+    )
+    laser_scan: LaserCollector.data_class = obs_dict.get(LaserCollector.name, None)
+
+    if laser_scan is None or len(laser_scan) == 0:
         raise ValueError("Neither LaserScan nor PointCloud data was provided!")
 
-    if len(laser_scan) == 0:
-        return np.inf
+    if full_range_laser_scan is not None:
+        return full_range_laser_scan.min()
 
-    # if not from_aggregate_obs:
     return laser_scan.min()
-    # else:
-    #     return min_distance_from_pointcloud(point_cloud)
 
 
 def safe_dist_breached(
