@@ -637,6 +637,70 @@ class RewardReverseDrive(RewardUnit):
             self.add_reward(self._reward)
 
 
+@RewardUnitFactory.register("factored_reverse_drive")
+class RewardFactoredReverseDrive(RewardUnit):
+    """
+    A reward unit that provides a reward for driving in reverse.
+
+    Args:
+        reward_function (RewardFunction): The reward function to be used.
+        reward (float, optional): The reward value for driving in reverse. Defaults to DEFAULTS.REVERSE_DRIVE.REWARD.
+        _on_safe_dist_violation (bool, optional): Whether to penalize for violating safe distance. Defaults to DEFAULTS.REVERSE_DRIVE._ON_SAFE_DIST_VIOLATION.
+        *args: Variable length argument list.
+        **kwargs: Arbitrary keyword arguments.
+
+    Attributes:
+        _reward (float): The reward value for driving in reverse.
+
+    Methods:
+        check_parameters: Checks if the reward value is positive and issues a warning if it is.
+        __call__: Adds the reward value to the total reward if the action is not None and the first element of the action is less than 0.
+
+    """
+
+    required_observations = [LastActionCollector]
+
+    @check_params
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        factor: float = -0.1,
+        threshold: float = None,
+        _on_safe_dist_violation: bool = DEFAULTS.REVERSE_DRIVE._ON_SAFE_DIST_VIOLATION,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+
+        self._factor = factor
+        self._threshold = threshold if threshold else 0.0
+
+    def check_parameters(self, *args, **kwargs):
+        """
+        Checks if the reward value is positive and issues a warning if it is.
+        """
+        if self._factor < 0.0:
+            warn_msg = (
+                f"[{self.__class__.__name__}] Reconsider this reward. "
+                f"Negative rewards may lead to unfavorable behaviors. "
+                f"Current value: {self._factor}"
+            )
+            warn(warn_msg)
+
+    def __call__(self, obs_dict: ObservationDict, *args, **kwargs):
+        """
+        Adds the reward value to the total reward if the action is not None and the first element of the action is less than 0.
+
+        Args:
+            action (np.ndarray): The action taken.
+
+        """
+        action: LastActionCollector.data_class = obs_dict.get(
+            LastActionCollector.name, None
+        )
+        if action is not None and action[0] < 0 and action[0] < self._threshold:
+            self.add_reward(self._factor * action[0])
+
 @RewardUnitFactory.register("abrupt_velocity_change")
 class RewardAbruptVelocityChange(RewardUnit):
     """
