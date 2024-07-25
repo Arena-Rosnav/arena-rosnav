@@ -1,5 +1,7 @@
 #!/bin/bash -i
- 
+
+branch=${1:-master}
+
 set -e
  
 # Store the current working directory
@@ -21,14 +23,14 @@ mkdir -p ~/arena_ws
 cd ~/arena_ws
 
 # clone arena-rosnav
-git clone https://github.com/Arena-Rosnav/arena-rosnav.git src/arena/arena-rosnav
+git clone --branch ${branch} https://github.com/Arena-Rosnav/arena-rosnav.git src/arena/arena-rosnav
 until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to update, retrying..." ; done
 #
  
 #python env init
 cd src/arena/arena-rosnav
 export PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring # resolve faster
-poetry run poetry install --no-root
+poetry run poetry install --no-root || (poetry run poetry lock --no-update && poetry run poetry install --no-root)
 poetry env use python3.8
 . "$(poetry env info -p)/bin/activate"
 cd ~/arena_ws

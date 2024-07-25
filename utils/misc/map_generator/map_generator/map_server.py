@@ -29,11 +29,10 @@ def start_map_server():
     pkg = "map_server"
     executable = "map_server"
     args = rospy.get_param("map_path")
-    remap_args = (
-        None
-        if rospy.get_param("single_env", True)
-        else [("/clock", "/clock_simulation")]
-    )
+
+    _is_multi_env = isinstance(rospy.get_param("num_envs", None), int)
+
+    remap_args = None if not _is_multi_env else [("/clock", "/clock_simulation")]
 
     node = roslaunch.core.Node(
         pkg,
@@ -72,6 +71,14 @@ def main():
             dir_path=ROSNAV_MAP_FOLDER,
         )
         create_yaml_files(map_name=MAP_FOLDER_NAME, dir_path=ROSNAV_MAP_FOLDER)
+
+        # delete distance_map.png
+        distance_map_path = (
+            ROSNAV_MAP_FOLDER / MAP_FOLDER_NAME / "map" / "distance_map.png"
+        )
+
+        if distance_map_path.exists():
+            distance_map_path.unlink()
 
         start_map_server()
 

@@ -18,6 +18,8 @@ class DEFAULTS:
     class APPROACH_GOAL:
         POS_FACTOR: float = 0.3
         NEG_FACTOR: float = 0.5
+        _GOAL_UPDATE_THRESHOLD: float = 2.5
+        _TERM_THRESHOLD: float = 2.0
         _ON_SAFE_DIST_VIOLATION: bool = True
 
     class COLLISION:
@@ -42,6 +44,7 @@ class DEFAULTS:
 
     class REVERSE_DRIVE:
         REWARD: float = 0.01
+        THRESHOLD: float = -0.5
         _ON_SAFE_DIST_VIOLATION: bool = True
 
     class ABRUPT_VEL_CHANGE:
@@ -53,8 +56,16 @@ class DEFAULTS:
         _ON_SAFE_DIST_VIOLATION: bool = False
 
     class TWO_FACTOR_VEL_DIFF:
-        ALPHA = 0.002
-        BETA = 0.005
+        ALPHA = 0.01
+        BETA = 0.025
+
+    class PED_SAFE_DISTANCE:
+        REWARD: float = -0.14
+        SAFE_DIST: float = 0.51
+
+    class OBS_SAFE_DISTANCE:
+        REWARD: float = -0.14
+        SAFE_DIST: float = 0.21
 
     class PED_TYPE_SPECIFIC_SAFETY_DISTANCE:
         TYPE: int = 1

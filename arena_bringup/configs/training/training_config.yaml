@@ -3,18 +3,18 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: true
 # number of parallel environments
-n_envs: 1
+n_envs: 4
 # gpu yes or no
 no_gpu: false
 
 ### General Training
 tm_robots: "random"
 tm_obstacles: "random"
-tm_modules: "staged"
+tm_modules: ""
 
 # number of simulation timesteps
-n_timesteps: 40000000
-max_num_moves_per_eps: 50
+n_timesteps: 4000000
+max_num_moves_per_eps: 500
 goal_radius: 0.25
 safety_distance: 0.5
 
@@ -49,7 +49,7 @@ callbacks:
   training_curriculum:
     # file for the robot's learning curriculum
     training_curriculum_file: "semantic.yaml"
-    curr_stage: 5
+    curr_stage: 0
     threshold_type: "succ"
     upper_threshold: 0.90
     lower_threshold: 0.65
@@ -63,23 +63,32 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "RosnavResNet_5_norm"
+  architecture_name: "RosnavResNet_simple"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: jackal_RosnavResNet_5_norm_2024_03_23__21_02_24 # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
-  checkpoint: "best_model" # gonna be ignored if resume is not null
+  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
+  checkpoint: "last_model" # gonna be ignored if resume is not null
+  weight_transfer:
+    model_path: "" #"/home/tar/catkin_ws/src/planners/rosnav/agents/jackal_RosnavResNet_8_norm_2024_04_28__03_44_35/last_model.zip"
+    include: # regex to include layers
+      - "^features_extractor"
+    exclude:
+      - ""
 
   frame_stacking:
     enabled: false
     stack_size: 6
 
   reward_fnc: "base_semantic"
+  # whether unity collider-based or laser-based safety distance is used
+  # if true, reward_fnc must include ped_safe_dist and obs_safe_dist
+  distinguished_safe_dist: false
   reward_fnc_kwargs: 
     placeholder: 0 # placeholder kwarg
   
   # subgoal mode: if true, the agent follows the subgoal given by the spcial horizon planner
   # if false, the agent follows the global goal
   # (intermediate planner params are located in robot-specific simulation setup directory)
-  subgoal_mode: false
+  subgoal_mode: true
 
   normalize:
     enabled: true
@@ -92,9 +101,13 @@ rl_agent:
 
   laser:
     full_range_laser: true # additional laser covering 360° covering blind spots -> additional collision check
+    # NOTE: full range laser is not supported by Arena Unity
     reduce_num_beams:
       enabled: false
       num_beams: 200
+  
+  rgbd:
+    enabled: false
 
   action_space:
     discrete: true
@@ -102,8 +115,8 @@ rl_agent:
       enabled: true
       # number of buckets for each action dimension
       # (only non-holonomic robots with 2D action space supported)
-      buckets_linear_vel: 8
-      buckets_angular_vel: 9
+      buckets_linear_vel: 12
+      buckets_angular_vel: 16
 
   lr_schedule:
     # learning rate schedule

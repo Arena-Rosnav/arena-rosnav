@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import os
 import sys
 import time
 
@@ -9,7 +8,11 @@ from rosnav.model.base_agent import BaseAgent
 from tools.argsparser import parse_training_args
 from tools.env_utils import make_envs
 from tools.general import generate_agent_name, get_paths, initialize_config, load_config
-from tools.model_utils import get_ppo_instance, init_callbacks, save_model
+from tools.model_utils import (
+    get_ppo_instance,
+    init_callbacks,
+    save_model,
+)
 from tools.ros_param_distributor import populate_ros_params
 
 
@@ -41,12 +44,7 @@ def main():
     print("________ STARTING TRAINING WITH:  %s ________\n" % config["agent_name"])
 
     # initialize hyperparameters (save to/ load from json)
-    config = initialize_config(
-        paths=paths,
-        config=config,
-        n_envs=config["n_envs"],
-        debug_mode=config["debug_mode"],
-    )
+    config = initialize_config(paths=paths, config=config)
 
     populate_ros_params(config, paths)
 
@@ -54,12 +52,12 @@ def main():
         config["rl_agent"]["architecture_name"]
     )
 
-    train_env, eval_env, observation_manager = make_envs(
+    train_env, eval_env, observation_space_manager = make_envs(
         agent_description, config, paths
     )
     eval_cb = init_callbacks(config, train_env, eval_env, paths)
     model = get_ppo_instance(
-        agent_description, observation_manager, config, train_env, paths
+        agent_description, observation_space_manager, config, train_env, paths
     )
 
     rospy.on_shutdown(lambda: on_shutdown(model, paths))

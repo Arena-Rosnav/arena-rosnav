@@ -84,6 +84,8 @@
         <arg name="namespace" value="$(arg namespace)" />
         <arg name="frame" value="$(arg name)/" />
 
+        <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
+
       </include>
     </group>
 

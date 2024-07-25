@@ -65,30 +65,23 @@ class RosnavMapGenerator(BaseMapGenerator):
 
     def retrieve_params(self) -> Tuple[int, int, float, MAP_TYPE, int, int, int, int]:
         height, width, map_res = super().retrieve_params()
-        map_type = rospy.get_param(
-            MAP_GENERATOR_NS("algorithm_config/rosnav/map_type"), self.map_type
-        )
+
+        algorithm_config = rospy.get_param(MAP_GENERATOR_NS("algorithm_config"))
+
+        map_type = algorithm_config.get("map_type", self.map_type)
         if type(map_type) == str:
             map_type = MAP_TYPE(map_type.lower())
 
         # indoor params
-        corridor_radius = rospy.get_param(
-            MAP_GENERATOR_NS("algorithm_config/rosnav/indoor/corridor_radius"),
-            self.corridor_radius,
-        )
-        iterations = rospy.get_param(
-            MAP_GENERATOR_NS("algorithm_config/rosnav/indoor/iterations"),
-            self.iterations,
-        )
+        indoor_cfg = algorithm_config.get("indoor", dict())
+        corridor_radius = indoor_cfg.get("corridor_radius", self.corridor_radius)
+        iterations = indoor_cfg.get("iterations", self.iterations)
 
         # outdoor params
-        obstacle_num = rospy.get_param(
-            MAP_GENERATOR_NS("algorithm_config/rosnav/outdoor/obstacle_num"),
-            self.obstacle_num,
-        )
-        obstacle_extra_radius = rospy.get_param(
-            MAP_GENERATOR_NS("algorithm_config/rosnav/outdoor/obstacle_extra_radius"),
-            self.obstacle_extra_radius,
+        outdoor_cfg = algorithm_config.get("outdoor", dict())
+        obstacle_num = outdoor_cfg.get("obstacle_num", self.obstacle_num)
+        obstacle_extra_radius = outdoor_cfg.get(
+            "obstacle_extra_radius", self.obstacle_extra_radius
         )
 
         return (

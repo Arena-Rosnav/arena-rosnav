@@ -32,10 +32,14 @@ def populate_ros_params(params: dict, paths: dict):
 
     tmp_params: dict = params["rl_agent"].copy()
     tmp_params.pop("resume")
-    rospy.set_param("rl_agent", tmp_params)
+    if tmp_params:
+        rospy.set_param("rl_agent", tmp_params)
 
     # populate laser params
     populate_laser_params(params)
+
+    # populate rgbd params
+    populate_rgbd_params(params)
 
     curriculum_file = params["callbacks"]["training_curriculum"][
         "training_curriculum_file"
@@ -72,6 +76,11 @@ def populate_laser_params(params: dict, agent_namespace: str = None):
         )
 
 
+def populate_rgbd_params(params: dict):
+    with contextlib.suppress(KeyError):
+        rospy.set_param("rgbd/enabled", params["rl_agent"]["rgbd"]["enabled"])
+
+
 def populate_discrete_action_space(params: dict, agent_namespace: str = None):
     robot_model = rospy.get_param("model")
     actions = get_actions_from_robot_yaml(robot_model)
@@ -97,18 +106,6 @@ def populate_discrete_action_space(params: dict, agent_namespace: str = None):
 
     agent_topic_prefix = f"{agent_namespace}/" if agent_namespace else ""
     rospy.set_param(f"{agent_topic_prefix}actions/discrete", discrete_actions_dict)
-
-
-def determine_space_encoder(frame_stacking: bool, reduced_laser: bool):
-    return "SemanticResNetSpaceEncoder"
-    if frame_stacking and not reduced_laser:
-        return "StackedEncoder"
-    elif not frame_stacking and reduced_laser:
-        return "ReducedLaserEncoder"
-    elif frame_stacking and reduced_laser:
-        return "StackedReducedLaserEncoder"
-    else:
-        return "DefaultEncoder"
 
 
 def populate_ros_configs(config):

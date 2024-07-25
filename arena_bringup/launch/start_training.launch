@@ -1,16 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
   <!-- CONSTANTS -->
-  <param name="SIMULATOR" value="flatland" />
   <param name="local_planner" value="rosnav" />
 
-  <arg name="model" default="burger"      doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real]"/>
+  <arg name="simulator" default="flatland" doc="[flatland, unity]" />
+  <param name="simulator" value="$(arg simulator)" />
 
   <!-- Here are the argument that may be frequently changed -->
+  <arg name="cfg" default="" doc="File name of the config file."/>
+
   <arg name="ns_prefix" default="sim" />
   <arg name="num_envs" default="1" />
 
-  <param name="single_env" value="false" />
+  <!-- unity specific -->
+  <!-- DISCLAIMER: The time_scale is currently not supported. 
+       Enable it by:
+          pedsim_engine/pedsim_simulator/src/simulator.cpp:184: change 'WallRate' to 'Rate'
+       Why it is not enabled:
+          Making pedsim use Rate breaks Flatland and Gazebo. Can be fixed for Flatland but didn't
+          find how to fix it for Gazebo.
+       Only enable it temporarily for training with Unity if desired but do not push it.
+  -->
+  <arg name="time_scale" default="1" />
+  <arg name="headless" default="true" />
 
   <!-- train mode  -->
   <arg name="train_mode" default="true"/>
@@ -18,14 +30,17 @@
   <arg name="inter_planner" default="bypass"/>
   <arg name="local_planner" default="rosnav"/>
 
+  <arg name="model" default="burger"      doc="model type [burger, jackal, ridgeback, agvota, rto, rto_real]"/>
   <!-- the folder name under the path simulator_setup/maps  -->
   <arg name="map_folder_name" default="map_empty" />
+
   <param name="map_file" value="$(arg map_folder_name)" />
   <param name="map_layer_path" value="$(find arena_simulation_setup)/worlds/$(arg map_folder_name)/map/map.world.yaml" />
 
   <arg name="entity_manager" default="crowdsim" doc="[flatland, pedsim, crowdsim]" />
-  <arg name="sfm" default="" doc="sfm for crowdsim [passthrough, pysocial]"/>
+  <arg name="sfm" default="pysocial" doc="sfm for crowdsim [passthrough, pysocial]"/>
   <arg name="world_file" default=""/>
+
   <param name="entity_manager" value="$(arg entity_manager)" />
 
   <!-- if it's false flatland server will not publish any debug related infomation and you will not able to visuzalize e.g robot, dynamic obstacles  -->
@@ -62,6 +77,9 @@
   <include file="$(find arena_bringup)/launch/training/single_env_training.launch">
     <arg name="ns" value="eval_sim" />
     <arg name="model" value="$(arg model)" />
+    <arg name="SIMULATOR" value="$(arg simulator)" />
+    <arg name="time_scale" value="$(arg time_scale)" />
+    <arg name="headless" value="$(arg headless)" />
     <arg name="entity_manager" value="$(arg entity_manager)" />
     <arg name="sfm" value="$(arg sfm)" />
     <arg name="world_file" value="$(arg world_file)" />
@@ -73,6 +91,9 @@
     <arg name="num_envs" value="$(arg num_envs)" />
     <arg name="ns_prefix" value="$(arg ns_prefix)" />
     <arg name="model" value="$(arg model)" />
+    <arg name="SIMULATOR" value="$(arg simulator)" />
+    <arg name="time_scale" value="$(arg time_scale)" />
+    <arg name="headless" value="$(arg headless)" />
     <arg name="entity_manager" value="$(arg entity_manager)" />
     <arg name="sfm" value="$(arg sfm)" />
     <arg name="inter_planner" value="$(arg inter_planner)" />
@@ -82,4 +103,11 @@
   <node pkg="task_generator" name="task_generator_server" type="server.py" output="screen"/>
   <node pkg="task_generator" name="task_generator_filewatcher" type="filewatcher.py" output="screen"/>
 
+  <group if="$(eval arg('cfg') != '')">
+    <node 
+      pkg="training" name="training" type="train_agent.py" output="screen" 
+      args="$(find arena_bringup)/configs/training/$(arg cfg)"
+    />
+    <param name="LEVERAGE_SIMS" value="true"/>
+  </group>
 </launch>

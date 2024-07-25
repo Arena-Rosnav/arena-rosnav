@@ -12,8 +12,9 @@ import rospy
 from task_generator.constants import Constants, Config
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
-from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
+from task_generator.shared import ModelType, PositionOrientation, Robot
 from task_generator.utils import Utils, rosparam_get
+from rl_utils.topic import Namespace
 
 from tf.transformations import quaternion_from_euler
 
@@ -109,7 +110,7 @@ class RobotManager:
         _gen_goal_topic = self.namespace("move_base_simple", "goal")
 
         self._move_base_goal_pub = rospy.Publisher(
-            _gen_goal_topic, geometry_msgs.PoseStamped, queue_size=10
+            str(_gen_goal_topic), geometry_msgs.PoseStamped, queue_size=10
         )
 
         self._pub_goal_timer = rospy.Timer(
@@ -117,18 +118,14 @@ class RobotManager:
         )
 
         rospy.Subscriber(
-            self.namespace("odom"), nav_msgs.Odometry, self._robot_pos_callback
+            str(self.namespace("odom")), nav_msgs.Odometry, self._robot_pos_callback
         )
 
         # if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
         #     return
 
         self._launch_robot()
-        self._robot_radius = (
-            float(rospy.get_param_cached("robot_radius"))
-            if Utils.get_arena_type() == Constants.ArenaType.TRAINING
-            else rosparam_get(float, self.namespace("robot_radius"))
-        )
+        self._robot_radius = rosparam_get(float, self.namespace("robot_radius"))
 
         # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
         self._clear_costmaps_srv = rospy.ServiceProxy(
@@ -151,7 +148,7 @@ class RobotManager:
     def namespace(self) -> Namespace:
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             return Namespace(
-                f"{self._namespace}{self._namespace}_{self.model_name}"
+                f"{self._namespace(f'{self._namespace}_{self.model_name}')}"
             )  # schizophrenia
 
         return self._namespace(self._robot.name)
@@ -274,19 +271,19 @@ class RobotManager:
         sensor_frame: str = rospy.get_param_cached(self.namespace("robot_sensor_frame"))
 
         rospy.set_param(
-            self.namespace("move_base", "global_costmap", "robot_base_frame"),
+            str(self.namespace("move_base", "global_costmap", "robot_base_frame")),
             os.path.join(self.name, base_frame),
         )
         rospy.set_param(
-            self.namespace("move_base", "local_costmap", "robot_base_frame"),
+            str(self.namespace("move_base", "local_costmap", "robot_base_frame")),
             os.path.join(self.name, base_frame),
         )
         rospy.set_param(
-            self.namespace("move_base", "local_costmap", "scan", "sensor_frame"),
+            str(self.namespace("move_base", "local_costmap", "scan", "sensor_frame")),
             os.path.join(self.name, sensor_frame),
         )
         rospy.set_param(
-            self.namespace("move_base", "global_costmap", "scan", "sensor_frame"),
+            str(self.namespace("move_base", "global_costmap", "scan", "sensor_frame")),
             os.path.join(self.name, base_frame),
         )
 

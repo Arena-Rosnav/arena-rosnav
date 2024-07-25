@@ -17,8 +17,6 @@ from .constants import TRAINING_CONSTANTS
 def initialize_config(
     paths: dict,
     config: dict,
-    n_envs: int = 1,
-    debug_mode: bool = False,
 ) -> dict:
     """
     Initialize config file for training and save it to agent directory
@@ -30,19 +28,25 @@ def initialize_config(
     import rosnav.model.custom_policy
     import rosnav.model.custom_sb3_policy
 
+    config["n_envs"] = (
+        rospy.get_param("num_envs")
+        if rospy.get_param("LEVERAGE_SIMS", False)
+        else config["n_envs"]
+    )
+
     config["robot"] = rospy.get_param("model")
     # dynamically adapt n_steps according to batch size and n envs
     # then update .json
     check_batch_size(
-        n_envs,
+        config["n_envs"],
         config["rl_agent"]["ppo"]["batch_size"],
         config["rl_agent"]["ppo"]["m_batch_size"],
     )
     config["rl_agent"]["ppo"]["n_steps"] = int(
-        config["rl_agent"]["ppo"]["batch_size"] / n_envs
+        config["rl_agent"]["ppo"]["batch_size"] / config["n_envs"]
     )
 
-    if not debug_mode:
+    if not config["debug_mode"]:
         write_config_yaml(config, paths)
     print_hyperparameters(config["rl_agent"]["ppo"])
 
@@ -93,6 +97,7 @@ def get_paths(config: dict) -> dict:
     elif (
         not os.path.isfile(os.path.join(PATHS["model"], f"{agent_name}.zip"))
         and not os.path.isfile(os.path.join(PATHS["model"], "best_model.zip"))
+        and not os.path.isfile(os.path.join(PATHS["model"], "last_model.zip"))
         and not config["debug_mode"]
     ):
         raise FileNotFoundError(

@@ -1,5 +1,5 @@
 suite:
-  config: basic.yaml
+  config: meta_suite.yaml
   scale_episodes: 1
 
 contest:

@@ -5,6 +5,10 @@
   <arg name="model"/>
   <arg name="inter_planner" default="bypass"/>
   <arg name="local_planner" default="rosnav"/>
+  <arg name="SIMULATOR" />
+  <!-- unity specific -->
+  <arg name="time_scale" default="1" />
+  <arg name="headless" default="true" />
   <arg name="entity_manager" default="crowdsim"/>
   <arg name="world_file" default=""/>
   <arg name="sfm" default=""/>
@@ -17,6 +21,10 @@
     <arg name="world_file" value="$(arg world_file)" />
     <arg name="inter_planner" value="$(arg inter_planner)" />
     <arg name="local_planner" value="$(arg local_planner)" />
+    <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
+    <arg name="env_num" value="$(arg num_envs)" />
+    <arg name="time_scale" value="$(arg time_scale)" />
+    <arg name="headless" value="$(arg headless)" />
   </include>
 
   <include file="$(find arena_bringup)/launch/training/start_envs.launch" if="$(eval arg('num_envs') > 1)">
@@ -27,5 +35,8 @@
     <arg name="sfm" value="$(arg sfm)" />
     <arg name="inter_planner" value="$(arg inter_planner)" />
     <arg name="local_planner" value="$(arg local_planner)" />
+    <arg name="SIMULATOR" value="$(arg SIMULATOR)" />
+    <arg name="time_scale" value="$(arg time_scale)" />
+    <arg name="headless" value="$(arg headless)" />
   </include>
 </launch>

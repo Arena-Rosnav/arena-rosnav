@@ -1,23 +1,29 @@
 import os
-import sys
-from typing import Tuple, Union
+from typing import Union
 
 import gym
 import rospy
 from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
+from rl_utils.envs.unity import UnityEnv
 from rl_utils.utils.vec_wrapper.delayed_subproc_vec_env import DelayedSubprocVecEnv
-from rl_utils.utils.vec_wrapper.vec_stats_recorder import VecStatsRecorder
 from rl_utils.utils.vec_wrapper.profiler import ProfilingVecEnv
+from rl_utils.utils.vec_wrapper.vec_stats_recorder import VecStatsRecorder
 from rosnav.model.base_agent import BaseAgent
+from rosnav.utils.observation_space.observation_space_manager import (
+    ObservationSpaceManager,
+)
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import (
     DummyVecEnv,
-    SubprocVecEnv,
     VecFrameStack,
     VecNormalize,
 )
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
+from task_generator.constants import Constants
 from task_generator.shared import Namespace
+from task_generator.utils import Utils
+
+from .constants import SIMULATION_NAMESPACES
 
 
 def load_vec_normalize(config: dict, paths: dict, env: VecEnv, eval_env: VecEnv):
@@ -85,7 +91,7 @@ def _init_env_fnc(
     reward_fnc: str,
     max_steps_per_episode: int,
     seed: int = 0,
-    trigger_init: bool = False,
+    init_by_call: bool = False,
     obs_unit_kwargs: dict = None,
     reward_fnc_kwargs: dict = None,
     task_generator_kwargs: dict = None,
@@ -104,20 +110,30 @@ def _init_env_fnc(
         Union[gym.Env, gym.Wrapper]: The initialized environment.
     """
 
-    def _init() -> Union[gym.Env, gym.Wrapper]:
-        return FlatlandEnv(
+    sim = Utils.get_simulator()
+    if sim == Constants.Simulator.UNITY:
+        env_cls = UnityEnv
+    elif sim == Constants.Simulator.FLATLAND:
+        env_cls = FlatlandEnv
+    else:
+        raise RuntimeError(
+            f"Training only supports simulators Arena Unity and Flatland but got {sim}"
+        )
+
+    def _init_env() -> Union[gym.Env, gym.Wrapper]:
+        return env_cls(
             ns=ns,
             agent_description=agent_description,
             reward_fnc=reward_fnc,
             max_steps_per_episode=max_steps_per_episode,
-            trigger_init=trigger_init,
+            init_by_call=init_by_call,
             obs_unit_kwargs=obs_unit_kwargs,
             reward_fnc_kwargs=reward_fnc_kwargs,
             task_generator_kwargs=task_generator_kwargs,
         )
 
     set_random_seed(seed)
-    return _init
+    return _init_env
 
 
 def make_envs(
@@ -138,47 +154,32 @@ def make_envs(
     Returns:
         tuple: A tuple containing the training environment and evaluation environment.
     """
-    SIM_PREFIX = "sim_"
-    EVAL_PREFIX = "eval_sim"
-    train_ns = (
-        lambda idx: f"/{SIM_PREFIX}{idx + 1}/{SIM_PREFIX}{idx + 1}_{rospy.get_param('model')}"
-    )
-    eval_ns = f"/{EVAL_PREFIX}/{EVAL_PREFIX}_{rospy.get_param('model')}"
-
-    obs_unit_kwargs = {
-        "subgoal_mode": config["rl_agent"]["subgoal_mode"],
-        "ns_to_semantic_topic": False,
-    }
-
-    env_fnc_kwargs = env_fnc_kwargs or {}
-    _env_fnc_kwargs = {
-        "agent_description": agent_description,
-        "reward_fnc": config["rl_agent"]["reward_fnc"],
-        "obs_unit_kwargs": obs_unit_kwargs,
-        "reward_fnc_kwargs": config["rl_agent"]["reward_fnc_kwargs"],
-    }
-    _env_fnc_kwargs.update(env_fnc_kwargs)
-
-    _train_env_fnc_kwargs = lambda idx: {
-        "ns": train_ns(idx),
-        "max_steps_per_episode": config["max_num_moves_per_eps"],
-        "trigger_init": True if not config["debug_mode"] else False,
-    }
-
-    _eval_env_fnc_kwargs = {
-        "ns": eval_ns,
-        "max_steps_per_episode": config["callbacks"]["periodic_eval"][
-            "max_num_moves_per_eps"
-        ],
-        "trigger_init": False,
-    }
-
     train_env_fncs = [
-        env_fnc(**_train_env_fnc_kwargs(idx), **_env_fnc_kwargs)
+        _init_env_fnc(
+            ns=SIMULATION_NAMESPACES.TRAIN_NS(idx),
+            agent_description=agent_description,
+            reward_fnc=config["rl_agent"]["reward_fnc"],
+            max_steps_per_episode=config["max_num_moves_per_eps"],
+            init_by_call=True if not config["debug_mode"] else False,
+            obs_unit_kwargs=None,
+            reward_fnc_kwargs=config["rl_agent"]["reward_fnc_kwargs"],
+        )
         for idx in range(config["n_envs"])
     ]
 
-    eval_env_fncs = [env_fnc(**_eval_env_fnc_kwargs, **_env_fnc_kwargs)]
+    eval_env_fncs = [
+        _init_env_fnc(
+            ns=SIMULATION_NAMESPACES.EVAL_NS,
+            agent_description=agent_description,
+            reward_fnc=config["rl_agent"]["reward_fnc"],
+            max_steps_per_episode=config["callbacks"]["periodic_eval"][
+                "max_num_moves_per_eps"
+            ],
+            init_by_call=False,
+            obs_unit_kwargs=None,
+            reward_fnc_kwargs=config["rl_agent"]["reward_fnc_kwargs"],
+        )
+    ]
 
     # vectorize environments
     train_env = (
@@ -188,7 +189,9 @@ def make_envs(
     )
     eval_env = DummyVecEnv(eval_env_fncs)
 
-    observation_manager = eval_env.envs[0].model_space_encoder.observation_space_manager
+    observation_manager: ObservationSpaceManager = eval_env.envs[
+        0
+    ].model_space_encoder.observation_space_manager
 
     # load vec wrappers
     if config["rl_agent"]["frame_stacking"]["enabled"]:
