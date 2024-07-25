@@ -6,7 +6,7 @@ import numpy as np
 import rospy
 from rl_utils.utils.observation_collector.constants import DONE_REASONS
 from task_generator.constants import Config, UnityConstants
-from unity_msgs.srv import (
+from unity_msgs.srv import (  # type: ignore
     AttachSafeDistSensor,  # type: ignore
     AttachSafeDistSensorRequest,
 )
@@ -143,6 +143,47 @@ class RewardSafeDistance(RewardUnit):
             or violation_in_blind_spot
         ):
             self.add_reward(self._reward)
+            self.add_info(self.SAFE_DIST_VIOLATION_INFO)
+
+
+@RewardUnitFactory.register("factored_safe_distance")
+class RewardFactoredSafeDistance(RewardUnit):
+    required_observations = [LaserCollector]
+    SAFE_DIST_VIOLATION_INFO = {"safe_dist_violation": True}
+
+    @check_params
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        factor: float = -0.5,
+        *args,
+        **kwargs,
+    ):
+        """Class for calculating the reward when violating the safe distance.
+
+        Args:
+            reward_function (RewardFunction): The reward function object.
+            reward (float, optional): The reward value for violating the safe distance. Defaults to DEFAULTS.SAFE_DISTANCE.REWARD.
+        """
+        super().__init__(reward_function, True, *args, **kwargs)
+        self._factor = factor
+        self._safe_dist = self._reward_function._safe_dist
+
+    def check_parameters(self, *args, **kwargs):
+        if self._factor >= 0.0:
+            warn_msg = (
+                f"[{self.__class__.__name__}] Reconsider this reward. "
+                f"Positive factor may lead to unfavorable behaviors. "
+                f"Current value: {self._factor}"
+            )
+            warn(warn_msg)
+
+    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any):
+        if self.get_internal_state_info("safe_dist_breached"):
+            self.add_reward(
+                self._factor
+                * (self._safe_dist - self.get_internal_state_info("min_dist_laser"))
+            )
             self.add_info(self.SAFE_DIST_VIOLATION_INFO)
 
 

@@ -4,11 +4,12 @@ import os
 import rospy
 from rosnav.utils.utils import get_actions_from_robot_yaml
 from task_generator.shared import Namespace
+from tools.constants import SIMULATION_NAMESPACES
 
 from .general import generate_discrete_action_dict
 
 
-def populate_ros_params(params: dict, paths: dict):
+def populate_ros_params(params: dict, paths: dict, train_mode: bool = True):
     # general params
     rospy.set_param("tm_robots", params["tm_robots"])
     rospy.set_param("tm_obstacles", params["tm_obstacles"])
@@ -16,9 +17,25 @@ def populate_ros_params(params: dict, paths: dict):
 
     rospy.set_param("training_config_path", paths["config"])
 
-    robot_name = rospy.get_param("model")
+    is_discrete = params["rl_agent"]["action_space"]["discrete"]
+    rospy.set_param(
+        "is_action_space_discrete",
+        is_discrete,
+    )
+
     rospy.set_param("goal_radius", params["goal_radius"])
-    rospy.set_param(f"{robot_name}/safety_distance", params["safety_distance"])
+
+    # set safety distance for all envs
+    if train_mode:
+        rospy.set_param(
+            f"{SIMULATION_NAMESPACES.EVAL_PREFIX}_{rospy.get_param('model')}/safety_distance",
+            params["safety_distance"],
+        )
+        for idx in range(params["n_envs"]):
+            rospy.set_param(
+                f"{SIMULATION_NAMESPACES.SIM_PREFIX}{idx + 1}_{rospy.get_param('model')}/safety_distance",
+                params["safety_distance"],
+            )
 
     # discrete actions
     if "action_space" in params["rl_agent"]:
