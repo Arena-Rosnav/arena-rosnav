@@ -84,6 +84,7 @@ void SpacialHorizon::odomCallback(const nav_msgs::OdometryConstPtr &msg)
             ROS_WARN("[SpacialHorizon] Reached subgoal. Recomputing subgoal.");
             getGlobalPath();
             getSubgoal(subgoal_pos);
+            publishSubgoal(subgoal_pos);
         }
 
     }
@@ -105,6 +106,7 @@ void SpacialHorizon::goalCallback(const geometry_msgs::PoseStampedPtr &msg)
 
     getGlobalPath();
     getSubgoal(subgoal_pos);
+    publishSubgoal(subgoal_pos);
 
     // when disable_intermediate_planner is true, the goal is the subgoal
     if (disable_intermediate_planner){
@@ -208,18 +210,20 @@ void SpacialHorizon::updateSubgoalCallback(const ros::TimerEvent &e)
             return;
         }
 
-        geometry_msgs::PoseStamped pose_stamped;
-        pose_stamped.header.stamp = ros::Time::now();
-        pose_stamped.header.frame_id = "map";
-        pose_stamped.pose.position.x = subgoal_pos(0);
-        pose_stamped.pose.position.y = subgoal_pos(1);
-        pose_stamped.pose.position.z = 0.0;
-
-
-        ROS_INFO_STREAM("[Spacial Horizon] Publishing new subgoal");
-
-        pub_subgoal.publish(pose_stamped);
+        publishSubgoal(subgoal_pos);
     }
+}
+
+void SpacialHorizon::publishSubgoal(Eigen::Vector2d &subgoal)
+{
+    geometry_msgs::PoseStamped pose_stamped;
+    pose_stamped.header.stamp = ros::Time::now();
+    pose_stamped.header.frame_id = "map";
+    pose_stamped.pose.position.x = subgoal(0);
+    pose_stamped.pose.position.y = subgoal(1);
+    pose_stamped.pose.position.z = 0.0;
+
+    pub_subgoal.publish(pose_stamped);
 }
 
 void SpacialHorizon::getGlobalPath(const ros::TimerEvent &e) {

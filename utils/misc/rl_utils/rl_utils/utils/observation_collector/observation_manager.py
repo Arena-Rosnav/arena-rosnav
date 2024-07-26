@@ -19,16 +19,17 @@ from .utils.topic import get_topic
 
 class ObservationManager:
     """
-    Class to manage observation units and collect observations.
-    Each unit is responsible for a dedicated observation type.
+    The ObservationManager class manages the collection and generation of observations from different units.
 
-    Attributes:
-        _ns (Namespace): The namespace object.
-        _obs_structur (List[Type[ObservationCollectorUnit]]): The list of observation unit types.
-        _collectors (List[ObservationCollectorUnit]): The list of observation unit instances to retrieve information.
-        _generators (List[ObservationGeneratorUnit]): The list of observation generator unit instances to generate observations.
-        _collectable_observations (Dict[str, GenericObservation]): A dictionary to store the collectable observations.
-        _subscribers (Dict[str, rospy.Subscriber]): A dictionary to store the subscribers for each observation collector.
+    It provides methods to initialize observation units, subscribe to topics, invalidate observations,
+    wait for observations, and retrieve observations from collectors and generators.
+
+    Args:
+        ns (Namespace): The namespace object.
+        obs_structur (List[ObservationCollectorUnit], optional): The list of observation unit types. Defaults to None.
+        obs_unit_kwargs (dict, optional): Additional keyword arguments for observation units. Defaults to None.
+        wait_for_obs (bool, optional): Whether to wait for observations to be available. Defaults to True.
+        is_single_env (bool, optional): Whether the simulation environment is a single environment. Defaults to None.
     """
 
     _ns: Namespace
@@ -147,6 +148,15 @@ class ObservationManager:
     def _get_collectable_observations(
         self, obs_dict: ObservationDict
     ) -> ObservationDict:
+        """
+        Retrieves the collectable observations from the collectors.
+
+        Args:
+            obs_dict (ObservationDict): A dictionary to store the observations.
+
+        Returns:
+            ObservationDict: A dictionary containing the collectable observations.
+        """
         # Retrieve all observations from the collectors
         for name, observation in self._collectable_observations.items():
             if observation.stale:
@@ -161,6 +171,15 @@ class ObservationManager:
     def _get_generatable_observations(
         self, obs_dict: ObservationDict
     ) -> ObservationDict:
+        """
+        Generates observations from the generators and updates the observation dictionary.
+
+        Args:
+            obs_dict (ObservationDict): The observation dictionary to update.
+
+        Returns:
+            ObservationDict: The updated observation dictionary.
+        """
         # Generate observations from the generators
         for generator in self._generators.values():
             try:
@@ -173,9 +192,17 @@ class ObservationManager:
 
         return obs_dict
 
-    def get_observations(self, *args, **kwargs) -> ObservationDict:
+    def get_observations(
+        self, *args, **extra_observations: ObservationDict
+    ) -> ObservationDict:
         """
         Get observations from all observation units.
+
+        This method collects observations from all observation units and returns them as a dictionary.
+
+        Args:
+            *args: Additional positional arguments.
+            **extra_observations: Additional keyword arguments representing extra observations/observations to be replaced.
 
         Returns:
             ObservationDict: Dictionary containing observations from all units.
@@ -184,5 +211,8 @@ class ObservationManager:
 
         self._get_collectable_observations(obs_dict)
         self._get_generatable_observations(obs_dict)
+
+        for key, val in extra_observations.items():
+            obs_dict[key] = val
 
         return obs_dict
