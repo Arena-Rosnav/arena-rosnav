@@ -77,6 +77,7 @@ private:
 
     bool getSubgoal(Eigen::Vector2d &subgoal);
     void updateSubgoalCallback(const ros::TimerEvent &e);
+    void publishSubgoal(Eigen::Vector2d &subgoal);
 
     /* get global plan from move base */
     void getGlobalPath();
