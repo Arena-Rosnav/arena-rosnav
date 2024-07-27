@@ -83,7 +83,7 @@ class Constants:
     }
 
     class Defaults:
-        # Manually copied defaults from TaskGenerator.cfg
+        # Manually copied defaults from from TaskGenerator.cfg
         TIMEOUT_WAIT_FOR_SERVICE = 60.0
         MAX_RESET_FAIL_TIMES = 10
         RANDOM_SEED = -1
