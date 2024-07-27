@@ -1397,7 +1397,7 @@ class RewardAngularVelocityConstraint(RewardUnit):
 
     def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> None:
         last_action: LastActionCollector.data_class = obs_dict.get(
-            LastActionCollector.name, None, dtype=np.ndarray
+            LastActionCollector.name, None
         )
         angular = abs(last_action[2]) if last_action is not None else 0.0
 
