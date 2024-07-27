@@ -156,5 +156,5 @@ def reverse_max_abs_scaling(
     observation_arr: np.ndarray, min_value: np.ndarray, max_value: np.ndarray
 ):
     denominator = max_value - min_value
-    denominator = np.where(denominator == 0, 1e-10, denominator)
+    denominator = np.where(denominator == 0, 1e-8, denominator)
     return (observation_arr + 1) * denominator / 2 + min_value
