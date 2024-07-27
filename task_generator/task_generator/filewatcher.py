@@ -13,7 +13,7 @@ from rosros import rospify as rospy
 import watchdog.observers
 import watchdog.events
 
-from task_generator import TaskGeneratorConfig
+from task_generator import TaskGenerator
 
 def observe(file: str, callback: watchdog.events.FileSystemEventHandler):
     observer = watchdog.observers.Observer()
