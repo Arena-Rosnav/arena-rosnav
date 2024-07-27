@@ -82,11 +82,34 @@ void SpacialHorizon::odomCallback(const nav_msgs::OdometryConstPtr &msg)
         if ((odom_pos - subgoal_pos).norm() <= subgoal_tolerance && subgoal_pos != end_pos)
         {
             ROS_WARN("[SpacialHorizon] Reached subgoal. Recomputing subgoal.");
-            getGlobalPath();
-            getSubgoal(subgoal_pos);
-            publishSubgoal(subgoal_pos);
+            tryUpdateGlobalplanAndSubgoal();
         }
 
+    }
+}
+
+void SpacialHorizon::tryUpdateGlobalplanAndSubgoal(int try_count)
+{
+    if (try_count > 5)
+    {
+        ROS_WARN("[SpacialHorizon] Could not update global plan and subgoal!");
+        return;
+    }
+    if (!has_goal)
+    {
+        ROS_WARN("[SpacialHorizon] No goal received yet!");
+        return;
+    }
+    getGlobalPath();
+    bool subgoal_success = getSubgoal(subgoal_pos);
+    if (!subgoal_success)
+    {
+        ROS_WARN_STREAM("[Spacial Horizon] Probably got no new goal. No subgoal found!");
+        tryUpdateGlobalplanAndSubgoal(try_count + 1);
+    }
+    else
+    {
+        publishSubgoal(subgoal_pos);
     }
 }
 
@@ -104,9 +127,7 @@ void SpacialHorizon::goalCallback(const geometry_msgs::PoseStampedPtr &msg)
 
     has_goal = true;
 
-    getGlobalPath();
-    getSubgoal(subgoal_pos);
-    publishSubgoal(subgoal_pos);
+    tryUpdateGlobalplanAndSubgoal();
 
     // when disable_intermediate_planner is true, the goal is the subgoal
     if (disable_intermediate_planner){
