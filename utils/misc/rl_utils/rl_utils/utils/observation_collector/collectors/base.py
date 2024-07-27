@@ -207,7 +207,7 @@ class LastActionCollector(ObservationCollectorUnit):
 
         """
         super().preprocess(msg)
-        return np.array((msg.linear.x, msg.linear.y, msg.angular.z), dtype=TwistType)
+        return np.array((msg.linear.x, msg.linear.y, msg.angular.z))
 
 
 class GlobalPlanCollector(ObservationCollectorUnit):
