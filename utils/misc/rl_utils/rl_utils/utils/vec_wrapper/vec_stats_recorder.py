@@ -42,6 +42,8 @@ class VecStatsRecorder(VecEnvWrapper):
         self.num_steps = 0
         self.num_episodes = 0
 
+        self.last_print_at_step = 0  # to calculate steps since last print
+
         np.set_printoptions(formatter={"float": "{:.2f}".format})
         self.get_action_ranges()
         self.reset_stats()
@@ -63,6 +65,7 @@ class VecStatsRecorder(VecEnvWrapper):
         """
         Reset the statistics.
         """
+        self.last_print_at_step = self.num_steps
         self.step_times = []
         self.cum_rewards = np.array([0.0] * self.num_envs)
         self.episode_returns = []
@@ -122,13 +125,14 @@ class VecStatsRecorder(VecEnvWrapper):
 
         avg_actions = (
             reverse_max_abs_scaling(
-                self.actions / self.num_steps,
+                self.actions / (self.num_steps - self.last_print_at_step),
                 min_value=self._action_min,
                 max_value=self._action_max,
             )
             if self.is_action_normalized
             else self.actions / self.num_steps
         )
+
         print("-" * 40, sep="", end="\n")  # Print 40 dashes as a line separator
         print(f"Episode {self.num_episodes} / Step {self.num_steps}:")
         print(f"Average actions: {avg_actions} (linear, transversal, angular)")
