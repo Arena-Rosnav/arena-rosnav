@@ -1399,7 +1399,7 @@ class RewardAngularVelocityConstraint(RewardUnit):
         last_action: LastActionCollector.data_class = obs_dict.get(
             LastActionCollector.name, None, dtype=np.ndarray
         )
-        angular = last_action[2] if last_action is not None else 0.0
+        angular = abs(last_action[2]) if last_action is not None else 0.0
 
         if self._threshold and angular > self._threshold:
             self.add_reward(self._penalty_factor * angular)
