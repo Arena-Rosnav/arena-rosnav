@@ -3,14 +3,14 @@ OBSERVATIONS THAT ACTIVELY LISTEN TO TOPICS AND PREPROCESS MESSAGES
 """
 
 from abc import ABC
-from typing import Type, ClassVar
+from typing import ClassVar, Type
 
 import geometry_msgs.msg as geometry_msgs
 import nav_msgs.msg as nav_msgs
 import numpy as np
 import sensor_msgs.msg as sensor_msgs
 
-from ..utils.pose import Pose2DType, pose3d_to_pose2d
+from ..utils.pose import Pose2DType, TwistType, pose3d_to_pose2d
 from .base_collector import ObservationCollectorUnit
 
 __all__ = [
@@ -207,7 +207,7 @@ class LastActionCollector(ObservationCollectorUnit):
 
         """
         super().preprocess(msg)
-        return np.array((msg.linear.x, msg.linear.y, msg.angular.z))
+        return np.array((msg.linear.x, msg.linear.y, msg.angular.z), dtype=TwistType)
 
 
 class GlobalPlanCollector(ObservationCollectorUnit):

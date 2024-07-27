@@ -4,20 +4,17 @@ from warnings import warn
 
 import numpy as np
 import rospy
+from rl_utils.utils.observation_collector import *
 from rl_utils.utils.observation_collector.constants import DONE_REASONS
 from task_generator.constants import Config, UnityConstants
-from unity_msgs.srv import (  # type: ignore
-    AttachSafeDistSensor,  # type: ignore
-    AttachSafeDistSensorRequest,
-)
+from unity_msgs.srv import AttachSafeDistSensor  # type: ignore
+from unity_msgs.srv import AttachSafeDistSensorRequest  # type: ignore
 
 from ..constants import DEFAULTS, REWARD_CONSTANTS
 from ..reward_function import RewardFunction
 from ..utils import check_params, get_ped_type_min_distances
 from .base_reward_units import GlobalplanRewardUnit, RewardUnit
 from .reward_unit_factory import RewardUnitFactory
-
-from rl_utils.utils.observation_collector import *
 
 # UPDATE WHEN ADDING A NEW UNIT
 __all__ = [
@@ -701,6 +698,7 @@ class RewardFactoredReverseDrive(RewardUnit):
         if action is not None and action[0] < 0 and action[0] < self._threshold:
             self.add_reward(self._factor * action[0])
 
+
 @RewardUnitFactory.register("abrupt_velocity_change")
 class RewardAbruptVelocityChange(RewardUnit):
     """
@@ -1382,12 +1380,12 @@ from geometry_msgs.msg import Pose2D
 
 @RewardUnitFactory.register("angular_vel_constraint")
 class RewardAngularVelocityConstraint(RewardUnit):
-    required_observations = [RobotPoseCollector]
+    required_observations = [LastActionCollector]
 
     def __init__(
         self,
         reward_function: RewardFunction,
-        penalty_factor: float = 0.05,
+        penalty_factor: float = -0.05,
         threshold: float = None,
         _on_safe_dist_violation: bool = True,
         *args,
@@ -1397,21 +1395,17 @@ class RewardAngularVelocityConstraint(RewardUnit):
         self._penalty_factor = penalty_factor
         self._threshold = threshold
 
-        self._time_step_size = rospy.get_param("step_size")
         self._last_theta = None
 
     def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> None:
-        robot_pose: RobotPoseCollector.data_class = obs_dict.get(
-            RobotPoseCollector.name, None
+        last_angular: LastActionCollector.data_class = abs(
+            obs_dict.get(LastActionCollector.name, 0.0)["angular"]
         )
 
         if self._last_theta is not None:
-            rotational_vel = (
-                abs(robot_pose["yaw"] - self._last_theta) / self._time_step_size
-            )
-            if self._threshold and rotational_vel > self._threshold:
-                self.add_reward(-self._penalty_factor * rotational_vel)
-        self._last_theta = robot_pose["yaw"]
+            if self._threshold and last_angular > self._threshold:
+                self.add_reward(self._penalty_factor * last_angular)
+        self._last_theta = last_angular
 
     def reset(self):
         self._last_theta = None

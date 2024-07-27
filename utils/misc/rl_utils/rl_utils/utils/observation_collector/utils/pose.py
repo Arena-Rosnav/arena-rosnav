@@ -7,6 +7,9 @@ from tf.transformations import euler_from_quaternion
 DistanceToGoal = float
 AngleToGoal = float
 Pose2DType = np.dtype([("x", np.float32), ("y", np.float32), ("yaw", np.float32)])
+TwistType = np.dtype(
+    [("linear_x", np.float32), ("linear_y", np.float32), ("angular", np.float32)]
+)
 
 
 def get_goal_pose_in_robot_frame(
