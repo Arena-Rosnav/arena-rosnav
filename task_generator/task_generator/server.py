@@ -6,7 +6,7 @@ from rosros import rospify as rospy
 import rospkg
 import yaml
 
-from task_generator import TaskGenerator
+from task_generator.task_generator_node  import TaskGenerator
 
 def load_parameters_from_yaml(file_path: str):
     with open(file_path, 'r') as file:
