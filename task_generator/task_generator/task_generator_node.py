@@ -14,6 +14,7 @@ from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
 from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
 from task_generator.manager.entity_manager.crowdsim_manager import CrowdsimManager
+
 from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
@@ -32,9 +33,55 @@ from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils import ModelLoader, Utils
+
+from task_generator.manager.world_manager import WorldManager
+from task_generator.manager.obstacle_manager import ObstacleManager
+
 import map_distance_server.srv as map_distance_server_srvs
 import std_msgs.msg as std_msgs
 import std_srvs.srv as std_srvs
+
+
+def create_default_robot_list(
+    robot_model: ModelWrapper,
+    name: str,
+    inter_planner:str,
+    local_planner: str,
+    agent: str
+) -> List[Robot]:
+    return [
+        Robot(
+            model=robot_model,
+            inter_planner=inter_planner,
+            local_planner=local_planner,
+            agent=agent,
+            position=next(gen_init_pos),
+            name=name,
+            record_data_dir=rosparam_get(str, "record_data_dir", None),
+            extra=dict(),
+        )
+    ]
+
+
+def read_robot_setup_file(setup_file: str) -> List[Dict]:
+    try:
+        with open(
+            os.path.join(
+                rospkg.RosPack().get_path("arena_bringup"),
+                "configs",
+                "robot_setup",
+                setup_file,
+            ),
+            "r",
+        ) as f:
+            robots: List[Dict] = yaml.safe_load(f)["robots"]
+
+        return robots
+
+    except:
+        traceback.print_exc()
+        rospy.signal_shutdown("")
+        raise Exception()
 
 
 class TaskGenerator:
@@ -61,6 +108,7 @@ class TaskGenerator:
         self._namespace = Namespace(namespace)
 
         # Params
+
         self._entity_mode = Constants.EntityManager(rosparam_get(str, "entity_manager"))
         self._auto_reset = rosparam_get(bool, "~auto_reset", True)
         self._train_mode = rosparam_get(bool, "train_mode", False)
@@ -116,6 +164,8 @@ class TaskGenerator:
 
             # Timers
             rospy.Timer(rospy.Duration(nsecs=int(0.5e9)), self._check_task_status)
+
+        # SETUP
 
     def _get_predefined_task(self, **kwargs):
         """
@@ -210,6 +260,7 @@ class TaskGenerator:
 
         robot_model: str = rosparam_get(str, "/model")
 
+
         if robot_setup_file == "":
             robots = create_default_robot_list(
                 robot_model=self._robot_loader.bind(robot_model),
@@ -246,6 +297,8 @@ class TaskGenerator:
 
         for robot in robots:
             robot_managers.append(
+                # RobotManager(os.path.join(namespace, name), simulator, robot)
+                # old but working due to namespace issue with "/" prefix in robot name
                 RobotManager(
                     namespace=self._namespace,
                     entity_manager=self._entity_manager,
@@ -254,6 +307,8 @@ class TaskGenerator:
             )
 
         return robot_managers
+
+    # RUNTIME
 
     def reset_task(self, **kwargs):
         self._start_time = rospy.get_time()
@@ -294,48 +349,6 @@ class TaskGenerator:
         rospy.loginfo(f"Shutting down. All {int(Config.General.DESIRED_EPISODES)} tasks completed")
 
         rospy.signal_shutdown("Finished all episodes of the current scenario")
-
-
-def create_default_robot_list(
-    robot_model: ModelWrapper,
-    name: str,
-    inter_planner: str,
-    local_planner: str,
-    agent: str
-) -> List[Robot]:
-    return [
-        Robot(
-            model=robot_model,
-            inter_planner=inter_planner,
-            local_planner=local_planner,
-            agent=agent,
-            position=next(gen_init_pos),
-            name=name,
-            record_data_dir=rosparam_get(str, "record_data_dir", None),
-            extra=dict(),
-        )
-    ]
-
-
-def read_robot_setup_file(setup_file: str) -> List[Dict]:
-    try:
-        with open(
-            os.path.join(
-                rospkg.RosPack().get_path("arena_bringup"),
-                "configs",
-                "robot_setup",
-                setup_file,
-            ),
-            "r",
-        ) as f:
-            robots: List[Dict] = yaml.safe_load(f)["robots"]
-
-        return robots
-
-    except:
-        traceback.print_exc()
-        rospy.signal_shutdown("")
-        raise Exception()
 
 
 if __name__ == "__main__":
