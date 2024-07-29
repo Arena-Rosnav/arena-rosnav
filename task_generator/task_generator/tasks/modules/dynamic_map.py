@@ -121,7 +121,7 @@ class Mod_DynamicMap(TM_Module):
 
         if isinstance(dist_map, map_distance_server_srvs.GetDistanceMapResponse):
             self._TASK.world_manager.update_world(
-                world_map=WorldMap.from_distmap(distmap=dist_map)
+                world_map=WorldMap.from_occupancy_grid(occupancy_grid=dist_map)
             )
             self._TASK.obstacle_manager.reset(purge=ObstacleLayer.WORLD)
             self._TASK.obstacle_manager.spawn_world_obstacles(

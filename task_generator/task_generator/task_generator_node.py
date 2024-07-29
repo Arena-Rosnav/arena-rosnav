@@ -186,7 +186,7 @@ class TaskGenerator:
             service_client_get_map()
         )
         world_manager = WorldManager(
-            world_map=WorldMap.from_distmap(distmap=map_response)
+            world_map=WorldMap.from_occupancy_grid(occupancy_grid=map_response)
         )
 
         if self._entity_mode == Constants.EntityManager.PEDSIM:
