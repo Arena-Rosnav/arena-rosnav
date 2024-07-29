@@ -26,6 +26,7 @@ class VecStatsRecorder(VecEnvWrapper):
         venv: VecEnv,
         verbose: bool = False,
         after_x_eps: int = 100,
+        record_actions: bool = False,
         is_action_normalized: bool = True,
         *args,
         **kwargs,
@@ -45,7 +46,9 @@ class VecStatsRecorder(VecEnvWrapper):
         self.last_print_at_step = 0  # to calculate steps since last print
 
         np.set_printoptions(formatter={"float": "{:.2f}".format})
-        self.get_action_ranges()
+        self._record_actions = record_actions
+        if self._record_actions:
+            self.get_action_ranges()
         self.reset_stats()
 
     def get_action_ranges(self):
@@ -86,12 +89,13 @@ class VecStatsRecorder(VecEnvWrapper):
 
         self.step_times.append(end_time - start_time)
 
-        mean_actions = (
-            obs[LastActionCollector.name.upper()][:, -1, :]
-            if LastActionCollector.name.upper() in obs
-            else BATCHED_ZERO_ACTION
-        )
-        self.actions += np.mean(mean_actions, axis=0)
+        if self._record_actions:
+            mean_actions = (
+                obs[LastActionCollector.name.upper()][:, -1, :]
+                if LastActionCollector.name.upper() in obs
+                else BATCHED_ZERO_ACTION
+            )
+            self.actions += np.mean(mean_actions, axis=0)
         self.cum_rewards += rewards
 
         for idx, done in enumerate(dones):
@@ -123,19 +127,21 @@ class VecStatsRecorder(VecEnvWrapper):
         if len(self.episode_returns) == 0 or len(self.episode_lengths) == 0:
             return
 
-        avg_actions = (
-            reverse_max_abs_scaling(
-                self.actions / (self.num_steps - self.last_print_at_step),
-                min_value=self._action_min,
-                max_value=self._action_max,
+        if self._record_actions:
+            avg_actions = (
+                reverse_max_abs_scaling(
+                    self.actions / (self.num_steps - self.last_print_at_step),
+                    min_value=self._action_min,
+                    max_value=self._action_max,
+                )
+                if self.is_action_normalized
+                else self.actions / self.num_steps
             )
-            if self.is_action_normalized
-            else self.actions / self.num_steps
-        )
 
         print("-" * 40, sep="", end="\n")  # Print 40 dashes as a line separator
         print(f"Episode {self.num_episodes} / Step {self.num_steps}:")
-        print(f"Average actions: {avg_actions} (linear, transversal, angular)")
+        if self._record_actions:
+            print(f"Average actions: {avg_actions} (linear, transversal, angular)")
         print(
             f"Average step time: {sum(self.step_times) / len(self.step_times):.4f} seconds"
         )
