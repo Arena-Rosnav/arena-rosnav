@@ -2,7 +2,7 @@ repositories:
   arena/evaluation:
     type: git
     url: https://github.com/voshch/arena-evaluation.git
-    version: 1ec926c52f3288468d110e1365ce69a175cbc4f2
+    version: 51b5efb
   arena/simulation-setup:
     type: git
     url: https://github.com/Arena-Rosnav/arena-simulation-setup.git
