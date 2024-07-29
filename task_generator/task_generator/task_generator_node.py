@@ -11,9 +11,9 @@ import yaml
 from rospkg import RosPack
 from task_generator.constants import Config, Constants
 from task_generator.manager.entity_manager.entity_manager import EntityManager
-from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
-from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
-from task_generator.manager.entity_manager.crowdsim_manager import CrowdsimManager
+#from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
+#from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
+#from task_generator.manager.entity_manager.crowdsim_manager import CrowdsimManager
 
 from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
@@ -27,7 +27,7 @@ from task_generator.shared import (
     rosparam_get
 )
 from task_generator.simulators.base_simulator import BaseSimulator
-from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
+#from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
 from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
 from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.tasks import Task
@@ -189,22 +189,21 @@ class TaskGenerator:
             world_map=WorldMap.from_occupancy_grid(occupancy_grid=map_response)
         )
 
-        if self._entity_mode == Constants.EntityManager.PEDSIM:
-            self._entity_manager = PedsimManager(
-                namespace=self._namespace, simulator=self._env_wrapper
-            )
-        elif self._entity_mode == Constants.EntityManager.FLATLAND:
-            self._entity_manager = FlatlandManager(
-                namespace=self._namespace, simulator=self._env_wrapper
-            )
-        elif self._entity_mode == Constants.EntityManager.CROWDSIM:
-            self._entity_manager = CrowdsimManager(
-                namespace=self._namespace, simulator=self._env_wrapper
-            )
-        else:
-            self._entity_manager = EntityManager(
-                namespace=self._namespace, simulator=self._env_wrapper
-            )
+        # if self._entity_mode == Constants.EntityManager.PEDSIM:
+        #     self._entity_manager = PedsimManager(
+        #         namespace=self._namespace, simulator=self._env_wrapper
+        #     )
+        # elif self._entity_mode == Constants.EntityManager.FLATLAND:
+        #     self._entity_manager = FlatlandManager(
+        #         namespace=self._namespace, simulator=self._env_wrapper
+        #     )
+        # elif self._entity_mode == Constants.EntityManager.CROWDSIM:
+        #     self._entity_manager = CrowdsimManager(
+        #         namespace=self._namespace, simulator=self._env_wrapper
+        #     )
+        self._entity_manager = EntityManager(
+            namespace=self._namespace, simulator=self._env_wrapper
+        )
 
         obstacle_manager = ObstacleManager(
             namespace=self._namespace,
