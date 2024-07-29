@@ -1,0 +1,5 @@
+[console_scripts]
+filewatcher = task_generator.filewatcher:main
+server = task_generator.server:main
+task_generator_node = task_generator.task_generator_node:main
+
