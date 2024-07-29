@@ -208,11 +208,13 @@ def make_envs(
         train_env,
         verbose=verbose,
         after_x_eps=cmd_logging_cfg["last_n_eps"],
+        record_actions=cmd_logging_cfg.get("record_actions", False),
     )
     eval_env = VecStatsRecorder(
         eval_env,
         verbose=verbose,
         after_x_eps=config["callbacks"]["periodic_eval"]["n_eval_episodes"],
+        record_actions=True,
     )
 
     # train_env = ProfilingVecEnv(
