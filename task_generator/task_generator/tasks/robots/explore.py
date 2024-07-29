@@ -1,7 +1,7 @@
 import math
 from typing import Dict
 
-import genpy
+from builtin_interfaces.msg import Time
 from task_generator.constants import Config, Constants
 from task_generator.shared import PositionOrientation
 from task_generator.tasks.robots.random import TM_Random
@@ -14,7 +14,7 @@ class TM_Explore(TM_Random):
     It inherits from the TM_Random class.
     """
 
-    _timeouts: Dict[int, genpy.Time]
+    _timeouts: Dict[int, Time]
 
     @classmethod
     def prefix(cls, *args):

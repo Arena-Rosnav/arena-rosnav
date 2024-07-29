@@ -13,7 +13,7 @@ from rospkg import RosPack
 
 from task_generator.shared import Obstacle, Position, PositionOrientation, PositionRadius
 
-from genpy.rostime import Time
+from builtin_interfaces.msg import Time
 from task_generator.utils import ModelLoader
 
 import map_distance_server.srv as map_distance_server_srvs
