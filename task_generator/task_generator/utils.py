@@ -282,7 +282,7 @@ class _ModelLoader_URDF(_ModelLoader):
 
 
 T = TypeVar("T")
-_unspecified = rospy.client._Unspecified()
+_unspecified = rospy.client._unspecified()
 
 
 def rosparam_get(cast: Type[T], param_name: str, default=_unspecified, strict: bool = False) -> T:
