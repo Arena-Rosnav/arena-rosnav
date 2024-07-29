@@ -10,9 +10,9 @@ from rosros import rospify as rospy
 import yaml
 from rospkg import RosPack
 from task_generator.constants import Config, Constants
-from task_generator.manager.entity_manager.entity_manager import EntityManager
-from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
-from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
+from manager.entity_manager.entity_manager import EntityManager
+from manager.entity_manager.flatland_manager import FlatlandManager
+from manager.entity_manager.pedsim_manager import PedsimManager
 from task_generator.manager.entity_manager.crowdsim_manager import CrowdsimManager
 
 from task_generator.manager.world_manager import WorldManager

@@ -102,7 +102,7 @@ class Constants:
 class TaskConfig_General:
     WAIT_FOR_SERVICE_TIMEOUT: float = dataclasses.field(default_factory=lambda: rosparam_get(float, "timeout_wait_for_service", Constants.get_default("TIMEOUT_WAIT_FOR_SERVICE")))
     MAX_RESET_FAIL_TIMES: int = dataclasses.field(default_factory=lambda: rosparam_get(int, "max_reset_fail_times", Constants.get_default("MAX_RESET_FAIL_TIMES")))
-    RNG: np.random.Generator = dataclasses.field(default_factory=lambda: np.random.default_rng(rosparam_get(int, "RANDOM/seed", Constants.get_default("RANDOM_SEED"))))
+    RNG: np.random.Generator = dataclasses.field(default_factory=lambda: np.random.default_rng(1))#rosparam_get(int, "RANDOM/seed", Constants.get_default("RANDOM_SEED",1))))
     DESIRED_EPISODES: float = dataclasses.field(default_factory=lambda: float(rosparam_get(int, "episodes", Constants.get_default("EPISODES"))))
 
 @dataclasses.dataclass
@@ -127,7 +127,7 @@ Config = TaskConfig()
 def _cb_reconfigure(config):
     global Config
 
-    Config.General.RNG = np.random.default_rng((lambda x: x if x >= 0 else None)(config["RANDOM_seed"]))
+    Config.General.RNG = np.random.default_rng((lambda x: x if x >= 0 else 1)(config["RANDOM_seed"]))
     Config.General.DESIRED_EPISODES = (lambda x: float("inf") if x < 0 else x)(config["episodes"])
     
     Config.Robot.GOAL_TOLERANCE_RADIUS = config["goal_radius"]
@@ -168,7 +168,7 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     """
 
     # load once at the start
-    val = rospy.get_param(pedsim_ns(parameter), fallback)
+    val = fallback #rospy.get_param(pedsim_ns(parameter), fallback)
 
     gen = lambda: val
 

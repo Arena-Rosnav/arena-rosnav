@@ -4,6 +4,7 @@ from typing import Callable, Collection, Dict, Iterator, List, Optional, Set, Tu
 
 
 from rosros import rospify as rospy
+from rosros.core import get_nodes
 import os
 import numpy as np
 
@@ -285,6 +286,9 @@ _unspecified = rospy.client._Unspecified()
 
 
 def rosparam_get(cast: Type[T], param_name: str, default=_unspecified, strict: bool = False) -> T:
+    if "task_generator_node" not in  get_nodes():
+        return default
+    
     val = rospy.get_param(param_name=param_name, default=default)
 
     if strict:
