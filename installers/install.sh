@@ -125,6 +125,9 @@ colcon_build
 
 # == install arena on top of ros2 ==
 
+sudo apt install -y \
+  libpcl-dev
+
 rm -r "${ARENA_WS_DIR}/src/arena/arena-rosnav"
 echo "cloning Arena-Rosnav into ${ARENA_WS_DIR}..."
 git clone --branch "${ARENA_BRANCH}" "https://github.com/${ARENA_ROSNAV_REPO}.git" "${ARENA_WS_DIR}/src/arena/arena-rosnav"
