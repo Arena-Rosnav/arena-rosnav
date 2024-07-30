@@ -1,12 +1,17 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import os
 from glob import glob 
 
 package_name = 'task_generator'
+
 setup(
-    name='task_generator',
+    name=package_name,
     version='0.0.0',
-    packages=[package_name],
+    packages=find_packages(
+        where='.',
+        include=[f'{package_name}*']
+    ),
+    package_dir={'': '.'},
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),

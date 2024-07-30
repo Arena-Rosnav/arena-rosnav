@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Union
 import xml.etree.ElementTree as ET
 import cv2
 import numpy as np
-import rospkg
+from ament_index_python.packages import get_package_share_directory
 
 import yaml
 from rosros import rospify as rospy
@@ -222,7 +222,7 @@ class YAMLUtil:
 
 
 tmp_dir = os.path.join(
-    rospkg.RosPack().get_path("arena_simulation_setup"), "tmp", "heightmap"
+    get_package_share_directory("arena_simulation_setup"), "tmp", "heightmap"
 )
 os.makedirs(tmp_dir, exist_ok=True)
 

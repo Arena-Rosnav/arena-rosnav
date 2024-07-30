@@ -82,23 +82,39 @@ class Constants:
         "update_rate": 10,
     }
 
+    class Defaults:
+        # Manually copied defaults from from TaskGenerator.cfg
+        TIMEOUT_WAIT_FOR_SERVICE = 60.0
+        MAX_RESET_FAIL_TIMES = 10
+        RANDOM_SEED = -1
+        EPISODES = -1
+        GOAL_RADIUS = 1.0
+        GOAL_TOLERANCE_ANGLE = 0.523598776  # 30 degrees in radians
+        TIMEOUT = -1.0  # -1 means infinite timeout
+        SPAWN_ROBOT_SAFE_DIST = 0.25
+        OBSTACLE_MAX_RADIUS = 15.0
+
+    @staticmethod
+    def get_default(param_name, default=None):
+        return getattr(Constants.Defaults, param_name, default)
+
 @dataclasses.dataclass
 class TaskConfig_General:
-    WAIT_FOR_SERVICE_TIMEOUT: float = dataclasses.field(default_factory=lambda:rosparam_get(float, "timeout_wait_for_service", 60))
-    MAX_RESET_FAIL_TIMES: int = dataclasses.field(default_factory=lambda:rosparam_get(int, "max_reset_fail_times", 10))
-    RNG: np.random.Generator = dataclasses.field(default_factory=lambda:np.random.default_rng())
-    DESIRED_EPISODES: float = float("inf")
+    WAIT_FOR_SERVICE_TIMEOUT: float = dataclasses.field(default_factory=lambda: rosparam_get(float, "timeout_wait_for_service", Constants.get_default("TIMEOUT_WAIT_FOR_SERVICE")))
+    MAX_RESET_FAIL_TIMES: int = dataclasses.field(default_factory=lambda: rosparam_get(int, "max_reset_fail_times", Constants.get_default("MAX_RESET_FAIL_TIMES")))
+    RNG: np.random.Generator = dataclasses.field(default_factory=lambda: np.random.default_rng(1))#rosparam_get(int, "RANDOM/seed", Constants.get_default("RANDOM_SEED",1))))
+    DESIRED_EPISODES: float = dataclasses.field(default_factory=lambda: float(rosparam_get(int, "episodes", Constants.get_default("EPISODES"))))
 
 @dataclasses.dataclass
 class TaskConfig_Robot:
-    GOAL_TOLERANCE_RADIUS: float = 1.0
-    GOAL_TOLERANCE_ANGLE: float = 30 * math.pi/180
-    SPAWN_ROBOT_SAFE_DIST: float = 0.25
-    TIMEOUT: float = float("inf")
+    GOAL_TOLERANCE_RADIUS: float = dataclasses.field(default_factory=lambda: rosparam_get(float, "goal_radius", Constants.get_default("GOAL_RADIUS")))
+    GOAL_TOLERANCE_ANGLE: float = dataclasses.field(default_factory=lambda: rosparam_get(float, "goal_tolerance_angle", Constants.get_default("GOAL_TOLERANCE_ANGLE")))
+    SPAWN_ROBOT_SAFE_DIST: float = dataclasses.field(default_factory=lambda: rosparam_get(float, "spawn_robot_safe_dist", Constants.get_default("SPAWN_ROBOT_SAFE_DIST")))
+    TIMEOUT: float = dataclasses.field(default_factory=lambda: float(rosparam_get(float, "timeout", Constants.get_default("TIMEOUT"))))
 
 @dataclasses.dataclass
 class TaskConfig_Obstacles:
-    OBSTACLE_MAX_RADIUS: float = 15
+    OBSTACLE_MAX_RADIUS: float = dataclasses.field(default_factory=lambda: rosparam_get(float, "obstacle_max_radius", Constants.get_default("OBSTACLE_MAX_RADIUS")))
 
 @dataclasses.dataclass
 class TaskConfig:
@@ -111,30 +127,12 @@ Config = TaskConfig()
 def _cb_reconfigure(config):
     global Config
 
-    Config.General.RNG = np.random.default_rng((lambda x: x if x >= 0 else None)(config["RANDOM_seed"]))
+    Config.General.RNG = np.random.default_rng((lambda x: x if x >= 0 else 1)(config["RANDOM_seed"]))
     Config.General.DESIRED_EPISODES = (lambda x: float("inf") if x < 0 else x)(config["episodes"])
     
     Config.Robot.GOAL_TOLERANCE_RADIUS = config["goal_radius"]
     Config.Robot.GOAL_TOLERANCE_ANGLE = config["goal_tolerance_angle"]
     Config.Robot.TIMEOUT = (lambda x: float("inf") if x < 0 else x)(config["timeout"])
-
-def load_parameters_from_yaml(file_path: str):
-    with open(file_path, 'r') as file:
-        params = yaml.safe_load(file)
-    
-    if params and 'ros__parameters' in params:
-        for key, value in params['ros__parameters'].items():
-            rospy.set_param(key, value)
-
-    # Simulate the dynamic_reconfigure callback
-    config = {
-        "RANDOM_seed": rospy.get_param("RANDOM/seed", -1),
-        "episodes": rospy.get_param("episodes", -1),
-        "goal_radius": rospy.get_param("goal_radius", 1.0),
-        "goal_tolerance_angle": rospy.get_param("goal_tolerance_angle", 30 * math.pi / 180),
-        "timeout": rospy.get_param("timeout", 60)
-    }
-    _cb_reconfigure(config)
 
 class FlatlandRandomModel:
     BODY = {
@@ -170,7 +168,7 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     """
 
     # load once at the start
-    val = rospy.get_param(pedsim_ns(parameter), fallback)
+    val = fallback #rospy.get_param(pedsim_ns(parameter), fallback)
 
     gen = lambda: val
 

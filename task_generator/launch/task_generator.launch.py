@@ -12,7 +12,7 @@ def generate_launch_description():
             executable='task_generator_node',
             name='task_generator_node',
             output='screen'
-        ),
+        )
         # launch_ros.actions.Node(
         #     package='task_generator',
         #     executable='server',
@@ -24,7 +24,7 @@ def generate_launch_description():
         #     executable='filewatcher',
         #     name='task_generator_filewatcher',
         #     output='screen'
-        # )
+        #)
     ])
     return ld
 

@@ -9,14 +9,14 @@ import numpy as np
 from typing import Callable, Collection, Optional, Tuple, Dict, List
 import scipy.interpolate
 
-from rospkg import RosPack
+from ament_index_python.packages import get_package_share_directory
 
 from task_generator.shared import Obstacle, Position, PositionOrientation, PositionRadius
 
-from genpy.rostime import Time
+from builtin_interfaces.msg import Time
 from task_generator.utils import ModelLoader
 
-import map_distance_server.srv as map_distance_server_srvs
+from nav_msgs.msg import OccupancyGrid
 
 # TYPES
 
@@ -183,20 +183,23 @@ class WorldMap:
     time: Time
 
     @staticmethod
-    def from_distmap(distmap: map_distance_server_srvs.GetDistanceMapResponse) -> "WorldMap":
+    def from_occupancy_grid(occupancy_grid: OccupancyGrid) -> "WorldMap":
+        # Convert occupancy grid data to numpy array
+        grid_data = np.array(occupancy_grid.data).reshape((occupancy_grid.info.height, occupancy_grid.info.width))
+        
+        # Normalize data to 0-255 range (0 = occupied, 255 = free)
+        normalized_data = np.interp(grid_data, (0, 100), (WorldOccupancy.FULL, WorldOccupancy.EMPTY)).astype(np.uint8)
+        
         return WorldMap(
             occupancy=WorldLayers(
-                walls=WorldOccupancy.from_map(
-                    np.array(distmap.data).reshape(
-                        (distmap.info.height, distmap.info.width))
-                )
+                walls=WorldOccupancy(normalized_data)
             ),
             origin=Position(
-                distmap.info.origin.position.y,
-                distmap.info.origin.position.x
+                occupancy_grid.info.origin.position.y,
+                occupancy_grid.info.origin.position.x
             ),
-            resolution=distmap.info.resolution,
-            time=distmap.info.map_load_time
+            resolution=occupancy_grid.info.resolution,
+            time=occupancy_grid.info.map_load_time
         )
 
     @property
@@ -317,7 +320,7 @@ def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[
 
 
 _world_model_loader = ModelLoader(os.path.join(
-    RosPack().get_path("arena_simulation_setup"), "tmp", "models"))
+    get_package_share_directory("arena_simulation_setup"), "tmp", "models"))
 
 
 def configurations_to_obstacles(configurations: Collection[WorldObstacleConfiguration]) -> WorldObstacles:

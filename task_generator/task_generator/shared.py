@@ -20,7 +20,7 @@ from typing import (
 import enum
 import yaml
 from rosros import rospify as rospy
-
+from rosros.core import get_nodes
 T = TypeVar("T")
 U = TypeVar("U")
 _unspecified = rospy.client._unspecified()
@@ -37,7 +37,8 @@ def rosparam_get(
     @param_name: Name of parameter on parameter server
     @default: Default value. Raise ValueError is default is unset and parameter can't be found.
     """
-
+    # if "task_generator_node" not in  get_nodes():
+    return default
     val = rospy.get_param(param_name=param_name, default=_notfound)
 
     if val == _notfound:

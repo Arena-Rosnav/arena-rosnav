@@ -1,5 +1,5 @@
 from typing import Dict
-import genpy
+from builtin_interfaces.msg import Time
 from rosros import rospify as rospy
 from task_generator.constants import Constants
 from task_generator.shared import PositionOrientation
@@ -19,7 +19,7 @@ class Mod_OverrideRobot(TM_Module):
     PARAM_WAYPOINTS = "guided_waypoints"
 
 
-    _timeouts: Dict[int, genpy.Time]
+    _timeouts: Dict[int, Time]
 
     def __init__(self, task: Task, **kwargs):
         TM_Module.__init__(self, task, **kwargs)
