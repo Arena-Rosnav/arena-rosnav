@@ -124,10 +124,6 @@ cd "${ARENA_WS_DIR}"
 cd "${ARENA_WS_DIR}"
 until vcs import src < src/arena/arena-rosnav/arena.repos ; do echo "failed to update, retrying..." ; done
 
-rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers"
-source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
-. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
-
 # == optinal installers ==
 
 cd "${ARENA_WS_DIR}/src/arena/arena-rosnav/installers"
@@ -150,5 +146,7 @@ cd "${ARENA_WS_DIR}"
 ln -s src/arena/arena-rosnav/tools/poetry_install .
 ln -s src/arena/arena-rosnav/tools/colcon_build .
 
+# final pass
+rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers"
 cd "${ARENA_WS_DIR}"
 . "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
