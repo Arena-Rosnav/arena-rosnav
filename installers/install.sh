@@ -2,33 +2,17 @@
 set -e
 
 export ARENA_ROSNAV_REPO='voshch/arena-rosnav'
-export PYTHON_VERSION='3.10'
 export ARENA_ROS_VERSION='jazzy'
 export ARENA_BRANCH='jazzy'
-
-export BUILD_EXCLUDES='python_orocos_kdl_vendor qt_gui_cpp rqt_gui_cpp qt_gui_core rqt'
-
-poetry_install(){
-  pyenv install -s "${PYTHON_VERSION}"
-  pyenv local "${PYTHON_VERSION}"
-  export PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring 
-  $HOME/.local/bin/poetry env use "${PYTHON_VERSION}"
-  $HOME/.local/bin/poetry install || ($HOME/.local/bin/poetry lock --no-update && $HOME/.local/bin/poetry install)
-}
-
-colcon_build(){
-  source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
-  colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)" --packages-skip ${BUILD_EXCLUDES}
-}
 
 # == read inputs ==
 echo 'Configuring arena-rosnav...'
 
-ARENA_WS_DIR=${ARENA_WS_DIR:-"~/arena_ws"}
+ARENA_WS_DIR=${ARENA_WS_DIR:-"arena4_ws"}
 read -p "arena-rosnav workspace directory [${ARENA_WS_DIR}] " INPUT
-export ARENA_WS_DIR="$(eval echo ${INPUT:-${ARENA_WS_DIR}})"
+export ARENA_WS_DIR=$(realpath "$(eval echo ${INPUT:-${ARENA_WS_DIR}})")
 
-sudo echo ""
+sudo echo "$ARENA_WS_DIR"
 
 # == python deps ==
 
@@ -71,8 +55,13 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-a
 mkdir -p "${ARENA_WS_DIR}/src/arena/arena-rosnav"
 cd "${ARENA_WS_DIR}/src/arena/arena-rosnav"
 curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/pyproject.toml" > pyproject.toml
-poetry_install
 
+mkdir -p "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools"
+cd "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools"
+curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/poetry_install" > poetry_install
+curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/colcon_build" > colcon_build
+cd "${ARENA_WS_DIR}" 
+. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/poetry_install"
 
 # Getting Packages
 echo "Installing Deps...:"
@@ -121,26 +110,23 @@ until vcs import src/ros2 < ros2.repos ; do echo "failed to update, retrying..."
 rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers"
 
 cd "${ARENA_WS_DIR}"
-colcon_build
+. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
 
 # == install arena on top of ros2 ==
-
-sudo apt install -y \
-  libpcl-dev
 
 rm -r "${ARENA_WS_DIR}/src/arena/arena-rosnav"
 echo "cloning Arena-Rosnav into ${ARENA_WS_DIR}..."
 git clone --branch "${ARENA_BRANCH}" "https://github.com/${ARENA_ROSNAV_REPO}.git" "${ARENA_WS_DIR}/src/arena/arena-rosnav"
 
-cd "${ARENA_WS_DIR}/src/arena/arena-rosnav"
-poetry_install
+cd "${ARENA_WS_DIR}"
+. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/poetry_install"
 
 cd "${ARENA_WS_DIR}"
 until vcs import src < src/arena/arena-rosnav/arena.repos ; do echo "failed to update, retrying..." ; done
 
 rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers"
 source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
-colcon_build
+. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
 
 # == optinal installers ==
 
@@ -161,5 +147,8 @@ if [[ "$choice" =~ ^[Yy] ]]; then
 fi
 
 cd "${ARENA_WS_DIR}"
-source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
-colcon_build
+ln -s src/arena/arena-rosnav/tools/poetry_install .
+ln -s src/arena/arena-rosnav/tools/colcon_build .
+
+cd "${ARENA_WS_DIR}"
+. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
