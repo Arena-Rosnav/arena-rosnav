@@ -3,8 +3,8 @@ episode_per_map: 10
 generation_timeout: 10
 
 map_properties:
-  width: 40
-  height: 40
+  width: 50
+  height: 50
   resolution: 0.5 # should stay fixed during runtime
 
 algorithm_config:
