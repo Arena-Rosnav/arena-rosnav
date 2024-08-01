@@ -340,7 +340,7 @@ class FlatlandEnv(gymnasium.Env):
         """
         # make sure all simulation components are ready before first episode
         if self._episode <= 1:
-            for _ in range(3):
+            for _ in range(4):
                 self.agent_action_pub.publish(Twist())
                 self._call_service_takeSimStep()
 
@@ -351,7 +351,7 @@ class FlatlandEnv(gymnasium.Env):
         """
         if self._is_train_mode:
             # extra step for planning serivce to provide global plan
-            for _ in range(2):
+            for _ in range(3):
                 self.agent_action_pub.publish(Twist())
                 self._call_service_takeSimStep()
 
