@@ -25,6 +25,7 @@ class ProfilingVecEnv(VecEnvWrapper):
         per_call: bool = True,
         print_stats: bool = True,
         log_file: str = None,
+        enable_subscribers: bool = True,
     ):
         super().__init__(env)
         self._step_profiler = pyinstrument.Profiler()
@@ -37,9 +38,14 @@ class ProfilingVecEnv(VecEnvWrapper):
         self._print_stats = print_stats
         self._log_file = log_file
 
-        # Set up subscribers
-        rospy.Subscriber("/profiler/profile_step", Bool, self._profile_step_callback)
-        rospy.Subscriber("/profiler/profile_reset", Bool, self._profile_reset_callback)
+        if enable_subscribers:
+            # Set up subscribers
+            rospy.Subscriber(
+                "/profiler/profile_step", Bool, self._profile_step_callback
+            )
+            rospy.Subscriber(
+                "/profiler/profile_reset", Bool, self._profile_reset_callback
+            )
 
     def _profile_step_callback(self, msg):
         self._profile_method_step = msg.data

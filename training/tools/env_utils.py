@@ -217,7 +217,6 @@ def make_envs(
         record_actions=True,
     )
 
-    train_env = ProfilingVecEnv(
-        train_env,
-    )
+    train_env = ProfilingVecEnv(train_env)
+    eval_env = ProfilingVecEnv(eval_env, enable_subscribers=False)
     return train_env, eval_env, observation_manager
