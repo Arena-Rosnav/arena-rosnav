@@ -38,19 +38,19 @@ def get_relative_pos_to_robot(
 
 
 def get_relative_vel_to_robot(
-    robot_pose: Pose2D,
+    robot_pose: np.ndarray,
     pedestrian_vel_vector: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> np.ndarray:
     """
     Calculates the relative velocity of pedestrians to the robot.
 
     Args:
-        robot_pose (Pose2D): The pose of the robot.
-        semantic_data_x (List[crowdsim_msgs.SemanticDatum]): List of semantic data along the x-axis.
-        semantic_data_y (List[crowdsim_msgs.SemanticDatum]): List of semantic data along the y-axis.
+        robot_pose (np.ndarray): The pose of the robot, including its position and orientation.
+        pedestrian_vel_vector (np.ndarray): The velocity vectors of pedestrians in (num_peds, 2 [x-vel, y-vel]).
 
     Returns:
-        Tuple[np.ndarray, np.ndarray]: A tuple containing the relative velocities along the x-axis and y-axis.
+        np.ndarray: The relative velocity vectors of pedestrians with respect to the robot
+                    in the robot's coordinate frame, shape (num_peds, 2).
     """
     map_R_robot = np.array(
         [
@@ -61,6 +61,6 @@ def get_relative_vel_to_robot(
     robot_R_map = np.linalg.inv(map_R_robot)
 
     if len(pedestrian_vel_vector) > 0:
-        rel_vel = np.matmul(robot_R_map, pedestrian_vel_vector.T)
+        rel_vel = np.matmul(robot_R_map, pedestrian_vel_vector.T).T
         return rel_vel
-    return np.array([])
+    return np.empty((0, 2))

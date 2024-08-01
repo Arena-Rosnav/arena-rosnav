@@ -88,7 +88,7 @@ class PedestrianRelativeVelX(ObservationGeneratorUnit):
         ped_rel_vel: PedestrianRelativeVel.data_class = obs_dict[
             PedestrianRelativeVel.name
         ]
-        return ped_rel_vel[0, :] if len(ped_rel_vel) > 0 else ped_rel_vel
+        return ped_rel_vel[:, 0] if len(ped_rel_vel) > 0 else ped_rel_vel
 
 
 class PedestrianRelativeVelY(ObservationGeneratorUnit):
@@ -101,4 +101,4 @@ class PedestrianRelativeVelY(ObservationGeneratorUnit):
             PedestrianRelativeVel.name
         ]
 
-        return ped_rel_vel[1, :] if len(ped_rel_vel) > 0 else ped_rel_vel
+        return ped_rel_vel[:, 0] if len(ped_rel_vel) > 0 else ped_rel_vel
