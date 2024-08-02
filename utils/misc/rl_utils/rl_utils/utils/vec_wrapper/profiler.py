@@ -77,7 +77,7 @@ class ProfilingVecEnv(VecEnvWrapper):
 
         obs, rewards, dones, infos = self.venv.step_wait()
 
-        if self._profile_method_step:
+        if self._profile_method_step and self._step_profiler.is_running:
             self._step_profiler.stop()
             self._output_stats(self._step_profiler, "step_wait")
 
@@ -102,7 +102,7 @@ class ProfilingVecEnv(VecEnvWrapper):
 
         observations = self.venv.reset()
 
-        if self._profile_method_reset:
+        if self._profile_method_reset and self._reset_profiler.is_running:
             self._reset_profiler.stop()
             self._output_stats(self._reset_profiler, "reset")
 
