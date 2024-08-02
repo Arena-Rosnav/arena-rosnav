@@ -81,7 +81,11 @@ class ProfilingVecEnv(VecEnvWrapper):
             self._step_profiler.stop()
             self._output_stats(self._step_profiler, "step_wait")
 
-        if self._profile_method_step and self._per_call:
+        if (
+            self._profile_method_step
+            and self._per_call
+            and self._step_profiler.is_running
+        ):
             self._step_profiler.reset()
 
         return obs, rewards, dones, infos
@@ -102,7 +106,11 @@ class ProfilingVecEnv(VecEnvWrapper):
             self._reset_profiler.stop()
             self._output_stats(self._reset_profiler, "reset")
 
-        if self._profile_method_reset and self._per_call:
+        if (
+            self._profile_method_reset
+            and self._per_call
+            and self._reset_profiler.is_running
+        ):
             self._reset_profiler.reset()
 
         return observations
