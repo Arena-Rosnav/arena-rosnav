@@ -2,7 +2,7 @@ goal_reached:
   reward: 20
 
 factored_safe_distance:
-  factor: -0.3
+  factor: -0.25
 
 collision:
   reward: -20
@@ -15,7 +15,7 @@ approach_goal:
 
 factored_reverse_drive:
   factor: 0.1
-  threshold: -0.5
+  threshold: 0.0
   _on_safe_dist_violation: true
 
 # approach_globalplan:
@@ -47,4 +47,4 @@ max_steps_exceeded:
 
 angular_vel_constraint:
   penalty_factor: -0.05
-  threshold: 1.0
+  threshold: 0.5
