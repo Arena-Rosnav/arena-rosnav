@@ -77,3 +77,9 @@ class DEFAULTS:
         TYPE: int = 1
         REWARD: float = -10.0
         BUMPER_ZONE: float = 0.05
+
+    class PED_TYPE_SPECIFICE_FACTORED_SAFETY_DISTANCE:
+        TYPE: int = 1
+        DISTANCE: float = 1.25
+        FACTOR: float = -0.5
+        _ON_SAFE_DIST_VIOLATION: bool = True
