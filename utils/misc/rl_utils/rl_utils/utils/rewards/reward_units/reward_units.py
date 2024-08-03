@@ -1209,6 +1209,7 @@ class RewardPedTypeSafetyDistance(RewardUnit):
     def __init__(
         self,
         reward_function: RewardFunction,
+        type_reward_pairs: Dict[int, float] = None,
         ped_type: int = DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE.TYPE,
         reward: float = DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE.REWARD,
         safety_distance: float = DEFAULTS.PED_TYPE_SPECIFIC_SAFETY_DISTANCE.DISTANCE,
@@ -1220,6 +1221,11 @@ class RewardPedTypeSafetyDistance(RewardUnit):
         self._type = ped_type
         self._reward = reward
         self._safety_distance = safety_distance
+        self._type_reward_pairs = (
+            type_reward_pairs
+            if isinstance(type_reward_pairs, dict)
+            else {ped_type: reward}
+        )
 
     def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> None:
         ped_type_min_distances = self.get_internal_state_info(
@@ -1235,15 +1241,73 @@ class RewardPedTypeSafetyDistance(RewardUnit):
                 "min_distances_per_ped_type"
             )
 
-        if self._type not in ped_type_min_distances:
-            rospy.logwarn_throttle(
-                60,
-                f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {self._type} not found.",
-            )
-            return
+        for ped_type, reward in self._type_reward_pairs.items():
+            if ped_type not in ped_type_min_distances:
+                rospy.logwarn_throttle(
+                    60,
+                    f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {ped_type} not found.",
+                )
+                continue
 
-        if ped_type_min_distances[self._type] < self._safety_distance:
-            self.add_reward(self._reward)
+            if ped_type_min_distances[ped_type] < self._safety_distance:
+                self.add_reward(reward)
+
+    def reset(self):
+        pass
+
+
+@RewardUnitFactory.register("ped_type_factored_safety_distance")
+class RewardPedTypeFactoredSafetyDistance(RewardUnit):
+
+    required_observations = [PedestrianRelativeLocation, RobotPoseCollector]
+
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        type_factor_pairs: Dict[int, float] = None,
+        ped_type: int = DEFAULTS.PED_TYPE_SPECIFICE_FACTORED_SAFETY_DISTANCE.TYPE,
+        factor: float = DEFAULTS.PED_TYPE_SPECIFICE_FACTORED_SAFETY_DISTANCE.FACTOR,
+        safety_distance: float = DEFAULTS.PED_TYPE_SPECIFICE_FACTORED_SAFETY_DISTANCE.DISTANCE,
+        _on_safe_dist_violation: bool = DEFAULTS.PED_TYPE_SPECIFICE_FACTORED_SAFETY_DISTANCE._ON_SAFE_DIST_VIOLATION,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+        self._type = ped_type
+        self._factor = factor
+        self._safety_distance = safety_distance
+        self._type_factor_pairs = (
+            type_factor_pairs
+            if isinstance(type_factor_pairs, dict)
+            else {ped_type: factor}
+        )
+
+    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> None:
+        ped_type_min_distances = self.get_internal_state_info(
+            "min_distances_per_ped_type"
+        )
+
+        if ped_type_min_distances is None:
+            self.add_internal_state_info(
+                key="min_distances_per_ped_type",
+                value=get_ped_type_min_distances(obs_dict),
+            )
+            ped_type_min_distances = self.get_internal_state_info(
+                "min_distances_per_ped_type"
+            )
+
+        for ped_type, factor in self._type_factor_pairs.items():
+            if ped_type not in ped_type_min_distances:
+                rospy.logwarn_throttle(
+                    60,
+                    f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {ped_type} not found.",
+                )
+                continue
+
+            if ped_type_min_distances[ped_type] < self._safety_distance:
+                self.add_reward(
+                    factor * (self._safety_distance - ped_type_min_distances[ped_type])
+                )
 
     def reset(self):
         pass
@@ -1271,6 +1335,7 @@ class RewardPedTypeCollision(RewardUnit):
     def __init__(
         self,
         reward_function: RewardFunction,
+        type_reward_pairs: Dict[int, float] = None,
         ped_type: int = DEFAULTS.PED_TYPE_SPECIFIC_COLLISION.TYPE,
         reward: float = DEFAULTS.PED_TYPE_SPECIFIC_COLLISION.REWARD,
         bumper_zone: float = DEFAULTS.PED_TYPE_SPECIFIC_COLLISION.BUMPER_ZONE,
@@ -1278,8 +1343,11 @@ class RewardPedTypeCollision(RewardUnit):
         **kwargs,
     ):
         super().__init__(reward_function, True, *args, **kwargs)
-        self._type = ped_type
-        self._reward = reward
+        self._type_reward_pairs = (
+            type_reward_pairs
+            if isinstance(type_reward_pairs, dict)
+            else {ped_type: reward}
+        )
         self._bumper_zone = self.robot_radius + bumper_zone
 
     def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> None:
@@ -1303,15 +1371,16 @@ class RewardPedTypeCollision(RewardUnit):
                 "min_distances_per_ped_type"
             )
 
-        if self._type not in ped_type_min_distances:
-            rospy.logwarn_throttle(
-                60,
-                f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {self._type} not found.",
-            )
-            return
+        for ped_type, reward in self._type_reward_pairs.items():
+            if ped_type not in ped_type_min_distances:
+                rospy.logwarn_throttle(
+                    60,
+                    f"[{rospy.get_name()}, {self.__class__.__name__}] Pedestrian type {ped_type} not found.",
+                )
+                continue
 
-        if ped_type_min_distances[self._type] <= self._bumper_zone:
-            self.add_reward(self._reward)
+            if ped_type_min_distances[ped_type] <= self._bumper_zone:
+                self.add_reward(reward)
 
     def reset(self):
         pass
