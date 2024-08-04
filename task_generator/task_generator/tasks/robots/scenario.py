@@ -3,14 +3,14 @@ import json
 import os
 from typing import List, NamedTuple
 
-import rospkg
-from rosros import rospify as rospy
+from ament_index_python.packages import get_package_share_directory
+import rclpy
+from rclpy.node import Node
+from rcl_interfaces.msg import SetParametersResult
 from task_generator.constants import Constants
-from task_generator.shared import PositionOrientation, PositionRadius, rosparam_get
+from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
 from task_generator.tasks.task_factory import TaskFactory
-
-import dynamic_reconfigure.client
 
 
 class _RobotGoal(NamedTuple):
@@ -44,10 +44,10 @@ class _Config:
 
 
 @TaskFactory.register_robots(Constants.TaskMode.TM_Robots.SCENARIO)
-class TM_Scenario(TM_Robots):
+class TM_Scenario(TM_Robots, Node):
     """
     This class represents a scenario for robots in the task generator.
-    It inherits from TM_Robots class.
+    It inherits from TM_Robots class and Node class.
 
     Attributes:
         _config (Config): The configuration object for the scenario.
@@ -60,11 +60,21 @@ class TM_Scenario(TM_Robots):
         return super().prefix("scenario", *args)
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        TM_Robots.__init__(self, **kwargs)
+        Node.__init__(self, 'tm_scenario_robots_node')
 
-        dynamic_reconfigure.client.Client(
-            name=self.NODE_CONFIGURATION, config_callback=self.reconfigure
-        )
+        self.declare_parameter('SCENARIO_file', '')
+        self.declare_parameter('map_file', '')
+        self.add_on_set_parameters_callback(self.parameters_callback)
+
+        # Initial configuration
+        self.reconfigure({'SCENARIO_file': self.get_parameter('SCENARIO_file').value})
+
+    def parameters_callback(self, params):
+        for param in params:
+            if param.name == 'SCENARIO_file':
+                self.reconfigure({'SCENARIO_file': param.value})
+        return SetParametersResult(successful=True)
 
     def reconfigure(self, config):
         """
@@ -76,16 +86,18 @@ class TM_Scenario(TM_Robots):
         Returns:
             None
         """
+        map_file = self.get_parameter('map_file').value
+        scenario_file = config['SCENARIO_file']
 
-        with open(
-            os.path.join(
-                rospkg.RosPack().get_path("arena_simulation_setup"),
-                "worlds",
-                rosparam_get(str, "map_file"),
-                "scenarios",
-                config["SCENARIO_file"]
-            )
-        ) as f:
+        scenario_path = os.path.join(
+            get_package_share_directory("arena_simulation_setup"),
+            "worlds",
+            map_file,
+            "scenarios",
+            scenario_file
+        )
+
+        with open(scenario_path) as f:
             scenario = json.load(f)
 
         self._config = _Config(
@@ -115,13 +127,11 @@ class TM_Scenario(TM_Robots):
 
         if setup_robot_length > scenario_robots_length:
             managed_robots = managed_robots[:scenario_robots_length]
-            rospy.logwarn_once(
-                "Roboto setup contains more robots than the scenario file."
-            )
+            self.get_logger().warn("Robot setup contains more robots than the scenario file.", once=True)
 
         if scenario_robots_length > setup_robot_length:
             SCENARIO_ROBOTS = SCENARIO_ROBOTS[:setup_robot_length]
-            rospy.logwarn_once("Scenario file contains more robots than setup.")
+            self.get_logger().warn("Scenario file contains more robots than setup.", once=True)
 
         for robot, config in zip(managed_robots, SCENARIO_ROBOTS):
             robot.reset(start_pos=config.start, goal_pos=config.goal)
