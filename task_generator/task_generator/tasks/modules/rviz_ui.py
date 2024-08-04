@@ -9,7 +9,7 @@ from task_generator.tasks.task_factory import TaskFactory
 
 import geometry_msgs.msg as geometry_msgs
 
-from tf.transformations import euler_from_quaternion
+from tf_transformations import euler_from_quaternion  # Changed import
 
 @TaskFactory.register_module(Constants.TaskMode.TM_Module.RVIZ_UI)
 class Mod_OverrideRobot(TM_Module):
@@ -17,7 +17,6 @@ class Mod_OverrideRobot(TM_Module):
     TOPIC_SET_GOAL = "/goalpose"
     TOPIC_NEW_SCENARIO = "/clicked_point"
     PARAM_WAYPOINTS = "guided_waypoints"
-
 
     _timeouts: Dict[int, Time]
 
