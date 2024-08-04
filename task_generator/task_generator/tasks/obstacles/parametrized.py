@@ -1,16 +1,18 @@
 import os
 from typing import List, Optional
 
-from rospkg import RosPack
+from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Config, Constants
 from task_generator.shared import DynamicObstacle, ModelWrapper, Namespace, Obstacle
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 from task_generator.tasks.task_factory import TaskFactory
 
-import dynamic_reconfigure.client
-import dataclasses
+import rclpy
+from rclpy.node import Node
+from rcl_interfaces.msg import SetParametersResult
 
+import dataclasses
 import xml.etree.ElementTree as ET
 
 @dataclasses.dataclass
@@ -42,13 +44,13 @@ def _get_attrib(element: ET.Element, attribute: str, default: Optional[str] = No
 
 
 @TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.PARAMETRIZED)
-class TM_Parametrized(TM_Obstacles):
+class TM_Parametrized(TM_Obstacles, Node):
 
     _config: _Config
 
     PATH_XML: Namespace = Namespace(
         os.path.join(
-            RosPack().get_path("arena_bringup"),
+            get_package_share_directory("arena_bringup"),
             "configs",
             "parametrized"
         )
@@ -59,15 +61,22 @@ class TM_Parametrized(TM_Obstacles):
         return super().prefix("parametrized", *args)
     
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        TM_Obstacles.__init__(self, **kwargs)
+        Node.__init__(self, 'tm_parametrized_node')
 
-        dynamic_reconfigure.client.Client(
-            name=self.NODE_CONFIGURATION,
-            config_callback=self.reconfigure
-        )
+        self.declare_parameter('PARAMETRIZED_file', '')
+        self.add_on_set_parameters_callback(self.parameters_callback)
+
+        # Initial configuration
+        self.reconfigure({'PARAMETRIZED_file': self.get_parameter('PARAMETRIZED_file').value})
+
+    def parameters_callback(self, params):
+        for param in params:
+            if param.name == 'PARAMETRIZED_file':
+                self.reconfigure({'PARAMETRIZED_file': param.value})
+        return SetParametersResult(successful=True)
 
     def reconfigure(self, config):
-
         xml_path = self.PATH_XML(config["PARAMETRIZED_file"])
 
         tree = ET.parse(xml_path)
@@ -89,9 +98,7 @@ class TM_Parametrized(TM_Obstacles):
             DYNAMIC = list(map(xml_to_config, root.findall("./static/dynamic") or [])),
         )
 
-
     def reset(self, **kwargs):
-
         dynamic_obstacles: List[DynamicObstacle] = list()
         obstacles: List[Obstacle] = list()
 
