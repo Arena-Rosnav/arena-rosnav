@@ -8,3 +8,4 @@ python3-rosdep-modules
 python3-pip
 python3-rosinstall-generator
 python3-vcstool
+python-filelock
