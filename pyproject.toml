@@ -5,7 +5,7 @@ version = "0.1.0"
 description = ""
 authors = [
     "ReykCS <reyk-carstens@web.de>",
-    "Volodymyr Shcherbyna <edu@vshch.com>",
+    "Volodymyr Shcherbyna <dev@vshch.com>",
 ]
 
 [tool.poetry.dependencies]

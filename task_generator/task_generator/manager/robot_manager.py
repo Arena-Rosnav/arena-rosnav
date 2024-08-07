@@ -2,12 +2,8 @@ import dataclasses
 from typing import Optional
 
 import numpy as np
-from rosros import rospify as rospy
-import roslaunch
 import os
 import scipy.spatial.transform
-
-import roslaunch
 from rosros import rospify as rospy
 from task_generator.constants import Constants, Config
 from task_generator.manager.entity_manager.entity_manager import EntityManager
@@ -15,12 +11,16 @@ from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
 from task_generator.utils import Utils, rosparam_get
 
-from tf.transformations import quaternion_from_euler
+from tf_transformations import quaternion_from_euler
 
 import nav_msgs.msg as nav_msgs
 import geometry_msgs.msg as geometry_msgs
 import std_srvs.srv as std_srvs
 
+import launch
+from launch import LaunchDescription
+from launch_ros.actions import Node
+from launch.launch_service import LaunchService
 
 class RobotManager:
     """
@@ -29,11 +29,18 @@ class RobotManager:
     """
 
     _namespace: Namespace
-
     _entity_manager: EntityManager
-
     _start_pos: PositionOrientation
     _goal_pos: PositionOrientation
+    _position: PositionOrientation
+    _robot_radius: float
+    _goal_tolerance_distance: float
+    _goal_tolerance_angle: float
+    _robot: Robot
+    _move_base_pub: rospy.Publisher
+    _move_base_goal_pub: rospy.Publisher
+    _pub_goal_timer: rospy.Timer
+    _clear_costmaps_srv: rospy.ServiceProxy
 
     @property
     def start_pos(self) -> PositionOrientation:
@@ -43,43 +50,25 @@ class RobotManager:
     def goal_pos(self) -> PositionOrientation:
         return self._goal_pos
 
-    _position: PositionOrientation
-
-    _robot_radius: float
-    _goal_tolerance_distance: float
-    _goal_tolerance_angle: float
-
-    _robot: Robot
-
-    _move_base_pub: rospy.Publisher
-    _move_base_goal_pub: rospy.Publisher
-    _pub_goal_timer: rospy.Timer
-    _clear_costmaps_srv: rospy.ServiceProxy
-
     def __init__(
         self, namespace: Namespace, entity_manager: EntityManager, robot: Robot
     ):
         self._namespace = namespace
-
         self._entity_manager = entity_manager
-
         self._start_pos = PositionOrientation(0, 0, 0)
         self._goal_pos = PositionOrientation(0, 0, 0)
-
         self._goal_tolerance_distance = rosparam_get(
             float, "goal_radius", Config.Robot.GOAL_TOLERANCE_RADIUS
-        )  # + self._robot_radius
+        )
         self._goal_tolerance_angle = rosparam_get(
             float, "goal_tolerance_angle", Config.Robot.GOAL_TOLERANCE_ANGLE
         )
-
         self._robot = robot
         self._safety_distance = rosparam_get(
             float,
             f"{robot.name}/safety_distance",
             Config.Robot.SPAWN_ROBOT_SAFE_DIST,
         )
-
         self._position = self._start_pos
 
     def set_up_robot(self):
@@ -100,12 +89,6 @@ class RobotManager:
 
         self._entity_manager.spawn_robot(self._robot)
 
-        # _gen_goal_topic = (
-        #     self.namespace("goal")
-        #     if Utils.get_arena_type() == Constants.ArenaType.TRAINING
-        #     else self.namespace("move_base_simple", "goal")
-        # )
-
         _gen_goal_topic = self.namespace("move_base_simple", "goal")
 
         self._move_base_goal_pub = rospy.Publisher(
@@ -120,9 +103,6 @@ class RobotManager:
             self.namespace("odom"), nav_msgs.Odometry, self._robot_pos_callback
         )
 
-        # if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-        #     return
-
         self._launch_robot()
         self._robot_radius = (
             float(rospy.get_param_cached("robot_radius"))
@@ -130,7 +110,6 @@ class RobotManager:
             else rosparam_get(float, self.namespace("robot_radius"))
         )
 
-        # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
         self._clear_costmaps_srv = rospy.ServiceProxy(
             self.namespace("move_base", "clear_costmaps"), std_srvs.Empty
         )
@@ -152,13 +131,12 @@ class RobotManager:
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             return Namespace(
                 f"{self._namespace}{self._namespace}_{self.model_name}"
-            )  # schizophrenia
+            )
 
         return self._namespace(self._robot.name)
 
     @property
     def is_done(self) -> bool:
-        """kind of redundant right now, but could contain more logic in the future"""
         return self._is_goal_reached
 
     def move_robot_to_pos(self, position: PositionOrientation):
@@ -169,10 +147,6 @@ class RobotManager:
         start_pos: Optional[PositionOrientation],
         goal_pos: Optional[PositionOrientation],
     ):
-        """
-        Publishes start and goal to data_recorder, publishes goal to move_base
-        """
-
         if start_pos is not None:
             self._start_pos = start_pos
             self.move_robot_to_pos(start_pos)
@@ -207,7 +181,6 @@ class RobotManager:
             np.array(goal[:2]) - np.array(start[:2])
         )
 
-        # https://gamedev.stackexchange.com/a/4472
         angle_to_goal: float = np.pi - np.abs(np.abs(goal[2] - start[2]) - np.pi)
 
         return (
@@ -238,38 +211,38 @@ class RobotManager:
         rospy.logwarn(f"START WITH MODEL {self.namespace}")
 
         if Utils.get_arena_type() != Constants.ArenaType.TRAINING:
-            roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(  # type: ignore
-                ["arena_bringup", "robot.launch"]
-            )
+            launch_description = LaunchDescription()
 
-            args = [
-                f"SIMULATOR:={Utils.get_simulator().value}",
-                f"model:={self.model_name}",
-                f"name:={self.name}",
-                f"namespace:={self.namespace}",
-                f"frame:={self.name+'/' if self.name != '' else ''}",
-                f"inter_planner:={self._robot.inter_planner}",
-                f"local_planner:={self._robot.local_planner}",
-                f"complexity:={rosparam_get(int, 'complexity', 1)}",
-                *(
-                    [
-                        "record_data:=true",
-                        f"record_data_dir:={self._robot.record_data_dir}",
-                    ]
-                    if self._robot.record_data_dir is not None
-                    else []
-                ),
-                f"train_mode:={rosparam_get(bool, 'train_mode', False)}",
-                f"agent_name:={self._robot.agent}",
-            ]
+            launch_arguments = {
+                'SIMULATOR': Utils.get_simulator().value,
+                'model': self.model_name,
+                'name': self.name,
+                'namespace': self.namespace,
+                'frame': f"{self.name}/" if self.name else '',
+                'inter_planner': self._robot.inter_planner,
+                'local_planner': self._robot.local_planner,
+                'complexity': rosparam_get(int, 'complexity', 1),
+                'train_mode': rosparam_get(bool, 'train_mode', False),
+                'agent_name': self._robot.agent,
+            }
 
-            self.process = roslaunch.parent.ROSLaunchParent(  # type: ignore
-                roslaunch.rlutil.get_or_generate_uuid(None, False),  # type: ignore
-                [(*roslaunch_file, args)],
-            )
-            self.process.start()
+            if self._robot.record_data_dir:
+                launch_arguments.update({
+                    'record_data': 'true',
+                    'record_data_dir': self._robot.record_data_dir,
+                })
 
-        # Overwrite default move base params
+            launch_description.add_action(Node(
+                package='arena_bringup',
+                executable='robot',
+                output='screen',
+                parameters=[launch_arguments]
+            ))
+
+            self.launch_service = LaunchService()
+            self.launch_service.include_launch_description(launch_description)
+            self.launch_service.run()
+
         base_frame: str = rospy.get_param_cached(self.namespace("robot_base_frame"))
         sensor_frame: str = rospy.get_param_cached(self.namespace("robot_sensor_frame"))
 

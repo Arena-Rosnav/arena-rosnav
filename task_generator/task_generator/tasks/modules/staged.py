@@ -1,8 +1,7 @@
 import dataclasses
 import os
-from typing import Any, Callable, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional
 
-import dynamic_reconfigure.client
 import rospkg
 from rosros import rospify as rospy
 import std_msgs.msg as std_msgs
@@ -29,7 +28,6 @@ class Stage(NamedTuple):
 class DynamicMapStage(NamedTuple):
     algorithm: str
     algorithm_config: Dict[str, Any]
-    # map_properties: Dict[str, Any]
 
     def serialize(self) -> Dict:
         return self._asdict()
@@ -45,12 +43,10 @@ class Config:
     starting_index: StageIndex
 
 
-# StagedInterface
 @TaskFactory.register_module(Constants.TaskMode.TM_Module.STAGED)
 class Mod_Staged(TM_Module):
     """
     A module for managing staged tasks in a task generator.
-
     Attributes:
         __config (Config): The configuration object for the staged tasks.
         __target_stage (StageIndex): The target stage index.
@@ -58,22 +54,17 @@ class Mod_Staged(TM_Module):
         __training_config_path (Optional[Namespace]): The path to the training configuration.
         __debug_mode (bool): Flag indicating whether debug mode is enabled.
         __config_lock (FileLock): The lock for the training configuration file.
-
         PARAM_CURR_STAGE (str): The parameter for the current stage index.
         PARAM_LAST_STAGE_REACHED (str): The parameter for the last stage reached flag.
         PARAM_GOAL_RADIUS (str): The parameter for the goal radius.
         PARAM_DEBUG_MODE (str): The parameter for the debug mode flag.
-
         PARAM_CURRICULUM (str): The parameter for the staged curriculum.
         PARAM_INDEX (str): The parameter for the staged index.
-
         TOPIC_PREVIOUS_STAGE (str): The topic for the previous stage.
         TOPIC_NEXT_STAGE (str): The topic for the next stage.
-
         CONFIG_PATH (Namespace): The path to the configuration files.
         CURRICULUM_PATH (Namespace): The path to the curriculum files.
     """
-
     __config: Config
     __target_stage: StageIndex
     __current_stage: StageIndex
@@ -150,23 +141,16 @@ class Mod_Staged(TM_Module):
 
         self.__current_stage = -1
 
-        self._dmre_client = dynamic_reconfigure.client.Client(
-            name=self.NODE_CONFIGURATION, config_callback=self.reconfigure
-        )
-
     def before_reset(self):
         """
         Method called before resetting the module.
-
         This method updates the current stage and performs necessary actions before resetting the module.
         """
-
         if self.__current_stage != self.__target_stage:
             self.__current_stage = self.__target_stage
             rospy.loginfo(
                 f"[{self._TASK.namespace}] Loading stage {self.__current_stage}"
             )
-
             # only update cpmfogiratopm with one task module instance
             if "sim_1" in rospy.get_name() or self.__debug_mode:
                 # publish goal radius
@@ -174,7 +158,6 @@ class Mod_Staged(TM_Module):
                 if goal_radius is None:
                     goal_radius = rosparam_get(float, self.PARAM_GOAL_RADIUS, 0.3)
                 rospy.set_param(self.PARAM_GOAL_RADIUS, goal_radius)
-
                 # set map generator params
                 if self.stage.dynamic_map.algorithm is not None:
                     rospy.set_param(
@@ -185,43 +168,22 @@ class Mod_Staged(TM_Module):
                         MAP_GENERATOR_NS("algorithm_config"),
                         self.stage.dynamic_map.algorithm_config,
                     )
-
                 # set obstacle configuration
                 obs_config = {}
                 for obs_type in ["static", "dynamic", "interactive"]:
-                    obs_config.update(
-                        {
-                            Mod_Staged.PARAM_CONFIGURATION_NAME(
-                                obs_type, param
-                            ): getattr(self.stage, obs_type)
-                            for param in ["min", "max"]
-                        }
-                    )
-
-                self._dmre_client.update_configuration(obs_config)
+                    for param in ["min", "max"]:
+                        param_name = Mod_Staged.PARAM_CONFIGURATION_NAME(obs_type, param)
+                        param_value = getattr(self.stage, obs_type)
+                        rospy.set_param(param_name, param_value)
 
             # The current stage is stored inside the config file for when the training is stopped and later continued, the correct stage can be restored.
             if self.__training_config_path is not None:
                 pass
-                # self.__config_lock.acquire()
-
-                # with open(self.__training_config_path, "r", encoding="utf-8") as target:
-                #     config = yaml.load(target, Loader=yaml.FullLoader)
-                #     config["callbacks"]["training_curriculum"][
-                #         "curr_stage"
-                #     ] = self.stage.serialize()
-
-                # with open(self.__training_config_path, "w", encoding="utf-8") as target:
-                #     yaml.dump(config, target, allow_unicode=True, indent=4)
-
-                # self.__config_lock.release()
 
     def reconfigure(self, config):
         """
         Method called when the configuration is updated.
-
         This method updates the configuration based on the new values.
-
         Args:
             config: The new configuration values.
         """
@@ -241,21 +203,11 @@ class Mod_Staged(TM_Module):
                     dynamic=stage.get("dynamic", 0),
                     goal_radius=stage.get("goal_radius", None),
                     dynamic_map=DynamicMapStage(
-                        algorithm=stage["map_generator"].get(
-                            "algorithm"
-                            # rosparam_get(str, MAP_GENERATOR_NS("algorithm")),
-                        ),
-                        algorithm_config=stage["map_generator"].get(
-                            "algorithm_config"
-                            # rosparam_get(dict, MAP_GENERATOR_NS("algorithm_config")),
-                        ),
-                        # map_properties=stage["map_generator"].get(
-                        #     "map_properties",
-                        #     rosparam_get(dict, MAP_GENERATOR_NS("map_properties")),
-                        # ),
+                        algorithm=stage["map_generator"].get("algorithm"),
+                        algorithm_config=stage["map_generator"].get("algorithm_config"),
                     ),
                 )
-                for i, stage in enumerate(yaml.load(f, Loader=yaml.FullLoader))
+                for i, stage in enumerate(yaml.safe_load(f))
             }
 
         try:
@@ -300,11 +252,9 @@ class Mod_Staged(TM_Module):
     def stage_index(self, val: StageIndex):
         """
         Setter for the stage index.
-
         Args:
             val (StageIndex): The new stage index.
         """
-
         val = val if val is not None else self.MIN_STAGE
 
         if val < self.MIN_STAGE or val > self.MAX_STAGE:
@@ -316,9 +266,7 @@ class Mod_Staged(TM_Module):
         self.__target_stage = val
 
         # publish stage state
-        if (
-            self.IS_EVAL_SIM and self.__current_stage != self.__target_stage
-        ):  # TODO reconsider if this check is needed
+        if self.IS_EVAL_SIM and self.__current_stage != self.__target_stage:
             rospy.set_param(self.PARAM_CURR_STAGE, self.__target_stage)
             rospy.set_param(
                 self.PARAM_LAST_STAGE_REACHED,

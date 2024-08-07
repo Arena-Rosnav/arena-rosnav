@@ -13,8 +13,12 @@ from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 from task_generator.tasks.task_factory import TaskFactory
 
-import dynamic_reconfigure.client
 import dataclasses
+
+# New imports for ROS 2
+import rclpy
+from rclpy.node import Node
+from rcl_interfaces.msg import SetParametersResult
 
 
 @dataclasses.dataclass
@@ -33,7 +37,7 @@ class _Config:
 
 
 @TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.RANDOM)
-class TM_Random(TM_Obstacles):
+class TM_Random(TM_Obstacles, Node):
     """
     Random task generator for obstacles.
 
@@ -57,32 +61,62 @@ class TM_Random(TM_Obstacles):
         return super().prefix("random", *args)
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        TM_Obstacles.__init__(self, **kwargs)
+        Node.__init__(self, 'tm_random_node')
 
-        dynamic_reconfigure.client.Client(
-            name=self.NODE_CONFIGURATION, config_callback=self.reconfigure
+        self.declare_parameters(
+            namespace='',
+            parameters=[
+                ('RANDOM_static_min', 0),
+                ('RANDOM_interactive_min', 0),
+                ('RANDOM_dynamic_min', 0),
+                ('RANDOM_static_max', 10),
+                ('RANDOM_interactive_max', 10),
+                ('RANDOM_dynamic_max', 10),
+                ('RANDOM_static_models', ''),
+                ('RANDOM_interactive_models', ''),
+                ('RANDOM_dynamic_models', ''),
+            ]
         )
 
-    def reconfigure(self, config):
+        self.add_on_set_parameters_callback(self.parameters_callback)
+        self.reconfigure(self.get_parameters([
+            'RANDOM_static_min', 'RANDOM_interactive_min', 'RANDOM_dynamic_min',
+            'RANDOM_static_max', 'RANDOM_interactive_max', 'RANDOM_dynamic_max',
+            'RANDOM_static_models', 'RANDOM_interactive_models', 'RANDOM_dynamic_models'
+        ]))
+
+    def parameters_callback(self, params):
+        for param in params:
+            if param.name in [
+                'RANDOM_static_min', 'RANDOM_interactive_min', 'RANDOM_dynamic_min',
+                'RANDOM_static_max', 'RANDOM_interactive_max', 'RANDOM_dynamic_max',
+                'RANDOM_static_models', 'RANDOM_interactive_models', 'RANDOM_dynamic_models'
+            ]:
+                self.reconfigure(params)
+        return SetParametersResult(successful=True)
+
+    def reconfigure(self, params):
         """
         Reconfigures the obstacle parameters based on the provided configuration.
 
         Args:
-            config: The configuration object containing the obstacle parameters.
+            params: The parameter list containing the obstacle parameters.
 
         Returns:
             None
         """
+        config = {param.name: param.value for param in params}
         self._config = _Config(
-            MIN_STATIC_OBSTACLES=config["RANDOM_static_min"],
-            MIN_INTERACTIVE_OBSTACLES=config["RANDOM_interactive_min"],
-            MIN_DYNAMIC_OBSTACLES=config["RANDOM_dynamic_min"],
-            MAX_STATIC_OBSTACLES=config["RANDOM_static_max"],
-            MAX_INTERACTIVE_OBSTACLES=config["RANDOM_interactive_max"],
-            MAX_DYNAMIC_OBSTACLES=config["RANDOM_dynamic_max"],
-            MODELS_STATIC_OBSTACLES=config["RANDOM_static_models"].split(";"),
-            MODELS_INTERACTIVE_OBSTACLES=config["RANDOM_interactive_models"].split(";"),
-            MODELS_DYNAMIC_OBSTACLES=config["RANDOM_dynamic_models"].split(";")
+            MIN_STATIC_OBSTACLES=config['RANDOM_static_min'],
+            MIN_INTERACTIVE_OBSTACLES=config['RANDOM_interactive_min'],
+            MIN_DYNAMIC_OBSTACLES=config['RANDOM_dynamic_min'],
+            MAX_STATIC_OBSTACLES=config['RANDOM_static_max'],
+            MAX_INTERACTIVE_OBSTACLES=config['RANDOM_interactive_max'],
+            MAX_DYNAMIC_OBSTACLES=config['RANDOM_dynamic_max'],
+            MODELS_STATIC_OBSTACLES=config['RANDOM_static_models'].split(";"),
+            MODELS_INTERACTIVE_OBSTACLES=config['RANDOM_interactive_models'].split(";"),
+            MODELS_DYNAMIC_OBSTACLES=config['RANDOM_dynamic_models'].split(";")
         )
 
     def reset(self, **kwargs) -> Obstacles:
