@@ -13,6 +13,7 @@
 #include <nav_msgs/Path.h>
 #include <nav_msgs/GetPlan.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <std_srvs/Empty.h>
 
 #include <boost/foreach.hpp>
 #define forEach BOOST_FOREACH
@@ -24,6 +25,7 @@
 #define PUB_TOPIC_SUBGOAL "subgoal"
 #define PUB_TOPIC_GLOBAL_PLAN "global_plan"
 #define SERVICE_GLOBAL_PLANNER "move_base_flex/NavfnROS/make_plan"
+#define SERVICE_STEP_WORLD "step_world"
 
 class SpacialHorizon
 {
@@ -48,7 +50,7 @@ private:
     ros::Publisher pub_subgoal, pub_global_plan;
 
     // service
-    ros::ServiceClient global_planner_srv;
+    ros::ServiceClient global_planner_srv, step_world_srv;
 
     // plan with global path from move base
     nav_msgs::GetPlan global_plan;
@@ -68,6 +70,7 @@ private:
 
     /* init methods */
     void initializeGlobalPlanningService();
+    void initializeStepWorldService();
     void initializeTimers();
 
     /* ros related callback*/

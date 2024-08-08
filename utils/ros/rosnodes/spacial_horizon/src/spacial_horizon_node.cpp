@@ -32,6 +32,11 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
         nh_.advertise<geometry_msgs::PoseStamped>(PUB_TOPIC_SUBGOAL, 10);
     pub_global_plan = nh_.advertise<nav_msgs::Path>(PUB_TOPIC_GLOBAL_PLAN, 10);
 
+    if (train_mode)
+    {
+        initializeStepWorldService();
+        return;
+    }
     initializeGlobalPlanningService();
     initializeTimers();
 }
@@ -47,6 +52,22 @@ void SpacialHorizon::initializeGlobalPlanningService()
                 service_name.c_str());
     }
     global_planner_srv = nh_.serviceClient<nav_msgs::GetPlan>(service_name, true);
+}
+
+void SpacialHorizon::initializeStepWorldService()
+{
+    ROS_INFO_STREAM("[Spacial Horizon - INIT] Initializing StepWorld service client");
+
+    std::string ns = ros::this_node::getNamespace(); 
+    ns = ns.substr(0, ns.find_last_of("/"));
+    std::string service_name = ns + "/" + SERVICE_STEP_WORLD;
+
+    while (!ros::service::waitForService(service_name, ros::Duration(3.0)))
+    {
+        ROS_INFO("[SpacialHorizon - INIT] Waiting for service %s to become available",
+                service_name.c_str());
+    }
+    step_world_srv = nh_.serviceClient<std_srvs::Empty>(service_name, true);
 }
 
 void SpacialHorizon::initializeTimers()
@@ -105,6 +126,11 @@ void SpacialHorizon::tryUpdateGlobalplanAndSubgoal(int try_count)
     if (!subgoal_success)
     {
         ROS_WARN_STREAM("[Spacial Horizon] Probably got no new goal. No subgoal found!");
+        if (train_mode)
+        {
+            std_srvs::Empty srv;
+            step_world_srv.call(srv);
+        }
         tryUpdateGlobalplanAndSubgoal(try_count + 1);
     }
     else
@@ -228,6 +254,11 @@ void SpacialHorizon::updateSubgoalCallback(const ros::TimerEvent &e)
         if (!subgoal_success)
         {
             ROS_WARN_STREAM("[Spacial Horizon] No subgoal found. No global plan received or goal reached!");
+            if (train_mode)
+            {
+                std_srvs::Empty srv;
+                step_world_srv.call(srv);
+            }
             return;
         }
 
