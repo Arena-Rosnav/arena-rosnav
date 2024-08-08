@@ -11,10 +11,8 @@ from task_generator.shared import ModelType, Namespace
 from task_generator.utils import rosparam_get
 
 from task_generator.constants import Constants, Config
-from task_generator.simulators.base_simulator import BaseSimulator
-from task_generator.simulators.simulator_factory import SimulatorFactory
+from task_generator.simulators import BaseSimulator
 
-@SimulatorFactory.register(Constants.Simulator.FLATLAND)
 class FlatlandSimulator(BaseSimulator):
     """
     This is the flatland encoder for connecting

@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Optional
+import typing
 
 import numpy as np
 import os
@@ -11,7 +11,26 @@ from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
 from task_generator.utils import Utils, rosparam_get
 
-from tf_transformations import quaternion_from_euler
+def quaternion_from_euler(roll: float, pitch: float, yaw: float, **kwargs) -> typing.Tuple[float, float, float, float]:
+    cr = np.cos(roll * 0.5);
+    sr = np.sin(roll * 0.5);
+    cp = np.cos(pitch * 0.5);
+    sp = np.sin(pitch * 0.5);
+    cy = np.cos(yaw * 0.5);
+    sy = np.sin(yaw * 0.5);
+
+    axes: str = str(kwargs.get('axes', 'sxyz'))
+    assert len(set(axes)) == len(axes), 'axes contains duplicate entries'
+    assert len(set(axes).difference(set('sxyz'))) == 0, 'axes contains invalid entries. allowed: s,x,y,z'
+
+    quat = dict(
+        s = cr * cp * cy + sr * sp * sy,
+        x = sr * cp * cy - cr * sp * sy,
+        y = cr * sp * cy + sr * cp * sy,
+        z = cr * cp * sy - sr * sp * cy
+    )
+
+    return tuple(quat[axis] for axis in axes)
 
 import nav_msgs.msg as nav_msgs
 import geometry_msgs.msg as geometry_msgs
@@ -144,8 +163,8 @@ class RobotManager:
 
     def reset(
         self,
-        start_pos: Optional[PositionOrientation],
-        goal_pos: Optional[PositionOrientation],
+        start_pos: typing.Optional[PositionOrientation],
+        goal_pos: typing.Optional[PositionOrientation],
     ):
         if start_pos is not None:
             self._start_pos = start_pos

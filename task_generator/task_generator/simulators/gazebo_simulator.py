@@ -12,12 +12,10 @@ from task_generator.simulators.simulator_factory import SimulatorFactory
 from task_generator.utils import rosparam_get
 from tf_transformations import quaternion_from_euler
 from task_generator.constants import Config, Constants
-from task_generator.simulators.base_simulator import BaseSimulator
-from task_generator.simulators.simulator_factory import SimulatorFactory
+from task_generator.simulators import BaseSimulator
 
 from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
 
-@SimulatorFactory.register(Constants.Simulator.GAZEBO)
 class GazeboSimulator(BaseSimulator):
 
     _goal_pub: rospy.Publisher

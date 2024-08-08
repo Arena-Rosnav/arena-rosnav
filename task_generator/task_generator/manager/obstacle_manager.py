@@ -8,7 +8,7 @@ from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import World
 from task_generator.manager.world_manager import WorldManager
 from task_generator.shared import DynamicObstacle, Obstacle
-from task_generator.simulators.base_simulator import BaseSimulator
+from task_generator.simulators import BaseSimulator
 
 
 class ObstacleManager:

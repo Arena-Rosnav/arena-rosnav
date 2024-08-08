@@ -26,10 +26,10 @@ from task_generator.shared import (
     gen_init_pos,
     rosparam_get
 )
-from task_generator.simulators.base_simulator import BaseSimulator
+
 #from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
 from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
-from task_generator.simulators.simulator_factory import SimulatorFactory
+from task_generator.simulators import BaseSimulator, SimulatorFactory
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils import ModelLoader, Utils
