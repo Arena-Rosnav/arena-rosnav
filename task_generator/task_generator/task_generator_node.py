@@ -39,7 +39,7 @@ from task_generator.manager.obstacle_manager import ObstacleManager
 
 import map_distance_server.srv as map_distance_server_srvs
 import std_msgs.msg as std_msgs
-import std_srvs.srv as std_srvs
+from std_srvs.srv import Empty
 
 
 def create_default_robot_list(
@@ -123,8 +123,7 @@ class TaskGenerator:
             )
 
             # Services
-            rospy.Service("reset_task", std_srvs.Empty, self._reset_task_srv_callback)
-
+            self.create_service(Empty, "reset_task", self._reset_task_srv_callback)
         # Vars
         self._env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())(
             namespace=self._namespace
@@ -334,12 +333,12 @@ class TaskGenerator:
         if self._task.is_done:
             self.reset_task()
 
-    def _reset_task_srv_callback(self, req: std_srvs.EmptyRequest):
+    def _reset_task_srv_callback(self, request: Empty.Request, response: Empty.Response):
         rospy.logdebug("Task Generator received task-reset request!")
-
+        
         self.reset_task()
-
-        return std_srvs.EmptyResponse()
+        
+        return response
 
     def _send_end_message_on_end(self):
         if self._number_of_resets < Config.General.DESIRED_EPISODES:

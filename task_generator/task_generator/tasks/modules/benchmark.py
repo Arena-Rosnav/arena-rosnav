@@ -12,7 +12,7 @@ import os
 import yaml
 import subprocess
 
-import rospkg
+import ament_index_python
 from rosros import rospify as rospy
 import arena_evaluation_msgs.srv as arena_evaluation_srvs
 
@@ -151,7 +151,7 @@ class Mod_Benchmark(TM_Module):
 
     DIR: Namespace = Namespace(
         os.path.join(
-                rospkg.RosPack().get_path("arena_bringup"),
+                ament_index_python.get_package_share_directory("arena_bringup"),
                 "configs",
                 "benchmark"
             )
@@ -159,7 +159,7 @@ class Mod_Benchmark(TM_Module):
     LOCK_FILE = "resume.lock"
     LOG_DIR = DIR("logs")
     TASK_GENERATOR_CONFIG = os.path.join(
-        rospkg.RosPack().get_path("arena_bringup"),
+        ament_index_python.get_package_share_directory("arena_bringup"),
         "configs",
         "task_generator.yaml"
     )
@@ -407,7 +407,7 @@ class Mod_Benchmark(TM_Module):
             subprocess.Popen(
                 [
                     os.path.join(
-                        rospkg.RosPack().get_path("task_generator"),
+                        ament_index_python.get_package_share_directory("task_generator"),
                         "scripts",
                         "delay_restart.py"
                     ),
