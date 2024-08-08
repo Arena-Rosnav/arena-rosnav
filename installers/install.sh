@@ -8,7 +8,7 @@ export ARENA_BRANCH='jazzy'
 # == read inputs ==
 echo 'Configuring arena-rosnav...'
 
-ARENA_WS_DIR=${ARENA_WS_DIR:-"arena4_ws"}
+ARENA_WS_DIR=${ARENA_WS_DIR:-"~/arena4_ws"}
 read -p "arena-rosnav workspace directory [${ARENA_WS_DIR}] " INPUT
 export ARENA_WS_DIR=$(realpath "$(eval echo ${INPUT:-${ARENA_WS_DIR}})")
 
