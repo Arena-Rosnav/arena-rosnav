@@ -5,9 +5,7 @@ from builtin_interfaces.msg import Time
 from task_generator.constants import Config, Constants
 from task_generator.shared import PositionOrientation
 from task_generator.tasks.robots.random import TM_Random
-from task_generator.tasks.task_factory import TaskFactory
 
-@TaskFactory.register_robots(Constants.TaskMode.TM_Robots.EXPLORE)
 class TM_Explore(TM_Random):
     """
     This class represents a task manager for exploring robots.

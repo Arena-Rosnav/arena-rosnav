@@ -22,8 +22,7 @@ from task_generator.shared import (
     ObstacleProps,
     PositionOrientation,
 )
-from task_generator.utils import Utils
-
+import task_generator.utils.arena as Utils
 
 class SDFUtil:
     @staticmethod

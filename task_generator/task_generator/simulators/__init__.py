@@ -92,3 +92,8 @@ def lazy_flatland():
 def lazy_gazebo():
     from .gazebo_simulator import GazeboSimulator
     return GazeboSimulator
+
+@SimulatorFactory.register(Constants.Simulator.UNITY)
+def lazy_unity():
+    from .unity_simulator import UnitySimulator
+    return UnitySimulator

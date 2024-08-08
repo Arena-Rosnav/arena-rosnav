@@ -15,7 +15,6 @@ from task_generator.constants import Constants
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import WorldMap
 from task_generator.tasks.modules import TM_Module
-from task_generator.tasks.task_factory import TaskFactory
 
 # Assuming map_distance_server messages are available in ROS 2
 from map_distance_server.srv import GetDistanceMap
@@ -28,7 +27,6 @@ DynamicMapConfiguration = Dict[str, Dict]
 def MAP_GENERATOR_NS(param_name: str) -> str:
     return f"/map_generator/{param_name}"
 
-@TaskFactory.register_module(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
 class Mod_DynamicMap(TM_Module, Node):
     def __init__(self, **kwargs):
         TM_Module.__init__(self, **kwargs)

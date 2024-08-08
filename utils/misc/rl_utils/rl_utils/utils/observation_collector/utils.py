@@ -3,7 +3,7 @@ from typing import Tuple
 
 import numpy as np
 from geometry_msgs.msg import Pose2D
-from tf.transformations import euler_from_quaternion
+from task_generator.utils.geometry import euler_from_quaternion
 
 DistanceToGoal = float
 AngleToGoal = float

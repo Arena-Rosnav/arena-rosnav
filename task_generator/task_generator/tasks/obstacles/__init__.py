@@ -1,7 +1,6 @@
-from typing import List, NamedTuple, Tuple
-from task_generator.constants import Constants, TaskConfig
+from typing import List, Tuple
 from task_generator.shared import DynamicObstacle, Obstacle
-from task_generator.tasks import Props_, TaskMode
+from task_generator.tasks import TaskMode
 
 Obstacles = Tuple[List[Obstacle], List[DynamicObstacle]]
 

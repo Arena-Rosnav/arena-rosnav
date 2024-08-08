@@ -27,12 +27,11 @@ from task_generator.shared import (
     rosparam_get
 )
 
-#from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
-from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
 from task_generator.simulators import BaseSimulator, SimulatorFactory
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory
-from task_generator.utils import ModelLoader, Utils
+from task_generator.utils import ModelLoader
+import task_generator.utils.arena as Utils
 
 from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
@@ -145,7 +144,7 @@ class TaskGenerator:
             self.srv_start_model_visualization = rospy.ServiceProxy(
                 "start_model_visualization", std_srvs.Empty
             )
-            self.srv_start_model_visualization(std_srvs.EmptyRequest())
+            self.srv_start_model_visualization(std_srvs.Empty_Request())
 
             rospy.sleep(1)
 
@@ -158,7 +157,7 @@ class TaskGenerator:
                 self.srv_setup_finished = rospy.ServiceProxy(
                     "task_generator_setup_finished", std_srvs.Empty
                 )
-                self.srv_setup_finished(std_srvs.EmptyRequest())
+                self.srv_setup_finished(std_srvs.Empty_Request())
             except:
                 pass
 
@@ -334,7 +333,7 @@ class TaskGenerator:
         if self._task.is_done:
             self.reset_task()
 
-    def _reset_task_srv_callback(self, req: std_srvs.EmptyRequest):
+    def _reset_task_srv_callback(self, req: std_srvs.Empty_Request):
         rospy.logdebug("Task Generator received task-reset request!")
 
         self.reset_task()
@@ -350,9 +349,10 @@ class TaskGenerator:
         rospy.signal_shutdown("Finished all episodes of the current scenario")
 
 
-if __name__ == "__main__":
+def main():
     rospy.init_node("task_generator")
-
     task_generator = TaskGenerator()
-
     rospy.spin()
+
+if __name__ == "__main__":
+    main()

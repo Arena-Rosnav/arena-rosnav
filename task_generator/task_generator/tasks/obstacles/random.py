@@ -11,7 +11,6 @@ from task_generator.shared import (
 )
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
-from task_generator.tasks.task_factory import TaskFactory
 
 import dataclasses
 
@@ -36,7 +35,6 @@ class _Config:
     MODELS_DYNAMIC_OBSTACLES: List[str]
 
 
-@TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.RANDOM)
 class TM_Random(TM_Obstacles, Node):
     """
     Random task generator for obstacles.

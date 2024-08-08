@@ -11,8 +11,6 @@ from map_generator.constants import MAP_GENERATOR_NS
 from task_generator.constants import Constants
 from task_generator.shared import Namespace, rosparam_get
 from task_generator.tasks.modules import TM_Module
-from task_generator.tasks.task_factory import TaskFactory
-
 
 class Stage(NamedTuple):
     static: int
@@ -43,7 +41,6 @@ class Config:
     starting_index: StageIndex
 
 
-@TaskFactory.register_module(Constants.TaskMode.TM_Module.STAGED)
 class Mod_Staged(TM_Module):
     """
     A module for managing staged tasks in a task generator.

@@ -6,7 +6,6 @@ from task_generator.constants import Config, Constants
 from task_generator.shared import DynamicObstacle, ModelWrapper, Namespace, Obstacle
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
-from task_generator.tasks.task_factory import TaskFactory
 
 import rclpy
 from rclpy.node import Node
@@ -42,8 +41,6 @@ def _get_attrib(element: ET.Element, attribute: str, default: Optional[str] = No
 
     raise ValueError(f"attribute {attribute} not found in {element}")
 
-
-@TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.PARAMETRIZED)
 class TM_Parametrized(TM_Obstacles, Node):
 
     _config: _Config

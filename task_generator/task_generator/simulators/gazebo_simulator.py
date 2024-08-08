@@ -9,7 +9,7 @@ import std_srvs.srv as std_srvs
 
 
 from task_generator.simulators.simulator_factory import SimulatorFactory
-from task_generator.utils import rosparam_get
+from task_generator.shared import rosparam_get
 from tf_transformations import quaternion_from_euler
 from task_generator.constants import Config, Constants
 from task_generator.simulators import BaseSimulator

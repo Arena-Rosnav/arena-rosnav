@@ -164,6 +164,71 @@ class Task(Props_):
         ...
 
 
-import task_generator.tasks.modules  # noqa
-import task_generator.tasks.robots  # noqa
-import task_generator.tasks.obstacles  # noqa
+from .task_factory import TaskFactory
+
+def declare_modules():
+    @TaskFactory.register_module(Constants.TaskMode.TM_Module.BENCHMARK)
+    def _benchmark():
+        from .modules.benchmark import Mod_Benchmark
+        return Mod_Benchmark
+
+    @TaskFactory.register_module(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
+    def _clear_forbidden_zones():
+        from .modules.clear_forbidden_zones import Mod_ClearForbiddenZones
+        return Mod_ClearForbiddenZones
+
+    @TaskFactory.register_module(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
+    def _dynamic_map():
+        from .modules.dynamic_map import Mod_DynamicMap
+        return Mod_DynamicMap
+
+    @TaskFactory.register_module(Constants.TaskMode.TM_Module.RVIZ_UI)
+    def _rviz_ui():
+        from .modules.rviz_ui import Mod_OverrideRobot
+        return Mod_OverrideRobot
+
+    @TaskFactory.register_module(Constants.TaskMode.TM_Module.STAGED)
+    def _staged():
+        from .modules.staged import Mod_Staged
+        return Mod_Staged
+
+def declare_obstacles():
+    @TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.PARAMETRIZED)
+    def _parametrized():
+        from .obstacles.parametrized import TM_Parametrized
+        return TM_Parametrized
+
+    @TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.RANDOM)
+    def _random():
+        from .obstacles.random import TM_Random
+        return TM_Random
+
+    @TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.SCENARIO)
+    def _scenario():
+        from .obstacles.scenario import TM_Scenario
+        return TM_Scenario
+    
+def declare_robots():
+    @TaskFactory.register_robots(Constants.TaskMode.TM_Robots.EXPLORE)
+    def _explore():
+        from .robots.explore import TM_Explore
+        return TM_Explore
+
+    @TaskFactory.register_robots(Constants.TaskMode.TM_Robots.GUIDED)
+    def _guided():
+        from .robots.guided import TM_Guided
+        return TM_Guided
+
+    @TaskFactory.register_robots(Constants.TaskMode.TM_Robots.RANDOM)
+    def _random():
+        from .robots.random import TM_Random
+        return TM_Random
+
+    @TaskFactory.register_robots(Constants.TaskMode.TM_Robots.SCENARIO)
+    def _scenario():
+        from .robots.scenario import TM_Scenario
+        return TM_Scenario
+    
+declare_modules()
+declare_obstacles()
+declare_robots()

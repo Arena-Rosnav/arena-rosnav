@@ -12,7 +12,7 @@ from nav_msgs.msg import Odometry
 from gazebo_msgs.srv import GetModelState
 from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance, TransformStamped
 import tf2_ros
-import tf.transformations
+from task_generator.utils.geometry import euler_from_quaternion
 import numpy as np
 import argparse
 import os
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         msg.child_frame_id = base_frame
         msg.pose.pose = resp.pose
 
-        angles = tf.transformations.euler_from_quaternion(
+        angles = euler_from_quaternion(
             [
                 resp.pose.orientation.x,
                 resp.pose.orientation.y,

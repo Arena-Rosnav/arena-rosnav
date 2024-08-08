@@ -5,13 +5,11 @@ from task_generator.constants import Constants
 from task_generator.shared import PositionOrientation
 from task_generator.tasks import Task
 from task_generator.tasks.modules import TM_Module
-from task_generator.tasks.task_factory import TaskFactory
 
 import geometry_msgs.msg as geometry_msgs
 
-from tf_transformations import euler_from_quaternion  # Changed import
+from task_generator.utils.geometry import euler_from_quaternion  # Changed import
 
-@TaskFactory.register_module(Constants.TaskMode.TM_Module.RVIZ_UI)
 class Mod_OverrideRobot(TM_Module):
     TOPIC_SET_POSITION = "/initialpose"
     TOPIC_SET_GOAL = "/goalpose"

@@ -1,4 +1,3 @@
-from task_generator.constants import Constants
 from task_generator.tasks import Reconfigurable, Task
 
 class TM_Module(Reconfigurable):
@@ -14,3 +13,4 @@ class TM_Module(Reconfigurable):
 
     def after_reset(self):
         ...
+

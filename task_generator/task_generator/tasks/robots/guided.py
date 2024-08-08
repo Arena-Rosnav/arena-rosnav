@@ -3,10 +3,7 @@ from rosros import rospify as rospy
 from task_generator.constants import Constants
 from task_generator.shared import PositionOrientation
 from task_generator.tasks.robots.random import TM_Random
-from task_generator.tasks.task_factory import TaskFactory
 
-
-@TaskFactory.register_robots(Constants.TaskMode.TM_Robots.GUIDED)
 class TM_Guided(TM_Random):
     """
     A class representing a guided task manager for robots.

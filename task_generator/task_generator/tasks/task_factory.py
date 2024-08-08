@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Type
+import typing
 
 from rosros import rospify as rospy
 from rospkg import RosPack
@@ -22,51 +22,48 @@ from task_generator.utils import ModelLoader
 
 
 class TaskFactory:
-    registry_obstacles: Dict[Constants.TaskMode.TM_Obstacles, Type[TM_Obstacles]] = {}
-    registry_robots: Dict[Constants.TaskMode.TM_Robots, Type[TM_Robots]] = {}
-    registry_module: Dict[Constants.TaskMode.TM_Module, Type[TM_Module]] = {}
+    registry_obstacles: typing.Dict[Constants.TaskMode.TM_Obstacles, typing.Callable[[], typing.Type[TM_Obstacles]]] = {}
+    registry_robots: typing.Dict[Constants.TaskMode.TM_Robots, typing.Callable[[], typing.Type[TM_Robots]]] = {}
+    registry_module: typing.Dict[Constants.TaskMode.TM_Module, typing.Callable[[], typing.Type[TM_Module]]] = {}
 
     @classmethod
     def register_obstacles(cls, name: Constants.TaskMode.TM_Obstacles):
-        def inner_wrapper(wrapped_class: Type[TM_Obstacles]):
+        def inner_wrapper(loader: typing.Callable[[], typing.Type[TM_Obstacles]]):
             assert (
                 name not in cls.registry_obstacles
             ), f"TaskMode '{name}' for obstacles already exists!"
-            assert issubclass(wrapped_class, TM_Obstacles)
 
-            cls.registry_obstacles[name] = wrapped_class
-            return wrapped_class
+            cls.registry_obstacles[name] = loader
+            return loader
 
         return inner_wrapper
 
     @classmethod
     def register_robots(cls, name: Constants.TaskMode.TM_Robots):
-        def inner_wrapper(wrapped_class: Type[TM_Robots]):
+        def inner_wrapper(loader: typing.Callable[[], typing.Type[TM_Robots]]):
             assert (
                 name not in cls.registry_obstacles
             ), f"TaskMode '{name}' for robots already exists!"
-            assert issubclass(wrapped_class, TM_Robots)
 
-            cls.registry_robots[name] = wrapped_class
-            return wrapped_class
+            cls.registry_robots[name] = loader
+            return loader
 
         return inner_wrapper
 
     @classmethod
     def register_module(cls, name: Constants.TaskMode.TM_Module):
-        def inner_wrapper(wrapped_class: Type[TM_Module]):
+        def inner_wrapper(loader: typing.Callable[[], typing.Type[TM_Module]]):
             assert (
                 name not in cls.registry_obstacles
             ), f"TaskMode '{name}' for module already exists!"
-            assert issubclass(wrapped_class, TM_Module)
 
-            cls.registry_module[name] = wrapped_class
-            return wrapped_class
+            cls.registry_module[name] = loader
+            return loader
 
         return inner_wrapper
 
     @classmethod
-    def combine(cls, modules: List[Constants.TaskMode.TM_Module] = []) -> Type[Task]:
+    def combine(cls, modules: typing.List[Constants.TaskMode.TM_Module] = []) -> typing.Type[Task]:
         for module in modules:
             assert (
                 module in cls.registry_module
@@ -91,7 +88,7 @@ class TaskFactory:
             def __init__(
                 self,
                 obstacle_manager: ObstacleManager,
-                robot_managers: List[RobotManager],
+                robot_managers: typing.List[RobotManager],
                 world_manager: WorldManager,
                 namespace: str = "",
                 *args,
@@ -102,10 +99,10 @@ class TaskFactory:
 
                 Args:
                     obstacle_manager (ObstacleManager): The obstacle manager for the task.
-                    robot_managers (List[RobotManager]): The list of robot managers for the task.
+                    robot_managers (typing.List[RobotManager]): The typing.List of robot managers for the task.
                     world_manager (WorldManager): The world manager for the task.
                     namespace (str, optional): The namespace for the task. Defaults to "".
-                    *args: Variable length argument list.
+                    *args: Variable length argument typing.List.
                     **kwargs: Arbitrary keyword arguments.
                 """
                 self._force_reset = False
@@ -151,7 +148,7 @@ class TaskFactory:
                 self.__param_tm_obstacles = None
                 self.__param_tm_robots = None
                 self.__modules = [
-                    cls.registry_module[module](task=self) for module in modules
+                    cls.registry_module[module]()(task=self) for module in modules
                 ]
 
                 if self._train_mode:
@@ -168,7 +165,7 @@ class TaskFactory:
                 assert (
                     tm_robots in cls.registry_robots
                 ), f"TaskMode '{tm_robots}' for robots is not registered!"
-                self.__tm_robots = cls.registry_robots[tm_robots](props=self)
+                self.__tm_robots = cls.registry_robots[tm_robots]()(props=self)
                 self.__param_tm_robots = tm_robots
 
             def set_tm_obstacles(self, tm_obstacles: Constants.TaskMode.TM_Obstacles):
@@ -181,7 +178,7 @@ class TaskFactory:
                 assert (
                     tm_obstacles in cls.registry_obstacles
                 ), f"TaskMode '{tm_obstacles}' for obstacles is not registered!"
-                self.__tm_obstacles = cls.registry_obstacles[tm_obstacles](props=self)
+                self.__tm_obstacles = cls.registry_obstacles[tm_obstacles]()(props=self)
                 self.__param_tm_obstacles = tm_obstacles
 
             def _reset_task(self, **kwargs):
@@ -313,19 +310,3 @@ class TaskFactory:
                 self._force_reset = True
 
         return CombinedTask
-
-
-from .obstacles.random import TM_Random
-from .obstacles.scenario import TM_Scenario
-from .obstacles.parametrized import TM_Parametrized
-
-from .robots.random import TM_Random
-from .robots.guided import TM_Guided
-from .robots.explore import TM_Explore
-from .robots.scenario import TM_Scenario
-
-from .modules.clear_forbidden_zones import Mod_ClearForbiddenZones
-from .modules.dynamic_map import Mod_DynamicMap
-from .modules.rviz_ui import Mod_OverrideRobot
-from .modules.staged import Mod_Staged
-from .modules.benchmark import Mod_Benchmark

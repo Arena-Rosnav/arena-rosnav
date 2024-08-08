@@ -37,9 +37,10 @@ from task_generator.simulators.flatland_simulator import FlatlandSimulator
 from typing import Callable, List
 
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
-from task_generator.utils import Utils, rosparam_get
+from task_generator.shared import rosparam_get
+import task_generator.utils.arena as Utils
 
-from tf.transformations import quaternion_from_euler, euler_from_quaternion
+from task_generator.utils.geometry import quaternion_from_euler, euler_from_quaternion
 
 # TODO retrieve this from pedsim registry
 def _get_ped_type() -> str:
@@ -143,12 +144,10 @@ class CrowdsimManager(EntityManager):
             pose.position.y,
             -math.pi / 2
             + euler_from_quaternion(
-                [
-                    pose.orientation.x,
-                    pose.orientation.y,
-                    pose.orientation.z,
-                    pose.orientation.w,
-                ]
+                x = pose.orientation.x,
+                y = pose.orientation.y,
+                z = pose.orientation.z,
+                w = pose.orientation.w,
             )[2],
         )
 

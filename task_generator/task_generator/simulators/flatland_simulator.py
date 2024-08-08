@@ -8,7 +8,7 @@ import geometry_msgs.msg as geometry_msgs
 
 from task_generator.shared import ModelType, Namespace
 
-from task_generator.utils import rosparam_get
+from task_generator.shared import rosparam_get
 
 from task_generator.constants import Constants, Config
 from task_generator.simulators import BaseSimulator

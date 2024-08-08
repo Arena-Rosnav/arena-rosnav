@@ -60,3 +60,5 @@ class TM_Robots(TaskMode):
             return True
         
         return all(robot.is_done for robot in self._PROPS.robot_managers)
+
+

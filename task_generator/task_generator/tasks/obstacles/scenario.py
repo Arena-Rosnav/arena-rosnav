@@ -7,7 +7,6 @@ from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Constants
 from task_generator.shared import DynamicObstacle, Obstacle, rosparam_get
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
-from task_generator.tasks.task_factory import TaskFactory
 
 import rclpy
 from rclpy.node import Node
@@ -20,7 +19,6 @@ class _Config:
     dynamic: List[DynamicObstacle]
 
 
-@TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.SCENARIO)
 class TM_Scenario(TM_Obstacles, Node):
 
     _config: _Config

@@ -4,10 +4,7 @@ from typing import List, Tuple
 from task_generator.constants import Config, Constants
 from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
-from task_generator.tasks.task_factory import TaskFactory
 
-
-@TaskFactory.register_robots(Constants.TaskMode.TM_Robots.RANDOM)
 class TM_Random(TM_Robots):
     """
     A class representing a task generator for random robot positions.

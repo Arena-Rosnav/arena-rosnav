@@ -20,6 +20,7 @@ class Constants:
     class Simulator(Enum):
         FLATLAND = "flatland"
         GAZEBO = "gazebo"
+        UNITY = "unity"
 
     class ArenaType(Enum):
         TRAINING = "training"
@@ -209,6 +210,10 @@ class Pedsim:
     FORCE_FACTOR_SOCIAL = lp("FORCE_FACTOR_SOCIAL", 5.0)
     FORCE_FACTOR_ROBOT = lp("FORCE_FACTOR_ROBOT", 0.0)
     WAYPOINT_MODE = lp("WAYPOINT_MODE", 0)
+
+class UnityConstants:
+    WALL_HEIGHT = 4.0
+    ATTACH_SAFE_DIST_SENSOR_TOPIC = "attach_safe_dist_sensor"
 
 # Entfernen der dynamic_reconfigure.client.Client-Instanzierung
 

@@ -37,9 +37,10 @@ from task_generator.simulators.flatland_simulator import FlatlandSimulator
 from typing import Callable, List
 
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
-from task_generator.utils import Utils, rosparam_get
+from task_generator.shared import rosparam_get
+import task_generator.utils.arena as Utils
 
-from tf.transformations import quaternion_from_euler, euler_from_quaternion
+from task_generator.utils.geometry import quaternion_from_euler, euler_from_quaternion
 
 # TODO structure these together
 def process_SDF(name: str, base_model: Model) -> Model:

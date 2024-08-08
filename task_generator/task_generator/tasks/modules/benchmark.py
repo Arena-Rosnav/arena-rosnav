@@ -145,8 +145,7 @@ class Contest(typing.NamedTuple):
     
     def config(self, index: Index) -> Contestant:
         return self.contestants[index]
-
-@TaskFactory.register_module(Constants.TaskMode.TM_Module.BENCHMARK)
+    
 class Mod_Benchmark(TM_Module):
 
     DIR: Namespace = Namespace(

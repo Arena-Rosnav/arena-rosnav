@@ -24,10 +24,8 @@ from rl_utils.utils.rewards.reward_function import RewardFunction
 from rosnav.model.base_agent import BaseAgent
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
 from std_srvs.srv import Empty
-from task_generator.shared import Namespace
+from task_generator.shared import Namespace, rosparam_get
 from task_generator.task_generator_node import TaskGenerator
-from task_generator.utils import rosparam_get
-
 
 def get_ns_idx(ns: str):
     try:

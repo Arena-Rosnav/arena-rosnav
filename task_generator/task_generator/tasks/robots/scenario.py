@@ -10,7 +10,6 @@ from rcl_interfaces.msg import SetParametersResult
 from task_generator.constants import Constants
 from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
-from task_generator.tasks.task_factory import TaskFactory
 
 
 class _RobotGoal(NamedTuple):
@@ -42,8 +41,6 @@ class _RobotGoal(NamedTuple):
 class _Config:
     robots: List[_RobotGoal]
 
-
-@TaskFactory.register_robots(Constants.TaskMode.TM_Robots.SCENARIO)
 class TM_Scenario(TM_Robots, Node):
     """
     This class represents a scenario for robots in the task generator.

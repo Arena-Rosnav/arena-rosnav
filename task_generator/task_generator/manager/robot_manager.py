@@ -8,29 +8,10 @@ from rosros import rospify as rospy
 from task_generator.constants import Constants, Config
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
-from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
-from task_generator.utils import Utils, rosparam_get
+from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot, rosparam_get
 
-def quaternion_from_euler(roll: float, pitch: float, yaw: float, **kwargs) -> typing.Tuple[float, float, float, float]:
-    cr = np.cos(roll * 0.5);
-    sr = np.sin(roll * 0.5);
-    cp = np.cos(pitch * 0.5);
-    sp = np.sin(pitch * 0.5);
-    cy = np.cos(yaw * 0.5);
-    sy = np.sin(yaw * 0.5);
-
-    axes: str = str(kwargs.get('axes', 'sxyz'))
-    assert len(set(axes)) == len(axes), 'axes contains duplicate entries'
-    assert len(set(axes).difference(set('sxyz'))) == 0, 'axes contains invalid entries. allowed: s,x,y,z'
-
-    quat = dict(
-        s = cr * cp * cy + sr * sp * sy,
-        x = sr * cp * cy - cr * sp * sy,
-        y = cr * sp * cy + sr * cp * sy,
-        z = cr * cp * sy - sr * sp * cy
-    )
-
-    return tuple(quat[axis] for axis in axes)
+import task_generator.utils.arena as Utils
+from task_generator.utils.geometry import quaternion_from_euler
 
 import nav_msgs.msg as nav_msgs
 import geometry_msgs.msg as geometry_msgs

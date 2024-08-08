@@ -1,10 +1,9 @@
 from rosros import rospify as rospy
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import WorldMap, WorldWalls
-from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot
+from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot, rosparam_get
 from task_generator.simulators import BaseSimulator
 from typing import Collection
-from task_generator.utils import rosparam_get
 
 import geometry_msgs.msg as geometry_msgs
 
