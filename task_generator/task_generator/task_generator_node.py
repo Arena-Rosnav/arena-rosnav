@@ -40,6 +40,9 @@ import map_distance_server.srv as map_distance_server_srvs
 import std_msgs.msg as std_msgs
 import std_srvs.srv as std_srvs
 
+import rclpy.node
+import ament_index_python
+
 
 def create_default_robot_list(
     robot_model: ModelWrapper,
@@ -83,7 +86,7 @@ def read_robot_setup_file(setup_file: str) -> List[Dict]:
         raise Exception()
 
 
-class TaskGenerator:
+class TaskGenerator(rclpy.node.Node):
     """
     Task Generator Node
     Will initialize and reset all tasks. The task to use is read from the `/task_mode` param.
@@ -122,8 +125,7 @@ class TaskGenerator:
             )
 
             # Services
-            rospy.Service("reset_task", std_srvs.Empty, self._reset_task_srv_callback)
-
+            self.create_service(std_srvs.Empty, "reset_task", self._reset_task_srv_callback)
         # Vars
         self._env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())(
             namespace=self._namespace
@@ -131,7 +133,7 @@ class TaskGenerator:
 
         # Loaders
         self._robot_loader = ModelLoader(
-            os.path.join(RosPack().get_path("arena_simulation_setup"), "entities", "robots")
+            os.path.join(ament_index_python.get_package_share_directory("arena_simulation_setup"), "entities", "robots")
         )
 
         if not self._train_mode:
@@ -333,12 +335,12 @@ class TaskGenerator:
         if self._task.is_done:
             self.reset_task()
 
-    def _reset_task_srv_callback(self, req: std_srvs.Empty_Request):
+    def _reset_task_srv_callback(self, request: std_srvs.Empty.Request, response: std_srvs.Empty.Response):
         rospy.logdebug("Task Generator received task-reset request!")
-
+        
         self.reset_task()
-
-        return std_srvs.EmptyResponse()
+        
+        return response
 
     def _send_end_message_on_end(self):
         if self._number_of_resets < Config.General.DESIRED_EPISODES:
