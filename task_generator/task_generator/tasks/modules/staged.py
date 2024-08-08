@@ -7,7 +7,6 @@ from rosros import rospify as rospy
 import std_msgs.msg as std_msgs
 import yaml
 from filelock import FileLock
-from map_generator.constants import MAP_GENERATOR_NS
 from task_generator.constants import Constants
 from task_generator.shared import Namespace, rosparam_get
 from task_generator.tasks.modules import TM_Module
@@ -160,14 +159,9 @@ class Mod_Staged(TM_Module):
                 rospy.set_param(self.PARAM_GOAL_RADIUS, goal_radius)
                 # set map generator params
                 if self.stage.dynamic_map.algorithm is not None:
-                    rospy.set_param(
-                        MAP_GENERATOR_NS("algorithm"), self.stage.dynamic_map.algorithm
-                    )
+                    rospy.set_param("/map_generator/algorithm", self.stage.dynamic_map.algorithm)
                 if self.stage.dynamic_map.algorithm_config is not None:
-                    rospy.set_param(
-                        MAP_GENERATOR_NS("algorithm_config"),
-                        self.stage.dynamic_map.algorithm_config,
-                    )
+                    rospy.set_param("/map_generator/algorithm_config", self.stage.dynamic_map.algorithm_config)
                 # set obstacle configuration
                 obs_config = {}
                 for obs_type in ["static", "dynamic", "interactive"]:
