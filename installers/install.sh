@@ -1,9 +1,9 @@
 #!/bin/bash -i
 set -e
 
-export ARENA_ROSNAV_REPO='voshch/arena-rosnav'
-export ARENA_ROS_VERSION='jazzy'
-export ARENA_BRANCH='jazzy'
+export ARENA_ROSNAV_REPO=${ARENA_ROSNAV_REPO:-voshch/arena-rosnav}
+export ARENA_BRANCH=${ARENA_BRANCH:-jazzy}
+export ARENA_ROS_VERSION=${ARENA_ROS_VERSION:-jazzy}
 
 # == read inputs ==
 echo 'Configuring arena-rosnav...'
@@ -75,7 +75,7 @@ sudo apt-get install -y \
     libtinyxml2-dev \
     libcunit1-dev \
     ros-dev-tools \
-    ros-${ROS_DISTRO}-ros-gz
+    ros-${ARENA_ROS_VERSION}-ros-gz
 
 # python -m pip install \
 #     colcon-common-extensions \
