@@ -13,20 +13,9 @@ from rl_utils.utils.drl_switch.constants import MBF_COMPATIBLE_TYPE
 from rl_utils.utils.drl_switch.local_planner.local_planner_manager import (
     LocalPlannerManager,
 )
+from rl_utils.utils.observation_collector import FullRangeLaserCollector
 from rl_utils.utils.observation_collector.constants import DONE_REASONS, OBS_DICT_KEYS
 from rl_utils.utils.observation_collector.observation_manager import ObservationManager
-from rl_utils.utils.observation_collector.observation_units.action_collector_unit import (
-    ActionCollectorUnit,
-)
-from rl_utils.utils.observation_collector.observation_units.base_collector_unit import (
-    BaseCollectorUnit,
-)
-from rl_utils.utils.observation_collector.observation_units.globalplan_collector_unit import (
-    GlobalplanCollectorUnit,
-)
-from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import (
-    SemanticAggregateUnit,
-)
 from rl_utils.utils.rewards.reward_function import RewardFunction
 from rosnav.model.base_agent import BaseAgent
 from rosnav.rosnav_space_manager.switch_space_manager import SwitchSpaceManager
@@ -92,7 +81,7 @@ class SwitchFlatlandEnv(gymnasium.Env):
         planner_configuration: dict,
         reward_fnc: str,
         max_steps_per_episode=100,
-        trigger_init: bool = False,
+        init_by_call: bool = False,
         obs_unit_kwargs=None,
         reward_fnc_kwargs=None,
         task_generator_kwargs=None,
@@ -125,7 +114,7 @@ class SwitchFlatlandEnv(gymnasium.Env):
         self._max_steps_per_episode = max_steps_per_episode
         self._last_action = np.array([0, 0, 0])  # linear x, linear y, angular z
 
-        if not trigger_init:
+        if not init_by_call:
             self.init()
 
     def init(self):
@@ -153,15 +142,15 @@ class SwitchFlatlandEnv(gymnasium.Env):
             ns=self.ns, config=self._planner_configuration
         )
 
+        obs_structure = set(self.reward_calculator.required_observations).union(
+            set(self.model_space_encoder.encoder.required_observations)
+        )
+        obs_structure.add(FullRangeLaserCollector)
+
         # observation collector
         self.observation_collector = ObservationManager(
             ns=self.ns,
-            obs_structur=[
-                BaseCollectorUnit,
-                GlobalplanCollectorUnit,
-                SemanticAggregateUnit,
-                ActionCollectorUnit,
-            ],
+            obs_structur=list(obs_structure),
             obs_unit_kwargs=self._obs_unit_kwargs,
         )
         return True
@@ -181,11 +170,13 @@ class SwitchFlatlandEnv(gymnasium.Env):
 
         # reward calculator
         self.reward_calculator = RewardFunction(
+            ns=self.ns,
             rew_func_name=reward_fnc,
             robot_radius=self.task.robot_managers[0]._robot_radius,
             safe_dist=self.task.robot_managers[0].safe_distance,
             goal_radius=rosparam_get(float, "goal_radius", 0.3),
             max_steps=self._max_steps_per_episode,
+            distinguished_safe_dist=False,
             **self._reward_fnc_kwargs,
         )
 

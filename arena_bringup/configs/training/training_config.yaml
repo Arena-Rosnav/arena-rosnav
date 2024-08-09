@@ -3,7 +3,7 @@
 # further no wandb logging and fake (simulated) multiprocessing for traceback
 debug_mode: true
 # number of parallel environments
-n_envs: 4
+n_envs: 2
 # gpu yes or no
 no_gpu: false
 
@@ -63,7 +63,7 @@ callbacks:
 ### Agent Specs: Training Hyperparameter and Network Architecture
 rl_agent:
   # name of architecture defined in the Policy factory
-  architecture_name: "RosnavResNet_simple"
+  architecture_name: "RosnavResNet"
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   checkpoint: "last_model" # gonna be ignored if resume is not null
@@ -78,7 +78,7 @@ rl_agent:
     enabled: false
     stack_size: 6
 
-  reward_fnc: "base_semantic"
+  reward_fnc: "barn"
   # whether unity collider-based or laser-based safety distance is used
   # if true, reward_fnc must include ped_safe_dist and obs_safe_dist
   distinguished_safe_dist: false

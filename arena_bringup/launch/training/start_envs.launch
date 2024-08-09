@@ -18,7 +18,6 @@
     <arg name="model" value="$(arg model)" />
     <arg name="entity_manager" value="$(arg entity_manager)" />
     <arg name="sfm" value="$(arg sfm)" />
-    <arg name="world_file" value="$(arg world_file)" />
     <arg name="inter_planner" value="$(arg inter_planner)" />
     <arg name="local_planner" value="$(arg local_planner)" />
     <arg name="SIMULATOR" value="$(arg SIMULATOR)" />

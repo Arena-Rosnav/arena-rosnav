@@ -68,6 +68,13 @@ rl_agent:
   resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
   checkpoint: "best_model" # gonna be ignored if resume is not null
 
+  weight_transfer:
+    model_path: "/home/tar/catkin_ws/src/planners/rosnav/agents/jackal_RosnavResNet_simple_2024_05_27__15_29_28/last_model.zip"
+    include: # regex to include layers
+      - ".*"
+    exclude:
+      - ""
+
   frame_stacking:
     enabled: false
     stack_size: 6

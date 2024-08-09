@@ -22,6 +22,7 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from task_generator.constants import Constants
 from task_generator.shared import Namespace
 from task_generator.utils import Utils
+from .switch_utils import _init_switch_env_fnc
 
 from .constants import SIMULATION_NAMESPACES
 
@@ -155,7 +156,7 @@ def make_envs(
         tuple: A tuple containing the training environment and evaluation environment.
     """
     train_env_fncs = [
-        _init_env_fnc(
+        env_fnc(
             ns=SIMULATION_NAMESPACES.TRAIN_NS(idx),
             agent_description=agent_description,
             reward_fnc=config["rl_agent"]["reward_fnc"],
@@ -163,12 +164,13 @@ def make_envs(
             init_by_call=True if not config["debug_mode"] else False,
             obs_unit_kwargs=None,
             reward_fnc_kwargs=config["rl_agent"]["reward_fnc_kwargs"],
+            **env_fnc_kwargs,
         )
         for idx in range(config["n_envs"])
     ]
 
     eval_env_fncs = [
-        _init_env_fnc(
+        env_fnc(
             ns=SIMULATION_NAMESPACES.EVAL_NS,
             agent_description=agent_description,
             reward_fnc=config["rl_agent"]["reward_fnc"],
@@ -178,6 +180,7 @@ def make_envs(
             init_by_call=False,
             obs_unit_kwargs=None,
             reward_fnc_kwargs=config["rl_agent"]["reward_fnc_kwargs"],
+            **env_fnc_kwargs,
         )
     ]
 

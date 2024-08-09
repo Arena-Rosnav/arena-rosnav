@@ -17,11 +17,13 @@ def populate_ros_params(params: dict, paths: dict, train_mode: bool = True):
 
     rospy.set_param("training_config_path", paths["config"])
 
-    is_discrete = params["rl_agent"]["action_space"]["discrete"]
-    rospy.set_param(
-        "is_action_space_discrete",
-        is_discrete,
-    )
+    is_switch = "switch" in params["agent_name"]
+    if not is_switch:
+        is_discrete = params["rl_agent"]["action_space"]["discrete"]
+        rospy.set_param(
+            "is_action_space_discrete",
+            is_discrete,
+        )
 
     rospy.set_param("goal_radius", params["goal_radius"])
 
@@ -76,21 +78,20 @@ def populate_laser_params(params: dict, agent_namespace: str = None):
     agent_topic_prefix = f"{agent_namespace}" if agent_namespace else ""
     agent_topic_prefix = Namespace(agent_topic_prefix)
 
-    with contextlib.suppress(KeyError):
-        rospy.set_param(
-            agent_topic_prefix("laser/reduce_num_beams"),
-            params["rl_agent"]["laser"]["reduce_num_beams"]["enabled"],
-        )
-    with contextlib.suppress(KeyError):
-        rospy.set_param(
-            agent_topic_prefix("laser/full_range_laser"),
-            params["rl_agent"]["laser"]["full_range_laser"],
-        )
-    with contextlib.suppress(KeyError):
-        rospy.set_param(
-            agent_topic_prefix("laser/reduced_num_laser_beams"),
-            params["rl_agent"]["laser"]["reduce_num_beams"]["num_beams"],
-        )
+    rospy.set_param(
+        "/" + agent_topic_prefix("laser/reduce_num_beams"),
+        params["rl_agent"]["laser"]["reduce_num_beams"]["enabled"],
+    )
+
+    rospy.set_param(
+        "/" + agent_topic_prefix("laser/full_range_laser"),
+        params["rl_agent"]["laser"]["full_range_laser"],
+    )
+
+    rospy.set_param(
+        "/" + agent_topic_prefix("laser/reduced_num_laser_beams"),
+        params["rl_agent"]["laser"]["reduce_num_beams"]["num_beams"],
+    )
 
 
 def populate_rgbd_params(params: dict):
@@ -122,7 +123,7 @@ def populate_discrete_action_space(params: dict, agent_namespace: str = None):
         discrete_actions_dict = actions["discrete"]
 
     agent_topic_prefix = f"{agent_namespace}/" if agent_namespace else ""
-    rospy.set_param(f"{agent_topic_prefix}actions/discrete", discrete_actions_dict)
+    rospy.set_param(f"/{agent_topic_prefix}actions/discrete", discrete_actions_dict)
 
 
 def populate_ros_configs(config):

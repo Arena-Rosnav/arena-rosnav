@@ -170,7 +170,7 @@ class SubgoalCollector(GoalCollector):
     """
 
     name: str = "subgoal"
-    topic: str = "subgoal"
+    topic: str = "current_subgoal"
 
 
 class LastActionCollector(ObservationCollectorUnit):

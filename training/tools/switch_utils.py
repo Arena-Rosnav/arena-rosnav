@@ -26,7 +26,7 @@ def _init_switch_env_fnc(
     reward_fnc: str,
     max_steps_per_episode: int,
     seed: int = 0,
-    trigger_init: bool = False,
+    init_by_call: bool = False,
     obs_unit_kwargs: dict = None,
     reward_fnc_kwargs: dict = None,
     task_generator_kwargs: dict = None,
@@ -41,7 +41,7 @@ def _init_switch_env_fnc(
         reward_fnc (str): The reward function.
         max_steps_per_episode (int): The maximum number of steps per episode.
         seed (int, optional): The random seed. Defaults to 0.
-        trigger_init (bool, optional): Whether to trigger initialization. Defaults to False.
+        init_by_call (bool, optional): Whether to trigger initialization. Defaults to False.
         obs_unit_kwargs (dict, optional): The observation unit keyword arguments. Defaults to None.
         reward_fnc_kwargs (dict, optional): The reward function keyword arguments. Defaults to None.
         task_generator_kwargs (dict, optional): The task generator keyword arguments. Defaults to None.
@@ -57,7 +57,7 @@ def _init_switch_env_fnc(
             planner_configuration=planner_configuration,
             reward_fnc=reward_fnc,
             max_steps_per_episode=max_steps_per_episode,
-            trigger_init=trigger_init,
+            init_by_call=init_by_call,
             obs_unit_kwargs=obs_unit_kwargs,
             reward_fnc_kwargs=reward_fnc_kwargs,
             task_generator_kwargs=task_generator_kwargs,
@@ -87,8 +87,6 @@ def initialize_switch_config(
     config = initialize_config(
         paths=paths,
         config=config,
-        n_envs=n_envs,
-        debug_mode=debug_mode,
     )
 
     return config
