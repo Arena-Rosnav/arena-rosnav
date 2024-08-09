@@ -15,7 +15,13 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Update and install a comprehensive set of libraries and tools
 RUN apt-get update && apt-get install -y \
+    gnupg \
+    lsb-release \
     build-essential \
+    cmake \
+    sudo \
+    curl \
+    git \
     wget \
     libssl-dev \
     zlib1g-dev \
@@ -27,11 +33,9 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     libbz2-dev \
     liblzma-dev \
-    cmake \
-    sudo \
-    curl \
-    git \
     python3 \
+    python3-pip \
+    python3-dev \
     software-properties-common
 
 # Download and run the install script
