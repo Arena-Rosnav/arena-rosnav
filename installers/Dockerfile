@@ -13,6 +13,27 @@ ARG ARENA_BRANCH=jazzy
 # Set the timezone
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+# Update and install a comprehensive set of libraries and tools
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    wget \
+    libssl-dev \
+    zlib1g-dev \
+    libncurses5-dev \
+    libgdbm-dev \
+    libnss3-dev \
+    libsqlite3-dev \
+    libreadline-dev \
+    libffi-dev \
+    libbz2-dev \
+    liblzma-dev \
+    cmake \
+    sudo \
+    curl \
+    git \
+    python3 \
+    software-properties-common
+
 # Download and run the install script
 ADD install.sh install.sh
 # ADD https://raw.githubusercontent.com/voshch/arena-rosnav/${ARENA_BRANCH}/installers/install.sh install.sh
