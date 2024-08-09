@@ -38,11 +38,15 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-dev \
+    python-is-python3 \
     software-properties-common
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN python3 --version
+RUN echo $PATH
 
 # Download and run the install script
 ADD install.sh install.sh
-# ADD https://raw.githubusercontent.com/voshch/arena-rosnav/${ARENA_BRANCH}/installers/install.sh install.sh
 RUN bash -c 'echo -e "\n\n\n\n\n\n\n" | bash install.sh'
 
 CMD ["bash"]
