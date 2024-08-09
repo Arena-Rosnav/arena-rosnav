@@ -75,7 +75,7 @@ sudo apt-get install -y \
     libtinyxml2-dev \
     libcunit1-dev \
     ros-dev-tools \
-    ros-${ARENA_ROS_VERSION}-ros-gz
+    ros-${ROS_DISTRO}-ros-gz
 
 # python -m pip install \
 #     colcon-common-extensions \
