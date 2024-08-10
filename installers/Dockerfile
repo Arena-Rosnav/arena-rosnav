@@ -41,7 +41,7 @@ RUN apt-get update && apt-get install -y \
     python-is-python3 \
     software-properties-common
 
-RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN if [ ! -e /usr/bin/python ]; then ln -s /usr/bin/python3 /usr/bin/python; fi
 RUN python3 --version
 RUN echo $PATH
 
