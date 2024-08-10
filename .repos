@@ -21,7 +21,7 @@ repositories:
     version: 862fb2d5
   arena/utils/move_base_flex:
     type: git
-    url: https://github.com/Arena-Rosnav/move_base_flex.git
+    url: https://github.com/tuananhroman/move_base_flex.git
     version: a4b20046c11a2ff2c5ea5e9af8eef6b59b0267c6
   arena/utils/navigation:
     type: git

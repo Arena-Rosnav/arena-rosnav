@@ -1,5 +1,6 @@
 #! /usr/bin/python
 
+import re
 import yaml
 import sys
 import os
@@ -49,6 +50,14 @@ class GIT:
     def short_hash(cls, hash):
         return hash[:8]
 
+    @classmethod
+    def ssh2https(cls, uri):
+        return \
+            re.sub(r'^.*@', r'https://',
+            re.sub(r':([^:]*)$', r'/\1',
+                uri
+            ))
+
 def ask_user(message):
     while True:
         inp = input(f"{message} (y/n): ")
@@ -65,12 +74,19 @@ for repo in ws_repos.union(yaml_repos.keys()).difference((DIR_ARENA_ROSNAV,)):
     # known repo
     if repo in ws_repos and repo in yaml_repos:
 
+        remote = GIT.cmd(GIT.CMD.ORIGIN_URL, repo)
+        http_remote = GIT.ssh2https(remote)
+
         hash = GIT.cmd(GIT.CMD.COMMIT_HASH, repo)
         short_hash = GIT.short_hash(hash)
         old_hash = yaml_repos[repo]["version"]
 
-        if old_hash not in (hash, short_hash):
+        if (
+            old_hash not in (hash, short_hash) or
+            yaml_repos[repo]["version"] not in (remote, http_remote)
+        ):
             if ask_user(f"{repo} has been changed ({GIT.cmd(GIT.CMD.BRANCH_NAME, repo)}). Update?"):
+                if remote: yaml_repos["url"] = http_remote
                 yaml_repos[repo]["version"] = short_hash
                 print(f"UPDATE {repo}: {old_hash} -> {short_hash}")
                 Counter.changed += 1
