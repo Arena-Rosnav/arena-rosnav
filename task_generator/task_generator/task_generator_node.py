@@ -83,7 +83,7 @@ def read_robot_setup_file(setup_file: str) -> List[Dict]:
         raise Exception("Failed to read robot setup file")
 
 
-class TaskGenerator(rclpy.node.Node):
+class TaskGenerator(Node):
     """
     Task Generator Node
     Will initialize and reset all tasks. The task to use is read from the `/task_mode` param.
@@ -93,7 +93,7 @@ class TaskGenerator(rclpy.node.Node):
         super().__init__('task_generator')
         self._namespace = Namespace(namespace)
 
-        # Params
+        # Declare all parameters
         self.declare_parameters(
             namespace='',
             parameters=[
@@ -105,6 +105,8 @@ class TaskGenerator(rclpy.node.Node):
                 ('inter_planner', ''),
                 ('local_planner', ''),
                 ('agent_name', ''),
+                ('robot_names', []),
+                ('task_generator_setup_finished', False),
             ]
         )
         
