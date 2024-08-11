@@ -97,7 +97,7 @@ class TaskGenerator(rclpy.node.Node):
         self.declare_parameters(
             namespace='',
             parameters=[
-                ('entity_manager', EntityManager),
+                ('entity_manager', ''),
                 ('auto_reset', True),
                 ('train_mode', False),
                 ('robot_setup_file', ''),
@@ -107,8 +107,8 @@ class TaskGenerator(rclpy.node.Node):
                 ('agent_name', ''),
             ]
         )
-
-        self._entity_mode = Constants.EntityManager(self.get_parameter('entity_manager').value)
+        
+        #self._entity_mode = Constants.EntityManager(self.get_parameter('entity_manager').value)
         self._auto_reset = self.get_parameter('auto_reset').value
         self._train_mode = self.get_parameter('train_mode').value
 

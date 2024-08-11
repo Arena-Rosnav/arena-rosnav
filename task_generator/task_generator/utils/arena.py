@@ -9,7 +9,7 @@ from task_generator.shared import rosparam_get
 import nav_msgs.msg as nav_msgs
 
 def get_simulator() -> Constants.Simulator:
-    return Constants.Simulator(rosparam_get(str, "simulator", "flatland").lower())
+    return Constants.Simulator(rosparam_get(str, "simulator", "gazebo").lower())
 
 def get_arena_type() -> Constants.ArenaType:
     return Constants.ArenaType(os.getenv("ARENA_TYPE", "training").lower())
