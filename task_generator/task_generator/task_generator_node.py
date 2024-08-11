@@ -5,10 +5,10 @@ import os
 import traceback
 from typing import Dict, List
 
-import rospkg
-from rosros import rospify as rospy
+import rclpy
+from rclpy.node import Node
 import yaml
-from rospkg import RosPack
+import ament_index_python
 from task_generator.constants import Config, Constants
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 #from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
@@ -37,11 +37,9 @@ from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 
 import map_distance_server.srv as map_distance_server_srvs
-import std_msgs.msg as std_msgs
+from std_msgs.msg import Int16, Empty
 import std_srvs.srv as std_srvs
-
-import rclpy.node
-import ament_index_python
+from std_srvs.srv import Empty as EmptySrv
 
 
 def create_default_robot_list(
@@ -69,7 +67,7 @@ def read_robot_setup_file(setup_file: str) -> List[Dict]:
     try:
         with open(
             os.path.join(
-                rospkg.RosPack().get_path("arena_bringup"),
+                get_package_share_directory("arena_bringup"),
                 "configs",
                 "robot_setup",
                 setup_file,
@@ -82,8 +80,7 @@ def read_robot_setup_file(setup_file: str) -> List[Dict]:
 
     except:
         traceback.print_exc()
-        rospy.signal_shutdown("")
-        raise Exception()
+        raise Exception("Failed to read robot setup file")
 
 
 class TaskGenerator(rclpy.node.Node):
@@ -92,40 +89,37 @@ class TaskGenerator(rclpy.node.Node):
     Will initialize and reset all tasks. The task to use is read from the `/task_mode` param.
     """
 
-    _entity_mode: Constants.EntityManager
-    _auto_reset: bool
-
-    _namespace: Namespace
-    _env_wrapper: BaseSimulator
-    _entity_manager: EntityManager
-    _task: Task
-
-    _pub_scenario_reset: rospy.Publisher
-    _pub_scenario_finished: rospy.Publisher
-
-    _start_time: float
-    _number_of_resets: int
-
-    def __init__(self, namespace: str = "/") -> None:
+    def __init__(self, namespace: str = "/"):
+        super().__init__('task_generator')
         self._namespace = Namespace(namespace)
 
         # Params
+        self.declare_parameters(
+            namespace='',
+            parameters=[
+                ('entity_mode', ''),
+                ('auto_reset', True),
+                ('train_mode', False),
+                ('robot_setup_file', ''),
+                ('model', ''),
+                ('inter_planner', ''),
+                ('local_planner', ''),
+                ('agent_name', ''),
+            ]
+        )
 
-        self._entity_mode = Constants.EntityManager(rosparam_get(str, "entity_manager"))
-        self._auto_reset = rosparam_get(bool, "~auto_reset", True)
-        self._train_mode = rosparam_get(bool, "train_mode", False)
+        self._entity_mode = Constants.EntityManager(self.get_parameter('entity_manager').value)
+        self._auto_reset = self.get_parameter('auto_reset').value
+        self._train_mode = self.get_parameter('train_mode').value
 
         # Publishers
         if not self._train_mode:
-            self._pub_scenario_reset = rospy.Publisher(
-                "scenario_reset", std_msgs.Int16, queue_size=1, latch=True
-            )
-            self._pub_scenario_finished = rospy.Publisher(
-                "scenario_finished", std_msgs.Empty, queue_size=10
-            )
+            self._pub_scenario_reset = self.create_publisher(Int16, 'scenario_reset', 1)
+            self._pub_scenario_finished = self.create_publisher(Empty, 'scenario_finished', 10)
 
             # Services
-            self.create_service(std_srvs.Empty, "reset_task", self._reset_task_srv_callback)
+            self.create_service(EmptySrv, 'reset_task', self._reset_task_srv_callback)
+
         # Vars
         self._env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())(
             namespace=self._namespace
@@ -133,40 +127,33 @@ class TaskGenerator(rclpy.node.Node):
 
         # Loaders
         self._robot_loader = ModelLoader(
-            os.path.join(ament_index_python.get_package_share_directory("arena_simulation_setup"), "entities", "robots")
+            os.path.join(get_package_share_directory("arena_simulation_setup"), "entities", "robots")
         )
 
         if not self._train_mode:
-            self._start_time = rospy.get_time()
+            self._start_time = self.get_clock().now().seconds_nanoseconds()[0]
             self._task = self._get_predefined_task()
-            rospy.set_param("/robot_names", self._task.robot_names)
+            self.set_parameters([rclpy.Parameter('robot_names', value=self._task.robot_names)])
 
             self._number_of_resets = 0
 
-            self.srv_start_model_visualization = rospy.ServiceProxy(
-                "start_model_visualization", std_srvs.Empty
-            )
-            self.srv_start_model_visualization(std_srvs.Empty_Request())
+            self.srv_start_model_visualization = self.create_client(EmptySrv, 'start_model_visualization')
+            while not self.srv_start_model_visualization.wait_for_service(timeout_sec=1.0):
+                self.get_logger().info('start_model_visualization service not available, waiting again...')
+            self.srv_start_model_visualization.call_async(EmptySrv.Request())
 
-            rospy.sleep(1)
+            self.create_timer(0.5, self._check_task_status)
 
             self.reset_task(first_map=True)
 
-            rospy.sleep(1)
-
             try:
-                rospy.set_param("task_generator_setup_finished", True)
-                self.srv_setup_finished = rospy.ServiceProxy(
-                    "task_generator_setup_finished", std_srvs.Empty
-                )
-                self.srv_setup_finished(std_srvs.Empty_Request())
+                self.set_parameters([rclpy.Parameter('task_generator_setup_finished', value=True)])
+                self.srv_setup_finished = self.create_client(EmptySrv, 'task_generator_setup_finished')
+                while not self.srv_setup_finished.wait_for_service(timeout_sec=1.0):
+                    self.get_logger().info('task_generator_setup_finished service not available, waiting again...')
+                self.srv_setup_finished.call_async(EmptySrv.Request())
             except:
                 pass
-
-            # Timers
-            rospy.Timer(rospy.Duration(nsecs=int(0.5e9)), self._check_task_status)
-
-        # SETUP
 
     def _get_predefined_task(self, **kwargs):
         """
@@ -177,15 +164,15 @@ class TaskGenerator(rclpy.node.Node):
                 self._namespace
             )
 
-        rospy.wait_for_service("/distance_map")
-
-        service_client_get_map = rospy.ServiceProxy(
-            "/distance_map", map_distance_server_srvs.GetDistanceMap
-        )
-
-        map_response: map_distance_server_srvs.GetDistanceMapResponse = (
-            service_client_get_map()
-        )
+        cli = self.create_client(GetDistanceMap, '/distance_map')
+        while not cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        
+        req = GetDistanceMap.Request()
+        future = cli.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        
+        map_response = future.result()
         world_manager = WorldManager(
             world_map=WorldMap.from_occupancy_grid(occupancy_grid=map_response)
         )
@@ -241,7 +228,7 @@ class TaskGenerator(rclpy.node.Node):
         if rosparam_get(str, "map_file", "") == "dynamic_map":
             tm_modules.append(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
 
-        rospy.logdebug("utils calls task factory")
+        self.get_logger().debug("utils calls task factory")
         task = TaskFactory.combine(
             modules=[Constants.TaskMode.TM_Module(module) for module in tm_modules]
         )(
@@ -256,9 +243,9 @@ class TaskGenerator(rclpy.node.Node):
 
     def _create_robot_managers(self) -> List[RobotManager]:
         # Read robot setup file
-        robot_setup_file: str = rosparam_get(str, "/robot_setup_file", "")
+        robot_setup_file: str = self.get_parameter('robot_setup_file').value
 
-        robot_model: str = rosparam_get(str, "/model")
+        robot_model: str = self.get_parameter('model').value
 
 
         if robot_setup_file == "":
@@ -311,50 +298,50 @@ class TaskGenerator(rclpy.node.Node):
     # RUNTIME
 
     def reset_task(self, **kwargs):
-        self._start_time = rospy.get_time()
+        self._start_time = self.get_clock().now().seconds_nanoseconds()[0]
 
         self._env_wrapper.before_reset_task()
 
-        rospy.loginfo("resetting")
+        self.get_logger().info("resetting")
 
         is_end = self._task.reset(callback=lambda: False, **kwargs)
 
         self._env_wrapper.after_reset_task()
 
-        self._pub_scenario_reset.publish(self._number_of_resets)
+        self._pub_scenario_reset.publish(Int16(data=self._number_of_resets))
         self._number_of_resets += 1
         self._send_end_message_on_end()
 
         self._env_wrapper.after_reset_task()
 
-        rospy.loginfo("=============")
-        rospy.loginfo("Task Reset!")
-        rospy.loginfo("=============")
+        self.get_logger().info("=============")
+        self.get_logger().info("Task Reset!")
+        self.get_logger().info("=============")
 
     def _check_task_status(self, *args, **kwargs):
         if self._task.is_done:
             self.reset_task()
 
     def _reset_task_srv_callback(self, request: std_srvs.Empty.Request, response: std_srvs.Empty.Response):
-        rospy.logdebug("Task Generator received task-reset request!")
-        
+        self.get_logger().debug("Task Generator received task-reset request!")
         self.reset_task()
-        
         return response
 
     def _send_end_message_on_end(self):
         if self._number_of_resets < Config.General.DESIRED_EPISODES:
             return
 
-        rospy.loginfo(f"Shutting down. All {int(Config.General.DESIRED_EPISODES)} tasks completed")
+        self.get_logger().info(f"Shutting down. All {int(Config.General.DESIRED_EPISODES)} tasks completed")
+        rclpy.shutdown()
 
-        rospy.signal_shutdown("Finished all episodes of the current scenario")
 
-
-def main():
-    rospy.init_node("task_generator")
+def main(args=None):
+    rclpy.init(args=args)
     task_generator = TaskGenerator()
-    rospy.spin()
+    rclpy.spin(task_generator)
+    # Clean the node if necessary
+    # task_generator.destroy_node()
+    # rclpy.shutdown()
 
 if __name__ == "__main__":
     main()

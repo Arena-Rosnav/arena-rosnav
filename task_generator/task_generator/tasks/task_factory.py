@@ -16,7 +16,7 @@ from task_generator.tasks.robots import TM_Robots
 
 import std_msgs.msg as std_msgs
 import rosgraph_msgs.msg as rosgraph_msgs
-import training.srv as training_srvs
+#import training.srv as training_srvs
 
 from task_generator.utils import ModelLoader
 
