@@ -2,6 +2,7 @@ FROM ubuntu:22.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
+ENV RTI_NC_LICENSE_ACCEPTED=yes
 ENV TZ=Etc/UTC
 ENV PATH="/root/.local/bin:/root/.pyenv/bin:$PATH"
 ENV PYENV_ROOT="/root/.pyenv"
@@ -44,9 +45,6 @@ RUN apt-get update && apt-get install -y \
 RUN if [ ! -e /usr/bin/python ]; then ln -s /usr/bin/python3 /usr/bin/python; fi
 RUN python3 --version
 RUN echo $PATH
-# accept license
-RUN echo "rti-connext-dds-6.0.1 rti-connext-dds-6.0.1/accepted-rti-license boolean true" | debconf-set-selections
-
 
 # Download and run the install script
 ADD install.sh install.sh
