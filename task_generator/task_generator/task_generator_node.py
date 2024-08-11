@@ -97,7 +97,7 @@ class TaskGenerator(rclpy.node.Node):
         self.declare_parameters(
             namespace='',
             parameters=[
-                ('entity_mode', ''),
+                ('entity_manager', EntityManager),
                 ('auto_reset', True),
                 ('train_mode', False),
                 ('robot_setup_file', ''),
