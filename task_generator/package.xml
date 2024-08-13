@@ -21,7 +21,7 @@
   <build_export_depend>rclpy</build_export_depend>
   <build_export_depend>sensor_msgs</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
-  <build_export_depend>transforms3d</build_depend>
+  <build_export_depend>transforms3d</build_export_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>rclpy</exec_depend>
