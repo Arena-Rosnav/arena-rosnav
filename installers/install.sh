@@ -8,7 +8,7 @@ export ARENA_ROS_VERSION=${ARENA_ROS_VERSION:-jazzy}
 # == read inputs ==
 echo 'Configuring arena-rosnav...'
 
-ARENA_WS_DIR=${ARENA_WS_DIR:-"/arena4_ws"}
+ARENA_WS_DIR=${ARENA_WS_DIR:-~/arena4_ws}
 read -p "arena-rosnav workspace directory [${ARENA_WS_DIR}] " INPUT
 export ARENA_WS_DIR=$(realpath "$(eval echo ${INPUT:-${ARENA_WS_DIR}})")
 
@@ -74,8 +74,7 @@ sudo apt-get install -y \
     libasio-dev \
     libtinyxml2-dev \
     libcunit1-dev \
-    ros-dev-tools \
-    ros-${ARENA_ROS_VERSION}-ros-gz
+    ros-dev-tools
 
 # python -m pip install \
 #     colcon-common-extensions \
@@ -109,6 +108,30 @@ cd "${ARENA_WS_DIR}"
 curl "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_VERSION}/ros2.repos" > ros2.repos
 until vcs import src/ros2 < ros2.repos ; do echo "failed to update, retrying..." ; done
 rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers"
+
+cd "${ARENA_WS_DIR}"
+. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
+
+# == install gazebo on top of ros2 ==
+cd "${ARENA_WS_DIR}"
+
+sudo apt-get install -y \
+  python3-pip \
+  lsb-release \
+  gnupg \
+  curl
+
+curl -O https://raw.githubusercontent.com/gazebo-tooling/gazebodistro/master/collection-harmonic.yaml
+mkdir -p "${ARENA_WS_DIR}/src/gazebo"
+vcs import "${ARENA_WS_DIR}/src/gazebo" < collection-harmonic.yaml
+
+sudo curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
+sudo apt-get update
+
+cd "${ARENA_WS_DIR}/src/gazebo"
+sudo apt -y install \
+  $(sort -u $(find . -iname 'packages-'`lsb_release -cs`'.apt' -o -iname 'packages.apt' | grep -v '/\.git/') | sed '/gz\|sdf/d' | tr '\n' ' ')
 
 cd "${ARENA_WS_DIR}"
 . "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
