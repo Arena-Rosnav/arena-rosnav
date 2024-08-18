@@ -69,8 +69,9 @@ class GazeboSimulator(BaseSimulator, Node):
     def after_reset_task(self):
         try:
             self.unpause_simulation()
-        except rospy.service.ServiceException as e:  # gazebo isn't the most reliable
-            rospy.logwarn(e)
+        except ServiceException as e:  # Handling service exceptions in ROS 2
+            self.get_logger().warn(f"ServiceException: {e}")
+            raise  ServiceException# Re-raise the exception if needed
 
     # ROBOT
 
