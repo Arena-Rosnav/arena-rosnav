@@ -1,7 +1,8 @@
 from typing import Collection
 from rosros import rospify as rospy
 import yaml
-from task_generator.constants import Config, FlatlandRandomModel
+from task_generator.constants import FlatlandRandomModel
+from task_generator.constants.runtime import Config
 from task_generator.shared import (
     DynamicObstacle,
     ModelType,

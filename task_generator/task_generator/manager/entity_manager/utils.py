@@ -10,7 +10,8 @@ from ament_index_python.packages import get_package_share_directory
 
 import yaml
 from rosros import rospify as rospy
-from task_generator.constants import Constants, Config
+from task_generator.constants import Constants
+from task_generator.constants.runtime import Config
 from task_generator.manager.utils import WorldMap, WorldOccupancy
 
 from task_generator.shared import (

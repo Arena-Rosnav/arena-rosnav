@@ -1,5 +1,5 @@
 from rosros import rospify as rospy
-from task_generator.constants import Config
+from task_generator.constants.runtime import Config
 from task_generator.shared import PositionOrientation
 from task_generator.tasks import TaskMode
 

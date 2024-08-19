@@ -4,7 +4,8 @@ import rospy
 from task_generator.shared import Namespace, rosparam_get
 from task_generator.manager.utils import WorldWalls
 from tf.transformations import quaternion_from_euler
-from task_generator.constants import Constants, UnityConstants, Config
+from task_generator.constants import Constants, UnityConstants
+from task_generator.constants.runtime import Config
 from task_generator.simulators import BaseSimulator
 
 from task_generator.shared import ModelType, Robot, Obstacle

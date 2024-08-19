@@ -2,7 +2,8 @@ import math
 from typing import Dict
 
 from builtin_interfaces.msg import Time
-from task_generator.constants import Config, Constants
+from task_generator.constants import Constants
+from task_generator.constants.runtime import Config
 from task_generator.shared import PositionOrientation
 from task_generator.tasks.robots.random import TM_Random
 

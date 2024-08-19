@@ -2,7 +2,8 @@ import datetime
 import hashlib
 import json
 import pathlib
-from task_generator.constants import Config, Constants
+from task_generator.constants import Constants
+from task_generator.constants.runtime import Config
 from task_generator.shared import Namespace, rosparam_get
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.task_factory import TaskFactory

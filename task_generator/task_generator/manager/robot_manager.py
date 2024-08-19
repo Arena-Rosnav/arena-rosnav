@@ -5,7 +5,8 @@ import numpy as np
 import os
 import scipy.spatial.transform
 from rosros import rospify as rospy
-from task_generator.constants import Constants, Config
+from task_generator.constants import Constants
+from task_generator.constants.runtime import Config
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot, rosparam_get

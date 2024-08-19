@@ -9,12 +9,15 @@ import sys
 from task_generator.simulators import SimulatorFactory
 from task_generator.shared import rosparam_get
 from task_generator.utils.geometry import quaternion_from_euler
-from task_generator.constants import Config, Constants
+from task_generator.constants import Constants
+from task_generator.constants.runtime import Config
 from task_generator.simulators import BaseSimulator
 
 from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
 
-class GazeboSimulator(BaseSimulator, Node):
+from task_generator import TASKGEN_NODE
+
+class GazeboSimulator(BaseSimulator):
 
     def __init__(self, namespace):
         # Ensure we have a valid node name
@@ -22,16 +25,14 @@ class GazeboSimulator(BaseSimulator, Node):
         if not node_name:
             node_name = "gazebo_simulator"  # Default name if namespace is empty
         
-        Node.__init__(self, node_name)
-        super().__init__(namespace)
-        
-        self._goal_pub = self.create_publisher(
+
+        self._goal_pub = TASKGEN_NODE.create_publisher(
             PoseStamped,
             self._namespace("/goal"),
             10
         )
-        self.declare_parameter('robot_model', '')
-        self._robot_name = self.get_parameter('robot_model').value
+        TASKGEN_NODE.declare_parameter('robot_model', '')
+        TASKGEN_NODE._robot_name = TASKGEN_NODE.get_parameter('robot_model').value
 
         # self._spawn_model = {
         #     ModelType.URDF: self.create_client(SpawnModel, '/gazebo/spawn_urdf_model'),
@@ -48,19 +49,19 @@ class GazeboSimulator(BaseSimulator, Node):
         
         # Initialize service clients
         # https://gazebosim.org/api/sim/8/entity_creation.html
-        self._spawn_entity = self.create_client(SpawnEntity, '/world/default/create')
-        self._delete_entity = self.create_client(DeleteEntity, '/world/default/remove')
-        self._set_entity_pose = self.create_client(SetEntityPose, '/world/default/set_pose')
-        self._control_world = self.create_client(ControlWorld, '/world/default/control')
+        self._spawn_entity = TASKGEN_NODE.create_client(SpawnEntity, '/world/default/create')
+        self._delete_entity = TASKGEN_NODE.create_client(DeleteEntity, '/world/default/remove')
+        self._set_entity_pose = TASKGEN_NODE.create_client(SetEntityPose, '/world/default/set_pose')
+        self._control_world = TASKGEN_NODE.create_client(ControlWorld, '/world/default/control')
         
-        self.get_logger().info("Waiting for gazebo services...")
+        TASKGEN_NODE.get_logger().info("Waiting for gazebo services...")
         # Wait for services to be available
         self._spawn_entity.wait_for_service()
         self._delete_entity.wait_for_service()
         self._set_entity_pose.wait_for_service()
         self._control_world.wait_for_service()
 
-        self.get_logger().info("Gazebo services are available now.")
+        TASKGEN_NODE.get_logger().info("Gazebo services are available now.")
         
 
     def before_reset_task(self):
@@ -98,8 +99,8 @@ class GazeboSimulator(BaseSimulator, Node):
         )
 
         if isinstance(entity, RobotProps):
-            self.declare_parameter(Namespace(entity.name)("robot_description"), entity.model.get(self.MODEL_TYPES).description)
-            self.declare_parameter(Namespace(entity.name)("tf_prefix"), str(Namespace(entity.name)))
+            TASKGEN_NODE.declare_parameter(Namespace(entity.name)("robot_description"), entity.model.get(self.MODEL_TYPES).description)
+            TASKGEN_NODE.declare_parameter(Namespace(entity.name)("tf_prefix"), str(Namespace(entity.name)))
 
         future = self._spawn_entity.call_async(request)
         rclpy.spin_until_future_complete(self, future)
@@ -139,7 +140,7 @@ class GazeboSimulator(BaseSimulator, Node):
 
     def _publish_goal(self, goal: PositionOrientation):
         goal_msg = PoseStamped()
-        goal_msg.header.stamp = self.get_clock().now().to_msg()
+        goal_msg.header.stamp = TASKGEN_NODE.get_clock().now().to_msg()
         goal_msg.header.frame_id = "map"
         goal_msg.pose.position.x = goal.x
         goal_msg.pose.position.y = goal.y

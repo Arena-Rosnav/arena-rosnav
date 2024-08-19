@@ -2,7 +2,8 @@ import os
 from typing import List, Optional
 
 from ament_index_python.packages import get_package_share_directory
-from task_generator.constants import Config, Constants
+from task_generator.constants import Constants
+from task_generator.constants.runtime import Config
 from task_generator.shared import DynamicObstacle, ModelWrapper, Namespace, Obstacle
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle

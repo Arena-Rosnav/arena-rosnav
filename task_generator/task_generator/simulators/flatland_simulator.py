@@ -10,7 +10,8 @@ from task_generator.shared import ModelType, Namespace
 
 from task_generator.shared import rosparam_get
 
-from task_generator.constants import Constants, Config
+from task_generator.constants import Constants
+from task_generator.constants.runtime import Config
 from task_generator.simulators import BaseSimulator
 
 class FlatlandSimulator(BaseSimulator):

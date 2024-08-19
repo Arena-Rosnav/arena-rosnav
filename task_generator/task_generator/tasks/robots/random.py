@@ -1,7 +1,8 @@
 import math
 from typing import List, Tuple
 
-from task_generator.constants import Config, Constants
+from task_generator.constants import Constants
+from task_generator.constants.runtime import Config
 from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
 

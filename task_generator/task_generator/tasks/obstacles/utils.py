@@ -4,7 +4,7 @@
 import dataclasses
 import math
 from typing import Dict, List, Optional
-from task_generator.constants import Config
+from task_generator.constants.runtime import Config
 from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, PositionOrientation, PositionRadius
 from task_generator.tasks import Props_
 
