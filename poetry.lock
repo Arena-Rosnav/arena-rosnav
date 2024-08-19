@@ -4468,6 +4468,25 @@ url = "https://pypi.org/simple"
 reference = "pypi-public"
 
 [[package]]
+name = "transforms3d"
+version = "0.4.2"
+description = "Functions for 3D coordinate transformations"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "transforms3d-0.4.2-py3-none-any.whl", hash = "sha256:1c70399d9e9473ecc23311fd947f727f7c69ed0b063244828c383aa1aefa5941"},
+    {file = "transforms3d-0.4.2.tar.gz", hash = "sha256:e8b5df30eaedbee556e81c6938e55aab5365894e47d0a17615d7db7fd2393680"},
+]
+
+[package.dependencies]
+numpy = ">=1.15"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.org/simple"
+reference = "pypi-public"
+
+[[package]]
 name = "typing-extensions"
 version = "4.12.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -4675,4 +4694,4 @@ reference = "pypi-public"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8,<3.11"
-content-hash = "a65026d4cb265206a27dfd0285510434680967a9e504073a1f174795e11f8e71"
+content-hash = "3458975c085cc9440963164b77d82674552c8978df78b3c5c1efe1c080b415b4"
