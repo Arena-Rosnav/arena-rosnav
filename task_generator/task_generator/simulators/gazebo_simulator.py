@@ -8,7 +8,7 @@ import sys
 
 from task_generator.simulators import SimulatorFactory
 from task_generator.shared import rosparam_get
-from tf_transformations import quaternion_from_euler
+from task_generator.utils.geometry import quaternion_from_euler
 from task_generator.constants import Config, Constants
 from task_generator.simulators import BaseSimulator
 
