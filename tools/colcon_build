@@ -3,6 +3,11 @@
 export BUILD_EXCLUDES='python_orocos_kdl_vendor qt_gui_cpp rqt_gui_cpp qt_gui_core rqt sensor_simulator'
 
 source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
-colcon build  --symlink-install --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)" --packages-skip ${BUILD_EXCLUDES}
+colcon build \
+    --symlink-install \
+    --continue-on-error \
+    --packages-skip-build-finished \
+    --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)" \
+    --packages-skip ${BUILD_EXCLUDES}
 
 source install/local_setup.bash
