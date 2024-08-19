@@ -2,8 +2,8 @@
 set -e
 
 export ARENA_ROSNAV_REPO=${ARENA_ROSNAV_REPO:-voshch/arena-rosnav}
-export ARENA_BRANCH=${ARENA_BRANCH:-jazzy}
-export ARENA_ROS_VERSION=${ARENA_ROS_VERSION:-jazzy}
+export ARENA_BRANCH=${ARENA_BRANCH:-humble}
+export ARENA_ROS_VERSION=${ARENA_ROS_VERSION:-humble}
 
 # == read inputs ==
 echo 'Configuring arena-rosnav...'
