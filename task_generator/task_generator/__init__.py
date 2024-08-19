@@ -5,6 +5,7 @@ from typing import Dict, List
 
 import rclpy
 import rclpy.node
+import rclpy.executors
 
 import yaml
 import ament_index_python
@@ -123,6 +124,7 @@ class TaskGenerator(rclpy.node.Node):
             # Services
             self.create_service(EmptySrv, 'reset_task', self._reset_task_srv_callback)
 
+    def post_init(self):
         # Vars
         self._env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())(
             namespace=self._namespace
@@ -157,6 +159,7 @@ class TaskGenerator(rclpy.node.Node):
                 self.srv_setup_finished.call_async(EmptySrv.Request())
             except:
                 pass
+        rclpy.spin(self)
 
     def _get_predefined_task(self, **kwargs):
         """
@@ -344,5 +347,3 @@ def init_task_gen_node(args=None):
 
     global TASKGEN_NODE
     TASKGEN_NODE = TaskGenerator()
-
-    rclpy.spin(TASKGEN_NODE)
