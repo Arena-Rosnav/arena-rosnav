@@ -24,8 +24,9 @@ class GazeboSimulator(BaseSimulator):
         node_name = namespace.strip('/').replace('/', '_')
         if not node_name:
             node_name = "gazebo_simulator"  # Default name if namespace is empty
+            
+        super().__init__(namespace=Namespace(node_name))
         
-
         self._goal_pub = TASKGEN_NODE.create_publisher(
             PoseStamped,
             self._namespace("/goal"),
