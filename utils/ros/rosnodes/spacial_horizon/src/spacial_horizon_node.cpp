@@ -18,8 +18,9 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     nh.param("fsm/publish_goal_on_subgoal_fail", publish_goal_on_subgoal_fail, true);
     nh.param("fsm/goal_tolerance", goal_tolerance, 0.2);
     nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 0.5);
-    nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 3.0);
-    nh.param("fsm/update_global_period", update_global_period, 3.0);
+    nh.param("fsm/subgoal_reach_tolerance", subgoal_reach_tolerance, 1.0);
+    nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 2.5);
+    nh.param("fsm/update_global_period", update_global_period, 5.0);
     nh.param("fsm/planning_horizon", planning_horizon, 5.0);
     
     /* ros communication with public node */
@@ -99,9 +100,9 @@ void SpacialHorizon::odomCallback(const nav_msgs::OdometryConstPtr &msg)
     // check if subgoal is reached
     if (has_goal && subgoal_pos.norm() > 0)
     {
-        if ((odom_pos - subgoal_pos).norm() <= subgoal_tolerance && subgoal_pos != end_pos)
+        if ((odom_pos - subgoal_pos).norm() <= subgoal_reach_tolerance && subgoal_pos != end_pos)
         {
-            ROS_WARN("[SpacialHorizon] Reached subgoal. Recomputing subgoal.");
+            ROS_ERROR("[SpacialHorizon] ==============> Reached subgoal. Recomputing subgoal... <==============");
             tryUpdateGlobalplanAndSubgoal();
         }
 
