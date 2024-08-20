@@ -1,46 +1,84 @@
 import dataclasses
 from typing import Any, Callable, Optional
-
 import numpy as np
-from task_generator.shared import Namespace, rosparam_get
+from rclpy.parameter import Parameter
+from rcl_interfaces.msg import SetParametersResult 
+from task_generator.shared import Namespace
+from task_generator import TASKGEN_NODE  # Use the global TASKGEN_NODE
 
 from . import Constants
 
 @dataclasses.dataclass
 class TaskConfig_General:
-    WAIT_FOR_SERVICE_TIMEOUT: float = dataclasses.field(default_factory=lambda: rosparam_get(float, "timeout_wait_for_service", Constants.get_default("TIMEOUT_WAIT_FOR_SERVICE")))
-    MAX_RESET_FAIL_TIMES: int = dataclasses.field(default_factory=lambda: rosparam_get(int, "max_reset_fail_times", Constants.get_default("MAX_RESET_FAIL_TIMES")))
-    RNG: np.random.Generator = dataclasses.field(default_factory=lambda: np.random.default_rng(1))#rosparam_get(int, "RANDOM/seed", Constants.get_default("RANDOM_SEED",1))))
-    DESIRED_EPISODES: float = dataclasses.field(default_factory=lambda: float(rosparam_get(int, "episodes", Constants.get_default("EPISODES"))))
+    WAIT_FOR_SERVICE_TIMEOUT: float = Constants.get_default("TIMEOUT_WAIT_FOR_SERVICE")
+    MAX_RESET_FAIL_TIMES: int = Constants.get_default("MAX_RESET_FAIL_TIMES")
+    RNG: np.random.Generator = np.random.default_rng(1)
+    DESIRED_EPISODES: float = Constants.get_default("EPISODES")
 
 @dataclasses.dataclass
 class TaskConfig_Robot:
-    GOAL_TOLERANCE_RADIUS: float = dataclasses.field(default_factory=lambda: rosparam_get(float, "goal_radius", Constants.get_default("GOAL_RADIUS")))
-    GOAL_TOLERANCE_ANGLE: float = dataclasses.field(default_factory=lambda: rosparam_get(float, "goal_tolerance_angle", Constants.get_default("GOAL_TOLERANCE_ANGLE")))
-    SPAWN_ROBOT_SAFE_DIST: float = dataclasses.field(default_factory=lambda: rosparam_get(float, "spawn_robot_safe_dist", Constants.get_default("SPAWN_ROBOT_SAFE_DIST")))
-    TIMEOUT: float = dataclasses.field(default_factory=lambda: float(rosparam_get(float, "timeout", Constants.get_default("TIMEOUT"))))
+    GOAL_TOLERANCE_RADIUS: float = Constants.get_default("GOAL_RADIUS")
+    GOAL_TOLERANCE_ANGLE: float = Constants.get_default("GOAL_TOLERANCE_ANGLE")
+    SPAWN_ROBOT_SAFE_DIST: float = Constants.get_default("SPAWN_ROBOT_SAFE_DIST")
+    TIMEOUT: float = Constants.get_default("TIMEOUT")
 
 @dataclasses.dataclass
 class TaskConfig_Obstacles:
-    OBSTACLE_MAX_RADIUS: float = dataclasses.field(default_factory=lambda: rosparam_get(float, "obstacle_max_radius", Constants.get_default("OBSTACLE_MAX_RADIUS")))
+    OBSTACLE_MAX_RADIUS: float = Constants.get_default("OBSTACLE_MAX_RADIUS")
 
 @dataclasses.dataclass
 class TaskConfig:
-    General: TaskConfig_General = dataclasses.field(default_factory=lambda:TaskConfig_General())
-    Robot: TaskConfig_Robot = dataclasses.field(default_factory=lambda:TaskConfig_Robot())
-    Obstacles: TaskConfig_Obstacles = dataclasses.field(default_factory=lambda:TaskConfig_Obstacles())
+    General: TaskConfig_General = TaskConfig_General()
+    Robot: TaskConfig_Robot = TaskConfig_Robot()
+    Obstacles: TaskConfig_Obstacles = TaskConfig_Obstacles()
 
 Config = TaskConfig()
 
-def _cb_reconfigure(config):
-    global Config
+# Use the global TASKGEN_NODE for parameter declaration and fetching initial values
+TASKGEN_NODE.declare_parameter('timeout_wait_for_service', Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+TASKGEN_NODE.declare_parameter('max_reset_fail_times', Config.General.MAX_RESET_FAIL_TIMES)
+TASKGEN_NODE.declare_parameter('goal_radius', Config.Robot.GOAL_TOLERANCE_RADIUS)
+TASKGEN_NODE.declare_parameter('goal_tolerance_angle', Config.Robot.GOAL_TOLERANCE_ANGLE)
+TASKGEN_NODE.declare_parameter('spawn_robot_safe_dist', Config.Robot.SPAWN_ROBOT_SAFE_DIST)
+TASKGEN_NODE.declare_parameter('timeout', Config.Robot.TIMEOUT)
+TASKGEN_NODE.declare_parameter('obstacle_max_radius', Config.Obstacles.OBSTACLE_MAX_RADIUS)
+TASKGEN_NODE.declare_parameter('episodes', Config.General.DESIRED_EPISODES)
 
-    Config.General.RNG = np.random.default_rng((lambda x: x if x >= 0 else 1)(config["RANDOM_seed"]))
-    Config.General.DESIRED_EPISODES = (lambda x: float("inf") if x < 0 else x)(config["episodes"])
-    
-    Config.Robot.GOAL_TOLERANCE_RADIUS = config["goal_radius"]
-    Config.Robot.GOAL_TOLERANCE_ANGLE = config["goal_tolerance_angle"]
-    Config.Robot.TIMEOUT = (lambda x: float("inf") if x < 0 else x)(config["timeout"])
+# Fetch the initial parameter values
+Config.General.WAIT_FOR_SERVICE_TIMEOUT = TASKGEN_NODE.get_parameter('timeout_wait_for_service').get_parameter_value().double_value
+Config.General.MAX_RESET_FAIL_TIMES = TASKGEN_NODE.get_parameter('max_reset_fail_times').get_parameter_value().integer_value
+Config.Robot.GOAL_TOLERANCE_RADIUS = TASKGEN_NODE.get_parameter('goal_radius').get_parameter_value().double_value
+Config.Robot.GOAL_TOLERANCE_ANGLE = TASKGEN_NODE.get_parameter('goal_tolerance_angle').get_parameter_value().double_value
+Config.Robot.SPAWN_ROBOT_SAFE_DIST = TASKGEN_NODE.get_parameter('spawn_robot_safe_dist').get_parameter_value().double_value
+Config.Robot.TIMEOUT = TASKGEN_NODE.get_parameter('timeout').get_parameter_value().double_value
+Config.Obstacles.OBSTACLE_MAX_RADIUS = TASKGEN_NODE.get_parameter('obstacle_max_radius').get_parameter_value().double_value
+Config.General.DESIRED_EPISODES = TASKGEN_NODE.get_parameter('episodes').get_parameter_value().double_value
+
+# Define the parameter callback function
+def parameter_callback(params: list[Parameter]):
+    global Config
+    for param in params:
+        if param.name == 'timeout_wait_for_service':
+            Config.General.WAIT_FOR_SERVICE_TIMEOUT = param.value
+        elif param.name == 'max_reset_fail_times':
+            Config.General.MAX_RESET_FAIL_TIMES = param.value
+        elif param.name == 'goal_radius':
+            Config.Robot.GOAL_TOLERANCE_RADIUS = param.value
+        elif param.name == 'goal_tolerance_angle':
+            Config.Robot.GOAL_TOLERANCE_ANGLE = param.value
+        elif param.name == 'spawn_robot_safe_dist':
+            Config.Robot.SPAWN_ROBOT_SAFE_DIST = param.value
+        elif param.name == 'timeout':
+            Config.Robot.TIMEOUT = param.value
+        elif param.name == 'obstacle_max_radius':
+            Config.Obstacles.OBSTACLE_MAX_RADIUS = param.value
+        elif param.name == 'episodes':
+            Config.General.DESIRED_EPISODES = float(param.value)
+
+    return SetParametersResult(successful=True)
+
+# Register the parameter callback
+TASKGEN_NODE.add_on_set_parameters_callback(parameter_callback)
 
 class FlatlandRandomModel:
     BODY = {
@@ -72,12 +110,9 @@ pedsim_ns = Namespace(
 
 def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     """
-    load pedsim param
+    Load Pedsim param
     """
-
-    # load once at the start
-    val = fallback #rospy.get_param(pedsim_ns(parameter), fallback)
-
+    val = fallback
     gen = lambda: val
 
     if isinstance(val, list):
@@ -117,7 +152,3 @@ class Pedsim:
     FORCE_FACTOR_SOCIAL = lp("FORCE_FACTOR_SOCIAL", 5.0)
     FORCE_FACTOR_ROBOT = lp("FORCE_FACTOR_ROBOT", 0.0)
     WAYPOINT_MODE = lp("WAYPOINT_MODE", 0)
-
-
-
-# Entfernen der dynamic_reconfigure.client.Client-Instanzierung
