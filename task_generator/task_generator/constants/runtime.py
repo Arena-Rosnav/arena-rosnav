@@ -151,5 +151,5 @@ class Pedsim:
 
 def main(args=None):
     rclpy.init(args=args)
-    node = TaskGenerator_ConfigNode(()
+    node = TaskGenerator_ConfigNode()
     rclpy.spin(node)
