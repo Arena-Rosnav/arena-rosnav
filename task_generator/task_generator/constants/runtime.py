@@ -37,7 +37,7 @@ Config = TaskConfig()
 
 class TaskGenerator_ConfigNode(Node):
     def __init__(self):
-        super().__init__('task_generator_node')
+        super().__init__('task_generator_config_node')
 
         # declare parameters and set default values 
         self.declare_parameter('timeout_wait_for_service', Config.General.WAIT_FOR_SERVICE_TIMEOUT)
