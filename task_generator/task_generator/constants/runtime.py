@@ -49,6 +49,17 @@ class TaskGenerator_ConfigNode(Node):
         self.declare_parameter('obstacle_max_radius', Config.Obstacles.OBSTACLE_MAX_RADIUS)
         self.declare_parameter('episodes', Config.General.DESIRED_EPISODES)
 
+
+        # Fetch the initial parameter values
+        Config.General.WAIT_FOR_SERVICE_TIMEOUT = self.get_parameter('timeout_wait_for_service').value
+        Config.General.MAX_RESET_FAIL_TIMES = self.get_parameter('max_reset_fail_times').value
+        Config.Robot.GOAL_TOLERANCE_RADIUS = self.get_parameter('goal_radius').value
+        Config.Robot.GOAL_TOLERANCE_ANGLE = self.get_parameter('goal_tolerance_angle').value
+        Config.Robot.SPAWN_ROBOT_SAFE_DIST = self.get_parameter('spawn_robot_safe_dist').value
+        Config.Robot.TIMEOUT = self.get_parameter('timeout').value
+        Config.Obstacles.OBSTACLE_MAX_RADIUS = self.get_parameter('obstacle_max_radius').value
+        Config.General.DESIRED_EPISODES = self.get_parameter('episodes').value
+
         # set up parameter callback
         self.add_on_set_parameters_callback(self.parameter_callback)
 
