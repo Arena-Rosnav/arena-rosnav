@@ -159,8 +159,11 @@ class Pedsim:
     FORCE_FACTOR_SOCIAL = lp("FORCE_FACTOR_SOCIAL", 5.0)
     FORCE_FACTOR_ROBOT = lp("FORCE_FACTOR_ROBOT", 0.0)
     WAYPOINT_MODE = lp("WAYPOINT_MODE", 0)
+    
+TASKGEN_NODE: TaskGenerator_ConfigNode
 
 def main(args=None):
     rclpy.init(args=args)
-    node = TaskGenerator_ConfigNode()
-    rclpy.spin(node)
+    global TASKGEN_CONFIGNODE
+    TASKGEN_CONFIGNODE = TaskGenerator_ConfigNode()
+    rclpy.spin(TASKGEN_CONFIGNODE)
