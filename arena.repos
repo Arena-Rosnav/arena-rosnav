@@ -1,12 +1,16 @@
 repositories:
-  arena/evaluation:
-    type: git
-    url: https://github.com/jokrasa1011/arena-evaluation.git
-    version: ros2
   arena/simulation-setup:
     type: git
     url: https://github.com/jokrasa1011/arena-simulation-setup.git
     version: ros2
+  arena/evaluation:
+    type: git
+    url: git@github.com:voshch/arena-evaluation.git
+    version: humble
+  # arena/evaluation:
+  #   type: git
+  #   url: https://github.com/jokrasa1011/arena-evaluation.git
+  #   version: ros2
   # arena/utils/3rd-party-robot-packages:
   #   type: git
   #   url: https://github.com/Arena-Rosnav/3rd-party-robot-packages
