@@ -4,7 +4,8 @@ import numpy as np
 from rclpy.parameter import Parameter
 from rcl_interfaces.msg import SetParametersResult 
 from task_generator.shared import Namespace
-from task_generator import TASKGEN_NODE  # Use the global TASKGEN_NODE
+from .. import TASKGEN_NODE
+ # Use the global TASKGEN_NODE
 
 from . import Constants
 
