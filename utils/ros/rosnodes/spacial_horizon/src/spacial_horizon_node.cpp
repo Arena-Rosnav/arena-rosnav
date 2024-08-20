@@ -108,20 +108,22 @@ void SpacialHorizon::odomCallback(const nav_msgs::OdometryConstPtr &msg)
     }
 }
 
-void SpacialHorizon::tryUpdateGlobalplanAndSubgoal(int try_count)
+bool SpacialHorizon::tryUpdateGlobalplanAndSubgoal(int try_count)
 {
     if (try_count > 5)
     {
         ROS_WARN("[SpacialHorizon] Could not update global plan and subgoal!");
-        return;
+        return false;
     }
     if (!has_goal)
     {
         ROS_WARN("[SpacialHorizon] No goal received yet!");
-        return;
+        return false;
     }
+
     getGlobalPath();
     bool subgoal_success = getSubgoal(subgoal_pos);
+
     if (!subgoal_success)
     {
         ROS_WARN_STREAM("[Spacial Horizon] Probably got no new goal. No subgoal found!");
@@ -130,11 +132,12 @@ void SpacialHorizon::tryUpdateGlobalplanAndSubgoal(int try_count)
             std_srvs::Empty srv;
             step_world_srv.call(srv);
         }
-        tryUpdateGlobalplanAndSubgoal(try_count + 1);
+        return tryUpdateGlobalplanAndSubgoal(try_count + 1);
     }
     else
     {
         publishSubgoal(subgoal_pos);
+        return true;
     }
 }
 
@@ -246,8 +249,7 @@ void SpacialHorizon::updateSubgoalCallback(const ros::TimerEvent &e)
         {
             ROS_INFO_STREAM("[Spacial Horizon]: Too far away from subgoal! Recomputing global path: " 
                             << end_pos << " " << odom_pos);
-            getGlobalPath();
-            subgoal_success = getSubgoal(subgoal_pos);
+            subgoal_success = tryUpdateGlobalplanAndSubgoal();
         }
 
         if (!subgoal_success)
@@ -290,6 +292,7 @@ void SpacialHorizon::getGlobalPath()
         ROS_FATAL("[SpacialHorizon - GET_PATH] Could not initialize get plan "
                   "service from %s",
                   global_planner_srv.getService().c_str());
+        return;
     }
 
     fillPathRequest(global_plan.request);
@@ -312,7 +315,7 @@ void SpacialHorizon::fillPathRequest(nav_msgs::GetPlan::Request &request)
                                         // most recent constraint
 }
 
-void SpacialHorizon::callPlanningService(ros::ServiceClient &serviceClient,
+bool SpacialHorizon::callPlanningService(ros::ServiceClient &serviceClient,
                                          nav_msgs::GetPlan &srv)
 {
     if (serviceClient.call(srv))
@@ -320,16 +323,18 @@ void SpacialHorizon::callPlanningService(ros::ServiceClient &serviceClient,
         if (srv.response.plan.poses.empty())
         {
             ROS_WARN("[SpacialHorizon - GET_PATH] Global plan was empty!");
-            return;
+            return false;
         }
 
         pub_global_plan.publish(srv.response.plan);
+        return true;
     }
     else
     {
         ROS_ERROR("[SpacialHorizon - GET_PATH] Failed to call service %s - is the "
                   "robot moving?",
                   serviceClient.getService().c_str());
+        return false;
     }
 }
 

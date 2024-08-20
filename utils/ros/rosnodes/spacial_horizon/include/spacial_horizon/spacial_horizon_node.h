@@ -81,13 +81,13 @@ private:
     bool getSubgoal(Eigen::Vector2d &subgoal);
     void updateSubgoalCallback(const ros::TimerEvent &e);
     void publishSubgoal(Eigen::Vector2d &subgoal);
-    void tryUpdateGlobalplanAndSubgoal(int try_count = 0);
+    bool tryUpdateGlobalplanAndSubgoal(int try_count = 0);
 
     /* get global plan from move base */
     void getGlobalPath();
     void getGlobalPath(const ros::TimerEvent &e);
     void fillPathRequest(nav_msgs::GetPlan::Request &request);
-    void callPlanningService(ros::ServiceClient &serviceClient, nav_msgs::GetPlan &srv);
+    bool callPlanningService(ros::ServiceClient &serviceClient, nav_msgs::GetPlan &srv);
 
 public:
     SpacialHorizon(/* args */) {}
