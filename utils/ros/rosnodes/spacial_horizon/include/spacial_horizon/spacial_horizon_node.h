@@ -61,6 +61,7 @@ private:
     bool publish_goal_on_subgoal_fail = false;
     double goal_tolerance;    // meter
     double subgoal_tolerance; // meter
+    double subgoal_reach_tolerance; // meter
     double subgoal_pub_period;
     double planning_horizon;
     double update_global_period;
