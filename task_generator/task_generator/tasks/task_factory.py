@@ -113,17 +113,17 @@ class TaskFactory:
                 self.robot_managers = robot_managers
                 self.world_manager = world_manager
 
-                self._train_mode = rosparam_get(bool, "/train_mode", False)
+                self.__modules = [
+                    cls.registry_module[module]()(task=self) for module in modules
+                ]
 
-                self.__reset_start = rospy.Publisher(
-                    self.TOPIC_RESET_START, std_msgs.Empty, queue_size=1
-                )
-                self.__reset_end = rospy.Publisher(
-                    self.TOPIC_RESET_END, std_msgs.Empty, queue_size=1
-                )
+                self._train_mode = TASKGEN_CONFIGNODE.declare_parameter("/train_mode", False)
+
+                self.__reset_start = TASKGEN_CONFIGNODE.create_publisher(std_msgs.Empty, 'reset_start', 1)
+                self.__reset_end = TASKGEN_CONFIGNODE.create_publisher(std_msgs.Empty, 'reset_end', 1)
                 self.__reset_mutex = False
 
-                rospy.Subscriber("/clock", rosgraph_msgs.Clock, self._clock_callback)
+                TASKGEN_CONFIGNODE.create_subscription(rosgraph_msgs.Clock, '/clock', self._clock_callback, 10)
                 self.last_reset_time = 0
                 self.clock = rosgraph_msgs.Clock()
 
@@ -153,8 +153,9 @@ class TaskFactory:
                 ]
 
                 if self._train_mode:
-                    self.set_tm_robots(Constants.TaskMode.TM_Robots(rospy.get_param("tm_robots")))
-                    self.set_tm_obstacles(Constants.TaskMode.TM_Obstacles(rospy.get_param("tm_obstacles")))
+                    self.set_tm_robots(Constants.TaskMode.TM_Robots(TASKGEN_CONFIGNODE.get_parameter('tm_robots').value))
+                    self.set_tm_obstacles(Constants.TaskMode.TM_Obstacles(TASKGEN_CONFIGNODE.get_parameter('tm_obstacles').value))
+
 
             def set_tm_robots(self, tm_robots: Constants.TaskMode.TM_Robots):
                 """
@@ -198,14 +199,14 @@ class TaskFactory:
                     if not self._train_mode:
                         if (
                             new_tm_robots := Constants.TaskMode.TM_Robots(
-                                rosparam_get(str, self.PARAM_TM_ROBOTS)
+                                TASKGEN_CONFIGNODE.get_parameter(self.PARAM_TM_ROBOTS).value
                             )
                         ) != self.__param_tm_robots:
                             self.set_tm_robots(new_tm_robots)
 
                         if (
                             new_tm_obstacles := Constants.TaskMode.TM_Obstacles(
-                                rosparam_get(str, self.PARAM_TM_OBSTACLES)
+                                TASKGEN_CONFIGNODE.get_parameter(self.PARAM_TM_OBSTACLES).value
                             )
                         ) != self.__param_tm_obstacles:
                             self.set_tm_obstacles(new_tm_obstacles)
@@ -227,9 +228,9 @@ class TaskFactory:
 
                     self.last_reset_time = self.clock.clock.secs
 
-                except rospy.ServiceException as e:
-                    rospy.logerr(repr(e))
-                    rospy.signal_shutdown("Reset error!")
+                except Exception as e:
+                    self.get_logger().error(repr(e))
+                    rclpy.shutdown("Reset error!")
                     raise Exception("reset error!") from e
 
                 finally:
@@ -252,18 +253,18 @@ class TaskFactory:
 
                 """
                 while self.__reset_mutex:
-                    rospy.sleep(0.001)
+                    rclpy.sleep(0.001)
                 self.__reset_mutex = True
 
                 try:
-                    rospy.set_param(self.PARAM_RESETTING, True)
+                    TASKGEN_CONFIGNODE.declare_parameter(self.PARAM_RESETTING, True).value
                     self._reset_task()
 
                 except Exception as e:
                     raise e
 
                 finally:
-                    rospy.set_param(self.PARAM_RESETTING, False)
+                    TASKGEN_CONFIGNODE.declare_parameter(self.PARAM_RESETTING, False).value
                     self.__reset_mutex = False
 
             def reset(self, **kwargs):
