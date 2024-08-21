@@ -5,7 +5,6 @@ from ros_gz_interfaces.srv import SpawnEntity, DeleteEntity, SetEntityPose, Cont
 from ros_gz_interfaces.msg import EntityFactory, WorldControl
 from geometry_msgs.msg import PoseStamped, Pose, Quaternion, Point
 import sys
-
 from task_generator.simulators import SimulatorFactory
 from task_generator.shared import rosparam_get
 from task_generator.utils.geometry import quaternion_from_euler
