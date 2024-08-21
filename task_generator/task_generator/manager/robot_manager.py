@@ -62,7 +62,7 @@ class RobotManager:
         self._goal_tolerance_distance = TASKGEN_CONFIGNODE.get_parameter('goal_radius').value
         self._goal_tolerance_angle = TASKGEN_CONFIGNODE.get_parameter('goal_tolerance_angle').value
         self._robot = robot
-        self._safety_distance = TASKGEN_CONFIGNODE.get_parameter(f'{robot.name}/safety_distance').value
+        self._safety_distance = TASKGEN_CONFIGNODE.get_parameter(f'{robot.name}/spawn_robot_safe_dist').value
         self._position = self._start_pos
 
     def set_up_robot(self):
@@ -220,8 +220,8 @@ class RobotManager:
                 'frame': f"{self.name}/" if self.name else '',
                 'inter_planner': self._robot.inter_planner,
                 'local_planner': self._robot.local_planner,
-                'complexity': TASKGEN_CONFIGNODE.get_parameter('complexity').value,
-                'train_mode': TASKGEN_CONFIGNODE.get_parameter('train_mode').value,
+                'complexity': TASKGEN_CONFIGNODE.declare_parameter('complexity', 1).value,
+                'train_mode': TASKGEN_CONFIGNODE.declare_parameter('train_mode', False).value,
                 'agent_name': self._robot.agent,
             }
 
