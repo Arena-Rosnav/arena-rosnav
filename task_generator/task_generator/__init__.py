@@ -60,6 +60,7 @@ def create_default_robot_list(
             agent=agent,
             position=next(gen_init_pos),
             name=name,
+            # TODO record_data_dir must be added to TASKGEN_CONFIGNODE
             record_data_dir=TASKGEN_CONFIGNODE.get_parameter('record_data_dir').value,
             extra=dict(),
         )
@@ -215,6 +216,9 @@ class TaskGenerator(rclpy.node.Node):
         # - Create a unique namespace name
         # - Create a robot manager
         # - Launch the robot.launch file
+        
+        
+        # TODO tm modules and map needs to be added to the taskgen_confignode
 
         tm_modules_value = TASKGEN_CONFIGNODE.get_parameter("tm_modules").value
         tm_modules = list(

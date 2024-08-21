@@ -1,14 +1,15 @@
 import os
 import typing
 
-from rosros import rospify as rospy
-from rospkg import RosPack
+import rclpy
+from rclpy.node import Node
+from rclpy.parameter import Parameter
 
 from task_generator.constants import Constants
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.world_manager import WorldManager
-from task_generator.shared import PositionOrientation, rosparam_get
+from task_generator.shared import PositionOrientation
 from task_generator.tasks import Task
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.obstacles import TM_Obstacles
