@@ -6,11 +6,12 @@ from typing import Dict, List
 import rclpy
 import rclpy.node
 import rclpy.executors
+from rclpy.parameter import Parameter
 
 import yaml
 import ament_index_python
 from task_generator.constants import Constants
-from task_generator.constants.runtime import Config
+from task_generator.constants.runtime import Config, TASKGEN_CONFIGNODE
 
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 #from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
@@ -59,7 +60,7 @@ def create_default_robot_list(
             agent=agent,
             position=next(gen_init_pos),
             name=name,
-            record_data_dir=rosparam_get(str, "record_data_dir", None),
+            record_data_dir=TASKGEN_CONFIGNODE.get_parameter('record_data_dir').value,
             extra=dict(),
         )
     ]
@@ -113,8 +114,8 @@ class TaskGenerator(rclpy.node.Node):
         )
         
         #self._entity_mode = Constants.EntityManager(self.get_parameter('entity_manager').value)
-        self._auto_reset = self.get_parameter('auto_reset').value
-        self._train_mode = self.get_parameter('train_mode').value
+        self._auto_reset = TASKGEN_CONFIGNODE.get_parameter('auto_reset').value
+        self._train_mode = TASKGEN_CONFIGNODE.get_parameter('train_mode').value
 
         # Publishers
         if not self._train_mode:
@@ -170,11 +171,11 @@ class TaskGenerator(rclpy.node.Node):
                 self._namespace
             )
 
-        cli = self.create_client(GetDistanceMap, '/distance_map')
+        cli = self.create_client(map_distance_server_srvs.GetDistanceMap, '/distance_map')
         while not cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         
-        req = GetDistanceMap.Request()
+        req = map_distance_server_srvs.GetDistanceMap.Request()
         future = cli.call_async(req)
         rclpy.spin_until_future_complete(self, future)
         
@@ -215,9 +216,7 @@ class TaskGenerator(rclpy.node.Node):
         # - Create a robot manager
         # - Launch the robot.launch file
 
-        PARAM_TM_MODULES = "tm_modules"
-
-        tm_modules_value = rosparam_get(str, PARAM_TM_MODULES, "")
+        tm_modules_value = TASKGEN_CONFIGNODE.get_parameter("tm_modules").value
         tm_modules = list(
             set(
                 [
@@ -231,7 +230,7 @@ class TaskGenerator(rclpy.node.Node):
         tm_modules.append(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
         tm_modules.append(Constants.TaskMode.TM_Module.RVIZ_UI)
 
-        if rosparam_get(str, "map_file", "") == "dynamic_map":
+        if TASKGEN_CONFIGNODE.get_parameter("map_file").value == "dynamic_map":
             tm_modules.append(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
 
         self.get_logger().debug("utils calls task factory")
@@ -249,17 +248,17 @@ class TaskGenerator(rclpy.node.Node):
 
     def _create_robot_managers(self) -> List[RobotManager]:
         # Read robot setup file
-        robot_setup_file: str = self.get_parameter('robot_setup_file').value
+        robot_setup_file: str = TASKGEN_CONFIGNODE.get_parameter('robot_setup_file').value
 
-        robot_model: str = self.get_parameter('model').value
+        robot_model: str = TASKGEN_CONFIGNODE.get_parameter('model').value
 
 
         if robot_setup_file == "":
             robots = create_default_robot_list(
                 robot_model=self._robot_loader.bind(robot_model),
-                inter_planner=rosparam_get(str, "/inter_planner", ""),
-                local_planner=rosparam_get(str, "/local_planner", ""),
-                agent=rosparam_get(str, "/agent_name", ""),
+                inter_planner=TASKGEN_CONFIGNODE.get_parameter("inter_planner").value,
+                local_planner=TASKGEN_CONFIGNODE.get_parameter("local_planner").value,
+                agent=TASKGEN_CONFIGNODE.get_parameter("agent_name").value,
                 name=f"{self._namespace[1:]}_{robot_model}"
                 if self._train_mode
                 else robot_model,
