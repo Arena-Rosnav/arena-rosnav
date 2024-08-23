@@ -37,7 +37,7 @@ class PedestrianRelativeLocation(ObservationGeneratorUnit):
 
         return get_relative_pos_to_robot(
             robot_pose=obs_dict[RobotPoseCollector.name],
-            distant_frames=np.stack(
+            distant_poses=np.stack(
                 [
                     [frame.location.x, frame.location.y, 1]
                     for frame in ped_location.points
@@ -101,4 +101,4 @@ class PedestrianRelativeVelY(ObservationGeneratorUnit):
             PedestrianRelativeVel.name
         ]
 
-        return ped_rel_vel[:, 0] if len(ped_rel_vel) > 0 else ped_rel_vel
+        return ped_rel_vel[:, 1] if len(ped_rel_vel) > 0 else ped_rel_vel

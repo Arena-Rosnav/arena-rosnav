@@ -28,6 +28,8 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 import re
 
+from stable_baselines3.common.utils import constant_fn
+
 from task_generator.shared import Namespace
 
 
@@ -95,6 +97,7 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
     update(model, "max_grad_norm", ppo_params["max_grad_norm"])
     update(model, "gae_lambda", ppo_params["gae_lambda"])
     update(model, "n_epochs", ppo_params["n_epochs"])
+    update(model, "clip_range", constant_fn(ppo_params["clip_range"]))
 
     if not config["rl_agent"]["lr_schedule"]["enabled"]:
         update(model, "learning_rate", ppo_params["learning_rate"])
