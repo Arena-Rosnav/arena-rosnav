@@ -61,7 +61,7 @@ def create_default_robot_list(
             position=next(gen_init_pos),
             name=name,
             # TODO record_data_dir must be added to TASKGEN_CONFIGNODE
-            record_data_dir=TASKGEN_CONFIGNODE.declare_parameter('record_data_dir', None).value,
+            record_data_dir=self.declare_parameter('record_data_dir', None).value,
             extra=dict(),
         )
     ]
@@ -114,9 +114,9 @@ class TaskGenerator(rclpy.node.Node):
             ]
         )
         
-        #self._entity_mode = Constants.EntityManager(self.get_parameter('entity_manager').value)
-        self._auto_reset = TASKGEN_CONFIGNODE.get_parameter('auto_reset').value
-        self._train_mode = TASKGEN_CONFIGNODE.get_parameter('train_mode').value
+        # self._entity_mode = Constants.EntityManager(self.get_parameter('entity_manager').value)
+        self._auto_reset = self.get_parameter('auto_reset').value
+        self._train_mode = self.get_parameter('train_mode').value
 
         # Publishers
         if not self._train_mode:
@@ -220,7 +220,7 @@ class TaskGenerator(rclpy.node.Node):
         
         # TODO tm modules and map needs to be added to the taskgen_confignode
 
-        tm_modules_value = TASKGEN_CONFIGNODE.declare_parameter("tm_modules", "").value
+        tm_modules_value = self.declare_parameter("tm_modules", "").value
         tm_modules = list(
             set(
                 [
@@ -234,7 +234,7 @@ class TaskGenerator(rclpy.node.Node):
         tm_modules.append(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
         tm_modules.append(Constants.TaskMode.TM_Module.RVIZ_UI)
 
-        if TASKGEN_CONFIGNODE.declare_parameter("map_file", "").value == "dynamic_map":
+        if self.declare_parameter("map_file", "").value == "dynamic_map":
             tm_modules.append(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
 
         self.get_logger().debug("utils calls task factory")
@@ -252,17 +252,17 @@ class TaskGenerator(rclpy.node.Node):
 
     def _create_robot_managers(self) -> List[RobotManager]:
         # Read robot setup file
-        robot_setup_file: str = TASKGEN_CONFIGNODE.get_parameter('robot_setup_file').value
+        robot_setup_file: str = self.get_parameter('robot_setup_file').value
 
-        robot_model: str = TASKGEN_CONFIGNODE.get_parameter('model').value
+        robot_model: str = self.get_parameter('model').value
 
 
         if robot_setup_file == "":
             robots = create_default_robot_list(
                 robot_model=self._robot_loader.bind(robot_model),
-                inter_planner=TASKGEN_CONFIGNODE.declare_parameter("inter_planner", "").value,
-                local_planner=TASKGEN_CONFIGNODE.declare_parameter("local_planner", "").value,
-                agent=TASKGEN_CONFIGNODE.declare_parameter("agent_name", "").value,
+                inter_planner=self.declare_parameter("inter_planner", "").value,
+                local_planner=self.declare_parameter("local_planner", "").value,
+                agent=self.declare_parameter("agent_name", "").value,
                 name=f"{self._namespace[1:]}_{robot_model}"
                 if self._train_mode
                 else robot_model,

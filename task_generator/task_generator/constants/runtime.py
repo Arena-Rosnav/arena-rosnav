@@ -160,7 +160,7 @@ class Pedsim:
     FORCE_FACTOR_ROBOT = lp("FORCE_FACTOR_ROBOT", 0.0)
     WAYPOINT_MODE = lp("WAYPOINT_MODE", 0)
     
-TASKGEN_CONFIGNODE = None
+TASKGEN_CONFIGNODE = TaskGenerator_ConfigNode
 
 def main(args=None):
     rclpy.init(args=args)
