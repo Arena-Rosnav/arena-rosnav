@@ -5,7 +5,7 @@ repositories:
     version: ros2
   arena/evaluation:
     type: git
-    url: git@github.com:voshch/arena-evaluation.git
+    url: https://github.com/voshch/arena-evaluation.git
     version: humble
   # arena/evaluation:
   #   type: git
