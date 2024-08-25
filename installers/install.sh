@@ -52,18 +52,6 @@ sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
 
-#python env
-mkdir -p "${ARENA_WS_DIR}/src/arena/arena-rosnav"
-cd "${ARENA_WS_DIR}/src/arena/arena-rosnav"
-curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/pyproject.toml" > pyproject.toml
-
-mkdir -p "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools"
-cd "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools"
-curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/poetry_install" > poetry_install
-curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/colcon_build" > colcon_build
-cd "${ARENA_WS_DIR}" 
-. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/poetry_install"
-
 # Getting Packages
 echo "Installing Deps...:"
 
@@ -76,6 +64,19 @@ sudo apt-get install -y \
     libtinyxml2-dev \
     libcunit1-dev \
     ros-dev-tools
+
+#python env
+mkdir -p "${ARENA_WS_DIR}/src/arena/arena-rosnav"
+cd "${ARENA_WS_DIR}/src/arena/arena-rosnav"
+curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/pyproject.toml" > pyproject.toml
+
+mkdir -p "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools"
+cd "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools"
+curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/poetry_install" > poetry_install
+curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/colcon_build" > colcon_build
+cd "${ARENA_WS_DIR}" 
+. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/poetry_install"
+
 
 # python -m pip install \
 #     colcon-common-extensions \
