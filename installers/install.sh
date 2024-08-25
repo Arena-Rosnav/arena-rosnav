@@ -52,18 +52,9 @@ sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
 
-# Getting Packages
-echo "Installing Deps...:"
-
-sudo apt-get install -y \
-    build-essential \
-    cmake \
-    git \
-    wget \
-    libasio-dev \
-    libtinyxml2-dev \
-    libcunit1-dev \
-    ros-dev-tools
+# for building python
+echo "Installing Python deps..." 
+sudo apt-get install -y build-essential python3-pip zlib1g-dev libffi-dev libssl-dev libbz2-dev libreadline-dev libsqlite3-dev liblzma-dev libncurses-dev tk-dev
 
 #python env
 mkdir -p "${ARENA_WS_DIR}/src/arena/arena-rosnav"
@@ -77,6 +68,17 @@ curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/too
 cd "${ARENA_WS_DIR}" 
 . "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/poetry_install"
 
+# Getting Packages
+echo "Installing deps...:"
+sudo apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    wget \
+    libasio-dev \
+    libtinyxml2-dev \
+    libcunit1-dev \
+    ros-dev-tools
 
 # python -m pip install \
 #     colcon-common-extensions \
