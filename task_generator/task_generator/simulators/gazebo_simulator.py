@@ -50,10 +50,10 @@ class GazeboSimulator(BaseSimulator):
         # Initialize service clients
         # https://gazebosim.org/api/sim/8/entity_creation.html
         try:
-            self._spawn_entity = TASKGEN_NODE.create_client(SpawnEntity, '/world/default/create')
-            self._delete_entity = TASKGEN_NODE.create_client(DeleteEntity, '/world/default/remove')
-            self._set_entity_pose = TASKGEN_NODE.create_client(SetEntityPose, '/world/default/set_pose')
-            self._control_world = TASKGEN_NODE.create_client(ControlWorld, '/world/default/control')
+            self._spawn_entity = TASKGEN_NODE.create_client(SpawnEntity, '/world/empty/create')
+            self._delete_entity = TASKGEN_NODE.create_client(DeleteEntity, '/world/empty/remove')
+            self._set_entity_pose = TASKGEN_NODE.create_client(SetEntityPose, '/world/empty/set_pose')
+            self._control_world = TASKGEN_NODE.create_client(ControlWorld, '/world/empty/control')
         except Exception as e:
             TASKGEN_NODE.get_logger().error(f"Error creating clients: {str(e)}")
             return

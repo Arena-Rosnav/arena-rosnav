@@ -10,11 +10,11 @@ def generate_launch_description():
     ld = launch.LaunchDescription([
         launch.actions.DeclareLaunchArgument(
             name='world',
-            default_value='turtlebot3_house'
+            default_value='empty'
         ),
         launch.actions.DeclareLaunchArgument(
             name='model',
-            default_value='burger'
+            default_value='jackal'
         ),
         launch.actions.DeclareLaunchArgument(
             name='headless',
