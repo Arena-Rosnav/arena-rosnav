@@ -143,8 +143,7 @@ sudo apt-get install -y ros-${ARENA_ROS_VERSION}-ros-gz
 # If ros_gz installation fails, build from source
 if [ $? -ne 0 ]; then
     echo "ros_gz installation via apt failed. Building from source..."
-    mkdir -p "${ARENA_WS_DIR}/src/ros_gz"
-    cd "${ARENA_WS_DIR}/src/ros_gz"
+    cd "${ARENA_WS_DIR}/src"
     git clone https://github.com/gazebosim/ros_gz.git -b ${ARENA_ROS_VERSION}
     cd "${ARENA_WS_DIR}"
     rosdep install -r --from-paths src -i -y --rosdistro ${ARENA_ROS_VERSION}
