@@ -148,7 +148,6 @@ if [ $? -ne 0 ]; then
     git clone https://github.com/gazebosim/ros_gz.git -b ${ARENA_ROS_VERSION}
     cd "${ARENA_WS_DIR}"
     rosdep install -r --from-paths src -i -y --rosdistro ${ARENA_ROS_VERSION}
-    colcon build --cmake-args -DBUILD_TESTING=OFF
 fi
 
 cd "${ARENA_WS_DIR}"
