@@ -8,6 +8,7 @@ colcon build \
     --continue-on-error \
     --packages-skip-build-finished \
     --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)" \
-    --packages-skip ${BUILD_EXCLUDES}
+    --packages-skip ${BUILD_EXCLUDES} \
+    "$@"
 
 source install/local_setup.bash
