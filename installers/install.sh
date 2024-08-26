@@ -137,6 +137,20 @@ cd "${ARENA_WS_DIR}/src/gazebo"
 sudo apt -y install \
   $(sort -u $(find . -iname 'packages-'`lsb_release -cs`'.apt' -o -iname 'packages.apt' | grep -v '/\.git/') | sed '/gz\|sdf/d' | tr '\n' ' ')
 
+# Install ros_gz
+sudo apt-get install -y ros-${ARENA_ROS_VERSION}-ros-gz
+
+# If ros_gz installation fails, build from source
+if [ $? -ne 0 ]; then
+    echo "ros_gz installation via apt failed. Building from source..."
+    mkdir -p "${ARENA_WS_DIR}/src/ros_gz"
+    cd "${ARENA_WS_DIR}/src/ros_gz"
+    git clone https://github.com/gazebosim/ros_gz.git -b ${ARENA_ROS_VERSION}
+    cd "${ARENA_WS_DIR}"
+    rosdep install -r --from-paths src -i -y --rosdistro ${ARENA_ROS_VERSION}
+    colcon build --cmake-args -DBUILD_TESTING=OFF
+fi
+
 cd "${ARENA_WS_DIR}"
 . "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
 
