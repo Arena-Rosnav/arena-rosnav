@@ -146,7 +146,7 @@ if [ $? -ne 0 ]; then
     cd "${ARENA_WS_DIR}/src"
     git clone https://github.com/gazebosim/ros_gz.git -b ${ARENA_ROS_VERSION}
     cd "${ARENA_WS_DIR}"
-    rosdep install -r --from-paths src -i -y --rosdistro ${ARENA_ROS_VERSION}
+    rosdep install -r --from-paths src/ros_gz -i -y --rosdistro ${ARENA_ROS_VERSION} --skip-keys "ignition-gazebo6"
 fi
 
 cd "${ARENA_WS_DIR}"
