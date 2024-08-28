@@ -9,7 +9,7 @@ import rclpy.executors
 from rclpy.parameter import Parameter
 
 import yaml
-import ament_index_python
+from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Config, TASKGEN_CONFIGNODE
 
