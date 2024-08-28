@@ -5,6 +5,8 @@ export ARENA_ROSNAV_REPO=${ARENA_ROSNAV_REPO:-voshch/arena-rosnav}
 export ARENA_BRANCH=${ARENA_BRANCH:-humble}
 export ARENA_ROS_VERSION=${ARENA_ROS_VERSION:-humble}
 
+export GAZEBO_VERSION=${GAZEBO_VERSION:-garden}
+
 # == read inputs ==
 echo 'Configuring arena-rosnav...'
 
@@ -68,6 +70,9 @@ curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/too
 cd "${ARENA_WS_DIR}" 
 . "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/poetry_install"
 
+#
+mkdir -p "${ARENA_WS_DIR}/src/deps"
+
 # Getting Packages
 echo "Installing deps...:"
 sudo apt-get install -y \
@@ -123,11 +128,13 @@ sudo apt-get install -y \
   python3-pip \
   lsb-release \
   gnupg \
-  curl
+  curl \
+  libgps-dev
 
-curl -O https://raw.githubusercontent.com/gazebo-tooling/gazebodistro/master/collection-harmonic.yaml
+curl -O "https://raw.githubusercontent.com/gazebo-tooling/gazebodistro/master/collection-${GAZEBO_VERSION}.yaml"
 mkdir -p "${ARENA_WS_DIR}/src/gazebo"
-vcs import "${ARENA_WS_DIR}/src/gazebo" < collection-harmonic.yaml
+until vcs import "${ARENA_WS_DIR}/src/gazebo" < "collection-${GAZEBO_VERSION}.yaml" ; do echo "failed to update, retrying..." ; done
+
 
 sudo curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
@@ -136,17 +143,30 @@ sudo apt-get update
 cd "${ARENA_WS_DIR}/src/gazebo"
 sudo apt -y install \
   $(sort -u $(find . -iname 'packages-'`lsb_release -cs`'.apt' -o -iname 'packages.apt' | grep -v '/\.git/') | sed '/gz\|sdf/d' | tr '\n' ' ')
+cd "${ARENA_WS_DIR}"
+
+rosdep install -r --from-paths src/gazebo -i -y --rosdistro ${ARENA_ROS_VERSION}
 
 # Install ros_gz
 sudo apt-get install -y ros-${ARENA_ROS_VERSION}-ros-gz
 
 # If ros_gz installation fails, build from source
 if [ $? -ne 0 ]; then
-    echo "ros_gz installation via apt failed. Building from source..."
-    cd "${ARENA_WS_DIR}/src"
-    git clone https://github.com/gazebosim/ros_gz.git -b ${ARENA_ROS_VERSION}
-    cd "${ARENA_WS_DIR}"
-    rosdep install -r --from-paths src/ros_gz -i -y --rosdistro ${ARENA_ROS_VERSION} --skip-keys "ignition-gazebo6"
+  echo "ros_gz installation via apt failed. Building from source..."
+  export GZ_VERSION=${GAZEBO_VERSION}
+
+  cd "${ARENA_WS_DIR}/src"
+  git clone https://github.com/gazebosim/ros_gz.git -b ${ARENA_ROS_VERSION}
+  cd "${ARENA_WS_DIR}"
+
+  #TODO resolve this through rosdep
+  cd "${ARENA_WS_DIR}/src/deps"
+  git clone https://github.com/rudislabs/actuator_msgs
+  git clone https://github.com/swri-robotics/gps_umd
+  git clone https://github.com/ros-perception/vision_msgs
+  cd "${ARENA_WS_DIR}"
+
+  rosdep install -r --from-paths src/ros_gz -i -y --rosdistro ${ARENA_ROS_VERSION}
 fi
 
 cd "${ARENA_WS_DIR}"
