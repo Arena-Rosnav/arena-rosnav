@@ -2,6 +2,8 @@
 
 export BUILD_EXCLUDES='python_orocos_kdl_vendor qt_gui_cpp rqt_gui_cpp qt_gui_core rqt sensor_simulator'
 
+ARENA_WS_DIR="$(pwd)"
+
 source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
 colcon build \
     --symlink-install \
@@ -11,4 +13,5 @@ colcon build \
     --packages-skip ${BUILD_EXCLUDES} \
     "$@"
 
+cd $ARENA_WS_DIR
 source install/local_setup.bash
