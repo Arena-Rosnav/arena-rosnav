@@ -83,22 +83,8 @@ sudo apt-get install -y \
     libasio-dev \
     libtinyxml2-dev \
     libcunit1-dev \
-    ros-dev-tools
-
-# python -m pip install \
-#     colcon-common-extensions \
-#     flake8-blind-except \
-#     flake8-class-newline \
-#     flake8-deprecated \
-#     mypy \
-#     pip \
-#     pytest \
-#     pytest-cov \
-#     pytest-mock \
-#     pytest-repeat \
-#     pytest-rerunfailures \
-#     pytest-runner \
-#     pytest-timeout
+    ros-dev-tools \
+    libpcl-dev
 
 # Check if the default ROS sources.list file already exists
 ros_sources_list="/etc/ros/rosdep/sources.list.d/20-default.list"
@@ -117,6 +103,9 @@ cd "${ARENA_WS_DIR}"
 curl "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_VERSION}/ros2.repos" > ros2.repos
 until vcs import src/ros2 < ros2.repos ; do echo "failed to update, retrying..." ; done
 rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers"
+
+cd "${ARENA_WS_DIR}/src/deps"
+git clone https://github.com/ros-perception/pcl_msgs.git -b ros2 pcl_msgs
 
 cd "${ARENA_WS_DIR}"
 . "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"

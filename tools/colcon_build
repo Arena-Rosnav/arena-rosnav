@@ -1,6 +1,6 @@
 #! /usr/bin/bash
 
-export BUILD_EXCLUDES='python_orocos_kdl_vendor qt_gui_cpp rqt_gui_cpp qt_gui_core rqt sensor_simulator'
+export BUILD_EXCLUDES='qt_gui_cpp rqt_gui_cpp qt_gui_core rqt'
 
 ARENA_WS_DIR="$(pwd)"
 
