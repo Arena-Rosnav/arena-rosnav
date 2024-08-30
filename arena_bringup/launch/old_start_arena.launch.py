@@ -1,12 +1,14 @@
 import os
-import sys
-
-import launch
-import launch_ros.actions
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
+from launch.conditions import IfCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
 
-def generate_launch_description():
+def old_generate_launch_description():
     ld = launch.LaunchDescription([
         launch.actions.DeclareLaunchArgument(
             name='desired_resets',
@@ -341,19 +343,19 @@ def generate_launch_description():
         #         'headless': launch.substitutions.LaunchConfiguration('headless')
         #     }.items()
         # ),
-        launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                os.path.join(get_package_share_directory(
-                    'arena_bringup'), 'launch/testing/simulators/gazebo.launch.py')
-            ),
-            launch_arguments={
-                'model': launch.substitutions.LaunchConfiguration('model'),
-                'rviz_file': launch.substitutions.LaunchConfiguration('rviz_file'),
-                'show_rviz': launch.substitutions.LaunchConfiguration('show_rviz'),
-                'world': launch.substitutions.LaunchConfiguration('world_file'),
-                'headless': launch.substitutions.LaunchConfiguration('headless')
-            }.items()
-        ),
+        # launch.actions.IncludeLaunchDescription(
+        #     launch.launch_description_sources.PythonLaunchDescriptionSource(
+        #         os.path.join(get_package_share_directory(
+        #             'arena_bringup'), 'launch/testing/simulators/gazebo.launch.py')
+        #     ),
+        #     launch_arguments={
+        #         'model': launch.substitutions.LaunchConfiguration('model'),
+        #         'rviz_file': launch.substitutions.LaunchConfiguration('rviz_file'),
+        #         'show_rviz': launch.substitutions.LaunchConfiguration('show_rviz'),
+        #         'world': launch.substitutions.LaunchConfiguration('world_file'),
+        #         'headless': launch.substitutions.LaunchConfiguration('headless')
+        #     }.items()
+        # ),
         # launch.actions.IncludeLaunchDescription(
         #     launch.launch_description_sources.PythonLaunchDescriptionSource(
         #         os.path.join(get_package_share_directory(
@@ -384,7 +386,3 @@ def generate_launch_description():
         )
     ])
     return ld
-
-
-if __name__ == '__main__':
-    generate_launch_description()

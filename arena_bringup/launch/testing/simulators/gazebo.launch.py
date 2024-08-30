@@ -1,5 +1,5 @@
 import os
-import sys
+import subprocess
 
 import launch
 import launch_ros.actions
@@ -7,56 +7,38 @@ from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
+    # --- Find Gazebo in the build directory ---
+    gazebo_path = os.path.join(get_package_share_directory('ros_gz_sim'), 'lib', 'gazebo')
+    gz_sim_path = os.path.join(gazebo_path, 'gz')
+
+    # Set environment variables
+    env = os.environ.copy()
+    env['GZ_CONFIG_PATH'] = os.path.join(gazebo_path, 'share', 'gz')
+    env['PATH'] = f"{gz_sim_path}:{env['PATH']}"
+
+    # Launch Arguments
     ld = launch.LaunchDescription([
-        launch.actions.DeclareLaunchArgument(
-            name='world',
-            default_value='empty'
+
+        # Launch gz_sim (Gazebo)
+        launch.actions.ExecuteProcess(
+            cmd=['ruby', os.path.join(gz_sim_path, 'gz'), 'sim', '--force-version', '7',
+                 launch.substitutions.LaunchConfiguration('world_file')],
+            env=env,
+            output='screen'
         ),
-        launch.actions.DeclareLaunchArgument(
-            name='model',
-            default_value='jackal'
-        ),
-        launch.actions.DeclareLaunchArgument(
-            name='headless',
-            default_value='false'
-        ),
-        launch.actions.DeclareLaunchArgument(
-            name='show_rviz',
-            default_value='true',
-            description='Wether to show rviz or not'
-        ),
-        launch.actions.DeclareLaunchArgument(
-            name='rviz_file',
-            default_value='nav_LP'
-        ),
-        launch.actions.DeclareLaunchArgument(
-            name='visualization',
-            default_value=''
-        ),
-        launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                os.path.join(get_package_share_directory(
-                    'gazebo_ros'), 'launch/empty_world.launch.py')
-            ),
-            launch_arguments={
-                'world_name': launch.substitutions.LaunchConfiguration('world'),
-                'paused': 'false',
-                'use_sim_time': 'true',
-                'debug': 'false',
-                'verbose': 'true',
-                'gui': "$(eval not arg('headless') > 0)",
-                'headless': "$(eval arg('headless') > 0)"
-            }.items()
-        ),
-        launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                os.path.join(get_package_share_directory(
-                    'arena_bringup'), 'launch/utils/rviz.launch.py')
-            ),
-            launch_arguments={
-                'show_rviz': launch.substitutions.LaunchConfiguration('show_rviz')
-            }.items()
-        )
+    
+        # # Launch robot model
+        # launch.actions.IncludeLaunchDescription(
+        #     launch.launch_description_sources.PythonLaunchDescriptionSource(
+        #         os.path.join(get_package_share_directory(
+        #             'ros_gz_sim'), 'launch', 'gz_spawn_entity.launch.py')
+        #     ),
+        #     launch_arguments={
+        #         'world_name': launch.substitutions.LaunchConfiguration('world_file'),
+        #         'name': launch.substitutions.LaunchConfiguration('model'),
+        #         'sdf': launch.substitutions.LaunchConfiguration('robot_setup_file')
+        #     }.items()
+        # ),
     ])
     return ld
 
