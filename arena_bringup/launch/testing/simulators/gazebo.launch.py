@@ -7,11 +7,15 @@ from launch.substitutions import PathJoinSubstitution, TextSubstitution
 
 def generate_launch_description():
     # Set environment variables
-    GZ_CONFIG_PATH = "/root/arena4_ws/install/gz-sim7/share/gz"  # Set the path directly
+    GZ_CONFIG_PATH = "/root/arena4_ws/install/gz-sim7/share/gz"
     GZ_SIM_PHYSICS_ENGINE_PATH = "/root/arena4_ws/build/gz-physics6"
-    env = os.environ.copy()
-    env['GZ_CONFIG_PATH'] = GZ_CONFIG_PATH
-    env['GZ_SIM_PHYSICS_ENGINE_PATH'] = GZ_SIM_PHYSICS_ENGINE_PATH
+    # Update the environment
+    os.environ['GZ_CONFIG_PATH'] = GZ_CONFIG_PATH
+    os.environ['GZ_SIM_PHYSICS_ENGINE_PATH'] = GZ_SIM_PHYSICS_ENGINE_PATH
+
+    # debug
+    # print(f"GZ_CONFIG_PATH: {os.environ.get('GZ_CONFIG_PATH')}")
+    # print(f"GZ_SIM_PHYSICS_ENGINE_PATH: {os.environ.get('GZ_SIM_PHYSICS_ENGINE_PATH')}")
 
     # Get the path to the gz_sim.launch.py file
     gz_sim_launch_file = os.path.join(
@@ -40,7 +44,7 @@ def generate_launch_description():
     ])
 
     # Set the physics engine to Bullet Featherstone
-    physics_engine = 'gz-physics-bullet-featherstone-plugin'
+    physics_engine = 'gz-physics-dartsim'
 
     # Launch gz_sim.launch.py with arguments
     ld = launch.LaunchDescription([
