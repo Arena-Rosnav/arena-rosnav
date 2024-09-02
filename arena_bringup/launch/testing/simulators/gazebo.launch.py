@@ -7,11 +7,21 @@ from launch.substitutions import PathJoinSubstitution, TextSubstitution
 
 def generate_launch_description():
     # Set environment variables
-    GZ_CONFIG_PATH = "/root/arena4_ws/install/gz-sim7/share/gz"
-    GZ_SIM_PHYSICS_ENGINE_PATH = "/root/arena4_ws/build/gz-physics6"
+    current_dir = os.path.abspath(__file__)
+    workspace_root = current_dir
+
+    while not workspace_root.endswith('arena4_ws'):
+        workspace_root = os.path.dirname(workspace_root)
+
+    if not workspace_root.endswith('arena4_ws'):
+        raise ValueError("Could not find the 'arena4_ws' directory in the current path.")
+    GZ_CONFIG_PATH = os.path.join(workspace_root, 'install', 'gz-sim7', 'share', 'gz')
+    GZ_SIM_PHYSICS_ENGINE_PATH = os.path.join(workspace_root, 'build', 'gz-physics6')
+    GZ_SIM_RESOURCE_PATH = os.path.join(workspace_root, 'src', 'gazebo', 'gz-sim', 'test', 'worlds', 'models')
     # Update the environment
     os.environ['GZ_CONFIG_PATH'] = GZ_CONFIG_PATH
     os.environ['GZ_SIM_PHYSICS_ENGINE_PATH'] = GZ_SIM_PHYSICS_ENGINE_PATH
+    os.environ['GZ_SIM_RESOURCE_PATH'] = GZ_SIM_RESOURCE_PATH
 
     # debug
     # print(f"GZ_CONFIG_PATH: {os.environ.get('GZ_CONFIG_PATH')}")
