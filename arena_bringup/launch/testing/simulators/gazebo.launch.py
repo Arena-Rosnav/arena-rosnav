@@ -24,12 +24,7 @@ def generate_launch_description():
         'gz_sim.launch.py'
     )
     # Define paths to your world SDF and robot URDF/gazebo files (using defaults if not provided)
-    world_file = launch.substitutions.LaunchConfiguration('world_file', default='empty')  # Default world
-    world_path = PathJoinSubstitution([
-        '../../../../../../gazebo/gz-sim/test/worlds/',
-        world_file,
-        '.sdf'
-    ])
+    world_file = launch.substitutions.LaunchConfiguration('world_file', default='empty.sdf')  # Default world
 
     model = launch.substitutions.LaunchConfiguration('model', default='jackal')
     robot_path = PathJoinSubstitution([
@@ -51,9 +46,9 @@ def generate_launch_description():
                 gz_sim_launch_file
             ),
             launch_arguments={
-                'world': world_path,
+                'gz_args': world_file,
                 'robot': robot_path,
-                'verbose': 'true',  # Optional for debugging
+                # 'verbose': 'true',  # Optional for debugging
                 # 'headless': launch.substitutions.LaunchConfiguration('headless'),
                 'physics-engine': physics_engine
             }.items()
