@@ -36,17 +36,17 @@ def generate_launch_description():
     # Define paths to your world SDF and robot URDF/gazebo files (using defaults if not provided)
     world_file = launch.substitutions.LaunchConfiguration('world_file', default='empty.sdf')  # Default world
 
-    model = launch.substitutions.LaunchConfiguration('model', default='jackal')
-    robot_path = PathJoinSubstitution([
-        get_package_share_directory('arena_simulation_setup'),
-        'entities', 
-        'robots',
-        model,
-        'urdf',
-        TextSubstitution(text='%s.gazebo' % model)
-    ])
+    # model = launch.substitutions.LaunchConfiguration('model', default='jackal')
+    # robot_path = PathJoinSubstitution([
+    #     get_package_share_directory('arena_simulation_setup'),
+    #     'entities', 
+    #     'robots',
+    #     model,
+    #     'urdf',
+    #     TextSubstitution(text='%s.gazebo' % model)
+    # ])
 
-    # Set the physics engine to Bullet Featherstone
+    # Set the physics engine to dartsim
     physics_engine = 'gz-physics-dartsim'
 
     # Launch gz_sim.launch.py with arguments
@@ -57,7 +57,7 @@ def generate_launch_description():
             ),
             launch_arguments={
                 'gz_args': world_file,
-                'robot': robot_path,
+                # 'robot': robot_path,
                 # 'verbose': 'true',  # Optional for debugging
                 # 'headless': launch.substitutions.LaunchConfiguration('headless'),
                 'physics-engine': physics_engine
