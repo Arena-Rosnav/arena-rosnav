@@ -5,8 +5,8 @@ from rl_utils.utils.observation_collector import LastActionCollector
 from rl_utils.utils.observation_collector.constants import DONE_REASONS
 from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
 from stable_baselines3.common.vec_env.base_vec_env import VecEnvObs
-
 import rospy
+import wandb
 
 BATCHED_ZERO_ACTION = np.array([[0.0, 0.0, 0.0]], dtype=np.float32)
 
@@ -138,21 +138,34 @@ class VecStatsRecorder(VecEnvWrapper):
                 else self.actions / self.num_steps
             )
 
+        avg_step_time = sum(self.step_times) / len(self.step_times)
+        avg_episode_return = sum(self.episode_returns) / len(self.episode_returns)
+        avg_episode_length = sum(self.episode_lengths) / len(self.episode_lengths)
+
         print("-" * 40, sep="", end="\n")  # Print 40 dashes as a line separator
         print(f"Episode {self.num_episodes} / Step {self.num_steps}:")
         if self._record_actions:
             print(f"Average actions: {avg_actions} (linear, transversal, angular)")
         print(
-            f"Average step time: {sum(self.step_times) / len(self.step_times):.4f} seconds"
+            f"Average step time: {avg_step_time:.4f} seconds"
         )
         print(
-            f"Average episode return: {sum(self.episode_returns) / len(self.episode_returns):.3f} pts"
+            f"Average episode return: {avg_episode_return:.3f} pts"
         )
         print(
-            f"Mean episode length: {sum(self.episode_lengths) / len(self.episode_lengths):.1f} steps"
+            f"Mean episode length: {avg_episode_length:.1f} steps"
         )
         print(f"Done reasons: {self.done_reasons}")
         print("-" * 40, sep="", end="\n")  # Print another line separator
+            
+        wandb.log({
+            "train_episode/step_time": avg_step_time,
+            "train_episode/reward": avg_episode_return,
+            "train_episode/length": avg_episode_length,
+            "train_episode/success_rate": self.done_reasons[DONE_REASONS.SUCCESS.name]/len(self.episode_lengths),
+            "train_episode/collision_rate": self.done_reasons[DONE_REASONS.COLLISION.name]/len(self.episode_lengths),
+            "train_episode/timeout_rate": self.done_reasons[DONE_REASONS.STEP_LIMIT.name]/len(self.episode_lengths)
+        })
 
     def reset(self) -> VecEnvObs:
         return self.venv.reset()  # pytype:disable=annotation-type-mismatch
