@@ -154,6 +154,32 @@ def save_model(model: PPO, paths: dict, file_name: str = "best_model") -> None:
             os.path.join(paths["model"], f"vec_normalize_{file_name}.pkl")
         )
 
+def freeze_weights(model: PPO, include: List[str] = None, exclude: List[str] = None):
+    if include is None:
+        rospy.logwarn("No include list provided. Skipping weight freezing.")
+        return model
+
+    exclude = exclude or []
+
+    if len(exclude) == 0 or exclude[0].lower() == "none" or exclude[0] == "":
+        exclude = ["---"]
+
+    state_dict_model = model.policy.state_dict()
+
+    weights_dict = {
+        key: value
+        for key, value in state_dict_model.items()
+        if any(re.match(_key, key) for _key in include)
+        and not any(item in key for item in exclude)
+    }
+
+    rospy.loginfo(f"Freezing weights for {len(weights_dict.keys())} keys!")
+
+    for name, param in model.policy.features_extractor.named_parameters():
+        if name in weights_dict.keys():
+            param.requires_grad = False
+
+    return model
 
 def get_ppo_instance(
     agent_description: BaseAgent,
@@ -201,6 +227,7 @@ def get_ppo_instance(
 
     # if not rospy.get_param("debug_mode") and new_model:
     #     save_model(model, paths)
+    # freeze_weights(model=model, include=["^features_extractor"])
 
     return model
 
