@@ -17,11 +17,11 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     nh.param("/disable_intermediate_planner", disable_intermediate_planner, false);
     nh.param("fsm/publish_goal_on_subgoal_fail", publish_goal_on_subgoal_fail, true);
     nh.param("fsm/goal_tolerance", goal_tolerance, 0.2);
-    nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 0.5);
+    nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 0.75);
     nh.param("fsm/subgoal_reach_tolerance", subgoal_reach_tolerance, 1.0);
-    nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 2.5);
-    nh.param("fsm/update_global_period", update_global_period, 5.0);
-    nh.param("fsm/planning_horizon", planning_horizon, 5.0);
+    nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 5.0);
+    nh.param("fsm/update_global_period", update_global_period, 2.0);
+    nh.param("fsm/planning_horizon", planning_horizon, 4.0);
     
     /* ros communication with public node */
     sub_goal =
@@ -204,6 +204,8 @@ bool SpacialHorizon::getSubgoal(Eigen::Vector2d &subgoal)
             Eigen::Vector2d(global_plan.response.plan.poses[i].pose.position.x,
                             global_plan.response.plan.poses[i].pose.position.y);
         double dist_to_robot = (odom_pos - wp_pt).norm();
+
+        // Check if the waypoint is planning_horizon + subgoal_tolerance away from the robot
         double diff_wp_horizon = abs(dist_to_robot - planning_horizon);
 
         if (diff_wp_horizon < subgoal_tolerance * 2)
