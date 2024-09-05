@@ -25,8 +25,6 @@ def initialize_config(
     :param config: dictionary containing training configurations
     :param n_envs: number of envs
     """
-    import rosnav.model.custom_policy
-    import rosnav.model.custom_sb3_policy
 
     config["n_envs"] = (
         rospy.get_param("num_envs")

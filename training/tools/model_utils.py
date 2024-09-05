@@ -202,6 +202,9 @@ def get_ppo_instance(
     # if not rospy.get_param("debug_mode") and new_model:
     #     save_model(model, paths)
 
+    # freeze weights
+    freeze_weights(model=model, include=["^features_extractor"])
+
     return model
 
 
@@ -377,6 +380,34 @@ def transfer_weights(
     model1.policy.load_state_dict(state_dict_model1, strict=True)
 
 
+def freeze_weights(model: PPO, include: List[str] = None, exclude: List[str] = None):
+    if include is None:
+        rospy.logwarn("No include list provided. Skipping weight freezing.")
+        return model
+
+    exclude = exclude or []
+
+    if len(exclude) == 0 or exclude[0].lower() == "none" or exclude[0] == "":
+        exclude = ["---"]
+
+    state_dict_model = model.policy.state_dict()
+
+    weights_dict = {
+        key: value
+        for key, value in state_dict_model.items()
+        if any(re.match(_key, key) for _key in include)
+        and not any(item in key for item in exclude)
+    }
+
+    rospy.loginfo(f"Freezing weights for {len(weights_dict.keys())} keys!")
+
+    for name, param in model.policy.features_extractor.named_parameters():
+        if name in weights_dict.keys():
+            param.requires_grad = False
+
+    return model
+
+
 from sb3_contrib.common.recurrent.type_aliases import RNNStates
 from sb3_contrib.common.recurrent.buffers import (
     RecurrentDictRolloutBuffer,
@@ -424,3 +455,9 @@ def init_rppo_rollout_buffer(model: RecurrentPPO):
         gae_lambda=model.gae_lambda,
         n_envs=model.n_envs,
     )
+
+
+def load_policies():
+    import rosnav.model.custom_policy
+    import rosnav.model.custom_sb3_policy
+    import rosnav.model.sb3_policy.paper
