@@ -48,31 +48,39 @@ class GazeboSimulator(BaseSimulator):
         # self._remove_model_srv = self.create_client(DeleteModel, '/gazebo/delete_model')
         
         # Initialize service clients
-        # https://gazebosim.org/api/sim/8/entity_creation.html
+        # https://gazebosim.org/api/sim/8/entity_creation.html        
         try:
-            self._spawn_entity = TASKGEN_NODE.create_client(SpawnEntity, '/world/empty/create')
-            self._delete_entity = TASKGEN_NODE.create_client(DeleteEntity, '/world/empty/remove')
-            self._set_entity_pose = TASKGEN_NODE.create_client(SetEntityPose, '/world/empty/set_pose')
-            self._control_world = TASKGEN_NODE.create_client(ControlWorld, '/world/empty/control')
+            self._spawn_entity = TASKGEN_NODE.create_client(SpawnEntity, '/world/diff_drive/create')
+            self._delete_entity = TASKGEN_NODE.create_client(DeleteEntity, '/world/diff_drive/remove')
+            self._set_entity_pose = TASKGEN_NODE.create_client(SetEntityPose, '/world/diff_drive/set_pose')
+            self._control_world = TASKGEN_NODE.create_client(ControlWorld, '/world/diff_drive/control')
         except Exception as e:
             TASKGEN_NODE.get_logger().error(f"Error creating clients: {str(e)}")
             return
 
         TASKGEN_NODE.get_logger().info("Waiting for gazebo services...")
         # Wait for services to be available
-        if not self._spawn_entity.wait_for_service(timeout_sec=5.0):
+        while not self._spawn_entity.wait_for_service(timeout_sec=15.0):
             TASKGEN_NODE.get_logger().error("Spawn entity service not available")
             return
-        if not self._delete_entity.wait_for_service(timeout_sec=5.0):
+        while not self._delete_entity.wait_for_service(timeout_sec=15.0):
             TASKGEN_NODE.get_logger().error("Delete entity service not available")
             return
-        if not self._set_entity_pose.wait_for_service(timeout_sec=5.0):
+        while not self._set_entity_pose.wait_for_service(timeout_sec=15.0):
             TASKGEN_NODE.get_logger().error("Set entity pose service not available")
             return
-        if not self._control_world.wait_for_service(timeout_sec=5.0):
+        while not self._control_world.wait_for_service(timeout_sec=15.0):
             TASKGEN_NODE.get_logger().error("Control world service not available")
             return
-
+        # resp_spawn = self._spawn_entity.call_async(req)
+        # resp_delete = self._delete_entity.call_async(req)
+        # resp_pose = self._set_entity_pose.call_async(req)
+        # resp_world = self._control_world.call_async(req)
+        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_spawn)
+        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_delete)
+        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_pose)
+        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_world)
+        
         TASKGEN_NODE.get_logger().info("Gazebo services are available now.")
         
 
