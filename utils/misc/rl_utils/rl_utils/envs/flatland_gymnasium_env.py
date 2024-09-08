@@ -123,10 +123,12 @@ class FlatlandEnv(gymnasium.Env):
             self._setup_env_for_training(
                 self._reward_fnc, **self._task_generator_kwargs
             )
+            obs_structure = set(self.reward_calculator.required_observations).union(
+                set(self.model_space_encoder.encoder.required_observations)
+            )
+        else:
+            obs_structure = set(self.model_space_encoder.encoder.required_observations)
 
-        obs_structure = set(self.reward_calculator.required_observations).union(
-            set(self.model_space_encoder.encoder.required_observations)
-        )
         obs_structure.add(FullRangeLaserCollector)
 
         self.observation_collector = ObservationManager(

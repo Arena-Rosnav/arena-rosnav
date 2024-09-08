@@ -12,6 +12,7 @@ from tools.model_utils import (
     get_ppo_instance,
     init_callbacks,
     save_model,
+    load_policies,
 )
 from tools.ros_param_distributor import populate_ros_params
 
@@ -48,6 +49,7 @@ def main():
 
     populate_ros_params(config, paths)
 
+    load_policies()
     agent_description: BaseAgent = AgentFactory.instantiate(
         config["rl_agent"]["architecture_name"]
     )
@@ -59,6 +61,9 @@ def main():
     model = get_ppo_instance(
         agent_description, observation_space_manager, config, train_env, paths
     )
+
+    # Get the number of parameters
+    # num_params = sum(p.numel() for p in model.policy.parameters())
 
     rospy.on_shutdown(lambda: on_shutdown(model, paths))
 
