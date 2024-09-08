@@ -17,11 +17,11 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     nh.param("/disable_intermediate_planner", disable_intermediate_planner, false);
     nh.param("fsm/publish_goal_on_subgoal_fail", publish_goal_on_subgoal_fail, true);
     nh.param("fsm/goal_tolerance", goal_tolerance, 0.2);
-    nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 0.5);
-    nh.param("fsm/subgoal_reach_tolerance", subgoal_reach_tolerance, 1.0);
-    nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 2.5);
-    nh.param("fsm/update_global_period", update_global_period, 5.0);
-    nh.param("fsm/planning_horizon", planning_horizon, 5.0);
+    nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 1.0);
+    nh.param("fsm/subgoal_reach_tolerance", subgoal_reach_tolerance, 1.5);
+    nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 10.0);
+    nh.param("fsm/update_global_period", update_global_period, 2.0);
+    nh.param("fsm/planning_horizon", planning_horizon, 6.0);
     
     /* ros communication with public node */
     sub_goal =
@@ -192,38 +192,27 @@ bool SpacialHorizon::getSubgoal(Eigen::Vector2d &subgoal)
     if (dist_to_goal < planning_horizon)
     {
         subgoal = end_pos;
-
         return true;
     }
 
-    Eigen::Vector2d _closest_point;
-
     for (size_t i = 0; i < global_plan.response.plan.poses.size(); i++)
     {
-        Eigen::Vector2d wp_pt =
-            Eigen::Vector2d(global_plan.response.plan.poses[i].pose.position.x,
-                            global_plan.response.plan.poses[i].pose.position.y);
+        Eigen::Vector2d wp_pt(global_plan.response.plan.poses[i].pose.position.x, global_plan.response.plan.poses[i].pose.position.y);
         double dist_to_robot = (odom_pos - wp_pt).norm();
-        double diff_wp_horizon = abs(dist_to_robot - planning_horizon);
 
-        if (diff_wp_horizon < subgoal_tolerance * 2)
+        // Check if the waypoint is planning_horizon + subgoal_tolerance away from the robot
+        if (abs(dist_to_robot - planning_horizon) < subgoal_tolerance * 2)
         {
-            _closest_point = wp_pt;
+            // Check if the waypoint is ahead of the robot
+            Eigen::Vector2d robot_to_goal = end_pos - odom_pos;
+            Eigen::Vector2d robot_to_waypoint = wp_pt - odom_pos;
+            double dot_product = robot_to_goal.dot(robot_to_waypoint);
+            if (dot_product > 0)
+            {
+                subgoal = wp_pt;
+                return true;
+            }
         }
-
-        // If dist to robot is somewhere in planning_horizon +- subgoal_tolerance
-        if (diff_wp_horizon < subgoal_tolerance)
-        {
-            subgoal = wp_pt;
-
-            return true;
-        }
-    }
-
-    if (publish_goal_on_subgoal_fail)
-    {
-        subgoal = _closest_point;
-        // return true;
     }
 
     return false;
