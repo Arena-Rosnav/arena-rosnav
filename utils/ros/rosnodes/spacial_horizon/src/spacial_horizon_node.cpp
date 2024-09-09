@@ -19,9 +19,9 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     nh.param("fsm/goal_tolerance", goal_tolerance, 0.2);
     nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 1.0);
     nh.param("fsm/subgoal_reach_tolerance", subgoal_reach_tolerance, 1.5);
-    nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 10.0);
+    nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 7.0);
     nh.param("fsm/update_global_period", update_global_period, 2.0);
-    nh.param("fsm/planning_horizon", planning_horizon, 6.0);
+    nh.param("fsm/planning_horizon", planning_horizon, 5.0);
     
     /* ros communication with public node */
     sub_goal =
@@ -105,7 +105,17 @@ void SpacialHorizon::odomCallback(const nav_msgs::OdometryConstPtr &msg)
             ROS_ERROR("[SpacialHorizon] ==============> Reached subgoal. Recomputing subgoal... <==============");
             tryUpdateGlobalplanAndSubgoal();
         }
+    }
 
+    // check if robot is too far away from subgoal
+    if (has_goal && subgoal_pos.norm() > 0)
+    {
+        double dist_to_subgoal = (odom_pos - subgoal_pos).norm();
+        if (dist_to_subgoal >= 9.0)
+        {
+            ROS_ERROR("[SpacialHorizon] ==============> Too far away from subgoal. Recomputing subgoal... <==============");
+            tryUpdateGlobalplanAndSubgoal();
+        }
     }
 }
 
