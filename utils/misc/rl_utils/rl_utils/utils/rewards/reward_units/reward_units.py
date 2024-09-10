@@ -263,7 +263,7 @@ class RewardApproachGoal(RewardUnit):
         self._goal_key = (
             SubgoalCollector.name
             if _follow_subgoal
-            or rospy.get_param(reward_function.ns("follow_subgoal"), False)
+            or rospy.get_param(reward_function.ns("follow_subgoal"), True)
             else GoalCollector.name
         )
 
@@ -1546,3 +1546,32 @@ class RewardMaxStepsExceeded(RewardUnit):
         Resets the step count to zero.
         """
         self._steps = 0
+
+@RewardUnitFactory.register("linear_vel_boost")
+class RewardLinearVelBoost(RewardUnit):
+    required_observations = [LastActionCollector]
+
+    def __init__(
+        self,
+        reward_function: RewardFunction,
+        reward_factor: float = -0.05,
+        threshold: float = None,
+        _on_safe_dist_violation: bool = True,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(reward_function, _on_safe_dist_violation, *args, **kwargs)
+        self._reward_factor = reward_factor
+        self._threshold = threshold
+
+    def __call__(self, obs_dict: ObservationDict, *args: Any, **kwargs: Any) -> None:
+        last_action: LastActionCollector.data_class = obs_dict.get(
+            LastActionCollector.name, None
+        )
+        linear = last_action[0] if last_action is not None else 0.0
+
+        if self._threshold and linear > self._threshold:
+            self.add_reward(self._reward_factor * linear)
+
+    def reset(self):
+        pass

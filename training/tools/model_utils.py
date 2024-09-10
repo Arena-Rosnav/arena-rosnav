@@ -98,6 +98,7 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
     update(model, "gae_lambda", ppo_params["gae_lambda"])
     update(model, "n_epochs", ppo_params["n_epochs"])
     update(model, "clip_range", constant_fn(ppo_params["clip_range"]))
+    update(model, "target_kl", ppo_params["target_kl"])
 
     if not config["rl_agent"]["lr_schedule"]["enabled"]:
         update(model, "learning_rate", ppo_params["learning_rate"])
@@ -228,9 +229,6 @@ def get_ppo_instance(
     # if not rospy.get_param("debug_mode") and new_model:
     #     save_model(model, paths)
     # freeze_weights(model=model, include=["^features_extractor"])
-
-    # freeze weights
-    freeze_weights(model=model, include=["^features_extractor"])
 
     return model
 
