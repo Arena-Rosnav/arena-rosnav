@@ -99,7 +99,8 @@ From: mzahana/base-ubuntu20-cuda11.4.2:latest
         && apt-get clean autoclean 
 
     # Install Python dependencies
-    pip3 install -U osrf-pycommon distro
+    pip install distro
+    pip3 install -U osrf-pycommon
     pip3 install --upgrade pip setuptools
 
     # Remove conflicting packages
@@ -111,12 +112,13 @@ From: mzahana/base-ubuntu20-cuda11.4.2:latest
     # Install additional dependencies
     apt-get install -y python3 python-is-python3 git python3-rosdep python3-pip python3-rosinstall-generator python3-vcstool build-essential python3-catkin-tools
 
-    # Auto completion in terminal
-    apt install -y bash-completion
-    echo "source /etc/profile.d/bash_completion.sh" >> $HOME/.bashrc
+    pip install --upgrade pip setuptools
 
+    export POETRY_HOME="/root/.local"
+    
     # Install Poetry
-    curl -sSL https://install.python-poetry.org | python3 -
+    # curl -sSL https://install.python-poetry.org | python3 -
+    python3 -m pip install --user poetry
 
     # Check if Poetry is installed
     /root/.local/bin/poetry --version
@@ -154,6 +156,7 @@ From: mzahana/base-ubuntu20-cuda11.4.2:latest
     # Build workspace
     . /opt/ros/$ROS_DISTRO/setup.sh
     catkin build
+    
 
 # Set the working directory
 %files
