@@ -28,10 +28,16 @@ class TRAINING_CONSTANTS(object):
             rospkg.RosPack().get_path("rosnav"), "agents", agent_name
         )
         TENSORBOARD = lambda agent_name: os.path.join(
-            TRAINING_CONSTANTS.PATHS.MAIN, "training_logs", "tensorboard", agent_name
+            TRAINING_CONSTANTS.PATHS.MODEL(agent_name),
+            "training_logs",
+            "tensorboard",
+            agent_name,
         )
         EVAL = lambda agent_name: os.path.join(
-            TRAINING_CONSTANTS.PATHS.MAIN, "training_logs", "train_eval_log", agent_name
+            TRAINING_CONSTANTS.PATHS.MODEL(agent_name),
+            "training_logs",
+            "train_eval_log",
+            agent_name,
         )
         ROBOT_SETTING = lambda robot_model: os.path.join(
             TRAINING_CONSTANTS.PATHS.SIMULATION_SETUP,
@@ -40,9 +46,7 @@ class TRAINING_CONSTANTS(object):
             f"{robot_model}.model.yaml",
         )
         AGENT_CONFIG = lambda agent_name: os.path.join(
-            rospkg.RosPack().get_path("rosnav"),
-            "agents",
-            agent_name,
+            TRAINING_CONSTANTS.PATHS.MODEL(agent_name),
             "training_config.yaml",
         )
 
@@ -60,6 +64,11 @@ class TRAINING_CONSTANTS(object):
         encoder_name = rospy.get_param("space_encoder", "RobotSpecificEncoder")
         agent_name = f"{robot_model}_{architecture_name}_{START_TIME}"
         return agent_name
+
+
+class EVALUATION_CONSTANTS(TRAINING_CONSTANTS):
+    class PATHS(TRAINING_CONSTANTS.PATHS):
+        MODEL = lambda agent_name: os.path.join("/mnt/output", agent_name)
 
 
 class SIMULATION_NAMESPACES:
