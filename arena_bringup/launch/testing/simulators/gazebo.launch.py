@@ -5,6 +5,7 @@ import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
 from launch.substitutions import PathJoinSubstitution, TextSubstitution
 
+
 def generate_launch_description():
     # Set environment variables
     current_dir = os.path.abspath(__file__)
@@ -17,11 +18,20 @@ def generate_launch_description():
         raise ValueError("Could not find the 'arena4_ws' directory in the current path.")
     GZ_CONFIG_PATH = os.path.join(workspace_root, 'install', 'gz-sim7', 'share', 'gz')
     GZ_SIM_PHYSICS_ENGINE_PATH = os.path.join(workspace_root, 'build', 'gz-physics6')
-    GZ_SIM_RESOURCE_PATH = os.path.join(workspace_root, 'src', 'gazebo', 'gz-sim', 'test', 'worlds', 'models')
+    GZ_SIM_RESOURCE_PATHS = [
+        os.path.join(workspace_root, 'src', 'gazebo', 'gz-sim', 'test', 'worlds', 'models'),
+        os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'entities'),
+        os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'worlds'),
+        os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'gazebo_models')
+        
+    ]
+    separator = ':'
+    GZ_SIM_RESOURCE_PATHS_COMBINED = separator.join(GZ_SIM_RESOURCE_PATHS)
+    
     # Update the environment
     os.environ['GZ_CONFIG_PATH'] = GZ_CONFIG_PATH
     os.environ['GZ_SIM_PHYSICS_ENGINE_PATH'] = GZ_SIM_PHYSICS_ENGINE_PATH
-    os.environ['GZ_SIM_RESOURCE_PATH'] = GZ_SIM_RESOURCE_PATH
+    os.environ['GZ_SIM_RESOURCE_PATH'] = GZ_SIM_RESOURCE_PATHS_COMBINED
 
     # debug
     # print(f"GZ_CONFIG_PATH: {os.environ.get('GZ_CONFIG_PATH')}")
