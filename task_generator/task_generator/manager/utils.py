@@ -321,7 +321,7 @@ def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[
 
 workspace_root = ModelLoader.getArenaDir()
 
-_world_model_loader = ModelLoader(os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'tmp', 'models'))
+_world_model_loader = ModelLoader(os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'worlds'))
 
 
 def configurations_to_obstacles(configurations: Collection[WorldObstacleConfiguration]) -> WorldObstacles:
