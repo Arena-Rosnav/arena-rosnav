@@ -128,22 +128,14 @@ class TaskFactory:
                 self.clock = rosgraph_msgs.Clock()
 
                 self.set_up_robot_managers()
+                
+                workspace_root = ModelLoader.getArenaDir()
 
                 self.model_loader = ModelLoader(
-                    os.path.join(
-                        RosPack().get_path("arena_simulation_setup"),
-                        "entities",
-                        "obstacles",
-                        "static",
-                    )
+                    os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'entities', 'obstacles', 'static')
                 )
                 self.dynamic_model_loader = ModelLoader(
-                    os.path.join(
-                        RosPack().get_path("arena_simulation_setup"),
-                        "entities",
-                        "obstacles",
-                        "dynamic",
-                    )
+                    os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'entities', 'obstacles', 'dynamic')
                 )
 
                 self.__param_tm_obstacles = None

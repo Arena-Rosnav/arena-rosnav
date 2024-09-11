@@ -133,8 +133,10 @@ class TaskGenerator(rclpy.node.Node):
         )
 
         # Loaders
+        workspace_root = ModelLoader.getArenaDir()
+        
         self._robot_loader = ModelLoader(
-            os.path.join(get_package_share_directory("arena_simulation_setup"), "entities", "robots")
+            os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'entities', 'robots')
         )
 
         if not self._train_mode:

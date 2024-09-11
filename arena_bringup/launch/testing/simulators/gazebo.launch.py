@@ -23,7 +23,6 @@ def generate_launch_description():
         os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'entities'),
         os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'worlds'),
         os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'gazebo_models')
-        
     ]
     separator = ':'
     GZ_SIM_RESOURCE_PATHS_COMBINED = separator.join(GZ_SIM_RESOURCE_PATHS)
@@ -75,6 +74,13 @@ def generate_launch_description():
         )
     ])
     return ld
+
+def add_directories_recursively(root_dirs):
+    all_dirs = []
+    for root_dir in root_dirs:
+        for dirpath, dirnames, filenames in os.walk(root_dir):
+            all_dirs.append(dirpath)
+    return all_dirs
 
 
 if __name__ == '__main__':
