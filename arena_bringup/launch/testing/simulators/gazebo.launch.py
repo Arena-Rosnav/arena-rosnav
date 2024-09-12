@@ -4,6 +4,7 @@ import launch
 import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
 from launch.substitutions import PathJoinSubstitution, TextSubstitution
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
@@ -57,8 +58,22 @@ def generate_launch_description():
 
     # Set the physics engine to dartsim
     physics_engine = 'gz-physics-dartsim'
+    
+    # Get the path to the YAML config file
+    config_file = os.path.join(workspace_root, 'src', 'arena', 'arena-rosnav', 'arena_bringup', 'launch', 'testing', 'simulators', 'gazebo_bridge.yaml')
+
+    bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        parameters=[{
+            'config_file': [config_file],
+            'qos_overrides./tf_static.publisher.durability': 'transient_local',
+        }],
+        output='screen'
+    )
 
     # Launch gz_sim.launch.py with arguments
+    
     ld = launch.LaunchDescription([
         launch.actions.IncludeLaunchDescription(
             launch.launch_description_sources.PythonLaunchDescriptionSource(
@@ -71,7 +86,8 @@ def generate_launch_description():
                 # 'headless': launch.substitutions.LaunchConfiguration('headless'),
                 'physics-engine': physics_engine
             }.items()
-        )
+        ),
+        bridge
     ])
     return ld
 

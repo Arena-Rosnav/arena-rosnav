@@ -59,19 +59,18 @@ class GazeboSimulator(BaseSimulator):
             return
 
         TASKGEN_NODE.get_logger().info("Waiting for gazebo services...")
-        # Wait for services to be available
-        while not self._spawn_entity.wait_for_service(timeout_sec=15.0):
-            TASKGEN_NODE.get_logger().error("Spawn entity service not available")
-            return
-        while not self._delete_entity.wait_for_service(timeout_sec=15.0):
-            TASKGEN_NODE.get_logger().error("Delete entity service not available")
-            return
-        while not self._set_entity_pose.wait_for_service(timeout_sec=15.0):
-            TASKGEN_NODE.get_logger().error("Set entity pose service not available")
-            return
-        while not self._control_world.wait_for_service(timeout_sec=15.0):
-            TASKGEN_NODE.get_logger().error("Control world service not available")
-            return
+        services = [
+            (self._spawn_entity, "Spawn entity"),
+            (self._delete_entity, "Delete entity"),
+            (self._set_entity_pose, "Set entity pose"),
+            (self._control_world, "Control world")
+        ]
+
+        for service, name in services:
+            if not self._wait_for_service(service, name):
+                return
+
+        TASKGEN_NODE.get_logger().info("All Gazebo services are available now.")
         # resp_spawn = self._spawn_entity.call_async(req)
         # resp_delete = self._delete_entity.call_async(req)
         # resp_pose = self._set_entity_pose.call_async(req)
@@ -81,7 +80,15 @@ class GazeboSimulator(BaseSimulator):
         # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_pose)
         # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_world)
         
-        TASKGEN_NODE.get_logger().info("Gazebo services are available now.")
+    def _wait_for_service(self, service, name, timeout=15.0):
+        timeout_loop = timeout
+        while not service.wait_for_service(timeout_sec=1.0):
+            TASKGEN_NODE.get_logger().warn(f"{name} service not available, waiting again...")
+            timeout_loop -= 1.0
+            if timeout_loop <= 0:
+                TASKGEN_NODE.get_logger().error(f"{name} service not available after {timeout} seconds")
+                return False
+        return True
         
 
     def before_reset_task(self):
