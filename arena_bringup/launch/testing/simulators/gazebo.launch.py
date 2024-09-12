@@ -62,15 +62,33 @@ def generate_launch_description():
     # Get the path to the YAML config file
     config_file = os.path.join(workspace_root, 'src', 'arena', 'arena-rosnav', 'arena_bringup', 'launch', 'testing', 'simulators', 'gazebo_bridge.yaml')
 
+    # Bridge ROS topics and Gazebo messages for establishing communication
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         parameters=[{
-            'config_file': [config_file],
+            'config_file': config_file,
             'qos_overrides./tf_static.publisher.durability': 'transient_local',
         }],
         output='screen'
     )
+    
+    robot_model = launch.substitutions.LaunchConfiguration('model', default='jackal')  # Default world
+    
+    robot_desc = os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'entities', 'robots', str(robot_model), 'urdf', str(robot_model)+'.gazebo')
+    
+    
+    # Takes the description and joint angles as inputs and publishes the 3D poses of the robot links
+    robot_state_publisher = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        output='both',
+        parameters=[
+            {'use_sim_time': True},
+            {'robot_description': robot_desc},
+        ]
+    )    
 
     # Launch gz_sim.launch.py with arguments
     
@@ -87,7 +105,8 @@ def generate_launch_description():
                 'physics-engine': physics_engine
             }.items()
         ),
-        bridge
+        bridge,
+        robot_state_publisher
     ])
     return ld
 
