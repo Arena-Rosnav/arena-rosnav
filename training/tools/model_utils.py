@@ -98,7 +98,7 @@ def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
     update(model, "gae_lambda", ppo_params["gae_lambda"])
     update(model, "n_epochs", ppo_params["n_epochs"])
     update(model, "clip_range", constant_fn(ppo_params["clip_range"]))
-    update(model, "target_kl", ppo_params["target_kl"])
+    update(model, "target_kl", ppo_params.get("target_kl", None))
 
     if not config["rl_agent"]["lr_schedule"]["enabled"]:
         update(model, "learning_rate", ppo_params["learning_rate"])
@@ -155,6 +155,7 @@ def save_model(model: PPO, paths: dict, file_name: str = "best_model") -> None:
             os.path.join(paths["model"], f"vec_normalize_{file_name}.pkl")
         )
 
+
 def freeze_weights(model: PPO, include: List[str] = None, exclude: List[str] = None):
     if include is None:
         rospy.logwarn("No include list provided. Skipping weight freezing.")
@@ -181,6 +182,7 @@ def freeze_weights(model: PPO, include: List[str] = None, exclude: List[str] = N
             param.requires_grad = False
 
     return model
+
 
 def get_ppo_instance(
     agent_description: BaseAgent,
@@ -324,11 +326,16 @@ def load_model(
                 if frame_stacking_cfg["enabled"] and not is_lstm
                 else 1
             ),
-        )
+        ),
+        "observation_space": observation_space_manager.observation_space,
     }
 
     # load model
-    return RecurrentPPO.load(path, env=env) if is_lstm else PPO.load(path, env=env)
+    return (
+        RecurrentPPO.load(path, env=env, custom_objects=custom_objects)
+        if is_lstm
+        else PPO.load(path, env=env, custom_objects=custom_objects)
+    )
 
 
 def init_callbacks(
