@@ -332,7 +332,7 @@ def load_model(
 
     # load model
     return (
-        RecurrentPPO.load(path, env=env)
+        RecurrentPPO.load(path, env=env, custom_objects=custom_objects)
         if is_lstm
         else PPO.load(path, env=env, custom_objects=custom_objects)
     )
