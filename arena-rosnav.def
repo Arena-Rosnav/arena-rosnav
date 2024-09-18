@@ -8,16 +8,18 @@ From: mzahana/base-ubuntu20-cuda11.4.2:latest
     export QT_X11_NO_MITSHM=1
     export FROM_LOCAL=${FROM_LOCAL:-false}
     export ARENA_BRANCH=${ARENA_BRANCH:-observation_refactor}
-    export ARENA_ROOT=${ARENA_ROOT:-/root}
+    export ARENA_ROOT=${ARENA_ROOT:-/arena}
     export ARENA_WS=${ARENA_WS:-arena_ws}
     export ROS_DISTRO=${ROS_DISTRO:-noetic}
+
+    export POETRY_HTTP_TIMEOUT=1000
 
 # Install required packages
 %post
     # Export build arguments as environment variables
     export FROM_LOCAL=${FROM_LOCAL:-false}
     export ARENA_BRANCH=${ARENA_BRANCH:-observation_refactor}
-    export ARENA_ROOT=${ARENA_ROOT:-/root}
+    export ARENA_ROOT=${ARENA_ROOT:-/arena}
     export ARENA_WS=${ARENA_WS:-arena_ws}
     export ROS_DISTRO=${ROS_DISTRO:-noetic}
 
@@ -97,70 +99,46 @@ From: mzahana/base-ubuntu20-cuda11.4.2:latest
         && geographiclib-get-geoids egm96-5 \
         && apt-get -y autoremove \
         && apt-get clean autoclean 
-
-    # Install Python dependencies
-    pip install distro
-    pip3 install -U osrf-pycommon
-    pip3 install --upgrade pip setuptools
-
+    
     # Remove conflicting packages
     sudo apt remove -y python3-pyasn1-modules  python3-mpi4py
+
+    # Install additional dependencies
+    apt-get install -y python3 python-is-python3 git python3-rosdep python3-pip python3-rosinstall-generator python3-vcstool build-essential python3-catkin-tools ca-certificates
+
+    export POETRY_HOME="$ARENA_ROOT/.local"
+    
+    # Install Poetry
+    curl -sSL https://install.python-poetry.org | python3 -
+    # python3 -m pip install --user poetry
+
+    # Check if Poetry is installed
+    $ARENA_ROOT/.local/bin/poetry --version
 
     # Bootstrap rosdep
     rosdep init && rosdep update
 
-    # Install additional dependencies
-    apt-get install -y python3 python-is-python3 git python3-rosdep python3-pip python3-rosinstall-generator python3-vcstool build-essential python3-catkin-tools
-
-    pip install --upgrade pip setuptools
-
-    export POETRY_HOME="/root/.local"
-    
-    # Install Poetry
-    # curl -sSL https://install.python-poetry.org | python3 -
-    python3 -m pip install --user poetry
-
-    # Check if Poetry is installed
-    /root/.local/bin/poetry --version
-
     # Install Arena-Rosnav
-    if [ -d /root/arena_ws/src/arena ]; then \
-        echo "Install Folder /root/arena_ws/src/arena/arena-rosnav already exists." && \
+    if [ -d $ARENA_ROOT/arena_ws/src/arena ]; then \
+        echo "Install Folder $ARENA_ROOT/arena_ws/src/arena/arena-rosnav already exists." && \
         echo "This indicates Arena Rosnav is already installed." && \
-        echo "If you wish to reinstall, please delete /root/arena_ws"; \
+        echo "If you wish to reinstall, please delete $ARENA_ROOT/arena_ws"; \
     fi
 
     # Clone Arena-Rosnav if not from local
     if [ "$FROM_LOCAL" = "false" ]; then \
-        rm -rf "/root/arena_ws/src/arena/arena-rosnav" && \
-        git clone --branch $ARENA_BRANCH https://github.com/Arena-Rosnav/arena-rosnav.git root/arena_ws/src/arena/arena-rosnav; \
+        rm -rf "$ARENA_ROOT/arena_ws/src/arena/arena-rosnav" && \
+        git clone --branch $ARENA_BRANCH https://github.com/Arena-Rosnav/arena-rosnav.git $ARENA_ROOT/arena_ws/src/arena/arena-rosnav; \
     fi
 
     # Pull all dependencies
     git config --global http.postBuffer 524288000
-    cd /root/arena_ws
+    cd $ARENA_ROOT/arena_ws
     until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to update, retrying..." ; done
 
-    # Setup python dependencies
-    export POETRY_HTTP_TIMEOUT=1000
-    cd /root/arena_ws/src/arena/arena-rosnav
-    /root/.local/bin/poetry config virtualenvs.create false \
-    && /root/.local/bin/poetry lock --no-update \
-    && /root/.local/bin/poetry install --no-interaction --no-ansi
-    
-
-    # Install rosdeps
-    cd /root/arena_ws
-    rosdep install --from-paths src --ignore-src -r -y
-
-    # Build workspace
-    . /opt/ros/$ROS_DISTRO/setup.sh
-    catkin build
-    
-
 # Set the working directory
-%files
-    . root/arena_ws/src/arena/arena-rosnav
+# %files
+#    . /home/fe/le/projects/arena_ws/src/arena/arena-rosnav
 
 %runscript
     exec bash
