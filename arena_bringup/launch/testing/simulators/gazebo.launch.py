@@ -1,22 +1,20 @@
 import os
-
-import launch
-import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
-from launch.substitutions import PathJoinSubstitution, TextSubstitution
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, Command, PathJoinSubstitution, TextSubstitution, PythonExpression
 from launch_ros.actions import Node
-
 
 def generate_launch_description():
     # Set environment variables
     current_dir = os.path.abspath(__file__)
     workspace_root = current_dir
-
     while not workspace_root.endswith('arena4_ws'):
         workspace_root = os.path.dirname(workspace_root)
-
     if not workspace_root.endswith('arena4_ws'):
         raise ValueError("Could not find the 'arena4_ws' directory in the current path.")
+
     GZ_CONFIG_PATH = os.path.join(workspace_root, 'install', 'gz-sim7', 'share', 'gz')
     GZ_SIM_PHYSICS_ENGINE_PATH = os.path.join(workspace_root, 'build', 'gz-physics6')
     GZ_SIM_RESOURCE_PATHS = [
@@ -25,44 +23,70 @@ def generate_launch_description():
         os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'worlds'),
         os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'gazebo_models')
     ]
-    separator = ':'
-    GZ_SIM_RESOURCE_PATHS_COMBINED = separator.join(GZ_SIM_RESOURCE_PATHS)
+    GZ_SIM_RESOURCE_PATHS_COMBINED = ':'.join(GZ_SIM_RESOURCE_PATHS)
     
     # Update the environment
     os.environ['GZ_CONFIG_PATH'] = GZ_CONFIG_PATH
     os.environ['GZ_SIM_PHYSICS_ENGINE_PATH'] = GZ_SIM_PHYSICS_ENGINE_PATH
     os.environ['GZ_SIM_RESOURCE_PATH'] = GZ_SIM_RESOURCE_PATHS_COMBINED
 
-    # debug
-    # print(f"GZ_CONFIG_PATH: {os.environ.get('GZ_CONFIG_PATH')}")
-    # print(f"GZ_SIM_PHYSICS_ENGINE_PATH: {os.environ.get('GZ_SIM_PHYSICS_ENGINE_PATH')}")
+    # Launch Arguments
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    world_file = LaunchConfiguration('world_file')
+    robot_model = LaunchConfiguration('model')
 
-    # Get the path to the gz_sim.launch.py file
+    # Gazebo launch
     gz_sim_launch_file = os.path.join(
         get_package_share_directory('ros_gz_sim'),
         'launch',
         'gz_sim.launch.py'
     )
-    # Define paths to your world SDF and robot URDF/gazebo files (using defaults if not provided)
-    world_file = launch.substitutions.LaunchConfiguration('world_file', default='empty.sdf')  # Default world
 
-    # model = launch.substitutions.LaunchConfiguration('model', default='jackal')
-    # robot_path = PathJoinSubstitution([
-    #     get_package_share_directory('arena_simulation_setup'),
-    #     'entities', 
-    #     'robots',
-    #     model,
-    #     'urdf',
-    #     TextSubstitution(text='%s.gazebo' % model)
-    # ])
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(gz_sim_launch_file),
+        launch_arguments={
+            'gz_args': [world_file, ' -v 4', ' -r'],
+            'physics-engine': 'gz-physics-dartsim'
+        }.items()
+    )
 
-    # Set the physics engine to dartsim
-    physics_engine = 'gz-physics-dartsim'
-    
-    # Get the path to the YAML config file
+    # Robot description
+    robot_desc_path = PathJoinSubstitution([
+        TextSubstitution(text=workspace_root),
+        'src', 'arena', 'simulation-setup', 'entities', 'robots',
+        robot_model, 'urdf',
+        PythonExpression(['"', robot_model, '.gazebo"'])
+    ])
+
+    # Use xacro to process the robot description file
+    robot_description = Command(['xacro ', robot_desc_path])
+
+    # Robot State Publisher
+    robot_state_publisher = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        output='both',
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            {'robot_description': robot_description},
+        ]
+    )
+
+    # Spawn Robot
+    spawn_robot = Node(
+        package='ros_gz_sim',
+        executable='create',
+        output='screen',
+        arguments=[
+            '-string', robot_description,
+            '-name', robot_model,
+            '-allow_renaming', 'false'
+        ],
+    )
+
+    # Bridge
     config_file = os.path.join(workspace_root, 'src', 'arena', 'arena-rosnav', 'arena_bringup', 'launch', 'testing', 'simulators', 'gazebo_bridge.yaml')
-
-    # Bridge ROS topics and Gazebo messages for establishing communication
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -72,43 +96,16 @@ def generate_launch_description():
         }],
         output='screen'
     )
-    
-    robot_model = launch.substitutions.LaunchConfiguration('model', default='jackal')  # Default world
-    
-    robot_desc = os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'entities', 'robots', str(robot_model), 'urdf', str(robot_model)+'.gazebo')
-    
-    
-    # Takes the description and joint angles as inputs and publishes the 3D poses of the robot links
-    robot_state_publisher = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
-        output='both',
-        parameters=[
-            {'use_sim_time': True},
-            {'robot_description': robot_desc},
-        ]
-    )    
 
-    # Launch gz_sim.launch.py with arguments
-    
-    ld = launch.LaunchDescription([
-        launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                gz_sim_launch_file
-            ),
-            launch_arguments={
-                'gz_args': world_file,
-                # 'robot': robot_path,
-                # 'verbose': 'true',  # Optional for debugging
-                # 'headless': launch.substitutions.LaunchConfiguration('headless'),
-                'physics-engine': physics_engine
-            }.items()
-        ),
+    return LaunchDescription([
+        DeclareLaunchArgument('use_sim_time', default_value='true', description='Use simulation (Gazebo) clock if true'),
+        DeclareLaunchArgument('world_file', default_value='empty.sdf', description='World file name'),
+        DeclareLaunchArgument('model', default_value='jackal', description='Robot model name'),
+        gazebo,
+        robot_state_publisher,
+        spawn_robot,
         bridge,
-        robot_state_publisher
     ])
-    return ld
 
 def add_directories_recursively(root_dirs):
     all_dirs = []

@@ -18,7 +18,7 @@ def generate_launch_description():
         ),
         launch.actions.DeclareLaunchArgument(
             name='model',
-            default_value='burger',
+            default_value='jackal',
             description='robot model type [burger, jackal, ridgeback, agvota, rto, ...]'
         ),
         launch.actions.DeclareLaunchArgument(
