@@ -2,10 +2,12 @@ Bootstrap: localimage
 From: arena.sif
 
 %post
-    cd $ARENA_ROOT/arena_ws/src/arena/arena-rosnav
+    alias poetry=$ARENA_ROOT/.local/bin/poetry
+    # poetry config virtualenvs.create false
 
-    $ARENA_ROOT/.local/bin/poetry lock --no-update \
-    && $ARENA_ROOT/.local/bin/poetry install --no-interaction --no-ansi --no-root --with training,social
+    cd $ARENA_ROOT/arena_ws/src/arena/arena-rosnav \
+    && poetry lock --no-update \
+    && poetry install --no-interaction --no-ansi --no-root --with training,social
 
     # Install rosdeps
     cd $ARENA_ROOT/arena_ws
@@ -19,11 +21,10 @@ From: arena.sif
     . $ARENA_ROOT/$ARENA_WS/devel/setup.sh
 
     # Setup Xvfb
-    apt-get install -y x11-apps
     export DISPLAY=99
+    Xvfb :99 -screen 0 1024x768x16 &
     Xvfb :99 -screen 0 1024x768x16 &
     exec "$@"
 
-    alias poetry=$ARENA_ROOT/.local/bin/poetry
 
     
