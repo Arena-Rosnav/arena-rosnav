@@ -18,7 +18,7 @@ actor_type = "person"  # [person, box]
 debug = False
 rospy.init_node("generate_world")
 rospack = rospkg.RosPack()
-sim_setup_path = rospack.get_path("arena_simulation_setup")
+sim_setup_path = rospack.get_path("simulation_setup")
 
 # setting paths
 if not debug:

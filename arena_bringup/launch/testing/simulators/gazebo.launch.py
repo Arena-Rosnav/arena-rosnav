@@ -23,6 +23,7 @@ def generate_launch_description():
         os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'entities'),
         os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'worlds'),
         os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'gazebo_models'),
+        os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'gazebo_models', 'Cafe table', 'materials', 'textures'),
         os.path.join(workspace_root, 'src', 'deps')
     ]
     GZ_SIM_RESOURCE_PATHS_COMBINED = ':'.join(GZ_SIM_RESOURCE_PATHS)

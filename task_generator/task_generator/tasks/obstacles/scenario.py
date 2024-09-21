@@ -46,7 +46,7 @@ class TM_Scenario(TM_Obstacles, Node):
     def reconfigure(self, config):
         scenario_file = config['SCENARIO_file']
         
-        package_share_directory = get_package_share_directory('arena_simulation_setup')
+        package_share_directory = get_package_share_directory('simulation_setup')
         map_file = self.get_parameter('map_file').value
 
         scenario_path = os.path.join(

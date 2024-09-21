@@ -87,7 +87,7 @@ class TM_Scenario(TM_Robots, Node):
         scenario_file = config['SCENARIO_file']
 
         scenario_path = os.path.join(
-            get_package_share_directory("arena_simulation_setup"),
+            get_package_share_directory("simulation_setup"),
             "worlds",
             map_file,
             "scenarios",

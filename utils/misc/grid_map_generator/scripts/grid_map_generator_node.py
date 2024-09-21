@@ -61,7 +61,7 @@ class GridMapGenerator:
 
         folder_name = world_name  
         rospack = rospkg.RosPack()
-        arena_pkg_path = rospack.get_path("arena_simulation_setup")
+        arena_pkg_path = rospack.get_path("simulation_setup")
 
         maps_dir = os.path.join(arena_pkg_path, "worlds")
         folder_path = os.path.join(maps_dir, folder_name, "map") 
@@ -96,7 +96,7 @@ class GridMapGenerator:
         # Run the map_saver command using subprocess
         folder_name = world_name 
         rospack = rospkg.RosPack()
-        arena_pkg_path = rospack.get_path("arena_simulation_setup")
+        arena_pkg_path = rospack.get_path("simulation_setup")
         maps_dir = os.path.join(arena_pkg_path, "worlds")
         folder_path = os.path.join(maps_dir, folder_name, "map") 
         map_saver_command = ['rosrun', 'map_server', 'map_saver', '-f', folder_path, '/map:=/map2d']
@@ -107,7 +107,7 @@ class GridMapGenerator:
 
         folder_name = world_name 
         rospack = rospkg.RosPack()
-        arena_pkg_path = rospack.get_path("arena_simulation_setup")
+        arena_pkg_path = rospack.get_path("simulation_setup")
         maps_dir = os.path.join(arena_pkg_path, "worlds")
         folder_path = os.path.join(maps_dir, folder_name, "map")      
         file_path = os.path.join(folder_path, "map.yaml")    
@@ -138,7 +138,7 @@ layers:
         folder_name = world_name 
         file_name = "map.world.yaml"
         rospack = rospkg.RosPack()
-        arena_pkg_path = rospack.get_path("arena_simulation_setup")
+        arena_pkg_path = rospack.get_path("simulation_setup")
         maps_dir = os.path.join(arena_pkg_path, "worlds")
         folder_path = os.path.join(maps_dir, folder_name)     
         file_path = os.path.join(folder_path, "map", file_name) 
