@@ -173,6 +173,12 @@ cd "${ARENA_WS_DIR}"
 cd "${ARENA_WS_DIR}"
 until vcs import src < src/arena/arena-rosnav/arena.repos ; do echo "failed to update, retrying..." ; done
 
+# == install jackal deps for ros2 ==
+
+echo "Cloning jackal repository from foxy-devel branch..."
+cd "${ARENA_WS_DIR}/src/deps"
+git clone --branch foxy-devel "https://github.com/jackal/jackal.git"
+
 # == optinal installers ==
 
 cd "${ARENA_WS_DIR}/src/arena/arena-rosnav/installers"
