@@ -5,6 +5,7 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetE
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, Command, PathJoinSubstitution, TextSubstitution, PythonExpression
 from launch_ros.actions import Node
+import xacro
 
 def generate_launch_description():
     # Set environment variables
@@ -21,7 +22,8 @@ def generate_launch_description():
         os.path.join(workspace_root, 'src', 'gazebo', 'gz-sim', 'test', 'worlds', 'models'),
         os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'entities'),
         os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'worlds'),
-        os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'gazebo_models')
+        os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'gazebo_models'),
+        os.path.join(workspace_root, 'src', 'deps')
     ]
     GZ_SIM_RESOURCE_PATHS_COMBINED = ':'.join(GZ_SIM_RESOURCE_PATHS)
     
@@ -51,15 +53,16 @@ def generate_launch_description():
     )
 
     # Robot description
-    robot_desc_path = PathJoinSubstitution([
-        TextSubstitution(text=workspace_root),
+    robot_desc_path = os.path.join(
+        workspace_root,
         'src', 'arena', 'simulation-setup', 'entities', 'robots',
-        robot_model, 'urdf',
-        PythonExpression(['"', robot_model, '.gazebo"'])
-    ])
+        'jackal', 'urdf',
+        'jackal' + '.urdf.xacro'
+    )
 
     # Use xacro to process the robot description file
-    robot_description = Command(['xacro ', robot_desc_path])
+    doc = xacro.process_file(robot_desc_path, mappings={'use_sim': 'true'})
+    robot_description = doc.toprettyxml(indent='  ')
 
     # Robot State Publisher
     robot_state_publisher = Node(
