@@ -27,7 +27,7 @@ def print_map(map):
 class MapDistanceServer:
     def __init__(self):
         self._distance_map_path = os.path.join(
-            Path(rospkg.RosPack().get_path("simulation_setup")),
+            Path(rospkg.RosPack().get_path('simulation-setup')),
             "worlds",
             rospy.get_param("map_file"),
             "map",

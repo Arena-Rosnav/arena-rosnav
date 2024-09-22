@@ -20,7 +20,7 @@ def get_config_path() -> Path:
 
 
 def get_robot_config_path(robot_name: str) -> Path:
-    p = Path(rospkg.RosPack().get_path("simulation_setup"))
+    p = Path(rospkg.RosPack().get_path('simulation-setup'))
     return p / "entities" / "robots" / f"{robot_name}" / "model_params.yaml"
 
 
