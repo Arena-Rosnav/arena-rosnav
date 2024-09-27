@@ -114,7 +114,7 @@ def generate_launch_description():
         ),
         launch.actions.DeclareLaunchArgument(
             name='map_file',
-            default_value='empty',
+            default_value='map_empty',
             description='use default <map>.sdf from gazebo or path to other sdf for map'
         ),
         launch.actions.DeclareLaunchArgument(
