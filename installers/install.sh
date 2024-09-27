@@ -180,8 +180,8 @@ cd "${ARENA_WS_DIR}/src/deps"
 git clone --branch foxy-devel "https://github.com/jackal/jackal.git"
 
 echo "Moving jackal contents to deps folder and removing jackal folder..."
-mv jackal/* .
-mv jackal/.* .
+mv jackal/* ./deps/
+mv jackal/.* ./deps/
 rm -rf jackal LICENSE README.md .gitignore .github
 
 # == optinal installers ==
