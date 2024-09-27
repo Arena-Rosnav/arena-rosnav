@@ -137,26 +137,21 @@ cd "${ARENA_WS_DIR}"
 rosdep install -r --from-paths src/gazebo -i -y --rosdistro ${ARENA_ROS_VERSION}
 
 # Install ros_gz
-sudo apt-get install -y ros-${ARENA_ROS_VERSION}-ros-gz
+echo "Building ros_gz from source..."
+export GZ_VERSION=${GAZEBO_VERSION}
 
-# If ros_gz installation fails, build from source
-if [ $? -ne 0 ]; then
-  echo "ros_gz installation via apt failed. Building from source..."
-  export GZ_VERSION=${GAZEBO_VERSION}
+cd "${ARENA_WS_DIR}/src"
+git clone https://github.com/gazebosim/ros_gz.git -b ${ARENA_ROS_VERSION}
+cd "${ARENA_WS_DIR}"
 
-  cd "${ARENA_WS_DIR}/src"
-  git clone https://github.com/gazebosim/ros_gz.git -b ${ARENA_ROS_VERSION}
-  cd "${ARENA_WS_DIR}"
+#TODO resolve this through rosdep
+cd "${ARENA_WS_DIR}/src/deps"
+git clone https://github.com/rudislabs/actuator_msgs
+git clone https://github.com/swri-robotics/gps_umd
+git clone https://github.com/ros-perception/vision_msgs
+cd "${ARENA_WS_DIR}"
 
-  #TODO resolve this through rosdep
-  cd "${ARENA_WS_DIR}/src/deps"
-  git clone https://github.com/rudislabs/actuator_msgs
-  git clone https://github.com/swri-robotics/gps_umd
-  git clone https://github.com/ros-perception/vision_msgs
-  cd "${ARENA_WS_DIR}"
-
-  rosdep install -r --from-paths src/ros_gz -i -y --rosdistro ${ARENA_ROS_VERSION}
-fi
+rosdep install -r --from-paths src/ros_gz -i -y --rosdistro ${ARENA_ROS_VERSION}
 
 cd "${ARENA_WS_DIR}"
 . "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
@@ -177,14 +172,18 @@ until vcs import src < src/arena/arena-rosnav/arena.repos ; do echo "failed to u
 
 echo "Cloning jackal repository contents from foxy-devel branch..."
 cd "${ARENA_WS_DIR}/src/deps"
-git clone --branch foxy-devel "https://github.com/jackal/jackal.git"
+git clone --branch foxy-devel "https://github.com/jackal/jackal.git" temp_jackal
 
-echo "Moving jackal contents to deps folder and removing jackal folder..."
-mv jackal/* ./deps/
-mv jackal/.* ./deps/
-rm -rf jackal LICENSE README.md .gitignore .github
+echo "Moving jackal contents to deps folder..."
+rsync -a temp_jackal/ ./
 
-# == optinal installers ==
+echo "Removing temporary jackal folder..."
+rm -rf temp_jackal LICENSE README.md .gitignore .github
+
+# == build ==
+cd "${ARENA_WS_DIR}"
+ln -s src/arena/arena-rosnav/tools/colcon_build .
+# == optional installers ==
 
 cd "${ARENA_WS_DIR}/src/arena/arena-rosnav/installers"
 
