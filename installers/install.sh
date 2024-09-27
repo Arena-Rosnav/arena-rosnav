@@ -175,9 +175,14 @@ until vcs import src < src/arena/arena-rosnav/arena.repos ; do echo "failed to u
 
 # == install jackal deps for ros2 ==
 
-echo "Cloning jackal repository from foxy-devel branch..."
+echo "Cloning jackal repository contents from foxy-devel branch..."
 cd "${ARENA_WS_DIR}/src/deps"
 git clone --branch foxy-devel "https://github.com/jackal/jackal.git"
+
+echo "Moving jackal contents to deps folder and removing jackal folder..."
+mv jackal/* .
+mv jackal/.* .
+rm -rf jackal LICENSE README.md .gitignore .github
 
 # == optinal installers ==
 
