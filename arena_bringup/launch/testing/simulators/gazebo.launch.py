@@ -37,6 +37,15 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     world_file = LaunchConfiguration('world_file')
     robot_model = LaunchConfiguration('model')
+    
+    # Construct the full world file path
+    world_file = PathJoinSubstitution([
+        workspace_root,
+        'src', 'arena', 'simulation-setup', 'worlds',
+        world_file,
+        'worlds',
+        PythonExpression(['"', world_file, '.world"'])
+    ])
 
     # Gazebo launch
     gz_sim_launch_file = os.path.join(
@@ -103,7 +112,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='true', description='Use simulation (Gazebo) clock if true'),
-        DeclareLaunchArgument('world_file', default_value='empty.sdf', description='World file name'),
+        DeclareLaunchArgument('world_file', default_value='map_empty', description='World file name'),
         DeclareLaunchArgument('model', default_value='jackal', description='Robot model name'),
         gazebo,
         robot_state_publisher,
