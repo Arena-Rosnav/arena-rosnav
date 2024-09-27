@@ -48,7 +48,7 @@ def generate_launch_description():
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(gz_sim_launch_file),
         launch_arguments={
-            'gz_args': [world_file, ' -v 4', ' -r'],
+            'gz_args': [world_file, ' -v 4', ' -r', ' --render-engine ogre'],
             'physics-engine': 'gz-physics-dartsim'
         }.items()
     )
