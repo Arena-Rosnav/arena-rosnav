@@ -20,7 +20,7 @@ run(){
 run '(cd src/arena/arena-rosnav && git pull);'
 run '(vcs import src < src/arena/arena-rosnav/arena.repos);' '$? > 1'
 run '(rosdep update && rosdep install --from-paths src --ignore-src -r -y)'
-run '(cd src/arena/arena-rosnav && poetry install --no-root);'
+run '(. src/arena/arena-rosnav/tools/poetry_install);'
 
 
 if [ $FATAL -ne 0 ] ;

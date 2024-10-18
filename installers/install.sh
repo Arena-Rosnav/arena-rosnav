@@ -70,6 +70,10 @@ curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/too
 cd "${ARENA_WS_DIR}" 
 . "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/poetry_install"
 
+# vcstool fork
+git clone https://github.com/voshch/vcstool.git "${ARENA_WS_DIR}/vcstool"
+python -m pip install -e "${ARENA_WS_DIR}/src/deps/vcstool"
+
 #
 mkdir -p "${ARENA_WS_DIR}/src/deps"
 

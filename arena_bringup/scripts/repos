@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 
 import yaml
 import sys
@@ -15,14 +15,19 @@ logger = logging.getLogger("repos")
 args = dict(enumerate(sys.argv))
 
 DIR_SRC = os.path.join(os.getcwd(), "src")
-assert os.path.isdir(DIR_SRC), "Current dir does not appear to be a catkin workspace!"
+assert os.path.isdir(DIR_SRC), "Current dir does not appear to be a colcon workspace!"
 
 DIR_ARENA_ROSNAV = "arena/arena-rosnav"
 FILE_REPOS = os.path.join(DIR_SRC, args.get(1, os.path.join(DIR_ARENA_ROSNAV, "arena.repos")))
 
+IGNORE = ('deps', 'gazebo', 'ros_gz', 'ros2')
+
 ws_repos = set()
 
 for root, dirs, files in os.walk(DIR_SRC, topdown=True):
+    if os.path.basename(root) in IGNORE:
+        dirs.clear()
+
     if ".git" in dirs:
         if (relpath := os.path.relpath(root, DIR_SRC)) != DIR_ARENA_ROSNAV:
             ws_repos.add(relpath)
@@ -66,13 +71,21 @@ for repo in ws_repos.union(yaml_repos.keys()).difference((DIR_ARENA_ROSNAV,)):
     if repo in ws_repos and repo in yaml_repos:
 
         hash = GIT.cmd(GIT.CMD.COMMIT_HASH, repo)
+        branch = GIT.cmd(GIT.CMD.BRANCH_NAME, repo)
         short_hash = GIT.short_hash(hash)
-        old_hash = yaml_repos[repo]["version"]
+        old_version = yaml_repos[repo]["version"]
+
+        old_branch = None
+        old_hash = old_version
+
+        if len(old_split := old_version.split('@')) > 1:
+            old_branch = old_split[0]
+            old_hash = '@'.join(old_split[1:])
 
         if old_hash not in (hash, short_hash):
-            if ask_user(f"{repo} has been changed ({GIT.cmd(GIT.CMD.BRANCH_NAME, repo)}). Update?"):
-                yaml_repos[repo]["version"] = short_hash
-                print(f"UPDATE {repo}: {old_hash} -> {short_hash}")
+            if ask_user(f"{repo} has been changed ({branch}). Update?"):
+                yaml_repos[repo]["version"] = f"{branch}@{short_hash}"
+                print(f"UPDATE {repo}: {old_version} -> {branch}@{short_hash}")
                 Counter.changed += 1
 
     # missing repo
