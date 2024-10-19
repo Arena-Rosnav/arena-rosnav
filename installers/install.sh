@@ -72,7 +72,7 @@ cd "${ARENA_WS_DIR}"
 
 # vcstool fork
 git clone https://github.com/voshch/vcstool.git "${ARENA_WS_DIR}/vcstool"
-python -m pip install -e "${ARENA_WS_DIR}/src/deps/vcstool"
+python -m pip install -e "${ARENA_WS_DIR}/vcstool"
 
 #
 mkdir -p "${ARENA_WS_DIR}/src/deps"
