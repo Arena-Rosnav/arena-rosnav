@@ -13,7 +13,7 @@ from rl_utils.utils.observation_collector import (
     ObservationManager,
     get_required_observation_units,
 )
-from rl_utils.utils.type_alias.observation import ObservationDict
+from rl_utils.utils.type_alias.observation import ObservationDict, InformationDict
 from rosnav_rl.reward.reward_function import RewardFunction
 from rosnav_rl.spaces import EncodedObservationDict, RosnavSpaceManager
 from std_srvs.srv import Empty
@@ -40,6 +40,22 @@ class FlatlandEnv(gymnasium.Env):
         *args,
         **kwargs,
     ):
+        """
+        Initializes the FlatlandEnv environment.
+
+        Args:
+            ns (Union[str, Namespace]): The namespace for the environment.
+            space_manager (RosnavSpaceManager): The space manager for ROS navigation.
+            reward_function (Optional[RewardFunction], optional): The reward function to use. Defaults to None.
+            simulation_state_container (Optional[SimulationStateContainer], optional): Container for simulation state. Defaults to None.
+            max_steps_per_episode (int, optional): Maximum steps per episode. Defaults to 100.
+            init_by_call (bool, optional): Whether to initialize by call. Defaults to False.
+            wait_for_obs (bool, optional): Whether to wait for observations. Defaults to False.
+            obs_unit_kwargs (dict, optional): Keyword arguments for observation unit. Defaults to None.
+            task_generator_kwargs (dict, optional): Keyword arguments for task generator. Defaults to None.
+            *args: Additional arguments.
+            **kwargs: Additional keyword arguments.
+        """
         super(FlatlandEnv, self).__init__()
 
         self.ns = Namespace(ns)
@@ -70,6 +86,27 @@ class FlatlandEnv(gymnasium.Env):
             self.init()
 
     def init(self):
+        """
+        Initializes the environment for training or evaluation.
+
+        If the environment is in training mode, it sets up the environment accordingly.
+        It then determines the required observation units based on the reward function
+        and the observation space list. If a full range laser is attached to the robot,
+        it adds the FullRangeLaserCollector to the observation units.
+
+        Finally, it initializes the ObservationManager with the required observation units
+        and other necessary parameters.
+
+        Attributes:
+            is_train_mode (bool): Indicates if the environment is in training mode.
+            _setup_env_for_training (function): Sets up the environment for training.
+            _reward_function (object): The reward function used in the environment.
+            _model_space_manager (object): Manages the observation space list.
+            __simulation_state_container (object): Contains the state of the simulation.
+            _obs_unit_kwargs (dict): Additional keyword arguments for observation units.
+            __wait_for_obs (bool): Indicates if the environment should wait for observations.
+            ns (str): Namespace for the observation manager.
+        """
         if self.is_train_mode:
             self._setup_env_for_training()
 
@@ -93,7 +130,7 @@ class FlatlandEnv(gymnasium.Env):
         )
 
     @property
-    def action_space(self):
+    def action_space(self) -> gymnasium.spaces.Box:
         """
         Returns the action space of the environment.
 
@@ -103,7 +140,7 @@ class FlatlandEnv(gymnasium.Env):
         return self._model_space_manager.action_space
 
     @property
-    def observation_space(self):
+    def observation_space(self) -> gymnasium.spaces.Dict:
         """
         Returns the observation space of the environment.
 
@@ -186,16 +223,20 @@ class FlatlandEnv(gymnasium.Env):
 
     def step(
         self, action: np.ndarray
-    ) -> Tuple[EncodedObservationDict, float, bool, bool, dict]:
+    ) -> Tuple[EncodedObservationDict, float, bool, bool, InformationDict]:
         """
-        Take a step in the environment.
+        Execute one step in the environment using the given action.
 
         Args:
-            action (np.ndarray): The action to take.
+            action (np.ndarray): The action to be taken in the environment.
 
         Returns:
-            tuple: A tuple containing the encoded observation, reward, done flag, info dictionary, and False flag.
-
+            Tuple[EncodedObservationDict, float, bool, bool, dict]: A tuple containing:
+                - EncodedObservationDict: The encoded observation dictionary after applying the model space manager.
+                - float: The reward obtained after taking the action.
+                - bool: A flag indicating if the episode has ended.
+                - bool: A flag indicating if the episode was truncated (always False in this implementation).
+                - InformationDict: Additional information about the step.
         """
         self._pub_action(self._decode_action(action))
 
@@ -231,19 +272,20 @@ class FlatlandEnv(gymnasium.Env):
             info,
         )
 
-    def reset(self, seed=None, options=None) -> Tuple[EncodedObservationDict, dict]:
+    def reset(
+        self, seed=None, options=None
+    ) -> Tuple[EncodedObservationDict, InformationDict]:
         """
-        Reset the environment.
+        Resets the environment to an initial state and returns an initial observation.
 
         Args:
-            seed: The random seed for the environment.
-            options: Additional options for resetting the environment.
+            seed (int, optional): The seed for random number generation. Defaults to None.
+            options (dict, optional): Additional options for the reset. Defaults to None.
 
         Returns:
-            tuple: A tuple containing the encoded observation and an empty info dictionary.
-
+            Tuple[EncodedObservationDict, InformationDict]:
+                A tuple containing the encoded observation dictionary and an information dictionary.
         """
-
         super().reset(seed=seed)
         self._episode += 1
 
@@ -298,6 +340,16 @@ class FlatlandEnv(gymnasium.Env):
                 self._call_service_takeSimStep()
 
     def _call_service_takeSimStep(self, t: float = None, srv_call: bool = True):
+        """
+        Calls the service to take a simulation step in the Flatland environment.
+
+        Args:
+            t (float, optional): The time duration for the simulation step. If None,
+                                 the default step size is used. Defaults to None.
+            srv_call (bool, optional): Flag to determine whether to call the service
+                                       to step the world. Defaults to True.
+
+        """
         if srv_call:
             self._step_world_srv()
         request = StepWorld()
