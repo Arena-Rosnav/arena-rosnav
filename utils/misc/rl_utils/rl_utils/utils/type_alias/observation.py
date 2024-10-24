@@ -13,6 +13,8 @@ from typing import (
     NewType,
 )
 
+# Gym Env
+InformationDict = Dict[str, Any]
 
 PATHS_KEYS = Literal["model", "tb", "eval", "robot_setting", "config", "curriculum"]
 PathsDict = Dict[PATHS_KEYS, str]

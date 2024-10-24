@@ -106,7 +106,25 @@ class ObservationManager:
 
     def _init_units(self) -> None:
         """
-        Initialize observation units and subscribers.
+        Initializes the observation units by creating instances of `GenericObservation` for each collector
+        and setting up ROS subscribers for each observation.
+
+        This method performs the following steps:
+        1. Imports the `GenericObservation` class from `rl_utils.utils.observation_collector.generic_observation`.
+        2. Iterates over the `_collectors` dictionary.
+        3. For each collector, creates an instance of `GenericObservation` with the initial message and preprocessing function.
+        4. Stores the `GenericObservation` instance in the `_collectable_observations` dictionary.
+        5. Sets up a ROS subscriber for each collector's topic, using the appropriate topic name and message data class.
+
+        Note:
+            If the collector's topic contains "crowdsim_agents" and the environment is single, the topic name is used directly.
+            Otherwise, the topic name is generated using the `get_topic` function.
+
+        Args:
+            None
+
+        Returns:
+            None
         """
         import rl_utils.utils.observation_collector.generic_observation as gen_obs
 
@@ -134,7 +152,10 @@ class ObservationManager:
 
     def _invalidate_observations(self) -> None:
         """
-        Invalidate all observations.
+        Invalidates all collectable observations.
+
+        This method iterates through all the collectable observations and calls
+        the `invalidate` method on each collector to mark them as invalid.
         """
         for collector in self._collectable_observations.values():
             collector.invalidate()
