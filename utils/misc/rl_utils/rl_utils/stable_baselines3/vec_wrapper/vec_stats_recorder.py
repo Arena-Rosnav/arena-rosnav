@@ -17,14 +17,12 @@ class VecStatsRecorder(VecEnvWrapper):
 
     Args:
         venv (VecEnv): The vectorized environment to wrap.
-        verbose (bool, optional): Whether to print the statistics or not. Defaults to False.
         x (int, optional): The frequency of printing the statistics. Defaults to 100.
     """
 
     def __init__(
         self,
         venv: VecEnv,
-        verbose: bool = False,
         after_x_eps: int = 100,
         record_actions: bool = False,
         is_action_normalized: bool = True,
@@ -35,7 +33,6 @@ class VecStatsRecorder(VecEnvWrapper):
 
         assert after_x_eps > 0, "'after_x_eps' must be positive"
 
-        self.verbose = verbose
         self.after_x_eps = after_x_eps
         self.num_envs = venv.num_envs
         self.is_action_normalized = is_action_normalized
@@ -110,11 +107,7 @@ class VecStatsRecorder(VecEnvWrapper):
 
         self.num_steps += 1
 
-        if (
-            self.verbose
-            and self.num_episodes % self.after_x_eps == 0
-            and self.num_episodes > 0
-        ):
+        if self.num_episodes % self.after_x_eps == 0 and self.num_episodes > 0:
             self.print_stats()
             self.reset_stats()
 
@@ -146,26 +139,31 @@ class VecStatsRecorder(VecEnvWrapper):
         print(f"Episode {self.num_episodes} / Step {self.num_steps}:")
         if self._record_actions:
             print(f"Average actions: {avg_actions} (linear, transversal, angular)")
-        print(
-            f"Average step time: {avg_step_time:.4f} seconds"
-        )
-        print(
-            f"Average episode return: {avg_episode_return:.3f} pts"
-        )
-        print(
-            f"Mean episode length: {avg_episode_length:.1f} steps"
-        )
+        print(f"Average step time: {avg_step_time:.4f} seconds")
+        print(f"Average episode return: {avg_episode_return:.3f} pts")
+        print(f"Mean episode length: {avg_episode_length:.1f} steps")
         print(f"Done reasons: {self.done_reasons}")
         print("-" * 40, sep="", end="\n")  # Print another line separator
-            
-        wandb.log({
-            "train_episode/step_time": avg_step_time,
-            "train_episode/reward": avg_episode_return,
-            "train_episode/length": avg_episode_length,
-            "train_episode/success_rate": self.done_reasons[DONE_REASONS.SUCCESS.name]/len(self.episode_lengths),
-            "train_episode/collision_rate": self.done_reasons[DONE_REASONS.COLLISION.name]/len(self.episode_lengths),
-            "train_episode/timeout_rate": self.done_reasons[DONE_REASONS.STEP_LIMIT.name]/len(self.episode_lengths)
-        })
+
+        wandb.log(
+            {
+                "train_episode/step_time": avg_step_time,
+                "train_episode/reward": avg_episode_return,
+                "train_episode/length": avg_episode_length,
+                "train_episode/success_rate": self.done_reasons[
+                    DONE_REASONS.SUCCESS.name
+                ]
+                / len(self.episode_lengths),
+                "train_episode/collision_rate": self.done_reasons[
+                    DONE_REASONS.COLLISION.name
+                ]
+                / len(self.episode_lengths),
+                "train_episode/timeout_rate": self.done_reasons[
+                    DONE_REASONS.STEP_LIMIT.name
+                ]
+                / len(self.episode_lengths),
+            }
+        )
 
     def reset(self) -> VecEnvObs:
         return self.venv.reset()  # pytype:disable=annotation-type-mismatch
