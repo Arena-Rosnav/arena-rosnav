@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Type
+from typing import Dict, List, Type, Optional
 
 import rosgraph_msgs.msg as rosgraph_msgs
 import rospy
@@ -16,6 +16,8 @@ from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.robots import TM_Robots
 from task_generator.utils import ModelLoader
+
+from rl_utils.state_container import TaskState
 
 
 class TaskFactory:
@@ -77,6 +79,8 @@ class TaskFactory:
             PARAM_TM_ROBOTS = "tm_robots"
             PARAM_TM_OBSTACLES = "tm_obstacles"
 
+            __task_state: Optional[TaskState] = None
+
             __param_tm_robots: Constants.TaskMode.TM_Robots
             __param_tm_obstacles: Constants.TaskMode.TM_Obstacles
 
@@ -91,6 +95,7 @@ class TaskFactory:
                 robot_managers: List[RobotManager],
                 world_manager: WorldManager,
                 namespace: Namespace = "",
+                task_state: Optional[TaskState] = None,
                 *args,
                 **kwargs,
             ):
@@ -105,6 +110,7 @@ class TaskFactory:
                     *args: Variable length argument list.
                     **kwargs: Arbitrary keyword arguments.
                 """
+                self.__task_state = task_state
                 self._force_reset = False
                 self.namespace = namespace
 
@@ -154,10 +160,18 @@ class TaskFactory:
                 self._step_world_srv = None
                 if self._train_mode:
                     self.set_tm_robots(
-                        Constants.TaskMode.TM_Robots(rospy.get_param("tm_robots"))
+                        Constants.TaskMode.TM_Robots(
+                            rospy.get_param("tm_robots")
+                            if self.__task_state is None
+                            else self.__task_state.task_modules.tm_robots
+                        )
                     )
                     self.set_tm_obstacles(
-                        Constants.TaskMode.TM_Obstacles(rospy.get_param("tm_obstacles"))
+                        Constants.TaskMode.TM_Obstacles(
+                            rospy.get_param("tm_obstacles")
+                            if self.__task_state is None
+                            else self.__task_state.task_modules.tm_obstacles
+                        )
                     )
 
             def set_tm_robots(self, tm_robots: Constants.TaskMode.TM_Robots):
@@ -203,6 +217,8 @@ class TaskFactory:
                         if (
                             new_tm_robots := Constants.TaskMode.TM_Robots(
                                 rosparam_get(str, self.PARAM_TM_ROBOTS)
+                                if self.__task_state is None
+                                else self.__task_state.task_modules.tm_robots
                             )
                         ) != self.__param_tm_robots:
                             self.set_tm_robots(new_tm_robots)
@@ -210,6 +226,8 @@ class TaskFactory:
                         if (
                             new_tm_obstacles := Constants.TaskMode.TM_Obstacles(
                                 rosparam_get(str, self.PARAM_TM_OBSTACLES)
+                                if self.__task_state is None
+                                else self.__task_state.task_modules.tm_obstacles
                             )
                         ) != self.__param_tm_obstacles:
                             self.set_tm_obstacles(new_tm_obstacles)

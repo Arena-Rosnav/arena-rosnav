@@ -20,7 +20,13 @@ class ObstacleManager:
 
     id_generator: Iterator[int]
 
-    def __init__(self, namespace, world_manager, simulator: BaseSimulator, entity_manager: EntityManager):
+    def __init__(
+        self,
+        namespace,
+        world_manager,
+        simulator: BaseSimulator,
+        entity_manager: EntityManager,
+    ):
         self._world_manager = world_manager
         self._namespace = namespace
         self._simulator = simulator
@@ -36,13 +42,13 @@ class ObstacleManager:
         """
 
         self._entity_manager.spawn_walls(
-            walls=world.entities.walls, heightmap=world.map)
-        
+            walls=world.entities.walls, heightmap=world.map
+        )
+
         if isinstance(self._simulator, UnitySimulator):
             self._simulator.spawn_walls(world.entities.walls)
 
-        self._entity_manager.spawn_obstacles(
-            obstacles=world.entities.obstacles)
+        self._entity_manager.spawn_obstacles(obstacles=world.entities.obstacles)
 
     def spawn_dynamic_obstacles(self, setups: Collection[DynamicObstacle]):
         """

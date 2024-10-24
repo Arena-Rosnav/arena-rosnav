@@ -23,6 +23,7 @@ from task_generator.shared import (
     PositionOrientation,
 )
 from task_generator.utils import Utils
+from rl_utils.state_container import RobotState
 
 
 class SDFUtil:
@@ -186,11 +187,14 @@ class YAMLUtil:
         return f"{namespace.robot_ns}/{frame_id}"
 
     @staticmethod
-    def update_plugins(namespace: Namespace, description: Any) -> Any:
+    def update_plugins(
+        namespace: Namespace, description: Any, robot_state: Optional[RobotState] = None
+    ) -> Any:
         plugins: List[Dict] = description.get("plugins", [])
 
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            if rospy.get_param("laser/full_range_laser", False):
+            # if rospy.get_param("laser/full_range_laser", False):
+            if robot_state.laser_state.attach_full_range_laser:
                 plugins.append(Constants.PLUGIN_FULL_RANGE_LASER.copy())
 
             for plugin in plugins:
