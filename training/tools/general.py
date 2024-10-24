@@ -13,6 +13,10 @@ import yaml
 from .constants import TRAINING_CONSTANTS
 
 from pydantic import BaseModel
+import json
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters import TerminalFormatter
 
 
 def write_config_yaml(config: dict, path: str) -> None:
@@ -31,7 +35,11 @@ def print_dict(hyperparams: dict) -> None:
 def print_base_model(hyperparams: BaseModel) -> None:
     print("\n--------------------------------")
     print("         HYPERPARAMETERS         \n")
-    print(hyperparams.model_dump(indent=4))
+    yaml_str = yaml.dump(
+        hyperparams.model_dump(), default_flow_style=False, sort_keys=False
+    )
+    colorful_yaml = highlight(yaml_str, get_lexer_by_name("yaml"), TerminalFormatter())
+    print(colorful_yaml)
     print("--------------------------------\n\n")
 
 
