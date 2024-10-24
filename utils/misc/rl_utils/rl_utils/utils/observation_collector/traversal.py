@@ -1,31 +1,44 @@
-from typing import List, Set, Type
+from typing import TYPE_CHECKING, List, Set, Type, Union
 
-from rl_utils.utils.observation_collector import *
+from rl_utils.utils.observation_collector import (
+    ObservationCollectorUnit,
+    ObservationGeneratorUnit,
+)
+
+if TYPE_CHECKING:
+    from rl_utils.utils.type_alias.observation import (
+        ObservationCollector,
+        ObservationGenerator,
+        ObservationGeneric,
+    )
+    from rosnav_rl.reward.reward_units.base_reward_units import RewardUnit
+    from rosnav_rl.spaces import BaseObservationSpace
 
 
-def get_required_observations(
+def get_required_observation_units(
     list_of_units: Union[List["BaseObservationSpace"], List["RewardUnit"]]
 ) -> list:
     """
-    Get the required observations for a list of observation/reward units.
+    Collects and returns a list of unique required observation units from the provided list of units.
 
     Args:
-        list_of_units (list): The list of observation/reward units.
+        list_of_units (Union[List["BaseObservationSpace"], List["RewardUnit"]]):
+            A list containing instances of either BaseObservationSpace or RewardUnit.
 
     Returns:
-        list: The list of required observations.
+        list: A list of unique required observation units.
     """
     observations = []
     for unit in list_of_units:
-        for observation_cls in unit.required_observations:
+        for observation_cls in unit.required_observation_units:
             observations.extend(retrieve_unique_unit(observation_cls, True))
     return list(set(observations))
 
 
 def retrieve_unique_unit(
-    unit: Union[ObservationCollector, ObservationGenerator],
+    unit: Union["ObservationCollector", "ObservationGenerator"],
     include_generators: bool = False,
-) -> Set[Type[ObservationCollector]]:
+) -> Set[Type["ObservationCollector"]]:
     is_collector = issubclass(unit, ObservationCollectorUnit)
     collectors = [unit] if include_generators and not is_collector else []
 
@@ -43,7 +56,7 @@ def retrieve_unique_unit(
     return set(collectors)
 
 
-def explore_hierarchy(list_of_units: List[ObservationGeneric]):
+def explore_hierarchy(list_of_units: List["ObservationGeneric"]):
     """
     Traverses the hierarchy of observation units and returns a dictionary
     that represents the depth of each unit in the hierarchy.
@@ -57,7 +70,7 @@ def explore_hierarchy(list_of_units: List[ObservationGeneric]):
     """
 
     def traverse_hierarchy(
-        unit: ObservationGeneric, hierarchy_dict: dict, recursion_depth: int = 0
+        unit: "ObservationGeneric", hierarchy_dict: dict, recursion_depth: int = 0
     ) -> int:
         if unit not in hierarchy_dict:
             hierarchy_dict[unit] = 0
@@ -85,13 +98,17 @@ def explore_hierarchy(list_of_units: List[ObservationGeneric]):
     return hierarchy_dict
 
 
-if __name__ == "__main__":
-    dist = retrieve_unique_unit(DistAngleToGoal, True)
-    social_state = retrieve_unique_unit(PedestrianRelativeLocation, True)
-    # set out of dist and social_state
-    set_out = set(dist) - set(social_state)
-    print(set_out)
+# if __name__ == "__main__":
+#     dist = retrieve_unique_unit(DistAngleToGoal, True)
+#     social_state = retrieve_unique_unit(PedestrianRelativeLocationGenerator, True)
+#     # set out of dist and social_state
+#     set_out = set(dist) - set(social_state)
+#     print(set_out)
 
-    c = explore_hierarchy(
-        [PedestrianRelativeVelX, PedestrianRelativeLocation, DistAngleToGoal]
-    )
+#     c = explore_hierarchy(
+#         [
+#             PedestrianRelativeVelXGenerator,
+#             PedestrianRelativeLocationGenerator,
+#             DistAngleToGoal,
+#         ]
+#     )

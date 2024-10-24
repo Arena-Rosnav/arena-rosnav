@@ -1,11 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import Type, TypeVar, ClassVar
+from typing import Type, TypeVar, ClassVar, List
 
 import rospy
 import numpy as np
 
 T = TypeVar("T")
 D = TypeVar("D")
+
+from task_generator.constants import Constants
+from task_generator.utils import Utils
 
 
 class BaseUnit(ABC):
@@ -40,9 +43,20 @@ class ObservationCollectorUnit(BaseUnit, ABC):
     topic: str = ""
     msg_data_class: Type[T] = T
     data_class: Type[D] = D
+    applicable_simulators: List[Constants.Simulator] = [
+        Constants.Simulator.FLATLAND,
+        Constants.Simulator.UNITY,
+        Constants.Simulator.GAZEBO,
+    ]
 
     is_topic_agent_specific: bool = True
     up_to_date_required: bool = False
+
+    def __init__(self, *args, **kwargs) -> None:
+        if Utils.get_simulator() not in self.applicable_simulators:
+            raise RuntimeError(
+                f"Collector '{self.name}' is not applicable for simulator {Utils.get_simulator()}"
+            )
 
     @abstractmethod
     def preprocess(self, msg: T) -> D:

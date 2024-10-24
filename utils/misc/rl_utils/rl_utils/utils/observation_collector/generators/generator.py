@@ -2,23 +2,34 @@
 ADVANCED OBSERVATIONS: OBSERVATIONS THAT ARE NOT DIRECTLY DERIVED FROM TOPICS
 """
 
-from typing import Any, Dict, List, Tuple, Type, TypeVar
-
-import numpy as np
-
-from ..collectors import BaseUnit, GoalCollector, RobotPoseCollector, SubgoalCollector
-from ..utils.semantic import get_relative_pos_to_robot
-from .base_generator import ObservationGeneratorUnit
-
 __all__ = [
     "GoalLocationInRobotFrame",
     "DistAngleToGoal",
     "SubgoalLocationInRobotFrame",
     "DistAngleToSubgoal",
+    "LaserSafeDistanceGenerator",
 ]
 
+from typing import TYPE_CHECKING, List, Tuple, Type, TypeVar
 
-ObservationDict = Dict[str, Any]
+import numpy as np
+from rl_utils.state_container import SimulationStateContainer
+
+from ..collectors import (
+    BaseUnit,
+    FullRangeLaserCollector,
+    GoalCollector,
+    LaserCollector,
+    RobotPoseCollector,
+    SubgoalCollector,
+)
+from ..utils.semantic import get_relative_pos_to_robot
+from .base_generator import ObservationGeneratorUnit
+
+if TYPE_CHECKING:
+    from rl_utils.utils.type_alias.observation import ObservationDict
+
+import rospy
 
 
 class GoalLocationInRobotFrame(ObservationGeneratorUnit):
@@ -30,7 +41,7 @@ class GoalLocationInRobotFrame(ObservationGeneratorUnit):
     requires: List[BaseUnit] = [GoalCollector, RobotPoseCollector]
     data_class: Type[np.ndarray] = np.ndarray
 
-    def generate(self, obs_dict: ObservationDict) -> np.ndarray:
+    def generate(self, obs_dict: "ObservationDict", *args, **kwargs) -> np.ndarray:
         """
         Generates the observation of the goal location in the robot's frame of reference.
 
@@ -54,7 +65,7 @@ class SubgoalLocationInRobotFrame(ObservationGeneratorUnit):
     requires: List[BaseUnit] = [SubgoalCollector, RobotPoseCollector]
     data_class: Type[np.ndarray] = np.ndarray
 
-    def generate(self, obs_dict: ObservationDict) -> np.ndarray:
+    def generate(self, obs_dict: "ObservationDict", *args, **kwargs) -> np.ndarray:
         goal_pose: GoalCollector.data_class = obs_dict[SubgoalCollector.name]
         robot_pose: RobotPoseCollector.data_class = obs_dict[RobotPoseCollector.name]
 
@@ -73,7 +84,9 @@ class DistAngleToGoal(ObservationGeneratorUnit):
     requires: List[BaseUnit] = [GoalLocationInRobotFrame]
     data_class: Type[Tuple[DistToGoal, AngleToGoal]] = Tuple[DistToGoal, AngleToGoal]
 
-    def generate(self, obs_dict: ObservationDict) -> Tuple[DistToGoal, AngleToGoal]:
+    def generate(
+        self, obs_dict: "ObservationDict", *args, **kwargs
+    ) -> Tuple[DistToGoal, AngleToGoal]:
         goal_in_robot_frame: GoalLocationInRobotFrame.data_class = obs_dict[
             GoalLocationInRobotFrame.name
         ]
@@ -89,7 +102,9 @@ class DistAngleToSubgoal(ObservationGeneratorUnit):
     requires: List[BaseUnit] = [SubgoalLocationInRobotFrame]
     data_class: Type[Tuple[DistToGoal, AngleToGoal]] = Tuple[DistToGoal, AngleToGoal]
 
-    def generate(self, obs_dict: ObservationDict) -> Tuple[DistToGoal, AngleToGoal]:
+    def generate(
+        self, obs_dict: "ObservationDict", *args, **kwargs
+    ) -> Tuple[DistToGoal, AngleToGoal]:
         goal_in_robot_frame: SubgoalLocationInRobotFrame.data_class = obs_dict[
             SubgoalLocationInRobotFrame.name
         ]
@@ -98,3 +113,29 @@ class DistAngleToSubgoal(ObservationGeneratorUnit):
         angle_to_goal = np.arctan2(goal_in_robot_frame[1], goal_in_robot_frame[0])
 
         return np.array((dist_to_goal, angle_to_goal))
+
+
+class LaserSafeDistanceGenerator(ObservationGeneratorUnit):
+    name: str = "laser_safe_distance_violation"
+    requires: List[BaseUnit] = [LaserCollector, FullRangeLaserCollector]
+    data_class: Type[bool] = bool
+
+    def generate(
+        self,
+        obs_dict: "ObservationDict",
+        simulation_state_container: SimulationStateContainer,
+        *args,
+        **kwargs,
+    ) -> np.ndarray:
+        if not isinstance(simulation_state_container, SimulationStateContainer):
+            rospy.logwarn_throttle(
+                60,
+                f"Can't calculate '{self.name}'-Generator! SimulationStateContainer not provided.",
+            )
+        return (
+            obs_dict[LaserCollector.name].min()
+            <= simulation_state_container.robot.safety_distance
+            if FullRangeLaserCollector.name not in obs_dict
+            else obs_dict[FullRangeLaserCollector.name].min()
+            <= simulation_state_container.robot.safety_distance
+        )

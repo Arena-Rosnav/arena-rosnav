@@ -1,8 +1,12 @@
 from typing import Type
 
+import rospy
 import unity_msgs.msg as unity_msgs
+from task_generator.constants import Config, UnityConstants, Constants
 
 from .base_collector import ObservationCollectorUnit
+from rl_utils.topic import Namespace
+from rl_utils.state_container import SimulationStateContainer
 
 __all__ = ["CollisionCollector", "PedSafeDistCollector", "ObsSafeDistCollector"]
 
@@ -52,9 +56,45 @@ class PedSafeDistCollector(ObservationCollectorUnit):
 
     name: str = "ped_safe_dist"
     topic: str = "ped_safe_dist"
+    applicable_simulators: list = [Constants.Simulator.UNITY]
     msg_data_class: Type[unity_msgs.Collision] = unity_msgs.Collision
     data_class: Type[bool] = bool
     up_to_date_required: bool = True
+
+    def __init__(
+        self,
+        ns: Namespace,
+        simulation_state_container: SimulationStateContainer,
+        *args,
+        **kwargs,
+    ):
+        try:
+            super().__init__(*args, **kwargs)
+        except RuntimeError as e:
+            rospy.logwarn(f"{e}. Collector '{self.name}' will not be used.")
+            return
+
+        # Send request to Unity to attach sensor
+        service_topic = ns.simulation_ns(
+            "unity", UnityConstants.ATTACH_SAFE_DIST_SENSOR_TOPIC
+        )
+
+        rospy.wait_for_service(
+            service_topic, timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
+        )
+        request = unity_msgs.AttachSafeDistSensorRequest(
+            robot_name=ns.robot_ns,
+            safe_dist_topic=PedSafeDistCollector.topic,
+            ped_safe_dist=True,
+            obs_safe_dist=False,
+            safe_dist=simulation_state_container.robot.safety_distance,
+        )
+        response = rospy.ServiceProxy(service_topic, unity_msgs.AttachSafeDistSensor)(
+            request
+        )
+        # Check success
+        if not response.success:
+            raise rospy.ServiceException(response.message)
 
     def preprocess(self, msg: unity_msgs.Collision) -> bool:
         """

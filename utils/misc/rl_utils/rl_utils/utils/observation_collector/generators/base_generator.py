@@ -1,9 +1,11 @@
-from ..collectors import BaseUnit
 from abc import ABC, abstractmethod
+from typing import ClassVar, List, Type, TypeVar
 
-from typing import List, Type, TypeVar, ClassVar
+from ..collectors import BaseUnit
 
 D = TypeVar("D")
+
+from rl_utils.state_container import SimulationStateContainer
 
 
 class ObservationGeneratorUnit(BaseUnit, ABC):
@@ -21,7 +23,13 @@ class ObservationGeneratorUnit(BaseUnit, ABC):
     data_class: Type[D] = D
 
     @abstractmethod
-    def generate(self, obs_dict: dict) -> D:
+    def generate(
+        self,
+        obs_dict: dict,
+        simulation_state_container: SimulationStateContainer,
+        *args,
+        **kwargs
+    ) -> D:
         """
         Generates the observation data based on the given observation dictionary.
 
