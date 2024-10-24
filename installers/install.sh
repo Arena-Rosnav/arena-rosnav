@@ -108,6 +108,10 @@ curl "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_VERSION}/ros2.repo
 until vcs import src/ros2 < ros2.repos ; do echo "failed to update, retrying..." ; done
 rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers"
 
+# == fix rosidl error that was caused upstream" ==
+cd "${ARENA_WS_DIR}/src/ros2/ros2/rosidl"
+git cherry-pick 654d6f5658b59009147b9fad9b724919633f38fe
+
 cd "${ARENA_WS_DIR}/src/deps"
 git clone https://github.com/ros-perception/pcl_msgs.git -b ros2 pcl_msgs
 
