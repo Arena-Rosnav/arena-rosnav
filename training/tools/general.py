@@ -10,62 +10,17 @@ import rosnode
 import rospy
 import yaml
 
-from .model_utils import check_batch_size
 from .constants import TRAINING_CONSTANTS
 
-
-def initialize_config(
-    paths: dict,
-    config: dict,
-) -> dict:
-    """
-    Initialize config file for training and save it to agent directory
-
-    :param PATHS: dictionary containing model specific paths
-    :param config: dictionary containing training configurations
-    :param n_envs: number of envs
-    """
-
-    config["n_envs"] = (
-        rospy.get_param("num_envs")
-        if rospy.get_param("LEVERAGE_SIMS", False)
-        else config["n_envs"]
-    )
-
-    config["robot"] = rospy.get_param("model")
-    # dynamically adapt n_steps according to batch size and n envs
-    # then update .json
-    check_batch_size(
-        config["n_envs"],
-        config["rl_agent"]["ppo"]["batch_size"],
-        config["rl_agent"]["ppo"]["m_batch_size"],
-    )
-    config["rl_agent"]["ppo"]["n_steps"] = int(
-        config["rl_agent"]["ppo"]["batch_size"] / config["n_envs"]
-    )
-    config["rl_agent"]["space_encoder"] = rospy.get_param(
-        "space_encoder", "RobotSpecificEncoder"
-    )
-
-    if not config["debug_mode"]:
-        write_config_yaml(config, paths)
-    print_hyperparameters(config["rl_agent"]["ppo"])
-
-    return config
+from pydantic import BaseModel
 
 
-def write_config_yaml(config: dict, paths: dict) -> None:
-    """
-    Write training_config.yaml to agent directory
-
-    :param hyperparams: dict containing model specific hyperparameters
-    :param paths: dictionary containing model specific paths
-    """
-    with open(paths["config"], "w") as outfile:
+def write_config_yaml(config: dict, path: str) -> None:
+    with open(path, "w") as outfile:
         yaml.dump(config, outfile, default_flow_style=False)
 
 
-def print_hyperparameters(hyperparams: dict) -> None:
+def print_dict(hyperparams: dict) -> None:
     print("\n--------------------------------")
     print("         HYPERPARAMETERS         \n")
     for param, param_val in hyperparams.items():
@@ -73,14 +28,27 @@ def print_hyperparameters(hyperparams: dict) -> None:
     print("--------------------------------\n\n")
 
 
-def get_paths(config: dict) -> dict:
+def print_base_model(hyperparams: BaseModel) -> None:
+    print("\n--------------------------------")
+    print("         HYPERPARAMETERS         \n")
+    print(hyperparams.model_dump(indent=4))
+    print("--------------------------------\n\n")
+
+
+def get_paths(
+    agent_name: str,
+    curriculum_file: str,
+    # resume_name: str,
+    # checkpoint_name: str,
+    # debug_mode: bool,
+    # use_wandb: bool = False,
+    # log_evaluation: bool = False,
+) -> dict:
     """
     Function to generate agent specific paths
 
     :param config (dict): Dictionary containing the training configuration
     """
-    agent_name = config["agent_name"]
-
     BASE_PATHS = TRAINING_CONSTANTS.PATHS
     PATHS = {
         "model": BASE_PATHS.MODEL(agent_name),
@@ -88,36 +56,72 @@ def get_paths(config: dict) -> dict:
         "eval": BASE_PATHS.EVAL(agent_name),
         "robot_setting": BASE_PATHS.ROBOT_SETTING(rospy.get_param("robot_model")),
         "config": BASE_PATHS.AGENT_CONFIG(agent_name),
-        "curriculum": BASE_PATHS.CURRICULUM(
-            config["callbacks"]["training_curriculum"]["training_curriculum_file"]
-        ),
+        "curriculum": BASE_PATHS.CURRICULUM(curriculum_file),
     }
-    # check for mode
-    if config["rl_agent"]["resume"] is None and not config["debug_mode"]:
-        os.makedirs(PATHS["model"])
-    elif (
-        not os.path.isfile(os.path.join(PATHS["model"], f"{agent_name}.zip"))
-        and not os.path.isfile(os.path.join(PATHS["model"], "best_model.zip"))
-        and not os.path.isfile(os.path.join(PATHS["model"], "last_model.zip"))
-        and not config["debug_mode"]
-    ):
-        raise FileNotFoundError(
-            f"""Couldn't find model named {agent_name}.zip' or 'best_model.zip' in '{PATHS["model"]}'"""
-        )
-    # evaluation log enabled
-    if config["monitoring"]["eval_log"] and not config["debug_mode"]:
-        if not os.path.exists(PATHS["eval"]):
-            os.makedirs(PATHS["eval"])
-    else:
-        PATHS["eval"] = None
-    # tensorboard log enabled
-    if config["monitoring"]["use_wandb"] and not config["debug_mode"]:
-        if not os.path.exists(PATHS["tb"]):
-            os.makedirs(PATHS["tb"])
-    else:
-        PATHS["tb"] = None
 
     return PATHS
+
+
+def create_directories(
+    paths: dict,
+    resume_name: str,
+    checkpoint_name: str,
+    log_evaluation: bool,
+    use_wandb: bool,
+) -> None:
+    create_model_directory(paths, resume_name, checkpoint_name)
+    paths["eval"] = create_evaluation_directory(paths, log_evaluation)
+    paths["tb"] = create_tensorboard_directory(paths, use_wandb)
+
+
+def create_model_directory(paths: dict, resume_name: str, checkpoint_name: str) -> None:
+    """
+    Create model directory if not in debug mode and resume_name is None.
+    Raise FileNotFoundError if checkpoint is not found.
+
+    :param PATHS: Dictionary containing paths
+    :param resume_name: Name of the resume file
+    :param checkpoint_name: Name of the checkpoint file
+    :param debug_mode: Boolean indicating if debug mode is enabled
+    """
+    if resume_name is None:
+        os.makedirs(paths["model"])
+
+    if not os.path.isfile(os.path.join(paths["model"], f"{checkpoint_name}.zip")):
+        raise FileNotFoundError(
+            f"""Couldn't find model named {checkpoint_name}.zip' in '{paths["model"]}'"""
+        )
+
+
+def create_evaluation_directory(paths: dict, log_evaluation: bool) -> str:
+    """
+    Create evaluation directory if log_evaluation is enabled and not in debug mode.
+
+    :param PATHS: Dictionary containing paths
+    :param log_evaluation: Boolean indicating if evaluation logging is enabled
+    :return: Path to evaluation directory or None
+    """
+    if log_evaluation:
+        if not os.path.exists(paths["eval"]):
+            os.makedirs(paths["eval"])
+        return paths["eval"]
+    return None
+
+
+def create_tensorboard_directory(paths: dict, use_wandb: bool) -> str:
+    """
+    Create tensorboard directory if use_wandb is enabled and not in debug mode.
+
+    :param PATHS: Dictionary containing paths
+    :param use_wandb: Boolean indicating if wandb is used
+    :param debug_mode: Boolean indicating if debug mode is enabled
+    :return: Path to tensorboard directory or None
+    """
+    if use_wandb:
+        if not os.path.exists(paths["tb"]):
+            os.makedirs(paths["tb"])
+        return paths["tb"]
+    return None
 
 
 def wait_for_nodes(
@@ -132,17 +136,17 @@ def wait_for_nodes(
     :param nodes_per_ns: (int) usual number of nodes per ns
     """
     if with_ns:
-        assert (
-            with_ns and n_envs >= 1
-        ), f"Illegal number of environments parsed: {n_envs}"
+        if n_envs < 1:
+            raise ValueError(f"Illegal number of environments parsed: {n_envs}")
     else:
-        assert (
-            not with_ns and n_envs == 1
-        ), "Simulation setup isn't compatible with the given number of envs"
+        if n_envs != 1:
+            raise ValueError(
+                "Simulation setup isn't compatible with the given number of envs"
+            )
 
     for i in range(n_envs):
+        ns = f"sim_{str(i + 1)}" if with_ns else ""
         for k in range(timeout):
-            ns = f"sim_{str(i + 1)}" if with_ns else ""
             namespaces = rosnode.get_node_names(namespace=ns)
 
             if len(namespaces) >= nodes_per_ns:
@@ -152,9 +156,10 @@ def wait_for_nodes(
                 f"Check if all simulation parts of namespace '{ns}' are running properly"
             )
             warnings.warn("Trying to connect again..")
-            assert (
-                k < timeout - 1
-            ), f"Timeout while trying to connect to nodes of '{ns}'"
+            if k >= timeout - 1:
+                raise TimeoutError(
+                    f"Timeout while trying to connect to nodes of '{ns}'"
+                )
 
             time.sleep(1)
 
@@ -171,32 +176,27 @@ def load_config(config_name: str) -> dict:
     return config
 
 
-def generate_agent_name(config: dict) -> str:
-    """Function to get agent name to save to/load from file system
-
-    Example names:
-    "MLP_B_64-64_P_32-32_V_32-32_relu_2021_01_07__10_32"
-    "DRL_LOCAL_PLANNER_2021_01_08__7_14"
-
-    :param config (dict): Dict containing the program arguments
-    """
-    if config["rl_agent"]["resume"] is None:
-        agent_name = TRAINING_CONSTANTS.generate_agent_name(
-            architecture_name=config["rl_agent"]["architecture_name"]
-        )
-        config["agent_name"] = agent_name
-        return agent_name
-    else:
-        config["agent_name"] = config["rl_agent"]["resume"]
-        return config["rl_agent"]["resume"]
-
-
 def generate_discrete_action_dict(
     linear_range: Tuple[float, float],
     angular_range: Tuple[float, float],
     num_linear_actions: int,
     num_angular_actions: int,
 ):
+    """
+    Generates a dictionary of discrete actions for a robot, combining linear and angular velocities.
+
+    Args:
+        linear_range (Tuple[float, float]): The range (min, max) of linear velocities.
+        angular_range (Tuple[float, float]): The range (min, max) of angular velocities.
+        num_linear_actions (int): The number of discrete linear actions to generate.
+        num_angular_actions (int): The number of discrete angular actions to generate.
+
+    Returns:
+        List[Dict[str, Union[str, float]]]: A list of dictionaries, each containing:
+            - "name" (str): A randomly generated name for the action.
+            - "linear" (float): The linear velocity component of the action.
+            - "angular" (float): The angular velocity component of the action.
+    """
     NAME_LEN = 12  # len for random action name
 
     linear_actions = np.linspace(
