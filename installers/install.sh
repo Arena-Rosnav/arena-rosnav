@@ -183,7 +183,7 @@ cd "${ARENA_WS_DIR}/src/deps"
 git clone --branch foxy-devel "https://github.com/jackal/jackal.git" temp_jackal
 
 echo "Moving jackal contents to deps folder..."
-rsync -a temp_jackal/ ./
+cp -a temp_jackal/. ./
 
 echo "Removing temporary jackal folder..."
 rm -rf temp_jackal LICENSE README.md .gitignore .github
