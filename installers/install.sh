@@ -16,6 +16,21 @@ export ARENA_WS_DIR=$(realpath "$(eval echo ${INPUT:-${ARENA_WS_DIR}})")
 
 sudo echo "$ARENA_WS_DIR"
 
+# == remove ros problems ==
+files=$(grep -l "ros" /etc/apt/sources.list.d/* | grep -v "ros2")
+
+if [ -n "$files" ]; then
+    echo "The following files can cause some problems to installer:"
+    echo "$files"
+    read -p "Do you want to delete these files? (Y/n) [Y]: " choice
+    choice=${choice:-Y}
+
+    if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+        sudo rm -f $files
+        echo "Deleted $(echo $files)"
+    fi
+fi
+
 # == python deps ==
 
 # pyenv
