@@ -7,6 +7,20 @@ export ARENA_ROS_VERSION=${ARENA_ROS_VERSION:-humble}
 
 export GAZEBO_VERSION=${GAZEBO_VERSION:-garden}
 
+# == remove ros problems ==
+files=$(grep -l "ros" /etc/apt/sources.list.d/* | grep -v "ros2")
+
+if [ -n "$files" ]; then
+    echo "The following files can cause some problems to installer:"
+    echo "$files"
+    read -p "Do you want to delete these files? (y/n): " choice
+
+    if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+        sudo rm $files
+        echo "Delete complete!"
+    fi
+fi
+
 # == read inputs ==
 echo 'Configuring arena-rosnav...'
 
