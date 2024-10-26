@@ -13,9 +13,9 @@ files=$(grep -l "ros" /etc/apt/sources.list.d/* | grep -v "ros2")
 if [ -n "$files" ]; then
     echo "The following files can cause some problems to installer:"
     echo "$files"
-    read -p "Do you want to delete these files? (y/n): " choice
+    read -p "Do you want to delete these files? (y/n): " Y
 
-    if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+    if [[ "$Y" == "y" || "$Y" == "Y" ]]; then
         sudo rm $files
         echo "Delete complete!"
     fi
