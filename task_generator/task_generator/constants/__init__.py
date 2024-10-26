@@ -1,13 +1,9 @@
-
 from enum import Enum
 import enum
-
 from task_generator.shared import Namespace
 
 class Constants:
-
     DEFAULT_PEDESTRIAN_MODEL = "actor1"
-
     TASK_GENERATOR_SERVER_NODE = Namespace("task_generator_server")
 
     class Simulator(Enum):
@@ -23,6 +19,7 @@ class Constants:
         PEDSIM = "pedsim"
         FLATLAND = "flatland"
         CROWDSIM = "crowdsim"
+        HUNAVSIM = "hunavsim"  # Added Hunavsim
 
     class TaskMode:
         @enum.unique
@@ -77,7 +74,6 @@ class Constants:
     }
 
     class Defaults:
-        # Manually copied defaults from from TaskGenerator.cfg
         TIMEOUT_WAIT_FOR_SERVICE = 60.0
         MAX_RESET_FAIL_TIMES = 10
         RANDOM_SEED = -1
