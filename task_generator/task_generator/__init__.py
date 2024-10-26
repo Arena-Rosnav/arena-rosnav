@@ -14,6 +14,7 @@ from task_generator.constants import Constants
 from task_generator.constants.runtime import Config, TASKGEN_CONFIGNODE
 
 from task_generator.manager.entity_manager.entity_manager import EntityManager
+from task_generator.manager.entity_manager.hunavsim_manager import HunavsimManager
 #from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
 #from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
 #from task_generator.manager.entity_manager.crowdsim_manager import CrowdsimManager
@@ -114,7 +115,7 @@ class TaskGenerator(rclpy.node.Node):
             ]
         )
         
-        # self._entity_mode = Constants.EntityManager(self.get_parameter('entity_manager').value)
+        self._entity_mode = Constants.EntityManager(self.get_parameter('entity_manager').value)
         self._auto_reset = self.get_parameter('auto_reset').value
         self._train_mode = self.get_parameter('train_mode').value
 
@@ -187,7 +188,12 @@ class TaskGenerator(rclpy.node.Node):
             world_map=WorldMap.from_occupancy_grid(occupancy_grid=map_response)
         )
 
-        # if self._entity_mode == Constants.EntityManager.PEDSIM:
+        if self._entity_mode == Constants.EntityManager.HUNAVSIM:
+            self._entity_manager = HunavsimManager(
+                namespace=self._namespace,
+                simulator=self._env_wrapper
+            )
+        # elif self._entity_mode == Constants.EntityManager.PEDSIM:
         #     self._entity_manager = PedsimManager(
         #         namespace=self._namespace, simulator=self._env_wrapper
         #     )
@@ -199,9 +205,10 @@ class TaskGenerator(rclpy.node.Node):
         #     self._entity_manager = CrowdsimManager(
         #         namespace=self._namespace, simulator=self._env_wrapper
         #     )
-        self._entity_manager = EntityManager(
-            namespace=self._namespace, simulator=self._env_wrapper
-        )
+        else:
+            self._entity_manager = EntityManager(
+                namespace=self._namespace, simulator=self._env_wrapper
+            )
 
         obstacle_manager = ObstacleManager(
             namespace=self._namespace,
@@ -219,9 +226,7 @@ class TaskGenerator(rclpy.node.Node):
         # - Create a robot manager
         # - Launch the robot.launch file
         
-        
         # TODO tm modules and map needs to be added to the taskgen_confignode
-
         tm_modules_value = self.declare_parameter("tm_modules", "").value
         tm_modules = list(
             set(
@@ -255,9 +260,7 @@ class TaskGenerator(rclpy.node.Node):
     def _create_robot_managers(self) -> List[RobotManager]:
         # Read robot setup file
         robot_setup_file: str = self.get_parameter('robot_setup_file').value
-
         robot_model: str = self.get_parameter('model').value
-
 
         if robot_setup_file == "":
             robots = create_default_robot_list(
@@ -307,7 +310,6 @@ class TaskGenerator(rclpy.node.Node):
         return robot_managers
 
     # RUNTIME
-
     def reset_task(self, **kwargs):
         self._start_time = self.get_clock().now().seconds_nanoseconds()[0]
 
@@ -349,6 +351,5 @@ TASKGEN_NODE: TaskGenerator
 
 def init_task_gen_node(args=None):
     rclpy.init(args=args)
-
     global TASKGEN_NODE
     TASKGEN_NODE = TaskGenerator()
