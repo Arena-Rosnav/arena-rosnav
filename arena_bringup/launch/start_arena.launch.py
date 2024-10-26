@@ -44,7 +44,7 @@ def generate_launch_description():
         launch.actions.DeclareLaunchArgument(
             name='entity_manager',
             default_value='crowdsim',
-            description='[flatland, pedsim, crowdsim]'
+            description='[flatland, pedsim, crowdsim, hunavsim]'
         ),
         launch.actions.DeclareLaunchArgument(
             name='sfm',
