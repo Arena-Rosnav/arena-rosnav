@@ -7,21 +7,6 @@ export ARENA_ROS_VERSION=${ARENA_ROS_VERSION:-humble}
 
 export GAZEBO_VERSION=${GAZEBO_VERSION:-garden}
 
-# == remove ros problems ==
-files=$(grep -l "ros" /etc/apt/sources.list.d/* | grep -v "ros2")
-
-if [ -n "$files" ]; then
-    echo "The following files can cause some problems to installer:"
-    echo "$files"
-    read -p "Do you want to delete these files? [Y/N]:" Y
-    Y=${Y: -Y}
-
-    if [[ "$Y" == "y" || "$Y" == "Y" ]]; then
-        sudo rm $files
-        echo "Delete complete!"
-    fi
-fi
-
 # == read inputs ==
 echo 'Configuring arena-rosnav...'
 
@@ -30,6 +15,21 @@ read -p "arena-rosnav workspace directory [${ARENA_WS_DIR}] " INPUT
 export ARENA_WS_DIR=$(realpath "$(eval echo ${INPUT:-${ARENA_WS_DIR}})")
 
 sudo echo "$ARENA_WS_DIR"
+
+# == remove ros problems ==
+files=$(grep -l "ros" /etc/apt/sources.list.d/* | grep -v "ros2")
+
+if [ -n "$files" ]; then
+    echo "The following files can cause some problems to installer:"
+    echo "$files"
+    read -p "Do you want to delete these files? (Y/n) [Y]: " choice
+    choice=${choice:-Y}
+
+    if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+        sudo rm -f $files
+        echo "Deleted $(echo $files)"
+    fi
+fi
 
 # == python deps ==
 
