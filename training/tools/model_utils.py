@@ -7,7 +7,7 @@ import torch
 from rl_utils.stable_baselines3.eval_callbacks.staged_train_callback import (
     InitiateNewTrainStage,
 )
-from rosnav_rl.utils.model.sb3.learning_rate_schedules import load_lr_schedule
+
 from sb3_contrib import RecurrentPPO
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import (
@@ -88,72 +88,72 @@ def check_batch_size(n_envs: int, batch_size: int, mn_batch_size: int) -> None:
         raise ValueError(" | ".join(errors))
 
 
-def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
-    """
-    Updates parameter of loaded PPO agent when it was manually changed in the configs yaml.
+# def update_hyperparam_model(model: PPO, PATHS: dict, config: dict) -> None:
+#     """
+#     Updates parameter of loaded PPO agent when it was manually changed in the configs yaml.
 
-    :param model(object, PPO): loaded PPO agent
-    :param PATHS: program relevant paths
-    :param params: dictionary containing loaded hyperparams
-    :param n_envs: number of parallel environments
-    """
+#     :param model(object, PPO): loaded PPO agent
+#     :param PATHS: program relevant paths
+#     :param params: dictionary containing loaded hyperparams
+#     :param n_envs: number of parallel environments
+#     """
 
-    def update(model, key, new_val):
-        if getattr(model, key) != new_val:
-            print(
-                "{:40}{:<10s}".format(
-                    f"Updating '{key}':",
-                    f"{str(getattr(model, key))}->{str(new_val)}",
-                )
-            )
-            setattr(model, key, new_val)
+#     def update(model, key, new_val):
+#         if getattr(model, key) != new_val:
+#             print(
+#                 "{:40}{:<10s}".format(
+#                     f"Updating '{key}':",
+#                     f"{str(getattr(model, key))}->{str(new_val)}",
+#                 )
+#             )
+#             setattr(model, key, new_val)
 
-    print("\n--------------------------------")
-    print("UPDATING MODEL HYPERPARAMETER...")
-    print("(no change -> no print below)")
+#     print("\n--------------------------------")
+#     print("UPDATING MODEL HYPERPARAMETER...")
+#     print("(no change -> no print below)")
 
-    ppo_params: dict = config["rl_agent"]["ppo"]
-    update(model, "batch_size", ppo_params["m_batch_size"])
-    update(model, "gamma", ppo_params["gamma"])
-    update(model, "n_steps", ppo_params["n_steps"])
-    update(model, "ent_coef", ppo_params["ent_coef"])
-    update(model, "vf_coef", ppo_params["vf_coef"])
-    update(model, "max_grad_norm", ppo_params["max_grad_norm"])
-    update(model, "gae_lambda", ppo_params["gae_lambda"])
-    update(model, "n_epochs", ppo_params["n_epochs"])
-    update(model, "clip_range", constant_fn(ppo_params["clip_range"]))
-    update(model, "target_kl", ppo_params.get("target_kl", None))
+#     ppo_params: dict = config["rl_agent"]["ppo"]
+#     update(model, "batch_size", ppo_params["m_batch_size"])
+#     update(model, "gamma", ppo_params["gamma"])
+#     update(model, "n_steps", ppo_params["n_steps"])
+#     update(model, "ent_coef", ppo_params["ent_coef"])
+#     update(model, "vf_coef", ppo_params["vf_coef"])
+#     update(model, "max_grad_norm", ppo_params["max_grad_norm"])
+#     update(model, "gae_lambda", ppo_params["gae_lambda"])
+#     update(model, "n_epochs", ppo_params["n_epochs"])
+#     update(model, "clip_range", constant_fn(ppo_params["clip_range"]))
+#     update(model, "target_kl", ppo_params.get("target_kl", None))
 
-    if not config["rl_agent"]["lr_schedule"]["enabled"]:
-        update(model, "learning_rate", ppo_params["learning_rate"])
-    else:
-        setattr(model, "learning_rate", load_lr_schedule(config))
-    model._setup_lr_schedule()
+#     if not config["rl_agent"]["lr_schedule"]["enabled"]:
+#         update(model, "learning_rate", ppo_params["learning_rate"])
+#     else:
+#         setattr(model, "learning_rate", load_lr_schedule(config))
+#     model._setup_lr_schedule()
 
-    if model.n_envs != config["n_envs"]:
-        print(
-            "{:40}{:<10s}".format(
-                "Updating 'n_envs':",
-                f"{str(model.n_envs)}->" + str(config["n_envs"]),
-            )
-        )
-        model.update_n_envs()
-        model.n_envs = config["n_envs"]
-        model.rollout_buffer.buffer_size = ppo_params["n_steps"]
-    if not config["debug_mode"] and config["monitoring"]["use_wandb"]:
-        model.tensorboard_log = PATHS["tb"]
-        logger = configure_logger(1, PATHS["tb"], "run", False)
-        model._logger = logger
-    if config["debug_mode"]:
-        model.tensorboard_log = None
-        model._logger = None
+#     if model.n_envs != config["n_envs"]:
+#         print(
+#             "{:40}{:<10s}".format(
+#                 "Updating 'n_envs':",
+#                 f"{str(model.n_envs)}->" + str(config["n_envs"]),
+#             )
+#         )
+#         model.update_n_envs()
+#         model.n_envs = config["n_envs"]
+#         model.rollout_buffer.buffer_size = ppo_params["n_steps"]
+#     if not config["debug_mode"] and config["monitoring"]["use_wandb"]:
+#         model.tensorboard_log = PATHS["tb"]
+#         logger = configure_logger(1, PATHS["tb"], "run", False)
+#         model._logger = logger
+#     if config["debug_mode"]:
+#         model.tensorboard_log = None
+#         model._logger = None
 
-    if not isinstance(model, RecurrentPPO):
-        model._setup_rollout_buffer()
-    else:
-        init_rppo_rollout_buffer(model)
+#     if not isinstance(model, RecurrentPPO):
+#         model._setup_rollout_buffer()
+#     else:
+#         init_rppo_rollout_buffer(model)
 
-    print("--------------------------------\n")
+#     print("--------------------------------\n")
 
 
 def init_sb3_callbacks(

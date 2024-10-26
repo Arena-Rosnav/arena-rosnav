@@ -1,6 +1,8 @@
+import json
 import os
 import random
 import string
+import sys
 import time
 import warnings
 from typing import Tuple
@@ -9,14 +11,13 @@ import numpy as np
 import rosnode
 import rospy
 import yaml
+from pydantic import BaseModel
+from pygments import highlight
+from pygments.formatters import TerminalFormatter
+from pygments.lexers import get_lexer_by_name
+from rosnav_rl.model import StableBaselinesAgent
 
 from .constants import TRAINING_CONSTANTS
-
-from pydantic import BaseModel
-import json
-from pygments import highlight
-from pygments.lexers import get_lexer_by_name
-from pygments.formatters import TerminalFormatter
 
 
 def write_config_yaml(config: dict, path: str) -> None:
@@ -73,16 +74,15 @@ def get_paths(
 def create_directories(
     paths: dict,
     resume_name: str,
-    checkpoint_name: str,
     log_evaluation: bool,
     use_wandb: bool,
 ) -> None:
-    create_model_directory(paths, resume_name, checkpoint_name)
+    create_model_directory(paths, resume_name)
     paths["eval"] = create_evaluation_directory(paths, log_evaluation)
     paths["tb"] = create_tensorboard_directory(paths, use_wandb)
 
 
-def create_model_directory(paths: dict, resume_name: str, checkpoint_name: str) -> None:
+def create_model_directory(paths: dict, resume_name: str) -> None:
     """
     Create model directory if not in debug mode and resume_name is None.
     Raise FileNotFoundError if checkpoint is not found.
@@ -94,11 +94,6 @@ def create_model_directory(paths: dict, resume_name: str, checkpoint_name: str) 
     """
     if resume_name is None:
         os.makedirs(paths["model"])
-
-    if not os.path.isfile(os.path.join(paths["model"], f"{checkpoint_name}.zip")):
-        raise FileNotFoundError(
-            f"""Couldn't find model named {checkpoint_name}.zip' in '{paths["model"]}'"""
-        )
 
 
 def create_evaluation_directory(paths: dict, log_evaluation: bool) -> str:
@@ -143,14 +138,12 @@ def wait_for_nodes(
     :param timeout: (int) seconds to wait for each ns
     :param nodes_per_ns: (int) usual number of nodes per ns
     """
-    if with_ns:
-        if n_envs < 1:
-            raise ValueError(f"Illegal number of environments parsed: {n_envs}")
-    else:
-        if n_envs != 1:
-            raise ValueError(
-                "Simulation setup isn't compatible with the given number of envs"
-            )
+    if with_ns and n_envs < 1:
+        raise ValueError(f"Illegal number of environments parsed: {n_envs}")
+    elif not with_ns and n_envs != 1:
+        raise ValueError(
+            "Simulation setup isn't compatible with the given number of envs"
+        )
 
     for i in range(n_envs):
         ns = f"sim_{str(i + 1)}" if with_ns else ""
@@ -184,49 +177,10 @@ def load_config(config_name: str) -> dict:
     return config
 
 
-def generate_discrete_action_dict(
-    linear_range: Tuple[float, float],
-    angular_range: Tuple[float, float],
-    num_linear_actions: int,
-    num_angular_actions: int,
+def save_model_and_exit(
+    rl_model: StableBaselinesAgent, dirpath: str, checkpoint_name: str
 ):
-    """
-    Generates a dictionary of discrete actions for a robot, combining linear and angular velocities.
-
-    Args:
-        linear_range (Tuple[float, float]): The range (min, max) of linear velocities.
-        angular_range (Tuple[float, float]): The range (min, max) of angular velocities.
-        num_linear_actions (int): The number of discrete linear actions to generate.
-        num_angular_actions (int): The number of discrete angular actions to generate.
-
-    Returns:
-        List[Dict[str, Union[str, float]]]: A list of dictionaries, each containing:
-            - "name" (str): A randomly generated name for the action.
-            - "linear" (float): The linear velocity component of the action.
-            - "angular" (float): The angular velocity component of the action.
-    """
-    NAME_LEN = 12  # len for random action name
-
-    linear_actions = np.linspace(
-        linear_range[0], linear_range[1], num_linear_actions, dtype=np.float16
-    )
-    angular_actions = np.linspace(
-        angular_range[0], angular_range[1], num_angular_actions, dtype=np.float16
-    )
-
-    discrete_action_space = [
-        (float(linear_action), float(angular_action))
-        for linear_action in linear_actions
-        for angular_action in angular_actions
-    ]
-    if (0, 0) not in discrete_action_space:
-        discrete_action_space.append((0, 0))
-
-    return [
-        {
-            "name": "".join(random.sample(string.ascii_lowercase, NAME_LEN)),
-            "linear": linear,
-            "angular": angular,
-        }
-        for linear, angular in discrete_action_space
-    ]
+    if not rospy.get_param("debug_mode", False):
+        rl_model.save(dirpath=dirpath, checkpoint_name=checkpoint_name)
+    rl_model.model.env.close()
+    sys.exit()
