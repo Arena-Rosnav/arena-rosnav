@@ -1,4 +1,5 @@
 ---
+
 - ros_topic_name: "/diff_drive/cmd_vel"
   gz_topic_name: "/model/diff_drive/cmd_vel"
   ros_type_name: "geometry_msgs/msg/Twist"
@@ -33,4 +34,21 @@
   gz_topic_name: "/model/diff_drive/pose_static"
   ros_type_name: "tf2_msgs/msg/TFMessage"
   gz_type_name: "gz.msgs.Pose_V"
+  direction: GZ_TO_ROS
+
+# Hunavsim specific bridges
+- ros_topic_name: "/hunav/pedestrian_states"
+  gz_topic_name: "/world/demo/pedestrian_states"
+  ros_type_name: "hunav_msgs/msg/PedestrianState"
+  gz_type_name: "gz.msgs.PedestrianState"
+  direction: GZ_TO_ROS
+- ros_topic_name: "/hunav/pedestrian_poses"
+  gz_topic_name: "/world/demo/pedestrian_poses"
+  ros_type_name: "geometry_msgs/msg/PoseArray"
+  gz_type_name: "gz.msgs.Pose_V"
+  direction: GZ_TO_ROS
+- ros_topic_name: "/hunav/add_pedestrian_status"
+  gz_topic_name: "/world/demo/add_pedestrian_status"
+  ros_type_name: "hunav_msgs/msg/PedestrianStatus"
+  gz_type_name: "gz.msgs.PedestrianStatus"
   direction: GZ_TO_ROS
