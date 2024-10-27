@@ -165,13 +165,11 @@ def wait_for_nodes(
             time.sleep(1)
 
 
-def load_config(dirpath: str, config_name: str) -> dict:
+def load_config(file_path: str) -> dict:
     """
     Load config parameters from config file
     """
-    # extend dirpath to include the config file
-    path = os.path.join(dirpath, config_name)
-    with open(path, "r", encoding="utf-8") as target:
+    with open(file_path, "r", encoding="utf-8") as target:
         config = yaml.load(target, Loader=yaml.FullLoader)
     return config
 
