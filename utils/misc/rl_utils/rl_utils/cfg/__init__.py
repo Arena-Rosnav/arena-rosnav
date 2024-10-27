@@ -1,4 +1,4 @@
-from rosnav_rl.cfg import AgentCfg, PPO_Cfg, PPO_Policy_Cfg, RewardCfg
+from rosnav_rl.cfg import AgentCfg, PPO_Algorithm_Cfg, PPO_Policy_Cfg, RewardCfg
 
 from .sb3_cfg import (
     CallbacksCfg,
