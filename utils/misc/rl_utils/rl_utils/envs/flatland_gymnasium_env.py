@@ -248,7 +248,10 @@ class FlatlandEnv(gymnasium.Env):
         )
 
         # calculate reward
-        reward, reward_info = self._reward_function.get_reward(obs_dict=obs_dict)
+        reward, reward_info = self._reward_function.get_reward(
+            obs_dict=obs_dict,
+            simulation_state_container=self.__simulation_state_container,
+        )
 
         self._steps_curr_episode += 1
 
