@@ -13,7 +13,7 @@ from rl_utils.utils.observation_collector import (
     ObservationManager,
     get_required_observation_units,
 )
-from rl_utils.utils.type_alias.observation import ObservationDict, InformationDict
+from rl_utils.utils.type_alias.observation import InformationDict, ObservationDict
 from rosnav_rl.reward.reward_function import RewardFunction
 from rosnav_rl.spaces import EncodedObservationDict, RosnavSpaceManager
 from std_srvs.srv import Empty
