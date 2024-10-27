@@ -23,7 +23,7 @@ class TrainingCfg(BaseModel):
             and self.framework_cfg.robot is not None
         ):
             custom_discrete_actions_list: CustomDiscreteActionList = (
-                self.agent_cfg.action_space.custom_discretization.generate_discrete_action_dict(
+                self.agent_cfg.action_space.custom_discretization.generate_discrete_from_box_dict(
                     self.framework_cfg.robot.robot_description.actions.continuous.linear_range,
                     self.framework_cfg.robot.robot_description.actions.continuous.linear_range,
                 )
