@@ -1,11 +1,17 @@
-import rl_utils.cfg as cfg
-from .general import load_config
-
 from typing import Tuple
+
+import rl_utils.cfg as cfg
+
+from tools.constants import TRAINING_CONSTANTS
+
+from .general import load_config
 
 
 def load_training_config(config_name: str) -> cfg.TrainingCfg:
-    raw_config = load_config(config_name)
+    raw_config = load_config(
+        dirpath=TRAINING_CONSTANTS.PATHS.TRAINING_CONFIGS(config_name),
+        config_name=config_name,
+    )
     return cfg.TrainingCfg.model_validate(raw_config, strict=True, from_attributes=True)
 
 
