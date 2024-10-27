@@ -32,16 +32,3 @@ class GeneralCfg(BaseModel):
         if v < 0:
             raise ValueError(f"{cls} cannot be negative.")
         return v
-
-    @model_validator(mode="after")
-    def propagate_safe_distance(self):
-        # TODO: Perhaps adjust TaskManager and RobotManaer to take in the safety distance (or simulation_state_container) as an argument
-        rospy.set_param(
-            f"{SIMULATION_NAMESPACES.EVAL_PREFIX}_{rospy.get_param('model')}/safety_distance",
-            self.safety_distance,
-        )
-        for idx in range(self.n_envs):
-            rospy.set_param(
-                f"{SIMULATION_NAMESPACES.SIM_PREFIX}{idx + 1}_{rospy.get_param('model')}/safety_distance",
-                self.safety_distance,
-            )

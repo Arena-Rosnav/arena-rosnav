@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 
 import rospy
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, field_validator
 from rosnav_rl.utils.utils import get_robot_yaml_path, load_yaml
 
 
@@ -37,10 +37,6 @@ class RobotYamlCfg(BaseModel):
     actions: ActionsCfg
     laser: LaserCfg
 
-    @classmethod
-    def from_dict(cls, data: dict) -> "RobotYamlCfg":
-        return cls.model_validate(data)
-
 
 class RobotCfg(BaseModel):
     robot_description: Optional[RobotYamlCfg] = None
@@ -48,8 +44,14 @@ class RobotCfg(BaseModel):
 
     @model_validator(mode="after")
     def read_robot_description(self):
-        if self.robot_description is None:
+        self.robot_description = RobotYamlCfg.model_validate(
+            load_yaml(get_robot_yaml_path(rospy.get_param("model")))
+        )
+
+    @field_validator("robot_description", mode="before")
+    @classmethod
+    def check_robot_description(cls, v):
+        if v is None:
             model = rospy.get_param("model")
-            self.robot_description = RobotYamlCfg.from_dict(
-                load_yaml(get_robot_yaml_path(model))
-            )
+            return RobotYamlCfg.model_validate(load_yaml(get_robot_yaml_path(model)))
+        return v
