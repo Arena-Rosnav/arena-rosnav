@@ -144,9 +144,9 @@ def generate_launch_description():
         }],
         arguments=['--ros-args', '--log-level', 'debug'],
         remappings = [
-            ('/world/default/pose/info', '/tf'),
-            ('/world/default/dynamic_pose/info', '/tf_dynamic'),
-            ('/world/default/state', '/world_state'),
+            ('/world/default/pose/info', '/tf_static'),
+            ('/world/default/dynamic_pose/info', '/tf'),
+            (f'/world/default/model/{robot_model}/joint_state', '/joint_states'),
         ]
     )
 
@@ -259,20 +259,16 @@ def generate_launch_description():
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            name='map_to_odom',
-            arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']
+            name='map_to_odom_publisher',
+            arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
+            parameters=[{'use_sim_time': use_sim_time}]
         ),
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            name='base_to_laser',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'laser_frame']
-        ),
-        Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            name='base_to_imu',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'imu_link']
+            name='odom_to_base_link_publisher',
+            arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_link'],
+            parameters=[{'use_sim_time': use_sim_time}]
         )
     ]
 

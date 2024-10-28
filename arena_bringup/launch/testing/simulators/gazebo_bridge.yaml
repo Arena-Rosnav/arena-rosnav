@@ -10,16 +10,34 @@
       history: "keep_last"
       depth: 10
 
-# State information (includes pose and joint states)
-- ros_topic_name: "/world_state"
-  ros_type_name: "ros_gz_interfaces/msg/WorldState"
-  gz_topic_name: "/world/default/state"
-  gz_type_name: "gz.msgs.WorldState"
+# TF
+- ros_topic_name: "/tf"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_topic_name: "/world/default/dynamic_pose/info"
+  gz_type_name: "gz.msgs.Pose_V"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "volatile"
+      history: "keep_last"
+      depth: 10
+
+# Static TF
+- ros_topic_name: "/tf_static"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_topic_name: "/world/default/pose/info"
+  gz_type_name: "gz.msgs.Pose_V"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "transient_local"
+      history: "keep_last"
+      depth: 10
 
 # Joint states
 - ros_topic_name: "/joint_states"
   ros_type_name: "sensor_msgs/msg/JointState"
-  gz_topic_name: "/joint_states"
+  gz_topic_name: "/world/default/model/${robot_model}/joint_state"
   gz_type_name: "gz.msgs.Model"
 
 # Odometry
@@ -37,7 +55,7 @@
 # IMU
 - ros_topic_name: "/imu"
   ros_type_name: "sensor_msgs/msg/Imu"
-  gz_topic_name: "/imu"
+  gz_topic_name: "/world/default/model/${robot_model}/imu"
   gz_type_name: "gz.msgs.IMU"
   qos_overrides:
     publisher:
@@ -51,9 +69,3 @@
   ros_type_name: "geometry_msgs/msg/Twist"
   gz_topic_name: "/model/${robot_model}/cmd_vel"
   gz_type_name: "gz.msgs.Twist"
-  qos_overrides:
-    publisher:
-      reliability: "reliable"
-      durability: "volatile"
-      history: "keep_last"
-      depth: 10
