@@ -191,6 +191,18 @@ cd "${ARENA_WS_DIR}"
 cd "${ARENA_WS_DIR}"
 until vcs import src < src/arena/arena-rosnav/arena.repos ; do echo "failed to update, retrying..." ; done
 
+# == install nav2 ==
+echo "Cloning navigation2 into deps folder from $ARENA_ROS_VERSION branch"
+cd "${ARENA_WS_DIR}/src/deps"
+git clone https://github.com/ros-navigation/navigation2.git --branch $ARENA_ROS_VERSION
+
+# Run rosdep from the workspace root to properly scan deps
+cd "${ARENA_WS_DIR}"
+rosdep install -y \
+  --from-paths src/deps \
+  --ignore-src
+. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
+
 # == install jackal deps for ros2 ==
 
 echo "Cloning jackal repository contents from foxy-devel branch..."
@@ -205,7 +217,7 @@ rm -rf temp_jackal LICENSE README.md .gitignore .github
 
 # == build ==
 cd "${ARENA_WS_DIR}"
-ln -s src/arena/arena-rosnav/tools/colcon_build .
+. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
 # == optional installers ==
 
 cd "${ARENA_WS_DIR}/src/arena/arena-rosnav/installers"
