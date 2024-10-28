@@ -19,7 +19,7 @@ def generate_launch_description():
         # Agent Manager Node
         Node(
             package='hunav_sim',
-            executable='hunav_agent_manager_node',
+            executable='agent_manager_node',
             name='hunav_agent_manager',
             output='screen',
             parameters=[
