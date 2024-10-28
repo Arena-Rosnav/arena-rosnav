@@ -205,7 +205,7 @@ rosdep install -y \
 
 # intall SLAM 
 
-git clone https://github.com/SteveMacenski/slam_toolbox.git --branch ros2
+git clone https://github.com/SteveMacenski/slam_toolbox.git --branch $ARENA_ROS_VERSION
 rosdep install -q -y -r --from-paths src/deps --ignore-src
 
 # == install jackal deps for ros2 ==
