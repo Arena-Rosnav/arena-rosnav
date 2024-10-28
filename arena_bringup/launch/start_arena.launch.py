@@ -134,6 +134,11 @@ def generate_launch_description():
             name='odom_frame_id',
             default_value='odom'
         ),
+        launch.actions.DeclareLaunchArgument(
+            name='use_sim_time',
+            default_value='true',
+            description='Use simulation (Gazebo) clock if true'
+        ),
         # launch_ros.actions.Node(
         #     package='rviz_utils',
         #     executable='create_config_file.py',

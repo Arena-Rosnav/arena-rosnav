@@ -1,58 +1,59 @@
 # Clock synchronization
 - ros_topic_name: "/clock"
   ros_type_name: "rosgraph_msgs/msg/Clock"
-  gz_topic_name: "/clock"
+  gz_topic_name: "/world/default/clock"
   gz_type_name: "gz.msgs.Clock"
-
-# TF (transformations)
-- ros_topic_name: "/tf"
-  ros_type_name: "tf2_msgs/msg/TFMessage"
-  gz_topic_name: "/world/${world_file}/model/${robot_model}/tf"
-  gz_type_name: "gz.msgs.Pose_V"
-  qos_overrides:
-    subscriber:
-      reliability: "best_effort"
-      durability: "volatile"
-- ros_topic_name: "/tf_static"
-  ros_type_name: "tf2_msgs/msg/TFMessage"
-  gz_topic_name: "/world/${world_file}/model/${robot_model}/tf_static"
-  gz_type_name: "gz.msgs.Pose_V"
   qos_overrides:
     publisher:
-      durability: "transient_local"
+      reliability: "reliable"
+      durability: "volatile"
+      history: "keep_last"
+      depth: 10
+
+# State information (includes pose and joint states)
+- ros_topic_name: "/world_state"
+  ros_type_name: "ros_gz_interfaces/msg/WorldState"
+  gz_topic_name: "/world/default/state"
+  gz_type_name: "gz.msgs.WorldState"
 
 # Joint states
 - ros_topic_name: "/joint_states"
   ros_type_name: "sensor_msgs/msg/JointState"
-  gz_topic_name: "/world/${world_file}/model/${robot_model}/joint_states"
-  gz_type_name: "gz.msgs.JointState"
+  gz_topic_name: "/joint_states"
+  gz_type_name: "gz.msgs.Model"
 
-# Odometry (if available)
-- ros_topic_name: "/${robot_model}/odom"
+# Odometry
+- ros_topic_name: "/odom"
   ros_type_name: "nav_msgs/msg/Odometry"
-  gz_topic_name: "/world/${world_file}/model/${robot_model}/odom"
+  gz_topic_name: "/model/${robot_model}/odometry"
   gz_type_name: "gz.msgs.Odometry"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "volatile"
+      history: "keep_last"
+      depth: 10
 
-# Laser scan (if available)
-- ros_topic_name: "/scan"
-  ros_type_name: "sensor_msgs/msg/LaserScan"
-  gz_topic_name: "/world/${world_file}/model/${robot_model}/lidar/scan"
-  gz_type_name: "gz.msgs.LaserScan"
-
-# IMU (if available)
-- ros_topic_name: "/imu/data"
+# IMU
+- ros_topic_name: "/imu"
   ros_type_name: "sensor_msgs/msg/Imu"
-  gz_topic_name: "/world/${world_file}/model/${robot_model}/imu/data"
+  gz_topic_name: "/imu"
   gz_type_name: "gz.msgs.IMU"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "volatile"
+      history: "keep_last"
+      depth: 10
 
-# Camera (if available)
-- ros_topic_name: "/camera/image"
-  ros_type_name: "sensor_msgs/msg/Image"
-  gz_topic_name: "/world/${world_file}/model/${robot_model}/camera/image"
-  gz_type_name: "gz.msgs.Image"
-
-# Command velocity (for robot control)
-- ros_topic_name: "/${robot_model}/cmd_vel"
+# Command velocity
+- ros_topic_name: "/cmd_vel"
   ros_type_name: "geometry_msgs/msg/Twist"
-  gz_topic_name: "/cmd_vel"
+  gz_topic_name: "/model/${robot_model}/cmd_vel"
   gz_type_name: "gz.msgs.Twist"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "volatile"
+      history: "keep_last"
+      depth: 10

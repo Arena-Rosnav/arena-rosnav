@@ -1,12 +1,12 @@
 import os
+import xacro
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, Command, PathJoinSubstitution, TextSubstitution, PythonExpression
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
 from launch.actions import TimerAction
-import xacro
 
 def generate_launch_description():
     # Set environment variables
@@ -14,9 +14,11 @@ def generate_launch_description():
     workspace_root = current_dir
     while not workspace_root.endswith('arena4_ws'):
         workspace_root = os.path.dirname(workspace_root)
+        
     if not workspace_root.endswith('arena4_ws'):
         raise ValueError("Could not find the 'arena4_ws' directory in the current path.")
 
+    # Set paths for Gazebo, Physics Engine, and Resource
     GZ_CONFIG_PATH = os.path.join(workspace_root, 'install', 'gz-sim7', 'share', 'gz')
     GZ_SIM_PHYSICS_ENGINE_PATH = os.path.join(workspace_root, 'build', 'gz-physics6')
     GZ_SIM_RESOURCE_PATHS = [
@@ -29,7 +31,7 @@ def generate_launch_description():
     ]
     GZ_SIM_RESOURCE_PATHS_COMBINED = ':'.join(GZ_SIM_RESOURCE_PATHS)
     
-    # Update the environment
+    # Update environment variables
     os.environ['GZ_CONFIG_PATH'] = GZ_CONFIG_PATH
     os.environ['GZ_SIM_PHYSICS_ENGINE_PATH'] = GZ_SIM_PHYSICS_ENGINE_PATH
     os.environ['GZ_SIM_RESOURCE_PATH'] = GZ_SIM_RESOURCE_PATHS_COMBINED
@@ -38,9 +40,9 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     world_file = LaunchConfiguration('world_file')
     robot_model = LaunchConfiguration('model')
-    
+
     # Construct the full world file path
-    world_file = PathJoinSubstitution([
+    world_file_path = PathJoinSubstitution([
         workspace_root,
         'src', 'arena', 'simulation-setup', 'worlds',
         world_file,
@@ -58,20 +60,20 @@ def generate_launch_description():
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(gz_sim_launch_file),
         launch_arguments={
-            'gz_args': [world_file, ' -v 4', ' -r', ' --render-engine ogre'],
+            'gz_args': [world_file_path, ' -v 4', ' -r', ' --render-engine ogre'],
             'physics-engine': 'gz-physics-dartsim'
         }.items()
     )
 
-    # Robot description
+    # Robot URDF (Xacro) description
     robot_desc_path = os.path.join(
         workspace_root,
         'src', 'arena', 'simulation-setup', 'entities', 'robots',
         'jackal', 'urdf',
-        'jackal' + '.urdf.xacro'
+        'jackal.urdf.xacro'
     )
 
-    # Use xacro to process the robot description file
+    # Process the robot description file using xacro
     doc = xacro.process_file(robot_desc_path, mappings={'use_sim': 'true'})
     robot_description = doc.toprettyxml(indent='  ')
 
@@ -95,7 +97,7 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}]
     )
 
-    # Spawn Robot
+    # Spawn the robot into the Gazebo simulation
     spawn_robot = Node(
         package='ros_gz_sim',
         executable='create',
@@ -114,8 +116,22 @@ def generate_launch_description():
         'launch', 'testing', 'simulators',
         'gazebo_bridge.yaml'
     )
+    
+    world_state_converter = Node(
+        package='ros_gz_bridge',
+        executable='world_state_to_odom',
+        name='world_state_to_odom',
+        output='screen',
+        parameters=[{
+            'use_sim_time': use_sim_time,
+            'robot_name': robot_model,  # Use the launch argument
+            'world_frame': world_file,  # Use the launch argument
+            'robot_frame': 'base_link',
+            'odom_frame': 'odom',
+        }]
+    )
 
-    # Bridge
+    # Bridge to connect Gazebo and ROS2
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -124,21 +140,24 @@ def generate_launch_description():
         parameters=[{
             'config_file': bridge_config,
             'qos_overrides./tf_static.publisher.durability': 'transient_local',
+            'use_sim_time': use_sim_time,
         }],
-        remappings=[
-            (f'/world/{world_file}/model/{robot_model}/tf', '/tf'),
-            (f'/world/{world_file}/model/{robot_model}/tf_static', '/tf_static'),
-            (f'/world/{world_file}/model/{robot_model}/joint_states', '/joint_states'),
+        arguments=['--ros-args', '--log-level', 'debug'],
+        remappings = [
+            ('/world/default/pose/info', '/tf'),
+            ('/world/default/dynamic_pose/info', '/tf_dynamic'),
+            ('/world/default/state', '/world_state'),
         ]
     )
 
-    # RViz
+    # RViz configuration path
     rviz_config_file = os.path.join(
         get_package_share_directory('nav2_bringup'),
         'rviz',
         'nav2_default_view.rviz'
     )
     
+    # Launch RViz node
     rviz = Node(
         package='rviz2',
         executable='rviz2',
@@ -148,47 +167,135 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Delay RViz launch to ensure other nodes start first
     delayed_rviz = TimerAction(
         period=5.0,
         actions=[rviz]
     )
-    
+
+    # Path to the SLAM configuration file
+    slam_config_file = os.path.join(
+        workspace_root, 'src', 'deps', 'jackal_navigation', 'config', 'slam.yaml'
+    )
+
     # SLAM Toolbox Node
     slam_toolbox_node = Node(
         package='slam_toolbox',
         executable='async_slam_toolbox_node',
         name='slam_toolbox',
         output='screen',
-        parameters=[{
-            'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'map_update_interval': 5.0,
-            'publish_map_tf': True,
-            'transform_publish_period': 0.1
-        }]
+        parameters=[slam_config_file],
     )
 
+    # Path to the Nav2 parameters file
+    nav2_params_file = os.path.join(
+        workspace_root, 'src', 'deps', 'jackal_navigation', 'config', 'nav2.yaml'
+    )
+
+    # Nav2 bringup launch
+    nav2_bringup_dir = get_package_share_directory('nav2_bringup')
+    
+    nav2_launch_file = PathJoinSubstitution([
+        workspace_root,
+        'src', 'deps', 'jackal_navigation', 'launch', 'nav2.launch.py'
+    ])
+
+    slam_launch_file = PathJoinSubstitution([
+        workspace_root,
+        'src', 'deps', 'jackal_navigation', 'launch', 'slam.launch.py'
+    ])
+
+    # Include the SLAM launch file
+    slam_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(slam_launch_file),
+        launch_arguments={
+            'use_sim_time': use_sim_time
+        }.items()
+    )
+
+    # Include the Nav2 launch file
+    nav2_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(nav2_launch_file),
+        launch_arguments={
+            'use_sim_time': use_sim_time
+        }.items()
+    )
+    
+# Robot Localization Node
+    robot_localization_node = Node(
+        package='robot_localization',
+        executable='ekf_node',
+        name='ekf_filter_node',
+        output='screen',
+        parameters=[{
+            'use_sim_time': use_sim_time,
+            'frequency': 30.0,
+            'two_d_mode': True,
+            'publish_tf': True,
+            'publish_acceleration': False,
+            'map_frame': 'map',
+            'odom_frame': 'odom',
+            'base_link_frame': 'base_link',
+            'world_frame': 'odom',
+            'odom0': '/odom',
+            'odom0_config': [True,  True,  False,
+                           False, False, True,
+                           False, False, False,
+                           False, False, True,
+                           False, False, False],
+            'imu0': '/imu',
+            'imu0_config': [False, False, False,
+                          True,  True,  True,
+                          False, False, False,
+                          True,  True,  True,
+                          False, False, False],
+            'publish_acceleration': False,
+            'odom0_relative': False,  # Changed from false to False
+            'imu0_relative': False,   # Changed from false to False
+        }]
+    )
+    
+    static_transform_publisher = [
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='map_to_odom',
+            arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']
+        ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='base_to_laser',
+            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'laser_frame']
+        ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='base_to_imu',
+            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'imu_link']
+        )
+    ]
+
+    # Return the LaunchDescription with all the nodes/actions
     return LaunchDescription([
-        DeclareLaunchArgument('use_sim_time', default_value='True', 
-                             description='Use simulation (Gazebo) clock if true'),
-        DeclareLaunchArgument('world_file', default_value='map_empty', 
-                             description='World file name'),
-        DeclareLaunchArgument('model', default_value='jackal', 
-                             description='Robot model name'),
+        DeclareLaunchArgument('use_sim_time', default_value='true', description='Use simulation (Gazebo) clock if true'),
+        DeclareLaunchArgument('world_file', default_value='map_empty', description='World file name'),
+        DeclareLaunchArgument('model', default_value='jackal', description='Robot model name'),
+        SetEnvironmentVariable('GZ_CONFIG_PATH', GZ_CONFIG_PATH),
+        SetEnvironmentVariable('GZ_SIM_PHYSICS_ENGINE_PATH', GZ_SIM_PHYSICS_ENGINE_PATH),
+        SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', GZ_SIM_RESOURCE_PATHS_COMBINED),
+        *static_transform_publisher,
         gazebo,
         robot_state_publisher,
         joint_state_publisher,
+        robot_localization_node,
         spawn_robot,
         bridge,
         delayed_rviz,
         slam_toolbox_node,
+        nav2_launch,
+        slam_launch,
     ])
-
-def add_directories_recursively(root_dirs):
-    all_dirs = []
-    for root_dir in root_dirs:
-        for dirpath, dirnames, filenames in os.walk(root_dir):
-            all_dirs.append(dirpath)
-    return all_dirs
 
 
 if __name__ == '__main__':
