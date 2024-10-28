@@ -203,6 +203,11 @@ rosdep install -y \
   --ignore-src
 . "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
 
+# intall SLAM 
+
+git clone https://github.com/SteveMacenski/slam_toolbox.git --branch ros2
+rosdep install -q -y -r --from-paths src/deps --ignore-src
+
 # == install jackal deps for ros2 ==
 
 echo "Cloning jackal repository contents from foxy-devel branch..."
