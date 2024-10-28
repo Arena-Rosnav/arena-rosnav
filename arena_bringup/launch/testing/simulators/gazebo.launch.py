@@ -86,6 +86,14 @@ def generate_launch_description():
         ]
     )
 
+    # Joint State Publisher
+    joint_state_publisher = Node(
+        package='joint_state_publisher',
+        executable='joint_state_publisher',
+        name='joint_state_publisher',
+        parameters=[{'use_sim_time': use_sim_time}]
+    )
+
     # Spawn Robot
     spawn_robot = Node(
         package='ros_gz_sim',
@@ -98,26 +106,60 @@ def generate_launch_description():
         ],
     )
 
+    # Bridge configuration - using the correct path
+    bridge_config = os.path.join(
+        workspace_root, 
+        'src', 'arena', 'arena-rosnav', 'arena_bringup', 
+        'launch', 'testing', 'simulators',
+        'gazebo_bridge.yaml'
+    )
+
     # Bridge
-    config_file = os.path.join(workspace_root, 'src', 'arena', 'arena-rosnav', 'arena_bringup', 'launch', 'testing', 'simulators', 'gazebo_bridge.yaml')
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
+        name='parameter_bridge',
+        output='screen',
         parameters=[{
-            'config_file': config_file,
+            'config_file': bridge_config,
             'qos_overrides./tf_static.publisher.durability': 'transient_local',
         }],
+        remappings=[
+            ('/world/empty/model/jackal/tf', '/tf'),
+            ('/world/empty/model/jackal/tf_static', '/tf_static'),
+            ('/world/empty/model/jackal/joint_states', '/joint_states'),
+        ]
+    )
+
+    # RViz
+    rviz_config_file = os.path.join(
+        get_package_share_directory('nav2_bringup'),
+        'rviz',
+        'nav2_default_view.rviz'
+    )
+    
+    rviz = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        arguments=['-d', rviz_config_file],
+        parameters=[{'use_sim_time': use_sim_time}],
         output='screen'
     )
 
     return LaunchDescription([
-        DeclareLaunchArgument('use_sim_time', default_value='true', description='Use simulation (Gazebo) clock if true'),
-        DeclareLaunchArgument('world_file', default_value='map_empty', description='World file name'),
-        DeclareLaunchArgument('model', default_value='jackal', description='Robot model name'),
+        DeclareLaunchArgument('use_sim_time', default_value='False', 
+                             description='Use simulation (Gazebo) clock if true'),
+        DeclareLaunchArgument('world_file', default_value='map_empty', 
+                             description='World file name'),
+        DeclareLaunchArgument('model', default_value='jackal', 
+                             description='Robot model name'),
         gazebo,
         robot_state_publisher,
+        joint_state_publisher,
         spawn_robot,
         bridge,
+        rviz,
     ])
 
 def add_directories_recursively(root_dirs):

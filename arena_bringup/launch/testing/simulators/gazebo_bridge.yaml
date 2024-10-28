@@ -1,36 +1,44 @@
+# gazebo_bridge.yaml
 ---
-- ros_topic_name: "/diff_drive/cmd_vel"
-  gz_topic_name: "/model/diff_drive/cmd_vel"
-  ros_type_name: "geometry_msgs/msg/Twist"
-  gz_type_name: "gz.msgs.Twist"
-  direction: ROS_TO_GZ
-- ros_topic_name: "/clock"
-  gz_topic_name: "/clock"
+# Clock bridge
+- topic_name: "/clock"
   ros_type_name: "rosgraph_msgs/msg/Clock"
   gz_type_name: "gz.msgs.Clock"
-  direction: GZ_TO_ROS
-- ros_topic_name: "/diff_drive/odometry"
-  gz_topic_name: "/model/diff_drive/odometry"
+
+# TF bridges
+- topic_name: "/tf"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "gz.msgs.Pose_V"
+
+- topic_name: "/tf_static"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "gz.msgs.Pose_V"
+
+# Odometry
+- topic_name: "/odom"
   ros_type_name: "nav_msgs/msg/Odometry"
   gz_type_name: "gz.msgs.Odometry"
-  direction: GZ_TO_ROS
-- ros_topic_name: "/diff_drive/scan"
-  gz_topic_name: "/scan"
+
+# LaserScan
+- topic_name: "/scan"
   ros_type_name: "sensor_msgs/msg/LaserScan"
   gz_type_name: "gz.msgs.LaserScan"
-  direction: GZ_TO_ROS
-- ros_topic_name: "/joint_states"
-  gz_topic_name: "/world/demo/model/diff_drive/joint_state"
+
+# Joint states
+- topic_name: "/joint_states"
   ros_type_name: "sensor_msgs/msg/JointState"
   gz_type_name: "gz.msgs.Model"
-  direction: GZ_TO_ROS
-- ros_topic_name: "/tf"
-  gz_topic_name: "/model/diff_drive/pose"
-  ros_type_name: "tf2_msgs/msg/TFMessage"
-  gz_type_name: "gz.msgs.Pose_V"
-  direction: GZ_TO_ROS
-- ros_topic_name: "/tf_static"
-  gz_topic_name: "/model/diff_drive/pose_static"
-  ros_type_name: "tf2_msgs/msg/TFMessage"
-  gz_type_name: "gz.msgs.Pose_V"
-  direction: GZ_TO_ROS
+
+# Camera
+- topic_name: "/camera/image_raw"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+
+- topic_name: "/camera/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+
+# IMU
+- topic_name: "/imu"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_type_name: "gz.msgs.IMU"
