@@ -173,51 +173,51 @@ def generate_launch_description():
         actions=[rviz]
     )
 
-    # Path to the SLAM configuration file
-    slam_config_file = os.path.join(
-        workspace_root, 'src', 'deps', 'jackal_navigation', 'config', 'slam.yaml'
-    )
-
-    # SLAM Toolbox Node
-    slam_toolbox_node = Node(
-        package='slam_toolbox',
-        executable='async_slam_toolbox_node',
-        name='slam_toolbox',
-        output='screen',
-        parameters=[slam_config_file],
-    )
-
     # Path to the Nav2 parameters file
-    nav2_params_file = os.path.join(
-        workspace_root, 'src', 'deps', 'jackal_navigation', 'config', 'nav2.yaml'
-    )
-
-    # Nav2 bringup launch
-    nav2_bringup_dir = get_package_share_directory('nav2_bringup')
+    nav2_params_file = PathJoinSubstitution([
+        workspace_root,
+        'src', 'arena', 'simulation-setup', 'entities', 'robots', robot_model, 'configs', 'nav2.yaml'
+    ])
+    
+    
+    nav2_map_file = PathJoinSubstitution([
+        workspace_root,
+        'src', 'arena', 'simulation-setup', 'worlds',
+        world_file,
+        'map', 'map.yaml'
+    ])
     
     nav2_launch_file = PathJoinSubstitution([
         workspace_root,
-        'src', 'deps', 'jackal_navigation', 'launch', 'nav2.launch.py'
+        'src', 'arena', 'simulation-setup', 'entities', 'robots', robot_model, 'launch', 'nav2.launch.py'
     ])
 
-    slam_launch_file = PathJoinSubstitution([
-        workspace_root,
-        'src', 'deps', 'jackal_navigation', 'launch', 'slam.launch.py'
-    ])
-
-    # Include the SLAM launch file
-    slam_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(slam_launch_file),
-        launch_arguments={
-            'use_sim_time': use_sim_time
-        }.items()
-    )
 
     # Include the Nav2 launch file
     nav2_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(nav2_launch_file),
         launch_arguments={
-            'use_sim_time': use_sim_time
+            'use_sim_time': use_sim_time,
+            'params_file': nav2_params_file,
+            'map': nav2_map_file,
+        }.items()
+    )
+    
+    slam_launch_file = PathJoinSubstitution([
+        workspace_root,
+        'src', 'arena', 'simulation-setup', 'entities', 'robots', robot_model, 'launch', 'slam.launch.py'
+    ])
+    
+    slam_yaml_file = PathJoinSubstitution([
+        workspace_root,
+        'src', 'arena', 'simulation-setup', 'entities', 'robots', robot_model, 'configs', 'slam.yaml'
+    ])
+    
+    slam_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(slam_launch_file),
+        launch_arguments={
+            'use_sim_time': use_sim_time,
+            'yaml_path': slam_yaml_file,
         }.items()
     )
     
@@ -288,7 +288,6 @@ def generate_launch_description():
         spawn_robot,
         bridge,
         delayed_rviz,
-        slam_toolbox_node,
         nav2_launch,
         slam_launch,
     ])

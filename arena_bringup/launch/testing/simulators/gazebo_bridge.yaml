@@ -69,3 +69,22 @@
   ros_type_name: "geometry_msgs/msg/Twist"
   gz_topic_name: "/model/${robot_model}/cmd_vel"
   gz_type_name: "gz.msgs.Twist"
+
+
+# Laser scan
+- ros_topic_name: "scan"
+  gz_topic_name: "/scan"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_type_name: "gz.msgs.LaserScan"
+
+# Map
+- ros_topic_name: "/map"
+  ros_type_name: "nav_msgs/msg/OccupancyGrid"
+  gz_topic_name: "/map"
+  gz_type_name: "gz.msgs.OccupancyGrid"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "transient_local"
+      history: "keep_last"
+      depth: 1
