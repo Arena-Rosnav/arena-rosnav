@@ -1,44 +1,58 @@
-# gazebo_bridge.yaml
----
-# Clock bridge
-- topic_name: "/clock"
+# Clock synchronization
+- ros_topic_name: "/clock"
   ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_topic_name: "/clock"
   gz_type_name: "gz.msgs.Clock"
 
-# TF bridges
-- topic_name: "/tf"
+# TF (transformations)
+- ros_topic_name: "/tf"
   ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_topic_name: "/world/${world_file}/model/${robot_model}/tf"
   gz_type_name: "gz.msgs.Pose_V"
-
-- topic_name: "/tf_static"
+  qos_overrides:
+    subscriber:
+      reliability: "best_effort"
+      durability: "volatile"
+- ros_topic_name: "/tf_static"
   ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_topic_name: "/world/${world_file}/model/${robot_model}/tf_static"
   gz_type_name: "gz.msgs.Pose_V"
-
-# Odometry
-- topic_name: "/odom"
-  ros_type_name: "nav_msgs/msg/Odometry"
-  gz_type_name: "gz.msgs.Odometry"
-
-# LaserScan
-- topic_name: "/scan"
-  ros_type_name: "sensor_msgs/msg/LaserScan"
-  gz_type_name: "gz.msgs.LaserScan"
+  qos_overrides:
+    publisher:
+      durability: "transient_local"
 
 # Joint states
-- topic_name: "/joint_states"
+- ros_topic_name: "/joint_states"
   ros_type_name: "sensor_msgs/msg/JointState"
-  gz_type_name: "gz.msgs.Model"
+  gz_topic_name: "/world/${world_file}/model/${robot_model}/joint_states"
+  gz_type_name: "gz.msgs.JointState"
 
-# Camera
-- topic_name: "/camera/image_raw"
+# Odometry (if available)
+- ros_topic_name: "/${robot_model}/odom"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_topic_name: "/world/${world_file}/model/${robot_model}/odom"
+  gz_type_name: "gz.msgs.Odometry"
+
+# Laser scan (if available)
+- ros_topic_name: "/scan"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_topic_name: "/world/${world_file}/model/${robot_model}/lidar/scan"
+  gz_type_name: "gz.msgs.LaserScan"
+
+# IMU (if available)
+- ros_topic_name: "/imu/data"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_topic_name: "/world/${world_file}/model/${robot_model}/imu/data"
+  gz_type_name: "gz.msgs.IMU"
+
+# Camera (if available)
+- ros_topic_name: "/camera/image"
   ros_type_name: "sensor_msgs/msg/Image"
+  gz_topic_name: "/world/${world_file}/model/${robot_model}/camera/image"
   gz_type_name: "gz.msgs.Image"
 
-- topic_name: "/camera/camera_info"
-  ros_type_name: "sensor_msgs/msg/CameraInfo"
-  gz_type_name: "gz.msgs.CameraInfo"
-
-# IMU
-- topic_name: "/imu"
-  ros_type_name: "sensor_msgs/msg/Imu"
-  gz_type_name: "gz.msgs.IMU"
+# Command velocity (for robot control)
+- ros_topic_name: "/${robot_model}/cmd_vel"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  gz_topic_name: "/cmd_vel"
+  gz_type_name: "gz.msgs.Twist"

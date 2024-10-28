@@ -107,10 +107,10 @@ def generate_launch_description():
         ],
     )
 
-    # Bridge configuration - using the correct path
+    # Bridge configuration
     bridge_config = os.path.join(
-        workspace_root, 
-        'src', 'arena', 'arena-rosnav', 'arena_bringup', 
+        workspace_root,
+        'src', 'arena', 'arena-rosnav', 'arena_bringup',
         'launch', 'testing', 'simulators',
         'gazebo_bridge.yaml'
     )
@@ -126,9 +126,9 @@ def generate_launch_description():
             'qos_overrides./tf_static.publisher.durability': 'transient_local',
         }],
         remappings=[
-            ('/world/empty/model/jackal/tf', '/tf'),
-            ('/world/empty/model/jackal/tf_static', '/tf_static'),
-            ('/world/empty/model/jackal/joint_states', '/joint_states'),
+            (f'/world/{world_file}/model/{robot_model}/tf', '/tf'),
+            (f'/world/{world_file}/model/{robot_model}/tf_static', '/tf_static'),
+            (f'/world/{world_file}/model/{robot_model}/joint_states', '/joint_states'),
         ]
     )
 
@@ -149,7 +149,7 @@ def generate_launch_description():
     )
 
     delayed_rviz = TimerAction(
-        period=10.0,
+        period=5.0,
         actions=[rviz]
     )
     
