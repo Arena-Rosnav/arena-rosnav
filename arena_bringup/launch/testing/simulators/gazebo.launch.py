@@ -147,8 +147,27 @@ def generate_launch_description():
         output='screen'
     )
 
+    delayed_rviz = TimerAction(
+        period=10.0,
+        actions=[rviz]
+    )
+    
+    # SLAM Toolbox Node
+    slam_toolbox_node = Node(
+        package='slam_toolbox',
+        executable='async_slam_toolbox_node',
+        name='slam_toolbox',
+        output='screen',
+        parameters=[{
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'map_update_interval': 5.0,
+            'publish_map_tf': True,
+            'transform_publish_period': 0.1
+        }]
+    )
+
     return LaunchDescription([
-        DeclareLaunchArgument('use_sim_time', default_value='False', 
+        DeclareLaunchArgument('use_sim_time', default_value='True', 
                              description='Use simulation (Gazebo) clock if true'),
         DeclareLaunchArgument('world_file', default_value='map_empty', 
                              description='World file name'),
@@ -159,7 +178,8 @@ def generate_launch_description():
         joint_state_publisher,
         spawn_robot,
         bridge,
-        rviz,
+        delayed_rviz,
+        slam_toolbox_node,
     ])
 
 def add_directories_recursively(root_dirs):
