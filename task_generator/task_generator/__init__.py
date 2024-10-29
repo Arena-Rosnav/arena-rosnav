@@ -102,7 +102,7 @@ class TaskGenerator(rclpy.node.Node):
         self.declare_parameters(
             namespace='',
             parameters=[
-                ('entity_manager', ''),
+                ('entity_manager', 'hunavsim'),
                 ('auto_reset', True),
                 ('train_mode', False),
                 ('robot_setup_file', ''),

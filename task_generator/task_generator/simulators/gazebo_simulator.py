@@ -14,11 +14,14 @@ from task_generator.simulators import BaseSimulator
 
 from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
 
-from task_generator import TASKGEN_NODE
-
 class GazeboSimulator(BaseSimulator):
-
-    def __init__(self, namespace):
+    def __init__(self, namespace, node: Node = None):
+        """Initialize GazeboSimulator
+        
+        Args:
+            namespace: Namespace for the simulator
+            node (Node, optional): ROS2 node instance
+        """
         # Ensure we have a valid node name
         node_name = namespace.strip('/').replace('/', '_')
         if not node_name:
@@ -26,39 +29,31 @@ class GazeboSimulator(BaseSimulator):
             
         super().__init__(namespace=Namespace(node_name))
         
-        self._goal_pub = TASKGEN_NODE.create_publisher(
+        # Store node reference
+        self._node = node
+        if self._node is None:
+            from task_generator import TASKGEN_NODE
+            self._node = TASKGEN_NODE
+        
+        self._goal_pub = self._node.create_publisher(
             PoseStamped,
             self._namespace("/goal"),
             10
         )
-        TASKGEN_NODE.declare_parameter('robot_model', '')
-        self._robot_name = TASKGEN_NODE.get_parameter('robot_model').value
-
-        # self._spawn_model = {
-        #     ModelType.URDF: self.create_client(SpawnModel, '/gazebo/spawn_urdf_model'),
-        #     ModelType.SDF: self.create_client(SpawnModel, '/gazebo/spawn_sdf_model'),
-        # }
-        
-        # Note: There's no direct equivalent for set_model_state in the new Gazebo
-        # self._move_model_srv = self.create_client(SetModelState, '/gazebo/set_model_state')
-        
-        # Pause and unpause are not directly available in new Gazebo
-        # self._unpause = self.create_client(Empty, '/gazebo/unpause_physics')
-        # self._pause = self.create_client(Empty, '/gazebo/pause_physics')
-        # self._remove_model_srv = self.create_client(DeleteModel, '/gazebo/delete_model')
+        self._node.declare_parameter('robot_model', '')
+        self._robot_name = self._node.get_parameter('robot_model').value
         
         # Initialize service clients
-        # https://gazebosim.org/api/sim/8/entity_creation.html        
         try:
-            self._spawn_entity = TASKGEN_NODE.create_client(SpawnEntity, '/world/diff_drive/create')
-            self._delete_entity = TASKGEN_NODE.create_client(DeleteEntity, '/world/diff_drive/remove')
-            self._set_entity_pose = TASKGEN_NODE.create_client(SetEntityPose, '/world/diff_drive/set_pose')
-            self._control_world = TASKGEN_NODE.create_client(ControlWorld, '/world/diff_drive/control')
+            self._spawn_entity = self._node.create_client(SpawnEntity, '/world/diff_drive/create')
+            self._delete_entity = self._node.create_client(DeleteEntity, '/world/diff_drive/remove')
+            self._set_entity_pose = self._node.create_client(SetEntityPose, '/world/diff_drive/set_pose')
+            self._control_world = self._node.create_client(ControlWorld, '/world/diff_drive/control')
         except Exception as e:
-            TASKGEN_NODE.get_logger().error(f"Error creating clients: {str(e)}")
+            self._node.get_logger().error(f"Error creating clients: {str(e)}")
             return
 
-        TASKGEN_NODE.get_logger().info("Waiting for gazebo services...")
+        self._node.get_logger().info("Waiting for gazebo services...")
         services = [
             (self._spawn_entity, "Spawn entity"),
             (self._delete_entity, "Delete entity"),
@@ -70,26 +65,7 @@ class GazeboSimulator(BaseSimulator):
             if not self._wait_for_service(service, name):
                 return
 
-        TASKGEN_NODE.get_logger().info("All Gazebo services are available now.")
-        # resp_spawn = self._spawn_entity.call_async(req)
-        # resp_delete = self._delete_entity.call_async(req)
-        # resp_pose = self._set_entity_pose.call_async(req)
-        # resp_world = self._control_world.call_async(req)
-        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_spawn)
-        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_delete)
-        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_pose)
-        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_world)
-        
-    def _wait_for_service(self, service, name, timeout=15.0):
-        timeout_loop = timeout
-        while not service.wait_for_service(timeout_sec=1.0):
-            TASKGEN_NODE.get_logger().warn(f"{name} service not available, waiting again...")
-            timeout_loop -= 1.0
-            if timeout_loop <= 0:
-                TASKGEN_NODE.get_logger().error(f"{name} service not available after {timeout} seconds")
-                return False
-        return True
-        
+        self._node.get_logger().info("All Gazebo services are available now.")
 
     def before_reset_task(self):
         self.pause_simulation()
@@ -97,11 +73,19 @@ class GazeboSimulator(BaseSimulator):
     def after_reset_task(self):
         try:
             self.unpause_simulation()
-        except ServiceException as e:  # Handling service exceptions in ROS 2
-            self.get_logger().warn(f"ServiceException: {e}")
-            raise  ServiceException# Re-raise the exception if needed
+        except Exception as e:  # Geändert von ServiceException zu Exception
+            self._node.get_logger().warn(f"Service error: {e}")
+            raise  # Re-raise the exception
 
-    # ROBOT
+    def _wait_for_service(self, service, name, timeout=15.0):
+        timeout_loop = timeout
+        while not service.wait_for_service(timeout_sec=1.0):
+            self._node.get_logger().warn(f"{name} service not available, waiting again...")
+            timeout_loop -= 1.0
+            if timeout_loop <= 0:
+                self._node.get_logger().error(f"{name} service not available after {timeout} seconds")
+                return False
+        return True
 
     def move_entity(self, name, position):
         request = SetEntityPose.Request()
@@ -111,7 +95,7 @@ class GazeboSimulator(BaseSimulator):
             orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, position.orientation, axes="sxyz"))
         )
         future = self._set_entity_pose.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
+        rclpy.spin_until_future_complete(self._node, future)
         return future.result().success
 
     def spawn_entity(self, entity):
@@ -126,19 +110,24 @@ class GazeboSimulator(BaseSimulator):
         )
 
         if isinstance(entity, RobotProps):
-            TASKGEN_NODE.declare_parameter(Namespace(entity.name)("robot_description"), entity.model.get(self.MODEL_TYPES).description)
-            TASKGEN_NODE.declare_parameter(Namespace(entity.name)("tf_prefix"), str(Namespace(entity.name)))
+            self._node.declare_parameter(
+                Namespace(entity.name)("robot_description"), 
+                entity.model.get(self.MODEL_TYPES).description
+            )
+            self._node.declare_parameter(
+                Namespace(entity.name)("tf_prefix"), 
+                str(Namespace(entity.name))
+            )
 
         future = self._spawn_entity.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
+        rclpy.spin_until_future_complete(self._node, future)
         return future.result().success
 
-
-    def delete_entity(self, name):
+    def delete_entity(self, name: str):
         request = DeleteEntity.Request()
         request.entity = name
         future = self._delete_entity.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
+        rclpy.spin_until_future_complete(self._node, future)
         return future.result().success
     
     def pause_simulation(self):
@@ -146,7 +135,7 @@ class GazeboSimulator(BaseSimulator):
         request.world_control = WorldControl()
         request.world_control.pause = True
         future = self._control_world.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
+        rclpy.spin_until_future_complete(self._node, future)
         return future.result().success
 
     def unpause_simulation(self):
@@ -154,7 +143,7 @@ class GazeboSimulator(BaseSimulator):
         request.world_control = WorldControl()
         request.world_control.pause = False
         future = self._control_world.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
+        rclpy.spin_until_future_complete(self._node, future)
         return future.result().success
 
     def step_simulation(self, steps):
@@ -162,12 +151,12 @@ class GazeboSimulator(BaseSimulator):
         request.world_control = WorldControl()
         request.world_control.multi_step = steps
         future = self._control_world.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
+        rclpy.spin_until_future_complete(self._node, future)
         return future.result().success
 
     def _publish_goal(self, goal: PositionOrientation):
         goal_msg = PoseStamped()
-        goal_msg.header.stamp = TASKGEN_NODE.get_clock().now().to_msg()
+        goal_msg.header.stamp = self._node.get_clock().now().to_msg()
         goal_msg.header.frame_id = "map"
         goal_msg.pose.position.x = goal.x
         goal_msg.pose.position.y = goal.y
