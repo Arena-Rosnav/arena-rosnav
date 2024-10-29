@@ -7,8 +7,8 @@ from typing import Callable, List, Collection, Dict, Any
 
 import rclpy
 from geometry_msgs.msg import Point, Pose, Quaternion, PoseStamped
-from hunav_msgs.srv import AddPedestrian, DeletePedestrian, UpdatePedestrianGoal
-from hunav_msgs.msg import PedestrianState
+from hunav_msgs.srv import ComputeAgent, ComputeAgents, GetAgents, MoveAgent, ResetAgents
+from hunav_msgs.msg import Agent, Agents, AgentBehavior
 from std_srvs.srv import Empty, Trigger
 from ament_index_python.packages import get_package_share_directory
 
@@ -35,14 +35,14 @@ from task_generator.utils.geometry import quaternion_from_euler, euler_from_quat
 
 class HunavsimManager(EntityManager):
     # Service Names
-    SERVICE_ADD_PEDESTRIAN = 'hunav/add_pedestrian'
-    SERVICE_DELETE_PEDESTRIAN = 'hunav/delete_pedestrian'
-    SERVICE_UPDATE_GOAL = 'hunav/update_pedestrian_goal'
-    SERVICE_PAUSE_SIMULATION = 'hunav/pause_simulation'
-    SERVICE_RESUME_SIMULATION = 'hunav/resume_simulation'
+    SERVICE_COMPUTE_AGENT = 'compute_agent'
+    SERVICE_COMPUTE_AGENTS = 'compute_agents'
+    SERVICE_GET_AGENTS = 'get_agents'
+    SERVICE_MOVE_AGENT = 'move_agent'
+    SERVICE_RESET_AGENTS = 'reset_agents'
     
     # Topics
-    TOPIC_PEDESTRIAN_STATES = 'hunav/pedestrian_states'
+    TOPIC_AGENTS_STATE = 'hunav/agents_state'
     
     def __init__(self, namespace: Namespace, simulator: GazeboSimulator):
         """Initialize HunavsimManager
@@ -66,51 +66,53 @@ class HunavsimManager(EntityManager):
         self._known_obstacles = KnownObstacles()
         
         # Initialize service clients
-        self._add_pedestrian_client = self.create_client(
-            AddPedestrian, 
-            self._namespace(self.SERVICE_ADD_PEDESTRIAN)
+        self._compute_agent_client = self.create_client(
+            ComputeAgent,
+            self._namespace(self.SERVICE_COMPUTE_AGENT)
         )
-        self._delete_pedestrian_client = self.create_client(
-            DeletePedestrian,
-            self._namespace(self.SERVICE_DELETE_PEDESTRIAN)
+        self._compute_agents_client = self.create_client(
+            ComputeAgents,
+            self._namespace(self.SERVICE_COMPUTE_AGENTS)
         )
-        self._update_goal_client = self.create_client(
-            UpdatePedestrianGoal,
-            self._namespace(self.SERVICE_UPDATE_GOAL)
+        self._get_agents_client = self.create_client(
+            GetAgents,
+            self._namespace(self.SERVICE_GET_AGENTS)
         )
-        self._pause_simulation_client = self.create_client(
-            Empty,
-            self._namespace(self.SERVICE_PAUSE_SIMULATION)
+        self._move_agent_client = self.create_client(
+            MoveAgent,
+            self._namespace(self.SERVICE_MOVE_AGENT)
         )
-        self._resume_simulation_client = self.create_client(
-            Empty,
-            self._namespace(self.SERVICE_RESUME_SIMULATION)
+        self._reset_agents_client = self.create_client(
+            ResetAgents,
+            self._namespace(self.SERVICE_RESET_AGENTS)
         )
         
         # Wait for services
         required_services = [
-            (self._add_pedestrian_client, 'add_pedestrian'),
-            (self._delete_pedestrian_client, 'delete_pedestrian'),
-            (self._update_goal_client, 'update_goal'),
-            (self._pause_simulation_client, 'pause_simulation'),
-            (self._resume_simulation_client, 'resume_simulation')
+            (self._compute_agent_client, 'compute_agent'),
+            (self._compute_agents_client, 'compute_agents'),
+            (self._get_agents_client, 'get_agents'),
+            (self._move_agent_client, 'move_agent'),
+            (self._reset_agents_client, 'reset_agents')
         ]
         
         for client, name in required_services:
             while not client.wait_for_service(timeout_sec=1.0):
                 self.get_logger().info(f'{name} service not available, waiting...')
         
-        # Subscribe to pedestrian states
+        # Subscribe to agent states
         self.create_subscription(
-            PedestrianState,
-            self._namespace(self.TOPIC_PEDESTRIAN_STATES),
-            self._pedestrian_state_callback,
+            Agents,
+            self._namespace(self.TOPIC_AGENTS_STATE),
+            self._agents_state_callback,
             10
         )
 
         # Initialize state variables
         self._is_paused = False
         self._semaphore_reset = False
+        self._agents_initialized = False
+        self._robot_initialized = False
 
         # Initialize JAIL_POS generator for handling deleted actors
         def gen_JAIL_POS(steps: int, x: int = 1, y: int = 0):
@@ -122,48 +124,8 @@ class HunavsimManager(EntityManager):
                 y += 1
         self.JAIL_POS = gen_JAIL_POS(10)
 
-    def _load_agent_config(self, agent_id: str) -> Dict[str, Any]:
-        """Load configuration for a specific agent from the config file
-        
-        Args:
-            agent_id (str): ID of the agent to load configuration for
-            
-        Returns:
-            Dict[str, Any]: Configuration dictionary for the agent
-        """
-        if agent_id not in self.agent_config:
-            self.get_logger().warn(f"No configuration found for agent {agent_id}")
-            return {}
-        return self.agent_config[agent_id]
-
-    @staticmethod
-    def convert_pose(pose: Pose) -> PositionOrientation:
-        """Convert a ROS Pose to a PositionOrientation"""
-        return PositionOrientation(
-            pose.position.x,
-            pose.position.y,
-            euler_from_quaternion(
-                [
-                    pose.orientation.x,
-                    pose.orientation.y,
-                    pose.orientation.z,
-                    pose.orientation.w,
-                ]
-            )[2],
-        )
-
-    @staticmethod
-    def pos_to_pose(pos: PositionOrientation) -> Pose:
-        """Convert a PositionOrientation to a ROS Pose"""
-        return Pose(
-            position=Point(x=pos.x, y=pos.y, z=0),
-            orientation=Quaternion(
-                *quaternion_from_euler(0.0, 0.0, pos.orientation, axes="sxyz")
-            ),
-        )
-
     def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
-        """Spawn pedestrians using Hunavsim
+        """Spawn dynamic obstacles/agents using Hunav
         
         Args:
             obstacles (Collection[DynamicObstacle]): Collection of dynamic obstacles to spawn
@@ -172,57 +134,50 @@ class HunavsimManager(EntityManager):
             # Load agent configuration
             agent_config = self._load_agent_config(obstacle.name)
             
-            request = AddPedestrian.Request()
-            request.id = obstacle.name
+            # Create agent request
+            request = ComputeAgent.Request()
+            agent = Agent()
+            agent.id = obstacle.name
+            agent.type = agent.PERSON
             
-            # Use configuration from YAML if available, otherwise use defaults
-            request.skin = agent_config.get('skin', 1)
-            request.group_id = agent_config.get('group_id', -1)
-            request.max_vel = agent_config.get('max_vel', 1.5)
-            request.radius = agent_config.get('radius', 0.4)
-            
-            # Behavior configuration
+            # Set behavior
+            agent.behavior = AgentBehavior()
             behavior = agent_config.get('behavior', {})
-            request.behavior.type = behavior.get('type', 1)  # REGULAR default
-            request.behavior.configuration = behavior.get('configuration', 0)
-            request.behavior.duration = behavior.get('duration', 40.0)
-            request.behavior.once = behavior.get('once', True)
-            request.behavior.vel = behavior.get('vel', 0.6)
-            request.behavior.dist = behavior.get('dist', 0.0)
-            request.behavior.goal_force_factor = behavior.get('goal_force_factor', 2.0)
-            request.behavior.obstacle_force_factor = behavior.get('obstacle_force_factor', 10.0)
-            request.behavior.social_force_factor = behavior.get('social_force_factor', 5.0)
-            request.behavior.other_force_factor = behavior.get('other_force_factor', 20.0)
+            agent.behavior.type = behavior.get('type', 1)  # REGULAR default
+            agent.behavior.configuration = behavior.get('configuration', 0)
+            agent.behavior.duration = behavior.get('duration', 40.0)
+            agent.behavior.once = behavior.get('once', True)
+            agent.behavior.vel = behavior.get('vel', 0.6)
+            agent.behavior.dist = behavior.get('dist', 0.0)
+            agent.behavior.goal_force_factor = behavior.get('goal_force_factor', 2.0)
+            agent.behavior.obstacle_force_factor = behavior.get('obstacle_force_factor', 10.0)
+            agent.behavior.social_force_factor = behavior.get('social_force_factor', 5.0)
+            agent.behavior.other_force_factor = behavior.get('other_force_factor', 20.0)
             
-            # Initial pose
+            # Set position and goals
             init_pose = agent_config.get('init_pose', {})
-            request.pose = Pose(
-                position=Point(
-                    x=init_pose.get('x', 0.0),
-                    y=init_pose.get('y', 0.0),
-                    z=init_pose.get('z', 0.0)
-                ),
-                orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, init_pose.get('h', 0.0)))
+            agent.position.position = Point(
+                x=init_pose.get('x', 0.0),
+                y=init_pose.get('y', 0.0),
+                z=init_pose.get('z', 0.0)
             )
+            agent.yaw = init_pose.get('h', 0.0)
             
-            # Goals
-            request.goal_radius = agent_config.get('goal_radius', 0.3)
-            request.cyclic_goals = agent_config.get('cyclic_goals', True)
-            
+            # Add goals
             goals = agent_config.get('goals', [])
             for goal_id in goals:
                 goal = agent_config.get(goal_id, {})
-                goal_pose = Pose(
-                    position=Point(
-                        x=goal.get('x', 0.0),
-                        y=goal.get('y', 0.0),
-                        z=goal.get('z', 0.0)
-                    ),
-                    orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, goal.get('h', 0.0)))
+                goal_pose = Pose()
+                goal_pose.position = Point(
+                    x=goal.get('x', 0.0),
+                    y=goal.get('y', 0.0),
+                    z=goal.get('z', 0.0)
                 )
-                request.goals.append(goal_pose)
+                agent.goals.append(goal_pose)
             
-            # Process model for Gazebo/Ignition
+            request.agent = agent
+            
+            # Process model for Gazebo
             obstacle = dataclasses.replace(
                 obstacle,
                 model=obstacle.model.override(
@@ -230,22 +185,22 @@ class HunavsimManager(EntityManager):
                     override=lambda model: model.replace(
                         description=SDFUtil.serialize(
                             SDFUtil.update_plugins(
-                                namespace=self._simulator._namespace(str(request.id)),
+                                namespace=self._simulator._namespace(str(request.agent.id)),
                                 description=SDFUtil.parse(model.description),
                             )
                         )
                     ),
-                    name=request.id,
+                    name=request.agent.id,
                 ),
             )
             
-            future = self._add_pedestrian_client.call_async(request)
+            future = self._compute_agent_client.call_async(request)
             rclpy.spin_until_future_complete(self, future)
             
             known = self._known_obstacles.create_or_get(
                 name=obstacle.name,
                 obstacle=obstacle,
-                pedsim_spawned=False,
+                hunav_spawned=False,
                 layer=ObstacleLayer.INUSE,
             )
 
@@ -256,14 +211,14 @@ class HunavsimManager(EntityManager):
             if known is not None:
                 if known.obstacle.name != obstacle.name:
                     raise RuntimeError(
-                        f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {obstacle.name}"
+                        f"New model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {obstacle.name}"
                     )
                 known.layer = ObstacleLayer.INUSE
             else:
                 known = self._known_obstacles.create_or_get(
                     name=obstacle.name,
                     obstacle=obstacle,
-                    pedsim_spawned=False,
+                    hunav_spawned=False,
                     layer=ObstacleLayer.INUSE,
                 )
             
@@ -279,30 +234,28 @@ class HunavsimManager(EntityManager):
             name=self.WALLS_ENTITY,
             obstacle=obstacle,
             layer=ObstacleLayer.WORLD,
-            pedsim_spawned=False,
+            hunav_spawned=False,
         )
         
         self._simulator.spawn_entity(obstacle)
 
-    def unuse_obstacles(self):
-        """Mark all obstacles as unused"""
-        self._is_paused = True
-        future = self._pause_simulation_client.call_async(Empty.Request())
+    def move_robot(self, name: str, position: PositionOrientation):
+        """Move robot to new position"""
+        request = MoveAgent.Request()
+        request.id = name
+        request.pose.position = Point(x=position.x, y=position.y, z=0.0)
+        quat = quaternion_from_euler(0.0, 0.0, position.orientation)
+        request.pose.orientation = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
+        
+        future = self._move_agent_client.call_async(request)
         rclpy.spin_until_future_complete(self, future)
 
-        for obstacle_id, obstacle in self._known_obstacles.items():
-            if obstacle.layer == ObstacleLayer.INUSE:
-                obstacle.layer = ObstacleLayer.UNUSED
-
     def remove_obstacles(self, purge):
-        """Remove obstacles based on purge level
-        
-        Args:
-            purge: Level determining which obstacles to remove
-        """
+        """Remove obstacles based on purge level"""
         if not self._is_paused:
             self._is_paused = True
-            future = self._pause_simulation_client.call_async(Empty.Request())
+            request = ResetAgents.Request()
+            future = self._reset_agents_client.call_async(request)
             rclpy.spin_until_future_complete(self, future)
 
         while self._semaphore_reset:
@@ -318,28 +271,19 @@ class HunavsimManager(EntityManager):
                 if purge >= obstacle.layer:
                     if isinstance(self._simulator, GazeboSimulator):
                         if isinstance(obstacle.obstacle, DynamicObstacle):
-                            # Move to JAIL instead of deletion for actors
                             def move_to_jail(obstacle_id):
                                 jail = next(self.JAIL_POS)
-                                self._simulator.move_entity(
-                                    name=obstacle_id, position=jail
-                                )
+                                self._simulator.move_entity(name=obstacle_id, position=jail)
                             actions.append(functools.partial(move_to_jail, obstacle_id))
                         else:
                             def delete_entity(obstacle_id):
-                                obstacle.pedsim_spawned = False
+                                obstacle.hunav_spawned = False
                                 self._simulator.delete_entity(name=obstacle_id)
                             actions.append(functools.partial(delete_entity, obstacle_id))
                             to_forget.append(obstacle_id)
                     else:
-                        obstacle.pedsim_spawned = False
+                        obstacle.hunav_spawned = False
                         to_forget.append(obstacle_id)
-
-                    # Delete from Hunavsim
-                    request = DeletePedestrian.Request()
-                    request.id = obstacle_id
-                    future = self._delete_pedestrian_client.call_async(request)
-                    rclpy.spin_until_future_complete(self, future)
 
             for obstacle_id in to_forget:
                 self._known_obstacles.forget(name=obstacle_id)
@@ -350,38 +294,51 @@ class HunavsimManager(EntityManager):
         for action in actions:
             action()
 
-        future = self._resume_simulation_client.call_async(Empty.Request())
-        rclpy.spin_until_future_complete(self, future)
-        self._is_paused = False
-
     def spawn_robot(self, robot: Robot):
         """Spawn robot in simulation"""
         self._simulator.spawn_entity(robot)
 
-    def move_robot(self, name: str, position: PositionOrientation):
-        """Move robot to new position"""
-        self._simulator.move_entity(name=name, position=position)
-
-    def _pedestrian_state_callback(self, msg: PedestrianState):
-        """Handle updates about pedestrian positions"""
-        if msg.id in self._known_obstacles:
-            entity = self._known_obstacles.get(msg.id)
-            
-            if entity is None:
-                return
+    def _agents_state_callback(self, msg: Agents):
+        """Handle updates about agent positions"""
+        for agent in msg.agents:
+            if agent.id in self._known_obstacles:
+                entity = self._known_obstacles.get(agent.id)
                 
-            if entity.pedsim_spawned:
-                self._simulator.move_entity(
-                    name=msg.id,
-                    position=self.convert_pose(msg.pose)
-                )
-            else:
-                self._simulator.spawn_entity(
-                    Obstacle(
-                        name=msg.id,
-                        position=self.convert_pose(msg.pose),
-                        model=entity.obstacle.model,
-                        extra=entity.obstacle.extra,
+                if entity is None:
+                    continue
+                    
+                if entity.hunav_spawned:
+                    pos = PositionOrientation(
+                        x=agent.position.position.x,
+                        y=agent.position.position.y,
+                        orientation=agent.yaw
                     )
-                )
-                entity.pedsim_spawned = True
+                    self._simulator.move_entity(name=agent.id, position=pos)
+                else:
+                    self._simulator.spawn_entity(
+                        Obstacle(
+                            name=agent.id,
+                            position=PositionOrientation(
+                                x=agent.position.position.x,
+                                y=agent.position.position.y,
+                                orientation=agent.yaw
+                            ),
+                            model=entity.obstacle.model,
+                            extra=entity.obstacle.extra,
+                        )
+                    )
+                    entity.hunav_spawned = True
+
+    def _load_agent_config(self, agent_id: str) -> Dict[str, Any]:
+        """Load configuration for a specific agent
+        
+        Args:
+            agent_id (str): ID of the agent
+            
+        Returns:
+            Dict[str, Any]: Configuration dictionary
+        """
+        if agent_id not in self.agent_config:
+            self.get_logger().warn(f"No configuration found for agent {agent_id}")
+            return {}
+        return self.agent_config[agent_id]
