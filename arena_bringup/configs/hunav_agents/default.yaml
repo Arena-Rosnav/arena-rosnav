@@ -1,6 +1,6 @@
 hunav_loader:
   ros__parameters:
-    map: map_empty  # Angepasst an Arena's Default
+    map: map_empty  #   Arena Default
     publish_people: true
     agents:
       - agent1

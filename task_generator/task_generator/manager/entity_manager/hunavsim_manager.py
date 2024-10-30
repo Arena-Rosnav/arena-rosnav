@@ -41,9 +41,6 @@ class HunavsimManager(EntityManager):
     SERVICE_MOVE_AGENT = 'move_agent'
     SERVICE_RESET_AGENTS = 'reset_agents'
     
-    # Topics
-    TOPIC_AGENTS_STATE = 'hunav/agents_state'
-    
     def __init__(self, namespace: Namespace, simulator: GazeboSimulator):
         """Initialize HunavsimManager
         
@@ -99,14 +96,6 @@ class HunavsimManager(EntityManager):
         for client, name in required_services:
             while not client.wait_for_service(timeout_sec=1.0):
                 self.get_logger().info(f'{name} service not available, waiting...')
-        
-        # Subscribe to agent states
-        self.create_subscription(
-            Agents,
-            self._namespace(self.TOPIC_AGENTS_STATE),
-            self._agents_state_callback,
-            10
-        )
 
         # Initialize state variables
         self._is_paused = False
@@ -124,6 +113,56 @@ class HunavsimManager(EntityManager):
                 y += 1
         self.JAIL_POS = gen_JAIL_POS(10)
 
+    def create_pedestrian_sdf(self, name: str, skin_type: str) -> str:
+        """Create SDF model description for a pedestrian
+        
+        Args:
+            name: Name of the pedestrian
+            skin_type: Type of mesh to use (casual_man, elegant_man, etc.)
+        """
+        # Get path to mesh file
+        mesh_path = os.path.join(
+            get_package_share_directory('hunav_sim'),
+            'hunav_rviz2_panel/meshes',
+            f'{skin_type}.dae'
+        )
+        
+        sdf = f"""<?xml version="1.0" ?>
+        <sdf version="1.6">
+            <model name="{name}">
+                <static>false</static>
+                <link name="link">
+                    <visual name="visual">
+                        <geometry>
+                            <mesh>
+                                <uri>file://{mesh_path}</uri>
+                            </mesh>
+                        </geometry>
+                    </visual>
+                    <collision name="collision">
+                        <geometry>
+                            <cylinder>
+                                <radius>0.3</radius>
+                                <length>1.7</length>
+                            </cylinder>
+                        </geometry>
+                    </collision>
+                </link>
+            </model>
+        </sdf>"""
+        return sdf
+
+    def get_skin_type(self, skin_id: int) -> str:
+        """Get mesh filename based on skin ID"""
+        skin_types = {
+            0: 'elegant_man',
+            1: 'casual_man',
+            2: 'elegant_woman',
+            3: 'regular_man',
+            4: 'worker_man'
+        }
+        return skin_types.get(skin_id, 'casual_man')
+
     def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
         """Spawn dynamic obstacles/agents using Hunav
         
@@ -134,8 +173,7 @@ class HunavsimManager(EntityManager):
             # Load agent configuration
             agent_config = self._load_agent_config(obstacle.name)
             
-            # Create agent request
-            request = ComputeAgent.Request()
+            # Create Hunav Agent
             agent = Agent()
             agent.id = obstacle.name
             agent.type = agent.PERSON
@@ -175,32 +213,33 @@ class HunavsimManager(EntityManager):
                 )
                 agent.goals.append(goal_pose)
             
-            request.agent = agent
+            # Create and spawn visual model in Gazebo
+            skin_type = self.get_skin_type(agent_config.get('skin', 1))
+            sdf = self.create_pedestrian_sdf(obstacle.name, skin_type)
             
-            # Process model for Gazebo
+            # Create model with SDF
             obstacle = dataclasses.replace(
                 obstacle,
-                model=obstacle.model.override(
+                model=Model(
+                    description=sdf,
                     model_type=ModelType.SDF,
-                    override=lambda model: model.replace(
-                        description=SDFUtil.serialize(
-                            SDFUtil.update_plugins(
-                                namespace=self._simulator._namespace(str(request.agent.id)),
-                                description=SDFUtil.parse(model.description),
-                            )
-                        )
-                    ),
-                    name=request.agent.id,
-                ),
+                    name=obstacle.name
+                )
             )
             
+            # Spawn in Gazebo
+            self._simulator.spawn_entity(obstacle)
+            
+            # Register with Hunav
+            request = ComputeAgent.Request()
+            request.agent = agent
             future = self._compute_agent_client.call_async(request)
             rclpy.spin_until_future_complete(self, future)
             
             known = self._known_obstacles.create_or_get(
                 name=obstacle.name,
                 obstacle=obstacle,
-                hunav_spawned=False,
+                hunav_spawned=True,  # Already spawned above
                 layer=ObstacleLayer.INUSE,
             )
 
@@ -298,36 +337,21 @@ class HunavsimManager(EntityManager):
         """Spawn robot in simulation"""
         self._simulator.spawn_entity(robot)
 
-    def _agents_state_callback(self, msg: Agents):
-        """Handle updates about agent positions"""
-        for agent in msg.agents:
-            if agent.id in self._known_obstacles:
-                entity = self._known_obstacles.get(agent.id)
-                
-                if entity is None:
-                    continue
-                    
-                if entity.hunav_spawned:
+    def update_agent_positions(self):
+        """Update agent positions based on Hunav calculations"""
+        request = ComputeAgents.Request()
+        future = self._compute_agents_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        
+        if future.result() is not None:
+            for agent in future.result().agents:
+                if agent.id in self._known_obstacles:
                     pos = PositionOrientation(
                         x=agent.position.position.x,
                         y=agent.position.position.y,
                         orientation=agent.yaw
                     )
                     self._simulator.move_entity(name=agent.id, position=pos)
-                else:
-                    self._simulator.spawn_entity(
-                        Obstacle(
-                            name=agent.id,
-                            position=PositionOrientation(
-                                x=agent.position.position.x,
-                                y=agent.position.position.y,
-                                orientation=agent.yaw
-                            ),
-                            model=entity.obstacle.model,
-                            extra=entity.obstacle.extra,
-                        )
-                    )
-                    entity.hunav_spawned = True
 
     def _load_agent_config(self, agent_id: str) -> Dict[str, Any]:
         """Load configuration for a specific agent

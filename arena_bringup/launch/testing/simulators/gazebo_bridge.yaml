@@ -1,54 +1,110 @@
----
-
-- ros_topic_name: "/diff_drive/cmd_vel"
-  gz_topic_name: "/model/diff_drive/cmd_vel"
-  ros_type_name: "geometry_msgs/msg/Twist"
-  gz_type_name: "gz.msgs.Twist"
-  direction: ROS_TO_GZ
+# Clock synchronization
 - ros_topic_name: "/clock"
-  gz_topic_name: "/clock"
   ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_topic_name: "/world/default/clock"
   gz_type_name: "gz.msgs.Clock"
-  direction: GZ_TO_ROS
-- ros_topic_name: "/diff_drive/odometry"
-  gz_topic_name: "/model/diff_drive/odometry"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "volatile"
+      history: "keep_last"
+      depth: 10
+
+# TF
+- ros_topic_name: "/tf"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_topic_name: "/world/default/dynamic_pose/info"
+  gz_type_name: "gz.msgs.Pose_V"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "volatile"
+      history: "keep_last"
+      depth: 10
+
+# Static TF
+- ros_topic_name: "/tf_static"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_topic_name: "/world/default/pose/info"
+  gz_type_name: "gz.msgs.Pose_V"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "transient_local"
+      history: "keep_last"
+      depth: 10
+
+# Joint states
+- ros_topic_name: "/joint_states"
+  ros_type_name: "sensor_msgs/msg/JointState"
+  gz_topic_name: "/world/default/model/${robot_model}/joint_state"
+  gz_type_name: "gz.msgs.Model"
+
+# Odometry
+- ros_topic_name: "/odom"
   ros_type_name: "nav_msgs/msg/Odometry"
+  gz_topic_name: "/model/${robot_model}/odometry"
   gz_type_name: "gz.msgs.Odometry"
-  direction: GZ_TO_ROS
-- ros_topic_name: "/diff_drive/scan"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "volatile"
+      history: "keep_last"
+      depth: 10
+
+# IMU
+- ros_topic_name: "/imu"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_topic_name: "/world/default/model/${robot_model}/imu"
+  gz_type_name: "gz.msgs.IMU"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "volatile"
+      history: "keep_last"
+      depth: 10
+
+# Command velocity
+- ros_topic_name: "/cmd_vel"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  gz_topic_name: "/model/${robot_model}/cmd_vel"
+  gz_type_name: "gz.msgs.Twist"
+
+
+# Laser scan
+- ros_topic_name: "scan"
   gz_topic_name: "/scan"
   ros_type_name: "sensor_msgs/msg/LaserScan"
   gz_type_name: "gz.msgs.LaserScan"
-  direction: GZ_TO_ROS
-- ros_topic_name: "/joint_states"
-  gz_topic_name: "/world/demo/model/diff_drive/joint_state"
-  ros_type_name: "sensor_msgs/msg/JointState"
-  gz_type_name: "gz.msgs.Model"
-  direction: GZ_TO_ROS
-- ros_topic_name: "/tf"
-  gz_topic_name: "/model/diff_drive/pose"
-  ros_type_name: "tf2_msgs/msg/TFMessage"
-  gz_type_name: "gz.msgs.Pose_V"
-  direction: GZ_TO_ROS
-- ros_topic_name: "/tf_static"
-  gz_topic_name: "/model/diff_drive/pose_static"
-  ros_type_name: "tf2_msgs/msg/TFMessage"
-  gz_type_name: "gz.msgs.Pose_V"
-  direction: GZ_TO_ROS
+
+# Map
+- ros_topic_name: "/map"
+  ros_type_name: "nav_msgs/msg/OccupancyGrid"
+  gz_topic_name: "/map"
+  gz_type_name: "gz.msgs.OccupancyGrid"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "transient_local"
+      history: "keep_last"
+      depth: 1
 
 # Hunavsim specific bridges
-- ros_topic_name: "/hunav/pedestrian_states"
-  gz_topic_name: "/world/demo/pedestrian_states"
-  ros_type_name: "hunav_msgs/msg/PedestrianState"
-  gz_type_name: "gz.msgs.PedestrianState"
-  direction: GZ_TO_ROS
-- ros_topic_name: "/hunav/pedestrian_poses"
-  gz_topic_name: "/world/demo/pedestrian_poses"
-  ros_type_name: "geometry_msgs/msg/PoseArray"
-  gz_type_name: "gz.msgs.Pose_V"
-  direction: GZ_TO_ROS
-- ros_topic_name: "/hunav/add_pedestrian_status"
-  gz_topic_name: "/world/demo/add_pedestrian_status"
-  ros_type_name: "hunav_msgs/msg/PedestrianStatus"
-  gz_type_name: "gz.msgs.PedestrianStatus"
-  direction: GZ_TO_ROS
+
+# - ros_topic_name: "/hunav/agents"
+#   gz_topic_name: "/world/demo/agents"
+#   ros_type_name: "hunav_msgs/msg/Agents"  
+#   gz_type_name: "gz.msgs.Agents"
+#   direction: GZ_TO_ROS
+
+# - ros_topic_name: "/hunav/agent"
+#   gz_topic_name: "/world/demo/agent"
+#   ros_type_name: "hunav_msgs/msg/Agent"  
+#   gz_type_name: "gz.msgs.Agent"
+#   direction: GZ_TO_ROS
+
+# - ros_topic_name: "/hunav/behavior"
+#   gz_topic_name: "/world/demo/behavior"
+#   ros_type_name: "hunav_msgs/msg/AgentBehavior" 
+#   gz_type_name: "gz.msgs.AgentBehavior"
+#   direction: GZ_TO_ROS
