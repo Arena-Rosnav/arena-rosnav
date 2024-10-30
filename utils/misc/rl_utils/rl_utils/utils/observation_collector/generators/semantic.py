@@ -127,7 +127,7 @@ class PedestrianRelativeVelYGenerator(ObservationGeneratorUnit):
 
 
 class PedestrianDistanceGenerator(ObservationGeneratorUnit):
-    name: str = "unity_pedestrian_safe_distance_violation"
+    name: str = "ped_type_distances"
     requires: List[BaseUnit] = [
         PedestrianRelativeLocationGenerator,
         PedestrianTypeCollector,
