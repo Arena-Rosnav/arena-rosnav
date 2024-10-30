@@ -6,7 +6,7 @@ from rosnav_rl.cfg.agent import AgentCfg
 from .sb3_cfg import SB3Cfg
 
 
-class TrainingCfg(BaseModel):
+class SB3TrainingCfg(BaseModel):
     framework_cfg: SB3Cfg
     agent_cfg: AgentCfg
 

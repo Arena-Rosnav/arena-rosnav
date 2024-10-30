@@ -20,11 +20,11 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 import wandb
 
 if TYPE_CHECKING:
-    from rl_utils.cfg import TrainingCfg, CallbacksCfg
+    from rl_utils.cfg import SB3TrainingCfg, CallbacksCfg
     from rosnav_rl.model.model import RL_Model
 
 
-def setup_wandb(train_cfg: "TrainingCfg", rl_model: "RL_Model") -> None:
+def setup_wandb(train_cfg: "SB3TrainingCfg", rl_model: "RL_Model") -> None:
     """
     Set up Weights and Biases (wandb) for tracking and visualizing training.
 
@@ -33,7 +33,7 @@ def setup_wandb(train_cfg: "TrainingCfg", rl_model: "RL_Model") -> None:
     It also watches the policy model for logging gradients and parameters.
 
     Args:
-        train_cfg (TrainingCfg): The training configuration object containing
+        train_cfg (SB3TrainingCfg): The training configuration object containing
             settings and parameters for the training session.
         rl_model (RL_Model): The reinforcement learning model to be tracked
             and monitored by wandb.

@@ -10,4 +10,4 @@ from .sb3_cfg import (
     SB3Cfg,
     TaskCfg,
 )
-from .train import TrainingCfg
+from .train import SB3TrainingCfg
