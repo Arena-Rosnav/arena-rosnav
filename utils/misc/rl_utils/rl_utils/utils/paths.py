@@ -148,9 +148,9 @@ class PathFactory:
     def get_paths(agent_name: str) -> Dict[Type[PathComponent], str]:
         """Generate all required paths for the agent"""
         return {
-            Agent: Agent(agent_name).path,
-            AgentTensorboard: AgentTensorboard(agent_name).path,
-            AgentEval: AgentEval(agent_name).path,
-            RobotSetting: RobotSetting().path,
-            ConfigComponent: ConfigComponent.path,
+            Agent: Agent(agent_name),
+            AgentTensorboard: AgentTensorboard(agent_name),
+            AgentEval: AgentEval(agent_name),
+            RobotSetting: RobotSetting(),
+            ConfigComponent: ConfigComponent,
         }

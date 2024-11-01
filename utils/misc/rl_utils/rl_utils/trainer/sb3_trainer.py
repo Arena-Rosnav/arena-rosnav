@@ -79,8 +79,8 @@ class StableBaselines3Trainer(ArenaTrainer):
             n_envs=self.general_cfg.n_envs,
             tm_modules=self.task_cfg.tm_modules,
             callback_cfg=self.callbacks_cfg,
-            model_save_path=self.paths[Paths.Agent],
-            eval_log_path=self.paths[Paths.AgentEval],
+            model_save_path=self.paths[Paths.Agent].path,
+            eval_log_path=self.paths[Paths.AgentEval].path,
             debug_mode=self.general_cfg.debug_mode,
         )
 
@@ -88,7 +88,7 @@ class StableBaselines3Trainer(ArenaTrainer):
             env=train_env,
             no_gpu=self.general_cfg.no_gpu,
             tensorboard_log_path=(
-                self.paths[Paths.AgentTensorboard]
+                self.paths[Paths.AgentTensorboard].path
                 if not self.general_cfg.debug_mode
                 else None
             ),

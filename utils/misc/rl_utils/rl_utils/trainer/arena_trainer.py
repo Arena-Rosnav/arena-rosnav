@@ -128,7 +128,7 @@ class ArenaTrainer(ABC):
             TrainerHook.ON_SAVE,
             lambda: save_model(
                 rl_model=self.agent,
-                dirpath=self.paths[Paths.Agent],
+                dirpath=self.paths[Paths.Agent].path,
                 checkpoint_name="last_model",
                 is_debug_mode=self.is_debug_mode,
             ),
@@ -154,12 +154,15 @@ class ArenaTrainer(ABC):
         if not debug_mode:
             write_config_yaml(
                 self.config.model_dump(),
-                self.paths[Paths.Agent] / "training_config.yaml",
+                self.paths[Paths.Agent].path / "training_config.yaml",
             )
 
     def _setup_paths(self, *args, **kwargs):
         """Setup necessary directories."""
         self.paths: PathsDict = PathFactory.get_paths(self.agent.name)
+        if not self.is_debug_mode:
+            for path in self.paths.values():
+                path.create()
 
     def _register_framework_specific_hooks(self):
         """Register hooks that are specific to the framework."""

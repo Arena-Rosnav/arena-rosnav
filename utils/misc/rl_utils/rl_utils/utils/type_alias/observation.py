@@ -18,7 +18,7 @@ from rl_utils.utils.paths import Path, PathComponent
 # Gym Env
 InformationDict = Dict[str, Any]
 
-PathsDict = Dict[Type[PathComponent], Union[str, Path]]
+PathsDict = Dict[Type[PathComponent], PathComponent]
 
 CustomDiscreteAction = Dict[str, Union[str, float]]
 CustomDiscreteActionList = List[CustomDiscreteAction]
