@@ -44,33 +44,6 @@ def print_base_model(hyperparams: BaseModel) -> None:
     print("--------------------------------\n\n")
 
 
-def get_paths(
-    agent_name: str,
-    curriculum_file: str,
-    # resume_name: str,
-    # checkpoint_name: str,
-    # debug_mode: bool,
-    # use_wandb: bool = False,
-    # log_evaluation: bool = False,
-) -> dict:
-    """
-    Function to generate agent specific paths
-
-    :param config (dict): Dictionary containing the training configuration
-    """
-    BASE_PATHS = TRAINING_CONSTANTS.PATHS
-    PATHS = {
-        "model": BASE_PATHS.MODEL(agent_name),
-        "tb": BASE_PATHS.TENSORBOARD(agent_name),
-        "eval": BASE_PATHS.EVAL(agent_name),
-        "robot_setting": BASE_PATHS.ROBOT_SETTING(rospy.get_param("robot_model")),
-        "config": BASE_PATHS.AGENT_CONFIG(agent_name),
-        "curriculum": BASE_PATHS.CURRICULUM(curriculum_file),
-    }
-
-    return PATHS
-
-
 def create_directories(
     paths: dict,
     resume_name: str,
@@ -174,10 +147,11 @@ def load_config(file_path: str) -> dict:
     return config
 
 
-def save_model_and_exit(
-    rl_model: StableBaselinesAgent, dirpath: str, checkpoint_name: str
-):
-    if not rospy.get_param("debug_mode", False):
+def save_model(
+    rl_model: StableBaselinesAgent,
+    dirpath: str,
+    checkpoint_name: str,
+    is_debug_mode: bool = False,
+) -> None:
+    if not rospy.get_param("debug_mode", is_debug_mode):
         rl_model.save(dirpath=dirpath, checkpoint_name=checkpoint_name)
-    rl_model.model.env.close()
-    sys.exit()
