@@ -1,23 +1,24 @@
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
     List,
+    Literal,
+    NewType,
     Optional,
     Tuple,
     Type,
     TypeVar,
     Union,
-    Literal,
-    TYPE_CHECKING,
-    NewType,
 )
+
+from rl_utils.utils.paths import Path, PathComponent
 
 # Gym Env
 InformationDict = Dict[str, Any]
 
-PATHS_KEYS = Literal["model", "tb", "eval", "robot_setting", "config", "curriculum"]
-PathsDict = Dict[PATHS_KEYS, str]
+PathsDict = Dict[Type[PathComponent], Union[str, Path]]
 
 CustomDiscreteAction = Dict[str, Union[str, float]]
 CustomDiscreteActionList = List[CustomDiscreteAction]
