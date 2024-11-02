@@ -95,7 +95,7 @@ class AgentEval(AgentLogs):
 class ConfigComponent(PathComponent):
     """Base class for configuration paths"""
 
-    def __init__(self, file_name: str):
+    def __init__(self, file_name: str = ""):
         self.file_name = file_name
         self._base = RosPackages.ARENA_BRINGUP / "configs" / "training"
 
@@ -152,5 +152,5 @@ class PathFactory:
             AgentTensorboard: AgentTensorboard(agent_name),
             AgentEval: AgentEval(agent_name),
             RobotSetting: RobotSetting(),
-            ConfigComponent: ConfigComponent,
+            ConfigComponent: ConfigComponent(),
         }
