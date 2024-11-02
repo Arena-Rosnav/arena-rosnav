@@ -8,6 +8,7 @@ import gymnasium
 from rl_utils.utils.paths import PathFactory
 import rospy
 from pydantic import BaseModel
+from pydantic.dataclasses import dataclass
 from rl_utils.cfg.train import TrainingCfg
 from rl_utils.state_container import SimulationStateContainer
 from rl_utils.utils.type_alias.observation import PathsDict
@@ -20,6 +21,22 @@ from tools.general import (
 )
 
 import rl_utils.utils.paths as Paths
+
+
+@dataclass
+class Timer:
+    start_time: float = 0
+    duration: float = 0
+
+    def start(self):
+        if self.start_time != 0:
+            raise ValueError("Timer already started.")
+        self.start_time = time.time()
+
+    def stop(self):
+        if self.start_time == 0:
+            raise ValueError("Timer not started.")
+        self.duration = time.time() - self.start_time
 
 
 class TrainingFramework(Enum):
@@ -50,93 +67,82 @@ class ArenaTrainer(ABC):
 
     def __init__(self, config: TrainingCfg):
         self.config = config
-        self._initialize_hook_stages()
+        self.timer = Timer()
+        self.__hooks: Dict[TrainerHook, List[Callable]] = {
+            stage: [] for stage in TrainerHook
+        }
+        self._initialize_trainer()
+
+    def _initialize_trainer(self):
+        """Initialize the trainer with default hooks and configuration."""
         self._register_default_hooks()
         self._run_hooks(TrainerHook.ON_INIT)
 
-    def register_hook(self, hook_name: Union[TrainerHook, str], callback: Callable):
+    def register_hook(
+        self, hook_name: Union[TrainerHook, str], callback: Callable
+    ) -> None:
         """Register a new hook callback."""
-        if hook_name not in self.__hooks:
-            print(f"Hook {hook_name} not found. Creating new hook.")
-            self.__hooks[hook_name] = []
-        self.__hooks[hook_name].append(callback)
+        if not isinstance(hook_name, TrainerHook):
+            hook_name = TrainerHook(hook_name)
+        self.__hooks.setdefault(hook_name, []).append(callback)
 
-    def setup(self, *args, **kwargs):
-        """Template method for setting up the trainer."""
+    def setup(self) -> None:
+        """Set up the training environment and components."""
         self._run_hooks(TrainerHook.BEFORE_SETUP)
-
-        self._register_framework_specific_hooks()
-        self._setup_monitoring()
-        self._setup_simulation_state_container()
-        self._setup_agent()
-        self._setup_paths()
-        self._setup_environment()
-        self._setup_train_method_arguments()
-
+        self._perform_setup()
         self._run_hooks(TrainerHook.AFTER_SETUP)
 
     def train(self, method_args: TypedDict = None) -> None:
-        """Execute the training process."""
+        """Execute the training process with error handling and metrics tracking."""
         self._run_hooks(TrainerHook.BEFORE_TRAINING)
-        start = time.time()
+        self.timer.start()
+
         try:
             self._train_impl(method_args or getattr(self, "method_arguments", {}))
         finally:
-            duration = time.time() - start
-            print(f"Time passed: {duration}s. \nTraining script will be terminated..")
+            self.timer.stop()
+            self._log_training_completion()
             self._run_hooks(TrainerHook.AFTER_TRAINING)
 
     def close(self):
         """Clean up and exit."""
         self._run_hooks(TrainerHook.ON_CLOSE)
 
-    def _initialize_hook_stages(self):
-        self.__hooks: Dict[TrainerHook, List[Callable]] = {
-            stage: [] for stage in TrainerHook
+    def _perform_setup(self) -> None:
+        """Execute all setup steps in sequence."""
+        setup_steps = [
+            self._register_framework_specific_hooks,
+            self._setup_monitoring,
+            self._setup_simulation_state_container,
+            self._setup_agent,
+            self._setup_paths,
+            self._setup_environment,
+            self._setup_train_method_arguments,
+        ]
+        for step in setup_steps:
+            step()
+
+    def _register_default_hooks(self) -> None:
+        """Register default hooks common across implementations."""
+        default_hooks = {
+            TrainerHook.ON_INIT: [lambda _: print_base_model(self.config)],
+            TrainerHook.BEFORE_SETUP: [lambda _: self._setup_node(self.is_debug_mode)],
+            TrainerHook.AFTER_SETUP: [lambda _: self._write_config(self.is_debug_mode)],
+            TrainerHook.AFTER_TRAINING: [
+                lambda _: rospy.on_shutdown(
+                    lambda: self._run_hooks(TrainerHook.ON_SAVE)
+                )
+            ],
+            TrainerHook.ON_SAVE: [lambda _: self._save_model()],
+            TrainerHook.ON_CLOSE: [
+                lambda _: self.agent.model.env.close(),
+                lambda _: sys.exit(0),
+            ],
         }
 
-    def _register_default_hooks(self):
-        """Register default hooks that are common across all implementations."""
-        # ON_INIT
-        # self.register_hook(
-        #     TrainerHook.ON_INIT,
-        #     lambda _: print(
-        #         f"________ STARTING TRAINING WITH: {self.agent.name} ________\n"
-        #     ),
-        # )
-        self.register_hook(TrainerHook.ON_INIT, lambda _: print_base_model(self.config))
-
-        # BEFORE_SETUP
-        self.register_hook(
-            TrainerHook.BEFORE_SETUP, lambda _: self._setup_node(self.is_debug_mode)
-        )
-
-        # AFTER_SETUP
-        self.register_hook(
-            TrainerHook.AFTER_SETUP,
-            lambda _: self._write_config(debug_mode=self.is_debug_mode),
-        )
-
-        # AFTER_TRAINING
-        self.register_hook(
-            TrainerHook.AFTER_TRAINING,
-            lambda: rospy.on_shutdown(lambda: self._run_hooks(TrainerHook.ON_SAVE)),
-        )
-
-        # ON_SAVE
-        self.register_hook(
-            TrainerHook.ON_SAVE,
-            lambda: save_model(
-                rl_model=self.agent,
-                dirpath=self.paths[Paths.Agent].path,
-                checkpoint_name="last_model",
-                is_debug_mode=self.is_debug_mode,
-            ),
-        )
-
-        # ON_CLOSE
-        self.register_hook(TrainerHook.ON_CLOSE, lambda _: self.agent.model.env.close())
-        self.register_hook(TrainerHook.ON_CLOSE, lambda _: sys.exit(0))
+        for hook, callbacks in default_hooks.items():
+            for callback in callbacks:
+                self.register_hook(hook, callback)
 
     def _run_hooks(self, hook_name: Union[TrainerHook, str]):
         """Execute all callbacks registered for a specific hook."""
@@ -195,6 +201,21 @@ class ArenaTrainer(ABC):
     def _train_impl(self, method_args: TypedDict):
         """Implementation of training logic."""
         self.agent.model.train(**method_args)
+
+    def _save_model(self) -> None:
+        """Save the trained model."""
+        save_model(
+            rl_model=self.agent,
+            dirpath=self.paths[Paths.Agent].path,
+            checkpoint_name="last_model",
+            is_debug_mode=self.is_debug_mode,
+        )
+
+    def _log_training_completion(self) -> None:
+        """Log training completion message."""
+        print(
+            f"Time passed: {self.timer.duration}s. \nTraining script will be terminated.."
+        )
 
     @property
     def is_debug_mode(self):
