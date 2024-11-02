@@ -1,6 +1,5 @@
+from pydantic import BaseModel, Field, field_validator
 import rospy
-from pydantic import BaseModel, model_validator, field_validator
-from tools.constants import SIMULATION_NAMESPACES
 
 
 class GeneralCfg(BaseModel):
@@ -17,18 +16,15 @@ class GeneralCfg(BaseModel):
 
     debug_mode: bool = False
     no_gpu: bool = False
-    n_envs: int = 1
-    n_timesteps: int = 4000000
-    max_num_moves_per_eps: int = 150
-    goal_radius: float = 0.4
-    safety_distance: float = 1.0
+    n_envs: int = Field(1, ge=1)
+    n_timesteps: int = Field(10_000_000, ge=1)
+    max_num_moves_per_eps: int = Field(150, ge=1)
+    goal_radius: float = Field(0.4, title="Goal Radius", gt=0)
+    safety_distance: float = Field(1.0, gt=0)
     show_progress_bar: bool = False
 
-    @field_validator(
-        "safety_distance", "goal_radius", "n_envs", "max_num_moves_per_eps"
-    )
+    @field_validator("debug_mode")
     @classmethod
-    def check_safety_distance(cls, v: float) -> float:
-        if v < 0:
-            raise ValueError(f"{cls} cannot be negative.")
+    def publish_debug_mode(cls, v: bool) -> bool:
+        rospy.set_param("/debug_mode", v)
         return v
