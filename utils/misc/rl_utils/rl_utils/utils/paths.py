@@ -141,16 +141,24 @@ class RobotSetting(PathComponent):
         )
 
 
+class PathDictionary(dict):
+    def create_all(self):
+        for path in self.values():
+            path.create()
+
+
 class PathFactory:
     """Factory class to create path instances"""
 
     @staticmethod
-    def get_paths(agent_name: str) -> Dict[Type[PathComponent], str]:
+    def get_paths(agent_name: str) -> Dict[Type[PathComponent], PathComponent]:
         """Generate all required paths for the agent"""
-        return {
-            Agent: Agent(agent_name),
-            AgentTensorboard: AgentTensorboard(agent_name),
-            AgentEval: AgentEval(agent_name),
-            RobotSetting: RobotSetting(),
-            ConfigComponent: ConfigComponent(),
-        }
+        return PathDictionary(
+            {
+                Agent: Agent(agent_name),
+                AgentTensorboard: AgentTensorboard(agent_name),
+                AgentEval: AgentEval(agent_name),
+                RobotSetting: RobotSetting(),
+                ConfigComponent: ConfigComponent(),
+            }
+        )
