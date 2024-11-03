@@ -1,21 +1,21 @@
 import os
-from typing import Any, Tuple
+from dataclasses import dataclass, fields
+from typing import Any, Tuple, get_type_hints
 
 import rl_utils.utils.paths as Paths
 import rosnav_rl.rl_agent as Rosnav_RL
 from rl_utils.cfg import TrainingCfg
 from rl_utils.trainer.arena_trainer import (
     ArenaTrainer,
+    TrainingArguments,
     TrainingFramework,
     TrainingHookStages,
-    TrainingArguments,
 )
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
-from tools.config import load_training_config, SB3ConfigManager
+from tools.config import SB3ConfigManager, load_training_config
 from tools.env_utils import make_envs
 from tools.model_utils import init_sb3_callbacks, setup_wandb
 from tools.states import get_arena_states
-from dataclasses import dataclass
 
 
 @dataclass
@@ -43,14 +43,14 @@ class StableBaselines3Trainer(ArenaTrainer):
 
     def _unpack_config(self) -> None:
         """Unpack SB3-specific configuration."""
-        self.general_cfg = self.config_manager.general_cfg
-        self.monitoring_cfg = self.config_manager.monitoring_cfg
-        self.task_cfg = self.config_manager.task_cfg
-        self.normalization_cfg = self.config_manager.normalization_cfg
-        self.callbacks_cfg = self.config_manager.callbacks_cfg
-        self.profiling_cfg = self.config_manager.profiling_cfg
-        self.robot_cfg = self.config_manager.robot_cfg
-        self.agent_cfg = self.config_manager.agent_cfg
+        self.general_cfg = self.config_manager.fields.general
+        self.monitoring_cfg = self.config_manager.fields.monitoring
+        self.task_cfg = self.config_manager.fields.task
+        self.normalization_cfg = self.config_manager.fields.normalization
+        self.callbacks_cfg = self.config_manager.fields.callbacks
+        self.profiling_cfg = self.config_manager.fields.profiling
+        self.robot_cfg = self.config_manager.fields.robot
+        self.agent_cfg = self.config_manager.fields.agent
 
     def _register_framework_specific_hooks(self) -> None:
         """Register SB3-specific training hooks."""
