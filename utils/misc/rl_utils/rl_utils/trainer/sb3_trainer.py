@@ -1,51 +1,79 @@
 import os
-from typing import Tuple
+from typing import Any, Tuple
 
 import rl_utils.utils.paths as Paths
 import rosnav_rl.rl_agent as Rosnav_RL
 from rl_utils.cfg import TrainingCfg
-from rl_utils.trainer.arena_trainer import ArenaTrainer, TrainerHook, TrainingFramework
+from rl_utils.trainer.arena_trainer import (
+    ArenaTrainer,
+    TrainingFramework,
+    TrainingHookStages,
+    TrainingArguments,
+)
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
-from tools.config import load_training_config, unpack_sb3_config
+from tools.config import load_training_config, SB3ConfigManager
 from tools.env_utils import make_envs
 from tools.model_utils import init_sb3_callbacks, setup_wandb
 from tools.states import get_arena_states
+from dataclasses import dataclass
+
+
+@dataclass
+class SB3TrainingArguments(TrainingArguments):
+    total_timesteps: int
+    callback: Any
+    progress_bar: bool = True
 
 
 class StableBaselines3Trainer(ArenaTrainer):
+    """
+    Trainer class for Stable Baselines 3 (SB3) framework.
+
+    Attributes:
+        FRAMEWORK (TrainingFramework): The training framework used (SB3).
+    """
+
     FRAMEWORK = TrainingFramework.SB3
+    config_manager: SB3ConfigManager
 
     def __init__(self, config: TrainingCfg):
-        super().__init__(config)
+        self.config_manager = SB3ConfigManager(config)
         self._unpack_config()
-        self.setup()
+        super().__init__(config)
 
     def _unpack_config(self) -> None:
         """Unpack SB3-specific configuration."""
-        configs = unpack_sb3_config(self.config.framework_cfg)
-        (
-            self.general_cfg,
-            self.monitoring_cfg,
-            self.task_cfg,
-            self.normalization_cfg,
-            self.callbacks_cfg,
-            self.profiling_cfg,
-            self.robot_cfg,
-        ) = configs
-        self.agent_cfg = self.config.agent_cfg
+        self.general_cfg = self.config_manager.general_cfg
+        self.monitoring_cfg = self.config_manager.monitoring_cfg
+        self.task_cfg = self.config_manager.task_cfg
+        self.normalization_cfg = self.config_manager.normalization_cfg
+        self.callbacks_cfg = self.config_manager.callbacks_cfg
+        self.profiling_cfg = self.config_manager.profiling_cfg
+        self.robot_cfg = self.config_manager.robot_cfg
+        self.agent_cfg = self.config_manager.agent_cfg
 
     def _register_framework_specific_hooks(self) -> None:
         """Register SB3-specific training hooks."""
+        TASK_GEN_SERVER_NODE = "task_generator_server"
+        CURRICULUM_PARAM = "STAGED_curriculum"
+        CURRICULUM_INDEX_PARAM = "STAGED_index"
+
+        file = self.callbacks_cfg.training_curriculum.curriculum_file
+        stage = self.callbacks_cfg.training_curriculum.current_stage
+
         for hook in [
             lambda _: StableBaselines3Trainer._set_curriculum_param(
-                "STAGED_curriculum",
-                self.callbacks_cfg.training_curriculum.curriculum_file,
+                TASK_GEN_SERVER_NODE,
+                CURRICULUM_PARAM,
+                file,
             ),
             lambda _: StableBaselines3Trainer._set_curriculum_param(
-                "STAGED_index", self.callbacks_cfg.training_curriculum.current_stage
+                TASK_GEN_SERVER_NODE,
+                CURRICULUM_INDEX_PARAM,
+                stage,
             ),
         ]:
-            self.register_hook(TrainerHook.AFTER_SETUP, hook)
+            self.hook_manager.register(TrainingHookStages.AFTER_SETUP, hook)
 
     def _setup_agent(self) -> None:
         """Initialize the RL agent with configuration."""
@@ -104,18 +132,16 @@ class StableBaselines3Trainer(ArenaTrainer):
 
     def _setup_train_method_arguments(self) -> None:
         """Prepare arguments for training method."""
-        self.method_arguments = {
-            "total_timesteps": self.general_cfg.n_timesteps,
-            "callback": self.eval_cb,
-            "progress_bar": self.general_cfg.show_progress_bar,
-        }
+        self.method_arguments = SB3TrainingArguments(
+            total_timesteps=self.general_cfg.n_timesteps,
+            callback=self.eval_cb,
+            progress_bar=self.general_cfg.show_progress_bar,
+        ).to_dict()
 
     @staticmethod
-    def _set_curriculum_param(param_name: str, value: str) -> None:
+    def _set_curriculum_param(node: str, param: str, value: str) -> None:
         """Set curriculum parameters via ROS dynamic reconfigure."""
-        os.system(
-            f"rosrun dynamic_reconfigure dynparam set /task_generator_server {param_name} {value}"
-        )
+        os.system(f"rosrun dynamic_reconfigure dynparam set /{node} {param} {value}")
 
     def _complete_model_initialization(self, train_env) -> None:
         """Initialize the agent's model with environment."""
