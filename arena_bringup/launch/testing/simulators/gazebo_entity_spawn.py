@@ -1,111 +1,72 @@
-import rclpy
-from rclpy.node import Node
-from ros_gz_interfaces.srv import SpawnEntity
-from geometry_msgs.msg import Pose, Point, Quaternion
+import os
 import random
-import math
 import xml.etree.ElementTree as ET
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, LogInfo
+from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
 
-class RandomObstacleSpawner(Node):
-    def __init__(self):
-        super().__init__('random_obstacle_spawner')
-        
-        # Create a client for the spawn service
-        self.spawn_client = self.create_client(SpawnEntity, '/world/default/create')
-        while not self.spawn_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for spawn service...')
-        
-        # Parameters for spawning
-        self.map_bounds = {
-            'x_min': -10.0, 'x_max': 10.0,
-            'y_min': -10.0, 'y_max': 10.0
-        }
-        self.min_obstacle_size = 0.3
-        self.max_obstacle_size = 1.0
-        
-    def generate_random_pose(self):
-        """Generate a random pose within map bounds"""
-        x = random.uniform(self.map_bounds['x_min'], self.map_bounds['x_max'])
-        y = random.uniform(self.map_bounds['y_min'], self.map_bounds['y_max'])
-        yaw = random.uniform(-math.pi, math.pi)
-        
-        pose = Pose()
-        pose.position = Point(x=x, y=y, z=0.5)  # z=0.5 to ensure obstacle is above ground
-        pose.orientation = Quaternion(x=0.0, y=0.0, z=math.sin(yaw/2), w=math.cos(yaw/2))
-        return pose
+def generate_random_position():
+    """Generate random positions within a specific range."""
+    x = random.uniform(-5.0, 5.0)
+    y = random.uniform(-5.0, 5.0)
+    z = 0.0  # Assuming boxes are placed on the ground
+    return x, y, z
 
-    def create_box_sdf(self, name, size):
-        """Create SDF string for a box obstacle"""
-        sdf = ET.Element('sdf', version='1.6')
-        model = ET.SubElement(sdf, 'model', name=name)
-        
-        # Static flag
-        static = ET.SubElement(model, 'static')
-        static.text = 'true'
-        
-        # Link
-        link = ET.SubElement(model, 'link', name='link')
-        
-        # Collision
-        collision = ET.SubElement(link, 'collision', name='collision')
-        geometry = ET.SubElement(collision, 'geometry')
-        box = ET.SubElement(geometry, 'box')
-        box_size = ET.SubElement(box, 'size')
-        box_size.text = f"{size} {size} 1.0"
-        
-        # Visual
-        visual = ET.SubElement(link, 'visual', name='visual')
-        geometry = ET.SubElement(visual, 'geometry')
-        box = ET.SubElement(geometry, 'box')
-        box_size = ET.SubElement(box, 'size')
-        box_size.text = f"{size} {size} 1.0"
-        
-        # Material
-        material = ET.SubElement(visual, 'material')
-        ambient = ET.SubElement(material, 'ambient')
-        ambient.text = '0.3 0.3 0.3 1'
-        diffuse = ET.SubElement(material, 'diffuse')
-        diffuse.text = '0.7 0.7 0.7 1'
-        
-        return ET.tostring(sdf, encoding='unicode')
+def read_sdf_as_xml_string(sdf_file_path):
+    """Read the SDF file and return its content as an XML string."""
+    tree = ET.parse(sdf_file_path)
+    root = tree.getroot()
+    return ET.tostring(root, encoding='unicode')
 
-    async def spawn_obstacle(self, index):
-        """Spawn a single obstacle"""
-        size = random.uniform(self.min_obstacle_size, self.max_obstacle_size)
-        name = f'obstacle_{index}'
-        pose = self.generate_random_pose()
-        sdf = self.create_box_sdf(name, size)
-        
-        request = SpawnEntity.Request()
-        request.name = name
-        request.xml = sdf
-        request.initial_pose = pose
-        
-        future = self.spawn_client.call_async(request)
-        await future
-        
-        if future.result().success:
-            self.get_logger().info(f'Successfully spawned {name}')
-        else:
-            self.get_logger().error(f'Failed to spawn {name}')
-
-    async def spawn_multiple_obstacles(self, num_obstacles):
-        """Spawn multiple obstacles"""
-        for i in range(num_obstacles):
-            await self.spawn_obstacle(i)
-
-def main(args=None):
-    rclpy.init(args=args)
-    spawner = RandomObstacleSpawner()
-    
-    # Spawn 10 random obstacles
-    rclpy.spin_until_future_complete(
-        spawner,
-        spawner.spawn_multiple_obstacles(10)
+def generate_spawn_node(box_index, box_sdf_xml, x, y, z):
+    """Generate a node to spawn the box model at the specified position."""
+    return Node(
+        package='ros_gz_sim',
+        executable='create',
+        output='screen',
+        arguments=[
+            '-string', box_sdf_xml,
+            '-name', f'box_{box_index}',
+            '-x', str(x),
+            '-y', str(y),
+            '-z', str(z)
+        ],
     )
-    
-    spawner.destroy_node()
-    rclpy.shutdown()
+
+def generate_launch_description():
+    # Set the workspace root
+    current_dir = os.path.abspath(__file__)
+    workspace_root = current_dir
+    while not workspace_root.endswith('arena4_ws'):
+        workspace_root = os.path.dirname(workspace_root)
+
+    if not workspace_root.endswith('arena4_ws'):
+        raise ValueError("Could not find the 'arena4_ws' directory in the current path.")
+
+    # Path to the box SDF file
+    box_sdf_path = os.path.join(
+        workspace_root, 'src', 'gazebo', 'sdformat', 'test', 'integration', 'model', 'box', 'model.sdf'
+    )
+
+    # Read the SDF file as an XML string
+    box_sdf_xml = read_sdf_as_xml_string(box_sdf_path)
+
+    # Launch Arguments
+    num_boxes = LaunchConfiguration('num_boxes', default='5')
+
+    # Generate spawn nodes for boxes
+    spawn_box_nodes = []
+    for i in range(5):  # Generate up to 5 boxes
+        x, y, z = generate_random_position()
+        spawn_box_nodes.append(LogInfo(msg=f'Spawning box {i} at position ({x}, {y}, {z})'))
+        spawn_box_nodes.append(generate_spawn_node(i, box_sdf_xml, x, y, z))
+
+    # Return the LaunchDescription with all the nodes/actions
+    return LaunchDescription([
+        DeclareLaunchArgument('num_boxes', default_value='5', description='Number of boxes to spawn'),
+        *spawn_box_nodes
+    ])
 
 if __name__ == '__main__':
-    main()
+    generate_launch_description()

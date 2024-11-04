@@ -2,11 +2,12 @@ import os
 import xacro
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable, ExecuteProcess
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
 from launch.actions import TimerAction
+from launch.conditions import IfCondition
 
 def generate_launch_description():
     # Set environment variables
@@ -40,6 +41,7 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     world_file = LaunchConfiguration('world_file')
     robot_model = LaunchConfiguration('model')
+    random_spawn_test = LaunchConfiguration('random_spawn_test')
 
     # Construct the full world file path
     world_file_path = PathJoinSubstitution([
@@ -288,6 +290,15 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}]
         )
     ]
+    
+    random_spawn_launch_file = PathJoinSubstitution([
+        workspace_root,
+        'src', 'arena', 'arena-rosnav', 'arena_bringup', 'launch', 'testing', 'simulators', 'gazebo_entity_spawn.py'
+    ])
+
+    random_spawn_spawn = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(random_spawn_launch_file)
+    )
 
     # Return the LaunchDescription with all the nodes/actions
     return LaunchDescription([
@@ -307,6 +318,10 @@ def generate_launch_description():
         delayed_rviz,
         nav2_launch,
         slam_launch,
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(random_spawn_launch_file),
+            condition=IfCondition(random_spawn_test)
+        ),
     ])
 
 
