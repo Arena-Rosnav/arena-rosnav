@@ -1,0 +1,23 @@
+ros2 run ros_gz_sim create --helpshort
+create: Usage: create -world [arg] [-file FILE] [-param PARAM] [-topic TOPIC]
+                       [-string STRING] [-name NAME] [-allow_renaming RENAMING] [-x X] [-y Y] [-z Z]
+                       [-R ROLL] [-P PITCH] [-Y YAW]
+
+  Flags from /root/arena4_ws/src/ros_gz/ros_gz_sim/src/create.cpp:
+    -P (Pitch component of initial orientation, in radians.) type: double
+      default: 0
+    -R (Roll component of initial orientation, in radians.) type: double
+      default: 0
+    -Y (Yaw component of initial orientation, in radians.) type: double
+      default: 0
+    -allow_renaming (Rename entity if name already used.) type: bool
+      default: false
+    -file (Load XML from a file.) type: string default: ""
+    -name (Name for spawned entity.) type: string default: ""
+    -param (Load XML from a ROS param.) type: string default: ""
+    -string (Load XML from a string.) type: string default: ""
+    -topic (Load XML from a ROS string publisher.) type: string default: ""
+    -world (World name.) type: string default: ""
+    -x (X component of initial position, in meters.) type: double default: 0
+    -y (Y component of initial position, in meters.) type: double default: 0
+    -z (Z component of initial position, in meters.) type: double default: 0

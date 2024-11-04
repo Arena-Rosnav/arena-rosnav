@@ -88,3 +88,24 @@
       durability: "transient_local"
       history: "keep_last"
       depth: 1
+
+# Gazebo Service Bridges
+- ros_service_name: "/world/default/create"
+  gz_service_name: "/world/default/create"
+  ros_type_name: "ros_gz_interfaces.srv.SpawnEntity"
+  gz_type_name: "gz.msgs.EntityFactory"
+
+- ros_service_name: "/world/default/remove"
+  gz_service_name: "/world/default/remove"
+  ros_type_name: "ros_gz_interfaces.srv.DeleteEntity"
+  gz_type_name: "gz.msgs.Entity"
+
+- ros_service_name: "/world/default/set_pose"
+  gz_service_name: "/world/default/set_pose"
+  ros_type_name: "ros_gz_interfaces.srv.SetEntityPose"
+  gz_type_name: "gz.msgs.Pose"
+
+- ros_service_name: "/world/default/control"
+  gz_service_name: "/world/default/control"
+  ros_type_name: "ros_gz_interfaces.srv.ControlWorld"
+  gz_type_name: "gz.msgs.WorldControl"
