@@ -6,7 +6,7 @@ repositories:
   arena/simulation-setup:
     type: git
     url: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: 9a24fce
+    version: training_refactor
   arena/utils/3rd-party-robot-packages:
     type: git
     url: https://github.com/Arena-Rosnav/3rd-party-robot-packages
@@ -98,7 +98,7 @@ repositories:
   planners/rosnav:
     type: git
     url: https://github.com/Arena-Rosnav/rosnav-rl.git
-    version: b238b18
+    version: refactor
   planners/sarl-star:
     type: git
     url: https://github.com/Arena-Rosnav/sarl-star.git
