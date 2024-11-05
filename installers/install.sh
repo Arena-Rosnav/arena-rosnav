@@ -234,12 +234,20 @@ if [[ "$choice" =~ ^[Yy] ]]; then
     $SHELL planners.sh
 fi
 
-# install traininp deps (optional)
+# install training deps (optional)
 read -p "Install training dependencies? [N] " choice
 choice="${choice:-N}"
 if [[ "$choice" =~ ^[Yy] ]]; then
     $SHELL training.sh
 fi
+
+# install isaacsim (optional)
+read -p "Install training dependencies? [Y] " choice
+choice="${choice:-Y}"
+if [[ "$choice" =~ ^[Yy] ]]; then
+    $SHELL isaac.sh
+fi
+
 
 cd "${ARENA_WS_DIR}"
 ln -s src/arena/arena-rosnav/tools/poetry_install .
