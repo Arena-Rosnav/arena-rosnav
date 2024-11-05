@@ -17,7 +17,7 @@ export ARENA_WS_DIR=$(realpath "$(eval echo ${INPUT:-${ARENA_WS_DIR}})")
 sudo echo "$ARENA_WS_DIR"
 
 # == remove ros problems ==
-files=$(grep -l "ros" /etc/apt/sources.list.d/* | grep -v "ros2")
+files=$((grep -l "ros" /etc/apt/sources.list.d/* | grep -v "ros2") || echo '')
 
 if [ -n "$files" ]; then
     echo "The following files can cause some problems to installer:"
