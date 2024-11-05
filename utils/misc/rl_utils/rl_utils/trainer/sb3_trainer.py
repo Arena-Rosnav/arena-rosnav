@@ -1,6 +1,5 @@
-import os
-from dataclasses import dataclass, fields
-from typing import Any, Tuple, get_type_hints
+from dataclasses import dataclass
+from typing import Any, Tuple
 
 import rl_utils.utils.paths as Paths
 import rosnav_rl.rl_agent as Rosnav_RL
@@ -11,6 +10,7 @@ from rl_utils.trainer.arena_trainer import (
     TrainingFramework,
     TrainingHookStages,
 )
+from rl_utils.utils.dynamic_reconfigure import set_dynamic_reconfigure_parameter
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from tools.config import SB3ConfigManager, load_training_config
 from tools.env_utils import make_envs
@@ -62,12 +62,12 @@ class StableBaselines3Trainer(ArenaTrainer):
         stage = self.callbacks_cfg.training_curriculum.current_stage
 
         for hook in [
-            lambda _: StableBaselines3Trainer._set_curriculum_param(
+            lambda _: set_dynamic_reconfigure_parameter(
                 TASK_GEN_SERVER_NODE,
                 CURRICULUM_PARAM,
                 file,
             ),
-            lambda _: StableBaselines3Trainer._set_curriculum_param(
+            lambda _: set_dynamic_reconfigure_parameter(
                 TASK_GEN_SERVER_NODE,
                 CURRICULUM_INDEX_PARAM,
                 stage,
@@ -130,18 +130,15 @@ class StableBaselines3Trainer(ArenaTrainer):
         if not self.general_cfg.debug_mode and self.monitoring_cfg.wandb:
             setup_wandb(train_cfg=self.config, rl_model=self.agent.model)
 
-    def _setup_train_method_arguments(self) -> None:
-        """Prepare arguments for training method."""
-        self.method_arguments = SB3TrainingArguments(
-            total_timesteps=self.general_cfg.n_timesteps,
-            callback=self.eval_cb,
-            progress_bar=self.general_cfg.show_progress_bar,
-        ).to_dict()
-
-    @staticmethod
-    def _set_curriculum_param(node: str, param: str, value: str) -> None:
-        """Set curriculum parameters via ROS dynamic reconfigure."""
-        os.system(f"rosrun dynamic_reconfigure dynparam set /{node} {param} {value}")
+    def _train_impl(self, method_args: TrainingArguments) -> None:
+        """Implementation of training logic."""
+        self.agent.model.train(
+            **SB3TrainingArguments(
+                total_timesteps=self.general_cfg.n_timesteps,
+                callback=self.eval_cb,
+                progress_bar=self.general_cfg.show_progress_bar,
+            ).to_dict()
+        )
 
     def _complete_model_initialization(self, train_env) -> None:
         """Initialize the agent's model with environment."""

@@ -97,7 +97,6 @@ class ArenaTrainer(ABC):
             self._setup_agent,
             self._setup_paths,
             self._setup_environment,
-            self._setup_train_method_arguments,
         ]
 
         for step in setup_steps:
@@ -132,7 +131,10 @@ class ArenaTrainer(ABC):
         default_hooks = {
             TrainingHookStages.ON_INIT: [lambda _: print_base_model(self.config)],
             TrainingHookStages.BEFORE_SETUP: [lambda _: self._setup_node()],
-            TrainingHookStages.AFTER_SETUP: [lambda _: self._write_config()],
+            TrainingHookStages.AFTER_SETUP: [
+                lambda _: self._write_config(),
+                lambda _: self.simulation_state_container.distribute(),
+            ],
             TrainingHookStages.AFTER_TRAINING: [
                 lambda _: rospy.on_shutdown(lambda: self._save_model())
             ],
