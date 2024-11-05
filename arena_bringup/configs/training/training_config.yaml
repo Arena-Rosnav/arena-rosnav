@@ -10,14 +10,14 @@ agent_cfg:
   framework:
     name: stable_baselines3  # framework name
     model:
-      architecture_name: AGENT_5
+      architecture_name: AGENT_1
       resume: null
         # agent_name: null  # name of the agent to resume training from
         # checkpoint: null  # checkpoint name 
         # path: null  # (optional) path to the model file - if null loading from default agent directory
     
     algorithm: # training algorithm configuration
-      batch_size: 256  # Number of samples per gradient update
+      batch_size: 128  # Number of samples per gradient update
       clip_range: 0.2  # Clipping parameter for PPO
       clip_range_vf: null  # Clipping parameter for value function (if None, no clipping)
       device: auto  # Device to use for training (cpu, cuda, auto)
@@ -38,7 +38,7 @@ agent_cfg:
       stats_window_size: 100  # Window size for the rolling statistics
       target_kl: null  # Target KL divergence threshold
       tensorboard_log: null  # Directory for tensorboard logs (if None, no logging)
-      total_batch_size: 1024  # Total batch size for training
+      total_batch_size: 128  # Total batch size for training
       use_sde: false  # Whether to use state-dependent exploration
       verbose: 2  # Verbosity level (0: no output, 1: info, 2: debug)
       vf_coef: 0.22  # Coefficient for the value function loss
