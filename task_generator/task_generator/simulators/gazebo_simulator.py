@@ -52,12 +52,13 @@ class GazeboSimulator(BaseSimulator):
         
         # Initialize service clients
         try:
+
             self._node.get_logger().info("Creating Gazebo service clients...")
             
-            self._spawn_entity = self._node.create_client(SpawnEntity, '/world/diff_drive/create')
-            self._delete_entity = self._node.create_client(DeleteEntity, '/world/diff_drive/remove')
-            self._set_entity_pose = self._node.create_client(SetEntityPose, '/world/diff_drive/set_pose')
-            self._control_world = self._node.create_client(ControlWorld, '/world/diff_drive/control')
+            self._spawn_entity = self._node.create_client(SpawnEntity, '/world/default/create')
+            self._delete_entity = self._node.create_client(DeleteEntity, '/world/default/remove')
+            self._set_entity_pose = self._node.create_client(SetEntityPose, '/world/default/set_pose')
+            self._control_world = self._node.create_client(ControlWorld, '/world/default/control')
             
             self._node.get_logger().info("Successfully created all service clients")
             

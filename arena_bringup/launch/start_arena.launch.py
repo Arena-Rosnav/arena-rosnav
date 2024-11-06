@@ -134,6 +134,16 @@ def generate_launch_description():
             name='odom_frame_id',
             default_value='odom'
         ),
+        launch.actions.DeclareLaunchArgument(
+            name='use_sim_time',
+            default_value='true',
+            description='Use simulation (Gazebo) clock if true'
+        ),
+        launch.actions.DeclareLaunchArgument(
+            name='random_spawn_test',
+            default_value='false',
+            description='test parameter for the random spawning of entities'
+        ),
         # launch_ros.actions.Node(
         #     package='rviz_utils',
         #     executable='create_config_file.py',
@@ -348,10 +358,12 @@ def generate_launch_description():
             ),
             launch_arguments={
                 'model': launch.substitutions.LaunchConfiguration('model'),
-                'rviz_file': launch.substitutions.LaunchConfiguration('rviz_file'),
-                'show_rviz': launch.substitutions.LaunchConfiguration('show_rviz'),
-                'world': launch.substitutions.LaunchConfiguration('world_file'),
-                'headless': launch.substitutions.LaunchConfiguration('headless')
+                # 'rviz_file': launch.substitutions.LaunchConfiguration('rviz_file'),
+                # 'show_rviz': launch.substitutions.LaunchConfiguration('show_rviz'),
+                'world_file': launch.substitutions.LaunchConfiguration('world_file'),
+                'use_sim_time': launch.substitutions.LaunchConfiguration('use_sim_time'),
+                'random_spawn_test': launch.substitutions.LaunchConfiguration('random_spawn_test'),
+                # 'headless': launch.substitutions.LaunchConfiguration('headless')
             }.items()
         ),
         # launch.actions.IncludeLaunchDescription(
