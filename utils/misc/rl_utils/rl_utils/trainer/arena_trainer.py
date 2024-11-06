@@ -92,11 +92,11 @@ class ArenaTrainer(ABC):
         """
         setup_steps = [
             self._register_framework_specific_hooks,
-            self._setup_monitoring,
             self._setup_simulation_state_container,
             self._setup_agent,
             self._setup_paths,
             self._setup_environment,
+            self._setup_monitoring,
         ]
 
         for step in setup_steps:
@@ -133,7 +133,7 @@ class ArenaTrainer(ABC):
             TrainingHookStages.BEFORE_SETUP: [lambda _: self._setup_node()],
             TrainingHookStages.AFTER_SETUP: [
                 lambda _: self._write_config(),
-                lambda _: self.simulation_state_container.distribute(),
+                # lambda _: self.simulation_state_container.distribute(),
             ],
             TrainingHookStages.AFTER_TRAINING: [
                 lambda _: rospy.on_shutdown(lambda: self._save_model())
