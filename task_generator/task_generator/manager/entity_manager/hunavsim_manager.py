@@ -109,8 +109,12 @@ class HunavsimManager(EntityManager):
             'hunav_agents',
             'default.yaml'
         )
+        self._node.get_logger().info(f"Loading config from: {config_path}")
+
         with open(config_path, 'r') as f:
-            self.agent_config = yaml.safe_load(f)['hunav_loader']['ros__parameters']
+            self.agent_config = yaml.safe_load(f)['hunav_loader']['ros__parameters'] 
+            self._node.get_logger().info("Loaded agent configurations:") # DEBUG TERMINAL OUTPUT
+            self._node.get_logger().info(f"{yaml.dump(self.agent_config, indent=2)}") #DEBUG TERMINAL OUTPUT 
             
         self._known_obstacles = KnownObstacles()
         self._pedestrians = {}  # Store pedestrian states
@@ -127,6 +131,8 @@ class HunavsimManager(EntityManager):
 
     def setup_services(self):
         """Initialize all required services"""
+        self._node.get_logger().info("Setting up Hunavservices...")
+
         self._compute_agent_client = self._node.create_client(
             ComputeAgent,
             self._namespace(self.SERVICE_COMPUTE_AGENT)
@@ -210,17 +216,61 @@ class HunavsimManager(EntityManager):
 
     def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
         """Spawn dynamic obstacles/agents"""
+        self._node.get_logger().info(f"\n\n[HUNAVSIM] Starting to spawn {len(list(obstacles))} dynamic obstacles")
+        
         for obstacle in obstacles:
+            self._node.get_logger().info(f"\n[HUNAVSIM] Processing obstacle: {obstacle.name}")
+            
             # Load agent configuration
             agent_config = self._load_agent_config(obstacle.name)
+            self._node.get_logger().info(f"[HUNAVSIM] Loaded agent config:\n{yaml.dump(agent_config, indent=2)}")
             
             # Create Hunav Agent
             request = ComputeAgent.Request()
             agent = Agent()
-            agent.id = obstacle.name
-            agent.type = agent.PERSON
-            
+
+            # Set basic properties
+            self._node.get_logger().info("[HUNAVSIM] Setting basic properties...")
+            agent.id = int(agent_config.get('id', 0))
+            agent.type = Agent.PERSON
+            agent.skin = agent_config.get('skin', 0)
+            agent.name = obstacle.name
+            agent.group_id = agent_config.get('group_id', -1)
+            self._node.get_logger().info(f"[HUNAVSIM] Basic properties set: id={agent.id}, type={agent.type}, skin={agent.skin}, name={agent.name}, group_id={agent.group_id}")
+
+            # Set position and orientation
+            self._node.get_logger().info("[HUNAVSIM] Setting position and orientation...")
+            init_pose = agent_config.get('init_pose', {})
+            agent.position = Pose()
+            agent.position.position = Point(
+                x=init_pose.get('x', 0.0),
+                y=init_pose.get('y', 0.0),
+                z=init_pose.get('z', 0.0)
+            )
+            agent.yaw = init_pose.get('h', 0.0)
+            self._node.get_logger().info(f"[HUNAVSIM] Position set: x={agent.position.position.x}, y={agent.position.position.y}, z={agent.position.position.z}, yaw={agent.yaw}")
+
+            # Set velocity
+            self._node.get_logger().info("[HUNAVSIM] Setting velocity...")
+            agent.velocity = Twist()
+            agent.velocity.linear.x = 0.0
+            agent.velocity.linear.y = 0.0
+            agent.velocity.linear.z = 0.0
+            agent.velocity.angular.x = 0.0
+            agent.velocity.angular.y = 0.0
+            agent.velocity.angular.z = 0.0
+            self._node.get_logger().info("[HUNAVSIM] Initial velocities set to 0")
+
+            # Set velocities and radius
+            self._node.get_logger().info("[HUNAVSIM] Setting velocities and radius...")
+            agent.desired_velocity = agent_config.get('max_vel', 1.5)
+            agent.radius = agent_config.get('radius', 0.4)
+            agent.linear_vel = 0.0
+            agent.angular_vel = 0.0
+            self._node.get_logger().info(f"[HUNAVSIM] Velocities and radius set: desired_vel={agent.desired_velocity}, radius={agent.radius}")
+
             # Set behavior
+            self._node.get_logger().info("[HUNAVSIM] Setting behavior...")
             agent.behavior = AgentBehavior()
             behavior = agent_config.get('behavior', {})
             agent.behavior.type = behavior.get('type', 1)
@@ -233,19 +283,14 @@ class HunavsimManager(EntityManager):
             agent.behavior.obstacle_force_factor = behavior.get('obstacle_force_factor', 10.0)
             agent.behavior.social_force_factor = behavior.get('social_force_factor', 5.0)
             agent.behavior.other_force_factor = behavior.get('other_force_factor', 20.0)
-            
-            # Set position and goals
-            init_pose = agent_config.get('init_pose', {})
-            agent.position.position = Point(
-                x=init_pose.get('x', 0.0),
-                y=init_pose.get('y', 0.0),
-                z=init_pose.get('z', 0.0)
-            )
-            agent.yaw = init_pose.get('h', 0.0)
-            
-            # Add goals
+            self._node.get_logger().info(f"[HUNAVSIM] Behavior set: type={agent.behavior.type}, vel={agent.behavior.vel}, social_force={agent.behavior.social_force_factor}")
+
+            # Set goals
+            self._node.get_logger().info("[HUNAVSIM] Setting goals...")
+            agent.goals = []
             goals = agent_config.get('goals', [])
             for goal_id in goals:
+                self._node.get_logger().info(f"[HUNAVSIM] Processing goal: {goal_id}")
                 goal = agent_config.get(goal_id, {})
                 goal_pose = Pose()
                 goal_pose.position = Point(
@@ -254,10 +299,22 @@ class HunavsimManager(EntityManager):
                     z=goal.get('z', 0.0)
                 )
                 agent.goals.append(goal_pose)
-            
-            # Create SDF model (WorldGenerator functionality)
+                self._node.get_logger().info(f"[HUNAVSIM] Added goal: x={goal_pose.position.x}, y={goal_pose.position.y}, z={goal_pose.position.z}")
+
+            # Set goal properties
+            self._node.get_logger().info("[HUNAVSIM] Setting goal properties...")
+            agent.cyclic_goals = agent_config.get('cyclic_goals', True)
+            agent.goal_radius = agent_config.get('goal_radius', 0.3)
+            self._node.get_logger().info(f"[HUNAVSIM] Goal properties set: cyclic={agent.cyclic_goals}, radius={agent.goal_radius}")
+
+            # Initialize empty closest obstacles
+            agent.closest_obs = []
+
+            # Create SDF model
+            self._node.get_logger().info("[HUNAVSIM] Creating SDF model...")
             sdf = self.create_pedestrian_sdf(agent_config)
-            
+            self._node.get_logger().info("[HUNAVSIM] SDF model created")
+
             # Create model with SDF
             obstacle = dataclasses.replace(
                 obstacle,
@@ -269,12 +326,20 @@ class HunavsimManager(EntityManager):
             )
             
             # Spawn in Gazebo
-            self._simulator.spawn_entity(obstacle)
+            self._node.get_logger().info(f"[HUNAVSIM] Spawning entity in Gazebo: {obstacle.name}")
+            spawn_success = self._simulator.spawn_entity(obstacle)
+            self._node.get_logger().info(f"[HUNAVSIM] Spawn {'successful' if spawn_success else 'failed'}")
             
             # Register with Hunav
+            self._node.get_logger().info("[HUNAVSIM] Registering with HuNav...")
             request.agent = agent
             future = self._compute_agent_client.call_async(request)
             rclpy.spin_until_future_complete(self._node, future)
+            
+            if future.result():
+                self._node.get_logger().info("[HUNAVSIM] Successfully registered with HuNav")
+            else:
+                self._node.get_logger().error("[HUNAVSIM] Failed to register with HuNav")
             
             known = self._known_obstacles.create_or_get(
                 name=obstacle.name,
@@ -282,6 +347,7 @@ class HunavsimManager(EntityManager):
                 hunav_spawned=True,
                 layer=ObstacleLayer.INUSE,
             )
+            self._node.get_logger().info(f"[HUNAVSIM] Added to known obstacles: {obstacle.name}")
 
     def update_pedestrians(self):
         """Update pedestrians (from HuNavPlugin's OnUpdate)"""
