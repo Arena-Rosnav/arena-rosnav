@@ -1,7 +1,7 @@
 FROM mzahana/base-ubuntu20-cuda11.4.2:latest
 
 ARG FROM_LOCAL=false
-ARG ARENA_BRANCH=drl_subgoal_mode
+ARG ARENA_BRANCH=observation_refactor
 ARG ARENA_ROOT=/root
 ARG ARENA_WS=arena_ws
 
@@ -124,7 +124,7 @@ RUN until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to up
 WORKDIR $ARENA_ROOT/$ARENA_WS/src/arena/arena-rosnav
 RUN poetry config virtualenvs.create true && \
     poetry install --no-root --no-interaction --no-ansi --with training && \
-    poetry env use python3.8
+    poetry env use python3.9
 
 WORKDIR $ARENA_ROOT/$ARENA_WS
 # Install necessary dependencies
