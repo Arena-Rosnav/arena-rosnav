@@ -6,7 +6,7 @@ authors = ["ReykCS <reyk-carstens@web.de>", "Volodymyr Shcherbyna <edu@vshch.com
 
 [tool.ruff]
 line-length = 120
-target-version = "py38"
+
 # Exclude a variety of commonly ignored directories.
 exclude = [
     ".git",
@@ -22,7 +22,7 @@ preview = true
 max-complexity = 10
 
 [tool.poetry.dependencies]
-python = "^3.8,<3.11"
+python = "^3.9"
 rospkg = "^1.4.0"
 PyYAML = "^6.0"
 filelock = "^3.7.1"
