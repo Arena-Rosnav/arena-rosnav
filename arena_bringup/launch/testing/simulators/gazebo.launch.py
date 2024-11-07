@@ -172,7 +172,11 @@ def generate_launch_description():
 
     # RViz configuration path
     rviz_config_file = os.path.join(
-        get_package_share_directory('nav2_bringup'),
+        workspace_root,
+        'src',
+        'deps',
+        'navigation2',
+        'nav2_bringup',
         'rviz',
         'nav2_default_view.rviz'
     )

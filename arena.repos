@@ -6,7 +6,7 @@ repositories:
   arena/simulation-setup:
     type: git
     url: https://github.com/voshch/arena-simulation-setup.git
-    version: ros2@a8bc6e23
+    version: ros2@b49559f
 #  arena/evaluation:
 #    type: git
 #    url: https://github.com/jokrasa1011/arena-evaluation.git
