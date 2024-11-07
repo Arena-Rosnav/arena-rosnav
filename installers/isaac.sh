@@ -9,8 +9,8 @@ python -m pip install torch==2.4.0 --index-url https://download.pytorch.org/whl/
 #Ensure upgrade the latest pip version
 python -m pip install --upgrade pip
 
-#Install PYyaml and typegaurd dependencies
-python -m pip install typeguard PyYAML
+#Install typegaurd dependencies
+python -m pip install typeguard
 
 #Install isaac sim
 echo "Downloading Isaac sim ..."
