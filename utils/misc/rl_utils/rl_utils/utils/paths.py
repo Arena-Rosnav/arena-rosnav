@@ -151,7 +151,9 @@ class PathFactory:
     """Factory class to create path instances"""
 
     @staticmethod
-    def get_paths(agent_name: str) -> Dict[Type[PathComponent], PathComponent]:
+    def get_paths(
+        agent_name: str,
+    ) -> Dict[Type[PathComponent], PathComponent]:
         """Generate all required paths for the agent"""
         return PathDictionary(
             {

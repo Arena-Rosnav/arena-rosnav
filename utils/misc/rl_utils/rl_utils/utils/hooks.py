@@ -11,7 +11,25 @@ if TYPE_CHECKING:
 
 
 class TrainingHookStages(Enum):
-    """Training pipeline hook stages."""
+    """Training pipeline hook stages.
+
+    ON_INIT
+        -> self.__init__()
+
+    BEFORE_SETUP
+        -> self._setup()
+    AFTER_SETUP
+
+    BEFORE_TRAINING
+        -> self.train()
+    AFTER_TRAINING
+
+    ON_SAVE
+        self._save_model()
+
+    ON_CLOSE
+        self.close()
+    """
 
     ON_INIT = auto()
     BEFORE_SETUP = auto()
