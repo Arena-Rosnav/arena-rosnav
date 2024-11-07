@@ -62,6 +62,8 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" 
     python3-rosdep \
     python3-catkin-tools \
     python3-catkin-lint \
+    python3.9-dev \
+    libopenmpi-dev \
     ros-$ROS_DISTRO-gazebo-ros-pkgs \
     ros-$ROS_DISTRO-mavlink \
     ros-$ROS_DISTRO-mavros \
