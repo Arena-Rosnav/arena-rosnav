@@ -299,18 +299,38 @@ class Obstacle(ObstacleProps):
         )
 
 
+DEFAULT_AGENT_CONFIG = yaml.safe_load(f)['hunav_loader']['ros__parameters'] 
+
 @dataclasses.dataclass(frozen=True)
 class DynamicObstacle(DynamicObstacleProps):
-    waypoints: Iterable[PositionRadius]
+    @dataclasses.dataclass
+    class Behavior:
+        type: int
+        state: int
+        configuration: int
+
+    behavior: Behavior
 
     @staticmethod
     def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
+
+        _type = obj.get('type', DEFAULT_AGENT_CONFIG['type'])
+        _state = obj.get('type', DEFAULT_AGENT_CONFIG['type'])
+        _conf = obj.get('type', DEFAULT_AGENT_CONFIG['type'])
+        
         name = str(obj.get("name", ""))
         position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
-        waypoints = [PositionRadius(*waypoint) for waypoint in obj.get("waypoints", [])]
+        
 
         return DynamicObstacle(
-            name=name, position=position, model=model, waypoints=waypoints, extra=obj
+            name=name,
+            position=position,
+            model=model,
+            behavior=DynamicObstacle.Behavior(
+                type=_type,
+                ...
+            ),
+            extra=obj
         )
 
 
