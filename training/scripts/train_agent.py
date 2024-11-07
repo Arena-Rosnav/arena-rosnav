@@ -3,6 +3,8 @@
 from rl_utils.trainer.sb3_trainer import StableBaselines3Trainer
 from tools.config import load_training_config
 
+# check dynamic parameter for training curriculum (persistent keyerror)
+# enhance configuration files with field definition
 # rosparam adjustments
 # loading method agent level and algorithm level
 # restructure folders based on framework -> algorithm

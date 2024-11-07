@@ -1,13 +1,8 @@
-import json
 import os
-import random
-import string
-import sys
 import time
 import warnings
-from typing import Tuple
+from typing import TYPE_CHECKING
 
-import numpy as np
 import rosnode
 import rospy
 import yaml
@@ -15,9 +10,20 @@ from pydantic import BaseModel
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
-from rosnav_rl.model import StableBaselinesAgent
 
-from .constants import TRAINING_CONSTANTS
+if TYPE_CHECKING:
+    from rl_utils.trainer.arena_trainer import ArenaTrainer
+
+from rl_utils.utils.paths import PathDictionary, PathFactory
+
+
+def setup_node(node_name: str) -> None:
+    rospy.init_node(node_name, disable_signals=True)
+
+
+def setup_debug_node(debug_mode: bool, node_name: str = "debug_node") -> None:
+    if debug_mode:
+        setup_node(node_name)
 
 
 def write_config_yaml(config: dict, path: str) -> None:
@@ -147,11 +153,9 @@ def load_config(file_path: str) -> dict:
     return config
 
 
-def save_model(
-    rl_model: StableBaselinesAgent,
-    dirpath: str,
-    checkpoint_name: str,
-    is_debug_mode: bool = False,
-) -> None:
-    if not rospy.get_param("debug_mode", is_debug_mode):
-        rl_model.save(dirpath=dirpath, checkpoint_name=checkpoint_name)
+def setup_paths_dictionary(
+    trainer: "ArenaTrainer", is_debug_mode: bool = False
+) -> PathDictionary:
+    trainer.paths = PathFactory.get_paths(trainer.agent_cfg.name)
+    if not is_debug_mode:
+        trainer.paths.create_all()

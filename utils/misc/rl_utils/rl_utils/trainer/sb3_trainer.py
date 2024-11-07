@@ -58,22 +58,23 @@ class StableBaselines3Trainer(ArenaTrainer):
         CURRICULUM_PARAM = "STAGED_curriculum"
         CURRICULUM_INDEX_PARAM = "STAGED_index"
 
-        file = self.callbacks_cfg.training_curriculum.curriculum_file
-        stage = self.callbacks_cfg.training_curriculum.current_stage
+        curriculum_file = self.callbacks_cfg.training_curriculum.curriculum_file
+        current_stage = self.callbacks_cfg.training_curriculum.current_stage
 
-        for hook in [
-            lambda _: set_dynamic_reconfigure_parameter(
-                TASK_GEN_SERVER_NODE,
-                CURRICULUM_PARAM,
-                file,
-            ),
-            lambda _: set_dynamic_reconfigure_parameter(
-                TASK_GEN_SERVER_NODE,
-                CURRICULUM_INDEX_PARAM,
-                stage,
-            ),
-        ]:
-            self.hook_manager.register(TrainingHookStages.AFTER_SETUP, hook)
+        def _set_curriculum_file(_):
+            return set_dynamic_reconfigure_parameter(
+                TASK_GEN_SERVER_NODE, CURRICULUM_PARAM, curriculum_file
+            )
+
+        def _set_curriculum_stage(_):
+            return set_dynamic_reconfigure_parameter(
+                TASK_GEN_SERVER_NODE, CURRICULUM_INDEX_PARAM, current_stage
+            )
+
+        self.hook_manager.register(
+            TrainingHookStages.BEFORE_SETUP,
+            [_set_curriculum_file, _set_curriculum_stage],
+        )
 
     def _setup_agent(self) -> None:
         """Initialize the RL agent with configuration."""
@@ -130,7 +131,7 @@ class StableBaselines3Trainer(ArenaTrainer):
         if not self.general_cfg.debug_mode and self.monitoring_cfg.wandb:
             setup_wandb(train_cfg=self.config, rl_model=self.agent.model)
 
-    def _train_impl(self, method_args: TrainingArguments) -> None:
+    def _train_impl(self, *args, **kwargs) -> None:
         """Implementation of training logic."""
         self.agent.model.train(
             **SB3TrainingArguments(

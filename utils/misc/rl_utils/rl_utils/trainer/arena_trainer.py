@@ -9,13 +9,13 @@ import rospy
 from rl_utils.cfg.train import TrainingCfg
 from rl_utils.state_container import SimulationStateContainer
 from rl_utils.utils.hooks import HookManager, TrainingHookStages, bind_hooks
-from rl_utils.utils.paths import PathFactory
 from rl_utils.utils.type_alias.observation import PathsDict
 from rosnav_rl.rl_agent import RL_Agent
 from tools.config import ConfigManager
 from tools.general import (
     print_base_model,
-    save_model,
+    setup_debug_node,
+    setup_paths_dictionary,
     write_config_yaml,
 )
 
@@ -60,6 +60,7 @@ class ArenaTrainer(ABC):
     config_manager: ConfigManager
     hook_manager: HookManager = HookManager()
 
+    @bind_hooks(before_stage=TrainingHookStages.ON_INIT)
     def __init__(self, config: TrainingCfg):
         """
         Initializes the ArenaTrainer with the given configuration.
@@ -69,6 +70,7 @@ class ArenaTrainer(ABC):
         """
         self.config = config
         self._register_default_hooks()
+        self._register_framework_specific_hooks()
         self._setup()
 
     @bind_hooks(
@@ -80,21 +82,18 @@ class ArenaTrainer(ABC):
         Sets up the trainer by executing a series of predefined setup steps.
 
         The setup steps include:
-        - Registering framework-specific hooks
-        - Setting up monitoring
         - Setting up the simulation state container
         - Setting up the agent
         - Setting up paths dictionary
         - Setting up the environment
         - Setting up training method arguments
+        - Setting up monitoring
 
         This method ensures that all necessary components are initialized and ready for training.
         """
         setup_steps = [
-            self._register_framework_specific_hooks,
             self._setup_simulation_state_container,
             self._setup_agent,
-            self._setup_paths,
             self._setup_environment,
             self._setup_monitoring,
         ]
@@ -106,18 +105,14 @@ class ArenaTrainer(ABC):
         before_stage=TrainingHookStages.BEFORE_TRAINING,
         after_stage=TrainingHookStages.AFTER_TRAINING,
     )
-    def train(self, method_args: TrainingArguments = None) -> None:
+    def train(self, *args, **kwargs) -> None:
         """
-        Train the model using the provided training arguments.
-
-        Args:
-            method_args (TrainingArguments): The arguments to use for training. If not provided,
-                                             it will use the 'method_arguments' attribute of the instance.
+        Train the model using the provided training implementation.
 
         Returns:
             None
         """
-        self._train_impl(method_args or getattr(self, "method_arguments", {}))
+        self._train_impl()
 
     @bind_hooks(before_stage=TrainingHookStages.ON_CLOSE)
     def close(self):
@@ -129,11 +124,14 @@ class ArenaTrainer(ABC):
     def _register_default_hooks(self) -> None:
         """Register default hooks common across implementations."""
         default_hooks = {
-            TrainingHookStages.ON_INIT: [lambda _: print_base_model(self.config)],
-            TrainingHookStages.BEFORE_SETUP: [lambda _: self._setup_node()],
+            TrainingHookStages.BEFORE_SETUP: [
+                lambda _: print_base_model(self.config),
+                lambda _: setup_debug_node(self.is_debug_mode),
+                lambda _: setup_paths_dictionary(self, self.is_debug_mode),
+            ],
             TrainingHookStages.AFTER_SETUP: [
                 lambda _: self._write_config(),
-                # lambda _: self.simulation_state_container.distribute(),
+                lambda _: self.simulation_state_container.distribute(),
             ],
             TrainingHookStages.AFTER_TRAINING: [
                 lambda _: rospy.on_shutdown(lambda: self._save_model())
@@ -142,12 +140,6 @@ class ArenaTrainer(ABC):
 
         for hook, callbacks in default_hooks.items():
             self.hook_manager.register(hook, callbacks)
-
-    def _setup_node(self):
-        """Setup ROS node."""
-        rospy.set_param("debug_mode", self.is_debug_mode)
-        if self.is_debug_mode:
-            rospy.init_node("debug_node", disable_signals=False)
 
     def _write_config(self):
         """Write configuration to file if not in debug mode."""
@@ -160,22 +152,14 @@ class ArenaTrainer(ABC):
     @bind_hooks(before_stage=TrainingHookStages.ON_SAVE)
     def _save_model(self) -> None:
         """Save the trained model."""
-        save_model(
-            rl_model=self.agent,
-            dirpath=self.paths[Paths.Agent].path,
-            checkpoint_name="last_model",
-            is_debug_mode=self.is_debug_mode,
-        )
-
-    def _train_impl(self, method_args: TrainingArguments) -> None:
-        """Implementation of training logic."""
-        self.agent.model.train(**method_args)
-
-    def _setup_paths(self, *args, **kwargs):
-        """Setup necessary directories."""
-        self.paths = PathFactory.get_paths(self.agent.name)
         if not self.is_debug_mode:
-            self.paths.create_all()
+            self.agent.model.save(
+                dirpath=self.paths[Paths.Agent].path, checkpoint_name="last_model"
+            )
+
+    def _train_impl(self, *args, **kwargs) -> None:
+        """Implementation of training logic."""
+        self.agent.model.train()
 
     def _register_framework_specific_hooks(self):
         """Register hooks that are specific to the framework."""
@@ -200,10 +184,6 @@ class ArenaTrainer(ABC):
     def _setup_simulation_state_container(self, *args, **kwargs) -> None:
         """Initialize simulation state container."""
         raise NotImplementedError()
-
-    def _setup_train_method_arguments(self, *args, **kwargs):
-        """Prepare arguments for training method."""
-        self.method_arguments = {}
 
     @property
     def is_debug_mode(self):
