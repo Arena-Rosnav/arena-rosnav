@@ -13,8 +13,8 @@ repositories:
     version: 8b60c1169626568bf734a07c3b0f13b06d3e2871
   arena/utils/crowdsim:
     type: git
-    url: https://github.com/Arena-Rosnav/crowdsim
-    version: 85fb9f82
+    url: https://github.com/tuananhroman/crowdsim.git
+    version: robust_pysocial
   arena/utils/flatland:
     type: git
     url: https://github.com/Arena-Rosnav/flatland.git
