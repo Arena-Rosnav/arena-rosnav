@@ -16,7 +16,7 @@ echo "installing ${ARENA_ROSNAV_REPO}:${ARENA_BRANCH} on ROS2 ${ARENA_ROS_VERSIO
 sudo echo 'confirmed'
 cd "$ARENA_WS_DIR"
 
-export INSTALLED=$(realpath src/arena/arena-rosnav/.installed)
+export INSTALLED=src/arena/arena-rosnav/.installed
 
 # == remove ros problems ==
 files=$((grep -l "/ros" /etc/apt/sources.list.d/* | grep -v "ros2") || echo '')
@@ -93,14 +93,19 @@ if [ ! -d "${ARENA_WS_DIR}/src/arena/arena-rosnav/.venv" ] ; then
     curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/pyproject.toml" > pyproject.toml
   popd
 
-  . /src/arena/arena-rosnav/tools/poetry_install
+  . src/arena/arena-rosnav/tools/poetry_install
 fi
 
-if [ ! -d vcstool ] ; then
-  # vcstool fork
+# vcstool fork (always reinstall)
+if [ ! -d vcstool/.git ] ; then
+  rm -f vcstool
   git clone https://github.com/voshch/vcstool.git vcstool
-  python -m pip install -e vcstool
+else
+  pushd vcstool
+    git pull
+  popd
 fi
+python -m pip install -e vcstool
 
 #
 mkdir -p src/deps
@@ -131,7 +136,7 @@ fi
 rosdep update
 
 if [ ! -d src/deps/pcl_msgs ] ; then
-  git clone https://github.com/ros-perception/pcl_msgs.git -b ros2 pcl_msgs src/deps/pcl_msgs
+  git clone https://github.com/ros-perception/pcl_msgs.git -b ros2 src/deps/pcl_msgs
 fi
 
 if [ ! -d src/ros2 ] ; then
