@@ -217,7 +217,7 @@ class TaskGenerator(rclpy.node.Node):
         )
 
         world_manager = WorldManager(
-            world_map=WorldMap.from_occupancy_grid(occupancy_grid=map_response)
+            world_map=WorldMap.from_occupancy_grid(occupancy_grid=DUMMY_MAP)
         )
 
         if self._entity_mode == Constants.EntityManager.HUNAVSIM:

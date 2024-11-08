@@ -1,35 +1,35 @@
-from rosros import rospify as rospy
+import rclpy
+import rclpy.publisher
+from rclpy.node import Node
+from geometry_msgs.msg import PoseStamped
+
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import WorldMap, WorldWalls
-from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot, rosparam_get
+from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot
 from task_generator.simulators import BaseSimulator
 from typing import Collection
 
-import geometry_msgs.msg as geometry_msgs
-
 class EntityManager:
-
-    _namespace: Namespace
-    _simulator: BaseSimulator
-
-    _robot_name: str
-    _goal_pub: rospy.Publisher
-
-    def __init__(self, namespace: Namespace, simulator: BaseSimulator):
+    def __init__(self, namespace: Namespace, simulator: BaseSimulator, node: Node = None):
         """
-            Initialize dynamic obstacle manager.
-
-            @namespace: global namespace
-            @simulator: Simulator instance
+        Initialize dynamic obstacle manager.
+        
+        Args:
+            namespace: global namespace
+            simulator: Simulator instance
+            node: ROS Node instance
         """
-
         self._simulator = simulator
         self._namespace = namespace
+        self._node = node
 
-        self._goal_pub = rospy.Publisher(self._namespace(
-            "/goal"), geometry_msgs.PoseStamped, queue_size=1, latch=True)
-
-        self._robot_name = rosparam_get(str, "robot_model", "")
+        if self._node:
+            self._goal_pub = self._node.create_publisher(
+                PoseStamped,
+                self._namespace("/goal"),
+                1
+            )
+            #self._robot_name = self._node.get_parameter('robot_model').value
 
         self._spawned_obstacles = []
         self._namespaces = dict()

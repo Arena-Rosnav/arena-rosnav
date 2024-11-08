@@ -2,7 +2,7 @@ from task_generator.simulators import BaseSimulator
 from task_generator.shared import EntityProps, PositionOrientation
 from task_generator import TASKGEN_NODE
 
-_logger = TASKGEN_NODE.get_logger('dummysim')
+_logger = TASKGEN_NODE.get_logger().get_child('dummysim')
 
 
 class DummySimulator(BaseSimulator):

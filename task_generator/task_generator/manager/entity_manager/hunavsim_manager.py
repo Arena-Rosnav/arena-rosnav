@@ -64,13 +64,20 @@ class HunavsimManager(EntityManager):
     SERVICE_RESET_AGENTS = 'reset_agents'
     
     def __init__(self, namespace: Namespace, simulator: GazeboSimulator, node: Node = None):
-        super().__init__(namespace=namespace, simulator=simulator)
+        """
+        Initialize HunavsimManager
         
-        self._node = node
-        if self._node is None:
+        Args:
+            namespace: global namespace
+            simulator: GazeboSimulator instance
+            node: ROS Node instance
+        """
+        if node is None:
             from task_generator import TASKGEN_NODE
-            self._node = TASKGEN_NODE
+            node = TASKGEN_NODE
             
+        super().__init__(namespace=namespace, simulator=simulator, node=node)
+        
         # Initialize state variables
         self._is_paused = False
         self._semaphore_reset = False
@@ -85,7 +92,7 @@ class HunavsimManager(EntityManager):
         # Initialize service clients
         self.setup_services()
         
-        # Setup timer for pedestrian updates (like HuNavPlugin's OnUpdate)
+        # Setup timer for pedestrian updates
         self._update_timer = self._node.create_timer(
             self._update_rate,
             self.update_pedestrians
@@ -215,133 +222,198 @@ class HunavsimManager(EntityManager):
         return sdf
 
     def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
-        """Spawn dynamic obstacles/agents"""
-        self._node.get_logger().info(f"\n\n[HUNAVSIM] Starting to spawn {len(list(obstacles))} dynamic obstacles")
-        
+        """Spawn dynamic obstacles/agents with enhanced debug output"""
+        # Initial debug prints
+        print("\n==================== STARTING SPAWN PROCESS ====================")
+        print(f"Attempting to spawn {len(list(obstacles))} obstacles")
+        self._node.get_logger().error(f"Attempting to spawn {len(list(obstacles))} obstacles")
+
         for obstacle in obstacles:
-            self._node.get_logger().info("\n=== DETAILED DEBUG OUTPUT ===")
-            self._node.get_logger().info(f"\n[HUNAVSIM] Processing obstacle: {obstacle.name}")
-            
+            print("\n=============== NEW OBSTACLE PROCESSING ===============")
+            print(f"Processing obstacle: {obstacle.name}")
+            self._node.get_logger().error(f"Processing obstacle: {obstacle.name}")
+
             # Create Hunav Agent
             request = ComputeAgent.Request()
             agent = Agent()
 
-            # Debug basic properties
-            self._node.get_logger().info("\n[DEBUG] Basic Properties:")
-            self._node.get_logger().info(f"- ID: {obstacle.id}")
-            self._node.get_logger().info(f"- Type: {obstacle.type}")
-            self._node.get_logger().info(f"- Skin: {obstacle.skin}")
-            self._node.get_logger().info(f"- Name: {obstacle.name}")
-            self._node.get_logger().info(f"- Group ID: {obstacle.group_id}")
-            
-            # Set basic properties
-            agent.id = obstacle.id
-            agent.type = obstacle.type
-            agent.skin = obstacle.skin
-            agent.name = obstacle.name
-            agent.group_id = obstacle.group_id
-            
-            # Debug position and orientation
-            self._node.get_logger().info("\n[DEBUG] Position & Orientation:")
-            self._node.get_logger().info(f"- Position Type: {type(obstacle.position)}")
-            self._node.get_logger().info(f"- Position Data: {obstacle.position}")
-            self._node.get_logger().info(f"- Yaw: {obstacle.yaw}")
-            
-            # Set position and orientation
-            agent.position = obstacle.position
-            agent.yaw = obstacle.yaw
+            try:
+                # Basic Properties Debug
+                print("\n--- Basic Properties Debug ---")
+                print(f"ID: {obstacle.id}")
+                print(f"Type: {obstacle.type}")
+                print(f"Skin: {obstacle.skin}")
+                print(f"Name: {obstacle.name}")
+                print(f"Group ID: {obstacle.group_id}")
+                self._node.get_logger().error(f"Basic Properties - ID: {obstacle.id}, Type: {obstacle.type}, Skin: {obstacle.skin}")
 
-            # Debug velocity
-            self._node.get_logger().info("\n[DEBUG] Velocity Data:")
-            self._node.get_logger().info(f"- Velocity Object: {obstacle.velocity}")
-            self._node.get_logger().info(f"- Desired Velocity: {obstacle.desired_velocity}")
-            self._node.get_logger().info(f"- Linear Vel: {obstacle.linear_vel}")
-            self._node.get_logger().info(f"- Angular Vel: {obstacle.angular_vel}")
-            self._node.get_logger().info(f"- Radius: {obstacle.radius}")
-            
-            # Set velocity
-            agent.velocity = obstacle.velocity if obstacle.velocity else Twist()
-            agent.desired_velocity = obstacle.desired_velocity
-            agent.radius = obstacle.radius
-            agent.linear_vel = obstacle.linear_vel
-            agent.angular_vel = obstacle.angular_vel
+                # Set basic properties
+                agent.id = obstacle.id
+                agent.type = obstacle.type
+                agent.skin = obstacle.skin
+                agent.name = obstacle.name
+                agent.group_id = obstacle.group_id
+            except Exception as e:
+                print(f"ERROR in basic properties: {e}")
+                self._node.get_logger().error(f"ERROR in basic properties: {e}")
 
-            # Debug behavior
-            self._node.get_logger().info("\n[DEBUG] Behavior Data:")
-            self._node.get_logger().info(f"- Type: {obstacle.behavior.type}")
-            self._node.get_logger().info(f"- Configuration: {obstacle.behavior.configuration}")
-            self._node.get_logger().info(f"- Duration: {obstacle.behavior.duration}")
-            self._node.get_logger().info(f"- Once: {obstacle.behavior.once}")
-            self._node.get_logger().info(f"- Vel: {obstacle.behavior.vel}")
-            self._node.get_logger().info(f"- Dist: {obstacle.behavior.dist}")
-            self._node.get_logger().info(f"- Goal Force: {obstacle.behavior.goal_force_factor}")
-            self._node.get_logger().info(f"- Obstacle Force: {obstacle.behavior.obstacle_force_factor}")
-            self._node.get_logger().info(f"- Social Force: {obstacle.behavior.social_force_factor}")
-            self._node.get_logger().info(f"- Other Force: {obstacle.behavior.other_force_factor}")
+            try:
+                # Position Debug
+                print("\n--- Position & Orientation Debug ---")
+                print(f"Position object: {obstacle.position}")
+                print(f"Position type: {type(obstacle.position)}")
+                print(f"Yaw value: {obstacle.yaw}")
+                self._node.get_logger().error(f"Position Data: {obstacle.position}, Yaw: {obstacle.yaw}")
 
-            # Set behavior
-            agent.behavior = AgentBehavior()
-            agent.behavior.type = obstacle.behavior.type
-            agent.behavior.configuration = obstacle.behavior.configuration
-            agent.behavior.duration = obstacle.behavior.duration
-            agent.behavior.once = obstacle.behavior.once
-            agent.behavior.vel = obstacle.behavior.vel
-            agent.behavior.dist = obstacle.behavior.dist
-            agent.behavior.goal_force_factor = obstacle.behavior.goal_force_factor
-            agent.behavior.obstacle_force_factor = obstacle.behavior.obstacle_force_factor
-            agent.behavior.social_force_factor = obstacle.behavior.social_force_factor
-            agent.behavior.other_force_factor = obstacle.behavior.other_force_factor
+                # Set position
+                agent.position = obstacle.position
+                agent.yaw = obstacle.yaw
+            except Exception as e:
+                print(f"ERROR in position setting: {e}")
+                self._node.get_logger().error(f"ERROR in position setting: {e}")
 
-            # Debug goals
-            self._node.get_logger().info("\n[DEBUG] Goals Data:")
-            self._node.get_logger().info(f"- Number of Goals: {len(obstacle.goals)}")
-            for i, goal in enumerate(obstacle.goals):
-                self._node.get_logger().info(f"- Goal {i}: {goal}")
-            self._node.get_logger().info(f"- Cyclic Goals: {obstacle.cyclic_goals}")
-            self._node.get_logger().info(f"- Goal Radius: {obstacle.goal_radius}")
-            
-            # Set goals
-            agent.goals = obstacle.goals
-            agent.cyclic_goals = obstacle.cyclic_goals
-            agent.goal_radius = obstacle.goal_radius
-            
-            # Debug closest obstacles
-            self._node.get_logger().info("\n[DEBUG] Closest Obstacles:")
-            self._node.get_logger().info(f"- Number of Closest Obs: {len(obstacle.closest_obs)}")
-            
-            agent.closest_obs = obstacle.closest_obs
+            try:
+                # Velocity Debug
+                print("\n--- Velocity Debug ---")
+                print(f"Velocity object: {obstacle.velocity}")
+                print(f"Desired velocity: {obstacle.desired_velocity}")
+                print(f"Linear vel: {obstacle.linear_vel}")
+                print(f"Angular vel: {obstacle.angular_vel}")
+                print(f"Radius: {obstacle.radius}")
+                self._node.get_logger().error(f"Velocity Data - Desired: {obstacle.desired_velocity}, Linear: {obstacle.linear_vel}")
 
-            # Rest of the code remains the same...
-            self._node.get_logger().info("\n=== END DEBUG OUTPUT ===\n")
+                # Set velocity
+                agent.velocity = obstacle.velocity if obstacle.velocity else Twist()
+                agent.desired_velocity = obstacle.desired_velocity
+                agent.radius = obstacle.radius
+                agent.linear_vel = obstacle.linear_vel
+                agent.angular_vel = obstacle.angular_vel
+            except Exception as e:
+                print(f"ERROR in velocity setting: {e}")
+                self._node.get_logger().error(f"ERROR in velocity setting: {e}")
 
-            # Create SDF model
-            sdf = self.create_pedestrian_sdf(obstacle)
+            try:
+                # Behavior Debug
+                print("\n--- Behavior Debug ---")
+                print(f"Behavior type: {obstacle.behavior.type}")
+                print(f"Configuration: {obstacle.behavior.configuration}")
+                print(f"Duration: {obstacle.behavior.duration}")
+                print("Force Factors:")
+                print(f"- Goal: {obstacle.behavior.goal_force_factor}")
+                print(f"- Obstacle: {obstacle.behavior.obstacle_force_factor}")
+                print(f"- Social: {obstacle.behavior.social_force_factor}")
+                print(f"- Other: {obstacle.behavior.other_force_factor}")
+                self._node.get_logger().error(f"Behavior Data - Type: {obstacle.behavior.type}, Config: {obstacle.behavior.configuration}")
 
-            obstacle = dataclasses.replace(
-                obstacle,
-                model=Model(
-                    description=sdf,
-                    model_type=ModelType.SDF,
-                    name=obstacle.name
+                # Set behavior
+                agent.behavior = AgentBehavior()
+                agent.behavior.type = obstacle.behavior.type
+                agent.behavior.configuration = obstacle.behavior.configuration
+                agent.behavior.duration = obstacle.behavior.duration
+                agent.behavior.once = obstacle.behavior.once
+                agent.behavior.vel = obstacle.behavior.vel
+                agent.behavior.dist = obstacle.behavior.dist
+                agent.behavior.goal_force_factor = obstacle.behavior.goal_force_factor
+                agent.behavior.obstacle_force_factor = obstacle.behavior.obstacle_force_factor
+                agent.behavior.social_force_factor = obstacle.behavior.social_force_factor
+                agent.behavior.other_force_factor = obstacle.behavior.other_force_factor
+            except Exception as e:
+                print(f"ERROR in behavior setting: {e}")
+                self._node.get_logger().error(f"ERROR in behavior setting: {e}")
+
+            try:
+                # Goals Debug
+                print("\n--- Goals Debug ---")
+                print(f"Number of goals: {len(obstacle.goals)}")
+                for i, goal in enumerate(obstacle.goals):
+                    print(f"Goal {i}: {goal}")
+                print(f"Cyclic goals: {obstacle.cyclic_goals}")
+                print(f"Goal radius: {obstacle.goal_radius}")
+                self._node.get_logger().error(f"Goals Data - Count: {len(obstacle.goals)}, Cyclic: {obstacle.cyclic_goals}")
+
+                # Set goals
+                agent.goals = obstacle.goals
+                agent.cyclic_goals = obstacle.cyclic_goals
+                agent.goal_radius = obstacle.goal_radius
+            except Exception as e:
+                print(f"ERROR in goals setting: {e}")
+                self._node.get_logger().error(f"ERROR in goals setting: {e}")
+
+            try:
+                # Closest obstacles Debug
+                print("\n--- Closest Obstacles Debug ---")
+                print(f"Number of closest obstacles: {len(obstacle.closest_obs)}")
+                self._node.get_logger().error(f"Closest obstacles count: {len(obstacle.closest_obs)}")
+
+                agent.closest_obs = obstacle.closest_obs
+            except Exception as e:
+                print(f"ERROR in closest obstacles setting: {e}")
+                self._node.get_logger().error(f"ERROR in closest obstacles setting: {e}")
+
+            try:
+                # SDF Model Creation Debug
+                print("\n--- SDF Model Creation ---")
+                print("Creating SDF model...")
+                self._node.get_logger().error("Starting SDF model creation")
+                
+                sdf = self.create_pedestrian_sdf(obstacle)
+                print("SDF model created successfully")
+                
+                # Create model with SDF
+                obstacle = dataclasses.replace(
+                    obstacle,
+                    model=Model(
+                        description=sdf,
+                        model_type=ModelType.SDF,
+                        name=obstacle.name
+                    )
                 )
-            )
-            
-            spawn_success = self._simulator.spawn_entity(obstacle)
-            request.agent = agent
-            future = self._compute_agent_client.call_async(request)
-            rclpy.spin_until_future_complete(self._node, future)
-            
-            if future.result():
-                self._node.get_logger().info("[HUNAVSIM] Successfully registered with HuNav")
-            else:
-                self._node.get_logger().error("[HUNAVSIM] Failed to register with HuNav")
-            
+            except Exception as e:
+                print(f"ERROR in SDF model creation: {e}")
+                self._node.get_logger().error(f"ERROR in SDF model creation: {e}")
+
+            try:
+                # Spawn Entity Debug
+                print("\n--- Entity Spawning ---")
+                print(f"Attempting to spawn entity: {obstacle.name}")
+                spawn_success = self._simulator.spawn_entity(obstacle)
+                print(f"Spawn {'successful' if spawn_success else 'failed'}")
+                self._node.get_logger().error(f"Spawn result for {obstacle.name}: {'success' if spawn_success else 'failed'}")
+            except Exception as e:
+                print(f"ERROR in entity spawning: {e}")
+                self._node.get_logger().error(f"ERROR in entity spawning: {e}")
+
+            try:
+                # HuNav Registration Debug
+                print("\n--- HuNav Registration ---")
+                print("Registering with HuNav...")
+                request.agent = agent
+                future = self._compute_agent_client.call_async(request)
+                rclpy.spin_until_future_complete(self._node, future)
+                
+                if future.result():
+                    print("Successfully registered with HuNav")
+                    self._node.get_logger().error("Successfully registered with HuNav")
+                else:
+                    print("Failed to register with HuNav")
+                    self._node.get_logger().error("Failed to register with HuNav")
+            except Exception as e:
+                print(f"ERROR in HuNav registration: {e}")
+                self._node.get_logger().error(f"ERROR in HuNav registration: {e}")
+
+            # Final steps
             known = self._known_obstacles.create_or_get(
                 name=obstacle.name,
                 obstacle=obstacle,
                 hunav_spawned=True,
                 layer=ObstacleLayer.INUSE,
             )
+            
+            print("\n=============== OBSTACLE PROCESSING COMPLETE ===============")
+            self._node.get_logger().error("OBSTACLE PROCESSING COMPLETE")
+
+        print("\n==================== SPAWN PROCESS COMPLETE ====================")
+        self._node.get_logger().error("SPAWN PROCESS COMPLETE")
 
     def update_pedestrians(self):
         """Update pedestrians (from HuNavPlugin's OnUpdate)"""
