@@ -15,9 +15,12 @@ read -p "arena-rosnav workspace directory [${ARENA_WS_DIR}] " INPUT
 export ARENA_WS_DIR=$(realpath "$(eval echo ${INPUT:-${ARENA_WS_DIR}})")
 
 sudo echo "$ARENA_WS_DIR"
+cd "$ARENA_WS_DIR"
+
+export INSTALLED=$(realpath src/arena/arena-rosnav/.installed)
 
 # == remove ros problems ==
-files=$((grep -l "ros" /etc/apt/sources.list.d/* | grep -v "ros2") || echo '')
+files=$((grep -l "/ros" /etc/apt/sources.list.d/* | grep -v "ros2") || echo '')
 
 if [ -n "$files" ]; then
     echo "The following files can cause some problems to installer:"
@@ -73,24 +76,33 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-a
 echo "Installing Python deps..." 
 sudo apt-get install -y build-essential python3-pip zlib1g-dev libffi-dev libssl-dev libbz2-dev libreadline-dev libsqlite3-dev liblzma-dev libncurses-dev tk-dev
 
-#python env
-mkdir -p "${ARENA_WS_DIR}/src/arena/arena-rosnav"
-cd "${ARENA_WS_DIR}/src/arena/arena-rosnav"
-curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/pyproject.toml" > pyproject.toml
+if [ ! -d src/arena/arena-rosnav/tools ] ; then
+  mkdir -p src/arena/arena-rosnav/tools
+  pushd src/arena/arena-rosnav/tools
+    curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/poetry_install" > poetry_install
+    curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/colcon_build" > colcon_build
+  popd
+fi
 
-mkdir -p "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools"
-cd "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools"
-curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/poetry_install" > poetry_install
-curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/colcon_build" > colcon_build
-cd "${ARENA_WS_DIR}" 
-. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/poetry_install"
+if [ ! -d "${ARENA_WS_DIR}/src/arena/arena-rosnav/.venv" ] ; then
+  #python env
+  
+  mkdir -p src/arena/arena-rosnav
+  pushd src/arena/arena-rosnav
+    curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/pyproject.toml" > pyproject.toml
+  popd
 
-# vcstool fork
-git clone https://github.com/voshch/vcstool.git "${ARENA_WS_DIR}/vcstool"
-python -m pip install -e "${ARENA_WS_DIR}/vcstool"
+  . /src/arena/arena-rosnav/tools/poetry_install
+fi
+
+if [ ! -d vcstool ] ; then
+  # vcstool fork
+  git clone https://github.com/voshch/vcstool.git vcstool
+  python -m pip install -e vcstool
+fi
 
 #
-mkdir -p "${ARENA_WS_DIR}/src/deps"
+mkdir -p src/deps
 
 # Getting Packages
 echo "Installing deps...:"
@@ -117,124 +129,83 @@ fi
 
 rosdep update
 
-mkdir -p "${ARENA_WS_DIR}/src/ros2"
-cd "${ARENA_WS_DIR}"
-curl "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_VERSION}/ros2.repos" > ros2.repos
-until vcs import src/ros2 < ros2.repos ; do echo "failed to update, retrying..." ; done
-rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers"
+if [ ! -d src/deps/pcl_msgs ] ; then
+  git clone https://github.com/ros-perception/pcl_msgs.git -b ros2 pcl_msgs src/deps/pcl_msgs
+fi
 
-# fix rosidl error that was caused upstream https://github.com/ros2/rosidl/issues/822#issuecomment-2403368061
-cd "${ARENA_WS_DIR}/src/ros2/ros2/rosidl"
-git cherry-pick 654d6f5658b59009147b9fad9b724919633f38fe
+if [ ! -d src/ros2 ] ; then
+  # install ros2
 
-cd "${ARENA_WS_DIR}/src/deps"
-git clone https://github.com/ros-perception/pcl_msgs.git -b ros2 pcl_msgs
+  mkdir -p src/ros2
+  curl "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_VERSION}/ros2.repos" > ros2.repos
+  until vcs import src/ros2 < ros2.repos ; do echo "failed to update, retrying..." ; done
+  rosdep install --from-paths src --ignore-src --rosdistro "${ARENA_ROS_VERSION}" -y --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers"
 
-cd "${ARENA_WS_DIR}"
-. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
+  # fix rosidl error that was caused upstream https://github.com/ros2/rosidl/issues/822#issuecomment-2403368061
+  pushd src/ros2/ros2/rosidl
+    git cherry-pick 654d6f5658b59009147b9fad9b724919633f38fe
+  popd
 
-#TODO resolve this through rosdep
-cd "${ARENA_WS_DIR}/src/deps"
-git clone https://github.com/rudislabs/actuator_msgs
-git clone https://github.com/swri-robotics/gps_umd
-git clone https://github.com/ros-perception/vision_msgs
-cd "${ARENA_WS_DIR}"
+  . src/arena/arena-rosnav/tools/colcon_build
 
-rosdep install -r --from-paths src/ros_gz -i -y --rosdistro ${ARENA_ROS_VERSION}
+  #TODO resolve this through rosdep
+  pushd src/deps
+    git clone https://github.com/rudislabs/actuator_msgs
+    git clone https://github.com/swri-robotics/gps_umd
+    git clone https://github.com/ros-perception/vision_msgs
+  popd
 
-cd "${ARENA_WS_DIR}"
-. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
+  # ??? rosdep install -r --from-paths src/ros_gz -i -y --rosdistro "${ARENA_ROS_VERSION}"
+
+  . src/arena/arena-rosnav/tools/colcon_build
+fi
 
 # == install arena on top of ros2 ==
 
-rm -r "${ARENA_WS_DIR}/src/arena/arena-rosnav"
-echo "cloning Arena-Rosnav into ${ARENA_WS_DIR}..."
-git clone --branch "${ARENA_BRANCH}" "https://github.com/${ARENA_ROSNAV_REPO}.git" "${ARENA_WS_DIR}/src/arena/arena-rosnav"
+if [ ! -f "$INSTALLED" ] ; then
+  mv src/arena/arena-rosnav src/arena/.arena-rosnav
 
-cd "${ARENA_WS_DIR}"
-. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/poetry_install"
+  echo "cloning Arena-Rosnav..."
+  git clone --branch "${ARENA_BRANCH}" "https://github.com/${ARENA_ROSNAV_REPO}.git" src/arena/arena-rosnav
 
-cd "${ARENA_WS_DIR}"
-until vcs import src < src/arena/arena-rosnav/arena.repos ; do echo "failed to update, retrying..." ; done
+  mv -n src/arena/.arena-rosnav/* src/arena/arena-rosnav
+  rm -r src/arena/.arena-rosnav
 
-# == install nav2 ==
-echo "Cloning navigation2 into deps folder from $ARENA_ROS_VERSION branch"
-cd "${ARENA_WS_DIR}/src/deps"
-git clone https://github.com/ros-navigation/navigation2.git --branch $ARENA_ROS_VERSION
+  ln -s src/arena/arena-rosnav/tools/poetry_install .
+  ln -s src/arena/arena-rosnav/tools/colcon_build .
 
-# Run rosdep from the workspace root to properly scan deps
-cd "${ARENA_WS_DIR}"
+  . poetry_install
+
+  until vcs import src < src/arena/arena-rosnav/arena.repos ; do echo "failed to update, retrying..." ; done
+
+  touch "$INSTALLED"
+fi
+
 rosdep install -y \
   --from-paths src/deps \
   --ignore-src
-. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
+. colcon_build
 
-# intall SLAM 
+#run installers
+installers=$(ls src/arena/arena-rosnav/installers | grep '[0-9]*_.*.sh')
 
-git clone https://github.com/SteveMacenski/slam_toolbox.git --branch $ARENA_ROS_VERSION
-rosdep install -q -y -r --from-paths src/deps --ignore-src
+for installer in $(ls | grep '[0-9]*_.*.sh') ; do 
+  name=$(echo $i | cut -d '_' -f 2)
 
-# == install jackal deps for ros2 ==
-
-echo "Cloning jackal repository contents from foxy-devel branch..."
-cd "${ARENA_WS_DIR}/src/deps"
-git clone --branch foxy-devel "https://github.com/jackal/jackal.git" temp_jackal
-
-echo "Moving jackal contents to deps folder..."
-cp -a temp_jackal/. ./
-
-echo "Removing temporary jackal folder..."
-rm -rf temp_jackal LICENSE README.md .gitignore .github
-
-# == build ==
-cd "${ARENA_WS_DIR}"
-. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
-
-# == launch gazebo install script ==
-read -p "Do you want to install Gazebo? [Y] " choice
-choice="${choice:-Y}"
-if [[ "$choice" =~ ^[Yy]$ ]]; then
-    $SHELL install_gazebo.sh
-else
-    echo "Skipping Gazebo installation."
-fi
-
-# == build ==
-cd "${ARENA_WS_DIR}"
-. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
-
-
-# == optional installers ==
-
-cd "${ARENA_WS_DIR}/src/arena/arena-rosnav/installers"
-
-# install planner deps (optional)
-read -p "Install all planners? [Y] " choice
-choice="${choice:-Y}"
-if [[ "$choice" =~ ^[Yy] ]]; then
-    $SHELL planners.sh
-fi
-
-# install training deps (optional)
-read -p "Install training dependencies? [N] " choice
-choice="${choice:-N}"
-if [[ "$choice" =~ ^[Yy] ]]; then
-    $SHELL training.sh
-fi
-
-# install isaacsim (optional)
-read -p "Install training dependencies? [Y] " choice
-choice="${choice:-Y}"
-if [[ "$choice" =~ ^[Yy] ]]; then
-    $SHELL isaac.sh
-fi
-
-
-cd "${ARENA_WS_DIR}"
-ln -s src/arena/arena-rosnav/tools/poetry_install .
-ln -s src/arena/arena-rosnav/tools/colcon_build .
+  if grep -q "$name" "$INSTALLED" ; then
+    echo "$name already installed"
+  else
+    unset $choice
+    read -p "Do you want to install ${name}? [Y] " choice
+    choice="${choice:-Y}"
+    if [[ "$choice" =~ ^[Yy]$ ]]; then
+        $SHELL $installer
+    else
+        echo "Skipping ${name} installation."
+    fi
+done
 
 # final pass
 rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers  DART libogre-next-2.3-dev transforms3d"
 cd "${ARENA_WS_DIR}"
-. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
+. colcon_build

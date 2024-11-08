@@ -7,10 +7,21 @@ repositories:
     type: git
     url: https://github.com/voshch/arena-simulation-setup.git
     version: ros2@b49559f
-#  arena/evaluation:
-#    type: git
-#    url: https://github.com/jokrasa1011/arena-evaluation.git
-#    version: ros2
+
+  deps/navigation2:
+    type: git
+    url: https://github.com/ros-navigation/navigation2.git
+    version: humble
+  deps/slam_toolbox:
+    type: git
+    url: https://github.com/SteveMacenski/slam_toolbox.git
+    version: humble
+
+  deps/robots/jackal:
+    type: git
+    url: https://github.com/jackal/jackal.git
+    version: foxy-devel
+
 #  arena/utils/3rd-party-robot-packages:
 #    type: git
 #    url: https://github.com/Arena-Rosnav/3rd-party-robot-packages
