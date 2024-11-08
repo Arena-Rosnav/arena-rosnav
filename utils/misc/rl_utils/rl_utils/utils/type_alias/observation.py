@@ -12,10 +12,13 @@ from typing import (
     TypeVar,
     Union,
 )
-
+import gymnasium
 from rl_utils.utils.paths import Path, PathComponent
 
 # Gym Env
+EnvironmentType = TypeVar(
+    "EnvironmentType", bound=Union[gymnasium.Env, gymnasium.Wrapper]
+)
 InformationDict = Dict[str, Any]
 
 PathsDict = Dict[Type[PathComponent], PathComponent]
