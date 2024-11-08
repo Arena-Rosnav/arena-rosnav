@@ -133,9 +133,6 @@ git clone https://github.com/ros-perception/pcl_msgs.git -b ros2 pcl_msgs
 cd "${ARENA_WS_DIR}"
 . "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
 
-# == launch gazebo install script ==
-. ./install_gazebo.sh
-
 #TODO resolve this through rosdep
 cd "${ARENA_WS_DIR}/src/deps"
 git clone https://github.com/rudislabs/actuator_msgs
@@ -192,6 +189,15 @@ rm -rf temp_jackal LICENSE README.md .gitignore .github
 # == build ==
 cd "${ARENA_WS_DIR}"
 . "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
+
+# == launch gazebo install script ==
+. ./install_gazebo.sh
+
+# == build ==
+cd "${ARENA_WS_DIR}"
+. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
+
+
 # == optional installers ==
 
 cd "${ARENA_WS_DIR}/src/arena/arena-rosnav/installers"
