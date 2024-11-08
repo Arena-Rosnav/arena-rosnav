@@ -4,6 +4,7 @@ import enum
 
 from task_generator.shared import Namespace
 
+
 class Constants:
 
     DEFAULT_PEDESTRIAN_MODEL = "actor1"
@@ -11,6 +12,7 @@ class Constants:
     TASK_GENERATOR_SERVER_NODE = Namespace("task_generator_server")
 
     class Simulator(Enum):
+        DUMMY = "dummy"
         FLATLAND = "flatland"
         GAZEBO = "gazebo"
         UNITY = "unity"
@@ -92,6 +94,7 @@ class Constants:
     def get_default(param_name, default=None):
         return getattr(Constants.Defaults, param_name, default)
 
+
 class UnityConstants:
     WALL_HEIGHT = 4.0
     ATTACH_SAFE_DIST_SENSOR_TOPIC = "attach_safe_dist_sensor"
@@ -99,7 +102,7 @@ class UnityConstants:
 # if __name__ == "__main__":
 #     rospack = rospkg.RosPack()
 #     config_file_path = os.path.join(rospack.get_path('arena_bringup'), 'configs', 'task_generator.yaml')
-    
+
 #     rospy.init_node("task_generator_server")
 #     load_parameters_from_yaml(config_file_path)
 #     rospy.spin()
