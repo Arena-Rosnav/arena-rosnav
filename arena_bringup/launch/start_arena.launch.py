@@ -33,8 +33,8 @@ def generate_launch_description():
         ),
         launch.actions.DeclareLaunchArgument(
             name='simulator',
-            default_value='flatland',
-            description='[flatland, gazebo]'
+            default_value='dummy',
+            description='[dummy, gazebo]'
         ),
         launch.actions.DeclareLaunchArgument(
             name='headless',
