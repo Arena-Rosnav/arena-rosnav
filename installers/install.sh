@@ -31,6 +31,7 @@ if [ -n "$files" ]; then
         sudo rm -f $files
         echo "Deleted $(echo $files)"
     fi
+    unset choice
 fi
 
 # == python deps ==
@@ -64,7 +65,8 @@ sudo apt-get install -y curl
 
 echo "Installing tzdata...:"
 export DEBIAN_FRONTEND=noninteractive
-sudo apt install -y tzdata && sudo dpkg-reconfigure --frontend noninteractive tzdata
+sudo apt install -y tzdata libompl-dev
+sudo dpkg-reconfigure --frontend noninteractive tzdata
 
 # ROS
 echo "Setting up ROS2 ${ARENA_ROS_VERSION}..."
@@ -92,9 +94,8 @@ if [ ! -d "${ARENA_WS_DIR}/src/arena/arena-rosnav/.venv" ] ; then
   pushd src/arena/arena-rosnav
     curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/pyproject.toml" > pyproject.toml
   popd
-
-  . src/arena/arena-rosnav/tools/poetry_install
 fi
+. src/arena/arena-rosnav/tools/poetry_install
 
 # vcstool fork (always reinstall)
 if [ ! -d vcstool/.git ] ; then
@@ -135,8 +136,15 @@ fi
 
 rosdep update
 
-if [ ! -d src/deps/pcl_msgs ] ; then
-  git clone https://github.com/ros-perception/pcl_msgs.git -b ros2 src/deps/pcl_msgs
+if [ ! -d src/deps ] ; then
+  #TODO resolve this through vcstool
+  mkdir -p src/deps
+  pushd src/deps
+    git clone https://github.com/ros-perception/pcl_msgs.git -b ros2
+    git clone https://github.com/rudislabs/actuator_msgs
+    git clone https://github.com/swri-robotics/gps_umd
+    git clone https://github.com/ros-perception/vision_msgs
+  popd
 fi
 
 if [ ! -f src/ros2/compiled ] ; then
@@ -144,26 +152,22 @@ if [ ! -f src/ros2/compiled ] ; then
 
   mkdir -p src/ros2
   curl "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_VERSION}/ros2.repos" > ros2.repos
-  until vcs import src/ros2 < ros2.repos ; do echo "failed to update, retrying..." ; done
-  rosdep install --from-paths src --ignore-src --rosdistro "${ARENA_ROS_VERSION}" -y --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers"
+  vcs import src/ros2 < ros2.repos
+  
+  rosdep install \
+    --from-paths src/ros2 \
+    --ignore-src \
+    --rosdistro "${ARENA_ROS_VERSION}" \
+    -y \
+    --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers" \
+    || echo 'rosdep failed to install all dependencies'
 
   # fix rosidl error that was caused upstream https://github.com/ros2/rosidl/issues/822#issuecomment-2403368061
   pushd src/ros2/ros2/rosidl
-    git cherry-pick 654d6f5658b59009147b9fad9b724919633f38fe
+    git cherry-pick 654d6f5658b59009147b9fad9b724919633f38fe || echo 'already cherry picked'
   popd
 
-  . src/arena/arena-rosnav/tools/colcon_build
-
-  #TODO resolve this through rosdep
-  pushd src/deps
-    git clone https://github.com/rudislabs/actuator_msgs
-    git clone https://github.com/swri-robotics/gps_umd
-    git clone https://github.com/ros-perception/vision_msgs
-  popd
-
-  # ??? rosdep install -r --from-paths src/ros_gz -i -y --rosdistro "${ARENA_ROS_VERSION}"
-
-  . src/arena/arena-rosnav/tools/colcon_build
+  . src/arena/arena-rosnav/tools/colcon_build --paths src/ros2/*
   touch src/ros2/compiled
 fi
 
@@ -176,44 +180,60 @@ if [ ! -f "$INSTALLED" ] ; then
   git clone --branch "${ARENA_BRANCH}" "https://github.com/${ARENA_ROSNAV_REPO}.git" src/arena/arena-rosnav
 
   mv -n src/arena/.arena-rosnav/* src/arena/arena-rosnav
-  rm -r src/arena/.arena-rosnav
+  rm -rf src/arena/.arena-rosnav
 
-  ln -s src/arena/arena-rosnav/tools/poetry_install .
-  ln -s src/arena/arena-rosnav/tools/colcon_build .
+  ln -fs src/arena/arena-rosnav/tools/poetry_install .
+  ln -fs src/arena/arena-rosnav/tools/colcon_build .
 
   . poetry_install
-
-  until vcs import src < src/arena/arena-rosnav/arena.repos ; do echo "failed to update, retrying..." ; done
-
-  touch "$INSTALLED"
 fi
 
+vcs import src < src/arena/arena-rosnav/arena.repos
 rosdep install -y \
   --from-paths src/deps \
-  --ignore-src
-. colcon_build
+  --ignore-src \
+  --rosdistro "$ARENA_ROS_VERSION" \
+  || echo 'rosdep failed to install all dependencies'
+touch "$INSTALLED"
+
 
 #run installers
-installers=$(ls src/arena/arena-rosnav/installers | grep '[0-9]*_.*.sh')
 
-for installer in $(ls | grep '[0-9]*_.*.sh') ; do 
-  name=$(echo $i | cut -d '_' -f 2)
+compile(){
+  sudo apt upgrade
+  rosdep install \
+    --from-paths src \
+    --ignore-src \
+    --rosdistro ${ARENA_ROS_VERSION} \
+    -y \
+    --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers  DART libogre-next-2.3-dev transforms3d" \
+    || echo 'rosdep failed to install all dependencies'
+  cd "${ARENA_WS_DIR}"
+  . colcon_build
+}
+
+for installer in $(ls src/arena/arena-rosnav/installers | grep -E '^[0-9]+_.*.sh') ; do 
+
+  name=$(echo $installer | cut -d '_' -f 2)
 
   if grep -q "$name" "$INSTALLED" ; then
     echo "$name already installed"
   else
-    unset $choice
-    read -p "Do you want to install ${name}? [Y] " choice
-    choice="${choice:-Y}"
+    read -p "Do you want to install ${name}? [N] " choice
+    choice="${choice:-N}"
     if [[ "$choice" =~ ^[Yy]$ ]]; then
-        $SHELL $installer
+        . "src/arena/arena-rosnav/installers/$installer"
+        compile
         echo "$name" >> "$INSTALLED"
     else
         echo "Skipping ${name} installation."
     fi
+    unset choice
+  fi
 done
 
+
 # final pass
-rosdep install --from-paths src --ignore-src --rosdistro ${ARENA_ROS_VERSION} -y --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers  DART libogre-next-2.3-dev transforms3d"
-cd "${ARENA_WS_DIR}"
-. colcon_build
+compile
+
+echo 'installation finished'
