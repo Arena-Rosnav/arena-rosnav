@@ -60,10 +60,9 @@ class BaseSimulator:
         raise NotImplementedError()
 
 
-
-
 class SimulatorFactory:
-    registry: typing.Dict[Constants.Simulator, typing.Callable[[], typing.Type[BaseSimulator]]] = {}
+    registry: typing.Dict[Constants.Simulator,
+                          typing.Callable[[], typing.Type[BaseSimulator]]] = {}
 
     @classmethod
     def register(cls, name: Constants.Simulator):
@@ -83,15 +82,24 @@ class SimulatorFactory:
 
         return simulator
 
+
+@SimulatorFactory.register(Constants.Simulator.DUMMY)
+def lazy_dummy():
+    from .dummy_simulator import DummySimulator
+    return DummySimulator
+
+
 @SimulatorFactory.register(Constants.Simulator.FLATLAND)
 def lazy_flatland():
     from .flatland_simulator import FlatlandSimulator
     return FlatlandSimulator
 
+
 @SimulatorFactory.register(Constants.Simulator.GAZEBO)
 def lazy_gazebo():
     from .gazebo_simulator import GazeboSimulator
     return GazeboSimulator
+
 
 @SimulatorFactory.register(Constants.Simulator.UNITY)
 def lazy_unity():
