@@ -274,28 +274,42 @@ def make_envs(
         Tuple[VecEnv, VecEnv]: The wrapped training and evaluation environments.
     """
 
-    def create_env_fnc(ns: Union[str, Namespace], max_steps: int) -> callable:
+    def create_env_fnc(
+        ns: Union[str, Namespace], max_steps: int, init_env_by_call: bool
+    ) -> callable:
         return _init_env_fnc(
             ns=ns,
             rl_agent=rl_agent,
             simulation_state_container=simulation_state_container,
             max_steps_per_episode=max_steps,
-            init_by_call=not general_cfg.debug_mode,
+            init_by_call=init_env_by_call,
         )
 
-    train_env_fncs = [
-        create_env_fnc(
-            SIMULATION_NAMESPACES.TRAIN_NS(idx), general_cfg.max_num_moves_per_eps
-        )
-        for idx in range(general_cfg.n_envs)
-    ]
+    def create_env_fncs(
+        n_envs: int, ns_fn: callable, max_steps: int, init_env_by_call: bool
+    ) -> List[callable]:
+        return [
+            create_env_fnc(
+                ns=ns_fn(idx),
+                max_steps=max_steps,
+                init_env_by_call=init_env_by_call,
+            )
+            for idx in range(n_envs)
+        ]
 
-    eval_env_fncs = [
-        create_env_fnc(
-            SIMULATION_NAMESPACES.EVAL_NS,
-            callback_cfg.periodic_evaluation.max_num_moves_per_eps,
-        )
-    ]
+    train_env_fncs = create_env_fncs(
+        n_envs=general_cfg.n_envs,
+        ns_fn=SIMULATION_NAMESPACES.TRAIN_NS,
+        max_steps=general_cfg.max_num_moves_per_eps,
+        init_env_by_call=not general_cfg.debug_mode,
+    )
+
+    eval_env_fncs = create_env_fncs(
+        n_envs=1,
+        ns_fn=lambda _: SIMULATION_NAMESPACES.EVAL_NS,
+        max_steps=callback_cfg.periodic_evaluation.max_num_moves_per_eps,
+        init_env_by_call=False,
+    )
 
     return sb3_wrap_env(
         train_env_fncs=train_env_fncs,
