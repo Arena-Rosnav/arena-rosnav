@@ -25,6 +25,12 @@ class SB3TrainingArguments(TrainingArguments):
     progress_bar: bool = True
 
 
+@dataclass
+class SB3Environment:
+    train_env: VecEnv
+    eval_env: VecEnv
+
+
 class StableBaselines3Trainer(ArenaTrainer):
     """
     Trainer class for Stable Baselines 3 (SB3) framework.
@@ -35,6 +41,7 @@ class StableBaselines3Trainer(ArenaTrainer):
 
     FRAMEWORK = TrainingFramework.SB3
     config_manager: SB3ConfigManager
+    environment: SB3Environment
 
     def __init__(self, config: TrainingCfg):
         self.config_manager = SB3ConfigManager(config)
@@ -85,21 +92,23 @@ class StableBaselines3Trainer(ArenaTrainer):
 
     def _setup_environment(self) -> None:
         """Set up training and evaluation environments."""
-        train_env, eval_env = self._create_environments()
-        self._setup_callbacks(train_env, eval_env)
-        self._complete_model_initialization(train_env)
+        self._create_environments()
+        self._setup_callbacks(self.environment.train_env, self.environment.eval_env)
+        self._complete_model_initialization(self.environment.train_env)
 
-    def _create_environments(self) -> Tuple[VecEnv, VecEnv]:
+    def _create_environments(self) -> None:
         """Create training and evaluation environments."""
-        return make_envs(
-            rl_agent=self.agent,
-            simulation_state_container=self.simulation_state_container,
-            agent_cfg=self.agent_cfg,
-            general_cfg=self.general_cfg,
-            callback_cfg=self.callbacks_cfg,
-            normalization_cfg=self.normalization_cfg,
-            monitoring_cfg=self.monitoring_cfg,
-            profiling_cfg=self.profiling_cfg,
+        self.environment = SB3Environment(
+            *make_envs(
+                rl_agent=self.agent,
+                simulation_state_container=self.simulation_state_container,
+                agent_cfg=self.agent_cfg,
+                general_cfg=self.general_cfg,
+                callback_cfg=self.callbacks_cfg,
+                normalization_cfg=self.normalization_cfg,
+                monitoring_cfg=self.monitoring_cfg,
+                profiling_cfg=self.profiling_cfg,
+            )
         )
 
     def _setup_callbacks(self, train_env: VecEnv, eval_env: VecEnv) -> None:

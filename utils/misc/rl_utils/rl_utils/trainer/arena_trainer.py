@@ -9,7 +9,7 @@ import rospy
 from rl_utils.cfg.train import TrainingCfg
 from rl_utils.state_container import SimulationStateContainer
 from rl_utils.utils.hooks import HookManager, TrainingHookStages, bind_hooks
-from rl_utils.utils.type_alias.observation import PathsDict
+from rl_utils.utils.type_alias.observation import PathsDict, EnvironmentType
 from rosnav_rl.rl_agent import RL_Agent
 from tools.config import ConfigManager
 from tools.general import (
@@ -44,7 +44,7 @@ class ArenaTrainer(ABC):
         paths (PathsDict): Dictionary containing paths for saving models and configurations.
         simulation_state_container (SimulationStateContainer): Container for storing the simulation state.
         agent (RL_Agent): The RL agent from Rosnav-RL being trained.
-        environment (gymnasium.Env): The simulation environment.
+        environment (EnvironmentType): The simulation environment.
         hook_manager (HookManager): Manages hooks for different stages of the training process.
     """
 
@@ -55,7 +55,7 @@ class ArenaTrainer(ABC):
 
     simulation_state_container: SimulationStateContainer
     agent: RL_Agent
-    environment: gymnasium.Env
+    environment: EnvironmentType
 
     config_manager: ConfigManager
     hook_manager: HookManager = HookManager()
