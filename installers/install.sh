@@ -139,7 +139,7 @@ if [ ! -d src/deps/pcl_msgs ] ; then
   git clone https://github.com/ros-perception/pcl_msgs.git -b ros2 src/deps/pcl_msgs
 fi
 
-if [ ! -d src/ros2 ] ; then
+if [ ! -f src/ros2/compiled ] ; then
   # install ros2
 
   mkdir -p src/ros2
@@ -164,6 +164,7 @@ if [ ! -d src/ros2 ] ; then
   # ??? rosdep install -r --from-paths src/ros_gz -i -y --rosdistro "${ARENA_ROS_VERSION}"
 
   . src/arena/arena-rosnav/tools/colcon_build
+  touch src/ros2/compiled
 fi
 
 # == install arena on top of ros2 ==
