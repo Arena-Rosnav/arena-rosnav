@@ -3,7 +3,7 @@ from typing import Any, Callable, Collection, Iterator
 import itertools
 
 
-from task_generator.manager.entity_manager.entity_manager import EntityManager
+from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import World
 from task_generator.manager.world_manager import WorldManager

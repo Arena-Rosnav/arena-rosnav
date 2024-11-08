@@ -110,19 +110,19 @@ class ModelLoader:
             return self._registry[model_type].load(self._model_dir, model, **kwargs)
 
         return None
-    
+
     def getArenaDir():
         current_dir = os.path.abspath(__file__)
         workspace_root = current_dir
-        
+
         while not workspace_root.endswith('arena4_ws'):
             workspace_root = os.path.dirname(workspace_root)
 
         if not workspace_root.endswith('arena4_ws'):
-            raise ValueError("Could not find the 'arena4_ws' directory in the current path.")
-        
+            raise ValueError(
+                "Could not find the 'arena4_ws' directory in the current path.")
+
         return workspace_root
-        
 
 
 @ModelLoader.model(ModelType.YAML)
@@ -209,4 +209,3 @@ class _ModelLoader_URDF(_ModelLoader):
                 path=model_path
             )
             return model_obj
-
