@@ -102,7 +102,7 @@ class StableBaselines3Trainer(ArenaTrainer):
             profiling_cfg=self.profiling_cfg,
         )
 
-    def _setup_callbacks(self, train_env, eval_env) -> None:
+    def _setup_callbacks(self, train_env: VecEnv, eval_env: VecEnv) -> None:
         """Initialize training callbacks."""
         self.eval_cb = init_sb3_callbacks(
             train_env=train_env,
