@@ -3,6 +3,8 @@ import os
 import traceback
 from typing import Dict, List
 
+import numpy as np
+
 import rclpy
 import rclpy.node
 import rclpy.executors
@@ -14,9 +16,9 @@ from task_generator.constants import Constants
 from task_generator.constants.runtime import Config, TASKGEN_CONFIGNODE
 
 from task_generator.manager.entity_manager.entity_manager import EntityManager
-#from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
-#from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
-#from task_generator.manager.entity_manager.crowdsim_manager import CrowdsimManager
+# from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
+# from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
+# from task_generator.manager.entity_manager.crowdsim_manager import CrowdsimManager
 
 from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
@@ -39,16 +41,16 @@ import task_generator.utils.arena as Utils
 from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 
-import map_distance_server.srv as map_distance_server_srvs
 from std_msgs.msg import Int16, Empty
 import std_srvs.srv as std_srvs
 from std_srvs.srv import Empty as EmptySrv
+import nav_msgs.msg as nav_msgs
 
 
 def create_default_robot_list(
     robot_model: ModelWrapper,
     name: str,
-    inter_planner:str,
+    inter_planner: str,
     local_planner: str,
     agent: str
 ) -> List[Robot]:
@@ -61,7 +63,8 @@ def create_default_robot_list(
             position=next(gen_init_pos),
             name=name,
             # TODO record_data_dir must be added to TASKGEN_CONFIGNODE
-            record_data_dir=self.declare_parameter('record_data_dir', None).value,
+            record_data_dir=self.declare_parameter(
+                'record_data_dir', None).value,
             extra=dict(),
         )
     ]
@@ -113,18 +116,21 @@ class TaskGenerator(rclpy.node.Node):
                 ('task_generator_setup_finished', False),
             ]
         )
-        
+
         # self._entity_mode = Constants.EntityManager(self.get_parameter('entity_manager').value)
         self._auto_reset = self.get_parameter('auto_reset').value
         self._train_mode = self.get_parameter('train_mode').value
 
         # Publishers
         if not self._train_mode:
-            self._pub_scenario_reset = self.create_publisher(Int16, 'scenario_reset', 1)
-            self._pub_scenario_finished = self.create_publisher(Empty, 'scenario_finished', 10)
+            self._pub_scenario_reset = self.create_publisher(
+                Int16, 'scenario_reset', 1)
+            self._pub_scenario_finished = self.create_publisher(
+                Empty, 'scenario_finished', 10)
 
             # Services
-            self.create_service(EmptySrv, 'reset_task', self._reset_task_srv_callback)
+            self.create_service(EmptySrv, 'reset_task',
+                                self._reset_task_srv_callback)
 
     def post_init(self):
         # Vars
@@ -134,19 +140,22 @@ class TaskGenerator(rclpy.node.Node):
 
         # Loaders
         workspace_root = ModelLoader.getArenaDir()
-        
+
         self._robot_loader = ModelLoader(
-            os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'entities', 'robots')
+            os.path.join(workspace_root, 'src', 'arena',
+                         'simulation-setup', 'entities', 'robots')
         )
 
         if not self._train_mode:
             self._start_time = self.get_clock().now().seconds_nanoseconds()[0]
             self._task = self._get_predefined_task()
-            self.set_parameters([rclpy.Parameter('robot_names', value=self._task.robot_names)])
+            self.set_parameters(
+                [rclpy.Parameter('robot_names', value=self._task.robot_names)])
 
             self._number_of_resets = 0
 
-            self.srv_start_model_visualization = self.create_client(EmptySrv, 'start_model_visualization')
+            self.srv_start_model_visualization = self.create_client(
+                EmptySrv, 'start_model_visualization')
             while not self.srv_start_model_visualization.wait_for_service(timeout_sec=1.0):
                 self.get_logger().info('start_model_visualization service not available, waiting again...')
             self.srv_start_model_visualization.call_async(EmptySrv.Request())
@@ -156,10 +165,13 @@ class TaskGenerator(rclpy.node.Node):
             self.reset_task(first_map=True)
 
             try:
-                self.set_parameters([rclpy.Parameter('task_generator_setup_finished', value=True)])
-                self.srv_setup_finished = self.create_client(EmptySrv, 'task_generator_setup_finished')
+                self.set_parameters(
+                    [rclpy.Parameter('task_generator_setup_finished', value=True)])
+                self.srv_setup_finished = self.create_client(
+                    EmptySrv, 'task_generator_setup_finished')
                 while not self.srv_setup_finished.wait_for_service(timeout_sec=1.0):
-                    self.get_logger().info('task_generator_setup_finished service not available, waiting again...')
+                    self.get_logger().info(
+                        'task_generator_setup_finished service not available, waiting again...')
                 self.srv_setup_finished.call_async(EmptySrv.Request())
             except:
                 pass
@@ -174,17 +186,34 @@ class TaskGenerator(rclpy.node.Node):
                 self._namespace
             )
 
-        cli = self.create_client(map_distance_server_srvs.GetDistanceMap, '/distance_map')
-        while not cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-        
-        req = map_distance_server_srvs.GetDistanceMap.Request()
-        future = cli.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
-        
-        map_response = future.result()
+        # cli = self.create_client(map_distance_server_srvs.GetDistanceMap, '/distance_map')
+        # while not cli.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info('service not available, waiting again...')
+
+        # req = map_distance_server_srvs.GetDistanceMap.Request()
+        # future = cli.call_async(req)
+        # rclpy.spin_until_future_complete(self, future)
+        # map_response = future.result()
+
+        DUMMY_MAP_SHAPE = (200, 200)
+        DUMMY_MAP = nav_msgs.OccupancyGrid(
+            info=nav_msgs.MapMetaData(
+                height=DUMMY_MAP_SHAPE[0],
+                width=DUMMY_MAP_SHAPE[1],
+                resolution=0.1,
+            ),
+            data=list(
+                np.pad(
+                    np.zeros((DUMMY_MAP_SHAPE[0]-2, DUMMY_MAP_SHAPE[1]-2)),
+                    ((1, 1), (1, 1)),
+                    mode='constant',
+                    constant_values=1
+                ).flat
+            )
+        )
+
         world_manager = WorldManager(
-            world_map=WorldMap.from_occupancy_grid(occupancy_grid=map_response)
+            world_map=WorldMap.from_occupancy_grid(occupancy_grid=DUMMY_MAP)
         )
 
         # if self._entity_mode == Constants.EntityManager.PEDSIM:
@@ -218,8 +247,7 @@ class TaskGenerator(rclpy.node.Node):
         # - Create a unique namespace name
         # - Create a robot manager
         # - Launch the robot.launch file
-        
-        
+
         # TODO tm modules and map needs to be added to the taskgen_confignode
 
         tm_modules_value = self.declare_parameter("tm_modules", "").value
@@ -241,7 +269,8 @@ class TaskGenerator(rclpy.node.Node):
 
         self.get_logger().debug("utils calls task factory")
         task = TaskFactory.combine(
-            modules=[Constants.TaskMode.TM_Module(module) for module in tm_modules]
+            modules=[Constants.TaskMode.TM_Module(
+                module) for module in tm_modules]
         )(
             obstacle_manager=obstacle_manager,
             robot_managers=robot_managers,
@@ -258,12 +287,13 @@ class TaskGenerator(rclpy.node.Node):
 
         robot_model: str = self.get_parameter('model').value
 
-
         if robot_setup_file == "":
             robots = create_default_robot_list(
                 robot_model=self._robot_loader.bind(robot_model),
-                inter_planner=self.declare_parameter("inter_planner", "").value,
-                local_planner=self.declare_parameter("local_planner", "").value,
+                inter_planner=self.declare_parameter(
+                    "inter_planner", "").value,
+                local_planner=self.declare_parameter(
+                    "local_planner", "").value,
                 agent=self.declare_parameter("agent_name", "").value,
                 name=f"{self._namespace[1:]}_{robot_model}"
                 if self._train_mode
@@ -342,10 +372,13 @@ class TaskGenerator(rclpy.node.Node):
         if self._number_of_resets < Config.General.DESIRED_EPISODES:
             return
 
-        self.get_logger().info(f"Shutting down. All {int(Config.General.DESIRED_EPISODES)} tasks completed")
+        self.get_logger().info(
+            f"Shutting down. All {int(Config.General.DESIRED_EPISODES)} tasks completed")
         rclpy.shutdown()
 
+
 TASKGEN_NODE: TaskGenerator
+
 
 def init_task_gen_node(args=None):
     rclpy.init(args=args)
