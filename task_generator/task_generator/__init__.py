@@ -204,7 +204,10 @@ class TaskGenerator(rclpy.node.Node):
             ),
             data=list(
                 np.pad(
-                    np.zeros((DUMMY_MAP_SHAPE[0]-2, DUMMY_MAP_SHAPE[1]-2)),
+                    np.zeros(
+                        (DUMMY_MAP_SHAPE[0]-2, DUMMY_MAP_SHAPE[1]-2),
+                        dtype=int,
+                    ),
                     ((1, 1), (1, 1)),
                     mode='constant',
                     constant_values=1
