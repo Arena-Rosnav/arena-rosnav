@@ -206,6 +206,7 @@ for installer in $(ls | grep '[0-9]*_.*.sh') ; do
     choice="${choice:-Y}"
     if [[ "$choice" =~ ^[Yy]$ ]]; then
         $SHELL $installer
+        echo "$name" >> "$INSTALLED"
     else
         echo "Skipping ${name} installation."
     fi
