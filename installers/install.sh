@@ -45,13 +45,15 @@ if [ ! -d ~/.pyenv ]; then
 fi
 
 # Poetry
-echo "Installing Poetry...:"
-curl -sSL https://install.python-poetry.org | python3 -
-if ! grep -q 'export PATH="$HOME/.local/bin"' ~/.bashrc; then
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-  source ~/.bashrc
+if ! which poetry ; then
+  echo "Installing Poetry...:"
+  curl -sSL https://install.python-poetry.org | python3 -
+  if ! grep -q 'export PATH="$HOME/.local/bin"' ~/.bashrc; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+    source ~/.bashrc
+  fi
+  $HOME/.local/bin/poetry config virtualenvs.in-project true
 fi
-$HOME/.local/bin/poetry config virtualenvs.in-project true
 
 # == compile ros ==
 
