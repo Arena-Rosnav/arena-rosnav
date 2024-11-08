@@ -1,6 +1,8 @@
 #!/bin/bash -i
 set -e
 
+export GAZEBO_VERSION=${GAZEBO_VERSION:-garden}
+
 # == install gazebo on top of ros2 ==
 cd "${ARENA_WS_DIR}"
 

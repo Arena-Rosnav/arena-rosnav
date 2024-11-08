@@ -5,8 +5,6 @@ export ARENA_ROSNAV_REPO=${ARENA_ROSNAV_REPO:-voshch/arena-rosnav}
 export ARENA_BRANCH=${ARENA_BRANCH:-humble}
 export ARENA_ROS_VERSION=${ARENA_ROS_VERSION:-humble}
 
-export GAZEBO_VERSION=${GAZEBO_VERSION:-garden}
-
 # == read inputs ==
 echo 'Configuring arena-rosnav...'
 
@@ -14,7 +12,8 @@ ARENA_WS_DIR=${ARENA_WS_DIR:-~/arena4_ws}
 read -p "arena-rosnav workspace directory [${ARENA_WS_DIR}] " INPUT
 export ARENA_WS_DIR=$(realpath "$(eval echo ${INPUT:-${ARENA_WS_DIR}})")
 
-sudo echo "$ARENA_WS_DIR"
+echo "installing ${ARENA_ROSNAV_REPO}:${ARENA_BRANCH} on ROS2 ${ARENA_ROS_VERSION} to ${ARENA_WS_DIR}"
+sudo echo 'confirmed'
 cd "$ARENA_WS_DIR"
 
 export INSTALLED=$(realpath src/arena/arena-rosnav/.installed)
