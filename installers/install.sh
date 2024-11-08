@@ -191,7 +191,12 @@ cd "${ARENA_WS_DIR}"
 . "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/colcon_build"
 
 # == launch gazebo install script ==
-. ./install_gazebo.sh
+read -p "Do you want to install Gazebo? [Y/n] " install_gazebo
+if [[ "$install_gazebo" =~ ^[Yy]$ ]]; then
+    . ./install_gazebo.sh
+else
+    echo "Skipping Gazebo installation."
+fi
 
 # == build ==
 cd "${ARENA_WS_DIR}"
