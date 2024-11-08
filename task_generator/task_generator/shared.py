@@ -1,6 +1,6 @@
 from __future__ import annotations
 import collections
-
+from geometry_msgs.msg import Pose, Twist, Point
 import dataclasses
 import os
 from typing import (
@@ -16,6 +16,9 @@ from typing import (
     Union,
     overload,
 )
+from pathlib import Path
+import rospkg
+
 
 import enum
 import yaml
@@ -299,7 +302,33 @@ class Obstacle(ObstacleProps):
         )
 
 
-DEFAULT_AGENT_CONFIG = yaml.safe_load(f)['hunav_loader']['ros__parameters'] 
+
+
+
+
+def load_config(filename: str = "default.yaml") -> dict:
+    """Load config from YAML file in arena_bringup configs."""
+    # Directly use your absolute path
+    config_path = f"/home/ahmo030/arena4_ws/src/arena/arena-rosnav/arena_bringup/configs/hunav_agents/{filename}"
+    
+    print(f"Loading config from: {config_path}")
+    
+    # Open and load the file
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+        params = config['hunav_loader']['ros__parameters']
+        
+        # Quick check of important values
+        print(f"\nFound Agents: {params['agents']}")
+        print(f"Agent1 type: {params['agent1']['behavior']['type']}")
+        print(f"Agent1 radius: {params['agent1']['radius']}")
+        
+        return params
+
+
+
+#load the hunav params     
+DEFAULT_AGENT_CONFIG = load_config()
 
 @dataclasses.dataclass(frozen=True)
 class DynamicObstacle(DynamicObstacleProps):
@@ -308,28 +337,100 @@ class DynamicObstacle(DynamicObstacleProps):
         type: int
         state: int
         configuration: int
+        duration: float
+        once: bool
+        vel: float
+        dist: float
+        social_force_factor: float
+        goal_force_factor: float
+        obstacle_force_factor: float
+        other_force_factor: float
 
+    id: int
+    type: int
+    skin: int
+    name: str
+    group_id: int
+    position: PositionOrientation
+    yaw: float
+    velocity: None  # oder entsprechender Typ
+    desired_velocity: float
+    radius: float
+    linear_vel: float
+    angular_vel: float
     behavior: Behavior
+    goals: list
+    cyclic_goals: bool
+    goal_radius: float
+    closest_obs: list
+    model: ModelWrapper
+    extra: dict
 
     @staticmethod
-    def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
+    def parse(obj: dict, model: ModelWrapper) -> "DynamicObstacle":
+        # Parse behavior
+        behavior_dict = obj.get('behavior', {})
+        _type = behavior_dict.get('type', DEFAULT_AGENT_CONFIG['agent1']['behavior']['type'])
+        _state = behavior_dict.get('state', DEFAULT_AGENT_CONFIG['agent1']['behavior']['state'])
+        _conf = behavior_dict.get('configuration', DEFAULT_AGENT_CONFIG['agent1']['behavior']['configuration'])
+        _duration = behavior_dict.get('duration', DEFAULT_AGENT_CONFIG['agent1']['behavior']['duration'])
+        _once = behavior_dict.get('once', DEFAULT_AGENT_CONFIG['agent1']['behavior']['once'])
+        _vel = behavior_dict.get('vel', DEFAULT_AGENT_CONFIG['agent1']['behavior']['vel'])
+        _dist = behavior_dict.get('dist', DEFAULT_AGENT_CONFIG['agent1']['behavior']['dist'])
+        _social_force = behavior_dict.get('social_force_factor', DEFAULT_AGENT_CONFIG['agent1']['behavior']['social_force_factor'])
+        _goal_force = behavior_dict.get('goal_force_factor', DEFAULT_AGENT_CONFIG['agent1']['behavior']['goal_force_factor'])
+        _obstacle_force = behavior_dict.get('obstacle_force_factor', DEFAULT_AGENT_CONFIG['agent1']['behavior']['obstacle_force_factor'])
+        _other_force = behavior_dict.get('other_force_factor', DEFAULT_AGENT_CONFIG['agent1']['behavior']['other_force_factor'])
 
-        _type = obj.get('type', DEFAULT_AGENT_CONFIG['type'])
-        _state = obj.get('type', DEFAULT_AGENT_CONFIG['type'])
-        _conf = obj.get('type', DEFAULT_AGENT_CONFIG['type'])
-        
+        # Parse basic properties
         name = str(obj.get("name", ""))
-        position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
-        
+        position = PositionOrientation(*obj.get("init_pose", (0, 0, 0, 0)))
+        _id = obj.get('id', DEFAULT_AGENT_CONFIG['agent1']['id'])
+        _agent_type = obj.get('type', 1)  # Default to PERSON=1
+        _skin = obj.get('skin', DEFAULT_AGENT_CONFIG['agent1']['skin'])
+        _group_id = obj.get('group_id', DEFAULT_AGENT_CONFIG['agent1']['group_id'])
+        _yaw = obj.get('yaw', 0.0)
+        _velocity = None
+        _desired_velocity = obj.get('max_vel', DEFAULT_AGENT_CONFIG['agent1']['max_vel'])
+        _radius = obj.get('radius', DEFAULT_AGENT_CONFIG['agent1']['radius'])
+        _linear_vel = 0.0
+        _angular_vel = 0.0
+        _goals = []
+        _cyclic_goals = obj.get('cyclic_goals', DEFAULT_AGENT_CONFIG['agent1']['cyclic_goals'])
+        _goal_radius = obj.get('goal_radius', DEFAULT_AGENT_CONFIG['agent1']['goal_radius'])
+        _closest_obs = []
 
         return DynamicObstacle(
+            id=_id,
+            type=_agent_type,
+            skin=_skin,
             name=name,
+            group_id=_group_id,
             position=position,
+            yaw=_yaw,
+            velocity=_velocity,
+            desired_velocity=_desired_velocity,
+            radius=_radius,
+            linear_vel=_linear_vel,
+            angular_vel=_angular_vel,
             model=model,
             behavior=DynamicObstacle.Behavior(
                 type=_type,
-                ...
+                state=_state,
+                configuration=_conf,
+                duration=_duration,
+                once=_once,
+                vel=_vel,
+                dist=_dist,
+                social_force_factor=_social_force,
+                goal_force_factor=_goal_force,
+                obstacle_force_factor=_obstacle_force,
+                other_force_factor=_other_force
             ),
+            goals=_goals,
+            cyclic_goals=_cyclic_goals,
+            goal_radius=_goal_radius,
+            closest_obs=_closest_obs,
             extra=obj
         )
 
