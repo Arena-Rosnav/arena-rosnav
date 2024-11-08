@@ -3,13 +3,12 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 
-import gymnasium
 import rl_utils.utils.paths as Paths
 import rospy
 from rl_utils.cfg.train import TrainingCfg
 from rl_utils.state_container import SimulationStateContainer
 from rl_utils.utils.hooks import HookManager, TrainingHookStages, bind_hooks
-from rl_utils.utils.type_alias.observation import PathsDict, EnvironmentType
+from rl_utils.utils.type_alias.observation import EnvironmentType, PathsDict
 from rosnav_rl.rl_agent import RL_Agent
 from tools.config import ConfigManager
 from tools.general import (

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 from rl_utils.trainer.sb3_trainer import StableBaselines3Trainer
+from tools.argsparser import parse_training_args
 from tools.config import load_training_config
 
-# check dynamic parameter for training curriculum (persistent keyerror)
 # enhance configuration files with field definition
 # rosparam adjustments
 # loading method agent level and algorithm level
@@ -12,8 +12,9 @@ from tools.config import load_training_config
 
 
 def main():
-    config = load_training_config("training_config.yaml")
-    trainer = StableBaselines3Trainer(config)
+    args, _ = parse_training_args()
+
+    trainer = StableBaselines3Trainer(load_training_config(args.config))
     trainer.train()
 
 
