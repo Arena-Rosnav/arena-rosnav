@@ -3,6 +3,14 @@ cd "${ARENA_WS_DIR}"
 
 source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
 
+echo "Checking installed nvidia driver"
+if ! command -v nvidia-smi &> /dev/null; then
+    echo "Warning: nvidia-smi command not found. Terminating script."
+    exit 1
+fi
+
+echo "nvidia-driver was installed"
+
 #Optional choice: install a CUDA-enabled PyTorch 2.4.0 build based on the CUDA version available on your system
 python -m pip install torch==2.4.0 --index-url https://download.pytorch.org/whl/cu121
 
