@@ -18,8 +18,8 @@ class Constants:
         DEPLOYMENT = "deployment"
 
     class EntityManager(Enum):
+        DUMMY = "dummy"
         PEDSIM = "pedsim"
-        FLATLAND = "flatland"
         CROWDSIM = "crowdsim"
         HUNAVSIM = "hunavsim"  # Added Hunavsim
 

@@ -13,6 +13,11 @@ def get_simulator() -> Constants.Simulator:
     return Constants.Simulator(rosparam_get(str, "simulator", "dummy").lower())
 
 
+
+def get_entity_manager() -> Constants.EntityManager:
+    return Constants.EntityManager(rosparam_get(str, "entity_manager", "dummy").lower())
+
+
 def get_arena_type() -> Constants.ArenaType:
     return Constants.ArenaType(os.getenv("ARENA_TYPE", "training").lower())
 

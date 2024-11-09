@@ -6,7 +6,7 @@ from ros_gz_interfaces.msg import EntityFactory, WorldControl
 from geometry_msgs.msg import PoseStamped, Pose, Quaternion, Point
 import sys
 import traceback
-from task_generator.simulators import SimulatorFactory
+from task_generator.simulators import SimulatorRegistry
 from task_generator.shared import rosparam_get
 from task_generator.utils.geometry import quaternion_from_euler
 from task_generator.constants import Constants
@@ -14,6 +14,9 @@ from task_generator.constants.runtime import Config
 from task_generator.simulators import BaseSimulator
 
 from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
+
+from task_generator import TASKGEN_NODE
+
 
 class GazeboSimulator(BaseSimulator):
     def __init__(self, namespace, node: Node = None):
@@ -27,7 +30,7 @@ class GazeboSimulator(BaseSimulator):
         node_name = namespace.strip('/').replace('/', '_')
         if not node_name:
             node_name = "gazebo_simulator"  # Default name if namespace is empty
-            
+
         super().__init__(namespace=Namespace(node_name))
         
         # Store node reference
@@ -38,8 +41,7 @@ class GazeboSimulator(BaseSimulator):
             
       
         self._node.get_logger().info(f"Initializing GazeboSimulator with namespace: {namespace}")
-        
-        self._goal_pub = self._node.create_publisher(
+        self._goal_pub = TASKGEN_NODE.create_publisher(
             PoseStamped,
             self._namespace("/goal"),
             10
@@ -84,7 +86,18 @@ class GazeboSimulator(BaseSimulator):
             self._node.get_logger().error("Not all Gazebo services are available!")
             return
 
+
         self._node.get_logger().info("All Gazebo services are available now.")
+        # resp_spawn = self._spawn_entity.call_async(req)
+        # resp_delete = self._delete_entity.call_async(req)
+        # resp_pose = self._set_entity_pose.call_async(req)
+        # resp_world = self._control_world.call_async(req)
+        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_spawn)
+        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_delete)
+        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_pose)
+        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_world)
+
+
 
     def before_reset_task(self):
         self._node.get_logger().info("Pausing simulation before reset")
@@ -117,7 +130,8 @@ class GazeboSimulator(BaseSimulator):
         request.entity = name
         request.pose = Pose(
             position=Point(x=position.x, y=position.y, z=0),
-            orientation=Quaternion(*quaternion_from_euler(0.0, 0.0, position.orientation, axes="sxyz"))
+            orientation=Quaternion(
+                *quaternion_from_euler(0.0, 0.0, position.orientation, axes="sxyz"))
         )
         
         try:
