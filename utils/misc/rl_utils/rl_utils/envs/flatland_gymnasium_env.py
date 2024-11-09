@@ -355,6 +355,8 @@ class FlatlandEnv(gymnasium.Env):
         """
         if srv_call:
             self._step_world_srv()
+            return
+
         request = StepWorld()
         request.required_time = self._step_size if t is None else t
 
