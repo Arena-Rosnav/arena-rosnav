@@ -60,7 +60,7 @@ class ArenaTrainer(ABC):
     hook_manager: HookManager = HookManager()
 
     @bind_hooks(before_stage=TrainingHookStages.ON_INIT)
-    def __init__(self, config: TrainingCfg):
+    def __init__(self, config: TrainingCfg, resume: bool = False) -> None:
         """
         Initializes the ArenaTrainer with the given configuration.
 
@@ -68,6 +68,8 @@ class ArenaTrainer(ABC):
             config (TrainingCfg): The configuration object for training.
         """
         self.config = config
+        self.__resume = resume
+
         self._register_default_hooks()
         self._register_framework_specific_hooks()
         self._setup()
@@ -95,6 +97,7 @@ class ArenaTrainer(ABC):
             self._setup_agent,
             self._setup_environment,
             self._setup_monitoring,
+            self._load,
         ]
 
         for step in setup_steps:
@@ -119,6 +122,11 @@ class ArenaTrainer(ABC):
         self._save_model()
         self.agent.model.env.close()
         sys.exit(0)
+
+    def _load(self, *args, **kwargs) -> None:
+        """Load a pre-trained model."""
+        if self.__resume:
+            self._load_impl()
 
     def _register_default_hooks(self) -> None:
         """Register default hooks common across implementations."""
@@ -156,13 +164,18 @@ class ArenaTrainer(ABC):
                 dirpath=self.paths[Paths.Agent].path, checkpoint_name="last_model"
             )
 
+    def _register_framework_specific_hooks(self):
+        """Register hooks that are specific to the framework."""
+        pass
+
     def _train_impl(self, *args, **kwargs) -> None:
         """Implementation of training logic."""
         self.agent.model.train()
 
-    def _register_framework_specific_hooks(self):
-        """Register hooks that are specific to the framework."""
-        pass
+    @abstractmethod
+    def _load_impl(self, *args, **kwargs) -> None:
+        """Load a pre-trained model."""
+        raise NotImplementedError()
 
     @abstractmethod
     def _setup_agent(self, *args, **kwargs) -> None:
@@ -187,3 +200,7 @@ class ArenaTrainer(ABC):
     @property
     def is_debug_mode(self):
         return rospy.get_param("debug_mode", False)
+
+    @property
+    def is_resume(self):
+        return self.__resume

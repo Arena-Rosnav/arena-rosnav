@@ -43,12 +43,12 @@ class StableBaselines3Trainer(ArenaTrainer):
     config_manager: SB3ConfigManager
     environment: SB3Environment
 
-    def __init__(self, config: TrainingCfg):
+    def __init__(self, config: TrainingCfg, resume: bool = False) -> None:
         self.config_manager = SB3ConfigManager(config)
-        self._unpack_config()
-        super().__init__(config)
+        self.__unpack_config()
+        super().__init__(config, resume)
 
-    def _unpack_config(self) -> None:
+    def __unpack_config(self) -> None:
         """Unpack SB3-specific configuration."""
         self.general_cfg = self.config_manager.fields.general
         self.monitoring_cfg = self.config_manager.fields.monitoring
@@ -81,6 +81,14 @@ class StableBaselines3Trainer(ArenaTrainer):
         self.hook_manager.register(
             TrainingHookStages.BEFORE_SETUP,
             [_set_curriculum_file, _set_curriculum_stage],
+        )
+
+    def _load_impl(self, *args, **kwargs) -> None:
+        checkpoint = self.agent_cfg.framework.model.resume.checkpoint
+
+        self.agent.model.load(
+            path=(self.paths[Paths.Agent].path / checkpoint),
+            env=self.environment.train_env,
         )
 
     def _setup_agent(self) -> None:
@@ -150,16 +158,25 @@ class StableBaselines3Trainer(ArenaTrainer):
             ).to_dict()
         )
 
-    def _complete_model_initialization(self, train_env) -> None:
+    def _complete_model_initialization(self, train_env: VecEnv) -> None:
         """Initialize the agent's model with environment."""
+        tensorboard_log_path = (
+            self.paths[Paths.AgentTensorboard].path
+            if not self.general_cfg.debug_mode
+            else None
+        )
+        resume_model_file = (
+            None
+            if not self.is_resume
+            else self.paths[Paths.Agent].path
+            / self.agent_cfg.framework.model.resume.checkpoint
+        )
+
         self.agent.initialize_model(
             env=train_env,
             no_gpu=self.general_cfg.no_gpu,
-            tensorboard_log_path=(
-                self.paths[Paths.AgentTensorboard].path
-                if not self.general_cfg.debug_mode
-                else None
-            ),
+            tensorboard_log_path=tensorboard_log_path,
+            resume_model_file=resume_model_file,
         )
 
 
