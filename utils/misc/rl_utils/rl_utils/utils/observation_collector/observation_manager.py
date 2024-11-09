@@ -197,9 +197,9 @@ class ObservationManager:
         """
         # Retrieve all observations from the collectors
         for name, observation in self._collectable_observations.items():
-            if observation.stale:
+            if observation.stale and self._collectors[name].up_to_date_required:
                 rospy.logdebug_throttle(1, f"Observation '{name}' IS STALE.")
-                if self._wait_for_obs and self._collectors[name].up_to_date_required:
+                if self._wait_for_obs:
                     self._wait_for_observation(name)
             obs_dict[name] = observation.value
 
