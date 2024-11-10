@@ -15,3 +15,10 @@ colcon build \
 
 cd $ARENA_WS_DIR
 source install/local_setup.bash
+
+for package in $(ls /opt/ros/humble/share/) ; do
+    setup_file="/opt/ros/humble/share/${package}/local_setup.bash"
+    if [ -f "$setup_file" ] ; then
+        . "$setup_file"
+    fi 
+done
