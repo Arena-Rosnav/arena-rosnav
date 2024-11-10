@@ -198,9 +198,9 @@ touch "$INSTALLED"
 
 
 #run installers
+sudo apt upgrade
 
 compile(){
-  sudo apt upgrade
   rosdep install \
     --from-paths src \
     --ignore-src \
