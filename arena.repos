@@ -8,6 +8,11 @@ repositories:
     url: https://github.com/voshch/arena-simulation-setup.git
     version: ros2@b49559f
 
+  deps/xacro:
+    type: git
+    url: https://github.com/ros/xacro.git
+    version: ros2
+
   deps/nav2/navigation2:
     type: git
     url: https://github.com/voshch/navigation2.git
