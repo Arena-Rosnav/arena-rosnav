@@ -60,3 +60,6 @@ __pycache__/
 *.log
 *install/
 *log/
+
+# arena specific
+.installed
