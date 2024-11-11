@@ -43,10 +43,10 @@ class StableBaselines3Trainer(ArenaTrainer):
     config_manager: SB3ConfigManager
     environment: SB3Environment
 
-    def __init__(self, config: TrainingCfg, resume: bool = False) -> None:
+    def __init__(self, config: TrainingCfg) -> None:
         self.config_manager = SB3ConfigManager(config)
         self.__unpack_config()
-        super().__init__(config, resume)
+        super().__init__(config, config.resume)
 
     def __unpack_config(self) -> None:
         """Unpack SB3-specific configuration."""

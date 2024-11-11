@@ -137,6 +137,7 @@ class ArenaTrainer(ABC):
                 lambda _: setup_paths_dictionary(self, self.is_debug_mode),
             ],
             TrainingHookStages.AFTER_SETUP: [
+                lambda _: self._set_resume_true(),
                 lambda _: self._write_config(),
                 lambda _: self.simulation_state_container.distribute(),
             ],
@@ -147,6 +148,10 @@ class ArenaTrainer(ABC):
 
         for hook, callbacks in default_hooks.items():
             self.hook_manager.register(hook, callbacks)
+
+    def _set_resume_true(self):
+        """Set resume to True to make sure one can directly load and resume training."""
+        self.config.resume = True
 
     def _write_config(self):
         """Write configuration to file if not in debug mode."""

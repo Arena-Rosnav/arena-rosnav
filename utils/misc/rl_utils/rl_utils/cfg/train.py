@@ -9,6 +9,7 @@ from .sb3_cfg import SB3Cfg
 class TrainingCfg(BaseModel):
     framework_cfg: SB3Cfg
     agent_cfg: AgentCfg
+    resume: bool = False
 
     model_config = ConfigDict(
         extra="forbid",  # Reject extra fields
@@ -31,4 +32,15 @@ class TrainingCfg(BaseModel):
             self.framework_cfg.robot.robot_description.actions.discrete = [
                 DiscreteAction(**action) for action in custom_discrete_actions_list
             ]
+        return self
+
+    @model_validator(mode="after")
+    def validate_resume(self):
+        if self.resume:
+            assert (
+                self.agent_cfg.name is not None
+            ), "Agent name must be provided for resume!"
+            assert (
+                self.agent_cfg.framework.model.resume.checkpoint is not None
+            ), "Checkpoint must be provided for resume!"
         return self
