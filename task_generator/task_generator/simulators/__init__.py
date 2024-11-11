@@ -3,6 +3,7 @@ import typing
 
 from task_generator.constants import Constants
 from task_generator.shared import ModelType, EntityProps, Namespace, PositionOrientation
+from task_generator.utils.registry import Registry
 
 
 class BaseSimulator:
@@ -60,40 +61,22 @@ class BaseSimulator:
         raise NotImplementedError()
 
 
+SimulatorRegistry = Registry[Constants.Simulator, BaseSimulator]()
 
 
-class SimulatorFactory:
-    registry: typing.Dict[Constants.Simulator, typing.Callable[[], typing.Type[BaseSimulator]]] = {}
-
-    @classmethod
-    def register(cls, name: Constants.Simulator):
-        def inner_wrapper(class_loader):
-            assert name not in cls.registry, f"Simulator '{name}' already exists!"
-
-            cls.registry[name] = class_loader
-            return class_loader
-
-        return inner_wrapper
-
-    @classmethod
-    def instantiate(cls, name: Constants.Simulator) -> typing.Type[BaseSimulator]:
-        assert name in cls.registry, f"Simulator '{name}' is not registered!"
-
-        simulator = cls.registry[name]()
-
-        return simulator
-
-@SimulatorFactory.register(Constants.Simulator.FLATLAND)
+@SimulatorRegistry.register(Constants.Simulator.FLATLAND)
 def lazy_flatland():
     from .flatland_simulator import FlatlandSimulator
     return FlatlandSimulator
 
-@SimulatorFactory.register(Constants.Simulator.GAZEBO)
+
+@SimulatorRegistry.register(Constants.Simulator.GAZEBO)
 def lazy_gazebo():
     from .gazebo_simulator import GazeboSimulator
     return GazeboSimulator
 
-@SimulatorFactory.register(Constants.Simulator.UNITY)
+
+@SimulatorRegistry.register(Constants.Simulator.UNITY)
 def lazy_unity():
     from .unity_simulator import UnitySimulator
     return UnitySimulator

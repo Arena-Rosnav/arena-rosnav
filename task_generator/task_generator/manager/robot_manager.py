@@ -8,7 +8,7 @@ import rclpy
 from rclpy.parameter import Parameter
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Config, TASKGEN_CONFIGNODE
-from task_generator.manager.entity_manager.entity_manager import EntityManager
+from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
 
@@ -23,6 +23,7 @@ import launch
 from launch import LaunchDescription
 from launch_ros.actions import Node as LaunchNode
 from launch.launch_service import LaunchService
+
 
 class RobotManager:
     """
@@ -59,10 +60,13 @@ class RobotManager:
         self._entity_manager = entity_manager
         self._start_pos = PositionOrientation(0, 0, 0)
         self._goal_pos = PositionOrientation(0, 0, 0)
-        self._goal_tolerance_distance = TASKGEN_CONFIGNODE.get_parameter('goal_radius').value
-        self._goal_tolerance_angle = TASKGEN_CONFIGNODE.get_parameter('goal_tolerance_angle').value
+        self._goal_tolerance_distance = TASKGEN_CONFIGNODE.get_parameter(
+            'goal_radius').value
+        self._goal_tolerance_angle = TASKGEN_CONFIGNODE.get_parameter(
+            'goal_tolerance_angle').value
         self._robot = robot
-        self._safety_distance = TASKGEN_CONFIGNODE.get_parameter(f'{robot.name}/spawn_robot_safe_dist').value
+        self._safety_distance = TASKGEN_CONFIGNODE.get_parameter(
+            f'{robot.name}/spawn_robot_safe_dist').value
         self._position = self._start_pos
 
     def set_up_robot(self):
@@ -93,20 +97,25 @@ class RobotManager:
             0.25, self._publish_goal_periodically
         )
         TASKGEN_CONFIGNODE.create_subscription(
-            nav_msgs.Odometry, self.namespace("odom"), self._robot_pos_callback, 10
+            nav_msgs.Odometry, self.namespace(
+                "odom"), self._robot_pos_callback, 10
         )
 
         self._launch_robot()
-        
+
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            self._robot_radius = float(TASKGEN_CONFIGNODE.get_parameter("robot_radius").value)
+            self._robot_radius = float(
+                TASKGEN_CONFIGNODE.get_parameter("robot_radius").value)
         else:
             # needs to be adjusted to self.get_parameter('robot_radius').value
-            #but robot_radius is not set yet in runtime.py
-            TASKGEN_CONFIGNODE.declare_parameter(("robot_radius"), Config.Robot.GOAL_TOLERANCE_RADIUS)
-            self._robot_radius = TASKGEN_CONFIGNODE.get_parameter(("robot_radius")).value
+            # but robot_radius is not set yet in runtime.py
+            TASKGEN_CONFIGNODE.declare_parameter(
+                ("robot_radius"), Config.Robot.GOAL_TOLERANCE_RADIUS)
+            self._robot_radius = TASKGEN_CONFIGNODE.get_parameter(
+                ("robot_radius")).value
         self._clear_costmaps_srv = self.create_client(
             std_srvs.Empty, self.namespace("move_base", "clear_costmaps"))
+
     @property
     def safe_distance(self) -> float:
         return self._robot_radius + self._safety_distance
@@ -180,7 +189,8 @@ class RobotManager:
             np.array(goal[:2]) - np.array(start[:2])
         )
 
-        angle_to_goal: float = np.pi - np.abs(np.abs(goal[2] - start[2]) - np.pi)
+        angle_to_goal: float = np.pi - \
+            np.abs(np.abs(goal[2] - start[2]) - np.pi)
 
         return (
             distance_to_goal < self._goal_tolerance_distance
@@ -242,14 +252,20 @@ class RobotManager:
             self.launch_service.include_launch_description(launch_description)
             self.launch_service.run()
 
-        base_frame: str = TASKGEN_CONFIGNODE.get_parameter(self.namespace("robot_base_frame")).value
-        sensor_frame: str = TASKGEN_CONFIGNODE.get_parameter(self.namespace("robot_sensor_frame")).value
+        base_frame: str = TASKGEN_CONFIGNODE.get_parameter(
+            self.namespace("robot_base_frame")).value
+        sensor_frame: str = TASKGEN_CONFIGNODE.get_parameter(
+            self.namespace("robot_sensor_frame")).value
 
         TASKGEN_CONFIGNODE.set_parameters([
-            Parameter(self.namespace("move_base", "global_costmap", "robot_base_frame"), Parameter.Type.STRING, os.path.join(self.name, base_frame)),
-            Parameter(self.namespace("move_base", "local_costmap", "robot_base_frame"), Parameter.Type.STRING, os.path.join(self.name, base_frame)),
-            Parameter(self.namespace("move_base", "local_costmap", "scan", "sensor_frame"), Parameter.Type.STRING, os.path.join(self.name, sensor_frame)),
-            Parameter(self.namespace("move_base", "global_costmap", "scan", "sensor_frame"), Parameter.Type.STRING, os.path.join(self.name, sensor_frame))
+            Parameter(self.namespace("move_base", "global_costmap", "robot_base_frame"),
+                      Parameter.Type.STRING, os.path.join(self.name, base_frame)),
+            Parameter(self.namespace("move_base", "local_costmap", "robot_base_frame"),
+                      Parameter.Type.STRING, os.path.join(self.name, base_frame)),
+            Parameter(self.namespace("move_base", "local_costmap", "scan", "sensor_frame"),
+                      Parameter.Type.STRING, os.path.join(self.name, sensor_frame)),
+            Parameter(self.namespace("move_base", "global_costmap", "scan", "sensor_frame"),
+                      Parameter.Type.STRING, os.path.join(self.name, sensor_frame))
         ])
 
     def _robot_pos_callback(self, data: nav_msgs.Odometry):

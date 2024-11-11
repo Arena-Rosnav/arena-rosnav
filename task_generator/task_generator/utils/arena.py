@@ -8,14 +8,22 @@ from task_generator.shared import rosparam_get
 
 import nav_msgs.msg as nav_msgs
 
+
 def get_simulator() -> Constants.Simulator:
     return Constants.Simulator(rosparam_get(str, "simulator", "gazebo").lower())
+
+
+def get_entity_manager() -> Constants.EntityManager:
+    return Constants.EntityManager(rosparam_get(str, "entity_manager", "dummy").lower())
+
 
 def get_arena_type() -> Constants.ArenaType:
     return Constants.ArenaType(os.getenv("ARENA_TYPE", "training").lower())
 
+
 def is_synthetic_map() -> bool:
     return rosparam_get(str, "map_file") in ["dynamic_map"]
+
 
 def generate_map_inner_border(free_space_indices, map_: nav_msgs.OccupancyGrid):
     """generate map border (four vertices of the map)
@@ -43,6 +51,7 @@ def generate_map_inner_border(free_space_indices, map_: nav_msgs.OccupancyGrid):
     # print('border',border_vertices)
     return border_vertices
 
+
 def update_freespace_indices_maze(map_: nav_msgs.OccupancyGrid):
     """update the indices(represented in a tuple) of the freespace based on the map and the static polygons
     ostacles manuelly added 
@@ -57,11 +66,11 @@ def update_freespace_indices_maze(map_: nav_msgs.OccupancyGrid):
     map_2d = np.reshape(map_.data, (height_in_cell, width_in_cell))
     # height range and width range
     wall_occupancy = np.array([[1.25, 12.65, 10.6, 10.8],
-                                [-4.45, 18.35, 16.3, 16.5],
-                                [-4.45, 18.35, 4.9, 5.1],
-                                [12.55, 12.75, -0.7, 22.1],
-                                [1.15, 1.35, -0.7, 22.1],
-                                [6.85, 7.05, 5.0, 16.4]])
+                               [-4.45, 18.35, 16.3, 16.5],
+                               [-4.45, 18.35, 4.9, 5.1],
+                               [12.55, 12.75, -0.7, 22.1],
+                               [1.15, 1.35, -0.7, 22.1],
+                               [6.85, 7.05, 5.0, 16.4]])
     size = wall_occupancy.shape[0]
     for ranges in wall_occupancy:
         height_low = int(ranges[0] / map_.info.resolution)

@@ -15,7 +15,7 @@ from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Config, TASKGEN_CONFIGNODE
 
-from task_generator.manager.entity_manager.entity_manager import EntityManager
+from task_generator.manager.entity_manager import EntityManagerRegistry
 # from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
 # from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
 # from task_generator.manager.entity_manager.crowdsim_manager import CrowdsimManager
@@ -32,7 +32,7 @@ from task_generator.shared import (
     rosparam_get
 )
 
-from task_generator.simulators import BaseSimulator, SimulatorFactory
+from task_generator.simulators import BaseSimulator, SimulatorRegistry
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils import ModelLoader
@@ -117,7 +117,9 @@ class TaskGenerator(rclpy.node.Node):
             ]
         )
 
-        # self._entity_mode = Constants.EntityManager(self.get_parameter('entity_manager').value)
+        self._entity_mode = Constants.EntityManager(
+            self.get_parameter('entity_manager').value
+        )
         self._auto_reset = self.get_parameter('auto_reset').value
         self._train_mode = self.get_parameter('train_mode').value
 
@@ -134,7 +136,7 @@ class TaskGenerator(rclpy.node.Node):
 
     def post_init(self):
         # Vars
-        self._env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())(
+        self._env_wrapper = SimulatorRegistry.get(Utils.get_simulator())(
             namespace=self._namespace
         )
 
@@ -182,7 +184,7 @@ class TaskGenerator(rclpy.node.Node):
         Gets the task based on the passed mode
         """
         if self._env_wrapper is None:
-            self._env_wrapper = SimulatorFactory.instantiate(Utils.get_simulator())(
+            self._env_wrapper = SimulatorRegistry.get(Utils.get_simulator())(
                 self._namespace
             )
 
@@ -219,20 +221,9 @@ class TaskGenerator(rclpy.node.Node):
             world_map=WorldMap.from_occupancy_grid(occupancy_grid=DUMMY_MAP)
         )
 
-        # if self._entity_mode == Constants.EntityManager.PEDSIM:
-        #     self._entity_manager = PedsimManager(
-        #         namespace=self._namespace, simulator=self._env_wrapper
-        #     )
-        # elif self._entity_mode == Constants.EntityManager.FLATLAND:
-        #     self._entity_manager = FlatlandManager(
-        #         namespace=self._namespace, simulator=self._env_wrapper
-        #     )
-        # elif self._entity_mode == Constants.EntityManager.CROWDSIM:
-        #     self._entity_manager = CrowdsimManager(
-        #         namespace=self._namespace, simulator=self._env_wrapper
-        #     )
-        self._entity_manager = EntityManager(
-            namespace=self._namespace, simulator=self._env_wrapper
+        self._entity_manager = EntityManagerRegistry.get(self._entity_mode)(
+            namespace=self._namespace,
+            simulator=self._env_wrapper,
         )
 
         obstacle_manager = ObstacleManager(
