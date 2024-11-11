@@ -4,7 +4,6 @@ import typing
 from task_generator.constants import Constants
 from task_generator.shared import ModelType, EntityProps, Namespace, PositionOrientation
 from task_generator.utils.registry import Registry
-from task_generator.manager.entity_manager import EntityManager
 
 
 
@@ -88,10 +87,3 @@ def lazy_dummy():
     return DummySimulator
 
 
-# Create registry for Entitymanager 
-EntityManagerRegistry = Registry[Constants.EntityManager, EntityManager]()
-#register Hunavsimmanager
-@EntityManagerRegistry.register(Constants.EntityManager.HUNAVSIM)
-def lazy_hunavsim():
-    from task_generator.manager.entity_manager.hunavsim_manager import HunavsimManager
-    return HunavsimManager

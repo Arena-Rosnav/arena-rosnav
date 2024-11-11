@@ -19,20 +19,23 @@ class EntityManager:
     _node: rclpy.node.Node
     _goal_pub: rclpy.publisher.Publisher
 
-    def __init__(self, namespace: Namespace, simulator: BaseSimulator):
+    def __init__(self, namespace: Namespace, simulator: BaseSimulator, node: rclpy.node.Node = None):
         """
         Initialize dynamic obstacle manager.
 
         Args:
             namespace: global namespace
             simulator: Simulator instance
-            node: ROS Node instance
+            node: ROS Node instance (optional)
         """
         self._simulator = simulator
         self._namespace = namespace
-
-        from task_generator import TASKGEN_NODE
-        self._node = TASKGEN_NODE
+        
+        if node is None:
+            from task_generator import TASKGEN_NODE
+            self._node = TASKGEN_NODE
+        else:
+            self._node = node
 
         self._goal_pub = self._node.create_publisher(
             PoseStamped,
@@ -127,7 +130,8 @@ def dummy():
 
     return DummyEntityManager
 
-# @EntityManagerRegistry.register(Constants.EntityManager.HUNAVSIM)
-# def lazy_hunavsim():
-#     from . hunavsim_manager import HunavsimManager
-#     return HunavsimManager
+@EntityManagerRegistry.register(Constants.EntityManager.HUNAVSIM)
+def lazy_hunavsim():
+     
+    from . hunavsim_manager import HunavsimManager
+    return HunavsimManager
