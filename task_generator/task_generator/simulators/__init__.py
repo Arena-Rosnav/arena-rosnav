@@ -4,6 +4,8 @@ import typing
 from task_generator.constants import Constants
 from task_generator.shared import ModelType, EntityProps, Namespace, PositionOrientation
 from task_generator.utils.registry import Registry
+from task_generator.manager.entity_manager import EntityManager
+
 
 
 class BaseSimulator:
@@ -63,7 +65,6 @@ class BaseSimulator:
 
 SimulatorRegistry = Registry[Constants.Simulator, BaseSimulator]()
 
-
 @SimulatorRegistry.register(Constants.Simulator.FLATLAND)
 def lazy_flatland():
     from .flatland_simulator import FlatlandSimulator
@@ -80,3 +81,17 @@ def lazy_gazebo():
 def lazy_unity():
     from .unity_simulator import UnitySimulator
     return UnitySimulator
+
+@SimulatorRegistry.register(Constants.Simulator.DUMMY)
+def lazy_dummy():
+    from .dummy_simulator import DummySimulator
+    return DummySimulator
+
+
+# Create registry for Entitymanager 
+EntityManagerRegistry = Registry[Constants.EntityManager, EntityManager]()
+#register Hunavsimmanager
+@EntityManagerRegistry.register(Constants.EntityManager.HUNAVSIM)
+def lazy_hunavsim():
+    from task_generator.manager.entity_manager.hunavsim_manager import HunavsimManager
+    return HunavsimManager

@@ -16,7 +16,7 @@ from ament_index_python.packages import get_package_share_directory
 
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Config
-from task_generator.manager.entity_manager.entity_manager import EntityManager
+from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import (
     KnownObstacles,
     ObstacleLayer,

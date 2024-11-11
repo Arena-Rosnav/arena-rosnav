@@ -309,7 +309,7 @@ class Obstacle(ObstacleProps):
 def load_config(filename: str = "default.yaml") -> dict:
     """Load config from YAML file in arena_bringup configs."""
     # Directly use your absolute path
-    config_path = f"/home/ahmo030/arena4_ws/src/arena/arena-rosnav/arena_bringup/configs/hunav_agents/{filename}"
+    config_path = f"/home/ahmo030/arena4_ws/src/arena/arena-rosnav/arena_bringup/configs/hunav_agents/{filename}" #fix (package path)
     
     print(f"Loading config from: {config_path}")
     

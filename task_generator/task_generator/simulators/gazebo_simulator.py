@@ -15,7 +15,6 @@ from task_generator.simulators import BaseSimulator
 
 from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
 
-from task_generator import TASKGEN_NODE
 
 
 class GazeboSimulator(BaseSimulator):

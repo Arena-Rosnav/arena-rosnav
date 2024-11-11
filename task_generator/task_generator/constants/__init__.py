@@ -12,6 +12,7 @@ class Constants:
         FLATLAND = "flatland"
         GAZEBO = "gazebo"
         UNITY = "unity"
+        
 
     class ArenaType(Enum):
         TRAINING = "training"
