@@ -53,22 +53,23 @@ import nav_msgs.msg as nav_msgs
 def create_default_robot_list(
     robot_model: ModelWrapper,
     name: str,
-    inter_planner: str,
-    local_planner: str,
+    #inter_planner: str,
+    #local_planner: str,
     agent: str
+    
 ) -> List[Robot]:
     return [
         Robot(
             model=robot_model,
-            inter_planner=inter_planner,
-            local_planner=local_planner,
-            agent=agent,
+            #inter_planner=inter_planner,
+            #local_planner=local_planner,
+            #agent=agent,
             position=next(gen_init_pos),
             name=name,
             # TODO record_data_dir must be added to TASKGEN_CONFIGNODE
-            record_data_dir=self.declare_parameter(
-                'record_data_dir', None).value,
-            extra=dict(),
+            # record_data_dir=self.declare_parameter(
+            #     'record_data_dir', None).value,
+            # extra=dict(),
         )
     ]
 
@@ -112,8 +113,8 @@ class TaskGenerator(rclpy.node.Node):
                 ('train_mode', False),
                 ('robot_setup_file', ''),
                 ('model', ''),
-                ('inter_planner', ''),
-                ('local_planner', ''),
+                #('inter_planner', ''),
+                #('local_planner', ''),
                 ('agent_name', ''),
                 ('robot_names', []),
                 ('task_generator_setup_finished', False),
@@ -285,11 +286,9 @@ class TaskGenerator(rclpy.node.Node):
         if robot_setup_file == "":
             robots = create_default_robot_list(
                 robot_model=self._robot_loader.bind(robot_model),
-                inter_planner=self.declare_parameter(
-                    "inter_planner", "").value,
-                local_planner=self.declare_parameter(
-                    "local_planner", "").value,
-                agent=self.declare_parameter("agent_name", "").value,
+                #inter_planner=self.declare_parameter("inter_planner", "").value,
+                #local_planner=self.declare_parameter("local_planner", "").value,
+                agent=self.get_parameter("agent_name").value,
                 name=f"{self._namespace[1:]}_{robot_model}"
                 if self._train_mode
                 else robot_model,
