@@ -85,7 +85,7 @@ def read_robot_setup_file(setup_file: str) -> List[Dict]:
 
         return robots
 
-    except:
+    except BaseException:
         traceback.print_exc()
         raise Exception("Failed to read robot setup file")
 
@@ -104,7 +104,7 @@ class TaskGenerator(rclpy.node.Node):
         self.declare_parameters(
             namespace='',
             parameters=[
-                ('entity_manager', ''),
+                ('entity_manager', 'dummy'),
                 ('auto_reset', True),
                 ('train_mode', False),
                 ('robot_setup_file', ''),
@@ -117,9 +117,7 @@ class TaskGenerator(rclpy.node.Node):
             ]
         )
 
-        self._entity_mode = Constants.EntityManager(
-            self.get_parameter('entity_manager').value
-        )
+        self._entity_mode = Utils.get_entity_manager()
         self._auto_reset = self.get_parameter('auto_reset').value
         self._train_mode = self.get_parameter('train_mode').value
 
@@ -158,7 +156,8 @@ class TaskGenerator(rclpy.node.Node):
 
             self.srv_start_model_visualization = self.create_client(
                 EmptySrv, 'start_model_visualization')
-            while not self.srv_start_model_visualization.wait_for_service(timeout_sec=1.0):
+            while not self.srv_start_model_visualization.wait_for_service(
+                    timeout_sec=1.0):
                 self.get_logger().info('start_model_visualization service not available, waiting again...')
             self.srv_start_model_visualization.call_async(EmptySrv.Request())
 
@@ -171,11 +170,12 @@ class TaskGenerator(rclpy.node.Node):
                     [rclpy.Parameter('task_generator_setup_finished', value=True)])
                 self.srv_setup_finished = self.create_client(
                     EmptySrv, 'task_generator_setup_finished')
-                while not self.srv_setup_finished.wait_for_service(timeout_sec=1.0):
+                while not self.srv_setup_finished.wait_for_service(
+                        timeout_sec=1.0):
                     self.get_logger().info(
                         'task_generator_setup_finished service not available, waiting again...')
                 self.srv_setup_finished.call_async(EmptySrv.Request())
-            except:
+            except BaseException:
                 pass
         rclpy.spin(self)
 
@@ -207,7 +207,7 @@ class TaskGenerator(rclpy.node.Node):
             data=list(
                 np.pad(
                     np.zeros(
-                        (DUMMY_MAP_SHAPE[0]-2, DUMMY_MAP_SHAPE[1]-2),
+                        (DUMMY_MAP_SHAPE[0] - 2, DUMMY_MAP_SHAPE[1] - 2),
                         dtype=int,
                     ),
                     ((1, 1), (1, 1)),
@@ -320,7 +320,8 @@ class TaskGenerator(rclpy.node.Node):
         for robot in robots:
             robot_managers.append(
                 # RobotManager(os.path.join(namespace, name), simulator, robot)
-                # old but working due to namespace issue with "/" prefix in robot name
+                # old but working due to namespace issue with "/" prefix in
+                # robot name
                 RobotManager(
                     namespace=self._namespace,
                     entity_manager=self._entity_manager,
@@ -357,7 +358,8 @@ class TaskGenerator(rclpy.node.Node):
         if self._task.is_done:
             self.reset_task()
 
-    def _reset_task_srv_callback(self, request: std_srvs.Empty.Request, response: std_srvs.Empty.Response):
+    def _reset_task_srv_callback(
+            self, request: std_srvs.Empty.Request, response: std_srvs.Empty.Response):
         self.get_logger().debug("Task Generator received task-reset request!")
         self.reset_task()
         return response

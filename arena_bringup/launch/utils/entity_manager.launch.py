@@ -9,7 +9,7 @@ def generate_launch_description():
     ld = launch.LaunchDescription([
         launch.actions.DeclareLaunchArgument(
             name='entity_manager',
-            default_value=''
+            default_value='dummy'
         ),
         launch.actions.DeclareLaunchArgument(
             name='sfm',
