@@ -196,8 +196,8 @@ def sb3_wrap_env(
                 env=env,
                 normalization_cfg=normalization_cfg,
                 agent_name=agent_cfg.name,
-                resume=bool(agent_cfg.policy.resume),
-                checkpoint_name=agent_cfg.policy.checkpoint,
+                resume=bool(agent_cfg.framework.model.resume),
+                checkpoint_name=agent_cfg.framework.model.resume.checkpoint,
                 is_training=is_training,
             )
             if normalization_cfg is not None
