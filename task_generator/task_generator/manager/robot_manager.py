@@ -60,13 +60,20 @@ class RobotManager:
         self._entity_manager = entity_manager
         self._start_pos = PositionOrientation(0, 0, 0)
         self._goal_pos = PositionOrientation(0, 0, 0)
-        self._goal_tolerance_distance = TASKGEN_CONFIGNODE.get_parameter(
-            'goal_radius').value
-        self._goal_tolerance_angle = TASKGEN_CONFIGNODE.get_parameter(
-            'goal_tolerance_angle').value
+        
+        # Parameter handling
+        try:
+            self._goal_tolerance_distance = TASKGEN_CONFIGNODE.get_parameter('goal_radius').value
+            self._goal_tolerance_angle = TASKGEN_CONFIGNODE.get_parameter('goal_tolerance_angle').value
+            self._safety_distance = TASKGEN_CONFIGNODE.get_parameter(f'{robot.name}/spawn_robot_safe_dist').value
+        except Exception as e:
+            # Fallback values
+            self._goal_tolerance_distance = 1.0  
+            self._goal_tolerance_angle = 0.523599  
+            self._safety_distance = 0.25  
+            print(f"Warning: Using default values for robot parameters: {e}")
+        
         self._robot = robot
-        self._safety_distance = TASKGEN_CONFIGNODE.get_parameter(
-            f'{robot.name}/spawn_robot_safe_dist').value
         self._position = self._start_pos
 
     def set_up_robot(self):

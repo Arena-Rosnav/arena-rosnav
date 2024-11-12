@@ -6,6 +6,7 @@ import yaml
 from typing import Callable, List, Collection, Dict, Any
 from threading import Lock
 
+
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Point, Pose, Quaternion, PoseStamped
@@ -89,7 +90,21 @@ class HunavsimManager(EntityManager):
         
         # Setup services
         self.setup_services()
+
+        # Wait to be sure that all services are ready 
+        time.sleep(2.0)  
         
+        # Service Test for Hunavsim
+        self._node.get_logger().info("Starting initial service tests...")
+        self.test_hunav_services()
+        self._node.get_logger().info("Initial service tests completed.")
+            
+        # Setup timer for pedestrian updates
+        self._update_timer = self._node.create_timer(
+            self._update_rate,
+            self.update_pedestrians
+        )       
+
         # Setup timer for pedestrian updates
         self._update_timer = self._node.create_timer(
             self._update_rate,
@@ -106,33 +121,140 @@ class HunavsimManager(EntityManager):
                 y += 1
         self.JAIL_POS = gen_JAIL_POS(10)
 
-    # def load_agent_configurations(self):                                          ##Currently not needed anymore since Agentparameter are integrated in the Dynamic Obstacle class itself (shared.py)
-    #     """Load agent configurations from YAML (WorldGenerator functionality)"""
-    #     config_path = os.path.join(
-    #         get_package_share_directory('arena_bringup'),
-    #         'configs',
-    #         'hunav_agents',
-    #         'default.yaml'
-    #     )
-    #     self._node.get_logger().info(f"Loading config from: {config_path}")
 
-    #     with open(config_path, 'r') as f:
-    #         self.agent_config = yaml.safe_load(f)['hunav_loader']['ros__parameters'] 
-    #         self._node.get_logger().info("Loaded agent configurations:") # DEBUG TERMINAL OUTPUT
-    #         self._node.get_logger().info(f"{yaml.dump(self.agent_config, indent=2)}") #DEBUG TERMINAL OUTPUT 
-            
-    #     self._known_obstacles = KnownObstacles()
-    #     self._pedestrians = {}  # Store pedestrian states
+    def test_hunav_services(self):
+        """Test all HuNav services with proper agent initialization"""
+        self._node.get_logger().info("\n========= STARTING HUNAV SERVICES TEST =========")
+
+        # Create test agents
+        test_agents = Agents()
+        test_agents.header.stamp = self._node.get_clock().now().to_msg()
+        test_agents.header.frame_id = "map"
+
+        # Create a test agent
+        test_agent = Agent()
+        test_agent.id = 1
+        test_agent.name = "test_pedestrian"
+        test_agent.type = Agent.PERSON
+        test_agent.position.position.x = 2.0
+        test_agent.position.position.y = 2.0
+        test_agent.yaw = 0.0
+        test_agent.desired_velocity = 1.0
+        test_agent.radius = 0.35
         
-    #     # Process configurations like WorldGenerator
-    #     for agent_name, config in self.agent_config.items():
-    #         if isinstance(config, dict) and 'id' in config:
-    #             self._pedestrians[agent_name] = {
-    #                 'config': config,
-    #                 'current_animation': 'WALK',
-    #                 'animation_time': 0.0,
-    #                 'last_update': time.time()
-    #             }
+        # Set behavior
+        test_agent.behavior = AgentBehavior()
+        test_agent.behavior.type = AgentBehavior.BEH_REGULAR
+        test_agent.behavior.configuration = AgentBehavior.BEH_CONF_DEFAULT
+        test_agent.behavior.duration = 40.0
+        test_agent.behavior.once = True
+        test_agent.behavior.goal_force_factor = 2.0
+        test_agent.behavior.obstacle_force_factor = 10.0
+        test_agent.behavior.social_force_factor = 5.0
+        
+        # Add test goal
+        goal = Pose()
+        goal.position.x = 5.0
+        goal.position.y = 5.0
+        test_agent.goals.append(goal)
+        test_agent.cyclic_goals = True
+        test_agent.goal_radius = 0.3
+
+        # Add agent to agents message
+        test_agents.agents.append(test_agent)
+
+        # Create test robot
+        test_robot = Agent()
+        test_robot.id = 0
+        test_robot.name = "test_robot"
+        test_robot.type = Agent.ROBOT
+        test_robot.position.position.x = 0.0
+        test_robot.position.position.y = 0.0
+        test_robot.yaw = 0.0
+        test_robot.radius = 0.3
+
+        self._node.get_logger().info("Created test agents and robot for service testing")
+
+        # 1. Test compute_agents service
+        try:
+            self._node.get_logger().info("\n--- Testing /compute_agents service ---")
+            request = ComputeAgents.Request()
+            request.robot = test_robot
+            request.current_agents = test_agents
+            
+            self._node.get_logger().info(f"Sending compute_agents request with {len(request.current_agents.agents)} agents")
+            
+            future = self._compute_agents_client.call_async(request)
+            rclpy.spin_until_future_complete(self._node, future)
+            
+            if future.result():
+                response = future.result()
+                self._node.get_logger().info(f"Received response with {len(response.updated_agents.agents)} agents")
+                for agent in response.updated_agents.agents:
+                    self._node.get_logger().info(
+                        f"\nAgent {agent.name} (ID: {agent.id}):"
+                        f"\n  Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
+                        f"\n  Behavior Type: {agent.behavior.type}"
+                        f"\n  Current State: {agent.behavior.state}"
+                        f"\n  Linear Velocity: {agent.linear_vel:.2f}"
+                        f"\n  Angular Velocity: {agent.angular_vel:.2f}"
+                    )
+        except Exception as e:
+            self._node.get_logger().error(f"compute_agents service test failed: {str(e)}")
+
+        # 2. Test compute_agent service
+        try:
+            self._node.get_logger().info("\n--- Testing /compute_agent service ---")
+            request = ComputeAgent.Request()
+            request.id = test_agent.id  # Use the ID of our test agent
+            
+            self._node.get_logger().info(f"Requesting compute_agent for ID: {request.id}")
+            
+            future = self._compute_agent_client.call_async(request)
+            rclpy.spin_until_future_complete(self._node, future)
+            
+            if future.result():
+                response = future.result()
+                agent = response.agent
+                self._node.get_logger().info(
+                    f"\nCompute_agent response:"
+                    f"\n  Agent: {agent.name} (ID: {agent.id})"
+                    f"\n  Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
+                    f"\n  Behavior: Type={agent.behavior.type}, State={agent.behavior.state}"
+                )
+        except Exception as e:
+            self._node.get_logger().error(f"compute_agent service test failed: {str(e)}")
+
+        # 3. Test move_agent service
+        try:
+            self._node.get_logger().info("\n--- Testing /move_agent service ---")
+            request = MoveAgent.Request()
+            request.agent_id = test_agent.id
+            request.robot = test_robot
+            request.current_agents = test_agents
+            
+            self._node.get_logger().info(f"Requesting move_agent for ID: {request.agent_id}")
+            
+            future = self._move_agent_client.call_async(request)
+            rclpy.spin_until_future_complete(self._node, future)
+            
+            if future.result():
+                response = future.result()
+                agent = response.updated_agent
+                self._node.get_logger().info(
+                    f"\nMove_agent response:"
+                    f"\n  Agent: {agent.name} (ID: {agent.id})"
+                    f"\n  New Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
+                    f"\n  New Yaw: {agent.yaw:.2f}"
+                    f"\n  Behavior State: {agent.behavior.state}"
+                )
+        except Exception as e:
+            self._node.get_logger().error(f"move_agent service test failed: {str(e)}")
+
+        self._node.get_logger().info("\n========= HUNAV SERVICES TEST COMPLETE =========")
+
+
+
 
     def setup_services(self):
         """Initialize all required services"""
@@ -247,7 +369,7 @@ class HunavsimManager(EntityManager):
 
             # Create Hunav Agent
             request = ComputeAgent.Request()
-            agent = Agent()
+            agent = Agent() # create an hunav_msgs/Agent                  
 
             try:
                 # Basic Properties Debug
@@ -426,6 +548,8 @@ class HunavsimManager(EntityManager):
 
         print("\n==================== SPAWN PROCESS COMPLETE ====================")
         self._node.get_logger().error("SPAWN PROCESS COMPLETE")
+
+
 
     def update_pedestrians(self):
         """Update pedestrians (from HuNavPlugin's OnUpdate)"""
