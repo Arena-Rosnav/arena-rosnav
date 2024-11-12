@@ -63,15 +63,28 @@ class HunavsimManager(EntityManager):
     SERVICE_MOVE_AGENT = 'move_agent'
     SERVICE_RESET_AGENTS = 'reset_agents'
     
+class HunavsimManager(EntityManager):
+    # Class constants
+    WALLS_ENTITY = "walls"  # Definition ffor walls_entity
+    
+    # Animation configuration (from WorldGenerator)
+    SKIN_TYPES = {
+        0: 'elegant_man.dae',
+        1: 'casual_man.dae',
+        2: 'elegant_woman.dae',
+        3: 'regular_man.dae',
+        4: 'worker_man.dae',
+        5: 'walk.dae'
+    }
+    
+    # Service Names
+    SERVICE_COMPUTE_AGENT = 'compute_agent'
+    SERVICE_COMPUTE_AGENTS = 'compute_agents'
+    SERVICE_GET_AGENTS = 'get_agents'
+    SERVICE_MOVE_AGENT = 'move_agent'
+    SERVICE_RESET_AGENTS = 'reset_agents'
+    
     def __init__(self, namespace: Namespace, simulator: GazeboSimulator, node: Node = None):
-        """
-        Initialize HunavsimManager
-        
-        Args:
-            namespace: global namespace
-            simulator: GazeboSimulator instance
-            node: ROS Node instance
-        """
         if node is None:
             from task_generator import TASKGEN_NODE
             node = TASKGEN_NODE
@@ -84,12 +97,13 @@ class HunavsimManager(EntityManager):
         self._agents_initialized = False
         self._robot_initialized = False
         self._lock = Lock()
-        self._update_rate = 0.1  # 10Hz update rate
+        self._update_rate = 0.1
         
-        # Load agent configuration
-        self.load_agent_configurations()
+        # Initialize collections
+        self._known_obstacles = KnownObstacles()  # Initialization
+        self._pedestrians = {}  # Store pedestrian states
         
-        # Initialize service clients
+        # Setup services
         self.setup_services()
         
         # Setup timer for pedestrian updates
@@ -108,38 +122,39 @@ class HunavsimManager(EntityManager):
                 y += 1
         self.JAIL_POS = gen_JAIL_POS(10)
 
-    def load_agent_configurations(self):
-        """Load agent configurations from YAML (WorldGenerator functionality)"""
-        config_path = os.path.join(
-            get_package_share_directory('arena_bringup'),
-            'configs',
-            'hunav_agents',
-            'default.yaml'
-        )
-        self._node.get_logger().info(f"Loading config from: {config_path}")
+    # def load_agent_configurations(self):                                          ##Currently not needed anymore since Agentparameter are integrated in the Dynamic Obstacle class itself (shared.py)
+    #     """Load agent configurations from YAML (WorldGenerator functionality)"""
+    #     config_path = os.path.join(
+    #         get_package_share_directory('arena_bringup'),
+    #         'configs',
+    #         'hunav_agents',
+    #         'default.yaml'
+    #     )
+    #     self._node.get_logger().info(f"Loading config from: {config_path}")
 
-        with open(config_path, 'r') as f:
-            self.agent_config = yaml.safe_load(f)['hunav_loader']['ros__parameters'] 
-            self._node.get_logger().info("Loaded agent configurations:") # DEBUG TERMINAL OUTPUT
-            self._node.get_logger().info(f"{yaml.dump(self.agent_config, indent=2)}") #DEBUG TERMINAL OUTPUT 
+    #     with open(config_path, 'r') as f:
+    #         self.agent_config = yaml.safe_load(f)['hunav_loader']['ros__parameters'] 
+    #         self._node.get_logger().info("Loaded agent configurations:") # DEBUG TERMINAL OUTPUT
+    #         self._node.get_logger().info(f"{yaml.dump(self.agent_config, indent=2)}") #DEBUG TERMINAL OUTPUT 
             
-        self._known_obstacles = KnownObstacles()
-        self._pedestrians = {}  # Store pedestrian states
+    #     self._known_obstacles = KnownObstacles()
+    #     self._pedestrians = {}  # Store pedestrian states
         
-        # Process configurations like WorldGenerator
-        for agent_name, config in self.agent_config.items():
-            if isinstance(config, dict) and 'id' in config:
-                self._pedestrians[agent_name] = {
-                    'config': config,
-                    'current_animation': 'WALK',
-                    'animation_time': 0.0,
-                    'last_update': time.time()
-                }
+    #     # Process configurations like WorldGenerator
+    #     for agent_name, config in self.agent_config.items():
+    #         if isinstance(config, dict) and 'id' in config:
+    #             self._pedestrians[agent_name] = {
+    #                 'config': config,
+    #                 'current_animation': 'WALK',
+    #                 'animation_time': 0.0,
+    #                 'last_update': time.time()
+    #             }
 
     def setup_services(self):
         """Initialize all required services"""
         self._node.get_logger().info("Setting up Hunavservices...")
 
+        # Erst Service-Clients erstellen
         self._compute_agent_client = self._node.create_client(
             ComputeAgent,
             self._namespace(self.SERVICE_COMPUTE_AGENT)
@@ -160,8 +175,8 @@ class HunavsimManager(EntityManager):
             ResetAgents,
             self._namespace(self.SERVICE_RESET_AGENTS)
         )
-        
-        # Wait for services
+
+        # Dann auf Services warten
         required_services = [
             (self._compute_agent_client, 'compute_agent'),
             (self._compute_agents_client, 'compute_agents'),
@@ -170,9 +185,22 @@ class HunavsimManager(EntityManager):
             (self._reset_agents_client, 'reset_agents')
         ]
         
+        max_attempts = 5
         for client, name in required_services:
-            while not client.wait_for_service(timeout_sec=1.0):
-                self._node.get_logger().info(f'{name} service not available, waiting...')
+            attempts = 0
+            while attempts < max_attempts:
+                if client.wait_for_service(timeout_sec=2.0):
+                    self._node.get_logger().info(f'Service {name} is available')
+                    break
+                attempts += 1
+                self._node.get_logger().warn(f'Waiting for service {name} (attempt {attempts}/{max_attempts})')
+                
+            if attempts >= max_attempts:
+                self._node.get_logger().error(f'Service {name} not available after {max_attempts} attempts')
+                return False
+                
+        self._node.get_logger().info("All services are ready")
+        return True
 
     def create_pedestrian_sdf(self, agent_config: Dict) -> str:
         """Create SDF description for pedestrian (from WorldGenerator)"""
