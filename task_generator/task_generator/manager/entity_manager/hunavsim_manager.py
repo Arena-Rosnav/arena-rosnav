@@ -35,7 +35,12 @@ from task_generator.shared import (
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
 from task_generator.utils.geometry import quaternion_from_euler, euler_from_quaternion
 
+
+    
 class HunavsimManager(EntityManager):
+    # Class constants
+    WALLS_ENTITY = "walls"  # Definition for walls_entity
+    
     # Animation configuration (from WorldGenerator)
     SKIN_TYPES = {
         0: 'elegant_man.dae',
@@ -46,6 +51,7 @@ class HunavsimManager(EntityManager):
         5: 'walk.dae'
     }
     
+
     ANIMATION_TYPES = {
         'WALK': '07_01-walk.bvh',
         'WALK_FORWARD': '69_02_walk_forward.bvh',
@@ -55,28 +61,6 @@ class HunavsimManager(EntityManager):
         'WALK_SCARED': '142_17-walk_scared.bvh',
         'WALK_ANGRY': '17_01-walk_with_anger.bvh'
     }
-
-    # Service Names
-    SERVICE_COMPUTE_AGENT = 'compute_agent'
-    SERVICE_COMPUTE_AGENTS = 'compute_agents'
-    SERVICE_GET_AGENTS = 'get_agents'
-    SERVICE_MOVE_AGENT = 'move_agent'
-    SERVICE_RESET_AGENTS = 'reset_agents'
-    
-class HunavsimManager(EntityManager):
-    # Class constants
-    WALLS_ENTITY = "walls"  # Definition ffor walls_entity
-    
-    # Animation configuration (from WorldGenerator)
-    SKIN_TYPES = {
-        0: 'elegant_man.dae',
-        1: 'casual_man.dae',
-        2: 'elegant_woman.dae',
-        3: 'regular_man.dae',
-        4: 'worker_man.dae',
-        5: 'walk.dae'
-    }
-    
     # Service Names
     SERVICE_COMPUTE_AGENT = 'compute_agent'
     SERVICE_COMPUTE_AGENTS = 'compute_agents'
@@ -154,7 +138,7 @@ class HunavsimManager(EntityManager):
         """Initialize all required services"""
         self._node.get_logger().info("Setting up Hunavservices...")
 
-        # Erst Service-Clients erstellen
+        # First create Service-Clients 
         self._compute_agent_client = self._node.create_client(
             ComputeAgent,
             self._namespace(self.SERVICE_COMPUTE_AGENT)
@@ -176,7 +160,7 @@ class HunavsimManager(EntityManager):
             self._namespace(self.SERVICE_RESET_AGENTS)
         )
 
-        # Dann auf Services warten
+        # Wait for Services 
         required_services = [
             (self._compute_agent_client, 'compute_agent'),
             (self._compute_agents_client, 'compute_agents'),
