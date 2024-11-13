@@ -1,6 +1,7 @@
 from __future__ import annotations
 import collections
-
+import typing
+from geometry_msgs.msg import Pose, Twist, Point
 import dataclasses
 import os
 from typing import (
@@ -16,7 +17,10 @@ from typing import (
     Union,
     overload,
 )
+from pathlib import Path
+import rospkg
 
+from ament_index_python.packages import get_package_share_directory
 import enum
 import yaml
 from rosros import rospify as rospy
@@ -54,7 +58,7 @@ def rosparam_get(
 
 class Namespace(str):
     def __call__(self, *args: str) -> Namespace:
-        return Namespace(os.path.join(self, *args))
+        return Namespace(os.path.join(self, *args)).remove_double_slash()
 
     @property
     def simulation_ns(self) -> Namespace:
@@ -299,18 +303,210 @@ class Obstacle(ObstacleProps):
         )
 
 
+
+
+
+
+def load_config(filename: str = "default.yaml") -> dict:
+    """Load config from YAML file in arena_bringup configs."""
+    # first priority: Source space
+    source_path = os.path.join(
+        os.environ.get('HOME', ''),
+        "arena4_ws/src/arena/arena-rosnav/arena_bringup/configs/hunav_agents",
+        filename
+    )
+    
+    # second priority: Install space
+    install_path = os.path.join(
+        get_package_share_directory("arena_bringup"),
+        "configs",
+        "hunav_agents",
+        filename
+    )
+    
+    print(f"\n========== TRYING CONFIG PATHS ==========")
+    print(f"Source path: {source_path}")
+    print(f"Install path: {install_path}")
+    
+    # try first source, then install path
+    if os.path.exists(source_path):
+        config_path = source_path
+        print(f"\nUsing source space config: {config_path}")
+    elif os.path.exists(install_path):
+        config_path = install_path
+        print(f"\nUsing install space config: {config_path}")
+    else:
+        raise FileNotFoundError(f"Config file not found in either:\n- {source_path}\n- {install_path}")
+
+    try:
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+            params = config['hunav_loader']['ros__parameters']
+            
+            print("\n========== FULL PARAMETER OVERVIEW ==========")
+            print("\n=== Available Agents ===")
+            print(f"Agents: {params['agents']}")
+            
+            print("\n=== Individual Agent Configurations ===")
+            for agent in params['agents']:
+                agent_config = params[agent]
+                print(f"\nAgent: {agent}")
+                print("Basic Properties:")
+                print(f"- ID: {agent_config.get('id')}")
+                print(f"- Skin: {agent_config.get('skin')}")
+                print(f"- Group ID: {agent_config.get('group_id')}")
+                print(f"- Max Velocity: {agent_config.get('max_vel')}")
+                print(f"- Radius: {agent_config.get('radius')}")
+                
+                print("\nBehavior:")
+                behavior = agent_config.get('behavior', {})
+                print(f"- Type: {behavior.get('type')}  # REGULAR=1, IMPASSIVE=2, SURPRISED=3, SCARED=4, CURIOUS=5, THREATENING=6")
+                print(f"- Configuration: {behavior.get('configuration')}  # default=0, custom=1, random_normal=2, random_uniform=3")
+                print(f"- Duration: {behavior.get('duration')}")
+                print(f"- Once: {behavior.get('once')}")
+                print(f"- Velocity: {behavior.get('vel')}")
+                print(f"- Distance: {behavior.get('dist')}")
+                print(f"- Goal Force Factor: {behavior.get('goal_force_factor')}")
+                print(f"- Obstacle Force Factor: {behavior.get('obstacle_force_factor')}")
+                print(f"- Social Force Factor: {behavior.get('social_force_factor')}")
+                print(f"- Other Force Factor: {behavior.get('other_force_factor')}")
+                
+                print("\nInitial Pose:")
+                init_pose = agent_config.get('init_pose', {})
+                print(f"- X: {init_pose.get('x')}")
+                print(f"- Y: {init_pose.get('y')}")
+                print(f"- Z: {init_pose.get('z')}")
+                print(f"- H: {init_pose.get('h')}")
+                
+                print("\nGoals:")
+                print(f"- Goal Radius: {agent_config.get('goal_radius')}")
+                print(f"- Cyclic Goals: {agent_config.get('cyclic_goals')}")
+                print(f"- Goals List: {agent_config.get('goals')}")
+                
+                # Print individual goal positions
+                for goal_id in agent_config.get('goals', []):
+                    goal_data = agent_config.get(goal_id, {})
+                    print(f"\n  {goal_id}:")
+                    print(f"  - X: {goal_data.get('x')}")
+                    print(f"  - Y: {goal_data.get('y')}")
+                    print(f"  - H: {goal_data.get('h')}")
+                    
+            print("\n============================================")
+            
+            return params
+        
+
+    except Exception as e:
+            print(f"Error loading config from {config_path}: {e}")
+            raise
+
+
+
+#load the hunav params     
+DEFAULT_AGENT_CONFIG = load_config()
+
 @dataclasses.dataclass(frozen=True)
 class DynamicObstacle(DynamicObstacleProps):
-    waypoints: Iterable[PositionRadius]
+    @dataclasses.dataclass
+    class Behavior:
+        type: int
+        state: int
+        configuration: int
+        duration: float
+        once: bool
+        vel: float
+        dist: float
+        social_force_factor: float
+        goal_force_factor: float
+        obstacle_force_factor: float
+        other_force_factor: float
+
+    id: int
+    type: int
+    skin: int
+    name: str
+    group_id: int
+    position: PositionOrientation
+    yaw: float
+    velocity: None  
+    desired_velocity: float
+    radius: float
+    linear_vel: float
+    angular_vel: float
+    behavior: Behavior
+    goals: list
+    cyclic_goals: bool
+    goal_radius: float
+    closest_obs: list
+    model: ModelWrapper
+    extra: dict
 
     @staticmethod
-    def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
+    def parse(obj: dict, model: ModelWrapper) -> "DynamicObstacle":
+        # Parse behavior
+        behavior_dict = obj.get('behavior', {})
+        _type = behavior_dict.get('type', DEFAULT_AGENT_CONFIG['agent1']['behavior']['type'])
+        _state = behavior_dict.get('state', DEFAULT_AGENT_CONFIG['agent1']['behavior']['state'])
+        _conf = behavior_dict.get('configuration', DEFAULT_AGENT_CONFIG['agent1']['behavior']['configuration'])
+        _duration = behavior_dict.get('duration', DEFAULT_AGENT_CONFIG['agent1']['behavior']['duration'])
+        _once = behavior_dict.get('once', DEFAULT_AGENT_CONFIG['agent1']['behavior']['once'])
+        _vel = behavior_dict.get('vel', DEFAULT_AGENT_CONFIG['agent1']['behavior']['vel'])
+        _dist = behavior_dict.get('dist', DEFAULT_AGENT_CONFIG['agent1']['behavior']['dist'])
+        _social_force = behavior_dict.get('social_force_factor', DEFAULT_AGENT_CONFIG['agent1']['behavior']['social_force_factor'])
+        _goal_force = behavior_dict.get('goal_force_factor', DEFAULT_AGENT_CONFIG['agent1']['behavior']['goal_force_factor'])
+        _obstacle_force = behavior_dict.get('obstacle_force_factor', DEFAULT_AGENT_CONFIG['agent1']['behavior']['obstacle_force_factor'])
+        _other_force = behavior_dict.get('other_force_factor', DEFAULT_AGENT_CONFIG['agent1']['behavior']['other_force_factor'])
+
+        # Parse basic properties
         name = str(obj.get("name", ""))
-        position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
-        waypoints = [PositionRadius(*waypoint) for waypoint in obj.get("waypoints", [])]
+        position = PositionOrientation(*obj.get("init_pose", (0, 0, 0, 0)))
+        _id = obj.get('id', DEFAULT_AGENT_CONFIG['agent1']['id'])
+        _agent_type = obj.get('type', 1)  # Default to PERSON=1
+        _skin = obj.get('skin', DEFAULT_AGENT_CONFIG['agent1']['skin'])
+        _group_id = obj.get('group_id', DEFAULT_AGENT_CONFIG['agent1']['group_id'])
+        _yaw = obj.get('yaw', 0.0)
+        _velocity = None
+        _desired_velocity = obj.get('max_vel', DEFAULT_AGENT_CONFIG['agent1']['max_vel'])
+        _radius = obj.get('radius', DEFAULT_AGENT_CONFIG['agent1']['radius'])
+        _linear_vel = 0.0
+        _angular_vel = 0.0
+        _goals = []
+        _cyclic_goals = obj.get('cyclic_goals', DEFAULT_AGENT_CONFIG['agent1']['cyclic_goals'])
+        _goal_radius = obj.get('goal_radius', DEFAULT_AGENT_CONFIG['agent1']['goal_radius'])
+        _closest_obs = []
 
         return DynamicObstacle(
-            name=name, position=position, model=model, waypoints=waypoints, extra=obj
+            id=_id,
+            type=_agent_type,
+            skin=_skin,
+            name=name,
+            group_id=_group_id,
+            position=position,
+            yaw=_yaw,
+            velocity=_velocity,
+            desired_velocity=_desired_velocity,
+            radius=_radius,
+            linear_vel=_linear_vel,
+            angular_vel=_angular_vel,
+            model=model,
+            behavior=DynamicObstacle.Behavior(
+                type=_type,
+                state=_state,
+                configuration=_conf,
+                duration=_duration,
+                once=_once,
+                vel=_vel,
+                dist=_dist,
+                social_force_factor=_social_force,
+                goal_force_factor=_goal_force,
+                obstacle_force_factor=_obstacle_force,
+                other_force_factor=_other_force
+            ),
+            goals=_goals,
+            cyclic_goals=_cyclic_goals,
+            goal_radius=_goal_radius,
+            closest_obs=_closest_obs,
+            extra=obj
         )
 
 
@@ -364,3 +560,6 @@ class Robot(RobotProps):
             record_data_dir=record_data,
             extra=obj,
         )
+
+class DefaultParameter(typing.NamedTuple):
+    value: typing.Any

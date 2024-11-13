@@ -5,11 +5,12 @@ import rclpy
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 
+from task_generator import NodeInterface, ConfigNodeInterface
 from task_generator.constants import Constants
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.world_manager import WorldManager
-from task_generator.shared import PositionOrientation
+from task_generator.shared import DefaultParameter, PositionOrientation
 from task_generator.tasks import Task
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.obstacles import TM_Obstacles
@@ -20,6 +21,8 @@ import rosgraph_msgs.msg as rosgraph_msgs
 #import training.srv as training_srvs
 
 from task_generator.utils import ModelLoader
+
+
 
 
 class TaskFactory:
@@ -70,7 +73,7 @@ class TaskFactory:
                 module in cls.registry_module
             ), f"Module '{module}' is not registered!"
 
-        class CombinedTask(Task):
+        class CombinedTask(Task, NodeInterface, ConfigNodeInterface):
             """
             Represents a combined task that involves multiple robots and obstacles.
             """
@@ -106,6 +109,9 @@ class TaskFactory:
                     *args: Variable length argument typing.List.
                     **kwargs: Arbitrary keyword arguments.
                 """
+                ConfigNodeInterface.__init__(self)
+                NodeInterface.__init__(self)
+
                 self._force_reset = False
                 self.namespace = namespace
 
@@ -117,13 +123,13 @@ class TaskFactory:
                     cls.registry_module[module]()(task=self) for module in modules
                 ]
 
-                self._train_mode = TASKGEN_CONFIGNODE.declare_parameter("/train_mode", False)
+                self._train_mode = self._config_node.get_parameter_or("/train_mode", DefaultParameter(False)).value
 
-                self.__reset_start = TASKGEN_CONFIGNODE.create_publisher(std_msgs.Empty, 'reset_start', 1)
-                self.__reset_end = TASKGEN_CONFIGNODE.create_publisher(std_msgs.Empty, 'reset_end', 1)
+                self.__reset_start = self._node.create_publisher(std_msgs.Empty, 'reset_start', 1)
+                self.__reset_end = self._node.create_publisher(std_msgs.Empty, 'reset_end', 1)
                 self.__reset_mutex = False
 
-                TASKGEN_CONFIGNODE.create_subscription(rosgraph_msgs.Clock, '/clock', self._clock_callback, 10)
+                self._node.create_subscription(rosgraph_msgs.Clock, '/clock', self._clock_callback, 10)
                 self.last_reset_time = 0
                 self.clock = rosgraph_msgs.Clock()
 
@@ -145,8 +151,8 @@ class TaskFactory:
                 ]
 
                 if self._train_mode:
-                    self.set_tm_robots(Constants.TaskMode.TM_Robots(TASKGEN_CONFIGNODE.get_parameter('tm_robots').value))
-                    self.set_tm_obstacles(Constants.TaskMode.TM_Obstacles(TASKGEN_CONFIGNODE.get_parameter('tm_obstacles').value))
+                    self.set_tm_robots(Constants.TaskMode.TM_Robots(self._config_node.get_parameter('tm_robots').value))
+                    self.set_tm_obstacles(Constants.TaskMode.TM_Obstacles(self._config_node.get_parameter('tm_obstacles').value))
 
 
             def set_tm_robots(self, tm_robots: Constants.TaskMode.TM_Robots):
@@ -191,14 +197,14 @@ class TaskFactory:
                     if not self._train_mode:
                         if (
                             new_tm_robots := Constants.TaskMode.TM_Robots(
-                                TASKGEN_CONFIGNODE.get_parameter(self.PARAM_TM_ROBOTS).value
+                                self._config_node.get_parameter(self.PARAM_TM_ROBOTS).value
                             )
                         ) != self.__param_tm_robots:
                             self.set_tm_robots(new_tm_robots)
 
                         if (
                             new_tm_obstacles := Constants.TaskMode.TM_Obstacles(
-                                TASKGEN_CONFIGNODE.get_parameter(self.PARAM_TM_OBSTACLES).value
+                                self._config_node.get_parameter(self.PARAM_TM_OBSTACLES).value
                             )
                         ) != self.__param_tm_obstacles:
                             self.set_tm_obstacles(new_tm_obstacles)
@@ -249,14 +255,14 @@ class TaskFactory:
                 self.__reset_mutex = True
 
                 try:
-                    TASKGEN_CONFIGNODE.declare_parameter(self.PARAM_RESETTING, True).value
+                    self._node.declare_parameter(self.PARAM_RESETTING, True).value
                     self._reset_task()
 
                 except Exception as e:
                     raise e
 
                 finally:
-                    TASKGEN_CONFIGNODE.declare_parameter(self.PARAM_RESETTING, False).value
+                    self._node.declare_parameter(self.PARAM_RESETTING, False).value
                     self.__reset_mutex = False
 
             def reset(self, **kwargs):

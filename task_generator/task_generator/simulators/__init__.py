@@ -1,12 +1,13 @@
 import itertools
 import typing
 
+from task_generator import NodeInterface, ConfigNodeInterface
 from task_generator.constants import Constants
 from task_generator.shared import ModelType, EntityProps, Namespace, PositionOrientation
 from task_generator.utils.registry import Registry
 
 
-class BaseSimulator:
+class BaseSimulator(NodeInterface, ConfigNodeInterface):
 
     _namespace: Namespace
 
@@ -15,6 +16,9 @@ class BaseSimulator:
     __counter: itertools.count
 
     def __init__(self, namespace: Namespace):
+        NodeInterface.__init__(self)
+        ConfigNodeInterface.__init__(self)
+
         self._namespace = namespace
         self._spawn_model = dict()
 
