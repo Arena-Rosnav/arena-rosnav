@@ -25,3 +25,15 @@ def init_task_gen_node(args=None):
 
     TASKGEN_CONFIG_NODE = TaskGenerator_ConfigNode()
     TASKGEN_NODE = TaskGenerator()
+
+    from .shared import configure_node
+    configure_node(TASKGEN_NODE)
+
+    TASKGEN_NODE.post_init()
+
+    while True:
+        print('step0')
+        rclpy.spin_once(TASKGEN_CONFIG_NODE)
+        print('step1')
+        rclpy.spin_once(TASKGEN_NODE)
+        print('step2')

@@ -13,9 +13,8 @@ sudo apt-get install -y \
   curl \
   libgps-dev
 
-curl -O "https://raw.githubusercontent.com/gazebo-tooling/gazebodistro/master/collection-${GAZEBO_VERSION}.yaml"
 mkdir -p src/gazebo
-vcs import src/gazebo < "collection-${GAZEBO_VERSION}.yaml"
+vcs import src/gazebo < "src/arena/arena-rosnav/.repos/gazebo.repos"
 
 sudo curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
@@ -29,12 +28,4 @@ popd
 
 rosdep install -r --from-paths src/gazebo -i -y --rosdistro ${ARENA_ROS_VERSION}
 
-# Install ros_gz
-echo 'Building ros_gz from source...'
 export GZ_VERSION=${GAZEBO_VERSION}
-
-if [ ! -d src/ros_gz ] ; then
-  pushd src
-    git clone https://github.com/gazebosim/ros_gz.git -b ${ARENA_ROS_VERSION}
-  popd
-fi

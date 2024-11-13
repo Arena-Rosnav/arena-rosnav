@@ -1,5 +1,6 @@
 from enum import Enum
 import enum
+import typing
 from task_generator.shared import Namespace
 
 
@@ -34,6 +35,10 @@ class Constants:
             @classmethod
             def prefix(cls, *args):
                 return Namespace("tm_obstacles")(*args)
+            
+            @classmethod
+            def default(cls) -> "Constants.TaskMode.TM_Obstacles":
+                return cls.RANDOM
 
         @enum.unique
         class TM_Robots(enum.Enum):
@@ -45,6 +50,10 @@ class Constants:
             @classmethod
             def prefix(cls, *args):
                 return Namespace("tm_robots")(*args)
+            
+            @classmethod
+            def default(cls) -> "Constants.TaskMode.TM_Robots":
+                return cls.RANDOM
 
         @enum.unique
         class TM_Module(enum.Enum):
@@ -57,6 +66,10 @@ class Constants:
             @classmethod
             def prefix(cls, *args):
                 return Namespace("tm_module")(*args)
+            
+            @classmethod
+            def default(cls) -> typing.List["Constants.TaskMode.TM_Module"]:
+                return []
 
     class MapGenerator:
         NODE_NAME = "map_generator"

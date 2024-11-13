@@ -44,7 +44,7 @@ class TM_Explore(TM_Random):
                     i, PositionOrientation(*waypoint, Config.General.RNG.random() * 2 * math.pi)
                 )
 
-            elif (self._PROPS.clock.clock - self._timeouts[i]).secs > Config.Robot.TIMEOUT:
+            elif (self._PROPS.clock.clock - self._timeouts[i]).sec > Config.Robot.TIMEOUT:
                 waypoint = self._PROPS.world_manager.get_position_on_map(
                     safe_dist=robot._robot_radius, forbid=False
                 )

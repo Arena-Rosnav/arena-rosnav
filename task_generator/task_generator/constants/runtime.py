@@ -1,5 +1,6 @@
 import dataclasses
 from typing import Any, Callable, Optional
+import typing
 
 import numpy as np
 import rclpy
@@ -17,6 +18,33 @@ class TaskConfig_General:
     DESIRED_EPISODES: float = Constants.get_default("EPISODES")
 
 @dataclasses.dataclass
+class TaskConfig_TaskMode:
+
+    _PARAM_TM_ROBOTS: str = 'tm_robots'
+    _PARAM_TM_OBSTACLES: str = 'tm_obstacles'
+    _PARAM_TM_MODULES: str = 'tm_modules'
+
+    @classmethod
+    def declare(cls, node: rclpy.node.Node):
+        node.declare_parameter(cls._PARAM_TM_ROBOTS, Constants.TaskMode.TM_Robots.default().value)
+        node.declare_parameter(cls._PARAM_TM_OBSTACLES, Constants.TaskMode.TM_Obstacles.default().value)
+        node.declare_parameter(cls._PARAM_TM_MODULES, ','.join(map(lambda x:x.value, Constants.TaskMode.TM_Module.default())))
+        
+    TM_ROBOTS: Constants.TaskMode.TM_Robots = dataclasses.field(default_factory=Constants.TaskMode.TM_Robots.default)
+    TM_OBSTACLES: Constants.TaskMode.TM_Obstacles = dataclasses.field(default_factory=Constants.TaskMode.TM_Obstacles.default)
+    TM_MODULES: typing.List[Constants.TaskMode.TM_Module] = dataclasses.field(default_factory=Constants.TaskMode.TM_Module.default)
+
+    def callback(self, param: Parameter):
+        if param.name == self._PARAM_TM_ROBOTS:
+            self.TM_ROBOTS = Constants.TaskMode.TM_Robots(param.value)
+        elif param.name == self._PARAM_TM_OBSTACLES:
+            self.TM_OBSTACLES = Constants.TaskMode.TM_Obstacles(param.value)
+        elif param.name == self._PARAM_TM_MODULES:
+            self.TM_MODULES = [Constants.TaskMode.TM_Module(mod) for mod in param.value.split(',')]
+
+
+    
+@dataclasses.dataclass
 class TaskConfig_Robot:
     GOAL_TOLERANCE_RADIUS: float = Constants.get_default("GOAL_RADIUS")
     GOAL_TOLERANCE_ANGLE: float = Constants.get_default("GOAL_TOLERANCE_ANGLE")
@@ -29,7 +57,12 @@ class TaskConfig_Obstacles:
 
 @dataclasses.dataclass
 class TaskConfig:
+    @classmethod
+    def declare(cls, node: rclpy.node.Node):
+        TaskConfig_TaskMode.declare(node)
+
     General: TaskConfig_General = TaskConfig_General()
+    TaskMode: TaskConfig_TaskMode = TaskConfig_TaskMode()
     Robot: TaskConfig_Robot = TaskConfig_Robot()
     Obstacles: TaskConfig_Obstacles = TaskConfig_Obstacles()
 
@@ -77,6 +110,8 @@ class TaskGenerator_ConfigNode(Node):
         self.declare_parameter('obstacle_max_radius', Config.Obstacles.OBSTACLE_MAX_RADIUS)
         self.declare_parameter('episodes', Config.General.DESIRED_EPISODES)
 
+        TaskConfig.declare(self)
+
         # Fetch the initial parameter values
         Config.General.WAIT_FOR_SERVICE_TIMEOUT = self.get_parameter('timeout_wait_for_service').value
         Config.General.MAX_RESET_FAIL_TIMES = self.get_parameter('max_reset_fail_times').value
@@ -108,4 +143,7 @@ class TaskGenerator_ConfigNode(Node):
                 Config.Obstacles.OBSTACLE_MAX_RADIUS = param.value
             elif param.name == 'episodes':
                 Config.General.DESIRED_EPISODES = float(param.value)
+
+            TaskConfig.TaskMode.callback(param)
+
         return rclpy.parameter.ParameterValue()
