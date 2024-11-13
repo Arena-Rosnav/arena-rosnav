@@ -196,6 +196,11 @@ rosdep install -y \
   || echo 'rosdep failed to install all dependencies'
 touch "$INSTALLED"
 
+if [ ! -d /usr/local/include/lightsfm ] ; then
+  git clone https://github.com/robotics-upo/lightsfm.git lightsfm
+  (cd lightsfm && make && sudo make install || rm -rf lightsfm)
+  rm -rf lightsfm || echo 'failed to install lightsfm'
+fi
 
 #run installers
 # sudo apt upgrade
