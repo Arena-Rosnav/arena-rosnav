@@ -16,13 +16,8 @@ from task_generator.constants import Constants
 from task_generator.constants.runtime import Config, TaskGenerator_ConfigNode
 
 
-from task_generator.manager.entity_manager.hunavsim_manager import HunavsimManager
-#from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
-#from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
-#from task_generator.manager.entity_manager.crowdsim_manager import CrowdsimManager
+from task_generator.simulators import BaseSimulator, SimulatorRegistry
 from task_generator.manager.entity_manager import EntityManagerRegistry
-
-
 from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
@@ -31,11 +26,9 @@ from task_generator.shared import (
     ModelWrapper,
     Namespace,
     Robot,
-    gen_init_pos,
-    rosparam_get
+    gen_init_pos
 )
 
-from task_generator.simulators import BaseSimulator, SimulatorRegistry
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils import ModelLoader
