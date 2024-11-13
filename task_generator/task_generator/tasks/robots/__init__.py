@@ -22,7 +22,7 @@ class TM_Robots(TaskMode):
         TaskMode.__init__(self, **kwargs)
 
     def reset(self, **kwargs):
-        self._last_reset = self._PROPS.clock.clock.secs
+        self._last_reset = self._PROPS.clock.clock.sec
 
     def set_position(self, position: PositionOrientation):
         """
@@ -55,7 +55,7 @@ class TM_Robots(TaskMode):
             bool: True if all robots are done, False otherwise.
 
         """
-        if (self._PROPS.clock.clock.secs - self._last_reset) > Config.Robot.TIMEOUT:
+        if (self._PROPS.clock.clock.sec - self._last_reset) > Config.Robot.TIMEOUT:
             rospy.logwarn(f"REACHED {Config.Robot.TIMEOUT}")
             return True
         

@@ -1,6 +1,7 @@
 import os
 from typing import List, Optional
 
+from task_generator import NodeInterface
 from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Config
@@ -9,7 +10,6 @@ from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 
 import rclpy
-from rclpy.node import Node
 from rcl_interfaces.msg import SetParametersResult
 
 import dataclasses
@@ -42,7 +42,7 @@ def _get_attrib(element: ET.Element, attribute: str, default: Optional[str] = No
 
     raise ValueError(f"attribute {attribute} not found in {element}")
 
-class TM_Parametrized(TM_Obstacles, Node):
+class TM_Parametrized(TM_Obstacles, NodeInterface):
 
     _config: _Config
 
@@ -59,14 +59,14 @@ class TM_Parametrized(TM_Obstacles, Node):
         return super().prefix("parametrized", *args)
     
     def __init__(self, **kwargs):
+        NodeInterface.__init__(self)
         TM_Obstacles.__init__(self, **kwargs)
-        Node.__init__(self, 'tm_parametrized_node')
 
-        self.declare_parameter('PARAMETRIZED_file', '')
-        self.add_on_set_parameters_callback(self.parameters_callback)
+        self._node.declare_parameter('PARAMETRIZED_file', '')
+        self._node.add_on_set_parameters_callback(self.parameters_callback)
 
         # Initial configuration
-        self.reconfigure({'PARAMETRIZED_file': self.get_parameter('PARAMETRIZED_file').value})
+        self.reconfigure({'PARAMETRIZED_file': self._node.get_parameter('PARAMETRIZED_file').value})
 
     def parameters_callback(self, params):
         for param in params:

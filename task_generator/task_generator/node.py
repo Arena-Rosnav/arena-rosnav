@@ -13,7 +13,7 @@ from rclpy.parameter import Parameter
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Constants
-from task_generator.constants.runtime import Config, TaskGenerator_ConfigNode
+from task_generator.constants.runtime import Config
 
 
 from task_generator.simulators import BaseSimulator, SimulatorRegistry
@@ -101,7 +101,7 @@ class TaskGenerator(rclpy.node.Node):
         self.declare_parameters(
             namespace='',
             parameters=[
-                ('entity_manager', 'hunavsim'),
+                ('entity_manager', 'dummy'),
                 ('auto_reset', True),
                 ('train_mode', False),
                 ('robot_setup_file', ''),
@@ -113,6 +113,8 @@ class TaskGenerator(rclpy.node.Node):
                 ('task_generator_setup_finished', False),
             ]
         )
+
+        Task.declare_parameters(self)
 
         self._auto_reset = self.get_parameter('auto_reset').value
         self._train_mode = self.get_parameter('train_mode').value
@@ -150,30 +152,29 @@ class TaskGenerator(rclpy.node.Node):
 
             self._number_of_resets = 0
 
-            self.srv_start_model_visualization = self.create_client(
-                EmptySrv, 'start_model_visualization')
-            while not self.srv_start_model_visualization.wait_for_service(
-                    timeout_sec=1.0):
-                self.get_logger().info('start_model_visualization service not available, waiting again...')
-            self.srv_start_model_visualization.call_async(EmptySrv.Request())
+            # self.srv_start_model_visualization = self.create_client(
+            #     EmptySrv, 'start_model_visualization')
+            # while not self.srv_start_model_visualization.wait_for_service(
+            #         timeout_sec=1.0):
+            #     self.get_logger().info('start_model_visualization service not available, waiting again...')
+            # self.srv_start_model_visualization.call_async(EmptySrv.Request())
 
             self.create_timer(0.5, self._check_task_status)
 
             self.reset_task(first_map=True)
 
-            try:
-                self.set_parameters(
-                    [rclpy.Parameter('task_generator_setup_finished', value=True)])
-                self.srv_setup_finished = self.create_client(
-                    EmptySrv, 'task_generator_setup_finished')
-                while not self.srv_setup_finished.wait_for_service(
-                        timeout_sec=1.0):
-                    self.get_logger().info(
-                        'task_generator_setup_finished service not available, waiting again...')
-                self.srv_setup_finished.call_async(EmptySrv.Request())
-            except BaseException:
-                pass
-        rclpy.spin(self)
+            # try:
+            #     self.set_parameters(
+            #         [rclpy.Parameter('task_generator_setup_finished', value=True)])
+            #     self.srv_setup_finished = self.create_client(
+            #         EmptySrv, 'task_generator_setup_finished')
+            #     while not self.srv_setup_finished.wait_for_service(
+            #             timeout_sec=1.0):
+            #         self.get_logger().info(
+            #             'task_generator_setup_finished service not available, waiting again...')
+            #     self.srv_setup_finished.call_async(EmptySrv.Request())
+            # except BaseException:
+            #     pass
 
     def _get_predefined_task(self, **kwargs):
         """
@@ -356,7 +357,7 @@ class TaskGenerator(rclpy.node.Node):
         return response
 
     def _send_end_message_on_end(self):
-        if self._number_of_resets < Config.General.DESIRED_EPISODES:
+        if Config.General.DESIRED_EPISODES < 0 or self._number_of_resets < Config.General.DESIRED_EPISODES:
             return
 
         self.get_logger().info(
