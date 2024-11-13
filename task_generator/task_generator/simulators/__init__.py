@@ -67,6 +67,10 @@ class BaseSimulator(NodeInterface, ConfigNodeInterface):
 
 SimulatorRegistry = Registry[Constants.Simulator, BaseSimulator]()
 
+@SimulatorRegistry.register(Constants.Simulator.DUMMY)
+def lazy_dummy():
+    from .dummy_simulator import DummySimulator
+    return DummySimulator
 
 @SimulatorRegistry.register(Constants.Simulator.FLATLAND)
 def lazy_flatland():

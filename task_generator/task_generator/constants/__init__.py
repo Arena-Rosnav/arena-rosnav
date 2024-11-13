@@ -12,6 +12,7 @@ class Constants:
     TASK_GENERATOR_SERVER_NODE = Namespace("task_generator_server")
 
     class Simulator(Enum):
+        DUMMY = "dummy"
         FLATLAND = "flatland"
         GAZEBO = "gazebo"
         UNITY = "unity"
