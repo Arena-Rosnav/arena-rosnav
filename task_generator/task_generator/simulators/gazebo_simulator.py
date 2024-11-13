@@ -4,13 +4,8 @@ from rclpy.node import Node
 from ros_gz_interfaces.srv import SpawnEntity, DeleteEntity, SetEntityPose, ControlWorld
 from ros_gz_interfaces.msg import EntityFactory, WorldControl
 from geometry_msgs.msg import PoseStamped, Pose, Quaternion, Point
-import sys
 import traceback
-from task_generator.simulators import SimulatorRegistry
-from task_generator.shared import rosparam_get
 from task_generator.utils.geometry import quaternion_from_euler
-from task_generator.constants import Constants
-from task_generator.constants.runtime import Config
 from task_generator.simulators import BaseSimulator
 
 from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
@@ -31,12 +26,6 @@ class GazeboSimulator(BaseSimulator):
             node_name = "gazebo_simulator"  # Default name if namespace is empty
 
         super().__init__(namespace=Namespace(node_name))
-        
-        # Store node reference
-        self._node = node
-        if self._node is None:
-            from task_generator import TASKGEN_NODE
-            self._node = TASKGEN_NODE
             
       
         self._node.get_logger().info(f"Initializing GazeboSimulator with namespace: {namespace}")
@@ -91,10 +80,10 @@ class GazeboSimulator(BaseSimulator):
         # resp_delete = self._delete_entity.call_async(req)
         # resp_pose = self._set_entity_pose.call_async(req)
         # resp_world = self._control_world.call_async(req)
-        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_spawn)
-        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_delete)
-        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_pose)
-        # rclpy.spin_until_future_complete(TASKGEN_NODE, resp_world)
+        # rclpy.spin_until_future_complete(this._node, resp_spawn)
+        # rclpy.spin_until_future_complete(this._node, resp_delete)
+        # rclpy.spin_until_future_complete(this._node, resp_pose)
+        # rclpy.spin_until_future_complete(this._node, resp_world)
 
 
 
