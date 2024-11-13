@@ -21,7 +21,7 @@ netifaces = "^0.11.0"
 watchdog = "^3.0.0"
 rosros = "^0.2.5"
 transforms3d = "^0.4.2"
-
+opencv-python = "^4.2.0"
 
 [tool.poetry.group.planners]
 # all planners except rosnav and aio

@@ -40,7 +40,7 @@ class GazeboSimulator(BaseSimulator):
             
       
         self._node.get_logger().info(f"Initializing GazeboSimulator with namespace: {namespace}")
-        self._goal_pub = TASKGEN_NODE.create_publisher(
+        self._goal_pub = self._node.create_publisher(
             PoseStamped,
             self._namespace("/goal"),
             10

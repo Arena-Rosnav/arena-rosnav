@@ -109,11 +109,3 @@ class TaskGenerator_ConfigNode(Node):
             elif param.name == 'episodes':
                 Config.General.DESIRED_EPISODES = float(param.value)
         return rclpy.parameter.ParameterValue()
-
-TASKGEN_CONFIGNODE = TaskGenerator_ConfigNode
-
-def main(args=None):
-    rclpy.init(args=args)
-    global TASKGEN_CONFIGNODE
-    TASKGEN_CONFIGNODE = TaskGenerator_ConfigNode()
-    rclpy.spin(TASKGEN_CONFIGNODE)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import collections
+import typing
 from geometry_msgs.msg import Pose, Twist, Point
 import dataclasses
 import os
@@ -57,7 +58,7 @@ def rosparam_get(
 
 class Namespace(str):
     def __call__(self, *args: str) -> Namespace:
-        return Namespace(os.path.join(self, *args))
+        return Namespace(os.path.join(self, *args)).remove_double_slash()
 
     @property
     def simulation_ns(self) -> Namespace:
@@ -559,3 +560,6 @@ class Robot(RobotProps):
             record_data_dir=record_data,
             extra=obj,
         )
+
+class DefaultParameter(typing.NamedTuple):
+    value: typing.Any
