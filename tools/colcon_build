@@ -9,9 +9,16 @@ colcon build \
     --symlink-install \
     --continue-on-error \
     --packages-skip-build-finished \
-    --cmake-args " -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p)" \
+    --cmake-args -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p) -DBUILD_TESTING=OFF \
     --packages-skip ${BUILD_EXCLUDES} \
-    "$@"
+    $@
 
 cd $ARENA_WS_DIR
 source install/local_setup.bash
+
+for package in $(ls /opt/ros/humble/share/) ; do
+    setup_file="/opt/ros/humble/share/${package}/local_setup.bash"
+    if [ -f "$setup_file" ] ; then
+        . "$setup_file"
+    fi 
+done
