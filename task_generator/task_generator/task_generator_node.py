@@ -1,11 +1,13 @@
 #! /usr/bin/env python3
-
-from . import init_task_gen_node
+import rclpy
 
 def main(args=None):
+    rclpy.init()
+    from . import init_task_gen_node
     init_task_gen_node()
-    from . import TASKGEN_NODE 
+    from . import TASKGEN_NODE, TASKGEN_CONFIG_NODE 
     TASKGEN_NODE.post_init()
+
     # Clean the node if necessary
     # task_generator.destroy_node()
     # rclpy.shutdown()
