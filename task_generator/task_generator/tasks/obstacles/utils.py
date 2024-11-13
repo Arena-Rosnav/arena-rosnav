@@ -40,10 +40,13 @@ class ITF_Obstacle:
 
             waypoints += [PositionRadius(*pos, 1) for pos in props.world_manager.get_positions_on_map(n=n_waypoints, safe_dist=safe_distance)]
 
-        return DynamicObstacle(**{
-            **dataclasses.asdict(setup),
-            **dict(waypoints=waypoints)
-        })
+        return DynamicObstacle.parse(
+            {
+                **dataclasses.asdict(setup),
+                **dict(waypoints=waypoints),
+            },
+            model=setup.model
+        )
 
 
     @classmethod

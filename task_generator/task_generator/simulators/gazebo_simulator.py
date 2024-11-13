@@ -1,5 +1,4 @@
 import rclpy
-from rclpy.node import Node
 
 from ros_gz_interfaces.srv import SpawnEntity, DeleteEntity, SetEntityPose, ControlWorld
 from ros_gz_interfaces.msg import EntityFactory, WorldControl
@@ -13,12 +12,11 @@ from task_generator.shared import ModelType, Namespace, PositionOrientation, Rob
 
 
 class GazeboSimulator(BaseSimulator):
-    def __init__(self, namespace, node: Node = None):
+    def __init__(self, namespace):
         """Initialize GazeboSimulator
         
         Args:
             namespace: Namespace for the simulator
-            node (Node, optional): ROS2 node instance
         """
         # Ensure we have a valid node name
         node_name = namespace.strip('/').replace('/', '_')

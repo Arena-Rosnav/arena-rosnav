@@ -215,16 +215,13 @@ class RobotManager(NodeInterface, ConfigNodeInterface):
 
     def _publish_goal(self, goal: PositionOrientation):
         goal_msg = geometry_msgs.PoseStamped()
-        goal_msg.header.seq = 0
-        goal_msg.header.stamp = self._node.get_clock().now().to_msg()
         goal_msg.header.frame_id = "map"
         goal_msg.pose.position.x = goal.x
         goal_msg.pose.position.y = goal.y
-        goal_msg.pose.position.z = 0
+        goal_msg.pose.position.z = 0.
 
-        goal_msg.pose.orientation = geometry_msgs.Quaternion(
-            *quaternion_from_euler(0.0, 0.0, goal.orientation, axes="sxyz")
-        )
+        goal_msg.pose.orientation = orientation = geometry_msgs.Quaternion()
+        orientation.x, orientation.y, orientation.z, orientation.w = quaternion_from_euler(0.0, 0.0, goal.orientation, axes="sxyz")
 
         self._move_base_goal_pub.publish(goal_msg)
 

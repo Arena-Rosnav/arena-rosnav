@@ -14,6 +14,8 @@ from task_generator.utils import ModelLoader
 import rosgraph_msgs.msg as rosgraph_msgs
 import std_msgs.msg as std_msgs
 
+import rclpy.node
+
 
 class Props_Manager:
     obstacle_manager: ObstacleManager
@@ -123,6 +125,11 @@ class Task(Props_):
     TOPIC_RESET_START = "reset_start"
     TOPIC_RESET_END = "reset_end"
     PARAM_RESETTING = "resetting"
+
+    @classmethod
+    def declare_parameters(cls, node: rclpy.node.Node):
+        node.declare_parameter(cls.PARAM_RESETTING, True)
+
 
     __reset_start: rospy.Publisher
     __reset_end: rospy.Publisher
