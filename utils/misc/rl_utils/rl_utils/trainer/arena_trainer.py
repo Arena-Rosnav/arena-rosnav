@@ -1,13 +1,16 @@
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from enum import Enum
+from typing import TYPE_CHECKING
 
 import rl_utils.utils.paths as Paths
 import rospy
-from rl_utils.cfg.train import TrainingCfg
+
+if TYPE_CHECKING:
+    from rl_utils.cfg.train import TrainingCfg
 from rl_utils.state_container import SimulationStateContainer
 from rl_utils.utils.hooks import HookManager, TrainingHookStages, bind_hooks
+from rl_utils.utils.type_alias.enums import RLFramework
 from rl_utils.utils.type_alias.observation import EnvironmentType, PathsDict
 from rosnav_rl.rl_agent import RL_Agent
 from tools.config import ConfigManager
@@ -27,10 +30,6 @@ class TrainingArguments:
         return self.__dict__
 
 
-class TrainingFramework(Enum):
-    SB3 = "StableBaselines3"
-
-
 class ArenaTrainer(ABC):
     """
     ArenaTrainer is an abstract base class for setting up and managing the training process of a reinforcement learning
@@ -38,7 +37,7 @@ class ArenaTrainer(ABC):
     as well as to register and manage hooks for various stages of the training lifecycle.
 
     Attributes:
-        FRAMEWORK (TrainingFramework): The training framework being used.
+        FRAMEWORK (RLFramework): The training framework being used.
         config (TrainingCfg): Configuration settings for the training process.
         paths (PathsDict): Dictionary containing paths for saving models and configurations.
         simulation_state_container (SimulationStateContainer): Container for storing the simulation state.
@@ -47,9 +46,9 @@ class ArenaTrainer(ABC):
         hook_manager (HookManager): Manages hooks for different stages of the training process.
     """
 
-    FRAMEWORK: TrainingFramework
+    framework: RLFramework
 
-    config: TrainingCfg
+    config: "TrainingCfg"
     paths: PathsDict
 
     simulation_state_container: SimulationStateContainer
@@ -60,7 +59,7 @@ class ArenaTrainer(ABC):
     hook_manager: HookManager = HookManager()
 
     @bind_hooks(before_stage=TrainingHookStages.ON_INIT)
-    def __init__(self, config: TrainingCfg, resume: bool = False) -> None:
+    def __init__(self, config: "TrainingCfg", resume: bool = False) -> None:
         """
         Initializes the ArenaTrainer with the given configuration.
 
@@ -97,7 +96,6 @@ class ArenaTrainer(ABC):
             self._setup_agent,
             self._setup_environment,
             self._setup_monitoring,
-            self._load,
         ]
 
         for step in setup_steps:
@@ -122,11 +120,6 @@ class ArenaTrainer(ABC):
         self._save_model()
         self.agent.model.env.close()
         sys.exit(0)
-
-    def _load(self, *args, **kwargs) -> None:
-        """Load a pre-trained model."""
-        if self.__resume:
-            self._load_impl()
 
     def _register_default_hooks(self) -> None:
         """Register default hooks common across implementations."""
@@ -176,11 +169,6 @@ class ArenaTrainer(ABC):
     def _train_impl(self, *args, **kwargs) -> None:
         """Implementation of training logic."""
         self.agent.model.train()
-
-    @abstractmethod
-    def _load_impl(self, *args, **kwargs) -> None:
-        """Load a pre-trained model."""
-        raise NotImplementedError()
 
     @abstractmethod
     def _setup_agent(self, *args, **kwargs) -> None:

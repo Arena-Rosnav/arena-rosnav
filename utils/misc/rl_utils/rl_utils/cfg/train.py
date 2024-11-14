@@ -1,4 +1,4 @@
-from pydantic import BaseModel, model_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 from rl_utils.cfg.sb3_cfg.robot import DiscreteAction
 from rl_utils.utils.type_alias.observation import CustomDiscreteActionList
 from rosnav_rl.cfg.agent import AgentCfg
@@ -41,6 +41,6 @@ class TrainingCfg(BaseModel):
                 self.agent_cfg.name is not None
             ), "Agent name must be provided for resume!"
             assert (
-                self.agent_cfg.framework.model.resume.checkpoint is not None
+                self.agent_cfg.framework.algorithm.checkpoint is not None
             ), "Checkpoint must be provided for resume!"
         return self

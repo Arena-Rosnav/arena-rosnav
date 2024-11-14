@@ -1,13 +1,15 @@
 from dataclasses import dataclass
-from typing import Any, Tuple
+from typing import TYPE_CHECKING, Any
 
 import rl_utils.utils.paths as Paths
 import rosnav_rl.rl_agent as Rosnav_RL
-from rl_utils.cfg import TrainingCfg
+
+if TYPE_CHECKING:
+    from rl_utils.cfg import TrainingCfg
 from rl_utils.trainer.arena_trainer import (
     ArenaTrainer,
+    RLFramework,
     TrainingArguments,
-    TrainingFramework,
     TrainingHookStages,
 )
 from rl_utils.utils.dynamic_reconfigure import set_dynamic_reconfigure_parameter
@@ -39,11 +41,11 @@ class StableBaselines3Trainer(ArenaTrainer):
         FRAMEWORK (TrainingFramework): The training framework used (SB3).
     """
 
-    FRAMEWORK = TrainingFramework.SB3
+    framework = RLFramework.SB3
     config_manager: SB3ConfigManager
     environment: SB3Environment
 
-    def __init__(self, config: TrainingCfg) -> None:
+    def __init__(self, config: "TrainingCfg") -> None:
         self.config_manager = SB3ConfigManager(config)
         self.__unpack_config()
         super().__init__(config, config.resume)
@@ -81,14 +83,6 @@ class StableBaselines3Trainer(ArenaTrainer):
         self.hook_manager.register(
             TrainingHookStages.BEFORE_SETUP,
             [_set_curriculum_file, _set_curriculum_stage],
-        )
-
-    def _load_impl(self, *args, **kwargs) -> None:
-        checkpoint = self.agent_cfg.framework.model.resume.checkpoint
-
-        self.agent.model.load(
-            path=(self.paths[Paths.Agent].path / checkpoint),
-            env=self.environment.train_env,
         )
 
     def _setup_agent(self) -> None:
@@ -169,7 +163,7 @@ class StableBaselines3Trainer(ArenaTrainer):
             None
             if not self.is_resume
             else self.paths[Paths.Agent].path
-            / self.agent_cfg.framework.model.resume.checkpoint
+            / self.agent_cfg.framework.algorithm.checkpoint
         )
 
         self.agent.initialize_model(
