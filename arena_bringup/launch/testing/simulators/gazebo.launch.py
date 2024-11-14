@@ -136,36 +136,11 @@ def generate_launch_description():
         package='ros_gz_bridge',
         executable='parameter_bridge',
         name='parameter_bridge',
-        output='screen',
-        parameters=[{
-            'config_file': bridge_config,
-            'qos_overrides./tf_static.publisher.durability': 'transient_local',
-            'use_sim_time': use_sim_time,
-            'robot_model': robot_model,
-        }],
-        arguments=[
-            # Service bridges with correct ROS 2 service type notation
-            '/world/default/control@ros_gz_interfaces.srv.ControlWorld',
-            '/world/default/create@ros_gz_interfaces.srv.SpawnEntity',
-            '/world/default/remove@ros_gz_interfaces.srv.DeleteEntity',
-            '/world/default/set_pose@ros_gz_interfaces.srv.SetEntityPose',
-            
-            # Additional debugging
-            '--ros-args',
-            '--log-level', 'debug'
-        ],
-        remappings=[
-            ('/world/default/pose/info', '/tf_static'),
-            ('/world/default/dynamic_pose/info', '/tf'),
-            (f'/world/default/model/{robot_model}/joint_state', '/joint_states'),
-            ('/model/${robot_model}/cmd_vel', '/cmd_vel'),
-            ('/model/${robot_model}/odometry', '/odom'),
-            ('/world/default/model/${robot_model}/imu', '/imu'),
-            ('/scan', '/scan'),
-            ('/map', '/map'),
-            ('/clock', '/clock')
-        ]
-    )
+        output='screen',  # Keep this for debugging
+        parameters=[{'config_file': bridge_config, 'use_sim_time': use_sim_time}],  # Bridge config
+        arguments=['--ros-args', '--log-level', 'debug'],  # Log level for debugging
+    ) 
+
 
     # RViz configuration path
     rviz_config_file = os.path.join(
