@@ -15,7 +15,6 @@ def generate_launch_description():
     workspace_root = current_dir
     while not workspace_root.endswith('arena4_ws'):
         workspace_root = os.path.dirname(workspace_root)
-        
     if not workspace_root.endswith('arena4_ws'):
         raise ValueError("Could not find the 'arena4_ws' directory in the current path.")
 
@@ -23,12 +22,11 @@ def generate_launch_description():
     GZ_CONFIG_PATH = os.path.join(workspace_root, 'install', 'gz-sim7', 'share', 'gz')
     GZ_SIM_PHYSICS_ENGINE_PATH = os.path.join(workspace_root, 'build', 'gz-physics6')
     GZ_SIM_RESOURCE_PATHS = [
-        os.path.join(workspace_root, 'src', 'gazebo', 'gz-sim', 'test', 'worlds', 'models'),
+        os.path.join(workspace_root, 'src', 'deps', 'robots', 'jackal'),
         os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'entities'),
         os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'worlds'),
         os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'gazebo_models'),
-        os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'gazebo_models', 'Cafe table', 'materials', 'textures'),
-        os.path.join(workspace_root, 'src', 'deps')
+        os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'gazebo_models', 'Cafe table', 'materials', 'textures')
     ]
     GZ_SIM_RESOURCE_PATHS_COMBINED = ':'.join(GZ_SIM_RESOURCE_PATHS)
     

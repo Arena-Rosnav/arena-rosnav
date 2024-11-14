@@ -33,6 +33,22 @@ def generate_spawn_node(box_index, box_sdf_xml, x, y, z):
             '-z', str(z)
         ],
     )
+    
+def delete_entity(request, response):
+    """Service callback to delete an entity from the simulation."""
+    entity_name = request.name
+    delete_node = generate_delete_node(entity_name)
+    delete_node.execute()
+    response.success = True
+    return response
+
+def generate_delete_service():
+    """Generate the DeleteEntity service."""
+    return ServiceHandler(
+        srv_name='/world/default/remove',
+        srv_type=DeleteEntity,
+        callback=delete_entity
+    )
 
 def generate_launch_description():
     # Set the workspace root
@@ -61,11 +77,14 @@ def generate_launch_description():
         x, y, z = generate_random_position()
         spawn_box_nodes.append(LogInfo(msg=f'Spawning box {i} at position ({x}, {y}, {z})'))
         spawn_box_nodes.append(generate_spawn_node(i, box_sdf_xml, x, y, z))
+        
+    # delete_service = generate_delete_service()
 
     # Return the LaunchDescription with all the nodes/actions
     return LaunchDescription([
         DeclareLaunchArgument('num_boxes', default_value='5', description='Number of boxes to spawn'),
-        *spawn_box_nodes
+        *spawn_box_nodes,
+        # delete_service,
     ])
 
 if __name__ == '__main__':
