@@ -206,7 +206,7 @@ class HunavsimManager(EntityManager):
         try:
             self._node.get_logger().info("\n--- Testing /compute_agent service ---")
             request = ComputeAgent.Request()
-            request.id = test_agent.id  # Use the ID of our test agent
+            request.id = test_agent.id
             
             self._node.get_logger().info(f"Requesting compute_agent for ID: {request.id}")
             
@@ -215,7 +215,7 @@ class HunavsimManager(EntityManager):
             
             if future.result():
                 response = future.result()
-                agent = response.agent
+                agent = response.updated_agent  
                 self._node.get_logger().info(
                     f"\nCompute_agent response:"
                     f"\n  Agent: {agent.name} (ID: {agent.id})"
