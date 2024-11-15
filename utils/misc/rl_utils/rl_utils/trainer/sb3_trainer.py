@@ -80,10 +80,23 @@ class StableBaselines3Trainer(ArenaTrainer):
                 TASK_GEN_SERVER_NODE, CURRICULUM_INDEX_PARAM, current_stage
             )
 
+        def _transfer_weights(_):
+            transfer_cfg = (
+                self.config_manager.fields.agent.framework.algorithm.transfer_weights
+            )
+            if transfer_cfg:
+                self.agent.model.transfer_weights(
+                    source_dir=transfer_cfg.source_dir,
+                    source_checkpoint=transfer_cfg.source_checkpoint,
+                    include=transfer_cfg.include,
+                    exclude=transfer_cfg.exclude,
+                )
+
         self.hook_manager.register(
             TrainingHookStages.BEFORE_SETUP,
             [_set_curriculum_file, _set_curriculum_stage],
         )
+        self.hook_manager.register(TrainingHookStages.AFTER_SETUP, _transfer_weights)
 
     def _setup_agent(self) -> None:
         """Initialize the RL agent with configuration."""
