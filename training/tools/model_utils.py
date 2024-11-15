@@ -44,7 +44,7 @@ def setup_wandb(train_cfg: "TrainingCfg", rl_model: "RL_Model") -> None:
     wandb.login()
     wandb.init(
         name=train_cfg.agent_cfg.name,
-        group=train_cfg.agent_cfg.framework.model.architecture_name,
+        group=train_cfg.agent_cfg.framework.algorithm.architecture_name,
         project="Arena-RL",
         entity=None,
         sync_tensorboard=True,
