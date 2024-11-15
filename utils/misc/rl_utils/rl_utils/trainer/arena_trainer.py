@@ -71,13 +71,13 @@ class ArenaTrainer(ABC):
 
         self._register_default_hooks()
         self._register_framework_specific_hooks()
-        self._setup()
+        self._setup_trainer()
 
     @bind_hooks(
         before_stage=TrainingHookStages.BEFORE_SETUP,
         after_stage=TrainingHookStages.AFTER_SETUP,
     )
-    def _setup(self) -> None:
+    def _setup_trainer(self) -> None:
         """
         Sets up the trainer by executing a series of predefined setup steps.
 
@@ -114,6 +114,15 @@ class ArenaTrainer(ABC):
         """
         self._train_impl()
 
+    def save(self, checkpoint: str, *args, **kwargs) -> None:
+        """
+        Save the trained model.
+
+        Returns:
+            None
+        """
+        self._save_model(checkpoint=checkpoint)
+
     @bind_hooks(before_stage=TrainingHookStages.ON_CLOSE)
     def close(self):
         """Clean up and exit."""
@@ -135,7 +144,9 @@ class ArenaTrainer(ABC):
                 lambda _: self.simulation_state_container.distribute(),
             ],
             TrainingHookStages.AFTER_TRAINING: [
-                lambda _: rospy.on_shutdown(lambda: self._save_model())
+                lambda _: rospy.on_shutdown(
+                    lambda: self._save_model(checkpoint="last_model")
+                )
             ],
         }
 
@@ -155,11 +166,11 @@ class ArenaTrainer(ABC):
             )
 
     @bind_hooks(before_stage=TrainingHookStages.ON_SAVE)
-    def _save_model(self) -> None:
+    def _save_model(self, checkpoint: str) -> None:
         """Save the trained model."""
         if not self.is_debug_mode:
             self.agent.model.save(
-                dirpath=self.paths[Paths.Agent].path, checkpoint_name="last_model"
+                dirpath=self.paths[Paths.Agent].path, checkpoint_name=checkpoint
             )
 
     def _register_framework_specific_hooks(self):
