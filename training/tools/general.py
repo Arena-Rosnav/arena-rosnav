@@ -156,6 +156,6 @@ def load_config(file_path: str) -> dict:
 def setup_paths_dictionary(
     trainer: "ArenaTrainer", is_debug_mode: bool = False
 ) -> PathDictionary:
-    trainer.paths = PathFactory.get_paths(trainer.agent_cfg.name)
+    trainer.paths = PathFactory.get_paths(trainer.config.agent_cfg.name)
     if not is_debug_mode:
         trainer.paths.create_all()
