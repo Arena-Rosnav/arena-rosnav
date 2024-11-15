@@ -2,14 +2,14 @@ goal_reached:
   reward: 15
 
 factored_safe_distance:
-  factor: -0.25
+  factor: -0.2
 
 collision:
   reward: -15
 
 approach_goal:
-  pos_factor: 0.15
-  neg_factor: 0.2
+  pos_factor: 0.2
+  neg_factor: 0.3
   _goal_update_threshold: 2.5
   _on_safe_dist_violation: true
 
@@ -34,17 +34,19 @@ two_factor_velocity_difference:
 #   _on_safe_dist_violation: true
 
 ped_type_collision:
-  type: 1
-  reward: -5
+  type_reward_pairs:
+    0: -2.5
+    1: -5
 
-ped_type_safety_distance:
-  type: 1
-  reward: -0.025
-  safety_distance: 1.5
+ped_type_factored_safety_distance:
+  type_factor_pairs:
+    0: -0.1
+    1: -0.2
+  safety_distance: 1.2
 
 max_steps_exceeded:
   reward: -15
 
 angular_vel_constraint:
-  penalty_factor: -0.025
+  penalty_factor: -0.05
   threshold: 0.5
