@@ -14,6 +14,7 @@ export ARENA_WS_DIR=$(realpath "$(eval echo ${INPUT:-${ARENA_WS_DIR}})")
 
 echo "installing ${ARENA_ROSNAV_REPO}:${ARENA_BRANCH} on ROS2 ${ARENA_ROS_VERSION} to ${ARENA_WS_DIR}"
 sudo echo 'confirmed'
+mkdir -p "$ARENA_WS_DIR"
 cd "$ARENA_WS_DIR"
 
 export INSTALLED=src/arena/arena-rosnav/.installed
@@ -107,9 +108,6 @@ else
   popd
 fi
 python -m pip install -e vcstool
-
-#
-mkdir -p src/deps
 
 # Getting Packages
 echo "Installing deps...:"
