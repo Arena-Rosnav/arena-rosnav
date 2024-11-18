@@ -57,7 +57,7 @@ class BaseSimulator(NodeInterface, ConfigNodeInterface):
 
     def move_entity(self, name: str, position: PositionOrientation) -> bool:
         """
-        Move the robot to the given position.
+        Move entity to the given position.
         """
         raise NotImplementedError()
 
