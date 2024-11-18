@@ -142,6 +142,7 @@ if [ ! -d src/deps ] ; then
     git clone https://github.com/rudislabs/actuator_msgs
     git clone https://github.com/swri-robotics/gps_umd
     git clone https://github.com/ros-perception/vision_msgs
+    git clone https://github.com/ros-perception/vision_opencv.git -b "$ARENA_ROS_VERSION"
   popd
 fi
 
