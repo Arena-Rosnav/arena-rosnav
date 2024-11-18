@@ -18,7 +18,10 @@ source install/local_setup.bash
 
 for package in $(ls /opt/ros/humble/share/) ; do
     setup_file="/opt/ros/humble/share/${package}/local_setup.bash"
+    install_setup_file="${ARENA_WS_DIR}/install/${package}/local_setup.bash"
     if [ -f "$setup_file" ] ; then
-        . "$setup_file"
+        if [ ! -f "$install_setup_file" ] ; then # avoid double sourcing
+            . "$setup_file"
+        fi
     fi 
 done
