@@ -14,6 +14,7 @@ export ARENA_WS_DIR=$(realpath "$(eval echo ${INPUT:-${ARENA_WS_DIR}})")
 
 echo "installing ${ARENA_ROSNAV_REPO}:${ARENA_BRANCH} on ROS2 ${ARENA_ROS_VERSION} to ${ARENA_WS_DIR}"
 sudo echo 'confirmed'
+mkdir -p "$ARENA_WS_DIR"
 cd "$ARENA_WS_DIR"
 
 export INSTALLED=src/arena/arena-rosnav/.installed
@@ -108,9 +109,6 @@ else
 fi
 python -m pip install -e vcstool
 
-#
-mkdir -p src/deps
-
 # Getting Packages
 echo "Installing deps...:"
 sudo apt-get install -y \
@@ -144,6 +142,7 @@ if [ ! -d src/deps ] ; then
     git clone https://github.com/rudislabs/actuator_msgs
     git clone https://github.com/swri-robotics/gps_umd
     git clone https://github.com/ros-perception/vision_msgs
+    git clone https://github.com/ros-perception/vision_opencv.git -b "$ARENA_ROS_VERSION"
   popd
 fi
 
@@ -211,6 +210,8 @@ compile(){
   cd "${ARENA_WS_DIR}"
   . colcon_build
 }
+
+compile
 
 for installer in $(ls src/arena/arena-rosnav/installers | grep -E '^[0-9]+_.*.sh') ; do 
 

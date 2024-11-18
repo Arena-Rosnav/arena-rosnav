@@ -26,6 +26,7 @@ pushd src/gazebo
     || true
 popd
 
-rosdep install -r --from-paths src/gazebo -i -y --rosdistro ${ARENA_ROS_VERSION}
+rosdep install -r --from-paths src/gazebo -i -y --rosdistro ${ARENA_ROS_VERSION} \
+  || echo 'rosdep failed to install all dependencies'
 
 export GZ_VERSION=${GAZEBO_VERSION}
