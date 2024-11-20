@@ -3,6 +3,7 @@
 export BUILD_EXCLUDES=""
 
 ARENA_WS_DIR="$(pwd)"
+ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-jazzy}
 
 source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
 colcon build \
@@ -16,8 +17,8 @@ colcon build \
 cd $ARENA_WS_DIR
 source install/local_setup.bash
 
-for package in $(ls /opt/ros/jazzy/share/ 2>/dev/null  || echo '') ; do
-    setup_file="/opt/ros/humble/share/${package}/local_setup.bash"
+for package in $(ls /opt/ros/${ARENA_ROS_DISTRO}/share/ 2>/dev/null  || echo '') ; do
+    setup_file="/opt/ros/${ARENA_ROS_DISTRO}/share/${package}/local_setup.bash"
     install_setup_file="${ARENA_WS_DIR}/install/${package}/local_setup.bash"
     if [ -f "$setup_file" ] ; then
         if [ ! -f "$install_setup_file" ] ; then # avoid double sourcing

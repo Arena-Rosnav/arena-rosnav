@@ -9,6 +9,7 @@ from launch_ros.actions import Node
 from launch.actions import TimerAction
 from launch.conditions import IfCondition
 
+
 def generate_launch_description():
     # Set environment variables
     current_dir = os.path.abspath(__file__)
@@ -16,20 +17,52 @@ def generate_launch_description():
     while not workspace_root.endswith('arena4_ws'):
         workspace_root = os.path.dirname(workspace_root)
     if not workspace_root.endswith('arena4_ws'):
-        raise ValueError("Could not find the 'arena4_ws' directory in the current path.")
+        raise ValueError(
+            "Could not find the 'arena4_ws' directory in the current path.")
 
     # Set paths for Gazebo, Physics Engine, and Resource
-    GZ_CONFIG_PATH = os.path.join(workspace_root, 'install', 'gz-sim7', 'share', 'gz')
-    GZ_SIM_PHYSICS_ENGINE_PATH = os.path.join(workspace_root, 'build', 'gz-physics6')
+    GZ_CONFIG_PATH = os.path.join(
+        workspace_root,
+        'install',
+        'gz-sim8',
+        'share',
+        'gz')
+    GZ_SIM_PHYSICS_ENGINE_PATH = os.path.join(
+        workspace_root,
+        'build',
+        'gz-physics7')
     GZ_SIM_RESOURCE_PATHS = [
         os.path.join(workspace_root, 'src', 'deps', 'robots', 'jackal'),
-        os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'entities'),
-        os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'worlds'),
-        os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'gazebo_models'),
-        os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'gazebo_models', 'Cafe table', 'materials', 'textures')
+        os.path.join(
+            workspace_root,
+            'src',
+            'arena',
+            'simulation-setup',
+            'entities'),
+        os.path.join(
+            workspace_root,
+            'src',
+            'arena',
+            'simulation-setup',
+            'worlds'),
+        os.path.join(
+            workspace_root,
+            'src',
+            'arena',
+            'simulation-setup',
+            'gazebo_models'),
+        os.path.join(
+            workspace_root,
+            'src',
+            'arena',
+            'simulation-setup',
+            'gazebo_models',
+            'Cafe table',
+            'materials',
+            'textures')
     ]
     GZ_SIM_RESOURCE_PATHS_COMBINED = ':'.join(GZ_SIM_RESOURCE_PATHS)
-    
+
     # Update environment variables
     os.environ['GZ_CONFIG_PATH'] = GZ_CONFIG_PATH
     os.environ['GZ_SIM_PHYSICS_ENGINE_PATH'] = GZ_SIM_PHYSICS_ENGINE_PATH
@@ -116,7 +149,7 @@ def generate_launch_description():
         'launch', 'testing', 'simulators',
         'gazebo_bridge.yaml'
     )
-    
+
     world_state_converter = Node(
         package='ros_gz_bridge',
         executable='world_state_to_odom',
@@ -137,10 +170,14 @@ def generate_launch_description():
         executable='parameter_bridge',
         name='parameter_bridge',
         output='screen',  # Keep this for debugging
-        parameters=[{'config_file': bridge_config, 'use_sim_time': use_sim_time}],  # Bridge config
-        arguments=['--ros-args', '--log-level', 'debug'],  # Log level for debugging
-    ) 
-
+        parameters=[{'config_file': bridge_config,
+                     'use_sim_time': use_sim_time}],  # Bridge config
+        arguments=[
+            '--ros-args',
+            '--log-level',
+            'debug'],
+        # Log level for debugging
+    )
 
     # RViz configuration path
     rviz_config_file = os.path.join(
@@ -152,7 +189,7 @@ def generate_launch_description():
         'rviz',
         'nav2_default_view.rviz'
     )
-    
+
     # Launch RViz node
     rviz = Node(
         package='rviz2',
@@ -174,20 +211,18 @@ def generate_launch_description():
         workspace_root,
         'src', 'arena', 'simulation-setup', 'entities', 'robots', robot_model, 'configs', 'nav2.yaml'
     ])
-    
-    
+
     nav2_map_file = PathJoinSubstitution([
         workspace_root,
         'src', 'arena', 'simulation-setup', 'worlds',
         world_file,
         'map', 'map.yaml'
     ])
-    
+
     nav2_launch_file = PathJoinSubstitution([
         workspace_root,
         'src', 'arena', 'simulation-setup', 'entities', 'robots', robot_model, 'launch', 'nav2.launch.py'
     ])
-
 
     # Include the Nav2 launch file
     nav2_launch = IncludeLaunchDescription(
@@ -198,17 +233,17 @@ def generate_launch_description():
             'map': nav2_map_file,
         }.items()
     )
-    
+
     slam_launch_file = PathJoinSubstitution([
         workspace_root,
         'src', 'arena', 'simulation-setup', 'entities', 'robots', robot_model, 'launch', 'slam.launch.py'
     ])
-    
+
     slam_yaml_file = PathJoinSubstitution([
         workspace_root,
         'src', 'arena', 'simulation-setup', 'entities', 'robots', robot_model, 'configs', 'slam.yaml'
     ])
-    
+
     slam_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(slam_launch_file),
         launch_arguments={
@@ -216,7 +251,7 @@ def generate_launch_description():
             'yaml_path': slam_yaml_file,
         }.items()
     )
-    
+
 # Robot Localization Node
     robot_localization_node = Node(
         package='robot_localization',
@@ -234,23 +269,23 @@ def generate_launch_description():
             'base_link_frame': 'base_link',
             'world_frame': 'odom',
             'odom0': '/odom',
-            'odom0_config': [True,  True,  False,
-                           False, False, True,
-                           False, False, False,
-                           False, False, True,
-                           False, False, False],
+            'odom0_config': [True, True, False,
+                             False, False, True,
+                             False, False, False,
+                             False, False, True,
+                             False, False, False],
             'imu0': '/imu',
             'imu0_config': [False, False, False,
-                          True,  True,  True,
-                          False, False, False,
-                          True,  True,  True,
-                          False, False, False],
+                            True, True, True,
+                            False, False, False,
+                            True, True, True,
+                            False, False, False],
             'publish_acceleration': False,
             'odom0_relative': False,  # Changed from false to False
             'imu0_relative': False,   # Changed from false to False
         }]
     )
-    
+
     static_transform_publisher = [
         Node(
             package='tf2_ros',
@@ -267,7 +302,7 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}]
         )
     ]
-    
+
     random_spawn_launch_file = PathJoinSubstitution([
         workspace_root,
         'src', 'arena', 'arena-rosnav', 'arena_bringup', 'launch', 'testing', 'simulators', 'gazebo_entity_spawn.py'
@@ -279,12 +314,25 @@ def generate_launch_description():
 
     # Return the LaunchDescription with all the nodes/actions
     return LaunchDescription([
-        DeclareLaunchArgument('use_sim_time', default_value='true', description='Use simulation (Gazebo) clock if true'),
-        DeclareLaunchArgument('world_file', default_value='map_empty', description='World file name'),
-        DeclareLaunchArgument('model', default_value='jackal', description='Robot model name'),
+        DeclareLaunchArgument(
+            'use_sim_time',
+            default_value='true',
+            description='Use simulation (Gazebo) clock if true'),
+        DeclareLaunchArgument(
+            'world_file',
+            default_value='map_empty',
+            description='World file name'),
+        DeclareLaunchArgument(
+            'model',
+            default_value='jackal',
+            description='Robot model name'),
         SetEnvironmentVariable('GZ_CONFIG_PATH', GZ_CONFIG_PATH),
-        SetEnvironmentVariable('GZ_SIM_PHYSICS_ENGINE_PATH', GZ_SIM_PHYSICS_ENGINE_PATH),
-        SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', GZ_SIM_RESOURCE_PATHS_COMBINED),
+        SetEnvironmentVariable(
+            'GZ_SIM_PHYSICS_ENGINE_PATH',
+            GZ_SIM_PHYSICS_ENGINE_PATH),
+        SetEnvironmentVariable(
+            'GZ_SIM_RESOURCE_PATH',
+            GZ_SIM_RESOURCE_PATHS_COMBINED),
         *static_transform_publisher,
         gazebo,
         robot_state_publisher,
