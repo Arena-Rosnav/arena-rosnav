@@ -6,14 +6,15 @@ import os
 import scipy.spatial.transform
 import rclpy
 from rclpy.parameter import Parameter
-from task_generator.constants import Constants
-from task_generator.constants.runtime import Config, TASKGEN_CONFIGNODE
-from task_generator.manager.entity_manager import EntityManager
-from task_generator.manager.entity_manager.utils import YAMLUtil
-from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
 
+from task_generator import NodeInterface, ConfigNodeInterface
 import task_generator.utils.arena as Utils
 from task_generator.utils.geometry import quaternion_from_euler
+from task_generator.constants import Constants
+from task_generator.constants.runtime import Config
+from task_generator.manager.entity_manager import EntityManager
+from task_generator.manager.entity_manager.utils import YAMLUtil
+from task_generator.shared import DefaultParameter, ModelType, Namespace, PositionOrientation, Robot
 
 import nav_msgs.msg as nav_msgs
 import geometry_msgs.msg as geometry_msgs
@@ -25,7 +26,7 @@ from launch_ros.actions import Node as LaunchNode
 from launch.launch_service import LaunchService
 
 
-class RobotManager:
+class RobotManager(NodeInterface, ConfigNodeInterface):
     """
     The robot manager manages the goal and start
     position of a robot for all task modes.
@@ -56,6 +57,9 @@ class RobotManager:
     def __init__(
         self, namespace: Namespace, entity_manager: EntityManager, robot: Robot
     ):
+        NodeInterface.__init__(self)
+        ConfigNodeInterface.__init__(self)
+
         self._namespace = namespace
         self._entity_manager = entity_manager
         self._start_pos = PositionOrientation(0, 0, 0)
@@ -63,9 +67,9 @@ class RobotManager:
         
         # Parameter handling
         try:
-            self._goal_tolerance_distance = TASKGEN_CONFIGNODE.get_parameter('goal_radius').value
-            self._goal_tolerance_angle = TASKGEN_CONFIGNODE.get_parameter('goal_tolerance_angle').value
-            self._safety_distance = TASKGEN_CONFIGNODE.get_parameter(f'{robot.name}/spawn_robot_safe_dist').value
+            self._goal_tolerance_distance = Config.Robot.GOAL_TOLERANCE_RADIUS
+            self._goal_tolerance_angle = Config.Robot.GOAL_TOLERANCE_ANGLE
+            self._safety_distance = Config.Robot.SPAWN_ROBOT_SAFE_DIST
         except Exception as e:
             # Fallback values
             self._goal_tolerance_distance = 1.0  
@@ -96,14 +100,14 @@ class RobotManager:
 
         _gen_goal_topic = self.namespace("move_base_simple", "goal")
 
-        self._move_base_goal_pub = TASKGEN_CONFIGNODE.create_publisher(
+        self._move_base_goal_pub = self._node.create_publisher(
             geometry_msgs.PoseStamped, _gen_goal_topic, 10
         )
 
-        self._pub_goal_timer = TASKGEN_CONFIGNODE.create_timer(
+        self._pub_goal_timer = self._node.create_timer(
             0.25, self._publish_goal_periodically
         )
-        TASKGEN_CONFIGNODE.create_subscription(
+        self._node.create_subscription(
             nav_msgs.Odometry, self.namespace(
                 "odom"), self._robot_pos_callback, 10
         )
@@ -112,15 +116,16 @@ class RobotManager:
 
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             self._robot_radius = float(
-                TASKGEN_CONFIGNODE.get_parameter("robot_radius").value)
+                self._node.get_parameter("robot_radius").value)
         else:
             # needs to be adjusted to self.get_parameter('robot_radius').value
             # but robot_radius is not set yet in runtime.py
-            TASKGEN_CONFIGNODE.declare_parameter(
+            self._node.declare_parameter(
                 ("robot_radius"), Config.Robot.GOAL_TOLERANCE_RADIUS)
-            self._robot_radius = TASKGEN_CONFIGNODE.get_parameter(
+            self._robot_radius = self._node.get_parameter(
                 ("robot_radius")).value
-        self._clear_costmaps_srv = self.create_client(
+            
+        self._clear_costmaps_srv = self._node.create_client(
             std_srvs.Empty, self.namespace("move_base", "clear_costmaps"))
 
     @property
@@ -161,7 +166,7 @@ class RobotManager:
             self.move_robot_to_pos(start_pos)
 
             if self._robot.record_data_dir is not None:
-                TASKGEN_CONFIGNODE.set_parameter(
+                self._node.set_parameter(
                     rclpy.parameter.Parameter(
                         self.namespace("start"),
                         rclpy.Parameter.Type.DOUBLE_ARRAY,
@@ -174,7 +179,7 @@ class RobotManager:
             self._publish_goal(self._goal_pos)
 
             if self._robot.record_data_dir is not None:
-                TASKGEN_CONFIGNODE.set_parameter(
+                self._node.set_parameter(
                     rclpy.parameter.Parameter(
                         self.namespace("goal"),
                         rclpy.Parameter.Type.DOUBLE_ARRAY,
@@ -210,21 +215,18 @@ class RobotManager:
 
     def _publish_goal(self, goal: PositionOrientation):
         goal_msg = geometry_msgs.PoseStamped()
-        goal_msg.header.seq = 0
-        goal_msg.header.stamp = TASKGEN_CONFIGNODE.get_clock().now().to_msg()
         goal_msg.header.frame_id = "map"
         goal_msg.pose.position.x = goal.x
         goal_msg.pose.position.y = goal.y
-        goal_msg.pose.position.z = 0
+        goal_msg.pose.position.z = 0.
 
-        goal_msg.pose.orientation = geometry_msgs.Quaternion(
-            *quaternion_from_euler(0.0, 0.0, goal.orientation, axes="sxyz")
-        )
+        goal_msg.pose.orientation = orientation = geometry_msgs.Quaternion()
+        orientation.x, orientation.y, orientation.z, orientation.w = quaternion_from_euler(0.0, 0.0, goal.orientation, axes="sxyz")
 
         self._move_base_goal_pub.publish(goal_msg)
 
     def _launch_robot(self):
-        self.get_logger().warn(f"START WITH MODEL {self.namespace}")
+        self._node.get_logger().warn(f"START WITH MODEL {self.namespace}")
 
         if Utils.get_arena_type() != Constants.ArenaType.TRAINING:
             launch_description = LaunchDescription()
@@ -237,8 +239,8 @@ class RobotManager:
                 'frame': f"{self.name}/" if self.name else '',
                 'inter_planner': self._robot.inter_planner,
                 'local_planner': self._robot.local_planner,
-                'complexity': TASKGEN_CONFIGNODE.declare_parameter('complexity', 1).value,
-                'train_mode': TASKGEN_CONFIGNODE.declare_parameter('train_mode', False).value,
+                # 'complexity': self._config_node.declare_parameter('complexity', 1).value,
+                # 'train_mode': self._config_node.declare_parameter('train_mode', False).value,
                 'agent_name': self._robot.agent,
             }
 
@@ -259,21 +261,20 @@ class RobotManager:
             self.launch_service.include_launch_description(launch_description)
             self.launch_service.run()
 
-        base_frame: str = TASKGEN_CONFIGNODE.get_parameter(
-            self.namespace("robot_base_frame")).value
-        sensor_frame: str = TASKGEN_CONFIGNODE.get_parameter(
-            self.namespace("robot_sensor_frame")).value
+        # TODO
+        # base_frame: str = self._node.get_parameter_or(self.namespace("robot_base_frame"), DefaultParameter('')).value
+        # sensor_frame: str = self._node.get_parameter_or(self.namespace("robot_sensor_frame"), DefaultParameter('')).value
 
-        TASKGEN_CONFIGNODE.set_parameters([
-            Parameter(self.namespace("move_base", "global_costmap", "robot_base_frame"),
-                      Parameter.Type.STRING, os.path.join(self.name, base_frame)),
-            Parameter(self.namespace("move_base", "local_costmap", "robot_base_frame"),
-                      Parameter.Type.STRING, os.path.join(self.name, base_frame)),
-            Parameter(self.namespace("move_base", "local_costmap", "scan", "sensor_frame"),
-                      Parameter.Type.STRING, os.path.join(self.name, sensor_frame)),
-            Parameter(self.namespace("move_base", "global_costmap", "scan", "sensor_frame"),
-                      Parameter.Type.STRING, os.path.join(self.name, sensor_frame))
-        ])
+        # self._node.set_parameters([
+        #     Parameter(self.namespace("move_base", "global_costmap", "robot_base_frame"),
+        #               Parameter.Type.STRING, os.path.join(self.name, base_frame)),
+        #     Parameter(self.namespace("move_base", "local_costmap", "robot_base_frame"),
+        #               Parameter.Type.STRING, os.path.join(self.name, base_frame)),
+        #     Parameter(self.namespace("move_base", "local_costmap", "scan", "sensor_frame"),
+        #               Parameter.Type.STRING, os.path.join(self.name, sensor_frame)),
+        #     Parameter(self.namespace("move_base", "global_costmap", "scan", "sensor_frame"),
+        #               Parameter.Type.STRING, os.path.join(self.name, sensor_frame))
+        # ])
 
     def _robot_pos_callback(self, data: nav_msgs.Odometry):
         current_position = data.pose.pose

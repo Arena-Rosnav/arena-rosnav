@@ -10,6 +10,7 @@ from task_generator.shared import (
     PositionOrientation,
     PositionRadius
 )
+from task_generator import NodeInterface
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 
@@ -17,7 +18,6 @@ import dataclasses
 
 # New imports for ROS 2
 import rclpy
-from rclpy.node import Node
 from rcl_interfaces.msg import SetParametersResult
 
 
@@ -36,7 +36,7 @@ class _Config:
     MODELS_DYNAMIC_OBSTACLES: List[str]
 
 
-class TM_Random(TM_Obstacles, Node):
+class TM_Random(TM_Obstacles, NodeInterface):
     """
     Random task generator for obstacles.
 
@@ -60,10 +60,10 @@ class TM_Random(TM_Obstacles, Node):
         return super().prefix("random", *args)
 
     def __init__(self, **kwargs):
+        NodeInterface.__init__(self)
         TM_Obstacles.__init__(self, **kwargs)
-        Node.__init__(self, 'tm_random_node')
 
-        self.declare_parameters(
+        self._node.declare_parameters(
             namespace='',
             parameters=[
                 ('RANDOM_static_min', 0),
@@ -78,8 +78,8 @@ class TM_Random(TM_Obstacles, Node):
             ]
         )
 
-        self.add_on_set_parameters_callback(self.parameters_callback)
-        self.reconfigure(self.get_parameters([
+        self._node.add_on_set_parameters_callback(self.parameters_callback)
+        self.reconfigure(self._node.get_parameters([
             'RANDOM_static_min', 'RANDOM_interactive_min', 'RANDOM_dynamic_min',
             'RANDOM_static_max', 'RANDOM_interactive_max', 'RANDOM_dynamic_max',
             'RANDOM_static_models', 'RANDOM_interactive_models', 'RANDOM_dynamic_models'
@@ -95,7 +95,7 @@ class TM_Random(TM_Obstacles, Node):
                 self.reconfigure(params)
         return SetParametersResult(successful=True)
 
-    def reconfigure(self, params):
+    def reconfigure(self, config):
         """
         Reconfigures the obstacle parameters based on the provided configuration.
 
@@ -105,7 +105,7 @@ class TM_Random(TM_Obstacles, Node):
         Returns:
             None
         """
-        config = {param.name: param.value for param in params}
+        config = {param.name: param.value for param in config}
         self._config = _Config(
             MIN_STATIC_OBSTACLES=config['RANDOM_static_min'],
             MIN_INTERACTIVE_OBSTACLES=config['RANDOM_interactive_min'],

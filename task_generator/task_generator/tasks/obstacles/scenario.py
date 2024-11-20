@@ -3,13 +3,13 @@ import json
 import os
 from typing import List
 
+from task_generator import NodeInterface
 from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Constants
 from task_generator.shared import DynamicObstacle, Obstacle, rosparam_get
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 
 import rclpy
-from rclpy.node import Node
 from rcl_interfaces.msg import SetParametersResult
 
 
@@ -19,7 +19,7 @@ class _Config:
     dynamic: List[DynamicObstacle]
 
 
-class TM_Scenario(TM_Obstacles, Node):
+class TM_Scenario(TM_Obstacles, NodeInterface):
 
     _config: _Config
 
@@ -28,14 +28,14 @@ class TM_Scenario(TM_Obstacles, Node):
         return super().prefix("scenario", *args)
     
     def __init__(self, **kwargs):
+        NodeInterface.__init__(self)
         TM_Obstacles.__init__(self, **kwargs)
-        Node.__init__(self, 'tm_scenario_node')
 
-        self.declare_parameter('SCENARIO_file', '')
-        self.add_on_set_parameters_callback(self.parameters_callback)
+        self._node.declare_parameter('SCENARIO_file', '')
+        self._node.add_on_set_parameters_callback(self.parameters_callback)
 
         # Initial configuration
-        self.reconfigure({'SCENARIO_file': self.get_parameter('SCENARIO_file').value})
+        self.reconfigure({'SCENARIO_file': self._node.get_parameter('SCENARIO_file').value})
 
     def parameters_callback(self, params):
         for param in params:
@@ -47,7 +47,7 @@ class TM_Scenario(TM_Obstacles, Node):
         scenario_file = config['SCENARIO_file']
         
         package_share_directory = get_package_share_directory('simulation-setup')
-        map_file = self.get_parameter('map_file').value
+        map_file = self._node.get_parameter('map_file').value
 
         scenario_path = os.path.join(
             package_share_directory,

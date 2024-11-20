@@ -1,5 +1,6 @@
 from __future__ import annotations
 import collections
+import typing
 from geometry_msgs.msg import Pose, Twist, Point
 import dataclasses
 import os
@@ -16,24 +17,22 @@ from typing import (
     Union,
     overload,
 )
-from pathlib import Path
-import rospkg
+import rclpy, rclpy.node
+
+_node: rclpy.node.Node
+
+def configure_node(node: rclpy.node.Node):
+    global _node
+    _node = node
 
 from ament_index_python.packages import get_package_share_directory
 import enum
 import yaml
-from rosros import rospify as rospy
-from rosros.core import get_nodes
 T = TypeVar("T")
-U = TypeVar("U")
-_unspecified = rospy.client._unspecified()
-_UNSPECIFIED = rospy.client._unspecified
-_notfound = object()
-
 
 def rosparam_get(
-    cast: Type[T], param_name: str, default: Union[U, _UNSPECIFIED] = _unspecified
-) -> Union[T, U]:
+    cast: Type[T], param_name: str, default: typing.Optional[T]
+) -> T:
     """
     Get typed ros parameter (strict)
     @cast: Return type of function
@@ -41,7 +40,8 @@ def rosparam_get(
     @default: Default value. Raise ValueError is default is unset and parameter can't be found.
     """
     # if "task_generator_node" not in  get_nodes():
-    return default
+    global _node
+    return _node.get_parameter_or(param_name, DefaultParameter(default)).value
     val = rospy.get_param(param_name=param_name, default=_notfound)
 
     if val == _notfound:
@@ -54,10 +54,16 @@ def rosparam_get(
     except ValueError as e:
         raise ValueError(f"could not cast {val} to {cast} of param {param_name}") from e
 
+def rosparam_set(
+       param_name: str, value: typing.Any 
+) -> bool:
+    global _node
+    return _node.set_parameters([rclpy.parameter.Parameter(param_name, value=value)])[0].successful
+
 
 class Namespace(str):
     def __call__(self, *args: str) -> Namespace:
-        return Namespace(os.path.join(self, *args))
+        return Namespace(os.path.join(self, *args)).remove_double_slash()
 
     @property
     def simulation_ns(self) -> Namespace:
@@ -402,110 +408,20 @@ def load_config(filename: str = "default.yaml") -> dict:
 
 
 #load the hunav params     
-DEFAULT_AGENT_CONFIG = load_config()
+# DEFAULT_AGENT_CONFIG = load_config()
 
 @dataclasses.dataclass(frozen=True)
 class DynamicObstacle(DynamicObstacleProps):
-    @dataclasses.dataclass
-    class Behavior:
-        type: int
-        state: int
-        configuration: int
-        duration: float
-        once: bool
-        vel: float
-        dist: float
-        social_force_factor: float
-        goal_force_factor: float
-        obstacle_force_factor: float
-        other_force_factor: float
-
-    id: int
-    type: int
-    skin: int
-    name: str
-    group_id: int
-    position: PositionOrientation
-    yaw: float
-    velocity: None  
-    desired_velocity: float
-    radius: float
-    linear_vel: float
-    angular_vel: float
-    behavior: Behavior
-    goals: list
-    cyclic_goals: bool
-    goal_radius: float
-    closest_obs: list
-    model: ModelWrapper
-    extra: dict
+    waypoints: Iterable[PositionRadius]
 
     @staticmethod
-    def parse(obj: dict, model: ModelWrapper) -> "DynamicObstacle":
-        # Parse behavior
-        behavior_dict = obj.get('behavior', {})
-        _type = behavior_dict.get('type', DEFAULT_AGENT_CONFIG['agent1']['behavior']['type'])
-        _state = behavior_dict.get('state', DEFAULT_AGENT_CONFIG['agent1']['behavior']['state'])
-        _conf = behavior_dict.get('configuration', DEFAULT_AGENT_CONFIG['agent1']['behavior']['configuration'])
-        _duration = behavior_dict.get('duration', DEFAULT_AGENT_CONFIG['agent1']['behavior']['duration'])
-        _once = behavior_dict.get('once', DEFAULT_AGENT_CONFIG['agent1']['behavior']['once'])
-        _vel = behavior_dict.get('vel', DEFAULT_AGENT_CONFIG['agent1']['behavior']['vel'])
-        _dist = behavior_dict.get('dist', DEFAULT_AGENT_CONFIG['agent1']['behavior']['dist'])
-        _social_force = behavior_dict.get('social_force_factor', DEFAULT_AGENT_CONFIG['agent1']['behavior']['social_force_factor'])
-        _goal_force = behavior_dict.get('goal_force_factor', DEFAULT_AGENT_CONFIG['agent1']['behavior']['goal_force_factor'])
-        _obstacle_force = behavior_dict.get('obstacle_force_factor', DEFAULT_AGENT_CONFIG['agent1']['behavior']['obstacle_force_factor'])
-        _other_force = behavior_dict.get('other_force_factor', DEFAULT_AGENT_CONFIG['agent1']['behavior']['other_force_factor'])
-
-        # Parse basic properties
+    def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
         name = str(obj.get("name", ""))
-        position = PositionOrientation(*obj.get("init_pose", (0, 0, 0, 0)))
-        _id = obj.get('id', DEFAULT_AGENT_CONFIG['agent1']['id'])
-        _agent_type = obj.get('type', 1)  # Default to PERSON=1
-        _skin = obj.get('skin', DEFAULT_AGENT_CONFIG['agent1']['skin'])
-        _group_id = obj.get('group_id', DEFAULT_AGENT_CONFIG['agent1']['group_id'])
-        _yaw = obj.get('yaw', 0.0)
-        _velocity = None
-        _desired_velocity = obj.get('max_vel', DEFAULT_AGENT_CONFIG['agent1']['max_vel'])
-        _radius = obj.get('radius', DEFAULT_AGENT_CONFIG['agent1']['radius'])
-        _linear_vel = 0.0
-        _angular_vel = 0.0
-        _goals = []
-        _cyclic_goals = obj.get('cyclic_goals', DEFAULT_AGENT_CONFIG['agent1']['cyclic_goals'])
-        _goal_radius = obj.get('goal_radius', DEFAULT_AGENT_CONFIG['agent1']['goal_radius'])
-        _closest_obs = []
+        position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
+        waypoints = [PositionRadius(*waypoint) for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
-            id=_id,
-            type=_agent_type,
-            skin=_skin,
-            name=name,
-            group_id=_group_id,
-            position=position,
-            yaw=_yaw,
-            velocity=_velocity,
-            desired_velocity=_desired_velocity,
-            radius=_radius,
-            linear_vel=_linear_vel,
-            angular_vel=_angular_vel,
-            model=model,
-            behavior=DynamicObstacle.Behavior(
-                type=_type,
-                state=_state,
-                configuration=_conf,
-                duration=_duration,
-                once=_once,
-                vel=_vel,
-                dist=_dist,
-                social_force_factor=_social_force,
-                goal_force_factor=_goal_force,
-                obstacle_force_factor=_obstacle_force,
-                other_force_factor=_other_force
-            ),
-            goals=_goals,
-            cyclic_goals=_cyclic_goals,
-            goal_radius=_goal_radius,
-            closest_obs=_closest_obs,
-            extra=obj
+            name=name, position=position, model=model, waypoints=waypoints, extra=obj
         )
 
 
@@ -559,3 +475,6 @@ class Robot(RobotProps):
             record_data_dir=record_data,
             extra=obj,
         )
+
+class DefaultParameter(typing.NamedTuple):
+    value: typing.Any

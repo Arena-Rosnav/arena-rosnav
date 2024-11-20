@@ -4,6 +4,7 @@ import rclpy.publisher
 import rclpy.node
 from geometry_msgs.msg import PoseStamped
 
+from task_generator import NodeInterface
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import WorldMap, WorldWalls
 from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot
@@ -14,9 +15,8 @@ from task_generator.constants import Constants
 from task_generator.utils.registry import Registry
 
 
-class EntityManager:
+class EntityManager(NodeInterface):
 
-    _node: rclpy.node.Node
     _goal_pub: rclpy.publisher.Publisher
 
     def __init__(self, namespace: Namespace, simulator: BaseSimulator, node: rclpy.node.Node = None):
@@ -31,11 +31,7 @@ class EntityManager:
         self._simulator = simulator
         self._namespace = namespace
         
-        if node is None:
-            from task_generator import TASKGEN_NODE
-            self._node = TASKGEN_NODE
-        else:
-            self._node = node
+        NodeInterface.__init__(self)
 
         self._goal_pub = self._node.create_publisher(
             PoseStamped,
@@ -122,16 +118,10 @@ def dummy():
             self.__logger.debug(f'removing obstacles (level {purge})')
 
         def spawn_robot(self, robot: Robot):
-            self.__logger.debug(f'spawning robot {Robot.name}')
+            self.__logger.debug(f'spawning robot {robot.name}')
 
         def move_robot(self, name: str, position: PositionOrientation):
             self.__logger.debug(
-                f'moving robot {Robot.name} to {repr(position)}')
+                f'moving robot {name} to {repr(position)}')
 
     return DummyEntityManager
-
-@EntityManagerRegistry.register(Constants.EntityManager.HUNAVSIM)
-def lazy_hunavsim():
-     
-    from . hunavsim_manager import HunavsimManager
-    return HunavsimManager
