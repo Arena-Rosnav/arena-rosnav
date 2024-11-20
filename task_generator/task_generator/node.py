@@ -14,6 +14,7 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Config
+from task_generator.manager.entity_manager.hunavsim_manager import HunavsimManager
 
 
 from task_generator.simulators import BaseSimulator, SimulatorRegistry
@@ -101,7 +102,7 @@ class TaskGenerator(rclpy.node.Node):
         self.declare_parameters(
             namespace='',
             parameters=[
-                ('entity_manager', 'dummy'),
+                ('entity_manager', 'hunavsim'),
                 ('auto_reset', True),
                 ('train_mode', False),
                 ('robot_setup_file', ''),
