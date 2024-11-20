@@ -3,8 +3,7 @@ from math import floor
 from typing import Collection, List, Optional, Tuple
 import numpy as np
 import scipy.signal
-from rosros import rospify as rospy
-from task_generator.constants.runtime import Config
+from task_generator.constants.runtime import Configuration
 
 from task_generator.manager.utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls
 from task_generator.shared import Position, PositionRadius
@@ -20,7 +19,8 @@ class WorldManager:
     _world: World
     _classic_forbidden_zones: List[PositionRadius]
 
-    def __init__(self, world_map: WorldMap, world_obstacles: Optional[Collection[WorldObstacleConfiguration]] = None):
+    def __init__(self, world_map: WorldMap,
+                 world_obstacles: Optional[Collection[WorldObstacleConfiguration]] = None):
         self._classic_forbidden_zones = []
         self.update_world(world_map=world_map, world_obstacles=world_obstacles)
 
@@ -82,16 +82,18 @@ class WorldManager:
                         1   # TODO actual radius
                     )
                 )
-            )  
+            )
 
     def forbid(self, forbidden_zones: List[PositionRadius]):
         for zone in forbidden_zones:
-            self.world.map.occupancy.forbidden_occupy(*self.world.map.tf_posr2rect(zone))
+            self.world.map.occupancy.forbidden_occupy(
+                *self.world.map.tf_posr2rect(zone))
 
     def forbid_clear(self):
         self._world.map.occupancy.forbidden_clear()
 
-    def _classic_get_random_pos_on_map(self, safe_dist: float, forbid: bool = True, forbidden_zones: Optional[List[PositionRadius]] = None) -> Position:
+    def _classic_get_random_pos_on_map(self, safe_dist: float, forbid: bool = True,
+                                       forbidden_zones: Optional[List[PositionRadius]] = None) -> Position:
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both
@@ -119,7 +121,8 @@ class WorldManager:
 
         import math
 
-        def is_pos_valid(x: float, y: float, safe_dist: float, forbidden_zones: List[PositionRadius]):
+        def is_pos_valid(x: float, y: float, safe_dist: float,
+                         forbidden_zones: List[PositionRadius]):
             """
             @safe_dist: minimal distance to the next obstacles for calculated positions
             """
@@ -161,10 +164,13 @@ class WorldManager:
         while len(possible_cells) > 0:
 
             # Select a random cell
-            x, y = possible_cells.pop(Config.General.RNG.integers(len(possible_cells)))
+            x, y = possible_cells.pop(
+                Configuration.General.RNG.integers(
+                    len(possible_cells)))
 
             # Check if valid
-            if is_pos_valid(float(x), float(y), safe_dist_in_cells, forbidden_zones_in_cells):
+            if is_pos_valid(float(x), float(y), safe_dist_in_cells,
+                            forbidden_zones_in_cells):
                 break
 
         else:
@@ -183,7 +189,8 @@ class WorldManager:
 
         return Position(point.x, point.y)
 
-    def get_positions_on_map(self, n: int, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> List[Position]:
+    def get_positions_on_map(self, n: int, safe_dist: float,
+                             forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> List[Position]:
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both
@@ -222,7 +229,7 @@ class WorldManager:
                 fork.occupy(*self.world.map.tf_posr2rect(posr))
                 forbidden_zones.append(posr)
                 points.append(pos)
-                
+
             return points
 
         else:
@@ -259,24 +266,25 @@ class WorldManager:
                         if to_produce > len(available_positions):
                             raise RuntimeError()
 
-                        candidates = available_positions[Config.General.RNG.choice(
+                        candidates = available_positions[Configuration.General.RNG.choice(
                             len(available_positions), to_produce, replace=False), :]
 
                         for candidate in candidates:
 
                             banned = all_banned[:banned_index, :]
 
-                            if np.any(np.linalg.norm(banned - candidate, axis=1) < min_dist):
+                            if np.any(np.linalg.norm(
+                                    banned - candidate, axis=1) < min_dist):
                                 continue
 
                             all_banned[banned_index] = candidate
                             banned_index += 1
 
                             fork.occupy(
-                                (candidate-min_dist),
-                                (candidate+min_dist)
+                                (candidate - min_dist),
+                                (candidate + min_dist)
                             )
-                            
+
                             result.append(self._world.map.tf_grid2pos(
                                 (candidate[0], candidate[1])))
 
@@ -294,12 +302,14 @@ class WorldManager:
                     result += [
                         self._world.map.tf_grid2pos(
                             (
-                                (-1-floor(i/5)) * int(self._shape[1]/5),
-                                int((i % 5) * self._shape[0]/5)
+                                (-1 - floor(i / 5)) * int(self._shape[1] / 5),
+                                int((i % 5) * self._shape[0] / 5)
                             )
                         ) for i in range(to_produce)]
-                    rospy.logerr(f"Couldn't find enough empty cells for {to_produce} requests")
-                
+                    # rospy.logerr(
+                    # f"Couldn't find enough empty cells for {to_produce}
+                    # requests")
+
                 finally:
                     return result
 
@@ -310,12 +320,15 @@ class WorldManager:
 
         return points
 
-    def get_position_on_map(self, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> Position:
-        return self.get_positions_on_map(n=1, safe_dist=safe_dist, forbidden_zones=forbidden_zones)[0]
+    def get_position_on_map(
+            self, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> Position:
+        return self.get_positions_on_map(
+            n=1, safe_dist=safe_dist, forbidden_zones=forbidden_zones)[0]
 
     id_gen = itertools.count()
 
-    def _occupancy_to_available(self, occupancy: np.ndarray, safe_dist: float) -> np.ndarray:
+    def _occupancy_to_available(
+            self, occupancy: np.ndarray, safe_dist: float) -> np.ndarray:
 
         filt_size = int(2 * safe_dist + 1)
         filt = np.full((filt_size, filt_size), 1) / (filt_size ** 2)

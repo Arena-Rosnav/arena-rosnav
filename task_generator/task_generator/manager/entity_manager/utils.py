@@ -9,9 +9,8 @@ import numpy as np
 from ament_index_python.packages import get_package_share_directory
 
 import yaml
-from rosros import rospify as rospy
 from task_generator.constants import Constants
-from task_generator.constants.runtime import Config
+from task_generator.constants.runtime import Configuration
 from task_generator.manager.utils import WorldMap, WorldOccupancy
 
 from task_generator.shared import (
@@ -22,8 +21,10 @@ from task_generator.shared import (
     Obstacle,
     ObstacleProps,
     PositionOrientation,
+    rosparam_get,
 )
 import task_generator.utils.arena as Utils
+
 
 class SDFUtil:
     @staticmethod
@@ -39,7 +40,8 @@ class SDFUtil:
         return file.getvalue()
 
     @staticmethod
-    def get_model_root(sdf: ET.ElementTree, tag="model") -> Union[ET.Element, None]:
+    def get_model_root(sdf: ET.ElementTree,
+                       tag="model") -> Union[ET.Element, None]:
         root = sdf.getroot()
         if root.tag != tag:
             root = root.find(tag)
@@ -166,7 +168,8 @@ class YAMLUtil:
                 return YAMLUtil.parse_yaml(file.read())
 
         else:
-            raise ValueError(f"can't process yaml descriptor of type {type(yaml)}")
+            raise ValueError(
+                f"can't process yaml descriptor of type {type(yaml)}")
 
     @staticmethod
     def serialize(obj: Any):
@@ -190,11 +193,12 @@ class YAMLUtil:
         plugins: List[Dict] = description.get("plugins", [])
 
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            if rospy.get_param("laser/full_range_laser", False):
+            if rosparam_get(bool, "laser/full_range_laser", False):
                 plugins.append(Constants.PLUGIN_FULL_RANGE_LASER.copy())
 
             for plugin in plugins:
-                for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
+                for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(
+                        plugin["type"], []):
                     default_val = None
                     if prop not in plugin:
                         default_val = YAMLUtil.PLUGIN_PROPS_DEFAULT_VAL[plugin["type"]][
@@ -216,7 +220,8 @@ class YAMLUtil:
             return description
 
         for plugin in plugins:
-            for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(plugin["type"], []):
+            for prop in YAMLUtil.PLUGIN_PROPS_TO_EXTEND.get(
+                    plugin["type"], []):
                 plugin[prop] = os.path.join(namespace, plugin.get(prop, ""))
         return description
 
@@ -260,7 +265,7 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
         <heightmap>
             <uri>{img_uri}</uri>
             <size>{padded_heightmap.shape[1] * world_map.resolution} {padded_heightmap.shape[0] * world_map.resolution} {height - z_offset}</size>
-            <pos>{heightmap.shape[1] * .5  * world_map.resolution + world_map.origin.x} {heightmap.shape[0] * .5 * world_map.resolution + world_map.origin.y} {z_offset}</pos>
+            <pos>{heightmap.shape[1] * .5 * world_map.resolution + world_map.origin.x} {heightmap.shape[0] * .5 * world_map.resolution + world_map.origin.y} {z_offset}</pos>
             <blend></blend>
             <use_terrain_paging>false</use_terrain_paging>
         </heightmap>
@@ -295,7 +300,8 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
     model = ModelWrapper.Constant(
         model_name,
         models={
-            # ModelType.YAML: Model(type=ModelType.YAML, name=model_name, description="", path=""),
+            # ModelType.YAML: Model(type=ModelType.YAML, name=model_name,
+            # description="", path=""),
             ModelType.SDF: Model(
                 type=ModelType.SDF,
                 name=model_name,

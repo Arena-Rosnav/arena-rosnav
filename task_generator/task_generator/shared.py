@@ -1,4 +1,7 @@
 from __future__ import annotations
+from ament_index_python.packages import get_package_share_directory
+import yaml
+import enum
 import collections
 import typing
 from geometry_msgs.msg import Pose, Twist, Point
@@ -17,18 +20,19 @@ from typing import (
     Union,
     overload,
 )
-import rclpy, rclpy.node
+import rclpy
+import rclpy.node
 
 _node: rclpy.node.Node
+
 
 def configure_node(node: rclpy.node.Node):
     global _node
     _node = node
 
-from ament_index_python.packages import get_package_share_directory
-import enum
-import yaml
+
 T = TypeVar("T")
+
 
 def rosparam_get(
     cast: Type[T], param_name: str, default: typing.Optional[T]
@@ -42,7 +46,6 @@ def rosparam_get(
     # if "task_generator_node" not in  get_nodes():
     global _node
     return _node.get_parameter_or(param_name, DefaultParameter(default)).value
-    val = rospy.get_param(param_name=param_name, default=_notfound)
 
     if val == _notfound:
         if isinstance(default, _UNSPECIFIED):
@@ -52,13 +55,16 @@ def rosparam_get(
     try:
         return cast(val)
     except ValueError as e:
-        raise ValueError(f"could not cast {val} to {cast} of param {param_name}") from e
+        raise ValueError(
+            f"could not cast {val} to {cast} of param {param_name}") from e
+
 
 def rosparam_set(
-       param_name: str, value: typing.Any 
+    param_name: str, value: typing.Any
 ) -> bool:
     global _node
-    return _node.set_parameters([rclpy.parameter.Parameter(param_name, value=value)])[0].successful
+    return _node.set_parameters(
+        [rclpy.parameter.Parameter(param_name, value=value)])[0].successful
 
 
 class Namespace(str):
@@ -79,7 +85,11 @@ class Namespace(str):
         return Namespace(self.replace("//", "/"))
 
 
-yaml.add_representer(Namespace, lambda dumper, data: dumper.represent_str(str(data)))
+yaml.add_representer(
+    Namespace,
+    lambda dumper,
+    data: dumper.represent_str(
+        str(data)))
 
 
 # TODO deprecate this in favor of Model.EMPTY
@@ -172,7 +182,6 @@ class ModelWrapper:
 
     @overload
     def get(self, only: ModelType, **kwargs) -> Model: ...
-
     """
         load specific model
         @only: single accepted ModelType
@@ -180,7 +189,6 @@ class ModelWrapper:
 
     @overload
     def get(self, only: Collection[ModelType], **kwargs) -> Model: ...
-
     """
         load specific model from collection
         @only: collection of acceptable ModelTypes
@@ -188,7 +196,6 @@ class ModelWrapper:
 
     @overload
     def get(self, **kwargs) -> Model: ...
-
     """
         load any available model
     """
@@ -259,7 +266,8 @@ class ModelWrapper:
         Create new ModelWrapper containing a single existing Model
         @model: Model to wrap
         """
-        return ModelWrapper.Constant(name=model.name, models={model.type: model})
+        return ModelWrapper.Constant(
+            name=model.name, models={model.type: model})
 
     @staticmethod
     def EMPTY() -> ModelWrapper:
@@ -277,7 +285,8 @@ class EntityProps:
 
 
 @dataclasses.dataclass(frozen=True)
-class ObstacleProps(EntityProps): ...
+class ObstacleProps(EntityProps):
+    ...
 
 
 @dataclasses.dataclass(frozen=True)
@@ -308,10 +317,6 @@ class Obstacle(ObstacleProps):
         )
 
 
-
-
-
-
 def load_config(filename: str = "default.yaml") -> dict:
     """Load config from YAML file in arena_bringup configs."""
     # first priority: Source space
@@ -320,7 +325,7 @@ def load_config(filename: str = "default.yaml") -> dict:
         "arena4_ws/src/arena/arena-rosnav/arena_bringup/configs/hunav_agents",
         filename
     )
-    
+
     # second priority: Install space
     install_path = os.path.join(
         get_package_share_directory("arena_bringup"),
@@ -328,11 +333,11 @@ def load_config(filename: str = "default.yaml") -> dict:
         "hunav_agents",
         filename
     )
-    
+
     print(f"\n========== TRYING CONFIG PATHS ==========")
     print(f"Source path: {source_path}")
     print(f"Install path: {install_path}")
-    
+
     # try first source, then install path
     if os.path.exists(source_path):
         config_path = source_path
@@ -341,17 +346,18 @@ def load_config(filename: str = "default.yaml") -> dict:
         config_path = install_path
         print(f"\nUsing install space config: {config_path}")
     else:
-        raise FileNotFoundError(f"Config file not found in either:\n- {source_path}\n- {install_path}")
+        raise FileNotFoundError(
+            f"Config file not found in either:\n- {source_path}\n- {install_path}")
 
     try:
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
             params = config['hunav_loader']['ros__parameters']
-            
+
             print("\n========== FULL PARAMETER OVERVIEW ==========")
             print("\n=== Available Agents ===")
             print(f"Agents: {params['agents']}")
-            
+
             print("\n=== Individual Agent Configurations ===")
             for agent in params['agents']:
                 agent_config = params[agent]
@@ -362,32 +368,38 @@ def load_config(filename: str = "default.yaml") -> dict:
                 print(f"- Group ID: {agent_config.get('group_id')}")
                 print(f"- Max Velocity: {agent_config.get('max_vel')}")
                 print(f"- Radius: {agent_config.get('radius')}")
-                
+
                 print("\nBehavior:")
                 behavior = agent_config.get('behavior', {})
-                print(f"- Type: {behavior.get('type')}  # REGULAR=1, IMPASSIVE=2, SURPRISED=3, SCARED=4, CURIOUS=5, THREATENING=6")
-                print(f"- Configuration: {behavior.get('configuration')}  # default=0, custom=1, random_normal=2, random_uniform=3")
+                print(
+                    f"- Type: {behavior.get('type')}  # REGULAR=1, IMPASSIVE=2, SURPRISED=3, SCARED=4, CURIOUS=5, THREATENING=6")
+                print(
+                    f"- Configuration: {behavior.get('configuration')}  # default=0, custom=1, random_normal=2, random_uniform=3")
                 print(f"- Duration: {behavior.get('duration')}")
                 print(f"- Once: {behavior.get('once')}")
                 print(f"- Velocity: {behavior.get('vel')}")
                 print(f"- Distance: {behavior.get('dist')}")
-                print(f"- Goal Force Factor: {behavior.get('goal_force_factor')}")
-                print(f"- Obstacle Force Factor: {behavior.get('obstacle_force_factor')}")
-                print(f"- Social Force Factor: {behavior.get('social_force_factor')}")
-                print(f"- Other Force Factor: {behavior.get('other_force_factor')}")
-                
+                print(
+                    f"- Goal Force Factor: {behavior.get('goal_force_factor')}")
+                print(
+                    f"- Obstacle Force Factor: {behavior.get('obstacle_force_factor')}")
+                print(
+                    f"- Social Force Factor: {behavior.get('social_force_factor')}")
+                print(
+                    f"- Other Force Factor: {behavior.get('other_force_factor')}")
+
                 print("\nInitial Pose:")
                 init_pose = agent_config.get('init_pose', {})
                 print(f"- X: {init_pose.get('x')}")
                 print(f"- Y: {init_pose.get('y')}")
                 print(f"- Z: {init_pose.get('z')}")
                 print(f"- H: {init_pose.get('h')}")
-                
+
                 print("\nGoals:")
                 print(f"- Goal Radius: {agent_config.get('goal_radius')}")
                 print(f"- Cyclic Goals: {agent_config.get('cyclic_goals')}")
                 print(f"- Goals List: {agent_config.get('goals')}")
-                
+
                 # Print individual goal positions
                 for goal_id in agent_config.get('goals', []):
                     goal_data = agent_config.get(goal_id, {})
@@ -395,19 +407,17 @@ def load_config(filename: str = "default.yaml") -> dict:
                     print(f"  - X: {goal_data.get('x')}")
                     print(f"  - Y: {goal_data.get('y')}")
                     print(f"  - H: {goal_data.get('h')}")
-                    
+
             print("\n============================================")
-            
+
             return params
-        
 
     except Exception as e:
-            print(f"Error loading config from {config_path}: {e}")
-            raise
+        print(f"Error loading config from {config_path}: {e}")
+        raise
 
 
-
-#load the hunav params     
+# load the hunav params
 # DEFAULT_AGENT_CONFIG = load_config()
 
 @dataclasses.dataclass(frozen=True)
@@ -418,7 +428,8 @@ class DynamicObstacle(DynamicObstacleProps):
     def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
         name = str(obj.get("name", ""))
         position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
-        waypoints = [PositionRadius(*waypoint) for waypoint in obj.get("waypoints", [])]
+        waypoints = [PositionRadius(*waypoint)
+                     for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
             name=name, position=position, model=model, waypoints=waypoints, extra=obj
@@ -462,7 +473,7 @@ class Robot(RobotProps):
         )
         agent = str(obj.get("agent", rosparam_get(str, "agent_name", "")))
         record_data = obj.get(
-            "record_data_dir", rospy.get_param("record_data_dir", None)
+            "record_data_dir", rosparam_get(str, "record_data_dir", None)
         )
 
         return Robot(
@@ -475,6 +486,7 @@ class Robot(RobotProps):
             record_data_dir=record_data,
             extra=obj,
         )
+
 
 class DefaultParameter(typing.NamedTuple):
     value: typing.Any

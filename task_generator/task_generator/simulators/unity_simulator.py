@@ -5,7 +5,7 @@ from task_generator.shared import Namespace, rosparam_get
 from task_generator.manager.utils import WorldWalls
 from tf.transformations import quaternion_from_euler
 from task_generator.constants import Constants, UnityConstants
-from task_generator.constants.runtime import Config
+from task_generator.constants.runtime import Configuration
 from task_generator.simulators import BaseSimulator
 
 from task_generator.shared import ModelType, Robot, Obstacle
@@ -17,7 +17,7 @@ from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from unity_msgs.srv import SpawnWalls, SpawnWallsRequest
 from unity_msgs.msg import Wall
 
-T = Config.General.WAIT_FOR_SERVICE_TIMEOUT
+T = Configuration.General.WAIT_FOR_SERVICE_TIMEOUT
 
 
 class UnitySimulator(BaseSimulator):
@@ -29,9 +29,18 @@ class UnitySimulator(BaseSimulator):
 
         self._robot_name = rosparam_get(str, "robot_model", "")
 
-        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Waiting for Unity services...")
+        rospy.loginfo(
+            "[Unity Simulator ns:" +
+            self._namespace +
+            "] Waiting for Unity services...")
 
-        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] namespace:" + self._namespace("unity") + ", robot name: " + self._robot_name)
+        rospy.loginfo(
+            "[Unity Simulator ns:" +
+            self._namespace +
+            "] namespace:" +
+            self._namespace("unity") +
+            ", robot name: " +
+            self._robot_name)
 
         rospy.wait_for_service(self._namespace(
             "unity", "spawn_walls"), timeout=T)
@@ -41,8 +50,11 @@ class UnitySimulator(BaseSimulator):
             "unity", "delete_model"), timeout=T)
         rospy.wait_for_service(self._namespace(
             "unity", "set_model_state"), timeout=T)
-        
-        rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] found all unity services")
+
+        rospy.loginfo(
+            "[Unity Simulator ns:" +
+            self._namespace +
+            "] found all unity services")
 
         # TODO: Custom Message Types
         self._spawn_walls_srv = rospy.ServiceProxy(
@@ -100,7 +112,6 @@ class UnitySimulator(BaseSimulator):
                 "robot_description"), model.description)
             rospy.set_param(full_robot_ns(
                 "tf_prefix"), str(request.robot_namespace))
-            
 
         if isinstance(entity, Obstacle) and "<actor" not in model.description:
             request.model_xml = model.name
@@ -155,7 +166,7 @@ class UnitySimulator(BaseSimulator):
 
     def spawn_walls(self, walls: WorldWalls):
         # rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Spawn Wall Request")
-        
+
         # send a spawn request to unity for all walls
         request = SpawnWallsRequest()
         request.walls = []

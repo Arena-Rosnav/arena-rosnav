@@ -1,13 +1,13 @@
 import itertools
 import typing
 
-from task_generator import NodeInterface, ConfigNodeInterface
+from task_generator import NodeInterface
 from task_generator.constants import Constants
 from task_generator.shared import ModelType, EntityProps, Namespace, PositionOrientation
 from task_generator.utils.registry import Registry
 
 
-class BaseSimulator(NodeInterface, ConfigNodeInterface):
+class BaseSimulator(NodeInterface):
 
     _namespace: Namespace
 
@@ -17,7 +17,6 @@ class BaseSimulator(NodeInterface, ConfigNodeInterface):
 
     def __init__(self, namespace: Namespace):
         NodeInterface.__init__(self)
-        ConfigNodeInterface.__init__(self)
 
         self._namespace = namespace
         self._spawn_model = dict()
@@ -67,10 +66,12 @@ class BaseSimulator(NodeInterface, ConfigNodeInterface):
 
 SimulatorRegistry = Registry[Constants.Simulator, BaseSimulator]()
 
+
 @SimulatorRegistry.register(Constants.Simulator.DUMMY)
 def lazy_dummy():
     from .dummy_simulator import DummySimulator
     return DummySimulator
+
 
 @SimulatorRegistry.register(Constants.Simulator.FLATLAND)
 def lazy_flatland():

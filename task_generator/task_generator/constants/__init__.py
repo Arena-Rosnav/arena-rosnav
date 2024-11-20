@@ -36,7 +36,7 @@ class Constants:
             @classmethod
             def prefix(cls, *args):
                 return Namespace("tm_obstacles")(*args)
-            
+
             @classmethod
             def default(cls) -> "Constants.TaskMode.TM_Obstacles":
                 return cls.RANDOM
@@ -51,7 +51,7 @@ class Constants:
             @classmethod
             def prefix(cls, *args):
                 return Namespace("tm_robots")(*args)
-            
+
             @classmethod
             def default(cls) -> "Constants.TaskMode.TM_Robots":
                 return cls.RANDOM
@@ -67,7 +67,7 @@ class Constants:
             @classmethod
             def prefix(cls, *args):
                 return Namespace("tm_module")(*args)
-            
+
             @classmethod
             def default(cls) -> typing.List["Constants.TaskMode.TM_Module"]:
                 return []
@@ -89,22 +89,6 @@ class Constants:
         "noise_std_dev": 0.0,
         "update_rate": 10,
     }
-
-    class Defaults:
-        # Manually copied defaults from from TaskGenerator.cfg
-        TIMEOUT_WAIT_FOR_SERVICE = 60.0
-        MAX_RESET_FAIL_TIMES = 10
-        RANDOM_SEED = -1
-        EPISODES = -1
-        GOAL_RADIUS = 1.0
-        GOAL_TOLERANCE_ANGLE = 0.523598776  # 30 degrees in radians
-        TIMEOUT = -1.0  # -1 means infinite timeout
-        SPAWN_ROBOT_SAFE_DIST = 0.25
-        OBSTACLE_MAX_RADIUS = 15.0
-
-    @staticmethod
-    def get_default(param_name, default=None):
-        return getattr(Constants.Defaults, param_name, default)
 
 
 class UnityConstants:

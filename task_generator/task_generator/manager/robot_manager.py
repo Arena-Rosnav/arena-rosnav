@@ -2,31 +2,27 @@ import dataclasses
 import typing
 
 import numpy as np
-import os
 import scipy.spatial.transform
 import rclpy
-from rclpy.parameter import Parameter
 
-from task_generator import NodeInterface, ConfigNodeInterface
+from task_generator import NodeInterface
 import task_generator.utils.arena as Utils
 from task_generator.utils.geometry import quaternion_from_euler
 from task_generator.constants import Constants
-from task_generator.constants.runtime import Config
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
-from task_generator.shared import DefaultParameter, ModelType, Namespace, PositionOrientation, Robot
+from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
 
 import nav_msgs.msg as nav_msgs
 import geometry_msgs.msg as geometry_msgs
 import std_srvs.srv as std_srvs
 
-import launch
 from launch import LaunchDescription
 from launch_ros.actions import Node as LaunchNode
 from launch.launch_service import LaunchService
 
 
-class RobotManager(NodeInterface, ConfigNodeInterface):
+class RobotManager(NodeInterface):
     """
     The robot manager manages the goal and start
     position of a robot for all task modes.
@@ -58,25 +54,24 @@ class RobotManager(NodeInterface, ConfigNodeInterface):
         self, namespace: Namespace, entity_manager: EntityManager, robot: Robot
     ):
         NodeInterface.__init__(self)
-        ConfigNodeInterface.__init__(self)
 
         self._namespace = namespace
         self._entity_manager = entity_manager
         self._start_pos = PositionOrientation(0, 0, 0)
         self._goal_pos = PositionOrientation(0, 0, 0)
-        
+
         # Parameter handling
         try:
-            self._goal_tolerance_distance = Config.Robot.GOAL_TOLERANCE_RADIUS
-            self._goal_tolerance_angle = Config.Robot.GOAL_TOLERANCE_ANGLE
-            self._safety_distance = Config.Robot.SPAWN_ROBOT_SAFE_DIST
+            self._goal_tolerance_distance = self._node.Config.Robot.GOAL_TOLERANCE_RADIUS.value
+            self._goal_tolerance_angle = self._node.Config.Robot.GOAL_TOLERANCE_ANGLE
+            self._safety_distance = self._node.Config.Robot.SPAWN_ROBOT_SAFE_DIST
         except Exception as e:
             # Fallback values
-            self._goal_tolerance_distance = 1.0  
-            self._goal_tolerance_angle = 0.523599  
-            self._safety_distance = 0.25  
+            self._goal_tolerance_distance = 1.0
+            self._goal_tolerance_angle = 0.523599
+            self._safety_distance = 0.25
             print(f"Warning: Using default values for robot parameters: {e}")
-        
+
         self._robot = robot
         self._position = self._start_pos
 
@@ -121,10 +116,10 @@ class RobotManager(NodeInterface, ConfigNodeInterface):
             # needs to be adjusted to self.get_parameter('robot_radius').value
             # but robot_radius is not set yet in runtime.py
             self._node.declare_parameter(
-                ("robot_radius"), Config.Robot.GOAL_TOLERANCE_RADIUS)
+                ("robot_radius"), self._node.Config.Robot.GOAL_TOLERANCE_RADIUS)
             self._robot_radius = self._node.get_parameter(
                 ("robot_radius")).value
-            
+
         self._clear_costmaps_srv = self._node.create_client(
             std_srvs.Empty, self.namespace("move_base", "clear_costmaps"))
 
@@ -221,7 +216,8 @@ class RobotManager(NodeInterface, ConfigNodeInterface):
         goal_msg.pose.position.z = 0.
 
         goal_msg.pose.orientation = orientation = geometry_msgs.Quaternion()
-        orientation.x, orientation.y, orientation.z, orientation.w = quaternion_from_euler(0.0, 0.0, goal.orientation, axes="sxyz")
+        orientation.x, orientation.y, orientation.z, orientation.w = quaternion_from_euler(
+            0.0, 0.0, goal.orientation, axes="sxyz")
 
         self._move_base_goal_pub.publish(goal_msg)
 
@@ -239,8 +235,8 @@ class RobotManager(NodeInterface, ConfigNodeInterface):
                 'frame': f"{self.name}/" if self.name else '',
                 'inter_planner': self._robot.inter_planner,
                 'local_planner': self._robot.local_planner,
-                # 'complexity': self._config_node.declare_parameter('complexity', 1).value,
-                # 'train_mode': self._config_node.declare_parameter('train_mode', False).value,
+                # 'complexity': self._node.declare_parameter('complexity', 1).value,
+                # 'train_mode': self._node.declare_parameter('train_mode', False).value,
                 'agent_name': self._robot.agent,
             }
 

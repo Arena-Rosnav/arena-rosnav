@@ -4,7 +4,7 @@
 import dataclasses
 import math
 from typing import Dict, List, Optional
-from task_generator.constants.runtime import Config
+from task_generator.constants.runtime import Configuration
 from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, PositionOrientation, PositionRadius
 from task_generator.tasks import Props_
 
@@ -38,7 +38,12 @@ class ITF_Obstacle:
             waypoints = [PositionRadius(setup.position.x, setup.position.y, 1)]
             safe_distance = 0.1  # the other waypoints don't need to avoid robot
 
-            waypoints += [PositionRadius(*pos, 1) for pos in props.world_manager.get_positions_on_map(n=n_waypoints, safe_dist=safe_distance)]
+            waypoints += [
+                PositionRadius(
+                    *pos,
+                    1) for pos in props.world_manager.get_positions_on_map(
+                    n=n_waypoints,
+                    safe_dist=safe_distance)]
 
         return DynamicObstacle.parse(
             {
@@ -47,7 +52,6 @@ class ITF_Obstacle:
             },
             model=setup.model
         )
-
 
     @classmethod
     def create_obstacle(
@@ -71,7 +75,8 @@ class ITF_Obstacle:
 
         if position is None:
             point = props.world_manager.get_position_on_map(safe_distance)
-            position = PositionOrientation(point.x, point.y, Config.General.RNG.random() * 2*math.pi)
+            position = PositionOrientation(
+                point.x, point.y, Configuration.General.RNG.random() * 2 * math.pi)
 
         if extra is None:
             extra = dict()
@@ -79,4 +84,3 @@ class ITF_Obstacle:
         return Obstacle(
             position=position, name=name, model=model, extra=extra, **kwargs
         )
-

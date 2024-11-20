@@ -15,7 +15,7 @@ import std_srvs.srv as std_srvs
 import functools
 
 from task_generator.constants import Constants, Pedsim
-from task_generator.constants.runtime import Config
+from task_generator.constants.runtime import Configuration
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import (
     KnownObstacles,
@@ -164,30 +164,30 @@ class PedsimManager(EntityManager):
         self._known_obstacles = KnownObstacles()
 
         rospy.wait_for_service(self._namespace(
-            self.SERVICE_SPAWN_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+            self.SERVICE_SPAWN_PEDS), timeout=Configuration.General.WAIT_FOR_SERVICE_TIMEOUT)
         rospy.wait_for_service(self._namespace(
-            self.SERVICE_RESPAWN_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+            self.SERVICE_RESPAWN_PEDS), timeout=Configuration.General.WAIT_FOR_SERVICE_TIMEOUT)
         rospy.wait_for_service(self._namespace(
-            self.SERVICE_RESET_ALL_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+            self.SERVICE_RESET_ALL_PEDS), timeout=Configuration.General.WAIT_FOR_SERVICE_TIMEOUT)
         rospy.wait_for_service(self._namespace(
-            self.SERVICE_REMOVE_ALL_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+            self.SERVICE_REMOVE_ALL_PEDS), timeout=Configuration.General.WAIT_FOR_SERVICE_TIMEOUT)
 
         rospy.wait_for_service(self._namespace(
-            self.SERVICE_ADD_WALLS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+            self.SERVICE_ADD_WALLS), timeout=Configuration.General.WAIT_FOR_SERVICE_TIMEOUT)
         rospy.wait_for_service(self._namespace(
-            self.SERVICE_CLEAR_WALLS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+            self.SERVICE_CLEAR_WALLS), timeout=Configuration.General.WAIT_FOR_SERVICE_TIMEOUT)
 
         rospy.wait_for_service(self._namespace(
-            self.SERVICE_SPAWN_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+            self.SERVICE_SPAWN_OBSTACLES), timeout=Configuration.General.WAIT_FOR_SERVICE_TIMEOUT)
         rospy.wait_for_service(
-            self._namespace(self.SERVICE_RESPAWN_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
+            self._namespace(self.SERVICE_RESPAWN_OBSTACLES), timeout=Configuration.General.WAIT_FOR_SERVICE_TIMEOUT
         )
         rospy.wait_for_service(
-            self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
+            self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES), timeout=Configuration.General.WAIT_FOR_SERVICE_TIMEOUT
         )
 
         rospy.wait_for_service(self._namespace(
-            self.SERVICE_REGISTER_ROBOT), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+            self.SERVICE_REGISTER_ROBOT), timeout=Configuration.General.WAIT_FOR_SERVICE_TIMEOUT)
 
         self._spawn_peds_srv = rospy.ServiceProxy(
             self._namespace(self.SERVICE_SPAWN_PEDS),
@@ -342,7 +342,10 @@ class PedsimManager(EntityManager):
             if known is not None:
                 if known.obstacle.name != obstacle.name:
                     raise RuntimeError(
-                        f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {obstacle.name} (did you forget to call remove_obstacles?)"
+                        f"new model name {
+                            obstacle.name} does not match model name {
+                            known.obstacle.name} of known obstacle {
+                            obstacle.name} (did you forget to call remove_obstacles?)"
                     )
 
                 known.layer = ObstacleLayer.INUSE
@@ -490,7 +493,10 @@ class PedsimManager(EntityManager):
             if known is not None:
                 if known.obstacle.name != obstacle.name:
                     raise RuntimeError(
-                        f"new model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {msg.id} (did you forget to call remove_obstacles?)"
+                        f"new model name {
+                            obstacle.name} does not match model name {
+                            known.obstacle.name} of known obstacle {
+                            msg.id} (did you forget to call remove_obstacles?)"
                     )
 
                 known.layer = ObstacleLayer.INUSE
@@ -644,7 +650,8 @@ class PedsimManager(EntityManager):
 
             if entity is None:
                 # rospy.logwarn(
-                #     f"obstacle {obstacle_name} not known by {type(self).__name__} (known: {list(self._known_obstacles.keys())})")
+                # f"obstacle {obstacle_name} not known by {type(self).__name__}
+                # (known: {list(self._known_obstacles.keys())})")
                 return
 
             if entity.pedsim_spawned:
@@ -691,7 +698,8 @@ class PedsimManager(EntityManager):
 
             if entity is None:
                 rospy.logwarn(
-                    f"dynamic obstacle {actor_id} not known by {type(self).__name__}"
+                    f"dynamic obstacle {actor_id} not known by {
+                        type(self).__name__}"
                 )
                 continue
 

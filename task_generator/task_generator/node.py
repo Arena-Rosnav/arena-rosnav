@@ -13,7 +13,7 @@ from rclpy.parameter import Parameter
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Constants
-from task_generator.constants.runtime import Config
+from task_generator.constants.runtime import Configuration
 
 
 from task_generator.simulators import BaseSimulator, SimulatorRegistry
@@ -41,6 +41,7 @@ from std_msgs.msg import Int16, Empty
 import std_srvs.srv as std_srvs
 from std_srvs.srv import Empty as EmptySrv
 import nav_msgs.msg as nav_msgs
+from task_generator.utils.ros_params import ROSParamServer
 
 
 def create_default_robot_list(
@@ -49,7 +50,7 @@ def create_default_robot_list(
     inter_planner: str,
     local_planner: str,
     agent: str
-    
+
 ) -> List[Robot]:
     return [
         Robot(
@@ -59,7 +60,7 @@ def create_default_robot_list(
             agent=agent,
             position=next(gen_init_pos),
             name=name,
-            # TODO record_data_dir must be added to TASKGEN_CONFIGNODE
+            # TODO record_data_dir must be added to TASKGEN_NODE
             # record_data_dir=self.declare_parameter(
             #     'record_data_dir', None).value,
             extra=dict(),
@@ -87,14 +88,16 @@ def read_robot_setup_file(setup_file: str) -> List[Dict]:
         raise Exception("Failed to read robot setup file")
 
 
-class TaskGenerator(rclpy.node.Node):
+class TaskGenerator(ROSParamServer, rclpy.node.Node):
     """
     Task Generator Node
     Will initialize and reset all tasks. The task to use is read from the `/task_mode` param.
     """
 
     def __init__(self, namespace: str = ""):
-        super().__init__('task_generator')
+        rclpy.node.Node.__init__(self, 'task_generator')
+        ROSParamServer.__init__(self)
+        self.Config = Configuration(self)
         self._namespace = Namespace(namespace)
 
         # Declare all parameters
@@ -239,18 +242,7 @@ class TaskGenerator(rclpy.node.Node):
         # - Create a robot manager
         # - Launch the robot.launch file
 
-        # TODO tm modules and map needs to be added to the taskgen_confignode
-        tm_modules_value = self.declare_parameter("tm_modules", "").value
-        tm_modules = list(
-            set(
-                [
-                    Constants.TaskMode.TM_Module(mod)
-                    for mod in tm_modules_value.split(",")
-                    if mod != ""
-                ]
-            )
-        )
-
+        tm_modules = self.Config.TaskMode.TM_MODULES.value
         tm_modules.append(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
         # tm_modules.append(Constants.TaskMode.TM_Module.RVIZ_UI)
 
@@ -258,10 +250,7 @@ class TaskGenerator(rclpy.node.Node):
             tm_modules.append(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
 
         self.get_logger().debug("utils calls task factory")
-        task = TaskFactory.combine(
-            modules=[Constants.TaskMode.TM_Module(
-                module) for module in tm_modules]
-        )(
+        task = TaskFactory.combine(tm_modules)(
             obstacle_manager=obstacle_manager,
             robot_managers=robot_managers,
             world_manager=world_manager,
@@ -293,7 +282,7 @@ class TaskGenerator(rclpy.node.Node):
                         robot,
                         model=self._robot_loader.bind(robot["model"]),
                     ),
-                    name=f'{robot["model"]}_{i}_{robot.get("amount", 1)-1}'
+                    name=f'{robot["model"]}_{i}_{robot.get("amount", 1) - 1}'
                 )
                 for robot in read_robot_setup_file(robot_setup_file)
                 for i in range(robot.get("amount", 1))
@@ -321,7 +310,7 @@ class TaskGenerator(rclpy.node.Node):
                     robot=robot,
                 )
             )
-            
+
         return robot_managers
 
     # RUNTIME
@@ -357,9 +346,9 @@ class TaskGenerator(rclpy.node.Node):
         return response
 
     def _send_end_message_on_end(self):
-        if Config.General.DESIRED_EPISODES < 0 or self._number_of_resets < Config.General.DESIRED_EPISODES:
+        if Configuration.General.DESIRED_EPISODES < 0 or self._number_of_resets < Configuration.General.DESIRED_EPISODES:
             return
 
         self.get_logger().info(
-            f"Shutting down. All {int(Config.General.DESIRED_EPISODES)} tasks completed")
+            f"Shutting down. All {int(Configuration.General.DESIRED_EPISODES)} tasks completed")
         rclpy.shutdown()

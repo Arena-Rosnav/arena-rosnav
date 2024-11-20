@@ -3,7 +3,6 @@ import os
 from typing import Any, Dict, List, NamedTuple, Optional
 
 import rospkg
-from rosros import rospify as rospy
 import std_msgs.msg as std_msgs
 import yaml
 from filelock import FileLock
@@ -11,6 +10,7 @@ from map_generator.constants import MAP_GENERATOR_NS
 from task_generator.constants import Constants
 from task_generator.shared import Namespace, rosparam_get
 from task_generator.tasks.modules import TM_Module
+
 
 class Stage(NamedTuple):
     static: int
@@ -78,7 +78,8 @@ class Mod_Staged(TM_Module):
     PARAM_CURRICULUM = "STAGED_curriculum"
     PARAM_INDEX = "STAGED_index"
 
-    PARAM_CONFIGURATION_NAME = lambda obs_type, param: f"RANDOM_{obs_type}_{param}"
+    def PARAM_CONFIGURATION_NAME(
+        obs_type, param): return f"RANDOM_{obs_type}_{param}"
 
     TOPIC_PREVIOUS_STAGE = "previous_stage"
     TOPIC_NEXT_STAGE = "next_stage"
@@ -134,7 +135,8 @@ class Mod_Staged(TM_Module):
                 self.__training_config_path
             ), f"Found no 'training_config.yaml' at {self.__training_config_path}"
 
-            self.__config_lock = FileLock(f"{self.__training_config_path}.lock")
+            self.__config_lock = FileLock(
+                f"{self.__training_config_path}.lock")
 
         self.__current_stage = -1
 
@@ -153,12 +155,14 @@ class Mod_Staged(TM_Module):
                 # publish goal radius
                 goal_radius = self.stage.goal_radius
                 if goal_radius is None:
-                    goal_radius = rosparam_get(float, self.PARAM_GOAL_RADIUS, 0.3)
+                    goal_radius = rosparam_get(
+                        float, self.PARAM_GOAL_RADIUS, 0.3)
                 rospy.set_param(self.PARAM_GOAL_RADIUS, goal_radius)
                 # set map generator params
                 if self.stage.dynamic_map.algorithm is not None:
                     rospy.set_param(
-                        MAP_GENERATOR_NS("algorithm"), self.stage.dynamic_map.algorithm
+                        MAP_GENERATOR_NS(
+                            "algorithm"), self.stage.dynamic_map.algorithm
                     )
                 if self.stage.dynamic_map.algorithm_config is not None:
                     rospy.set_param(
@@ -169,11 +173,14 @@ class Mod_Staged(TM_Module):
                 obs_config = {}
                 for obs_type in ["static", "dynamic", "interactive"]:
                     for param in ["min", "max"]:
-                        param_name = Mod_Staged.PARAM_CONFIGURATION_NAME(obs_type, param)
+                        param_name = Mod_Staged.PARAM_CONFIGURATION_NAME(
+                            obs_type, param)
                         param_value = getattr(self.stage, obs_type)
                         rospy.set_param(param_name, param_value)
 
-            # The current stage is stored inside the config file for when the training is stopped and later continued, the correct stage can be restored.
+            # The current stage is stored inside the config file for when the
+            # training is stopped and later continued, the correct stage can be
+            # restored.
             if self.__training_config_path is not None:
                 pass
 
@@ -185,12 +192,13 @@ class Mod_Staged(TM_Module):
             config: The new configuration values.
         """
         try:
-            curriculum_file = str(self.CURRICULUM_PATH(config[self.PARAM_CURRICULUM]))
+            curriculum_file = str(self.CURRICULUM_PATH(
+                config[self.PARAM_CURRICULUM]))
         except Exception as e:
-            rospy.logwarn(e)
             curriculum_file = "default.yaml"
 
-        assert os.path.isfile(curriculum_file), f"{curriculum_file} is not a file"
+        assert os.path.isfile(
+            curriculum_file), f"{curriculum_file} is not a file"
 
         with open(curriculum_file) as f:
             stages = {
@@ -201,7 +209,8 @@ class Mod_Staged(TM_Module):
                     goal_radius=stage.get("goal_radius", None),
                     dynamic_map=DynamicMapStage(
                         algorithm=stage["map_generator"].get("algorithm"),
-                        algorithm_config=stage["map_generator"].get("algorithm_config"),
+                        algorithm_config=stage["map_generator"].get(
+                            "algorithm_config"),
                     ),
                 )
                 for i, stage in enumerate(yaml.safe_load(f))
@@ -210,7 +219,6 @@ class Mod_Staged(TM_Module):
         try:
             starting_index = config[self.PARAM_INDEX]
         except Exception as e:
-            rospy.logwarn(e)
             starting_index = 0
 
         self.__config = Config(stages=stages, starting_index=starting_index)
