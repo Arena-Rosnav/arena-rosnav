@@ -1,0 +1,15 @@
+#! /usr/bin/bash
+
+export PYTHON_VERSION='3.12'
+
+pyenv install -s "${PYTHON_VERSION}"
+pyenv local "${PYTHON_VERSION}"
+export PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring 
+
+curr_dir="$(pwd)" 
+
+cd src/arena/arena-rosnav
+$HOME/.local/bin/poetry env use "${PYTHON_VERSION}"
+$HOME/.local/bin/poetry install || ($HOME/.local/bin/poetry lock --no-update && $HOME/.local/bin/poetry install)
+
+cd "$curr_dir"

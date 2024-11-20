@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<random>
+  <static>
+    <obstacle name="shelf">
+      <min>2</min>
+      <max>7</max>
+      <type>shelf</type>
+      <model>shelf</model>
+    </obstacle>
+  </static>
+  <dynamic>
+    <obstacle name="actor1">
+      <min>1</min>
+      <max>3</max>
+      <type>adult</type>
+      <model>actor1</model>
+    </obstacle>
+    <obstacle name="actor2">
+      <min>2</min>
+      <max>4</max>
+      <type>adult</type>
+      <model>actor2</model>
+    </obstacle>
+  </dynamic>
+</random>

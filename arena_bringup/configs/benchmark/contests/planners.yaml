@@ -1,0 +1,27 @@
+/**:
+  ros__parameters:
+    contestants:
+    - inter_planner: bypass
+      local_planner: teb
+      name: teb-basic
+    - inter_planner: bypass
+      local_planner: dwa
+      name: dwa-basic
+    - inter_planner: bypass
+      local_planner: dragon
+      name: dragon-basic
+    - inter_planner: bypass
+      local_planner: rosnav
+      name: rosnav-basic
+    - inter_planner: bypass
+      local_planner: applr
+      name: applr-basic
+    - inter_planner: bypass
+      local_planner: lflh
+      name: lflh-basic
+    - inter_planner: bypass
+      local_planner: trail
+      name: trail-basic
+    - inter_planner: bypass
+      local_planner: cohan
+      name: cohan-basic

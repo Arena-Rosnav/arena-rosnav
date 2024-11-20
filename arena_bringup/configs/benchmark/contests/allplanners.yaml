@@ -1,0 +1,45 @@
+/**:
+  ros__parameters:
+    contestants:
+    - inter_planner: polite
+      local_planner: teb
+      name: teb-polite
+    - inter_planner: aggressive
+      local_planner: teb
+      name: teb-aggressive
+    - inter_planner: polite
+      local_planner: rosnav
+      name: rosnav-polite
+    - inter_planner: aggressive
+      local_planner: rosnav
+      name: rosnav-aggressive
+    - inter_planner: polite
+      local_planner: cohan
+      name: cohan-polite
+    - inter_planner: aggressive
+      local_planner: cohan
+      name: cohan-aggressive
+    - inter_planner: bypass
+      local_planner: teb
+      name: teb-basic
+    - inter_planner: bypass
+      local_planner: dwa
+      name: dwa-basic
+    - inter_planner: bypass
+      local_planner: dragon
+      name: dragon-basic
+    - inter_planner: bypass
+      local_planner: rosnav
+      name: rosnav-basic
+    - inter_planner: bypass
+      local_planner: applr
+      name: applr-basic
+    - inter_planner: bypass
+      local_planner: lflh
+      name: lflh-basic
+    - inter_planner: bypass
+      local_planner: trail
+      name: trail-basic
+    - inter_planner: bypass
+      local_planner: cohan
+      name: cohan-basic

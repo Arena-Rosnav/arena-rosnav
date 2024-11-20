@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<package format="3">
+  <name>map_distance_server</name>
+  <version>0.0.0</version>
+  <description>The map_distance_server package</description>
+  <maintainer email="reyk@todo.todo">reyk</maintainer>
+  <license>TODO</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>rclpy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>builtin_interfaces</build_depend>
+  <build_export_depend>nav_msgs</build_export_depend>
+  <build_export_depend>rclpy</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>builtin_interfaces</exec_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
+  <export><build_type>ament_cmake</build_type>
+  </export></package>

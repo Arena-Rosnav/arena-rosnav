@@ -1,0 +1,17 @@
+/**:
+  ros__parameters:
+    additionalArguments:
+    - name: trainings_environment
+      value: teb
+    - name: network_type
+      value: teb
+    local_planner: teb
+    scenarios:
+    - map_files:
+      - map_file: small_warehouse
+        scenario: eval_mar_2022/small_warehouse_obs10.json
+      - map_file: map2
+        scenario: eval_mar_2022/map2_obs10.json
+      - map_file: map5
+        scenario: eval_mar_2022/map5_obs10.json
+      robot: burger

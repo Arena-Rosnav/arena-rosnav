@@ -1,0 +1,9 @@
+/**:
+  ros__parameters:
+    contest:
+      config: basic.yaml
+    general:
+      simulator: flatland
+    suite:
+      config: meta_suite.yaml
+      scale_episodes: 1

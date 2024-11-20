@@ -1,0 +1,83 @@
+/**:
+  ros__parameters:
+    callbacks:
+      periodic_eval:
+        eval_freq: 15000
+        max_num_moves_per_eps: 250
+        n_eval_episodes: 30
+      stop_training:
+        threshold: 0.985
+        threshold_type: succ
+      training_curriculum:
+        curr_stage: 0
+        lower_threshold: 0.6
+        threshold_type: succ
+        training_curriculum_file: semantic.yaml
+        upper_threshold: 0.95
+    debug_mode: false
+    goal_radius: 0.3
+    max_num_moves_per_eps: 175
+    monitoring:
+      cmd_line_logging:
+        episode_statistics:
+          enabled: true
+          last_n_eps: 20
+        training_metrics:
+          enabled: true
+      eval_log: false
+      use_wandb: true
+    n_envs: 32
+    n_timesteps: 10000000
+    no_gpu: false
+    rl_agent:
+      action_space:
+        custom_discretization:
+          buckets_angular_vel: 16
+          buckets_linear_vel: 12
+          enabled: true
+        discrete: true
+      architecture_name: LSTM_ResNet_5_norm
+      checkpoint: last_model
+      frame_stacking:
+        enabled: false
+        stack_size: 6
+      laser:
+        full_range_laser: true
+        reduce_num_beams:
+          enabled: false
+          num_beams: 200
+      lr_schedule:
+        enabled: true
+        settings:
+          final_value: 0.0001
+          initial_value: 0.001
+        type: linear
+      normalize:
+        enabled: true
+        settings:
+          clip_obs: 30.0
+          clip_reward: 30.0
+          gamma: 0.99
+          norm_obs: true
+          norm_reward: true
+      ppo:
+        batch_size: 1536
+        clip_range: 0.2
+        ent_coef: 0.005
+        gae_lambda: 0.95
+        gamma: 0.99
+        learning_rate: 0.0005
+        m_batch_size: 64
+        max_grad_norm: 0.5
+        n_epochs: 3
+        n_steps: 1200
+        vf_coef: 0.22
+      resume: null
+      reward_fnc: base_semantic
+      reward_fnc_kwargs:
+        placeholder: 0
+      subgoal_mode: false
+    safety_distance: 1
+    tm_modules: staged
+    tm_obstacles: random
+    tm_robots: random

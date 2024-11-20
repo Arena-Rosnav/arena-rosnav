@@ -1,0 +1,7 @@
+/**:
+  ros__parameters:
+    robots:
+    - agent: AGENT_NAME
+      amount: NUMBER
+      model: ROBOT_MODEL
+      planner: LOCAL_PLANNER

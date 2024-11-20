@@ -1,0 +1,37 @@
+/**:
+  ros__parameters:
+    stages:
+    - config:
+        SCENARIO:
+          file: 4.json
+      episodes: 1
+      map: arena_hospital_small
+      name: scenario
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 3
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 10
+            min: 5
+            models:
+            - shelf
+        SCENARIO:
+          file: default.json
+      episodes: 4
+      map: map_empty
+      name: scenario_random
+      robot: jackal
+      tm_obstacles: random
+      tm_robots: scenario

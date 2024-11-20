@@ -1,0 +1,23 @@
+/**:
+  ros__parameters:
+    abrupt_vel_change:
+      '-1':
+        factor: 0.075
+        vel_idx: -1
+      '0':
+        factor: 0.25
+        vel_idx: 0
+      '1':
+        factor: 0.075
+        vel_idx: 1
+    collision:
+      punishment: 10
+    goal_approached:
+      penalty_factor: 0.6
+      reward_factor: 0.5
+    goal_reached:
+      reward: 15
+    reverse_drive:
+      penalty: 1.0e-05
+    safe_dist:
+      punishment: 0.125

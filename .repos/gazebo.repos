@@ -1,0 +1,66 @@
+---
+repositories:
+  gz-cmake:
+    type: git
+    url: https://github.com/gazebosim/gz-cmake
+    version: gz-cmake3
+  gz-common:
+    type: git
+    url: https://github.com/gazebosim/gz-common
+    version: gz-common5
+  gz-fuel-tools:
+    type: git
+    url: https://github.com/gazebosim/gz-fuel-tools
+    version: gz-fuel-tools9
+  gz-sim:
+    type: git
+    url: https://github.com/gazebosim/gz-sim
+    version: gz-sim8
+  gz-gui:
+    type: git
+    url: https://github.com/gazebosim/gz-gui
+    version: gz-gui8
+  gz-launch:
+    type: git
+    url: https://github.com/gazebosim/gz-launch
+    version: gz-launch7
+  gz-math:
+    type: git
+    url: https://github.com/gazebosim/gz-math
+    version: gz-math7
+  gz-msgs:
+    type: git
+    url: https://github.com/gazebosim/gz-msgs
+    version: gz-msgs10
+  gz-physics:
+    type: git
+    url: https://github.com/gazebosim/gz-physics
+    version: gz-physics7
+  gz-plugin:
+    type: git
+    url: https://github.com/gazebosim/gz-plugin
+    version: gz-plugin2
+  gz-rendering:
+    type: git
+    url: https://github.com/gazebosim/gz-rendering
+    version: gz-rendering8
+  gz-sensors:
+    type: git
+    url: https://github.com/gazebosim/gz-sensors
+    version: gz-sensors8
+  gz-tools:
+    type: git
+    url: https://github.com/gazebosim/gz-tools
+    version: gz-tools2
+  gz-transport:
+    type: git
+    url: https://github.com/gazebosim/gz-transport
+    version: gz-transport13
+  gz-utils:
+    type: git
+    url: https://github.com/gazebosim/gz-utils
+    version: gz-utils2
+  sdformat:
+    type: git
+    url: https://github.com/gazebosim/sdformat
+    version: sdf14

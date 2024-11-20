@@ -1,0 +1,69 @@
+/**:
+  ros__parameters:
+  - dynamic: 15
+    goal_radius: 1.5
+    map_generator:
+      algorithm: rosnav
+      algorithm_config:
+        indoor:
+          corridor_radius: 3
+          iterations: 50
+        map_type: indoor
+    static: 0
+  - dynamic: 20
+    goal_radius: 0.75
+    map_generator:
+      algorithm: rosnav
+      algorithm_config:
+        indoor:
+          corridor_radius: 3
+          iterations: 50
+        map_type: indoor
+    static: 0
+  - dynamic: 25
+    goal_radius: 0.5
+    map_generator:
+      algorithm: rosnav
+      algorithm_config:
+        indoor:
+          corridor_radius: 3
+          iterations: 50
+        map_type: indoor
+    static: 0
+  - dynamic: 25
+    goal_radius: 0.3
+    map_generator:
+      algorithm: rosnav
+      algorithm_config:
+        indoor:
+          corridor_radius: 3
+          iterations: 50
+        map_type: indoor
+    static: 0
+  - dynamic: 30
+    map_generator:
+      algorithm: rosnav
+      algorithm_config:
+        indoor:
+          corridor_radius: 3
+          iterations: 50
+        map_type: indoor
+    static: 0
+  - dynamic: 35
+    map_generator:
+      algorithm: rosnav
+      algorithm_config:
+        indoor:
+          corridor_radius: 3
+          iterations: 50
+        map_type: indoor
+    static: 0
+  - dynamic: 50
+    map_generator:
+      algorithm: rosnav
+      algorithm_config:
+        indoor:
+          corridor_radius: 3
+          iterations: 45
+        map_type: indoor
+    static: 0

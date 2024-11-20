@@ -1,0 +1,11 @@
+/**:
+  ros__parameters:
+    collision:
+      punishment: 10
+    goal_approached:
+      penalty_factor: 0.4
+      reward_factor: 0.3
+    goal_reached:
+      reward: 15
+    safe_dist:
+      punishment: 0.25

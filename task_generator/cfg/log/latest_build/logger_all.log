@@ -1,0 +1,66 @@
+[0.063s] DEBUG:colcon:Command line arguments: ['/usr/bin/colcon', 'build', '--packages-ignore', 'tiago_gazebo']
+[0.063s] DEBUG:colcon:Parsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='build', build_base='build', install_base='install', merge_install=False, symlink_install=False, test_result_base=None, continue_on_error=False, executor='parallel', parallel_workers=16, event_handlers=None, ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['.'], packages_ignore=['tiago_gazebo'], packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=None, packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, allow_overriding=[], cmake_args=None, cmake_target=None, cmake_target_skip_unavailable=False, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, ament_cmake_args=None, catkin_cmake_args=None, catkin_skip_building_tests=False, verb_parser=<colcon_defaults.argument_parser.defaults.DefaultArgumentsDecorator object at 0x7bbd73f381f0>, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x7bbd74113d60>, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x7bbd74113d60>>)
+[0.151s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[0.151s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[0.151s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[0.151s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[0.151s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) discover
+[0.151s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[0.151s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/ros2-migration/src/arena/arena-rosnav/task_generator/cfg'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ignore', 'ignore_ament_install']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore_ament_install'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_pkg']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_pkg'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_meta']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_meta'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ros']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ros'
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['cmake', 'python']
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'cmake'
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python'
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['python_setup_py']
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python_setup_py'
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extensions ['ignore', 'ignore_ament_install']
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extension 'ignore'
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(build) ignored
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extensions ['ignore', 'ignore_ament_install']
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extension 'ignore'
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(install) ignored
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extensions ['ignore', 'ignore_ament_install']
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extension 'ignore'
+[0.158s] Level 1:colcon.colcon_core.package_identification:_identify(log) ignored
+[0.158s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults
+[0.158s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) discover
+[0.158s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) using defaults
+[0.158s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) discover
+[0.158s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) using defaults
+[0.170s] WARNING:colcon.colcon_core.package_discovery:ignoring unknown package 'tiago_gazebo' in --packages-ignore
+[0.170s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) check parameters
+[0.170s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) discover
+[0.172s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 27 installed packages in /ros2-migration/install
+[0.173s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 271 installed packages in /opt/ros/humble
+[0.174s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) using defaults
+[0.206s] INFO:colcon.colcon_core.executor:Executing jobs using 'parallel' executor
+[0.207s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete
+[0.207s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:closing loop
+[0.207s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:loop closed
+[0.207s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete finished with '0'
+[0.207s] DEBUG:colcon.colcon_core.event_reactor:joining thread
+[0.210s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.notify_send': Could not find 'notify-send'
+[0.210s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.terminal_notifier': Not used on non-Darwin systems
+[0.210s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.win32': Not used on non-Windows systems
+[0.210s] INFO:colcon.colcon_notification.desktop_notification:Sending desktop notification using 'notify2'
+[0.211s] DEBUG:colcon.colcon_notification.desktop_notification.notify2:Failed to initialize notify2: org.freedesktop.DBus.Error.Spawn.ExecFailed: /usr/bin/dbus-launch terminated abnormally without any error message
+[0.212s] DEBUG:colcon.colcon_core.event_reactor:joined thread
+[0.213s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[0.213s] INFO:colcon.colcon_core.shell:Creating prefix script '/ros2-migration/src/arena/arena-rosnav/task_generator/cfg/install/local_setup.ps1'
+[0.214s] INFO:colcon.colcon_core.shell:Creating prefix util module '/ros2-migration/src/arena/arena-rosnav/task_generator/cfg/install/_local_setup_util_ps1.py'
+[0.215s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/ros2-migration/src/arena/arena-rosnav/task_generator/cfg/install/setup.ps1'
+[0.216s] INFO:colcon.colcon_core.shell:Creating prefix script '/ros2-migration/src/arena/arena-rosnav/task_generator/cfg/install/local_setup.sh'
+[0.216s] INFO:colcon.colcon_core.shell:Creating prefix util module '/ros2-migration/src/arena/arena-rosnav/task_generator/cfg/install/_local_setup_util_sh.py'
+[0.217s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/ros2-migration/src/arena/arena-rosnav/task_generator/cfg/install/setup.sh'
+[0.218s] INFO:colcon.colcon_core.shell:Creating prefix script '/ros2-migration/src/arena/arena-rosnav/task_generator/cfg/install/local_setup.bash'
+[0.218s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/ros2-migration/src/arena/arena-rosnav/task_generator/cfg/install/setup.bash'
+[0.220s] INFO:colcon.colcon_core.shell:Creating prefix script '/ros2-migration/src/arena/arena-rosnav/task_generator/cfg/install/local_setup.zsh'
+[0.220s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/ros2-migration/src/arena/arena-rosnav/task_generator/cfg/install/setup.zsh'

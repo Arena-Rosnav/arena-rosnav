@@ -1,0 +1,27 @@
+#! /usr/bin/bash
+
+export BUILD_EXCLUDES=""
+
+ARENA_WS_DIR="$(pwd)"
+
+source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
+colcon build \
+    --symlink-install \
+    --continue-on-error \
+    --packages-skip-build-finished \
+    --packages-skip qt_gui_core rqt qt_gui_cpp rqt_gui_cpp python_orocos_kdl_vendor \
+    --cmake-args -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p) -DBUILD_TESTING=OFF \
+    $@
+
+cd $ARENA_WS_DIR
+source install/local_setup.bash
+
+for package in $(ls /opt/ros/jazzy/share/ 2>/dev/null  || echo '') ; do
+    setup_file="/opt/ros/humble/share/${package}/local_setup.bash"
+    install_setup_file="${ARENA_WS_DIR}/install/${package}/local_setup.bash"
+    if [ -f "$setup_file" ] ; then
+        if [ ! -f "$install_setup_file" ] ; then # avoid double sourcing
+            . "$setup_file"
+        fi
+    fi 
+done

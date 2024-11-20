@@ -1,0 +1,55 @@
+/**:
+  ros__parameters:
+  - dynamic: 12
+    goal_radius: 1.0
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.075
+        smooth_iter: 3
+    static: 0
+  - dynamic: 15
+    goal_radius: 0.75
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.1
+        smooth_iter: 8
+    static: 0
+  - dynamic: 20
+    goal_radius: 0.5
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.1
+        smooth_iter: 2
+    static: 0
+  - dynamic: 25
+    goal_radius: 0.3
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.125
+        smooth_iter: 5
+    static: 0
+  - dynamic: 30
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.125
+        smooth_iter: 2
+    static: 0
+  - dynamic: 35
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.15
+        smooth_iter: 2
+    static: 0
+  - dynamic: 40
+    map_generator:
+      algorithm: barn
+      algorithm_config:
+        fill_pct: 0.15
+        smooth_iter: 5
+    static: 0

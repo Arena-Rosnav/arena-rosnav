@@ -1,0 +1,11 @@
+- # First item in the list
+  ros_topic_name: /world/default/remove
+  ros_type_name: ros_gz_interfaces/srv/DeleteEntity
+  ros_topic_name: /world/default/remove
+  gz_type_name: gz.srv.DeleteEntity
+
+- # Second item in the list
+  ros_topic_name: "/scan"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_topic_name: "/world/default/model/jackal/front/laser/scan"
+  gz_type_name: "gz.msgs.LaserScan"

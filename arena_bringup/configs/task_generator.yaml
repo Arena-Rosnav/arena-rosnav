@@ -1,0 +1,26 @@
+/**:
+  ros__parameters:
+    PARAMETRIZED:
+      file: default.xml
+    RANDOM:
+      dynamic:
+        max: 15
+        min: 3
+        models:
+        - actor1
+      interactive:
+        max: 0
+        min: 0
+        models:
+        - shelf
+      seed: -1
+      static:
+        max: 10
+        min: 5
+        models:
+        - shelf
+    SCENARIO:
+      file: default.json
+    STAGED:
+      curriculum: default.yaml
+      index: 0

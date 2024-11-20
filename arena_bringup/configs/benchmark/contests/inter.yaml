@@ -1,0 +1,21 @@
+/**:
+  ros__parameters:
+    contestants:
+    - inter_planner: polite
+      local_planner: teb
+      name: teb-polite
+    - inter_planner: aggressive
+      local_planner: teb
+      name: teb-aggressive
+    - inter_planner: polite
+      local_planner: rosnav
+      name: rosnav-polite
+    - inter_planner: aggressive
+      local_planner: rosnav
+      name: rosnav-aggressive
+    - inter_planner: polite
+      local_planner: cohan
+      name: cohan-polite
+    - inter_planner: aggressive
+      local_planner: cohan
+      name: cohan-aggressive

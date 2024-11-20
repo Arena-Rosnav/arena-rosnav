@@ -1,0 +1,34 @@
+/**:
+  ros__parameters:
+    active_heading_direction:
+      _on_safe_dist_violation: true
+      iters: 60
+      r_angle: 0.5
+    approach_globalplan:
+      _on_safe_dist_violation: false
+      neg_factor: 0.3
+      pos_factor: 0.2
+    approach_goal:
+      _on_safe_dist_violation: true
+      neg_factor: 0.9
+      pos_factor: 0.65
+    collision:
+      reward: -15
+    goal_reached:
+      reward: 15
+    ped_type_collision:
+      reward: -5
+      type: 1
+    ped_type_safety_distance:
+      reward: -0.1
+      safety_distance: 0.5
+      type: 1
+    reverse_drive:
+      _on_safe_dist_violation: true
+      reward: -0.1
+    safe_distance:
+      reward: -0.25
+    two_factor_velocity_difference:
+      _on_safe_dist_violation: true
+      alpha: 0.005
+      beta: 0.01

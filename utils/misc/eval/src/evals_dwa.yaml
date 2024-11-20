@@ -1,0 +1,17 @@
+/**:
+  ros__parameters:
+    additionalArguments:
+    - name: trainings_environment
+      value: dwa
+    - name: network_type
+      value: dwa
+    local_planner: dwa
+    scenarios:
+    - map_files:
+      - map_file: small_warehouse
+        scenario: eval_mar_2022/small_warehouse_obs05.json
+      - map_file: map2
+        scenario: eval_mar_2022/map2_obs05.json
+      - map_file: map5
+        scenario: eval_mar_2022/map5_obs05.json
+      robot: burger

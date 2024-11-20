@@ -1,0 +1,383 @@
+/**:
+  ros__parameters:
+    stages:
+    - config:
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: map_empty
+      name: map_empty_1_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 2.json
+      episodes: 5
+      map: map_empty
+      name: map_empty_2_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 3.json
+      episodes: 5
+      map: map_empty
+      name: map_empty_3_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 4.json
+      episodes: 5
+      map: map_empty
+      name: map_empty_4_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 5.json
+      episodes: 5
+      map: map_empty
+      name: map_empty_5_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_hospital_small
+      name: arena_hospital_small_1_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 2.json
+      episodes: 5
+      map: arena_hospital_small
+      name: arena_hospital_small_2_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 3.json
+      episodes: 5
+      map: arena_hospital_small
+      name: arena_hospital_small_3_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 4.json
+      episodes: 5
+      map: arena_hospital_small
+      name: arena_hospital_small_4_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 5.json
+      episodes: 5
+      map: arena_hospital_small
+      name: arena_hospital_small_5_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_corridor
+      name: arena_corridor_1_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 2.json
+      episodes: 5
+      map: arena_corridor
+      name: arena_corridor_2_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 3.json
+      episodes: 5
+      map: arena_corridor
+      name: arena_corridor_3_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 4.json
+      episodes: 5
+      map: arena_corridor
+      name: arena_corridor_4_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 5.json
+      episodes: 5
+      map: arena_corridor
+      name: arena_corridor_5_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_rooms1
+      name: arena_rooms1_1_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 2.json
+      episodes: 5
+      map: arena_rooms1
+      name: arena_rooms1_2_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 3.json
+      episodes: 5
+      map: arena_rooms1
+      name: arena_rooms1_3_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 4.json
+      episodes: 5
+      map: arena_rooms1
+      name: arena_rooms1_4_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        SCENARIO:
+          file: 5.json
+      episodes: 5
+      map: arena_rooms1
+      name: arena_rooms1_5_jackal
+      robot: jackal
+      tm_obstacles: scenario
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 5
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 0
+            min: 0
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_corridor
+      name: arena_corridor_random_5obstacles
+      robot: jackal
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 10
+            min: 10
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 0
+            min: 0
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_corridor
+      name: arena_corridor_random_10obstacles
+      robot: jackal
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 5
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 0
+            min: 0
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_hospital_small
+      name: arena_hospital_small_random_5obstacles
+      robot: jackal
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 10
+            min: 10
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 0
+            min: 0
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_hospital_small
+      name: arena_hospital_small_random_10obstacles
+      robot: jackal
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 5
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 0
+            min: 0
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: map_empty
+      name: map_empty_random_5obstacles
+      robot: jackal
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 10
+            min: 10
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 0
+            min: 0
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: map_empty
+      name: map_empty_random_10obstacles
+      robot: jackal
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 5
+            min: 5
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 0
+            min: 0
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_rooms1
+      name: arena_rooms1_random_5obstacles
+      robot: jackal
+      tm_obstacles: random
+      tm_robots: scenario
+    - config:
+        RANDOM:
+          dynamic:
+            max: 10
+            min: 10
+            models:
+            - actor1
+          interactive:
+            max: 0
+            min: 0
+            models:
+            - shelf
+          static:
+            max: 0
+            min: 0
+            models:
+            - shelf
+        SCENARIO:
+          file: 1.json
+      episodes: 5
+      map: arena_rooms1
+      name: arena_rooms1_random_10obstacles
+      robot: jackal
+      tm_obstacles: random
+      tm_robots: scenario

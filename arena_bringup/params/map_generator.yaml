@@ -1,0 +1,18 @@
+/**:
+  ros__parameters:
+    algorithm: rosnav
+    algorithm_config:
+      fill_pct: 0.15
+      indoor:
+        corridor_radius: 5
+        iterations: 60
+      map_type: indoor
+      outdoor:
+        obstacle_extra_radius: 1
+        obstacle_num: 15
+      smooth_iter: 5
+    episode_per_map: 12
+    map_properties:
+      height: 80
+      resolution: 0.5
+      width: 80

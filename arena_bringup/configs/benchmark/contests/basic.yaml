@@ -1,0 +1,6 @@
+/**:
+  ros__parameters:
+    contestants:
+    - inter_planner: bypass
+      local_planner: teb
+      name: teb

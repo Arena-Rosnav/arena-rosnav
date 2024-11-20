@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>rviz_plugins</name>
+  <version>0.0.0</version>
+  <description>Additional plugins for RViz</description>
+  <maintainer email="eeshaojie@todo.todo">Shaojie Shen</maintainer>
+  <license>BSD</license>
+  <url type="website">http://ros.org/wiki/rviz_plugins</url>
+
+  <!-- Build tool dependencies -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Build dependencies -->
+  <build_depend>ament_cmake</build_depend>
+  <build_depend>rviz_common</build_depend>
+  <build_depend>rviz_rendering</build_depend>
+  <build_depend>rclcpp</build_depend>
+  <build_depend>Qt5Core</build_depend>
+  <build_depend>Qt5Gui</build_depend>
+  <build_depend>Qt5Widgets</build_depend>
+
+  <!-- Execution dependencies -->
+  <exec_depend>rviz_common</exec_depend>
+  <exec_depend>rviz_rendering</exec_depend>
+  <exec_depend>rclcpp</exec_depend>
+  <exec_depend>Qt5Core</exec_depend>
+  <exec_depend>Qt5Gui</exec_depend>
+  <exec_depend>Qt5Widgets</exec_depend>
+
+  <!-- Exporting RViz plugin description -->
+  <export>
+    <build_type>ament_cmake</build_type>
+    <rviz plugin="${prefix}/plugin_description.xml"/>
+  </export>
+</package>
