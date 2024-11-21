@@ -17,7 +17,7 @@ def generate_launch_description():
             default_value=''
         ),
         launch.actions.DeclareLaunchArgument(
-            name='model',
+            name='robot',
             default_value='jackal',
             description='robot model type [burger, jackal, ridgeback, agvota, rto, ...]'
         ),
@@ -43,8 +43,8 @@ def generate_launch_description():
         ),
         launch.actions.DeclareLaunchArgument(
             name='entity_manager',
-            default_value='crowdsim',
-            description='[flatland, pedsim, crowdsim]'
+            default_value='dummy',
+            description='[dummy]'
         ),
         launch.actions.DeclareLaunchArgument(
             name='sfm',
@@ -58,7 +58,7 @@ def generate_launch_description():
         ),
         launch.actions.DeclareLaunchArgument(
             name='agent_name',
-            default_value=launch.substitutions.LaunchConfiguration('model'),
+            default_value=launch.substitutions.LaunchConfiguration('robot'),
             description='DRL agent name to be deployed'
         ),
         launch.actions.DeclareLaunchArgument(
@@ -84,7 +84,7 @@ def generate_launch_description():
         ),
         launch.actions.DeclareLaunchArgument(
             name='tm_modules',
-            default_value=''
+            default_value='rviz_ui'  # TODO breaks launch if empty
         ),
         launch.actions.DeclareLaunchArgument(
             name='benchmark_resume',
@@ -113,18 +113,9 @@ def generate_launch_description():
             default_value='true'
         ),
         launch.actions.DeclareLaunchArgument(
-            name='map_file',
+            name='world',
             default_value='map_empty',
-            description='use default <map>.sdf from gazebo or path to other sdf for map'
-        ),
-        launch.actions.DeclareLaunchArgument(
-            name='map_path',
-            default_value=launch.substitutions.LaunchConfiguration('map_file')
-        ),
-        launch.actions.DeclareLaunchArgument(
-            name='world_file',
-            default_value=launch.substitutions.LaunchConfiguration('map_file'),
-            description='set to generated_world to replace occupancy map with obstacles and walls (NOT IMPLEMENTED YET)'
+            description='world to load'
         ),
         launch.actions.DeclareLaunchArgument(
             name='global_frame_id',
@@ -330,11 +321,26 @@ def generate_launch_description():
         launch.actions.IncludeLaunchDescription(
             launch.launch_description_sources.PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory(
+                    'task_generator'), 'launch/task_generator.launch.py')
+            ),
+            launch_arguments={
+                'simulator': launch.substitutions.LaunchConfiguration('simulator'),
+                'entity_manager': launch.substitutions.LaunchConfiguration('entity_manager'),
+                'tm_obstacles': launch.substitutions.LaunchConfiguration('tm_obstacles'),
+                'tm_robots': launch.substitutions.LaunchConfiguration('tm_robots'),
+                'tm_modules': launch.substitutions.LaunchConfiguration('tm_modules'),
+                'robot': launch.substitutions.LaunchConfiguration('robot'),
+                'world': launch.substitutions.LaunchConfiguration('world'),
+            }.items(),
+        ),
+        launch.actions.IncludeLaunchDescription(
+            launch.launch_description_sources.PythonLaunchDescriptionSource(
+                os.path.join(get_package_share_directory(
                     'arena_bringup'), 'launch/utils/entity_manager.launch.py')
             ),
             launch_arguments={
                 'entity_manager': launch.substitutions.LaunchConfiguration('entity_manager'),
-                'world_file': launch.substitutions.LaunchConfiguration('world_file'),
+                'world_file': launch.substitutions.LaunchConfiguration('world'),
                 'sfm': launch.substitutions.LaunchConfiguration('sfm')
             }.items()
         ),
@@ -357,14 +363,16 @@ def generate_launch_description():
                     'arena_bringup'), 'launch/testing/simulators/gazebo.launch.py')
             ),
             launch_arguments={
-                'model': launch.substitutions.LaunchConfiguration('model'),
+                'model': launch.substitutions.LaunchConfiguration('robot'),
                 # 'rviz_file': launch.substitutions.LaunchConfiguration('rviz_file'),
                 # 'show_rviz': launch.substitutions.LaunchConfiguration('show_rviz'),
-                'world_file': launch.substitutions.LaunchConfiguration('world_file'),
+                'world_file': launch.substitutions.LaunchConfiguration('world'),
                 'use_sim_time': launch.substitutions.LaunchConfiguration('use_sim_time'),
                 'random_spawn_test': launch.substitutions.LaunchConfiguration('random_spawn_test'),
                 # 'headless': launch.substitutions.LaunchConfiguration('headless')
-            }.items()
+            }.items(),
+            condition=launch.conditions.IfCondition(launch.substitutions.PythonExpression(
+                ['"', launch.substitutions.LaunchConfiguration('simulator'), '"=="gazebo"'])),
         ),
         # launch.actions.IncludeLaunchDescription(
         #     launch.launch_description_sources.PythonLaunchDescriptionSource(
@@ -383,17 +391,11 @@ def generate_launch_description():
             ),
             launch_arguments={
                 'ns': '',
-                'robot_name': launch.substitutions.LaunchConfiguration('model'),
+                'robot_name': launch.substitutions.LaunchConfiguration('robot'),
                 'global_frame_id': launch.substitutions.LaunchConfiguration('global_frame_id'),
                 'odom_frame_id': launch.substitutions.LaunchConfiguration('odom_frame_id')
             }.items()
         ),
-        launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                os.path.join(get_package_share_directory(
-                    'arena_bringup'), 'launch/testing/task_generator.launch.py')
-            )
-        )
     ])
     return ld
 

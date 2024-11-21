@@ -104,11 +104,10 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
         self.declare_parameters(
             namespace='',
             parameters=[
-                ('entity_manager', 'dummy'),
                 ('auto_reset', True),
+                ('robot', 'jackal'),
                 ('train_mode', False),
                 ('robot_setup_file', ''),
-                ('model', ''),
                 ('inter_planner', ''),
                 ('local_planner', ''),
                 ('agent_name', ''),
@@ -263,7 +262,7 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
     def _create_robot_managers(self) -> List[RobotManager]:
         # Read robot setup file
         robot_setup_file: str = self.get_parameter('robot_setup_file').value
-        robot_model: str = self.get_parameter('model').value
+        robot_model: str = self.get_parameter('robot').value
 
         if robot_setup_file == "":
             robots = create_default_robot_list(

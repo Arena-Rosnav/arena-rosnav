@@ -1,8 +1,6 @@
 from .utils.ros_params import ROSParamServer
 import rclpy
 
-TASKGEN_NODE: ROSParamServer
-
 
 class NodeInterface:
     node: ROSParamServer
@@ -11,8 +9,7 @@ class NodeInterface:
         ...
 
 
-def init_task_gen_node(args=None):
-    global TASKGEN_NODE
+def init_task_gen_node(args=None) -> ROSParamServer:
 
     from .node import TaskGenerator
     NodeInterface.node = TaskGenerator()
@@ -22,6 +19,4 @@ def init_task_gen_node(args=None):
 
     NodeInterface.node.post_init()
 
-    while True:
-        # rclpy.spin_once(TASKGEN_CONFIG_NODE)
-        rclpy.spin_once(NodeInterface.node)
+    return NodeInterface.node
