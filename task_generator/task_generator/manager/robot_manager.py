@@ -1,4 +1,5 @@
 import dataclasses
+import os
 import typing
 
 import numpy as np
@@ -17,9 +18,8 @@ import nav_msgs.msg as nav_msgs
 import geometry_msgs.msg as geometry_msgs
 import std_srvs.srv as std_srvs
 
-from launch import LaunchDescription
-from launch_ros.actions import Node as LaunchNode
-from launch.launch_service import LaunchService
+import launch
+import ament_index_python
 
 
 class RobotManager(NodeInterface):
@@ -216,7 +216,7 @@ class RobotManager(NodeInterface):
         self.node.get_logger().warn(f"START WITH MODEL {self.namespace}")
 
         if Utils.get_arena_type() != Constants.ArenaType.TRAINING:
-            launch_description = LaunchDescription()
+            launch_description = launch.LaunchDescription()
 
             launch_arguments = {
                 'SIMULATOR': Utils.get_simulator().value,
@@ -237,14 +237,20 @@ class RobotManager(NodeInterface):
                     'record_data_dir': self._robot.record_data_dir,
                 })
 
-            launch_description.add_action(LaunchNode(
-                package='arena_bringup',
-                executable='robot',
-                output='screen',
-                parameters=[launch_arguments]
-            ))
+            launch_description.add_action(
+                launch.actions.IncludeLaunchDescription(
+                    launch.launch_description_sources.PythonLaunchDescriptionSource(
+                        os.path.join(
+                            ament_index_python.packages.get_package_share_directory(
+                                'arena_bringup'),
+                            'launch/testing/robot.launch.py'
+                        )
+                    ),
+                    launch_arguments=launch_arguments.items(),
+                )
+            )
 
-            self.launch_service = LaunchService()
+            self.launch_service = launch.launch_service.LaunchService()
             self.launch_service.include_launch_description(launch_description)
             self.launch_service.run()
 
