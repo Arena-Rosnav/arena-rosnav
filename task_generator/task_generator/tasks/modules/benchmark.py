@@ -56,11 +56,11 @@ class _Config(typing.NamedTuple):
 class Suite(typing.NamedTuple):
 
     @classmethod
-    def parse(cls, name: str, obj: typing.Dict):
+    def parse(cls, name: str, obj: typing.Dict, default_timeout: float):
         return cls(
             name=name,
             stages=[
-                cls.Stage.parse(stage)
+                cls.Stage.parse(stage, default_timeout=default_timeout)
                 for stage
                 in obj["stages"]
             ]
@@ -92,8 +92,12 @@ class Suite(typing.NamedTuple):
             )
 
         @classmethod
-        def parse(cls, obj: typing.Dict) -> "Suite.Stage":
-            obj.setdefault("timeout", self._node.Config.Robot.TIMEOUT)
+        def parse(
+            cls,
+            obj: typing.Dict,
+            default_timeout: float
+        ) -> "Suite.Stage":
+            obj.setdefault("timeout", default_timeout)
             obj.setdefault("seed", cls.hash(obj))
             return cls(**obj)
 
@@ -197,10 +201,12 @@ class Mod_Benchmark(TM_Module):
                                  yaml.load(f, yaml.FullLoader))
 
     @classmethod
-    def _load_suite(cls, suite: str) -> Suite:
+    def _load_suite(cls, suite: str, default_timeout: float) -> Suite:
         with open(cls.DIR("suites", suite)) as f:
-            return Suite.parse(pathlib.Path(suite).stem,
-                               yaml.load(f, yaml.FullLoader))
+            return Suite.parse(
+                pathlib.Path(suite).stem, yaml.load(f, yaml.FullLoader),
+                default_timeout=default_timeout,
+            )
 
     @classmethod
     def _resume(cls) -> typing.Tuple[str, Contest.Index, Suite.Index, int]:
@@ -251,7 +257,10 @@ class Mod_Benchmark(TM_Module):
     def __init__(self, **kwargs):
 
         self._config = self._load_config()
-        self._suite = self._load_suite(self._config.suite.config)
+        self._suite = self._load_suite(
+            self._config.suite.config,
+            default_timeout=self.node.Configuration.Robot.TIMEOUT.value
+        )
         self._contest = self._load_contest(self._config.contest.config)
 
         self._requires_restart = False
@@ -289,12 +298,12 @@ class Mod_Benchmark(TM_Module):
             self._log_suite()
 
             self._requires_restart = True
-            return self._reincarnate()
+            self._reincarnate()
+        else:
+            self._runid, contest_index, suite_index, headless = self._resume()
 
-        self._runid, contest_index, suite_index, headless = self._resume()
-
-        self._contest_index, self._suite_index, self._headless = contest_index, suite_index, headless
-        self._episode = -1
+            self._contest_index, self._suite_index, self._headless = contest_index, suite_index, headless
+            self._episode = -1
 
     def before_reset(self):
         pass

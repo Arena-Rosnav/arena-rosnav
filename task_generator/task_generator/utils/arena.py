@@ -10,23 +10,26 @@ import nav_msgs.msg as nav_msgs
 
 
 def get_simulator() -> Constants.Simulator:
-    return Constants.Simulator(rosparam_get(str, "simulator", Constants.Simulator.DUMMY.value).lower())
-
+    return Constants.Simulator(rosparam_get(
+        str, "simulator", Constants.Simulator.DUMMY.value).lower())
 
 
 def get_entity_manager() -> Constants.EntityManager:
-    return Constants.EntityManager(rosparam_get(str, "entity_manager", Constants.EntityManager.DUMMY.value).lower())
+    return Constants.EntityManager(rosparam_get(
+        str, "entity_manager", Constants.EntityManager.DUMMY.value).lower())
 
 
 def get_arena_type() -> Constants.ArenaType:
-    return Constants.ArenaType(os.getenv("ARENA_TYPE", Constants.ArenaType.DEPLOYMENT.value).lower())
+    return Constants.ArenaType(
+        os.getenv("ARENA_TYPE", Constants.ArenaType.DEPLOYMENT.value).lower())
 
 
 def is_synthetic_map() -> bool:
-    return rosparam_get(str, "map_file") in ["dynamic_map"]
+    return rosparam_get(str, "map_file", "") in ["dynamic_map"]
 
 
-def generate_map_inner_border(free_space_indices, map_: nav_msgs.OccupancyGrid):
+def generate_map_inner_border(free_space_indices,
+                              map_: nav_msgs.OccupancyGrid):
     """generate map border (four vertices of the map)
 
     Returns:
@@ -55,7 +58,7 @@ def generate_map_inner_border(free_space_indices, map_: nav_msgs.OccupancyGrid):
 
 def update_freespace_indices_maze(map_: nav_msgs.OccupancyGrid):
     """update the indices(represented in a tuple) of the freespace based on the map and the static polygons
-    ostacles manuelly added 
+    ostacles manuelly added
     param map_ : original occupacy grid
     param vertlist: vertex of the polygons
 

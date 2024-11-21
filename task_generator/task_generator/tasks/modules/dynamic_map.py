@@ -25,8 +25,11 @@ from map_distance_server.srv import GetDistanceMap
 DynamicMapConfiguration = Dict[str, Dict]
 
 # Define MAP_GENERATOR_NS as a function if it's not available
+
+
 def MAP_GENERATOR_NS(param_name: str) -> str:
     return f"/map_generator/{param_name}"
+
 
 class Mod_DynamicMap(TM_Module, NodeInterface):
     def __init__(self, **kwargs):
@@ -35,18 +38,28 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
 
         self.callback_group = ReentrantCallbackGroup()
 
-        self.__map_request_pub = self._node.create_publisher(String, self.TOPIC_REQUEST_MAP, 1)
-        self.__task_reset_pub = self._node.create_publisher(String, self.TOPIC_RESET, 1)
+        self.__map_request_pub = self.node.create_publisher(
+            String, self.TOPIC_REQUEST_MAP, 1)
+        self.__task_reset_pub = self.node.create_publisher(
+            String, self.TOPIC_RESET, 1)
 
-        self._node.create_subscription(String, self.TOPIC_RESET, self._cb_task_reset, 1, callback_group=self.callback_group)
+        self.node.create_subscription(
+            String,
+            self.TOPIC_RESET,
+            self._cb_task_reset,
+            1,
+            callback_group=self.callback_group)
 
-        self.__get_dist_map_service = self._node.create_client(GetDistanceMap, self.SERVICE_DISTANCE_MAP, callback_group=self.callback_group)
+        self.__get_dist_map_service = self.node.create_client(
+            GetDistanceMap, self.SERVICE_DISTANCE_MAP, callback_group=self.callback_group)
 
-        self._node.declare_parameter('num_envs', 1)
-        self._node.declare_parameter(MAP_GENERATOR_NS('episode_per_map'), 1)
+        self.node.declare_parameter('num_envs', 1)
+        self.node.declare_parameter(MAP_GENERATOR_NS('episode_per_map'), 1)
 
-        num_envs = self._node.get_parameter('num_envs').value if "eval_sim" not in self._TASK.robot_managers[0].namespace else 1
-        self._target_eps_num = self._node.get_parameter(MAP_GENERATOR_NS('episode_per_map')).value * num_envs
+        num_envs = self.node.get_parameter(
+            'num_envs').value if "eval_sim" not in self._TASK.robot_managers[0].namespace else 1
+        self._target_eps_num = self.node.get_parameter(
+            MAP_GENERATOR_NS('episode_per_map')).value * num_envs
 
         self._episodes = 0
         self.add_on_set_parameters_callback(self.parameters_callback)
@@ -63,19 +76,21 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
             self.request_new_map()
 
     def _set_config(self, config: DynamicMapConfiguration):
-        generator = self._node.get_parameter(self.PARAM_GENERATOR).value
+        generator = self.node.get_parameter(self.PARAM_GENERATOR).value
         log = f"Setting [Map Generator: {generator}] parameters"
         config_generator = config.get(generator, dict())
         for key, value in config_generator.items():
             log += f"\t{key}={value}"
-            rosparam_set(f"{self.PARAM_GENERATOR_CONFIGS}.{generator}.{key}", value)
-        self._node.get_logger().info(log)
+            rosparam_set(f"{self.PARAM_GENERATOR_CONFIGS}.{
+                         generator}.{key}", value)
+        self.node.get_logger().info(log)
 
     def _cb_task_reset(self, msg):
         self._update_map()
 
     def _update_map(self):
-        future = self.__get_dist_map_service.call_async(GetDistanceMap.Request())
+        future = self.__get_dist_map_service.call_async(
+            GetDistanceMap.Request())
         future.add_done_callback(self._update_map_callback)
 
     def _update_map_callback(self, future):
@@ -89,21 +104,21 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
                 self._TASK.world_manager.world
             )
         except Exception as e:
-            self._node.get_logger().warn(f"Service call failed {e}")
+            self.node.get_logger().warn(f"Service call failed {e}")
 
     def request_new_map(self):
         self._episodes = 0
         self.__map_request_pub.publish(String())
-        
+
         try:
-            self._node.create_subscription(
+            self.node.create_subscription(
                 OccupancyGrid,
                 self.TOPIC_MAP,
                 lambda _: None,
                 1,
                 callback_group=self.callback_group
             )
-            self._node.create_subscription(
+            self.node.create_subscription(
                 String,
                 self.TOPIC_SIGNAL_MAP,
                 lambda _: None,
@@ -111,11 +126,12 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
                 callback_group=self.callback_group
             )
         except Exception as e:
-            self._node.get_logger().warn(f"[Map Generator] Timeout while waiting for new map. Continue with current map. {e}")
+            self.node.get_logger().warn(
+                f"[Map Generator] Timeout while waiting for new map. Continue with current map. {e}")
         else:
-            self._node.get_logger().info("===================")
-            self._node.get_logger().info("+++ Got new map +++")
-            self._node.get_logger().info("===================")
+            self.node.get_logger().info("===================")
+            self.node.get_logger().info("+++ Got new map +++")
+            self.node.get_logger().info("===================")
 
         self.__task_reset_pub.publish(String())
 

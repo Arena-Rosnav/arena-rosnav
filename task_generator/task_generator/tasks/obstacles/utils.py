@@ -76,7 +76,7 @@ class ITF_Obstacle:
         if position is None:
             point = props.world_manager.get_position_on_map(safe_distance)
             position = PositionOrientation(
-                point.x, point.y, Configuration.General.RNG.random() * 2 * math.pi)
+                point.x, point.y, self.node.Configuration.General.RNG.value.random() * 2 * math.pi)
 
         if extra is None:
             extra = dict()

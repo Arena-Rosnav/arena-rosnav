@@ -3,7 +3,6 @@ from typing import Dict
 
 from builtin_interfaces.msg import Time
 from task_generator.constants import Constants
-from task_generator.constants.runtime import Configuration
 from task_generator.shared import PositionOrientation
 from task_generator.tasks.robots.random import TM_Random
 
@@ -42,16 +41,16 @@ class TM_Explore(TM_Random):
                 )
                 self._set_goal(
                     i, PositionOrientation(
-                        *waypoint, Configuration.General.RNG.random() * 2 * math.pi)
+                        *waypoint, self.node.Configuration.General.RNG.value.random() * 2 * math.pi)
                 )
 
-            elif (self._PROPS.clock.clock - self._timeouts[i]).sec > self._node.Config.Robot.TIMEOUT:
+            elif (self._PROPS.clock.clock - self._timeouts[i]).sec > self.node.Configuration.Robot.TIMEOUT.value:
                 waypoint = self._PROPS.world_manager.get_position_on_map(
                     safe_dist=robot._robot_radius, forbid=False
                 )
                 self._set_position(
                     i, PositionOrientation(
-                        *waypoint, Configuration.General.RNG.random() * 2 * math.pi)
+                        *waypoint, self.node.Configuration.General.RNG.value.random() * 2 * math.pi)
                 )
 
         return False

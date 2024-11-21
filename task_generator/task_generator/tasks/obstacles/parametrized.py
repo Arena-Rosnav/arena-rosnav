@@ -1,7 +1,6 @@
 import os
 from typing import List, Optional
 
-from task_generator import NodeInterface
 from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Configuration
@@ -47,7 +46,7 @@ def _get_attrib(element: ET.Element, attribute: str,
     raise ValueError(f"attribute {attribute} not found in {element}")
 
 
-class TM_Parametrized(TM_Obstacles, NodeInterface):
+class TM_Parametrized(TM_Obstacles):
 
     _config: _Config
 
@@ -64,15 +63,14 @@ class TM_Parametrized(TM_Obstacles, NodeInterface):
         return super().prefix("parametrized", *args)
 
     def __init__(self, **kwargs):
-        NodeInterface.__init__(self)
         TM_Obstacles.__init__(self, **kwargs)
 
-        self._node.declare_parameter('PARAMETRIZED_file', '')
-        self._node.add_on_set_parameters_callback(self.parameters_callback)
+        self.node.declare_parameter('PARAMETRIZED_file', '')
+        self.node.add_on_set_parameters_callback(self.parameters_callback)
 
         # Initial configuration
         self.reconfigure(
-            {'PARAMETRIZED_file': self._node.get_parameter('PARAMETRIZED_file').value})
+            {'PARAMETRIZED_file': self.node.get_parameter('PARAMETRIZED_file').value})
 
     def parameters_callback(self, params):
         for param in params:
@@ -114,7 +112,7 @@ class TM_Parametrized(TM_Obstacles, NodeInterface):
         # Create static obstacles
         for config in self._config.STATIC:
             for i in range(
-                Configuration.General.RNG.integers(
+                self.node.Configuration.General.RNG.value.integers(
                     config.min,
                     config.max,
                     endpoint=True
@@ -131,7 +129,7 @@ class TM_Parametrized(TM_Obstacles, NodeInterface):
         # Create interactive obstacles
         for config in self._config.INTERACTIVE:
             for i in range(
-                Configuration.General.RNG.integers(
+                self.node.Configuration.General.RNG.value.integers(
                     config.min,
                     config.max,
                     endpoint=True
@@ -148,7 +146,7 @@ class TM_Parametrized(TM_Obstacles, NodeInterface):
         # Create dynamic obstacles
         for config in self._config.DYNAMIC:
             for i in range(
-                Configuration.General.RNG.integers(
+                self.node.Configuration.General.RNG.value.integers(
                     config.min,
                     config.max,
                     endpoint=True

@@ -3,7 +3,6 @@ import json
 import os
 from typing import List
 
-from task_generator import NodeInterface
 from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Constants
 from task_generator.shared import DynamicObstacle, Obstacle, rosparam_get
@@ -19,23 +18,23 @@ class _Config:
     dynamic: List[DynamicObstacle]
 
 
-class TM_Scenario(TM_Obstacles, NodeInterface):
+class TM_Scenario(TM_Obstacles):
 
     _config: _Config
 
     @classmethod
     def prefix(cls, *args):
         return super().prefix("scenario", *args)
-    
+
     def __init__(self, **kwargs):
-        NodeInterface.__init__(self)
         TM_Obstacles.__init__(self, **kwargs)
 
-        self._node.declare_parameter('SCENARIO_file', '')
-        self._node.add_on_set_parameters_callback(self.parameters_callback)
+        self.node.declare_parameter('SCENARIO_file', '')
+        self.node.add_on_set_parameters_callback(self.parameters_callback)
 
         # Initial configuration
-        self.reconfigure({'SCENARIO_file': self._node.get_parameter('SCENARIO_file').value})
+        self.reconfigure(
+            {'SCENARIO_file': self.node.get_parameter('SCENARIO_file').value})
 
     def parameters_callback(self, params):
         for param in params:
@@ -45,9 +44,10 @@ class TM_Scenario(TM_Obstacles, NodeInterface):
 
     def reconfigure(self, config):
         scenario_file = config['SCENARIO_file']
-        
-        package_share_directory = get_package_share_directory('simulation-setup')
-        map_file = self._node.get_parameter('map_file').value
+
+        package_share_directory = get_package_share_directory(
+            'simulation-setup')
+        map_file = self.node.get_parameter('map_file').value
 
         scenario_path = os.path.join(
             package_share_directory,
@@ -71,7 +71,8 @@ class TM_Scenario(TM_Obstacles, NodeInterface):
             dynamic=[
                 DynamicObstacle.parse(
                     obs,
-                    model=self._PROPS.dynamic_model_loader.bind(obs.get("model", Constants.DEFAULT_PEDESTRIAN_MODEL))
+                    model=self._PROPS.dynamic_model_loader.bind(
+                        obs.get("model", Constants.DEFAULT_PEDESTRIAN_MODEL))
                 )
                 for obs in scenario.get("obstacles", {}).get("dynamic", [])
             ]

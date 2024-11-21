@@ -6,7 +6,6 @@ from typing import List, NamedTuple
 from ament_index_python.packages import get_package_share_directory
 import rclpy
 from rcl_interfaces.msg import SetParametersResult
-from task_generator import NodeInterface
 from task_generator.constants import Constants
 from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
@@ -41,7 +40,8 @@ class _RobotGoal(NamedTuple):
 class _Config:
     robots: List[_RobotGoal]
 
-class TM_Scenario(TM_Robots, NodeInterface):
+
+class TM_Scenario(TM_Robots):
     """
     This class represents a scenario for robots in the task generator.
     It inherits from TM_Robots class and Node class.
@@ -57,15 +57,15 @@ class TM_Scenario(TM_Robots, NodeInterface):
         return super().prefix("scenario", *args)
 
     def __init__(self, **kwargs):
-        NodeInterface.__init__(self)
         TM_Robots.__init__(self, **kwargs)
 
-        self._node.declare_parameter('SCENARIO_file', '')
-        self._node.declare_parameter('map_file', '')
-        self._node.add_on_set_parameters_callback(self.parameters_callback)
+        self.node.declare_parameter('SCENARIO_file', '')
+        self.node.declare_parameter('map_file', '')
+        self.node.add_on_set_parameters_callback(self.parameters_callback)
 
         # Initial configuration
-        self.reconfigure({'SCENARIO_file': self._node.get_parameter('SCENARIO_file').value})
+        self.reconfigure(
+            {'SCENARIO_file': self.node.get_parameter('SCENARIO_file').value})
 
     def parameters_callback(self, params):
         for param in params:
@@ -83,7 +83,7 @@ class TM_Scenario(TM_Robots, NodeInterface):
         Returns:
             None
         """
-        map_file = self._node.get_parameter('map_file').value
+        map_file = self.node.get_parameter('map_file').value
         scenario_file = config['SCENARIO_file']
 
         scenario_path = os.path.join(
@@ -98,7 +98,8 @@ class TM_Scenario(TM_Robots, NodeInterface):
             scenario = json.load(f)
 
         self._config = _Config(
-            robots=[_RobotGoal.parse(robot) for robot in scenario.get("robots", [])]
+            robots=[_RobotGoal.parse(robot)
+                    for robot in scenario.get("robots", [])]
         )
 
     def reset(self, **kwargs):
@@ -124,11 +125,13 @@ class TM_Scenario(TM_Robots, NodeInterface):
 
         if setup_robot_length > scenario_robots_length:
             managed_robots = managed_robots[:scenario_robots_length]
-            self._node.get_logger().warn("Robot setup contains more robots than the scenario file.", once=True)
+            self.node.get_logger().warn(
+                "Robot setup contains more robots than the scenario file.", once=True)
 
         if scenario_robots_length > setup_robot_length:
             SCENARIO_ROBOTS = SCENARIO_ROBOTS[:setup_robot_length]
-            self._node.get_logger().warn("Scenario file contains more robots than setup.", once=True)
+            self.node.get_logger().warn(
+                "Scenario file contains more robots than setup.", once=True)
 
         for robot, config in zip(managed_robots, SCENARIO_ROBOTS):
             robot.reset(start_pos=config.start, goal_pos=config.goal)

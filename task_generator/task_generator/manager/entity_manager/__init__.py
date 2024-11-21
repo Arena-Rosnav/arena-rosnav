@@ -19,7 +19,8 @@ class EntityManager(NodeInterface):
 
     _goal_pub: rclpy.publisher.Publisher
 
-    def __init__(self, namespace: Namespace, simulator: BaseSimulator, node: rclpy.node.Node = None):
+    def __init__(self, namespace: Namespace,
+                 simulator: BaseSimulator, node: rclpy.node.Node = None):
         """
         Initialize dynamic obstacle manager.
 
@@ -30,20 +31,20 @@ class EntityManager(NodeInterface):
         """
         self._simulator = simulator
         self._namespace = namespace
-        
+
         NodeInterface.__init__(self)
 
-        self._goal_pub = self._node.create_publisher(
+        self._goal_pub = self.node.create_publisher(
             PoseStamped,
             self._namespace("/goal"),
             1
         )
-        # self._robot_name = self._node.get_parameter('robot_model').value
+        # self._robot_name = self.node.get_parameter('robot_model').value
 
     def spawn_obstacles(self, obstacles: Collection[Obstacle]):
         """
-        Loads given obstacles into the simulator. 
-        If the object has an interaction radius of > 0, 
+        Loads given obstacles into the simulator.
+        If the object has an interaction radius of > 0,
         then load it as an interactive obstacle instead of static
         """
         raise NotImplementedError()
@@ -51,8 +52,8 @@ class EntityManager(NodeInterface):
     def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
         """
         Loads given obstacles into the simulator.
-        Currently by loading a existing sdf file, 
-        then reaplacing the static values by dynamic ones 
+        Currently by loading a existing sdf file,
+        then reaplacing the static values by dynamic ones
         """
         raise NotImplementedError()
 
@@ -100,12 +101,13 @@ def dummy():
     class DummyEntityManager(EntityManager):
         def __init__(self, namespace: Namespace, simulator: BaseSimulator):
             super().__init__(namespace, simulator)
-            self.__logger = self._node.get_logger().get_child('dummy_EM')
+            self.__logger = self.node.get_logger().get_child('dummy_EM')
 
         def spawn_obstacles(self, obstacles: Collection[Obstacle]):
             self.__logger.debug(f'spawning {len(obstacles)} static obstacles')
 
-        def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
+        def spawn_dynamic_obstacles(
+                self, obstacles: Collection[DynamicObstacle]):
             self.__logger.debug(f'spawning {len(obstacles)} dynamic obstacles')
 
         def spawn_walls(self, walls: WorldWalls, heightmap: WorldMap):
@@ -114,7 +116,8 @@ def dummy():
         def unuse_obstacles(self):
             self.__logger.debug(f'unusing obstacles')
 
-        def remove_obstacles(self, purge: ObstacleLayer = ObstacleLayer.UNUSED):
+        def remove_obstacles(
+                self, purge: ObstacleLayer = ObstacleLayer.UNUSED):
             self.__logger.debug(f'removing obstacles (level {purge})')
 
         def spawn_robot(self, robot: Robot):

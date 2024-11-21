@@ -124,16 +124,16 @@ class TaskFactory:
                     cls.registry_module[module]()(task=self) for module in modules
                 ]
 
-                self._train_mode = self._node.get_parameter_or(
+                self._train_mode = self.node.get_parameter_or(
                     "/train_mode", DefaultParameter(False)).value
 
-                self.__reset_start = self._node.create_publisher(
+                self.__reset_start = self.node.create_publisher(
                     std_msgs.Empty, 'reset_start', 1)
-                self.__reset_end = self._node.create_publisher(
+                self.__reset_end = self.node.create_publisher(
                     std_msgs.Empty, 'reset_end', 1)
                 self.__reset_mutex = False
 
-                self._node.create_subscription(
+                self.node.create_subscription(
                     rosgraph_msgs.Clock, '/clock', self._clock_callback, 10)
                 self.last_reset_time = 0
                 self.clock = rosgraph_msgs.Clock()
@@ -171,11 +171,9 @@ class TaskFactory:
 
                 if self._train_mode:
                     self.set_tm_robots(
-                        Constants.TaskMode.TM_Robots(
-                            self._node.get_parameter('tm_robots').value))
+                        Constants.TaskMode.TM_Robots(self.node.Configuration.TaskMode.TM_ROBOTS.value))
                     self.set_tm_obstacles(
-                        Constants.TaskMode.TM_Obstacles(
-                            self._node.get_parameter('tm_obstacles').value))
+                        Constants.TaskMode.TM_Obstacles(self.node.Configuration.TaskMode.TM_OBSTACLES.value))
 
             def set_tm_robots(self, tm_robots: Constants.TaskMode.TM_Robots):
                 """
@@ -220,12 +218,12 @@ class TaskFactory:
 
                     if not self._train_mode:
                         if (
-                            new_tm_robots := Constants.TaskMode.TM_Robots(Configuration.TaskMode.TM_ROBOTS)
+                            new_tm_robots := self.node.Configuration.TaskMode.TM_ROBOTS.value
                         ) != self.__param_tm_robots:
                             self.set_tm_robots(new_tm_robots)
 
                         if (
-                            new_tm_obstacles := Constants.TaskMode.TM_Obstacles(Configuration.TaskMode.TM_OBSTACLES)
+                            new_tm_obstacles := self.node.Configuration.TaskMode.TM_OBSTACLES.value
                         ) != self.__param_tm_obstacles:
                             self.set_tm_obstacles(new_tm_obstacles)
 
@@ -249,7 +247,7 @@ class TaskFactory:
                     self.last_reset_time = self.clock.clock.sec
 
                 except Exception as e:
-                    self._node.get_logger().error(repr(e))
+                    self.node.get_logger().error(repr(e))
                     rclpy.shutdown()
                     raise Exception("reset error!") from e
 

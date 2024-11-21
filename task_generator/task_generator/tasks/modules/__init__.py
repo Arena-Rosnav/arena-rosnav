@@ -1,11 +1,12 @@
-from task_generator.tasks import Reconfigurable, Task
+from task_generator.tasks import Reconfigurable, Task, TaskMode
 
-class TM_Module(Reconfigurable):
+
+class TM_Module(TaskMode):
 
     _TASK: Task
 
     def __init__(self, task: Task, **kwargs):
-        Reconfigurable.__init__(self)
+        TaskMode.__init__(self, task)
         self._TASK = task
 
     def before_reset(self):
@@ -13,4 +14,3 @@ class TM_Module(Reconfigurable):
 
     def after_reset(self):
         ...
-

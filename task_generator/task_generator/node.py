@@ -97,7 +97,7 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
     def __init__(self, namespace: str = ""):
         rclpy.node.Node.__init__(self, 'task_generator')
         ROSParamServer.__init__(self)
-        self.Config = Configuration(self)
+        self.Configuration = Configuration(self)
         self._namespace = Namespace(namespace)
 
         # Declare all parameters
@@ -242,7 +242,7 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
         # - Create a robot manager
         # - Launch the robot.launch file
 
-        tm_modules = self.Config.TaskMode.TM_MODULES.value
+        tm_modules = self.Configuration.TaskMode.TM_MODULES.value
         tm_modules.append(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
         # tm_modules.append(Constants.TaskMode.TM_Module.RVIZ_UI)
 
@@ -346,9 +346,9 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
         return response
 
     def _send_end_message_on_end(self):
-        if Configuration.General.DESIRED_EPISODES < 0 or self._number_of_resets < Configuration.General.DESIRED_EPISODES:
+        if self.Configuration.General.DESIRED_EPISODES.value < 0 or self._number_of_resets < self.Configuration.General.DESIRED_EPISODES.value:
             return
 
         self.get_logger().info(
-            f"Shutting down. All {int(Configuration.General.DESIRED_EPISODES)} tasks completed")
+            f"Shutting down. All {int(self.Configuration.General.DESIRED_EPISODES.value)} tasks completed")
         rclpy.shutdown()

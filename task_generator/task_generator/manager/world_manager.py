@@ -3,13 +3,13 @@ from math import floor
 from typing import Collection, List, Optional, Tuple
 import numpy as np
 import scipy.signal
-from task_generator.constants.runtime import Configuration
+from task_generator import NodeInterface
 
 from task_generator.manager.utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls
 from task_generator.shared import Position, PositionRadius
 
 
-class WorldManager:
+class WorldManager(NodeInterface):
     """
     The map manager manages the static map
     and is used to get new goal, robot and
@@ -19,8 +19,12 @@ class WorldManager:
     _world: World
     _classic_forbidden_zones: List[PositionRadius]
 
-    def __init__(self, world_map: WorldMap,
-                 world_obstacles: Optional[Collection[WorldObstacleConfiguration]] = None):
+    def __init__(
+        self,
+        world_map: WorldMap,
+        world_obstacles: Optional[Collection[WorldObstacleConfiguration]] = None
+    ):
+        NodeInterface.__init__(self)
         self._classic_forbidden_zones = []
         self.update_world(world_map=world_map, world_obstacles=world_obstacles)
 
@@ -165,7 +169,7 @@ class WorldManager:
 
             # Select a random cell
             x, y = possible_cells.pop(
-                Configuration.General.RNG.integers(
+                self.node.Configuration.General.RNG.integers(
                     len(possible_cells)))
 
             # Check if valid
@@ -266,7 +270,7 @@ class WorldManager:
                         if to_produce > len(available_positions):
                             raise RuntimeError()
 
-                        candidates = available_positions[Configuration.General.RNG.choice(
+                        candidates = available_positions[self.node.Configuration.General.RNG.choice(
                             len(available_positions), to_produce, replace=False), :]
 
                         for candidate in candidates:

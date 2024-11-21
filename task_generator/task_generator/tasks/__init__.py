@@ -1,6 +1,7 @@
 import dataclasses
 import os
 from typing import Any, List, Type
+from task_generator import NodeInterface
 from task_generator.constants import Constants
 
 from task_generator.manager.obstacle_manager import ObstacleManager
@@ -78,11 +79,12 @@ class Reconfigurable:
         ...
 
 
-class TaskMode(Reconfigurable):
+class TaskMode(Reconfigurable, NodeInterface):
     _PROPS: Props_
 
     def __init__(self, props: Props_, **kwargs):
         Reconfigurable.__init__(self)
+        NodeInterface.__init__(self)
         self._PROPS = props
 
 

@@ -3,6 +3,7 @@ import typing
 import abc
 import rclpy
 import rcl_interfaces.msg
+from task_generator.shared import DefaultParameter
 
 
 class RosParam(abc.ABC):
@@ -15,7 +16,7 @@ class RosParam(abc.ABC):
 
     @value.setter
     @abc.abstractmethod
-    def set_value(self, value):
+    def value(self, value):
         """
         Set value and publish.
         """
@@ -63,7 +64,6 @@ class ROSParamServer(rclpy.node.Node):
             self._from_param = parse
 
             self._parameter_value = value
-            print(parse)
             self._value = parse(self._parameter_value)
             self._node.register_param(self)
 
@@ -76,7 +76,7 @@ class ROSParamServer(rclpy.node.Node):
             return self._value
 
         @value.setter
-        def set_value(self, value: typing.Any):
+        def value(self, value: typing.Any):
             self._node.set_parameters([
                 rclpy.parameter.Parameter(
                     name=self._name,
@@ -89,8 +89,11 @@ class ROSParamServer(rclpy.node.Node):
             return self._parameter_value
 
         @param.setter
-        def set_param(self, value: typing.Any) -> bool:
+        def param(self, value: typing.Any):
             self._value = self._from_param(value)
+
+        def callback(self, value: typing.Any) -> bool:
+            self.param = value
             return True
 
     __callbacks: typing.Dict[
@@ -107,8 +110,13 @@ class ROSParamServer(rclpy.node.Node):
     def register_param(self, param: _ROSParam):
         if param.name not in self.__callbacks:
             self.__callbacks[param.name] = set()
-            self.declare_parameter(param.name, param.param)
-        self.__callbacks[param.name].add(param.set_param)
+
+            try:
+                self.declare_parameter(param.name, param.param)
+            except rclpy.exceptions.ParameterAlreadyDeclaredException:
+                pass
+
+        self.__callbacks[param.name].add(param.callback)
 
     def _callback(self, params):
         successful = True
@@ -116,6 +124,20 @@ class ROSParamServer(rclpy.node.Node):
             for callback in self.__callbacks.get(param.name, set()):
                 successful &= callback(param.value)
         return rcl_interfaces.msg.SetParametersResult(successful=successful)
+
+    def rosparam_get[T](
+        self,
+        param_name: str,
+        default: typing.Optional[T]
+    ) -> T:
+        """
+        Get typed ros parameter (strict)
+        @param_name: Name of parameter on parameter server
+        @default: Default value. Raise ValueError is default is unset and parameter can't be found.
+        """
+        return self.get_parameter_or(
+            param_name, DefaultParameter(default)
+        ).value
 
     def __init__(self):
         self.__callbacks = {}

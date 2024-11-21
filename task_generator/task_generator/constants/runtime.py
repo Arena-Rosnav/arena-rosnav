@@ -62,10 +62,16 @@ def Configuration(server: ROSParamServer):
 
         class TaskMode:
             TM_ROBOTS = server.ROSParam[Constants.TaskMode.TM_Robots](
-                'tm_robots', Constants.TaskMode.TM_Robots.default().value)
+                'tm_robots',
+                Constants.TaskMode.TM_Robots.default().value,
+                parse=Constants.TaskMode.TM_Robots
+            )
 
             TM_OBSTACLES = server.ROSParam[Constants.TaskMode.TM_Obstacles](
-                'tm_obstacles', Constants.TaskMode.TM_Obstacles.default().value)
+                'tm_obstacles',
+                Constants.TaskMode.TM_Obstacles.default().value,
+                parse=Constants.TaskMode.TM_Obstacles
+            )
 
             TM_MODULES = server.ROSParam[typing.List[Constants.TaskMode.TM_Module]](
                 'tm_modules',
