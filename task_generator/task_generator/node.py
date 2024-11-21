@@ -322,8 +322,6 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
 
         is_end = self._task.reset(callback=lambda: False, **kwargs)
 
-        self._env_wrapper.after_reset_task()
-
         self._pub_scenario_reset.publish(Int16(data=self._number_of_resets))
         self._number_of_resets += 1
         self._send_end_message_on_end()
