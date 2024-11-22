@@ -206,7 +206,7 @@ class HunavsimManager(EntityManager):
         try:
             self._node.get_logger().info("\n--- Testing /compute_agent service ---")
             request = ComputeAgent.Request()
-            request.id = test_agent.id  # Use the ID of our test agent
+            request.id = test_agent.id
             
             self._node.get_logger().info(f"Requesting compute_agent for ID: {request.id}")
             
@@ -215,7 +215,7 @@ class HunavsimManager(EntityManager):
             
             if future.result():
                 response = future.result()
-                agent = response.agent
+                agent = response.updated_agent  
                 self._node.get_logger().info(
                     f"\nCompute_agent response:"
                     f"\n  Agent: {agent.name} (ID: {agent.id})"
@@ -680,6 +680,7 @@ class HunavsimManager(EntityManager):
         
         self._simulator.spawn_entity(obstacle)
 
+
     def remove_obstacles(self, purge):
         """Remove obstacles based on purge level"""
         if not self._is_paused:
@@ -728,14 +729,37 @@ class HunavsimManager(EntityManager):
 
     def move_robot(self, name: str, position: PositionOrientation):
         """Move robot to new position"""
-        request = MoveAgent.Request()
-        request.id = name
-        request.pose.position = Point(x=position.x, y=position.y, z=0.0)
-        quat = quaternion_from_euler(0.0, 0.0, position.orientation)
-        request.pose.orientation = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
-        
-        future = self._move_agent_client.call_async(request)
-        rclpy.spin_until_future_complete(self._node, future)
+        try:
+            if not self._move_agent_client.service_is_ready():
+                self._node.get_logger().warn("Move agent service not ready yet")
+                return
+
+            request = MoveAgent.Request()
+            request.agent_id = int(name)  # Convert string to int
+            request.pose = Pose()
+            request.pose.position = Point(x=position.x, y=position.y, z=0.0)
+            quat = quaternion_from_euler(0.0, 0.0, position.orientation)
+            request.pose.orientation = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
+            
+            future = self._move_agent_client.call_async(request)
+            
+            # Add timeout to prevent hanging
+            timeout_sec = 1.0
+            start_time = time.time()
+            while not future.done() and time.time() - start_time < timeout_sec:
+                rclpy.spin_once(self._node, timeout_sec=0.1)
+                
+            if not future.done():
+                self._node.get_logger().error("Move robot service call timed out")
+                return
+                
+            if future.result() is not None:
+                self._node.get_logger().info(f"Successfully moved robot {name}")
+            else:
+                self._node.get_logger().error("Move robot service call failed")
+                
+        except Exception as e:
+            self._node.get_logger().error(f"Error moving robot: {str(e)}")
 
     def spawn_robot(self, robot: Robot):
         """Spawn robot in simulation"""
@@ -748,3 +772,13 @@ class HunavsimManager(EntityManager):
         while angle > 3.14159:
             angle -= 2 * 3.14159
         return angle
+    
+    def unuse_obstacles(self):
+        """Remove/unuse all obstacles."""
+        try:
+            
+            self.remove_obstacles(ObstacleLayer.WORLD)
+            return True
+        except Exception as e:
+            self._node.get_logger().error(f"Error in unuse_obstacles: {e}")
+            return False

@@ -125,3 +125,9 @@ def dummy():
                 f'moving robot {name} to {repr(position)}')
 
     return DummyEntityManager
+
+@EntityManagerRegistry.register(Constants.EntityManager.HUNAVSIM)
+def lazy_hunavsim():
+
+    from . hunavsim_manager import HunavsimManager
+    return HunavsimManager
