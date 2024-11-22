@@ -451,7 +451,7 @@ class DynamicObstacle(DynamicObstacleProps):
         # Parse behavior
         behavior_dict = obj.get('behavior', {})
         _type = behavior_dict.get('type', DEFAULT_AGENT_CONFIG['agent1']['behavior']['type'])
-        _state = behavior_dict.get('state', DEFAULT_AGENT_CONFIG['agent1']['behavior']['state'])
+        _state = behavior_dict.get('state',0)# DEFAULT_AGENT_CONFIG['agent1']['behavior']['state'])
         _conf = behavior_dict.get('configuration', DEFAULT_AGENT_CONFIG['agent1']['behavior']['configuration'])
         _duration = behavior_dict.get('duration', DEFAULT_AGENT_CONFIG['agent1']['behavior']['duration'])
         _once = behavior_dict.get('once', DEFAULT_AGENT_CONFIG['agent1']['behavior']['once'])
@@ -464,7 +464,15 @@ class DynamicObstacle(DynamicObstacleProps):
 
         # Parse basic properties
         name = str(obj.get("name", ""))
-        position = PositionOrientation(*obj.get("init_pose", (0, 0, 0, 0)))
+        # Get init_pose and extract only what we need for PositionOrientation
+        init_pose = obj.get("init_pose", {})
+        x = init_pose.get('x', 0.0)
+        y = init_pose.get('y', 0.0)
+        h = init_pose.get('h', 0.0)
+        position = PositionOrientation(x=x, y=y, orientation=h)
+
+        # Initialize empty waypoints list (required by DynamicObstacleProps)
+        _waypoints = []  
         _id = obj.get('id', DEFAULT_AGENT_CONFIG['agent1']['id'])
         _agent_type = obj.get('type', 1)  # Default to PERSON=1
         _skin = obj.get('skin', DEFAULT_AGENT_CONFIG['agent1']['skin'])
@@ -511,7 +519,8 @@ class DynamicObstacle(DynamicObstacleProps):
             cyclic_goals=_cyclic_goals,
             goal_radius=_goal_radius,
             closest_obs=_closest_obs,
-            extra=obj
+            extra=obj,
+            waypoints=_waypoints  # Add the required waypoints argument
         )
 
 
