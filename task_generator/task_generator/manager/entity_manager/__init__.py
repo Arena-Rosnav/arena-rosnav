@@ -105,14 +105,10 @@ def dummy():
 
         def spawn_obstacles(self, obstacles: Collection[Obstacle]):
             self.__logger.debug(f'spawning {len(obstacles)} static obstacles')
-            for obstacle in obstacles:
-                self._simulator.spawn_entity(obstacle)
 
         def spawn_dynamic_obstacles(
                 self, obstacles: Collection[DynamicObstacle]):
             self.__logger.debug(f'spawning {len(obstacles)} dynamic obstacles')
-            for obstacle in obstacles:
-                self._simulator.spawn_entity(obstacle)
 
         def spawn_walls(self, walls: WorldWalls, heightmap: WorldMap):
             self.__logger.debug(f'spawning {len(walls)} walls')
@@ -126,11 +122,16 @@ def dummy():
 
         def spawn_robot(self, robot: Robot):
             self.__logger.debug(f'spawning robot {robot.name}')
-            self._simulator.spawn_entity(robot)
 
         def move_robot(self, name: str, position: PositionOrientation):
             self.__logger.debug(
                 f'moving robot {name} to {repr(position)}')
-            self._simulator.move_entity(name, position)
 
     return DummyEntityManager
+
+
+@EntityManagerRegistry.register(Constants.EntityManager.HUNAVSIM)
+def lazy_hunavsim():
+
+    from . hunavsim_manager import HunavsimManager
+    return HunavsimManager

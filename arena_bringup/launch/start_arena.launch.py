@@ -44,7 +44,7 @@ def generate_launch_description():
         launch.actions.DeclareLaunchArgument(
             name='entity_manager',
             default_value='dummy',
-            description='[dummy]'
+            description='[dummy, hunavsim]'
         ),
         launch.actions.DeclareLaunchArgument(
             name='sfm',
