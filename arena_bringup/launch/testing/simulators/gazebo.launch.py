@@ -9,7 +9,6 @@ from launch_ros.actions import Node
 from launch.actions import TimerAction
 from launch.conditions import IfCondition
 
-
 def generate_launch_description():
     # Set environment variables
     current_dir = os.path.abspath(__file__)
@@ -21,16 +20,16 @@ def generate_launch_description():
             "Could not find the 'arena4_ws' directory in the current path.")
 
     # Set paths for Gazebo, Physics Engine, and Resource
-    GZ_CONFIG_PATH = os.path.join(
-        workspace_root,
-        'install',
-        'gz-sim8',
-        'share',
-        'gz')
+    GZ_CONFIG_PATHS = [
+        os.path.join(workspace_root, 'install', 'gz-sim8', 'share', 'gz'),
+        # os.path.join(workspace_root, 'install', 'gz-tools2', 'share', 'gz'),
+    ]
+    
     GZ_SIM_PHYSICS_ENGINE_PATH = os.path.join(
         workspace_root,
         'build',
         'gz-physics7')
+    
     GZ_SIM_RESOURCE_PATHS = [
         os.path.join(workspace_root, 'src', 'deps', 'robots', 'jackal'),
         os.path.join(
@@ -61,9 +60,13 @@ def generate_launch_description():
             'materials',
             'textures')
     ]
+    # GZ_CONFIG_PATH = ":".join(GZ_CONFIG_PATHS)
+    GZ_CONFIG_PATH = "/usr/share/gz"
+    
     GZ_SIM_RESOURCE_PATHS_COMBINED = ':'.join(GZ_SIM_RESOURCE_PATHS)
 
     # Update environment variables
+    # os.environ['GZ_CONFIG_PATH'] = GZ_CONFIG_PATH
     os.environ['GZ_CONFIG_PATH'] = GZ_CONFIG_PATH
     os.environ['GZ_SIM_PHYSICS_ENGINE_PATH'] = GZ_SIM_PHYSICS_ENGINE_PATH
     os.environ['GZ_SIM_RESOURCE_PATH'] = GZ_SIM_RESOURCE_PATHS_COMBINED
@@ -107,8 +110,11 @@ def generate_launch_description():
     )
 
     # Process the robot description file using xacro
-    doc = xacro.process_file(robot_desc_path, mappings={'use_sim': 'true'})
-    robot_description = doc.toprettyxml(indent='  ')
+    # doc = xacro.process_file(robot_desc_path, mappings={'use_sim': 'true'})
+    # robot_description = doc.toprettyxml(indent='  ')
+    # Process the robot description file using xacro
+    robot_description = xacro.process_file(robot_desc_path, mappings={'use_sim': 'true'}).toxml()
+
 
     # Robot State Publisher
     robot_state_publisher = Node(
@@ -135,11 +141,20 @@ def generate_launch_description():
         package='ros_gz_sim',
         executable='create',
         output='screen',
-        arguments=[
-            '-string', robot_description,
-            '-name', robot_model,
-            '-allow_renaming', 'false'
-        ],
+        # arguments=[
+        #     '-world', 'default',
+        #     '-string', robot_description,
+        #     '-name', robot_model,
+        #     '-allow_renaming', 'false',
+        #     '-x', '0',
+        #     '-y', '0',
+        #     '-z', '0',
+        # ],
+        parameters=[{'world': 'default',
+                     'string': robot_description,
+                     'name': robot_model,
+                     'allow_renaming': False,
+                     }],
     )
 
     # Bridge configuration
@@ -200,11 +215,6 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Delay RViz launch to ensure other nodes start first
-    delayed_rviz = TimerAction(
-        period=5.0,
-        actions=[rviz]
-    )
 
     # Path to the Nav2 parameters file
     nav2_params_file = PathJoinSubstitution([
@@ -251,6 +261,7 @@ def generate_launch_description():
             'yaml_path': slam_yaml_file,
         }.items()
     )
+    
 
 # Robot Localization Node
     robot_localization_node = Node(
@@ -310,6 +321,12 @@ def generate_launch_description():
 
     random_spawn_spawn = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(random_spawn_launch_file)
+    )
+    
+        # Delay RViz launch to ensure other nodes start first
+    delayed_rviz = TimerAction(
+        period=5.0,
+        actions=[rviz]
     )
 
     # Return the LaunchDescription with all the nodes/actions

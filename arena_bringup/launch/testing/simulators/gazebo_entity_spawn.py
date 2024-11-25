@@ -19,19 +19,22 @@ def read_sdf_as_xml_string(sdf_file_path):
     root = tree.getroot()
     return ET.tostring(root, encoding='unicode')
 
-def generate_spawn_node(box_index, box_sdf_xml, x, y, z):
+def generate_spawn_node(box_index, box_sdf_xml, box_sdf_path, x, y, z):
     """Generate a node to spawn the box model at the specified position."""
+    print(f"ros2 launch ros_gz_sim gz_spawn_model.launch.py world:=default file:={box_sdf_path} entity_name:=my_vehicle x:={str(x)} y:={str(y)} z:={str(z)}")
     return Node(
         package='ros_gz_sim',
         executable='create',
         output='screen',
-        arguments=[
-            '-string', box_sdf_xml,
-            '-name', f'box_{box_index}',
-            '-x', str(x),
-            '-y', str(y),
-            '-z', str(z)
-        ],
+        parameters=[{'world': 'default',
+                     'file': box_sdf_path,
+                    #  'string': box_sdf_xml,
+                     'name': f'box_{box_index}',
+                     'allow_renaming': False,
+                     'x': x,
+                     'y': y,
+                     'z': z,
+                     }],
     )
 
 def generate_launch_description():
@@ -48,6 +51,8 @@ def generate_launch_description():
     box_sdf_path = os.path.join(
         workspace_root, 'src', 'gazebo', 'sdformat', 'test', 'integration', 'model', 'box', 'model.sdf'
     )
+    
+    print(box_sdf_path)
 
     # Read the SDF file as an XML string
     box_sdf_xml = read_sdf_as_xml_string(box_sdf_path)
@@ -60,7 +65,7 @@ def generate_launch_description():
     for i in range(5):  # Generate up to 5 boxes
         x, y, z = generate_random_position()
         spawn_box_nodes.append(LogInfo(msg=f'Spawning box {i} at position ({x}, {y}, {z})'))
-        spawn_box_nodes.append(generate_spawn_node(i, box_sdf_xml, x, y, z))
+        spawn_box_nodes.append(generate_spawn_node(i, box_sdf_xml, box_sdf_path, x, y, z))
 
     # Return the LaunchDescription with all the nodes/actions
     return LaunchDescription([
