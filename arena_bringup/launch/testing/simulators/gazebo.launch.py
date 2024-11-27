@@ -172,6 +172,7 @@ def generate_launch_description():
                 "string": robot_description,
                 "name": robot_model,
                 "allow_renaming": False,
+                "topic":  'robot_description',
             }
         ],
     )
@@ -204,18 +205,39 @@ def generate_launch_description():
             }
         ],
     )
+    
+    gz_topic = '/model/robot'
+    joint_state_gz_topic = '/world/default' + gz_topic + '/joint_state'
+    link_pose_gz_topic = gz_topic + '/pose'
 
     # Bridge to connect Gazebo and ROS2
     bridge = Node(
-        package="ros_gz_bridge",
-        executable="parameter_bridge",
-        name="parameter_bridge",
-        output="screen",  # Keep this for debugging
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        output='screen',
+        arguments=[
+            # Existing clock bridge
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+            # Joint states (Gazebo -> ROS2)
+            joint_state_gz_topic + '@sensor_msgs/msg/JointState[gz.msgs.Model',
+            # Link poses (Gazebo -> ROS2)
+            link_pose_gz_topic + '@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+            link_pose_gz_topic + '_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+            # Velocity and odometry (Gazebo -> ROS2)
+            gz_topic + '/cmd_vel@geometry_msgs/msg/Twist[gz.msgs.Twist',
+            gz_topic + '/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+        ],
+        remappings=[
+            (joint_state_gz_topic, 'joint_states'),
+            (link_pose_gz_topic, '/tf'),
+            (link_pose_gz_topic + '_static', '/tf_static'),
+        ],
         parameters=[
-            {"config_file": bridge_config, "use_sim_time": use_sim_time}
-        ],  # Bridge config
-        arguments=["--ros-args", "--log-level", "debug"],
-        # Log level for debugging
+            {
+                'qos_overrides./tf_static.publisher.durability': 'transient_local',
+                'use_sim_time': use_sim_time
+            }
+        ],
     )
 
     # RViz configuration path
