@@ -33,7 +33,7 @@ sudo apt-get update
 # Install Gazebo binaries and ROS-Gazebo bridge
 sudo apt-get install -y \
   gz-${GAZEBO_VERSION} \
-  ros-${ARENA_ROS_VERSION}-ros-gz
+  ros-${ARENA_ROS_DISTRO}-ros-gz
 
 # Set Gazebo version environment variable
 export GZ_VERSION=${GAZEBO_VERSION}
