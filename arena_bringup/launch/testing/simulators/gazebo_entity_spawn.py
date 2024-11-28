@@ -11,7 +11,7 @@ def generate_random_position():
     """Generate random positions within a specific range."""
     x = random.uniform(-5.0, 5.0)
     y = random.uniform(-5.0, 5.0)
-    z = 0.0  # Assuming boxes are placed on the ground
+    z = 0.0  # Assuming chairs are placed on the ground
     return x, y, z
 
 
@@ -22,8 +22,8 @@ def read_sdf_as_xml_string(sdf_file_path):
     return ET.tostring(root, encoding="unicode")
 
 
-def generate_spawn_node(box_index, box_sdf_xml, box_sdf_path, x, y, z):
-    """Generate a node to spawn the box model at the specified position."""
+def generate_spawn_node(chair_index, chair_sdf_xml, chair_sdf_path, x, y, z):
+    """Generate a node to spawn the chair model at the specified position."""
     return Node(
         package="ros_gz_sim",
         executable="create",
@@ -31,9 +31,9 @@ def generate_spawn_node(box_index, box_sdf_xml, box_sdf_path, x, y, z):
         parameters=[
             {
                 "world": "default",
-                "file": box_sdf_path,
-                #  'string': box_sdf_xml,
-                "name": f"box_{box_index}",
+                "file": chair_sdf_path,
+                #  'string': chair_sdf_xml,
+                "name": f"chair_{chair_index}",
                 "allow_renaming": False,
                 "x": x,
                 "y": y,
@@ -55,47 +55,46 @@ def generate_launch_description():
             "Could not find the 'arena4_ws' directory in the current path."
         )
 
-    # Path to the box SDF file
-    box_sdf_path = os.path.join(
+    # Path to the chair SDF file
+    chair_sdf_path = os.path.join(
         workspace_root,
         "src",
-        "gazebo",
-        "sdformat",
-        "test",
-        "integration",
-        "model",
-        "box",
-        "model.sdf",
+        "arena",
+        "simulation-setup",
+        "entities",
+        "obstacles",
+        "static",
+        "chair",
+        "sdf",
+        "chair.sdf",
     )
 
-    print(box_sdf_path)
-
     # Read the SDF file as an XML string
-    box_sdf_xml = read_sdf_as_xml_string(box_sdf_path)
+    chair_sdf_xml = read_sdf_as_xml_string(chair_sdf_path)
 
     # Launch Arguments
-    num_boxes = LaunchConfiguration("num_boxes", default="5")
+    num_chairs = LaunchConfiguration("num_chairs", default="5")
 
-    # Generate spawn nodes for boxes
-    spawn_box_nodes = []
-    for i in range(5):  # Generate up to 5 boxes
+    # Generate spawn nodes for chairs
+    spawn_chair_nodes = []
+    for i in range(5):  # Generate up to 5 chairs
         x, y, z = generate_random_position()
-        spawn_box_nodes.append(
-            LogInfo(msg=f"Spawning box {i} at position ({x}, {y}, {z})")
+        spawn_chair_nodes.append(
+            LogInfo(msg=f"Spawning chair {i} at position ({x}, {y}, {z})")
         )
-        spawn_box_nodes.append(
-            generate_spawn_node(i, box_sdf_xml, box_sdf_path, x, y, z)
+        spawn_chair_nodes.append(
+            generate_spawn_node(i, chair_sdf_xml, chair_sdf_path, x, y, z)
         )
 
     # Return the LaunchDescription with all the nodes/actions
     return LaunchDescription(
         [
             DeclareLaunchArgument(
-                "num_boxes",
+                "num_chairs",
                 default_value="5",
-                description="Number of boxes to spawn",
+                description="Number of chairs to spawn",
             ),
-            *spawn_box_nodes,
+            *spawn_chair_nodes,
         ]
     )
 
