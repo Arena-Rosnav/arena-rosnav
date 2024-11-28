@@ -181,7 +181,7 @@ if [ ! -f "$INSTALLED" ] ; then
   mv src/arena/arena-rosnav src/arena/.arena-rosnav
 
   echo "cloning Arena-Rosnav..."
-  git clone --depth 1  --branch "${ARENA_BRANCH}" "https://github.com/${ARENA_ROSNAV_REPO}.git" src/arena/arena-rosnav
+  git clone --branch "${ARENA_BRANCH}" "https://github.com/${ARENA_ROSNAV_REPO}.git" src/arena/arena-rosnav
 
   mv -n src/arena/.arena-rosnav/* src/arena/.arena-rosnav/.* src/arena/arena-rosnav || true
   rm -rf src/arena/.arena-rosnav
