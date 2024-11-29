@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 import numpy as np
-import math
 import rospy
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Int16
-from visualization_msgs.msg import Marker, MarkerArray
+from visualization_msgs.msg import MarkerArray
 from nav_msgs.msg import Path, Odometry
 from ford_msgs.msg import Clusters
 from geometry_msgs.msg import PoseStamped

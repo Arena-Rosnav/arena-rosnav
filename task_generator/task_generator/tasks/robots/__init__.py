@@ -1,4 +1,3 @@
-from task_generator.constants.runtime import Configuration
 from task_generator.shared import PositionOrientation
 from task_generator.tasks import TaskMode
 

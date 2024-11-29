@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-from math import isclose
 from pathlib import Path
 
 import numpy as np

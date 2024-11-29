@@ -2,17 +2,10 @@
 
 import rospy
 import rospkg
-import matplotlib.pyplot as plt
 import os
 import threading
 import subprocess
 
-from geometry_msgs.msg import PoseWithCovarianceStamped
-from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import Twist
-from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseStamped, PoseWithCovariance
-from nav_msgs.msg import Path
 from std_srvs.srv import Empty, EmptyRequest
 
 

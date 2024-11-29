@@ -4,7 +4,6 @@ import yaml
 import enum
 import collections
 import typing
-from geometry_msgs.msg import Pose, Twist, Point
 import dataclasses
 import os
 from typing import (
@@ -17,7 +16,6 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    Union,
     overload,
 )
 import rclpy
@@ -130,9 +128,23 @@ class Model:
 
 Position = collections.namedtuple("Position", ("x", "y"))
 
-PositionOrientation = collections.namedtuple(
-    "PositionOrientation", ("x", "y", "orientation")
-)
+
+@dataclasses.dataclass(frozen=True)
+class Posisiton:
+    """
+    2D position
+    """
+    x: float
+    y: float
+
+
+@dataclasses.dataclass(frozen=True)
+class PositionOrientation(Posisiton):
+    """
+    2D position with 2D yaw
+    """
+    orientation: float
+
 
 PositionRadius = collections.namedtuple("PositionRadius", ("x", "y", "radius"))
 

@@ -2,8 +2,6 @@ import itertools
 from typing import Callable, Dict, Iterator, List
 
 import numpy as np
-from task_generator.constants import Constants
-from task_generator.constants.runtime import Configuration
 from task_generator.shared import (
     DynamicObstacle,
     Obstacle,
@@ -16,7 +14,6 @@ from task_generator.tasks.obstacles.utils import ITF_Obstacle
 import dataclasses
 
 # New imports for ROS 2
-import rclpy
 from rcl_interfaces.msg import SetParametersResult
 
 

@@ -1,14 +1,13 @@
 import multiprocessing as mp
 import time
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional
 
 import gymnasium as gym
-import numpy as np
 from gymnasium import spaces
 from stable_baselines3.common.vec_env.base_vec_env import CloudpickleWrapper
 from stable_baselines3.common.vec_env.patch_gym import _patch_env
-from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv, VecEnv
+from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 
 
 def _worker(

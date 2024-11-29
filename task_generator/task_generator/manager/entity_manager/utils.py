@@ -6,11 +6,9 @@ from typing import Any, Dict, List, Optional, Union
 import xml.etree.ElementTree as ET
 import cv2
 import numpy as np
-from ament_index_python.packages import get_package_share_directory
 
 import yaml
 from task_generator.constants import Constants
-from task_generator.constants.runtime import Configuration
 from task_generator.manager.utils import WorldMap, WorldOccupancy
 
 from task_generator.shared import (

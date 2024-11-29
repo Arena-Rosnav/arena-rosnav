@@ -19,7 +19,6 @@ import rosgraph_msgs.msg as rosgraph_msgs
 # import training.srv as training_srvs
 
 from task_generator.utils import ModelLoader
-from task_generator.constants.runtime import Configuration
 
 import task_generator.utils.arena as Utils
 

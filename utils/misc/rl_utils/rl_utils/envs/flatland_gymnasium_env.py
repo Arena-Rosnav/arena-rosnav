@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 import random
 import re
-import time
 from typing import Tuple
 
 import gymnasium
@@ -300,7 +299,6 @@ class FlatlandEnv(gymnasium.Env):
         Close the environment.
 
         """
-        pass
 
     def _determine_termination(
         self,

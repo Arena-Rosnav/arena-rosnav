@@ -3,7 +3,6 @@ import rospy
 import numpy as np
 import time
 
-from typing import List
 from std_msgs.msg import Bool
 from stable_baselines3.common.callbacks import BaseCallback, EvalCallback
 

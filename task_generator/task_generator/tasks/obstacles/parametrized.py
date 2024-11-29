@@ -2,13 +2,10 @@ import os
 from typing import List, Optional
 
 from ament_index_python.packages import get_package_share_directory
-from task_generator.constants import Constants
-from task_generator.constants.runtime import Configuration
 from task_generator.shared import DynamicObstacle, ModelWrapper, Namespace, Obstacle
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 
-import rclpy
 from rcl_interfaces.msg import SetParametersResult
 
 import dataclasses

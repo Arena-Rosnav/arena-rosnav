@@ -1,6 +1,5 @@
 from .utils.ros_params import ROSParamServer
 import rclpy
-import task_generator.utils.arena as Utils
 
 
 class NodeInterface:

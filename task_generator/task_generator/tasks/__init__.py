@@ -1,6 +1,5 @@
-import dataclasses
 import os
-from typing import Any, List, Type
+from typing import List
 from task_generator import NodeInterface
 from task_generator.constants import Constants
 
@@ -12,7 +11,6 @@ from task_generator.shared import Namespace, PositionOrientation
 from task_generator.utils import ModelLoader
 
 import rosgraph_msgs.msg as rosgraph_msgs
-import std_msgs.msg as std_msgs
 
 import rclpy.node
 from task_generator.utils.ros_params import ROSParamServer

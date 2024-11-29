@@ -1,9 +1,7 @@
 import functools
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, TypeVar
 
-import numpy as np
 import rospy
-from rl_utils.utils.rewards.utils import distances_from_pointcloud
 from task_generator.shared import Namespace
 
 import sensor_msgs.msg as sensor_msgs

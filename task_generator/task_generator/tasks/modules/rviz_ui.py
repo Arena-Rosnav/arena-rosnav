@@ -1,7 +1,6 @@
 from typing import Dict
 from builtin_interfaces.msg import Time
 from rosros import rospify as rospy
-from task_generator.constants import Constants
 from task_generator.shared import PositionOrientation
 from task_generator.tasks import Task
 from task_generator.tasks.modules import TM_Module

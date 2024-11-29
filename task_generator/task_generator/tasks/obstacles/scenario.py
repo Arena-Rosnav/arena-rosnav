@@ -3,15 +3,12 @@ import json
 import os
 from typing import List
 
-from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Constants
-from task_generator.shared import DynamicObstacle, Obstacle, rosparam_get
+from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 
-import rclpy
 from rcl_interfaces.msg import SetParametersResult
 
-import task_generator.utils.arena as Utils
 
 
 @dataclasses.dataclass

@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
-import copy
 
 import pedsim_msgs.msg as peds
-import rosnode
 import rospy
 from ford_msgs.msg import Clusters
 from geometry_msgs.msg import Point, Vector3
-from nav_msgs.msg import Odometry
 
 # col
-from scenario_police import police
-from std_msgs.msg import ColorRGBA, Int16
+from std_msgs.msg import Int16
 from visualization_msgs.msg import MarkerArray
 
 

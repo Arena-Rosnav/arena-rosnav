@@ -4,9 +4,7 @@ import os
 from typing import List, NamedTuple
 
 from ament_index_python.packages import get_package_share_directory
-import rclpy
 from rcl_interfaces.msg import SetParametersResult
-from task_generator.constants import Constants
 from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
 

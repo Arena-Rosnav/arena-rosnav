@@ -9,7 +9,6 @@ import numpy as np
 from typing import Callable, Collection, Optional, Tuple, Dict, List
 import scipy.interpolate
 
-from ament_index_python.packages import get_package_share_directory
 
 from task_generator.shared import Obstacle, Position, PositionOrientation, PositionRadius
 
