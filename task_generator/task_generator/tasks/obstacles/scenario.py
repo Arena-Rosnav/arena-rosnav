@@ -10,7 +10,6 @@ from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from rcl_interfaces.msg import SetParametersResult
 
 
-
 @dataclasses.dataclass
 class _Config:
     static: List[Obstacle]
@@ -44,7 +43,7 @@ class TM_Scenario(TM_Obstacles):
     def reconfigure(self, config):
         scenario_file = config['SCENARIO_file']
 
-        map_file = self.node.get_parameter('world').value
+        map_file = self.node.conf.Arena.WORLD.value
 
         scenario_path = os.path.join(
             self.node.conf.Arena.get_world_path(),

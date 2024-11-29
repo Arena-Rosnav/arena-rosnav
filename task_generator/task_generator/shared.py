@@ -1,25 +1,18 @@
 from __future__ import annotations
-from ament_index_python.packages import get_package_share_directory
-import yaml
-import enum
+
 import collections
-import typing
 import dataclasses
+import enum
 import os
-from typing import (
-    Callable,
-    Collection,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    overload,
-)
+import typing
+from typing import (Callable, Collection, Dict, Iterable, List, Optional,
+                    Tuple, Type, TypeVar, overload)
+
+import attr
 import rclpy
 import rclpy.node
+import yaml
+from ament_index_python.packages import get_package_share_directory
 
 _node: rclpy.node.Node
 
@@ -36,7 +29,7 @@ def rosparam_get(
     cast: Type[T], param_name: str, default: typing.Optional[T]
 ) -> T:
     """
-    # TODO deprecate in favor of ROSParamServer.rosparam[T].get()
+    # TODO deprecate in favor of ROSParamServer.rosparam[T].get
     Get typed ros parameter (strict)
     @cast: Return type of function
     @param_name: Name of parameter on parameter server
@@ -61,6 +54,9 @@ def rosparam_get(
 def rosparam_set(
     param_name: str, value: typing.Any
 ) -> bool:
+    """
+    # TODO deprecate in favor of ROSParamServer.rosparam[T].set
+    """
     global _node
     return _node.set_parameters(
         [rclpy.parameter.Parameter(param_name, value=value)])[0].successful
@@ -129,21 +125,21 @@ class Model:
 Position = collections.namedtuple("Position", ("x", "y"))
 
 
-@dataclasses.dataclass(frozen=True)
+@attr.frozen()
 class Posisiton:
     """
     2D position
     """
-    x: float
-    y: float
+    x: float = attr.field(converter=float)
+    y: float = attr.field(converter=float)
 
 
-@dataclasses.dataclass(frozen=True)
+@attr.frozen()
 class PositionOrientation(Posisiton):
     """
     2D position with 2D yaw
     """
-    orientation: float
+    orientation: float = attr.field(converter=float)
 
 
 PositionRadius = collections.namedtuple("PositionRadius", ("x", "y", "radius"))

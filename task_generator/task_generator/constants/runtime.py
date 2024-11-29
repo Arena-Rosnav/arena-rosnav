@@ -7,6 +7,8 @@ from task_generator.utils.ros_params import ROSParamServer
 from . import Constants
 from ..utils.arena import get_simulation_setup_path
 
+import rclpy
+
 
 def Configuration(server: ROSParamServer):
 
@@ -31,7 +33,7 @@ def Configuration(server: ROSParamServer):
 
             WORLD = server.ROSParam[str](
                 'world',
-                None,
+                rclpy.parameter.Parameter.Type.STRING,
             )
 
             @classmethod

@@ -8,7 +8,7 @@ import rclpy
 
 from task_generator import NodeInterface
 import task_generator.utils.arena as Utils
-from task_generator.utils.geometry import quaternion_from_euler
+from task_generator.utils.geometry import angle_diff, quaternion_from_euler
 from task_generator.constants import Constants
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
@@ -186,12 +186,11 @@ class RobotManager(NodeInterface):
         start = self._position
         goal = self._goal_pos
 
-        distance_to_goal: float = np.linalg.norm(
-            np.array(goal[:2]) - np.array(start[:2])
-        )
+        distance_to_goal: float = float(np.linalg.norm(
+            np.array([goal.x, goal.y]) - np.array([start.x, start.y])
+        ).flat[0])
 
-        angle_to_goal: float = np.pi - \
-            np.abs(np.abs(goal[2] - start[2]) - np.pi)
+        angle_to_goal: float = angle_diff(goal.orientation, start.orientation)
 
         return (
             distance_to_goal < self._goal_tolerance_distance

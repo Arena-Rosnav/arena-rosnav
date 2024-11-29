@@ -58,7 +58,6 @@ class TM_Scenario(TM_Robots):
         TM_Robots.__init__(self, **kwargs)
 
         self.node.declare_parameter('SCENARIO_file', '')
-        self.node.declare_parameter('world', '')
         self.node.add_on_set_parameters_callback(self.parameters_callback)
 
         # Initial configuration
@@ -81,7 +80,7 @@ class TM_Scenario(TM_Robots):
         Returns:
             None
         """
-        world = self.node.get_parameter('world').value
+        world = self.node.conf.Arena.WORLD.value
         scenario_file = config['SCENARIO_file']
 
         scenario_path = os.path.join(
