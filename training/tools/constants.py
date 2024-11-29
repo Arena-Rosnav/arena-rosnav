@@ -9,42 +9,48 @@ class TRAINING_CONSTANTS(object):
     class PATHS(object):
         MAIN = rospkg.RosPack().get_path("training")
         ROBOT_MODEL = rospy.get_param("robot_model")
-        SIMULATION_SETUP = rospkg.RosPack().get_path('simulation-setup')
+        SIMULATION_SETUP = rospkg.RosPack().get_path('simulation_setup')
 
         CONFIGS = rospkg.RosPack().get_path("arena_bringup") + "/configs"
-        TRAINING_CONFIGS = lambda file_name: os.path.join(
+
+        def TRAINING_CONFIGS(file_name): return os.path.join(
             TRAINING_CONSTANTS.PATHS.CONFIGS, "training", file_name
         )
-        REWARD_FUNCTIONS = lambda file_name: os.path.join(
+
+        def REWARD_FUNCTIONS(file_name): return os.path.join(
             TRAINING_CONSTANTS.PATHS.CONFIGS,
             "training",
             "reward_functions",
             f"{file_name}.yaml",
         )
 
-        MODEL = lambda agent_name: os.path.join(
+        def MODEL(agent_name): return os.path.join(
             rospkg.RosPack().get_path("rosnav"), "agents", agent_name
         )
-        TENSORBOARD = lambda agent_name: os.path.join(
+
+        def TENSORBOARD(agent_name): return os.path.join(
             TRAINING_CONSTANTS.PATHS.MAIN, "training_logs", "tensorboard", agent_name
         )
-        EVAL = lambda agent_name: os.path.join(
+
+        def EVAL(agent_name): return os.path.join(
             TRAINING_CONSTANTS.PATHS.MAIN, "training_logs", "train_eval_log", agent_name
         )
-        ROBOT_SETTING = lambda robot_model: os.path.join(
+
+        def ROBOT_SETTING(robot_model): return os.path.join(
             TRAINING_CONSTANTS.PATHS.SIMULATION_SETUP,
             "robot",
             robot_model,
             f"{robot_model}.model.yaml",
         )
-        AGENT_CONFIG = lambda agent_name: os.path.join(
+
+        def AGENT_CONFIG(agent_name): return os.path.join(
             rospkg.RosPack().get_path("rosnav"),
             "agents",
             agent_name,
             "training_config.yaml",
         )
 
-        CURRICULUM = lambda file_name: os.path.join(
+        def CURRICULUM(file_name): return os.path.join(
             TRAINING_CONSTANTS.PATHS.CONFIGS,
             "training",
             "training_curriculums",

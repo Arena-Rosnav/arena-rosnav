@@ -27,7 +27,7 @@ def print_map(map):
 class MapDistanceServer:
     def __init__(self):
         self._distance_map_path = os.path.join(
-            Path(rospkg.RosPack().get_path('simulation-setup')),
+            Path(rospkg.RosPack().get_path('simulation_setup')),
             "worlds",
             rospy.get_param("map_file"),
             "map",
@@ -48,14 +48,16 @@ class MapDistanceServer:
         self.map = self.map_service().map
 
         if not os.path.exists(self._distance_map_path):
-            # If the distance map does not exist or a new map is provided by map generator
+            # If the distance map does not exist or a new map is provided by
+            # map generator
             distance_map = None
             self.new_map_data = list(self._get_map_with_distances())
             self.save_distance_map(
                 self._distance_map_path, self.new_map_data, self.map.info
             )
         else:
-            distance_map = self.get_distance_map(self._distance_map_path, self.map.info)
+            distance_map = self.get_distance_map(
+                self._distance_map_path, self.map.info)
             self.new_map_data = distance_map
 
     def _distance_map_srv_handler(self, _):
@@ -74,10 +76,12 @@ class MapDistanceServer:
 
         as_bits = "{0:b}".format(pow(255, 3) - value)
 
-        return tuple(int(as_bits[(i * 8) : ((i + 1) * 8)], base=2) for i in range(3))
+        return tuple(int(as_bits[(i * 8): ((i + 1) * 8)], base=2)
+                     for i in range(3))
 
     def create_distance_value(self, color):
-        m = int("".join(["{0:b}".format(i).rjust(8, "0") for i in color]), base=2)
+        m = int("".join(["{0:b}".format(i).rjust(8, "0")
+                for i in color]), base=2)
 
         return 0 if m == 0 else pow(255, 3) - m
 
@@ -115,10 +119,12 @@ class MapDistanceServer:
 
         coordinates_with_length = np.full(
             len(self.map.data), -1
-        )  ## Hier wird die Länge gespeichert
+        )  # Hier wird die Länge gespeichert
         coordinates_length_dict = (
             {}
-        )  # Für schnellen Zugriff dict mit key = Länge und value = Array[(x, y)]
+            # Für schnellen Zugriff dict mit key = Länge und value = Array[(x,
+            # y)]
+        )
 
         # Loop over all free spaces and all neighbors and set distance of current
         # cell to 0 if neighbors have no distance (are obstacles) or to
@@ -134,7 +140,7 @@ class MapDistanceServer:
 
                     try:
                         val = map_2d[x + j, y + i]
-                    except:
+                    except BaseException:
                         continue
 
                     if val != 0:
@@ -146,7 +152,8 @@ class MapDistanceServer:
                     if coordinates_with_length[index] >= 0:
                         dist = min(coordinates_with_length[index] + 1, dist)
 
-            if np.isinf(dist): dist = 0 #regularize
+            if np.isinf(dist):
+                dist = 0  # regularize
 
             coordinates_length_dict.setdefault(dist, []).append((x, y))
             coordinates_with_length[self._get_index(x, y)] = dist
@@ -169,8 +176,8 @@ class MapDistanceServer:
 
                         try:
                             val = map_2d[x + j, y + i]
-                        except:
-                            ## Out of bounds
+                        except BaseException:
+                            # Out of bounds
                             continue
 
                         index = self._get_index(x + j, y + i)
@@ -184,7 +191,8 @@ class MapDistanceServer:
         # print(list(coordinates_with_length))
 
         return coordinates_with_length
-        # return np.reshape(coordinates_with_length, (height_in_cell, width_in_cell))
+        # return np.reshape(coordinates_with_length, (height_in_cell,
+        # width_in_cell))
 
     def _get_index(self, x, y):
         return x * self.map.info.width + y
@@ -193,13 +201,15 @@ class MapDistanceServer:
 class DynamicMapDistanceServer(MapDistanceServer):
     def __init__(self):
         self._first_map = True
-        # Publish a message to the MapGenerator that the new distance map is ready
+        # Publish a message to the MapGenerator that the new distance map is
+        # ready
         self.new_dist_map_pub = rospy.Publisher(
             "/signal_new_distance_map", String, queue_size=1
         )
         super().__init__()
         # Subscribe to the map topic to know when a new map is generated
-        self.map_sub = rospy.Subscriber("/map", OccupancyGrid, self._map_callback)
+        self.map_sub = rospy.Subscriber(
+            "/map", OccupancyGrid, self._map_callback)
 
     def produce_distance_map(self):
         """Generates and saves or loads the distance map."""
@@ -209,14 +219,16 @@ class DynamicMapDistanceServer(MapDistanceServer):
             self.map = self.map_service().map
 
         if not os.path.exists(self._distance_map_path) or not self._first_map:
-            # If the distance map does not exist or a new map is provided by map generator
+            # If the distance map does not exist or a new map is provided by
+            # map generator
             self.new_map_data = list(self._get_map_with_distances())
             self.new_dist_map_pub.publish(String(""))
             self.save_distance_map(
                 self._distance_map_path, self.new_map_data, self.map.info
             )
         else:
-            distance_map = self.get_distance_map(self._distance_map_path, self.map.info)
+            distance_map = self.get_distance_map(
+                self._distance_map_path, self.map.info)
             self.new_map_data = distance_map
 
     def _map_callback(self, msg: OccupancyGrid):
@@ -246,7 +258,8 @@ class DynamicMapDistanceServer(MapDistanceServer):
                 f"{width} x {height} != {required_map_size}"
             )
 
-        if not nearlyequal(map_properties["resolution"], self.map.info.resolution, 5):
+        if not nearlyequal(
+                map_properties["resolution"], self.map.info.resolution, 5):
             raise ValueError(
                 "Map data and map properties do not match. "
                 "New map must have the same resolution as the origin map. \n"
@@ -290,7 +303,8 @@ if __name__ == "__main__":
     # # distance. This is roughly n^2, but this is only done once so it is OK
 
     # coordinates_with_length = np.full(len(map.data), -1) ## Hier wird die Länge gespeichert
-    # coordinates_length_dict = {} # Für schnellen Zugriff dict mit key = Länge und value = Array[(x, y)]
+    # coordinates_length_dict = {} # Für schnellen Zugriff dict mit key =
+    # Länge und value = Array[(x, y)]
 
     # def get_index(x, y):
     #     return x * map.info.width + y

@@ -114,71 +114,71 @@ def generate_launch_description():
         }.items(),
     )
 
-    # Robot URDF (Xacro) description
-    robot_desc_path = os.path.join(
-        workspace_root,
-        "src",
-        "arena",
-        "simulation-setup",
-        "entities",
-        "robots",
-        "jackal",
-        "urdf",
-        "jackal.urdf.xacro",
-    )
+    # # Robot URDF (Xacro) description
+    # robot_desc_path = os.path.join(
+    #     workspace_root,
+    #     "src",
+    #     "arena",
+    #     "simulation-setup",
+    #     "entities",
+    #     "robots",
+    #     "jackal",
+    #     "urdf",
+    #     "jackal.urdf.xacro",
+    # )
 
-    # Process the robot description file using xacro
-    # doc = xacro.process_file(robot_desc_path, mappings={'use_sim': 'true'})
-    # robot_description = doc.toprettyxml(indent='  ')
-    # Process the robot description file using xacro
-    robot_description = xacro.process_file(
-        robot_desc_path, mappings={"use_sim": "true"}
-    ).toxml()
+    # # Process the robot description file using xacro
+    # # doc = xacro.process_file(robot_desc_path, mappings={'use_sim': 'true'})
+    # # robot_description = doc.toprettyxml(indent='  ')
+    # # Process the robot description file using xacro
+    # robot_description = xacro.process_file(
+    #     robot_desc_path, mappings={"use_sim": "true"}
+    # ).toxml()
 
-    # Robot State Publisher
-    robot_state_publisher = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        name="robot_state_publisher",
-        output="both",
-        parameters=[
-            {"use_sim_time": use_sim_time},
-            {"robot_description": robot_description},
-        ],
-    )
+    # # Robot State Publisher
+    # robot_state_publisher = Node(
+    #     package="robot_state_publisher",
+    #     executable="robot_state_publisher",
+    #     name="robot_state_publisher",
+    #     output="both",
+    #     parameters=[
+    #         {"use_sim_time": use_sim_time},
+    #         {"robot_description": robot_description},
+    #     ],
+    # )
 
-    # Joint State Publisher
-    joint_state_publisher = Node(
-        package="joint_state_publisher",
-        executable="joint_state_publisher",
-        name="joint_state_publisher",
-        parameters=[{"use_sim_time": use_sim_time}],
-    )
+    # # Joint State Publisher
+    # joint_state_publisher = Node(
+    #     package="joint_state_publisher",
+    #     executable="joint_state_publisher",
+    #     name="joint_state_publisher",
+    #     parameters=[{"use_sim_time": use_sim_time}],
+    # )
 
-    # Spawn the robot into the Gazebo simulation
-    spawn_robot = Node(
-        package="ros_gz_sim",
-        executable="create",
-        output="screen",
-        # arguments=[
-        #     '-world', 'default',
-        #     '-string', robot_description,
-        #     '-name', robot_model,
-        #     '-allow_renaming', 'false',
-        #     '-x', '0',
-        #     '-y', '0',
-        #     '-z', '0',
-        # ],
-        parameters=[
-            {
-                "world": "default",
-                "string": robot_description,
-                "name": robot_model,
-                "allow_renaming": False,
-                "topic":  'robot_description',
-            }
-        ],
-    )
+    # # Spawn the robot into the Gazebo simulation
+    # spawn_robot = Node(
+    #     package="ros_gz_sim",
+    #     executable="create",
+    #     output="screen",
+    #     # arguments=[
+    #     #     '-world', 'default',
+    #     #     '-string', robot_description,
+    #     #     '-name', robot_model,
+    #     #     '-allow_renaming', 'false',
+    #     #     '-x', '0',
+    #     #     '-y', '0',
+    #     #     '-z', '0',
+    #     # ],
+    #     parameters=[
+    #         {
+    #             "world": "default",
+    #             "string": robot_description,
+    #             "name": robot_model,
+    #             "allow_renaming": False,
+    #             "topic": 'robot_description',
+    #         }
+    #     ],
+    # )
 
     # Bridge configuration
     bridge_config = os.path.join(
@@ -208,7 +208,7 @@ def generate_launch_description():
             }
         ],
     )
-    
+
     gz_topic = '/model/robot'
     joint_state_gz_topic = '/world/default' + gz_topic + '/joint_state'
     link_pose_gz_topic = gz_topic + '/pose'
@@ -225,7 +225,8 @@ def generate_launch_description():
             joint_state_gz_topic + '@sensor_msgs/msg/JointState[gz.msgs.Model',
             # Link poses (Gazebo -> ROS2)
             link_pose_gz_topic + '@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-            link_pose_gz_topic + '_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+            link_pose_gz_topic + \
+                '_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
             # Velocity and odometry (Gazebo -> ROS2)
             gz_topic + '/cmd_vel@geometry_msgs/msg/Twist[gz.msgs.Twist',
             gz_topic + '/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
@@ -263,171 +264,6 @@ def generate_launch_description():
         parameters=[{"use_sim_time": use_sim_time}],
         output="screen",
     )
-
-    # Path to the Nav2 parameters file
-    nav2_params_file = PathJoinSubstitution(
-        [
-            workspace_root,
-            "src",
-            "arena",
-            "simulation-setup",
-            "entities",
-            "robots",
-            robot_model,
-            "configs",
-            "nav2.yaml",
-        ]
-    )
-
-    nav2_map_file = PathJoinSubstitution(
-        [
-            workspace_root,
-            "src",
-            "arena",
-            "simulation-setup",
-            "worlds",
-            world_file,
-            "map",
-            "map.yaml",
-        ]
-    )
-
-    nav2_launch_file = PathJoinSubstitution(
-        [
-            workspace_root,
-            "src",
-            "arena",
-            "simulation-setup",
-            "entities",
-            "robots",
-            robot_model,
-            "launch",
-            "nav2.launch.py",
-        ]
-    )
-
-    # Include the Nav2 launch file
-    nav2_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(nav2_launch_file),
-        launch_arguments={
-            "use_sim_time": use_sim_time,
-            "params_file": nav2_params_file,
-            "map": nav2_map_file,
-        }.items(),
-    )
-
-    slam_launch_file = PathJoinSubstitution(
-        [
-            workspace_root,
-            "src",
-            "arena",
-            "simulation-setup",
-            "entities",
-            "robots",
-            robot_model,
-            "launch",
-            "slam.launch.py",
-        ]
-    )
-
-    slam_yaml_file = PathJoinSubstitution(
-        [
-            workspace_root,
-            "src",
-            "arena",
-            "simulation-setup",
-            "entities",
-            "robots",
-            robot_model,
-            "configs",
-            "slam.yaml",
-        ]
-    )
-
-    slam_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(slam_launch_file),
-        launch_arguments={
-            "use_sim_time": use_sim_time,
-            "yaml_path": slam_yaml_file,
-        }.items(),
-    )
-
-    # Robot Localization Node
-    robot_localization_node = Node(
-        package="robot_localization",
-        executable="ekf_node",
-        name="ekf_filter_node",
-        output="screen",
-        parameters=[
-            {
-                "use_sim_time": use_sim_time,
-                "frequency": 30.0,
-                "two_d_mode": True,
-                "publish_tf": True,
-                "publish_acceleration": False,
-                "map_frame": "map",
-                "odom_frame": "odom",
-                "base_link_frame": "base_link",
-                "world_frame": "odom",
-                "odom0": "/odom",
-                "odom0_config": [
-                    True,
-                    True,
-                    False,
-                    False,
-                    False,
-                    True,
-                    False,
-                    False,
-                    False,
-                    False,
-                    False,
-                    True,
-                    False,
-                    False,
-                    False,
-                ],
-                "imu0": "/imu",
-                "imu0_config": [
-                    False,
-                    False,
-                    False,
-                    True,
-                    True,
-                    True,
-                    False,
-                    False,
-                    False,
-                    True,
-                    True,
-                    True,
-                    False,
-                    False,
-                    False,
-                ],
-                "publish_acceleration": False,
-                "odom0_relative": False,  # Changed from false to False
-                "imu0_relative": False,  # Changed from false to False
-            }
-        ],
-    )
-
-    static_transform_publisher = [
-        Node(
-            package="tf2_ros",
-            executable="static_transform_publisher",
-            name="map_to_odom_publisher",
-            arguments=["0", "0", "0", "0", "0", "0", "map", "odom"],
-            parameters=[{"use_sim_time": use_sim_time}],
-        ),
-        Node(
-            package="tf2_ros",
-            executable="static_transform_publisher",
-            name="odom_to_base_link_publisher",
-            arguments=["0", "0", "0", "0", "0", "0", "odom", "base_link"],
-            parameters=[{"use_sim_time": use_sim_time}],
-        ),
-    ]
 
     random_spawn_launch_file = PathJoinSubstitution(
         [
@@ -473,16 +309,12 @@ def generate_launch_description():
             SetEnvironmentVariable(
                 "GZ_SIM_RESOURCE_PATH", GZ_SIM_RESOURCE_PATHS_COMBINED
             ),
-            *static_transform_publisher,
             gazebo,
-            robot_state_publisher,
-            joint_state_publisher,
-            robot_localization_node,
-            spawn_robot,
+            # robot_state_publisher,
+            # joint_state_publisher,
+            # spawn_robot,
             bridge,
             delayed_rviz,
-            nav2_launch,
-            slam_launch,
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(random_spawn_launch_file),
                 condition=IfCondition(random_spawn_test),

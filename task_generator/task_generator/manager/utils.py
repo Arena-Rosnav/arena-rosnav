@@ -18,6 +18,8 @@ from task_generator.utils import ModelLoader
 
 from nav_msgs.msg import OccupancyGrid
 
+import task_generator.utils.arena as Utils
+
 # TYPES
 
 
@@ -60,15 +62,17 @@ class WorldOccupancy:
     @staticmethod
     def empty(grid: np.ndarray) -> np.ndarray:
         return np.isclose(grid, WorldOccupancy.EMPTY)
-    
+
     @staticmethod
     def not_empty(grid: np.ndarray) -> np.ndarray:
         return np.invert(WorldOccupancy.empty(grid))
 
     @staticmethod
-    def emptyish(grid: np.ndarray, thresh: Optional[float] = None) -> np.ndarray:
+    def emptyish(grid: np.ndarray,
+                 thresh: Optional[float] = None) -> np.ndarray:
         if thresh is None:
-            thresh = float((int(WorldOccupancy.FULL) + int(WorldOccupancy.EMPTY)) / 2)
+            thresh = float((int(WorldOccupancy.FULL) +
+                           int(WorldOccupancy.EMPTY)) / 2)
         return grid >= thresh
 
     @staticmethod
@@ -80,7 +84,8 @@ class WorldOccupancy:
         return np.invert(WorldOccupancy.full(grid))
 
     @staticmethod
-    def fullish(grid: np.ndarray, thresh: Optional[float] = None) -> np.ndarray:
+    def fullish(grid: np.ndarray,
+                thresh: Optional[float] = None) -> np.ndarray:
         return np.invert(WorldOccupancy.emptyish(grid, thresh))
 
     @property
@@ -90,7 +95,7 @@ class WorldOccupancy:
     def clear(self):
         self.grid.fill(WorldOccupancy.EMPTY)
 
-    def occupy(self, lo:Tuple[int, int], hi: Tuple[int, int]):
+    def occupy(self, lo: Tuple[int, int], hi: Tuple[int, int]):
         ly, hy = np.clip(np.array([lo[1], hi[1]]), 0, self._grid.shape[0] - 1)
         lx, hx = np.clip(np.array([lo[0], hi[0]]), 0, self._grid.shape[1] - 1)
         self._grid[
@@ -164,7 +169,7 @@ class WorldLayers:
             self._base._forbidden = self._grid
             self._base._invalidate_combined_cache()
 
-        def occupy(self, lo:Tuple[int, int], hi: Tuple[int, int]):
+        def occupy(self, lo: Tuple[int, int], hi: Tuple[int, int]):
             self._grid.occupy(lo, hi)
 
         @property
@@ -185,11 +190,16 @@ class WorldMap:
     @staticmethod
     def from_occupancy_grid(occupancy_grid: OccupancyGrid) -> "WorldMap":
         # Convert occupancy grid data to numpy array
-        grid_data = np.array(occupancy_grid.data).reshape((occupancy_grid.info.height, occupancy_grid.info.width))
-        
+        grid_data = np.array(
+            occupancy_grid.data).reshape(
+            (occupancy_grid.info.height,
+             occupancy_grid.info.width))
+
         # Normalize data to 0-255 range (0 = occupied, 255 = free)
-        normalized_data = np.interp(grid_data, (0, 100), (WorldOccupancy.FULL, WorldOccupancy.EMPTY)).astype(np.uint8)
-        
+        normalized_data = np.interp(
+            grid_data, (0, 100), (WorldOccupancy.FULL, WorldOccupancy.EMPTY)).astype(
+            np.uint8)
+
         return WorldMap(
             occupancy=WorldLayers(
                 walls=WorldOccupancy(normalized_data)
@@ -207,14 +217,27 @@ class WorldMap:
         return self.occupancy._walls.grid.shape
 
     def tf_pos2grid(self, position: Position) -> Tuple[int, int]:
-        return np.round((position.y - self.origin.y) / self.resolution), np.round(self.shape[1] - (position.x - self.origin.x) / self.resolution)
+        return np.round((position.y - self.origin.y) / self.resolution), np.round(
+            self.shape[1] - (position.x - self.origin.x) / self.resolution)
 
     def tf_grid2pos(self, grid_pos: Tuple[int, int]) -> Position:
-        return Position(x=grid_pos[1] * self.resolution + self.origin.y, y=(grid_pos[0]) * self.resolution + self.origin.x)
+        return Position(x=grid_pos[1] * self.resolution + self.origin.y,
+                        y=(grid_pos[0]) * self.resolution + self.origin.x)
 
-    def tf_posr2rect(self, posr: PositionRadius) -> Tuple[Tuple[int, int], Tuple[int, int]]:
-        lo = self.tf_pos2grid(Position(posr.x - posr.radius, posr.y - posr.radius))
-        hi = self.tf_pos2grid(Position(posr.x + posr.radius, posr.y + posr.radius))
+    def tf_posr2rect(
+            self, posr: PositionRadius) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+        lo = self.tf_pos2grid(
+            Position(
+                posr.x -
+                posr.radius,
+                posr.y -
+                posr.radius))
+        hi = self.tf_pos2grid(
+            Position(
+                posr.x +
+                posr.radius,
+                posr.y +
+                posr.radius))
         return (lo, hi)
 
 
@@ -282,9 +305,11 @@ class _WallLines(Dict[float, List[Tuple[float, float]]]):
         get WorldWalls object
         """
         if not self._inverted:
-            return set([(Position(start, major), Position(end, major)) for major, segment in self.items() for start, end in segment])
+            return set([(Position(start, major), Position(end, major))
+                       for major, segment in self.items() for start, end in segment])
         else:
-            return set([(Position(major, start), Position(major, end)) for major, segment in self.items() for start, end in segment])
+            return set([(Position(major, start), Position(major, end))
+                       for major, segment in self.items() for start, end in segment])
 
 
 def RLE_2D(grid: np.ndarray) -> WorldWalls:
@@ -310,21 +335,28 @@ def RLE_2D(grid: np.ndarray) -> WorldWalls:
     return set().union(walls_x.lines, walls_y.lines)
 
 
-def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[[Tuple[int, int]], Position]] = None) -> WorldWalls:
+def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[[
+                       Tuple[int, int]], Position]] = None) -> WorldWalls:
     walls = RLE_2D(grid=WorldOccupancy.not_full(occupancy_grid))
 
     if transform is None:
-        transform = lambda p: Position(x=p[0], y=p[1])
+        def _transform(p): return Position(x=p[0], y=p[1])
+        transform = _transform
 
     return [(transform(wall[0]), transform(wall[1])) for wall in walls]
 
 
-workspace_root = ModelLoader.getArenaDir()
+_world_model_loader = ModelLoader(
+    os.path.join(
+        Utils.get_simulation_setup_path(),
+        'worlds',
+    )
+)
 
-_world_model_loader = ModelLoader(os.path.join(workspace_root, 'src', 'arena', 'simulation-setup', 'worlds'))
 
-
-def configurations_to_obstacles(configurations: Collection[WorldObstacleConfiguration]) -> WorldObstacles:
+def configurations_to_obstacles(
+    configurations: Collection[WorldObstacleConfiguration]
+) -> WorldObstacles:
 
     name_gen = itertools.count()
 

@@ -38,6 +38,7 @@ def rosparam_get(
     cast: Type[T], param_name: str, default: typing.Optional[T]
 ) -> T:
     """
+    # TODO deprecate in favor of ROSParamServer.rosparam[T].get()
     Get typed ros parameter (strict)
     @cast: Return type of function
     @param_name: Name of parameter on parameter server
@@ -255,7 +256,8 @@ class ModelWrapper:
                     return models[model_type]
             else:
                 raise LookupError(
-                    f"no matching model found for {name} (available: {list(models.keys())}, requested: {list(only)})"
+                    f"no matching model found for {
+                        name} (available: {list(models.keys())}, requested: {list(only)})"
                 )
 
         return ModelWrapper.bind(name, get)

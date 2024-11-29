@@ -259,7 +259,7 @@ class Mod_Benchmark(TM_Module):
         self._config = self._load_config()
         self._suite = self._load_suite(
             self._config.suite.config,
-            default_timeout=self.node.Configuration.Robot.TIMEOUT.value
+            default_timeout=self.node.conf.Robot.TIMEOUT.value
         )
         self._contest = self._load_contest(self._config.contest.config)
 
@@ -460,7 +460,7 @@ class Mod_Benchmark(TM_Module):
 
                     # suite
                     f"model:={suite_config.robot}",
-                    f"map_file:={suite_config.map}",
+                    f"world:={suite_config.map}",
                     f"tm_robots:={suite_config.tm_robots}",
                     f"tm_obstacles:={suite_config.tm_obstacles}"
                 ],

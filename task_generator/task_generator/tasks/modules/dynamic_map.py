@@ -135,7 +135,7 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
 
         self.__task_reset_pub.publish(String())
 
-    PARAM_MAP_FILE = "map_file"
+    PARAM_MAP_FILE = "world"
     PARAM_EPISODES = "dynamic_map.curr_eps"
     PARAM_GENERATOR = "generator"
     PARAM_GENERATOR_CONFIGS = "generator_configs"

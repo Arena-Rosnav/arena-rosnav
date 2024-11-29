@@ -112,7 +112,7 @@ class TM_Parametrized(TM_Obstacles):
         # Create static obstacles
         for config in self._config.STATIC:
             for i in range(
-                self.node.Configuration.General.RNG.value.integers(
+                self.node.conf.General.RNG.value.integers(
                     config.min,
                     config.max,
                     endpoint=True
@@ -129,7 +129,7 @@ class TM_Parametrized(TM_Obstacles):
         # Create interactive obstacles
         for config in self._config.INTERACTIVE:
             for i in range(
-                self.node.Configuration.General.RNG.value.integers(
+                self.node.conf.General.RNG.value.integers(
                     config.min,
                     config.max,
                     endpoint=True
@@ -146,7 +146,7 @@ class TM_Parametrized(TM_Obstacles):
         # Create dynamic obstacles
         for config in self._config.DYNAMIC:
             for i in range(
-                self.node.Configuration.General.RNG.value.integers(
+                self.node.conf.General.RNG.value.integers(
                     config.min,
                     config.max,
                     endpoint=True

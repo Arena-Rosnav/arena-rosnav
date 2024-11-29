@@ -62,9 +62,9 @@ class RobotManager(NodeInterface):
 
         # Parameter handling
         try:
-            self._goal_tolerance_distance = self.node.Configuration.Robot.GOAL_TOLERANCE_RADIUS.value
-            self._goal_tolerance_angle = self.node.Configuration.Robot.GOAL_TOLERANCE_ANGLE.value
-            self._safety_distance = self.node.Configuration.Robot.SPAWN_ROBOT_SAFE_DIST.value
+            self._goal_tolerance_distance = self.node.conf.Robot.GOAL_TOLERANCE_RADIUS.value
+            self._goal_tolerance_angle = self.node.conf.Robot.GOAL_TOLERANCE_ANGLE.value
+            self._safety_distance = self.node.conf.Robot.SPAWN_ROBOT_SAFE_DIST.value
         except Exception as e:
             # Fallback values
             self._goal_tolerance_distance = 1.0
@@ -109,7 +109,10 @@ class RobotManager(NodeInterface):
 
         self._launch_robot()
 
-        self._robot_radius = self.node.rosparam_get('robot_radius', 0.25)
+        self._robot_radius = self.node.rosparam[float].get(
+            'robot_radius',
+            0.25
+        )
 
         self._clear_costmaps_srv = self.node.create_client(
             std_srvs.Empty, self.namespace("move_base", "clear_costmaps"))
@@ -219,8 +222,14 @@ class RobotManager(NodeInterface):
             launch_description = launch.LaunchDescription()
 
             launch_arguments = {
-                'SIMULATOR': Utils.get_simulator().value,
-                'model': self.model_name,
+                'robot_path': os.path.join(
+                    Utils.get_simulation_setup_path(),
+                    'entities',
+                    'robots',
+                    self.model_name,
+                ),
+                'world_path': self.node.conf.Arena.get_world_path(),
+                'simulator': self.node.conf.Arena.SIMULATOR.value.value,
                 'name': self.name,
                 'namespace': self.namespace,
                 'frame': f"{self.name}/" if self.name else '',

@@ -227,7 +227,7 @@ class YAMLUtil:
 
 
 tmp_dir = os.path.join(
-    get_package_share_directory('simulation-setup'), "tmp", "heightmap"
+    Utils.get_simulation_setup_path(), "tmp", "heightmap"
 )
 os.makedirs(tmp_dir, exist_ok=True)
 

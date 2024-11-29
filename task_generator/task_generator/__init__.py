@@ -1,9 +1,12 @@
 from .utils.ros_params import ROSParamServer
 import rclpy
+import task_generator.utils.arena as Utils
 
 
 class NodeInterface:
-    node: ROSParamServer
+    class Taskgen_T(ROSParamServer, rclpy.node.Node):
+        ...
+    node: Taskgen_T
 
     def __init__(self) -> None:
         ...
@@ -14,9 +17,8 @@ def init_task_gen_node(args=None) -> ROSParamServer:
     from .node import TaskGenerator
     NodeInterface.node = TaskGenerator()
 
+    # TODO deprecate
     from .shared import configure_node
     configure_node(NodeInterface.node)
-
-    NodeInterface.node.post_init()
 
     return NodeInterface.node

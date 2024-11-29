@@ -55,7 +55,7 @@ class TM_Robots(TaskMode):
 
         """
         if (self._PROPS.clock.clock.sec - self._last_reset) \
-                > self.node.Configuration.Robot.TIMEOUT.value:
+                > self.node.conf.Robot.TIMEOUT.value:
             return True
 
         return all(robot.is_done for robot in self._PROPS.robot_managers)

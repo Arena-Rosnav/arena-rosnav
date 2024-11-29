@@ -60,7 +60,7 @@ class TM_Scenario(TM_Robots):
         TM_Robots.__init__(self, **kwargs)
 
         self.node.declare_parameter('SCENARIO_file', '')
-        self.node.declare_parameter('map_file', '')
+        self.node.declare_parameter('world', '')
         self.node.add_on_set_parameters_callback(self.parameters_callback)
 
         # Initial configuration
@@ -83,13 +83,13 @@ class TM_Scenario(TM_Robots):
         Returns:
             None
         """
-        map_file = self.node.get_parameter('map_file').value
+        world = self.node.get_parameter('world').value
         scenario_file = config['SCENARIO_file']
 
         scenario_path = os.path.join(
-            get_package_share_directory('simulation-setup'),
+            get_package_share_directory('simulation_setup'),
             "worlds",
-            map_file,
+            world,
             "scenarios",
             scenario_file
         )

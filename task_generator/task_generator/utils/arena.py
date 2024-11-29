@@ -4,28 +4,29 @@ import os
 import numpy as np
 
 from task_generator.constants import Constants
-from task_generator.shared import rosparam_get
 
 import nav_msgs.msg as nav_msgs
 
+import ament_index_python.packages
 
-def get_simulator() -> Constants.Simulator:
-    return Constants.Simulator(rosparam_get(
-        str, "simulator", Constants.Simulator.DUMMY.value).lower())
+_simulation_setup_path: str = ament_index_python.packages.get_package_share_directory(
+    'simulation-setup'
+)
 
 
-def get_entity_manager() -> Constants.EntityManager:
-    return Constants.EntityManager(rosparam_get(
-        str, "entity_manager", Constants.EntityManager.DUMMY.value).lower())
+def get_simulation_setup_path() -> str:
+    """
+    Get path to simulation_setup package.
+    """
+    return _simulation_setup_path
 
 
 def get_arena_type() -> Constants.ArenaType:
+    """
+    Get arena type.
+    """
     return Constants.ArenaType(
         os.getenv("ARENA_TYPE", Constants.ArenaType.DEPLOYMENT.value).lower())
-
-
-def is_synthetic_map() -> bool:
-    return rosparam_get(str, "map_file", "") in ["dynamic_map"]
 
 
 def generate_map_inner_border(free_space_indices,

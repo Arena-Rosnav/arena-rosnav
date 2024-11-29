@@ -21,6 +21,8 @@ import rosgraph_msgs.msg as rosgraph_msgs
 from task_generator.utils import ModelLoader
 from task_generator.constants.runtime import Configuration
 
+import task_generator.utils.arena as Utils
+
 
 class TaskFactory:
     registry_obstacles: typing.Dict[Constants.TaskMode.TM_Obstacles,
@@ -144,20 +146,14 @@ class TaskFactory:
 
                 self.model_loader = ModelLoader(
                     os.path.join(
-                        workspace_root,
-                        'src',
-                        'arena',
-                        'simulation-setup',
+                        Utils.get_simulation_setup_path(),
                         'entities',
                         'obstacles',
                         'static')
                 )
                 self.dynamic_model_loader = ModelLoader(
                     os.path.join(
-                        workspace_root,
-                        'src',
-                        'arena',
-                        'simulation-setup',
+                        Utils.get_simulation_setup_path(),
                         'entities',
                         'obstacles',
                         'dynamic')
@@ -171,9 +167,9 @@ class TaskFactory:
 
                 if self._train_mode:
                     self.set_tm_robots(
-                        Constants.TaskMode.TM_Robots(self.node.Configuration.TaskMode.TM_ROBOTS.value))
+                        Constants.TaskMode.TM_Robots(self.node.conf.TaskMode.TM_ROBOTS.value))
                     self.set_tm_obstacles(
-                        Constants.TaskMode.TM_Obstacles(self.node.Configuration.TaskMode.TM_OBSTACLES.value))
+                        Constants.TaskMode.TM_Obstacles(self.node.conf.TaskMode.TM_OBSTACLES.value))
 
             def set_tm_robots(self, tm_robots: Constants.TaskMode.TM_Robots):
                 """
@@ -218,12 +214,12 @@ class TaskFactory:
 
                     if not self._train_mode:
                         if (
-                            new_tm_robots := self.node.Configuration.TaskMode.TM_ROBOTS.value
+                            new_tm_robots := self.node.conf.TaskMode.TM_ROBOTS.value
                         ) != self.__param_tm_robots:
                             self.set_tm_robots(new_tm_robots)
 
                         if (
-                            new_tm_obstacles := self.node.Configuration.TaskMode.TM_OBSTACLES.value
+                            new_tm_obstacles := self.node.conf.TaskMode.TM_OBSTACLES.value
                         ) != self.__param_tm_obstacles:
                             self.set_tm_obstacles(new_tm_obstacles)
 
