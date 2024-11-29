@@ -258,9 +258,30 @@ class RobotManager(NodeInterface):
                 )
             )
 
-            self.launch_service = launch.launch_service.LaunchService()
-            self.launch_service.include_launch_description(launch_description)
-            self.launch_service.run()
+            import multiprocessing
+            import asyncio
+
+            # https://github.com/ros2/launch/issues/724#issue-1851039469
+            def run_process(stop_event, launch_description):
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                launch_service = launch.launch_service.LaunchService()
+                launch_service.include_launch_description(launch_description)
+                launch_task = loop.create_task(launch_service.run_async())
+                loop.run_until_complete(
+                    loop.run_in_executor(
+                        None, stop_event.wait))
+                if not launch_task.done():
+                    asyncio.ensure_future(launch_service.shutdown(), loop=loop)
+                    loop.run_until_complete(launch_task)
+
+            stop_event = multiprocessing.Event()
+            process = multiprocessing.Process(
+                target=run_process,
+                args=(stop_event, launch_description),
+                daemon=True
+            )
+            process.start()
 
         # TODO
         # base_frame: str = self.node.get_parameter_or(self.namespace("robot_base_frame"), DefaultParameter('')).value
