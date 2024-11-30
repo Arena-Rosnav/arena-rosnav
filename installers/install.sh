@@ -38,7 +38,7 @@ fi
 # == python deps ==
 
 # pyenv
-if ! which pyenv ; then
+if [ ! -d "$HOME/.pyenv" ] ; then
   rm -rf "$HOME/.pyenv"
   curl https://pyenv.run | bash
   echo 'export PYENV_ROOT="$HOME/.pyenv"'                                 >> ~/.bashrc
@@ -117,6 +117,7 @@ else
   popd
 fi
 python -m pip install -e vcstool
+alias vcs="$HOME/.pyenv/shims/vcs" # avoid reopening shell
 
 # Getting Packages
 echo "Installing deps...:"
