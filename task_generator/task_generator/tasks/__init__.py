@@ -130,7 +130,7 @@ class Task(Props_):
 
     @classmethod
     def declare_parameters(cls, node: ROSParamServer):
-        node.register_param(node.ROSParam[bool](cls.PARAM_RESETTING, True))
+        node.ROSParam[bool](cls.PARAM_RESETTING, True)
 
     __reset_start: rclpy.publisher.Publisher
     __reset_end: rclpy.publisher.Publisher

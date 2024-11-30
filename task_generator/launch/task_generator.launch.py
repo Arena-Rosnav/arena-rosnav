@@ -47,15 +47,15 @@ def generate_launch_description():
         executable='task_generator_node',
         name='task_generator_node',
         output='screen',
-        parameters=[
-                simulator.parameter,
-                entity_manager.parameter,
-                robot.parameter,
-                tm_robots.parameter,
-                tm_obstacles.parameter,
-                tm_modules.parameter,
-                world.parameter,
-        ],
+        parameters=[{
+                **simulator.parameter,
+                **entity_manager.parameter,
+                **robot.parameter,
+                **tm_robots.parameter,
+                **tm_obstacles.parameter,
+                **tm_modules.parameter,
+                **world.parameter,
+        }],
     )
 
     ld = launch.LaunchDescription([

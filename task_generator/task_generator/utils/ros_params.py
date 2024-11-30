@@ -63,9 +63,9 @@ class ROSParamServer(rclpy.node.Node):
                 parse = self.identity
             self._from_param = parse
 
-            self._parameter_value = value
-            self._value = parse(self._parameter_value)
-            self._node.register_param(self, **kwargs)
+            self._node.register_param(self, value, **kwargs)
+            # self._parameter_value = value
+            # self._value = parse(self._parameter_value)
 
         @property
         def name(self) -> str:
@@ -101,16 +101,17 @@ class ROSParamServer(rclpy.node.Node):
         typing.Set[typing.Callable[[typing.Any], bool]]
     ]
 
-    def register_param(self, param: _ROSParam, **kwargs):
-        if param.name not in self.__callbacks:
-            self.__callbacks[param.name] = set()
+    def register_param(self, param: _ROSParam, value: typing.Any, **kwargs):
 
+        parameter_known = param.name in self.__callbacks
+
+        self.__callbacks.setdefault(param.name, set()).add(param.callback)
+
+        if not parameter_known:
             try:
-                self.declare_parameter(param.name, param.param, **kwargs)
+                self.declare_parameter(param.name, value, **kwargs)
             except rclpy.exceptions.ParameterAlreadyDeclaredException:
                 pass
-
-        self.__callbacks[param.name].add(param.callback)
 
     def _callback(self, params):
         successful = True
