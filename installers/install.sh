@@ -173,7 +173,7 @@ if [ ! -f src/ros2/compiled ] ; then
 
   # fix rosidl error that was caused upstream https://github.com/ros2/rosidl/issues/822#issuecomment-2403368061
   pushd src/ros2/ros2/rosidl
-    git cherry-pick 654d6f5658b59009147b9fad9b724919633f38fe || echo 'already cherry picked'
+    git -c user.name='Arena' -c user.email='anonymous@arena-rosnav.org' cherry-pick 654d6f5658b59009147b9fad9b724919633f38fe || echo 'already cherry picked'
   popd
 
   . src/arena/arena-rosnav/tools/colcon_build --paths src/ros2/*
