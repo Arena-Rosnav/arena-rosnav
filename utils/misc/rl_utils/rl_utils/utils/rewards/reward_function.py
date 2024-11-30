@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
-import rospy
 from std_msgs.msg import Float32
 from tools.dynamic_parameter import DynamicParameter
 

@@ -1,32 +1,28 @@
 import dataclasses
+import os
 import typing
 
 import numpy as np
-import os
 import scipy.spatial.transform
 import rclpy
-from rclpy.parameter import Parameter
 
-from task_generator import NodeInterface, ConfigNodeInterface
+from task_generator import NodeInterface
 import task_generator.utils.arena as Utils
-from task_generator.utils.geometry import quaternion_from_euler
+from task_generator.utils.geometry import angle_diff, quaternion_from_euler
 from task_generator.constants import Constants
-from task_generator.constants.runtime import Config
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
-from task_generator.shared import DefaultParameter, ModelType, Namespace, PositionOrientation, Robot
+from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
 
 import nav_msgs.msg as nav_msgs
 import geometry_msgs.msg as geometry_msgs
 import std_srvs.srv as std_srvs
 
 import launch
-from launch import LaunchDescription
-from launch_ros.actions import Node as LaunchNode
-from launch.launch_service import LaunchService
+import ament_index_python
 
 
-class RobotManager(NodeInterface, ConfigNodeInterface):
+class RobotManager(NodeInterface):
     """
     The robot manager manages the goal and start
     position of a robot for all task modes.
@@ -58,25 +54,24 @@ class RobotManager(NodeInterface, ConfigNodeInterface):
         self, namespace: Namespace, entity_manager: EntityManager, robot: Robot
     ):
         NodeInterface.__init__(self)
-        ConfigNodeInterface.__init__(self)
 
         self._namespace = namespace
         self._entity_manager = entity_manager
         self._start_pos = PositionOrientation(0, 0, 0)
         self._goal_pos = PositionOrientation(0, 0, 0)
-        
+
         # Parameter handling
         try:
-            self._goal_tolerance_distance = Config.Robot.GOAL_TOLERANCE_RADIUS
-            self._goal_tolerance_angle = Config.Robot.GOAL_TOLERANCE_ANGLE
-            self._safety_distance = Config.Robot.SPAWN_ROBOT_SAFE_DIST
+            self._goal_tolerance_distance = self.node.conf.Robot.GOAL_TOLERANCE_RADIUS.value
+            self._goal_tolerance_angle = self.node.conf.Robot.GOAL_TOLERANCE_ANGLE.value
+            self._safety_distance = self.node.conf.Robot.SPAWN_ROBOT_SAFE_DIST.value
         except Exception as e:
             # Fallback values
-            self._goal_tolerance_distance = 1.0  
-            self._goal_tolerance_angle = 0.523599  
-            self._safety_distance = 0.25  
+            self._goal_tolerance_distance = 1.0
+            self._goal_tolerance_angle = 0.523599
+            self._safety_distance = 0.25
             print(f"Warning: Using default values for robot parameters: {e}")
-        
+
         self._robot = robot
         self._position = self._start_pos
 
@@ -100,32 +95,26 @@ class RobotManager(NodeInterface, ConfigNodeInterface):
 
         _gen_goal_topic = self.namespace("move_base_simple", "goal")
 
-        self._move_base_goal_pub = self._node.create_publisher(
+        self._move_base_goal_pub = self.node.create_publisher(
             geometry_msgs.PoseStamped, _gen_goal_topic, 10
         )
 
-        self._pub_goal_timer = self._node.create_timer(
+        self._pub_goal_timer = self.node.create_timer(
             0.25, self._publish_goal_periodically
         )
-        self._node.create_subscription(
+        self.node.create_subscription(
             nav_msgs.Odometry, self.namespace(
                 "odom"), self._robot_pos_callback, 10
         )
 
         self._launch_robot()
 
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            self._robot_radius = float(
-                self._node.get_parameter("robot_radius").value)
-        else:
-            # needs to be adjusted to self.get_parameter('robot_radius').value
-            # but robot_radius is not set yet in runtime.py
-            self._node.declare_parameter(
-                ("robot_radius"), Config.Robot.GOAL_TOLERANCE_RADIUS)
-            self._robot_radius = self._node.get_parameter(
-                ("robot_radius")).value
-            
-        self._clear_costmaps_srv = self._node.create_client(
+        self._robot_radius = self.node.rosparam[float].get(
+            'robot_radius',
+            0.25
+        )
+
+        self._clear_costmaps_srv = self.node.create_client(
             std_srvs.Empty, self.namespace("move_base", "clear_costmaps"))
 
     @property
@@ -166,7 +155,7 @@ class RobotManager(NodeInterface, ConfigNodeInterface):
             self.move_robot_to_pos(start_pos)
 
             if self._robot.record_data_dir is not None:
-                self._node.set_parameter(
+                self.node.set_parameter(
                     rclpy.parameter.Parameter(
                         self.namespace("start"),
                         rclpy.Parameter.Type.DOUBLE_ARRAY,
@@ -179,7 +168,7 @@ class RobotManager(NodeInterface, ConfigNodeInterface):
             self._publish_goal(self._goal_pos)
 
             if self._robot.record_data_dir is not None:
-                self._node.set_parameter(
+                self.node.set_parameter(
                     rclpy.parameter.Parameter(
                         self.namespace("goal"),
                         rclpy.Parameter.Type.DOUBLE_ARRAY,
@@ -197,12 +186,11 @@ class RobotManager(NodeInterface, ConfigNodeInterface):
         start = self._position
         goal = self._goal_pos
 
-        distance_to_goal: float = np.linalg.norm(
-            np.array(goal[:2]) - np.array(start[:2])
-        )
+        distance_to_goal: float = float(np.linalg.norm(
+            np.array([goal.x, goal.y]) - np.array([start.x, start.y])
+        ).flat[0])
 
-        angle_to_goal: float = np.pi - \
-            np.abs(np.abs(goal[2] - start[2]) - np.pi)
+        angle_to_goal: float = angle_diff(goal.orientation, start.orientation)
 
         return (
             distance_to_goal < self._goal_tolerance_distance
@@ -221,26 +209,33 @@ class RobotManager(NodeInterface, ConfigNodeInterface):
         goal_msg.pose.position.z = 0.
 
         goal_msg.pose.orientation = orientation = geometry_msgs.Quaternion()
-        orientation.x, orientation.y, orientation.z, orientation.w = quaternion_from_euler(0.0, 0.0, goal.orientation, axes="sxyz")
+        orientation.x, orientation.y, orientation.z, orientation.w = quaternion_from_euler(
+            0.0, 0.0, goal.orientation, axes="sxyz")
 
         self._move_base_goal_pub.publish(goal_msg)
 
     def _launch_robot(self):
-        self._node.get_logger().warn(f"START WITH MODEL {self.namespace}")
+        self.node.get_logger().warn(f"START WITH MODEL {self.namespace}")
 
         if Utils.get_arena_type() != Constants.ArenaType.TRAINING:
-            launch_description = LaunchDescription()
+            launch_description = launch.LaunchDescription()
 
             launch_arguments = {
-                'SIMULATOR': Utils.get_simulator().value,
-                'model': self.model_name,
+                'robot_path': os.path.join(
+                    Utils.get_simulation_setup_path(),
+                    'entities',
+                    'robots',
+                    self.model_name,
+                ),
+                'world_path': self.node.conf.Arena.get_world_path(),
+                'simulator': self.node.conf.Arena.SIMULATOR.value.value,
                 'name': self.name,
                 'namespace': self.namespace,
                 'frame': f"{self.name}/" if self.name else '',
                 'inter_planner': self._robot.inter_planner,
                 'local_planner': self._robot.local_planner,
-                # 'complexity': self._config_node.declare_parameter('complexity', 1).value,
-                # 'train_mode': self._config_node.declare_parameter('train_mode', False).value,
+                # 'complexity': self.node.declare_parameter('complexity', 1).value,
+                # 'train_mode': self.node.declare_parameter('train_mode', False).value,
                 'agent_name': self._robot.agent,
             }
 
@@ -250,22 +245,25 @@ class RobotManager(NodeInterface, ConfigNodeInterface):
                     'record_data_dir': self._robot.record_data_dir,
                 })
 
-            launch_description.add_action(LaunchNode(
-                package='arena_bringup',
-                executable='robot',
-                output='screen',
-                parameters=[launch_arguments]
-            ))
-
-            self.launch_service = LaunchService()
-            self.launch_service.include_launch_description(launch_description)
-            self.launch_service.run()
+            launch_description.add_action(
+                launch.actions.IncludeLaunchDescription(
+                    launch.launch_description_sources.PythonLaunchDescriptionSource(
+                        os.path.join(
+                            ament_index_python.packages.get_package_share_directory(
+                                'arena_bringup'),
+                            'launch/testing/robot.launch.py'
+                        )
+                    ),
+                    launch_arguments=launch_arguments.items(),
+                )
+            )
+            self.node.do_launch(launch_description)
 
         # TODO
-        # base_frame: str = self._node.get_parameter_or(self.namespace("robot_base_frame"), DefaultParameter('')).value
-        # sensor_frame: str = self._node.get_parameter_or(self.namespace("robot_sensor_frame"), DefaultParameter('')).value
+        # base_frame: str = self.node.get_parameter_or(self.namespace("robot_base_frame"), DefaultParameter('')).value
+        # sensor_frame: str = self.node.get_parameter_or(self.namespace("robot_sensor_frame"), DefaultParameter('')).value
 
-        # self._node.set_parameters([
+        # self.node.set_parameters([
         #     Parameter(self.namespace("move_base", "global_costmap", "robot_base_frame"),
         #               Parameter.Type.STRING, os.path.join(self.name, base_frame)),
         #     Parameter(self.namespace("move_base", "local_costmap", "robot_base_frame"),

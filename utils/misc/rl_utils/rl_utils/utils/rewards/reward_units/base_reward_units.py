@@ -83,11 +83,9 @@ class RewardUnit(ABC):
 
     def check_parameters(self, *args, **kwargs):
         """Method to check the parsed unit parameters. Send warning if params were chosen inappropriately."""
-        pass
 
     def reset(self):
         """Method to reset the unit state after each episode."""
-        pass
 
     @abstractmethod
     def __call__(self, *args: Any, **kwargs: Any) -> Any:

@@ -13,8 +13,8 @@ from geometry_msgs.msg import Point, Vector3
 class VisualizeRobotModel:
     def __init__(self):
         self.srv_start_setup = rospy.Service(
-            "start_model_visualization", 
-            Empty, 
+            "start_model_visualization",
+            Empty,
             self.start_model_visualization_callback
         )
 
@@ -46,8 +46,8 @@ class VisualizeRobotModel:
 
             self.subscribers.append(
                 rospy.Subscriber(
-                    os.path.join(name, robot_odom_topic), 
-                    Odometry, 
+                    os.path.join(name, robot_odom_topic),
+                    Odometry,
                     self.publish_model,
                     (robot_model, name)
                 )
@@ -60,7 +60,7 @@ class VisualizeRobotModel:
 
         try:
             markers = self.robot_models[robot_model]
-        except:
+        except BaseException:
             print("Error - Getting markers from dict", robot_model)
             return
 
@@ -71,14 +71,14 @@ class VisualizeRobotModel:
 
         try:
             self.publisher_map[name].publish(MarkerArray(markers))
-        except:
+        except BaseException:
             traceback.print_exc()
             print("Error - publishing markers", name, markers)
 
     @staticmethod
     def read_robot_model_file(robot_model):
         file_path = os.path.join(
-            rospkg.RosPack().get_path('simulation-setup'),
+            rospkg.RosPack().get_path('simulation_setup'),
             "entities",
             "robots",
             robot_model,
@@ -87,7 +87,7 @@ class VisualizeRobotModel:
 
         with open(file_path) as file:
             return yaml.safe_load(file)["bodies"]
-    
+
     @staticmethod
     def create_marker_array_for_robot(bodies):
         markers = []
@@ -116,8 +116,8 @@ class VisualizeRobotModel:
         if type == "circle":
             marker.type = Marker.SPHERE
             marker.scale = Vector3(
-                footprint["radius"] * 2, 
-                footprint["radius"] * 2, 
+                footprint["radius"] * 2,
+                footprint["radius"] * 2,
                 0.1
             )
 

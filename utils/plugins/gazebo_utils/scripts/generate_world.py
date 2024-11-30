@@ -18,7 +18,7 @@ actor_type = "person"  # [person, box]
 debug = False
 rospy.init_node("generate_world")
 rospack = rospkg.RosPack()
-sim_setup_path = rospack.get_path('simulation-setup')
+sim_setup_path = rospack.get_path('simulation_setup')
 
 # setting paths
 if not debug:
@@ -158,30 +158,39 @@ def add_actor_element_box(j, agent):
     return actor, script
 
 
-# In the scenario case we use the gazebo-actor concept to move our dynamic obstacles, therefore we need to script the actors trajectories in the .world file
+# In the scenario case we use the gazebo-actor concept to move our dynamic
+# obstacles, therefore we need to script the actors trajectories in the
+# .world file
 if mode in ["scenario", "scenario_staged"]:
 
     # loading scenario data
     if not debug:
-        scenario_path = rospy.get_param("/task_generator_node/scenario_json_path")
+        scenario_path = rospy.get_param(
+            "/task_generator_node/scenario_json_path")
     else:
         scenario_path = "/home/elias/catkin_ws/src/arena-rosnav-3D/simulator_setup/scenarios/turtlebot3_world.json"
     scenario = ArenaScenario()
     scenario.loadFromFile(scenario_path)
     num_of_actors = 0
 
-    # looping through the data of every individual dynamic obstacle defined in the scenario file
+    # looping through the data of every individual dynamic obstacle defined in
+    # the scenario file
     for j, ped in enumerate(scenario.pedsimAgents):
         for agent in range(ped.number_of_peds):
 
-            # NOTE: check out 'simulator_setup/worlds/small_warehouse/models/actor/meshes' for further actor models
+            # NOTE: check out
+            # 'simulator_setup/worlds/small_warehouse/models/actor/meshes' for
+            # further actor models
             if actor_type == "person":
                 actor, script = add_actor_element_person(j, agent)
             if actor_type == "box":
                 actor, script = add_actor_element_box(j, agent)
 
             # creating the the trajectory points
-            trajectory = Element("trajectory", id=f"{j}_{agent}", type="animation")
+            trajectory = Element(
+                "trajectory",
+                id=f"{j}_{agent}",
+                type="animation")
             waypoint = Element("waypoint")
             max_vel = ped.vmax
             traj_time = START_TIME
@@ -203,13 +212,17 @@ if mode in ["scenario", "scenario_staged"]:
             actor.append(script)
             world_.append(actor)
 
-# in the case of for example random-mode the trajectory points of dynamic obstacles are determined randomly in the task_generator node. The position of the actors is determined by pedsim. Therefore we include here the actor model without trajectory points
+# in the case of for example random-mode the trajectory points of dynamic
+# obstacles are determined randomly in the task_generator node. The
+# position of the actors is determined by pedsim. Therefore we include
+# here the actor model without trajectory points
 else:
     num_of_actors = TaskMode.Random.MAX_DYNAMIC_OBS
 
     for item in range(num_of_actors):
         actor = Element("actor", name="person_" + str(item + 1))
-        s_pos = etree.fromstring("<pose> -0.46 20.8 -10.0 0.0 0.0 1.18 </pose>")
+        s_pos = etree.fromstring(
+            "<pose> -0.46 20.8 -10.0 0.0 0.0 1.18 </pose>")
         actor.append(s_pos)
         skin = Element("skin")
         skin_fn = Element("filename")
@@ -228,7 +241,10 @@ else:
         animation.append(animate_fn)
         animation.append(interpolate_x)
         actor.append(animation)
-        plugin = Element("plugin", name="None", filename="libActorPosePlugin.so")
+        plugin = Element(
+            "plugin",
+            name="None",
+            filename="libActorPosePlugin.so")
         actor.append(plugin)
 
         collision_model = etree.fromstring(get_collision_model())
@@ -238,4 +254,8 @@ else:
         world_.append(actor)
 
 
-tree_.write(world_file, pretty_print=True, xml_declaration=True, encoding="utf-8")
+tree_.write(
+    world_file,
+    pretty_print=True,
+    xml_declaration=True,
+    encoding="utf-8")

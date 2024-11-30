@@ -1,6 +1,6 @@
 #! /usr/bin/bash
 
-export PYTHON_VERSION='3.10'
+export PYTHON_VERSION='3.12'
 
 pyenv install -s "${PYTHON_VERSION}"
 pyenv local "${PYTHON_VERSION}"

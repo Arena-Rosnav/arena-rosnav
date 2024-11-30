@@ -4,7 +4,7 @@ import numpy as np
 
 from .aggregate_collector_unit import AggregateCollectorUnit
 import crowdsim_msgs.msg as crowdsim_msgs
-from geometry_msgs.msg import Point, Pose2D
+from geometry_msgs.msg import Pose2D
 from crowdsim_agents.utils import SemanticAttribute
 from rl_utils.utils.observation_collector.constants import OBS_DICT_KEYS
 

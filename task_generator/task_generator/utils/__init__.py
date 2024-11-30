@@ -2,7 +2,6 @@ import functools
 import subprocess
 from typing import Callable, Collection, Dict, Iterator, List, Optional, Set, Tuple, Type
 
-from rosros import rospify as rospy
 import os
 
 import heapq
@@ -65,9 +64,9 @@ class ModelLoader:
         self._cache = dict()
         self._models = set()
 
-        # potentially expensive
-        rospy.logdebug(
-            f"models in {os.path.basename(model_dir)}: {self.models}")
+        # # potentially expensive
+        # rospy.logdebug(
+        #     f"models in {os.path.basename(model_dir)}: {self.models}")
 
     @property
     def models(self) -> Set[str]:
@@ -75,16 +74,19 @@ class ModelLoader:
             if os.path.isdir(self._model_dir):
                 self._models = set(next(os.walk(self._model_dir))[1])
             else:
-                rospy.logwarn(
-                    f"Model directory {self._model_dir} does not exist. No models are provided.")
+                # rospy.logwarn(
+                # f"Model directory {self._model_dir} does not exist. No models
+                # are provided.")
                 self._models = set()
 
         return self._models
 
     def bind(self, model: str) -> ModelWrapper:
-        return ModelWrapper.bind(name=model, callback=functools.partial(self._load, model))
+        return ModelWrapper.bind(
+            name=model, callback=functools.partial(self._load, model))
 
-    def _load(self, model: str, only: Collection[ModelType], **kwargs) -> Model:
+    def _load(self, model: str,
+              only: Collection[ModelType], **kwargs) -> Model:
 
         if not len(only):
             only = self._registry.keys()
@@ -105,9 +107,11 @@ class ModelLoader:
             raise FileNotFoundError(
                 f"no model {model} among {only} found in {self._model_dir}")
 
-    def _load_single(self, model_type: ModelType, model: str, **kwargs) -> Optional[Model]:
+    def _load_single(self, model_type: ModelType, model: str,
+                     **kwargs) -> Optional[Model]:
         if model_type in self._registry:
-            return self._registry[model_type].load(self._model_dir, model, **kwargs)
+            return self._registry[model_type].load(
+                self._model_dir, model, **kwargs)
 
         return None
 
@@ -197,8 +201,9 @@ class _ModelLoader_URDF(_ModelLoader):
             ]).decode("utf-8")
 
         except subprocess.CalledProcessError as e:
-            rospy.logerr_once(
-                f"error processing model {model} URDF file {model_path}. refusing to load.\n{e}\n{e.output.decode('utf-8')}")
+            # rospy.logerr_once(
+            # f"error processing model {model} URDF file {model_path}. refusing
+            # to load.\n{e}\n{e.output.decode('utf-8')}")
             return None
 
         else:

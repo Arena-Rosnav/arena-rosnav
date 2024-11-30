@@ -1,4 +1,3 @@
-from time import sleep
 from typing import Any, Dict
 
 import numpy as np
@@ -12,7 +11,7 @@ from sensor_msgs.msg import LaserScan
 from task_generator.shared import Namespace
 
 from ..constants import OBS_DICT_KEYS, TOPICS
-from ..utils import get_goal_pose_in_robot_frame, pose3d_to_pose2d
+from ..utils import pose3d_to_pose2d
 from .collector_unit import CollectorUnit
 
 
@@ -136,7 +135,6 @@ class BaseCollectorUnit(CollectorUnit):
         """
         Wait for the required data to be received.
         """
-        pass
         # if self._first_reset:
         #     self._first_reset = False
         #     return

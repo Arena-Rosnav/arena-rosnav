@@ -3,7 +3,7 @@ set -e
 
 export ARENA_ROSNAV_REPO=${ARENA_ROSNAV_REPO:-voshch/arena-rosnav}
 export ARENA_BRANCH=${ARENA_BRANCH:-humble}
-export ARENA_ROS_VERSION=${ARENA_ROS_VERSION:-humble}
+export ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-humble}
 
 # == read inputs ==
 echo 'Configuring arena-rosnav...'
@@ -12,7 +12,7 @@ ARENA_WS_DIR=${ARENA_WS_DIR:-~/arena4_ws}
 read -p "arena-rosnav workspace directory [${ARENA_WS_DIR}] " INPUT
 export ARENA_WS_DIR=$(realpath "$(eval echo ${INPUT:-${ARENA_WS_DIR}})")
 
-echo "installing ${ARENA_ROSNAV_REPO}:${ARENA_BRANCH} on ROS2 ${ARENA_ROS_VERSION} to ${ARENA_WS_DIR}"
+echo "installing ${ARENA_ROSNAV_REPO}:${ARENA_BRANCH} on ROS2 ${ARENA_ROS_DISTRO} to ${ARENA_WS_DIR}"
 sudo echo 'confirmed'
 mkdir -p "$ARENA_WS_DIR"
 cd "$ARENA_WS_DIR"
@@ -38,12 +38,21 @@ fi
 # == python deps ==
 
 # pyenv
-if [ ! -d ~/.pyenv ]; then
+if ! which pyenv ; then
+  rm -rf "$HOME/.pyenv"
   curl https://pyenv.run | bash
   echo 'export PYENV_ROOT="$HOME/.pyenv"'                                 >> ~/.bashrc
   echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"'  >> ~/.bashrc
   echo 'eval "$(pyenv init -)"'                                           >> ~/.bashrc
-  source ~/.bashrc
+  
+  . ~/.bashrc
+
+  # resourcing does not work in the same shell
+  export PYENV_ROOT="$HOME/.pyenv"
+  export PATH="$PYENV_ROOT/bin:$PATH"
+  eval "$(pyenv init -)"
+
+  which pyenv || (echo 'open a completely new shell'; exit 1)
 fi
 
 # Poetry
@@ -70,7 +79,7 @@ sudo apt install -y tzdata libompl-dev
 sudo dpkg-reconfigure --frontend noninteractive tzdata
 
 # ROS
-echo "Setting up ROS2 ${ARENA_ROS_VERSION}..."
+echo "Setting up ROS2 ${ARENA_ROS_DISTRO}..."
 
 sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
@@ -88,7 +97,7 @@ if [ ! -d src/arena/arena-rosnav/tools ] ; then
   popd
 fi
 
-if [ ! -d "${ARENA_WS_DIR}/src/arena/arena-rosnav/.venv" ] ; then
+if [ ! -f "${ARENA_WS_DIR}/src/arena/arena-rosnav/pyproject.toml" ] ; then
   #python env
   
   mkdir -p src/arena/arena-rosnav
@@ -120,7 +129,8 @@ sudo apt-get install -y \
     libtinyxml2-dev \
     libcunit1-dev \
     ros-dev-tools \
-    libpcl-dev
+    libpcl-dev \
+    libboost-python-dev
 
 # Check if the default ROS sources.list file already exists
 ros_sources_list="/etc/ros/rosdep/sources.list.d/20-default.list"
@@ -132,17 +142,17 @@ else
   sudo rosdep init
 fi
 
-rosdep update
+rosdep update --rosdistro "${ARENA_ROS_DISTRO}"
 
 if [ ! -d src/deps ] ; then
   #TODO resolve this through vcstool
   mkdir -p src/deps
   pushd src/deps
-    git clone https://github.com/ros-perception/pcl_msgs.git -b ros2
-    git clone https://github.com/rudislabs/actuator_msgs
-    git clone https://github.com/swri-robotics/gps_umd
-    git clone https://github.com/ros-perception/vision_msgs
-    git clone https://github.com/ros-perception/vision_opencv.git -b "$ARENA_ROS_VERSION"
+    git clone --filter=tree:0 --depth 1 https://github.com/ros-perception/pcl_msgs.git -b ros2
+    git clone --filter=tree:0 --depth 1 https://github.com/rudislabs/actuator_msgs.git
+    git clone --filter=tree:0 --depth 1 https://github.com/swri-robotics/gps_umd.git -b ros2-devel
+    git clone --filter=tree:0 --depth 1 https://github.com/ros-perception/vision_msgs.git -b ros2
+    git clone --filter=tree:0 --depth 1 https://github.com/ros-perception/vision_opencv.git -b rolling
   popd
 fi
 
@@ -150,13 +160,13 @@ if [ ! -f src/ros2/compiled ] ; then
   # install ros2
 
   mkdir -p src/ros2
-  curl "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_VERSION}/ros2.repos" > ros2.repos
+  curl "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_DISTRO}/ros2.repos" > ros2.repos
   vcs import src/ros2 < ros2.repos
   
   rosdep install \
     --from-paths src/ros2 \
     --ignore-src \
-    --rosdistro "${ARENA_ROS_VERSION}" \
+    --rosdistro "${ARENA_ROS_DISTRO}" \
     -y \
     --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers" \
     || echo 'rosdep failed to install all dependencies'
@@ -178,8 +188,9 @@ if [ ! -f "$INSTALLED" ] ; then
   echo "cloning Arena-Rosnav..."
   git clone --branch "${ARENA_BRANCH}" "https://github.com/${ARENA_ROSNAV_REPO}.git" src/arena/arena-rosnav
 
-  mv -n src/arena/.arena-rosnav/* src/arena/arena-rosnav
+  mv -n src/arena/.arena-rosnav/* src/arena/.arena-rosnav/.* src/arena/arena-rosnav || true
   rm -rf src/arena/.arena-rosnav
+
 
   ln -fs src/arena/arena-rosnav/tools/poetry_install .
   ln -fs src/arena/arena-rosnav/tools/colcon_build .
@@ -191,8 +202,9 @@ vcs import src < src/arena/arena-rosnav/arena.repos
 rosdep install -y \
   --from-paths src/deps \
   --ignore-src \
-  --rosdistro "$ARENA_ROS_VERSION" \
+  --rosdistro "$ARENA_ROS_DISTRO" \
   || echo 'rosdep failed to install all dependencies'
+. poetry_install
 touch "$INSTALLED"
 
 
@@ -203,7 +215,7 @@ compile(){
   rosdep install \
     --from-paths src \
     --ignore-src \
-    --rosdistro ${ARENA_ROS_VERSION} \
+    --rosdistro ${ARENA_ROS_DISTRO} \
     -y \
     --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers  DART libogre-next-2.3-dev transforms3d" \
     || echo 'rosdep failed to install all dependencies'

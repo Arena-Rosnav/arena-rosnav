@@ -1,7 +1,6 @@
-import dataclasses
 import os
-from typing import Any, List, Type
-from rosros import rospify as rospy
+from typing import List
+from task_generator import NodeInterface
 from task_generator.constants import Constants
 
 from task_generator.manager.obstacle_manager import ObstacleManager
@@ -12,9 +11,9 @@ from task_generator.shared import Namespace, PositionOrientation
 from task_generator.utils import ModelLoader
 
 import rosgraph_msgs.msg as rosgraph_msgs
-import std_msgs.msg as std_msgs
 
 import rclpy.node
+from task_generator.utils.ros_params import ROSParamServer
 
 
 class Props_Manager:
@@ -51,7 +50,9 @@ class Reconfigurable:
         ...
 
     NODE_CONFIGURATION = Namespace(
-        os.path.join(rospy.get_namespace(), Constants.TASK_GENERATOR_SERVER_NODE)
+        os.path.join(
+            "",  # rospy.get_namespace(),
+            Constants.TASK_GENERATOR_SERVER_NODE)
     )
 
     @classmethod
@@ -76,11 +77,12 @@ class Reconfigurable:
         ...
 
 
-class TaskMode(Reconfigurable):
+class TaskMode(Reconfigurable, NodeInterface):
     _PROPS: Props_
 
     def __init__(self, props: Props_, **kwargs):
         Reconfigurable.__init__(self)
+        NodeInterface.__init__(self)
         self._PROPS = props
 
 
@@ -127,12 +129,11 @@ class Task(Props_):
     PARAM_RESETTING = "resetting"
 
     @classmethod
-    def declare_parameters(cls, node: rclpy.node.Node):
-        node.declare_parameter(cls.PARAM_RESETTING, True)
+    def declare_parameters(cls, node: ROSParamServer):
+        node.ROSParam[bool](cls.PARAM_RESETTING, True)
 
-
-    __reset_start: rospy.Publisher
-    __reset_end: rospy.Publisher
+    __reset_start: rclpy.publisher.Publisher
+    __reset_end: rclpy.publisher.Publisher
     __reset_mutex: bool
 
     def __init__(
@@ -146,7 +147,7 @@ class Task(Props_):
     ):
         raise NotImplementedError()
 
-    def reset(self, **kwargs):
+    def reset(self, **kwargs) -> None:
         ...
 
     @property
@@ -171,7 +172,8 @@ class Task(Props_):
         ...
 
 
-from .task_factory import TaskFactory
+from .task_factory import TaskFactory  # noqa
+
 
 def declare_modules():
     @TaskFactory.register_module(Constants.TaskMode.TM_Module.BENCHMARK)
@@ -179,7 +181,8 @@ def declare_modules():
         from .modules.benchmark import Mod_Benchmark
         return Mod_Benchmark
 
-    @TaskFactory.register_module(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
+    @TaskFactory.register_module(
+        Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
     def _clear_forbidden_zones():
         from .modules.clear_forbidden_zones import Mod_ClearForbiddenZones
         return Mod_ClearForbiddenZones
@@ -199,8 +202,10 @@ def declare_modules():
         from .modules.staged import Mod_Staged
         return Mod_Staged
 
+
 def declare_obstacles():
-    @TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.PARAMETRIZED)
+    @TaskFactory.register_obstacles(
+        Constants.TaskMode.TM_Obstacles.PARAMETRIZED)
     def _parametrized():
         from .obstacles.parametrized import TM_Parametrized
         return TM_Parametrized
@@ -214,7 +219,8 @@ def declare_obstacles():
     def _scenario():
         from .obstacles.scenario import TM_Scenario
         return TM_Scenario
-    
+
+
 def declare_robots():
     @TaskFactory.register_robots(Constants.TaskMode.TM_Robots.EXPLORE)
     def _explore():
@@ -235,7 +241,8 @@ def declare_robots():
     def _scenario():
         from .robots.scenario import TM_Scenario
         return TM_Scenario
-    
+
+
 declare_modules()
 declare_obstacles()
 declare_robots()

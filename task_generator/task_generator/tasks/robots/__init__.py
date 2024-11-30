@@ -1,5 +1,3 @@
-from rosros import rospify as rospy
-from task_generator.constants.runtime import Config
 from task_generator.shared import PositionOrientation
 from task_generator.tasks import TaskMode
 
@@ -55,10 +53,8 @@ class TM_Robots(TaskMode):
             bool: True if all robots are done, False otherwise.
 
         """
-        if (self._PROPS.clock.clock.sec - self._last_reset) > Config.Robot.TIMEOUT:
-            rospy.logwarn(f"REACHED {Config.Robot.TIMEOUT}")
+        if (self._PROPS.clock.clock.sec - self._last_reset) \
+                > self.node.conf.Robot.TIMEOUT.value:
             return True
-        
+
         return all(robot.is_done for robot in self._PROPS.robot_managers)
-
-
