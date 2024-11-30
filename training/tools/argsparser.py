@@ -31,8 +31,6 @@ def training_args(parser):
     )
     group = parser.add_mutually_exclusive_group(required=True)
 
-    import rosnav.model.custom_policy
-    import rosnav.model.custom_sb3_policy
     from rosnav.model.agent_factory import AgentFactory
 
     group.add_argument(

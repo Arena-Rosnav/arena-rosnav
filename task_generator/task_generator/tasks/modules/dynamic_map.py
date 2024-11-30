@@ -1,17 +1,11 @@
-import os
 from typing import Dict
 
-from rclpy.publisher import Publisher
-from rclpy.subscription import Subscription
-from rclpy.service import Service
 from rclpy.callback_groups import ReentrantCallbackGroup
-from rclpy.executors import MultiThreadedExecutor
 from std_msgs.msg import String
 from nav_msgs.msg import OccupancyGrid
 from rcl_interfaces.msg import SetParametersResult
 
 from task_generator import NodeInterface
-from task_generator.constants import Constants
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.utils import WorldMap
 from task_generator.task_generator.shared import rosparam_set
@@ -135,7 +129,7 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
 
         self.__task_reset_pub.publish(String())
 
-    PARAM_MAP_FILE = "map_file"
+    PARAM_MAP_FILE = "world"
     PARAM_EPISODES = "dynamic_map.curr_eps"
     PARAM_GENERATOR = "generator"
     PARAM_GENERATOR_CONFIGS = "generator_configs"

@@ -1,4 +1,3 @@
-import functools
 import typing
 import abc
 import rclpy
@@ -56,6 +55,7 @@ class ROSParamServer(rclpy.node.Node):
             *,
             parse: typing.Optional[typing.Callable[[
                 typing.Any], T]] = None,
+            **kwargs,
         ) -> None:
             self._name = name
 
@@ -63,9 +63,9 @@ class ROSParamServer(rclpy.node.Node):
                 parse = self.identity
             self._from_param = parse
 
-            self._parameter_value = value
-            self._value = parse(self._parameter_value)
-            self._node.register_param(self)
+            self._node.register_param(self, value, **kwargs)
+            # self._parameter_value = value
+            # self._value = parse(self._parameter_value)
 
         @property
         def name(self) -> str:
@@ -101,22 +101,17 @@ class ROSParamServer(rclpy.node.Node):
         typing.Set[typing.Callable[[typing.Any], bool]]
     ]
 
-    @property
-    def ROSParam(self) -> typing.Type["_ROSParam"]:
-        class ROSParam[T](self._ROSParam[T]):
-            _node = self
-        return ROSParam
+    def register_param(self, param: _ROSParam, value: typing.Any, **kwargs):
 
-    def register_param(self, param: _ROSParam):
-        if param.name not in self.__callbacks:
-            self.__callbacks[param.name] = set()
+        parameter_known = param.name in self.__callbacks
 
+        self.__callbacks.setdefault(param.name, set()).add(param.callback)
+
+        if not parameter_known:
             try:
-                self.declare_parameter(param.name, param.param)
+                self.declare_parameter(param.name, value, **kwargs)
             except rclpy.exceptions.ParameterAlreadyDeclaredException:
                 pass
-
-        self.__callbacks[param.name].add(param.callback)
 
     def _callback(self, params):
         successful = True
@@ -125,20 +120,55 @@ class ROSParamServer(rclpy.node.Node):
                 successful &= callback(param.value)
         return rcl_interfaces.msg.SetParametersResult(successful=successful)
 
-    def rosparam_get[T](
-        self,
-        param_name: str,
-        default: typing.Optional[T]
-    ) -> T:
+    @property
+    def ROSParam(self) -> typing.Type["_ROSParam"]:
         """
-        Get typed ros parameter (strict)
-        @param_name: Name of parameter on parameter server
-        @default: Default value. Raise ValueError is default is unset and parameter can't be found.
+        Typed ROS2 parameter class with callbacks.
         """
-        return self.get_parameter_or(
-            param_name, DefaultParameter(default)
-        ).value
+        class ROSParam[T](self._ROSParam[T]):
+            _node = self
+        return ROSParam
+
+    class rosparam[T]:
+        """
+        Light-weight stateless interface for singular typed rosparam actions (short-lived).
+        Runtime checks are not performed.
+        Use ROSParam instead for most use cases.
+        """
+
+        _node: "ROSParamServer"
+
+        class _unspecified(object):
+            ...
+
+        @classmethod
+        def get(cls, param_name: str,
+                default: "T | typing.Type[_unspecified]" = _unspecified) -> T:
+            """
+            Get value of parameter.
+            """
+
+            value = cls._node.get_parameter_or(
+                param_name, DefaultParameter(default)
+            ).value
+            if value is cls._unspecified:
+                raise ValueError(
+                    f'parameter {param_name} is unset and no default passed'
+                )
+
+            return value
+
+        @classmethod
+        def set(cls, param_name: str, value: T) -> bool:
+            """
+            Set value of parameter.
+            """
+
+            return cls._node.set_parameters([
+                rclpy.parameter.Parameter(param_name, value=value)
+            ])[0].successful
 
     def __init__(self):
+        self.rosparam._node = self
         self.__callbacks = {}
         self.add_on_set_parameters_callback(self._callback)

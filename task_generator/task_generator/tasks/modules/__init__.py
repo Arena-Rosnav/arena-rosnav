@@ -1,4 +1,4 @@
-from task_generator.tasks import Reconfigurable, Task, TaskMode
+from task_generator.tasks import Task, TaskMode
 
 
 class TM_Module(TaskMode):

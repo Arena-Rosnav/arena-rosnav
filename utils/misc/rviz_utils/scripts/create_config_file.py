@@ -3,7 +3,6 @@ import rospkg
 import rostopic
 import os
 import re
-import numpy as np
 import subprocess
 from rviz_utils.config import Config
 from rviz_utils.matchers import Matcher

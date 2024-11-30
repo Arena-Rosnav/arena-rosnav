@@ -1,6 +1,5 @@
 import dataclasses
 import functools
-import json
 import math
 import time
 
@@ -28,7 +27,6 @@ from task_generator.shared import (
     DynamicObstacle,
     Model,
     ModelType,
-    Namespace,
     Obstacle,
     PositionOrientation,
     Robot,
@@ -38,7 +36,6 @@ from task_generator.simulators.flatland_simulator import FlatlandSimulator
 from typing import Callable, List
 
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
-from task_generator.shared import rosparam_get
 import task_generator.utils.arena as Utils
 
 from task_generator.utils.geometry import quaternion_from_euler, euler_from_quaternion

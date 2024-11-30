@@ -2,13 +2,10 @@ import os
 from typing import List, Optional
 
 from ament_index_python.packages import get_package_share_directory
-from task_generator.constants import Constants
-from task_generator.constants.runtime import Configuration
 from task_generator.shared import DynamicObstacle, ModelWrapper, Namespace, Obstacle
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 
-import rclpy
 from rcl_interfaces.msg import SetParametersResult
 
 import dataclasses
@@ -112,7 +109,7 @@ class TM_Parametrized(TM_Obstacles):
         # Create static obstacles
         for config in self._config.STATIC:
             for i in range(
-                self.node.Configuration.General.RNG.value.integers(
+                self.node.conf.General.RNG.value.integers(
                     config.min,
                     config.max,
                     endpoint=True
@@ -129,7 +126,7 @@ class TM_Parametrized(TM_Obstacles):
         # Create interactive obstacles
         for config in self._config.INTERACTIVE:
             for i in range(
-                self.node.Configuration.General.RNG.value.integers(
+                self.node.conf.General.RNG.value.integers(
                     config.min,
                     config.max,
                     endpoint=True
@@ -146,7 +143,7 @@ class TM_Parametrized(TM_Obstacles):
         # Create dynamic obstacles
         for config in self._config.DYNAMIC:
             for i in range(
-                self.node.Configuration.General.RNG.value.integers(
+                self.node.conf.General.RNG.value.integers(
                     config.min,
                     config.max,
                     endpoint=True

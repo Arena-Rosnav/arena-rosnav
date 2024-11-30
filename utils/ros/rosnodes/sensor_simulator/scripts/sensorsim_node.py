@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
-from visualization_msgs.msg import MarkerArray
-import rosnode
 import rospy
 
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import  Point, Twist
-from std_msgs.msg import ColorRGBA
 from ford_msgs.msg import Clusters
 
 import copy

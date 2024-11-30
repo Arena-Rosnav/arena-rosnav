@@ -8,7 +8,7 @@ import rclpy
 
 from task_generator import NodeInterface
 import task_generator.utils.arena as Utils
-from task_generator.utils.geometry import quaternion_from_euler
+from task_generator.utils.geometry import angle_diff, quaternion_from_euler
 from task_generator.constants import Constants
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
@@ -62,9 +62,9 @@ class RobotManager(NodeInterface):
 
         # Parameter handling
         try:
-            self._goal_tolerance_distance = self.node.Configuration.Robot.GOAL_TOLERANCE_RADIUS.value
-            self._goal_tolerance_angle = self.node.Configuration.Robot.GOAL_TOLERANCE_ANGLE.value
-            self._safety_distance = self.node.Configuration.Robot.SPAWN_ROBOT_SAFE_DIST.value
+            self._goal_tolerance_distance = self.node.conf.Robot.GOAL_TOLERANCE_RADIUS.value
+            self._goal_tolerance_angle = self.node.conf.Robot.GOAL_TOLERANCE_ANGLE.value
+            self._safety_distance = self.node.conf.Robot.SPAWN_ROBOT_SAFE_DIST.value
         except Exception as e:
             # Fallback values
             self._goal_tolerance_distance = 1.0
@@ -109,7 +109,10 @@ class RobotManager(NodeInterface):
 
         self._launch_robot()
 
-        self._robot_radius = self.node.rosparam_get('robot_radius', 0.25)
+        self._robot_radius = self.node.rosparam[float].get(
+            'robot_radius',
+            0.25
+        )
 
         self._clear_costmaps_srv = self.node.create_client(
             std_srvs.Empty, self.namespace("move_base", "clear_costmaps"))
@@ -183,12 +186,11 @@ class RobotManager(NodeInterface):
         start = self._position
         goal = self._goal_pos
 
-        distance_to_goal: float = np.linalg.norm(
-            np.array(goal[:2]) - np.array(start[:2])
-        )
+        distance_to_goal: float = float(np.linalg.norm(
+            np.array([goal.x, goal.y]) - np.array([start.x, start.y])
+        ).flat[0])
 
-        angle_to_goal: float = np.pi - \
-            np.abs(np.abs(goal[2] - start[2]) - np.pi)
+        angle_to_goal: float = angle_diff(goal.orientation, start.orientation)
 
         return (
             distance_to_goal < self._goal_tolerance_distance
@@ -219,8 +221,14 @@ class RobotManager(NodeInterface):
             launch_description = launch.LaunchDescription()
 
             launch_arguments = {
-                'SIMULATOR': Utils.get_simulator().value,
-                'model': self.model_name,
+                'robot_path': os.path.join(
+                    Utils.get_simulation_setup_path(),
+                    'entities',
+                    'robots',
+                    self.model_name,
+                ),
+                'world_path': self.node.conf.Arena.get_world_path(),
+                'simulator': self.node.conf.Arena.SIMULATOR.value.value,
                 'name': self.name,
                 'namespace': self.namespace,
                 'frame': f"{self.name}/" if self.name else '',
@@ -249,10 +257,7 @@ class RobotManager(NodeInterface):
                     launch_arguments=launch_arguments.items(),
                 )
             )
-
-            self.launch_service = launch.launch_service.LaunchService()
-            self.launch_service.include_launch_description(launch_description)
-            self.launch_service.run()
+            self.node.do_launch(launch_description)
 
         # TODO
         # base_frame: str = self.node.get_parameter_or(self.namespace("robot_base_frame"), DefaultParameter('')).value

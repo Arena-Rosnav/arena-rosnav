@@ -1,4 +1,3 @@
-from task_generator.constants import Constants
 from task_generator.tasks.modules import TM_Module
 
 class Mod_ClearForbiddenZones(TM_Module):

@@ -1,40 +1,52 @@
-#!/usr/bin/env python3
+# Copyright 2024 Open Source Robotics Foundation, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-import rclpy
-from rclpy.node import Node
-from ros_gz_interfaces.srv import DeleteEntity  # Import the correct service type
-import sys
+#taken from official ros_gz_sim
 
-class DeleteEntityClient(Node):
-    def __init__(self):
-        super().__init__('delete_entity_client')
-        self.client = self.create_client(DeleteEntity, '/world/default/remove')  # Correct service name
-        while not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service not available, waiting...')
-        self.get_logger().info('Service is now available.')
+"""Launch remove models in gz sim."""
 
-    def delete_entity(self, entity_name):
-        request = DeleteEntity.Request()
-        request.name = entity_name  # Set the entity name in the request
-        future = self.client.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
-        if future.result() is not None:
-            if future.result().success:
-                self.get_logger().info(f"Deleted entity: {entity_name}")
-            else:
-                self.get_logger().error(f"Failed to delete entity: {entity_name}. Reason: {future.result().reason}")
-        else:
-            self.get_logger().error("Service call failed")
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration, TextSubstitution
+from launch_ros.actions import Node
 
-def main(args=None):
-    if args is None:
-        args = sys.argv[1:]  # Use sys.argv to get command line arguments
 
-    rclpy.init(args=args)
-    entity_name = args[0] if args else 'box_0'  # Default to 'box_0' if no argument provided
-    node = DeleteEntityClient()
-    node.delete_entity(entity_name)
-    rclpy.shutdown()
+def generate_launch_description():
 
-if __name__ == '__main__':
-    main()
+    world = LaunchConfiguration('world')
+    entity_name = LaunchConfiguration('entity_name')
+
+    declare_world_cmd = DeclareLaunchArgument(
+        'world', default_value=TextSubstitution(text=''),
+        description='World name')
+    declare_entity_name_cmd = DeclareLaunchArgument(
+        'entity_name', default_value=TextSubstitution(text=''),
+        description='SDF filename')
+
+    remove = Node(
+        package='ros_gz_sim',
+        executable='remove',
+        output='screen',
+        parameters=[{'world': world, 'entity_name': entity_name}],
+    )
+
+    # Create the launch description and populate
+    ld = LaunchDescription()
+
+    # Declare the launch options
+    ld.add_action(declare_world_cmd)
+    ld.add_action(declare_entity_name_cmd)
+    ld.add_action(remove)
+
+    return ld

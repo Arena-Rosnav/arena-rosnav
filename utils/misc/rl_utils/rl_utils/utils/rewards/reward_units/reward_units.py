@@ -4,7 +4,7 @@ from warnings import warn
 
 import numpy as np
 import rospy
-from rl_utils.utils.observation_collector.constants import DONE_REASONS, OBS_DICT_KEYS
+from rl_utils.utils.observation_collector.constants import DONE_REASONS
 
 from ..constants import DEFAULTS, REWARD_CONSTANTS
 from ..reward_function import RewardFunction

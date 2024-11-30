@@ -1,14 +1,13 @@
 #! /usr/bin/env python
 from std_msgs.msg import Int16
-from geometry_msgs.msg import Point, Quaternion, PoseStamped, PoseWithCovarianceStamped
-from geometry_msgs.msg import Twist, Vector3
+from geometry_msgs.msg import Point
+from geometry_msgs.msg import Vector3
 import rospy
 from nav_msgs.msg import Odometry
-from tf.transformations import *
 import tf2_ros
 
 # viz
-from visualization_msgs.msg import Marker, MarkerArray
+from visualization_msgs.msg import Marker
 from std_msgs.msg import ColorRGBA
 
 color_dict = {

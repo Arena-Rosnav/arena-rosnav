@@ -1,10 +1,9 @@
-from numpy import full
 import rospy
 
 from task_generator.shared import Namespace, rosparam_get
 from task_generator.manager.utils import WorldWalls
 from tf.transformations import quaternion_from_euler
-from task_generator.constants import Constants, UnityConstants
+from task_generator.constants import UnityConstants
 from task_generator.constants.runtime import Configuration
 from task_generator.simulators import BaseSimulator
 
@@ -98,8 +97,8 @@ class UnitySimulator(BaseSimulator):
         # send coordinates in the normal ROS refrence frame (FLU)
         request.initial_pose = Pose(
             position=Point(
-                x=entity.position[0],
-                y=entity.position[1],
+                x=entity.position.x,
+                y=entity.position.y,
                 z=0.35
             ),
             orientation=Quaternion(
