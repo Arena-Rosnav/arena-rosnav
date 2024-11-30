@@ -147,8 +147,8 @@ class Task(Props_):
     ):
         raise NotImplementedError()
 
-    def reset(self, **kwargs) -> bool:
-        return False
+    def reset(self, **kwargs) -> None:
+        ...
 
     @property
     def is_done(self) -> bool:

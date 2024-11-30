@@ -13,6 +13,9 @@ import rclpy
 import rclpy.node
 import yaml
 from ament_index_python.packages import get_package_share_directory
+from task_generator.utils.geometry import euler_from_quaternion
+
+import geometry_msgs.msg as geometry_msgs
 
 _node: rclpy.node.Node
 
@@ -140,6 +143,22 @@ class PositionOrientation(Posisiton):
     2D position with 2D yaw
     """
     orientation: float = attr.field(converter=float)
+
+    @classmethod
+    def from_pose(
+        cls,
+        pose: geometry_msgs.Pose
+    ) -> typing.Self:
+        return cls(
+            x=pose.position.x,
+            y=pose.position.y,
+            orientation=euler_from_quaternion(
+                x=pose.orientation.x,
+                y=pose.orientation.y,
+                z=pose.orientation.z,
+                w=pose.orientation.w
+            )[2]
+        )
 
 
 PositionRadius = collections.namedtuple("PositionRadius", ("x", "y", "radius"))

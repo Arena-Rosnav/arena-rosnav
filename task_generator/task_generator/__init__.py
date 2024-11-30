@@ -1,5 +1,7 @@
+import typing
 from .utils.ros_params import ROSParamServer
 import rclpy
+import launch
 
 
 class NodeInterface:
@@ -11,10 +13,12 @@ class NodeInterface:
         ...
 
 
-def init_task_gen_node(args=None) -> ROSParamServer:
+def init_task_gen_node(
+    do_launch: typing.Callable[[launch.LaunchDescription], None],
+) -> ROSParamServer:
 
     from .node import TaskGenerator
-    NodeInterface.node = TaskGenerator()
+    NodeInterface.node = TaskGenerator(do_launch=do_launch)
 
     # TODO deprecate
     from .shared import configure_node

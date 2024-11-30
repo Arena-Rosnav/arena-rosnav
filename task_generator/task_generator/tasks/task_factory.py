@@ -94,11 +94,11 @@ class TaskFactory:
 
             def __init__(
                 self,
+                *args,
                 obstacle_manager: ObstacleManager,
                 robot_managers: typing.List[RobotManager],
                 world_manager: WorldManager,
                 namespace: str = "",
-                *args,
                 **kwargs,
             ):
                 """

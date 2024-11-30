@@ -2,12 +2,14 @@ import dataclasses
 import os
 import traceback
 from typing import Dict, List
+import typing
 
 import numpy as np
 
 import rclpy
 import rclpy.node
 import rclpy.executors
+import launch
 
 import yaml
 from ament_index_python.packages import get_package_share_directory
@@ -96,10 +98,20 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
 
     _initialized: bool
 
-    def __init__(self, namespace: str = ""):
+    do_launch: typing.Callable[[launch.LaunchDescription], None]
+
+    def __init__(
+        self,
+        namespace: str = "",
+        *,
+        do_launch: typing.Callable[[launch.LaunchDescription], None]
+
+    ):
         rclpy.node.Node.__init__(self, 'task_generator')
         ROSParamServer.__init__(self)
         self.conf = Configuration(self)
+
+        self.do_launch = do_launch
         self._namespace = Namespace(namespace)
 
         # Declare all parameters
@@ -168,7 +180,6 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
         #     self.get_logger().info('start_model_visualization service not available, waiting again...')
         # self.srv_start_model_visualization.call_async(EmptySrv.Request())
 
-        self._get_predefined_task()
         self.reset_task(first_map=True)
 
         # try:
@@ -251,7 +262,7 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
 
         tm_modules = self.conf.TaskMode.TM_MODULES.value
         tm_modules.append(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
-        # tm_modules.append(Constants.TaskMode.TM_Module.RVIZ_UI)
+        tm_modules.append(Constants.TaskMode.TM_Module.RVIZ_UI)
 
         if self.conf.Arena.WORLD.value == "dynamic_map":
             tm_modules.append(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
@@ -328,7 +339,7 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
 
         self.get_logger().info("resetting")
 
-        is_end = self._task.reset(callback=lambda: False, **kwargs)
+        self._task.reset(callback=lambda: False, **kwargs)
 
         self._pub_scenario_reset.publish(Int16(data=self._number_of_resets))
         self._number_of_resets += 1
