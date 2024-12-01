@@ -1,8 +1,6 @@
 import os
-import sys
 
 import launch
-import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
 
 
@@ -128,7 +126,7 @@ def generate_launch_description():
         launch.actions.DeclareLaunchArgument(
             name='use_sim_time',
             default_value='true',
-            description='Use simulation (Gazebo) clock if true'
+            description='Use simulation clock if true'
         ),
         launch.actions.DeclareLaunchArgument(
             name='random_spawn_test',

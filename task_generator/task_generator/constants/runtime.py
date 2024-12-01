@@ -1,9 +1,13 @@
+import os
 import typing
 
 import numpy as np
 from task_generator.utils.ros_params import ROSParamServer
 
 from . import Constants
+from ..utils.arena import get_simulation_setup_path
+
+import rclpy
 
 
 def Configuration(server: ROSParamServer):
@@ -11,10 +15,49 @@ def Configuration(server: ROSParamServer):
     def _positive_or_inf(v: typing.Any) -> float:
         return v if v >= 0 else float('inf')
 
-    class TaskConfig:
+    class Config:
         """
         Combined Task Config
         """
+
+        class Arena:
+            """
+            Formerly arena.py.
+            """
+
+            SIMULATOR = server.ROSParam[Constants.Simulator](
+                'simulator',
+                Constants.Simulator.DUMMY.value,
+                parse=Constants.Simulator
+            )
+
+            WORLD = server.ROSParam[str](
+                'world',
+                rclpy.parameter.Parameter.Type.STRING,
+            )
+
+            @classmethod
+            def get_world_path(cls) -> str:
+                """
+                Get absolute path of current world directory.
+                """
+                return os.path.join(
+                    get_simulation_setup_path(),
+                    'worlds',
+                    cls.WORLD.value,
+                )
+
+            WORLD = server.ROSParam[str](
+                'world',
+                'map_empty'
+            )
+
+            ENTITY_MANAGER = server.ROSParam[Constants.EntityManager](
+                'entity_manager',
+                Constants.EntityManager.DUMMY.value,
+                parse=Constants.EntityManager
+            )
+
         class General:
             """
             General Task Configuration
@@ -81,7 +124,7 @@ def Configuration(server: ROSParamServer):
                     Constants.TaskMode.TM_Module(m) for m in x.split(',') if m != '']
             )
 
-    return TaskConfig
+    return Config
 
 
 # def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:

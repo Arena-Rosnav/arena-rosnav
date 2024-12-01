@@ -1,27 +1,21 @@
 from __future__ import annotations
-from ament_index_python.packages import get_package_share_directory
-import yaml
-import enum
+
 import collections
-import typing
-from geometry_msgs.msg import Pose, Twist, Point
 import dataclasses
+import enum
 import os
-from typing import (
-    Callable,
-    Collection,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    overload,
-)
+import typing
+from typing import (Callable, Collection, Dict, Iterable, List, Optional,
+                    Tuple, Type, TypeVar, overload)
+
+import attr
 import rclpy
 import rclpy.node
+import yaml
+from ament_index_python.packages import get_package_share_directory
+from task_generator.utils.geometry import euler_from_quaternion
+
+import geometry_msgs.msg as geometry_msgs
 
 _node: rclpy.node.Node
 
@@ -38,6 +32,7 @@ def rosparam_get(
     cast: Type[T], param_name: str, default: typing.Optional[T]
 ) -> T:
     """
+    # TODO deprecate in favor of ROSParamServer.rosparam[T].get
     Get typed ros parameter (strict)
     @cast: Return type of function
     @param_name: Name of parameter on parameter server
@@ -62,6 +57,9 @@ def rosparam_get(
 def rosparam_set(
     param_name: str, value: typing.Any
 ) -> bool:
+    """
+    # TODO deprecate in favor of ROSParamServer.rosparam[T].set
+    """
     global _node
     return _node.set_parameters(
         [rclpy.parameter.Parameter(param_name, value=value)])[0].successful
@@ -129,9 +127,39 @@ class Model:
 
 Position = collections.namedtuple("Position", ("x", "y"))
 
-PositionOrientation = collections.namedtuple(
-    "PositionOrientation", ("x", "y", "orientation")
-)
+
+@attr.frozen()
+class Posisiton:
+    """
+    2D position
+    """
+    x: float = attr.field(converter=float)
+    y: float = attr.field(converter=float)
+
+
+@attr.frozen()
+class PositionOrientation(Posisiton):
+    """
+    2D position with 2D yaw
+    """
+    orientation: float = attr.field(converter=float)
+
+    @classmethod
+    def from_pose(
+        cls,
+        pose: geometry_msgs.Pose
+    ) -> typing.Self:
+        return cls(
+            x=pose.position.x,
+            y=pose.position.y,
+            orientation=euler_from_quaternion(
+                x=pose.orientation.x,
+                y=pose.orientation.y,
+                z=pose.orientation.z,
+                w=pose.orientation.w
+            )[2]
+        )
+
 
 PositionRadius = collections.namedtuple("PositionRadius", ("x", "y", "radius"))
 

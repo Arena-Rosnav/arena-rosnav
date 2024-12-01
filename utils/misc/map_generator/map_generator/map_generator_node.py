@@ -2,7 +2,6 @@
 import subprocess
 from typing import List
 
-import map_generator
 import numpy as np
 import rospy
 from map_generator.base_map_gen import BaseMapGenerator

@@ -7,7 +7,7 @@ import traceback
 from task_generator.utils.geometry import quaternion_from_euler
 from task_generator.simulators import BaseSimulator
 
-from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
+from task_generator.shared import Namespace, PositionOrientation, RobotProps
 
 
 class GazeboSimulator(BaseSimulator):

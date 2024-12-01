@@ -3,12 +3,10 @@ import json
 import os
 from typing import List
 
-from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Constants
-from task_generator.shared import DynamicObstacle, Obstacle, rosparam_get
+from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 
-import rclpy
 from rcl_interfaces.msg import SetParametersResult
 
 
@@ -45,14 +43,10 @@ class TM_Scenario(TM_Obstacles):
     def reconfigure(self, config):
         scenario_file = config['SCENARIO_file']
 
-        package_share_directory = get_package_share_directory(
-            'simulation-setup')
-        map_file = self.node.get_parameter('map_file').value
+        map_file = self.node.conf.Arena.WORLD.value
 
         scenario_path = os.path.join(
-            package_share_directory,
-            "worlds",
-            map_file,
+            self.node.conf.Arena.get_world_path(),
             "scenarios",
             scenario_file
         )

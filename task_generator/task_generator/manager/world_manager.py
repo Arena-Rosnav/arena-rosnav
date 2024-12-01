@@ -169,7 +169,7 @@ class WorldManager(NodeInterface):
 
             # Select a random cell
             x, y = possible_cells.pop(
-                self.node.Configuration.General.RNG.integers(
+                self.node.conf.General.RNG.integers(
                     len(possible_cells)))
 
             # Check if valid
@@ -270,7 +270,7 @@ class WorldManager(NodeInterface):
                         if to_produce > len(available_positions):
                             raise RuntimeError()
 
-                        candidates = available_positions[self.node.Configuration.General.RNG.choice(
+                        candidates = available_positions[self.node.conf.General.RNG.choice(
                             len(available_positions), to_produce, replace=False), :]
 
                         for candidate in candidates:

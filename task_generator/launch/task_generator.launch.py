@@ -1,99 +1,72 @@
-import os
-import sys
 
 import launch
 import launch_ros.actions
 
 
+class LaunchArgument(launch.actions.DeclareLaunchArgument):
+    @property
+    def substitution(self):
+        return launch.substitutions.LaunchConfiguration(self.name)
+
+    @property
+    def parameter(self):
+        return {self.name: self.substitution}
+
+
 def generate_launch_description():
+
+    simulator = LaunchArgument(
+        name='simulator',
+        description='[dummy, gazebo]'
+    )
+    entity_manager = LaunchArgument(
+        name='entity_manager',
+        description='[dummy]'
+    )
+    robot = LaunchArgument(
+        name='robot',
+        description='robot type [burger, jackal, ridgeback, agvota, rto, ...]'
+    )
+
+    tm_robots = LaunchArgument(
+        name='tm_robots',
+    )
+    tm_obstacles = LaunchArgument(
+        name='tm_obstacles',
+    )
+    tm_modules = LaunchArgument(
+        name='tm_modules',
+    )
+
+    world = LaunchArgument(
+        name='world',
+    )
+
+    task_generator_node = launch_ros.actions.Node(
+        package='task_generator',
+        executable='task_generator_node',
+        name='task_generator_node',
+        output='screen',
+        parameters=[{
+                **simulator.parameter,
+                **entity_manager.parameter,
+                **robot.parameter,
+                **tm_robots.parameter,
+                **tm_obstacles.parameter,
+                **tm_modules.parameter,
+                **world.parameter,
+        }],
+    )
+
     ld = launch.LaunchDescription([
-        launch.actions.DeclareLaunchArgument(
-            name='simulator',
-            description='[dummy, gazebo]'
-        ),
-        launch_ros.actions.SetParameter(
-            name='simulator',
-            value=launch_ros.parameter_descriptions.ParameterValue(
-                launch.substitutions.LaunchConfiguration('simulator'),
-                value_type=str
-            )
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            name='entity_manager',
-            description='[dummy]'
-        ),
-        launch_ros.actions.SetParameter(
-            name='entity_manager',
-            value=launch_ros.parameter_descriptions.ParameterValue(
-                launch.substitutions.LaunchConfiguration('entity_manager'),
-                value_type=str
-            )
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            name='robot',
-            description='robot type [burger, jackal, ridgeback, agvota, rto, ...]'
-        ),
-        launch_ros.actions.SetParameter(
-            name='robot',
-            value=launch_ros.parameter_descriptions.ParameterValue(
-                launch.substitutions.LaunchConfiguration('robot'),
-                value_type=str
-            )
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            name='tm_robots',
-        ),
-        launch_ros.actions.SetParameter(
-            name='tm_robots',
-            value=launch_ros.parameter_descriptions.ParameterValue(
-                launch.substitutions.LaunchConfiguration('tm_robots'),
-                value_type=str
-            )
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            name='tm_obstacles',
-        ),
-        launch_ros.actions.SetParameter(
-            name='tm_obstacles',
-            value=launch_ros.parameter_descriptions.ParameterValue(
-                launch.substitutions.LaunchConfiguration('tm_obstacles'),
-                value_type=str
-            )
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            name='tm_modules',
-        ),
-        launch_ros.actions.SetParameter(
-            name='tm_modules',
-            value=launch_ros.parameter_descriptions.ParameterValue(
-                launch.substitutions.LaunchConfiguration('tm_modules'),
-                value_type=str
-            )
-        ),
-
-        launch.actions.DeclareLaunchArgument(
-            name='world',
-            description='world to load'
-        ),
-        launch_ros.actions.SetParameter(
-            name='world',
-            value=launch_ros.parameter_descriptions.ParameterValue(
-                launch.substitutions.LaunchConfiguration('world'),
-                value_type=str
-            )
-        ),
-
-        launch_ros.actions.Node(
-            package='task_generator',
-            executable='task_generator_node',
-            name='task_generator_node',
-            output='screen'
-        )
+        simulator,
+        entity_manager,
+        robot,
+        tm_robots,
+        tm_obstacles,
+        tm_modules,
+        world,
+        task_generator_node,
         # launch_ros.actions.Node(
         #     package='task_generator',
         #     executable='server',

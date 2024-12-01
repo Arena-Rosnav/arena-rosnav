@@ -11,7 +11,7 @@ def get_workspace_root():
     """Get the workspace root directory."""
     current_dir = os.path.abspath(__file__)
     workspace_root = current_dir
-    while not workspace_root.endswith('arena4_ws'):
+    while not workspace_root.endswith("arena4_ws"):
         workspace_root = os.path.dirname(workspace_root)
 
     if not workspace_root.endswith('arena4_ws'):

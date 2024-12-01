@@ -1,4 +1,3 @@
-from task_generator.constants.runtime import Configuration
 from task_generator.shared import PositionOrientation
 from task_generator.tasks import TaskMode
 
@@ -55,7 +54,7 @@ class TM_Robots(TaskMode):
 
         """
         if (self._PROPS.clock.clock.sec - self._last_reset) \
-                > self.node.Configuration.Robot.TIMEOUT.value:
+                > self.node.conf.Robot.TIMEOUT.value:
             return True
 
         return all(robot.is_done for robot in self._PROPS.robot_managers)

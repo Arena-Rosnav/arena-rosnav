@@ -38,7 +38,7 @@ fi
 # == python deps ==
 
 # pyenv
-if ! which pyenv ; then
+if [ ! -d "$HOME/.pyenv" ] ; then
   rm -rf "$HOME/.pyenv"
   curl https://pyenv.run | bash
   echo 'export PYENV_ROOT="$HOME/.pyenv"'                                 >> ~/.bashrc
@@ -128,9 +128,9 @@ sudo apt-get install -y \
     libasio-dev \
     libtinyxml2-dev \
     libcunit1-dev \
-    ros-dev-tools \
     libpcl-dev \
-    libboost-python-dev
+    libboost-python-dev \
+    python3-rosdep
 
 # Check if the default ROS sources.list file already exists
 ros_sources_list="/etc/ros/rosdep/sources.list.d/20-default.list"
@@ -163,12 +163,13 @@ if [ ! -f src/ros2/compiled ] ; then
   curl "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_DISTRO}/ros2.repos" > ros2.repos
   vcs import src/ros2 < ros2.repos
   
+  RTI_NC_LICENSE_ACCEPTED=yes \
   rosdep install \
     --from-paths src/ros2 \
     --ignore-src \
     --rosdistro "${ARENA_ROS_DISTRO}" \
     -y \
-    --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers" \
+    --skip-keys \
     || echo 'rosdep failed to install all dependencies'
 
   . src/arena/arena-rosnav/tools/colcon_build --paths src/ros2/*
@@ -217,7 +218,7 @@ compile(){
     --ignore-src \
     --rosdistro ${ARENA_ROS_DISTRO} \
     -y \
-    --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers  DART libogre-next-2.3-dev transforms3d" \
+    --skip-keys "transforms3d" \
     || echo 'rosdep failed to install all dependencies'
   cd "${ARENA_WS_DIR}"
   . colcon_build

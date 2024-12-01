@@ -50,7 +50,6 @@ class CollectorUnit(ABC):
         """
         Method to wait for observations.
         """
-        pass
 
     @abstractmethod
     def get_observations(
