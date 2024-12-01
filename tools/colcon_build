@@ -3,7 +3,7 @@
 export BUILD_EXCLUDES=""
 
 ARENA_WS_DIR="$(pwd)"
-ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-jazzy}
+ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-humble}
 
 source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
 colcon build \
