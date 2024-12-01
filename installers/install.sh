@@ -153,7 +153,7 @@ if [ ! -d src/deps ] ; then
     git clone --filter=tree:0 --depth 1 https://github.com/rudislabs/actuator_msgs.git
     git clone --filter=tree:0 --depth 1 https://github.com/swri-robotics/gps_umd.git -b ros2-devel
     git clone --filter=tree:0 --depth 1 https://github.com/ros-perception/vision_msgs.git -b ros2
-    git clone --filter=tree:0 --depth 1 https://github.com/ros-perception/vision_opencv.git -b rolling
+    git clone --filter=tree:0 --depth 1 https://github.com/ros-perception/vision_opencv.git -b humble
   popd
 fi
 
@@ -164,12 +164,12 @@ if [ ! -f src/ros2/compiled ] ; then
   curl "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_DISTRO}/ros2.repos" > ros2.repos
   vcs import src/ros2 < ros2.repos
   
+  RTI_NC_LICENSE_ACCEPTED=yes \
   rosdep install \
     --from-paths src/ros2 \
     --ignore-src \
     --rosdistro "${ARENA_ROS_DISTRO}" \
     -y \
-    --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers" \
     || echo 'rosdep failed to install all dependencies'
 
   # fix rosidl error that was caused upstream https://github.com/ros2/rosidl/issues/822#issuecomment-2403368061
@@ -218,7 +218,7 @@ compile(){
     --ignore-src \
     --rosdistro ${ARENA_ROS_DISTRO} \
     -y \
-    --skip-keys "console_bridge fastcdr fastrtps libopensplice67 libopensplice69 rti-connext-dds-5.3.1 urdfdom_headers  DART libogre-next-2.3-dev transforms3d" \
+    --skip-keys "transforms3d" \
     || echo 'rosdep failed to install all dependencies'
   cd "${ARENA_WS_DIR}"
   . colcon_build
