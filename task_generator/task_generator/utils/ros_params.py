@@ -21,12 +21,13 @@ class RosParam(abc.ABC):
         """
 
 
+T = typing.TypeVar('T')
 U = typing.TypeVar('U')
 
 
 class ROSParamServer(rclpy.node.Node):
 
-    class _ROSParam[T](RosParam, abc.ABC):
+    class _ROSParam(RosParam, abc.ABC, typing.Generic[T]):
         """
         Wrapper that handles callbacks.
         """
@@ -63,9 +64,9 @@ class ROSParamServer(rclpy.node.Node):
                 parse = self.identity
             self._from_param = parse
 
+            self._parameter_value = value
+            self._value = parse(self._parameter_value)
             self._node.register_param(self, value, **kwargs)
-            # self._parameter_value = value
-            # self._value = parse(self._parameter_value)
 
         @property
         def name(self) -> str:
@@ -125,11 +126,11 @@ class ROSParamServer(rclpy.node.Node):
         """
         Typed ROS2 parameter class with callbacks.
         """
-        class ROSParam[T](self._ROSParam[T]):
+        class ROSParam(self._ROSParam[T], typing.Generic[T]):
             _node = self
         return ROSParam
 
-    class rosparam[T]:
+    class rosparam(typing.Generic[T]):
         """
         Light-weight stateless interface for singular typed rosparam actions (short-lived).
         Runtime checks are not performed.

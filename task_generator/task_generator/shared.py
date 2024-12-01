@@ -283,8 +283,7 @@ class ModelWrapper:
                     return models[model_type]
             else:
                 raise LookupError(
-                    f"no matching model found for {
-                        name} (available: {list(models.keys())}, requested: {list(only)})"
+                    f"no matching model found for {name} (available: {list(models.keys())}, requested: {list(only)})"
                 )
 
         return ModelWrapper.bind(name, get)
