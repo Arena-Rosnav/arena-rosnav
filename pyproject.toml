@@ -9,7 +9,7 @@ authors = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.10"
 rospkg = "^1.4.0"
 PyYAML = "^6.0"
 filelock = "^3.7.1"
