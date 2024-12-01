@@ -63,9 +63,9 @@ class ROSParamServer(rclpy.node.Node):
                 parse = self.identity
             self._from_param = parse
 
+            self._parameter_value = value
+            self._value = parse(self._parameter_value)
             self._node.register_param(self, value, **kwargs)
-            # self._parameter_value = value
-            # self._value = parse(self._parameter_value)
 
         @property
         def name(self) -> str:
