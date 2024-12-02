@@ -53,6 +53,9 @@ def generate_launch_description():
             workspace_root, "src", "arena", "simulation-setup", "entities", "obstacles", "static"
         ),
         os.path.join(
+            workspace_root, "src", "arena", "simulation-setup", "entities", "obstacles", "robots"
+        ),
+        os.path.join(
             workspace_root,
             "src",
             "arena",

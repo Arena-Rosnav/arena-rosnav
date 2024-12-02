@@ -281,7 +281,7 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
     def _create_robot_managers(self) -> List[RobotManager]:
         # Read robot setup file
         robot_setup_file: str = self.rosparam[str].get('robot_setup_file')
-        robot_model: str = self.get_parameter('robot').value
+        robot_model: str = self.rosparam[str].get('robot')
 
         if robot_setup_file == "":
             robots = create_default_robot_list(
