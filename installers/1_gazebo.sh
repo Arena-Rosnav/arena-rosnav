@@ -43,10 +43,12 @@ if [ ! -d "${ARENA_WS_DIR}/src/gazebo" ]; then
 else
     echo "Directory ${ARENA_WS_DIR}/src/gazebo already exists."
 fi
-cd "${ARENA_WS_DIR}/src/gazebo"
-git clone https://github.com/gazebosim/ros_gz.git -b ros2
-cd "${ARENA_WS_DIR}"
-rosdep install -r --from-paths src -i -y --rosdistro rolling
+
+pushd "${ARENA_WS_DIR}/src/gazebo"
+  git clone https://github.com/gazebosim/ros_gz.git -b ros2
+popd
+
+rosdep install -r --from-paths src -i -y --rosdistro ${ARENA_ROS_DISTRO} 
 
 
 echo "Gazebo ${GAZEBO_VERSION} and ROS-Gazebo bridge installed successfully!"
