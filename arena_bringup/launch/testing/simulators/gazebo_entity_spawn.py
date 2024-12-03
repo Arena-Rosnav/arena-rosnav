@@ -50,7 +50,7 @@ def create_sdf_string(agent_name: str, agent_config: dict) -> str:
     workspace_root = get_workspace_root()
     mesh_path = os.path.join(
         workspace_root,
-        'src/deps/hunav_gazebo_wrapper/media/models',
+        'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/models',
         skin_type
     )
     
