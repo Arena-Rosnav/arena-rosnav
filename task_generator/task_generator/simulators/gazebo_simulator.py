@@ -103,7 +103,7 @@ class GazeboSimulator(BaseSimulator):
         launch_description = launch.LaunchDescription()
 
         try:
-            description = entity.model.get().description
+            description = entity.model.get(ModelType.URDF).description
         except FileNotFoundError:
             return True
 
