@@ -5,6 +5,7 @@ import dataclasses
 import math
 from typing import Dict, List, Optional
 from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, PositionOrientation, PositionRadius
+from task_generator import NodeInterface
 from task_generator.tasks import Props_
 
 
@@ -16,6 +17,7 @@ class ITF_Obstacle:
     @classmethod
     def create_dynamic_obstacle(
         cls,
+        node: NodeInterface.Taskgen_T,
         props: Props_,
         waypoints: Optional[List[PositionRadius]] = None,
         n_waypoints: int = 2,
@@ -30,7 +32,7 @@ class ITF_Obstacle:
         @extra: (optional) Extra properties to store
         """
 
-        setup = cls.create_obstacle(props, **kwargs)
+        setup = cls.create_obstacle(node, props, **kwargs)
 
         if waypoints is None:
 
@@ -39,10 +41,14 @@ class ITF_Obstacle:
 
             waypoints += [
                 PositionRadius(
-                    *pos,
-                    1) for pos in props.world_manager.get_positions_on_map(
+                    *pos, 1
+                )
+                for pos
+                in props.world_manager.get_positions_on_map(
                     n=n_waypoints,
-                    safe_dist=safe_distance)]
+                    safe_dist=safe_distance
+                )
+            ]
 
         return DynamicObstacle.parse(
             {
@@ -55,6 +61,7 @@ class ITF_Obstacle:
     @classmethod
     def create_obstacle(
         cls,
+        node: NodeInterface.Taskgen_T,
         props: Props_,
         name: str,
         model: ModelWrapper,
@@ -75,7 +82,7 @@ class ITF_Obstacle:
         if position is None:
             point = props.world_manager.get_position_on_map(safe_distance)
             position = PositionOrientation(
-                point.x, point.y, self.node.conf.General.RNG.value.random() * 2 * math.pi)
+                point.x, point.y, node.conf.General.RNG.value.random() * 2 * math.pi)
 
         if extra is None:
             extra = dict()

@@ -15,14 +15,7 @@ colcon build \
     $@
 
 cd $ARENA_WS_DIR
+if [ -f "/opt/ros/${ARENA_ROS_DISTRO}/setup.bash" ] ; then
+    . "/opt/ros/${ARENA_ROS_DISTRO}/setup.bash"
+fi
 source install/local_setup.bash
-
-for package in $(ls /opt/ros/${ARENA_ROS_DISTRO}/share/ 2>/dev/null  || echo '') ; do
-    setup_file="/opt/ros/${ARENA_ROS_DISTRO}/share/${package}/local_setup.bash"
-    install_setup_file="${ARENA_WS_DIR}/install/${package}/local_setup.bash"
-    if [ -f "$setup_file" ] ; then
-        if [ ! -f "$install_setup_file" ] ; then # avoid double sourcing
-            . "$setup_file"
-        fi
-    fi 
-done

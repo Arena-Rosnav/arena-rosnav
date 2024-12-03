@@ -1,12 +1,16 @@
 import typing
-from .utils.ros_params import ROSParamServer
-import rclpy
+
 import launch
+import rclpy
+import rclpy.node
+
+from .utils.ros_params import ROSParamServer
 
 
 class NodeInterface:
     class Taskgen_T(ROSParamServer, rclpy.node.Node):
         ...
+
     node: Taskgen_T
 
     def __init__(self) -> None:

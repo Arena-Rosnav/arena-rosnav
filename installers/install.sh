@@ -129,9 +129,9 @@ sudo apt-get install -y \
     libasio-dev \
     libtinyxml2-dev \
     libcunit1-dev \
-    ros-dev-tools \
     libpcl-dev \
-    libboost-python-dev
+    libboost-python-dev \
+    python3-rosdep
 
 # Check if the default ROS sources.list file already exists
 ros_sources_list="/etc/ros/rosdep/sources.list.d/20-default.list"
