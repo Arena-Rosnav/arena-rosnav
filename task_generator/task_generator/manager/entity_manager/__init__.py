@@ -126,7 +126,7 @@ def dummy():
         def spawn_robot(self, robot: Robot):
             self.__logger.debug(f'spawning robot {robot.name}')
             self._simulator.spawn_entity(robot)
-        
+
         def remove_robot(self, name: str):
             self.__logger.debug(f'removing robot {name}')
             self._simulator.delete_entity(name)

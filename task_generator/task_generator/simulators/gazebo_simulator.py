@@ -32,6 +32,7 @@ class GazeboSimulator(BaseSimulator):
             self._namespace("goal"),
             10
         )
+        self.entities = {}
 
     def before_reset_task(self):
         self.node.get_logger().info("Pausing simulation before reset")
@@ -64,6 +65,11 @@ class GazeboSimulator(BaseSimulator):
         return True
 
     def move_entity(self, name, position):
+        self.node.get_logger().info(
+            f"Attempting to move entity: {name}")
+        entity = self.entities[name]
+        self.delete_entity(name)
+        self.spawn_entity(entity, position)
         return True
         self.node.get_logger().info(
             f"Moving entity {name} to position: {position}")
@@ -96,7 +102,7 @@ class GazeboSimulator(BaseSimulator):
             traceback.print_exc()
             return False
 
-    def spawn_entity(self, entity):
+    def spawn_entity(self, entity, position=None):
         self.node.get_logger().info(
             f"Attempting to spawn entity: {entity.name}")
 
@@ -106,7 +112,26 @@ class GazeboSimulator(BaseSimulator):
             description = entity.model.get(ModelType.URDF).description
         except FileNotFoundError:
             return True
-
+        
+        # Default parameters
+        parameters=[
+            {
+                "world": "default",
+                "string": launch_ros.parameter_descriptions.ParameterValue(description, value_type=str),
+                "name": launch_ros.parameter_descriptions.ParameterValue(entity.name, value_type=str),
+                "allow_renaming": False,
+                "topic": 'robot_description',
+            }
+        ]
+        # If Position is provided
+        if position is not None:
+            parameters.extend([
+                {
+                    "x": launch_ros.parameter_descriptions.ParameterValue(position.x, value_type=float),
+                    "y": launch_ros.parameter_descriptions.ParameterValue(position.y, value_type=float),
+                    "Y": launch_ros.parameter_descriptions.ParameterValue(position.orientation, value_type=float)
+                }
+            ])
         launch_description.add_action(
             launch_ros.actions.Node(
                 package="ros_gz_sim",
@@ -121,18 +146,10 @@ class GazeboSimulator(BaseSimulator):
                 #     '-y', '0',
                 #     '-z', '0',
                 # ],
-                parameters=[
-                    {
-                        "world": "default",
-                        "string": launch_ros.parameter_descriptions.ParameterValue(description, value_type=str),
-                        "name": launch_ros.parameter_descriptions.ParameterValue(entity.name, value_type=str),
-                        "allow_renaming": False,
-                        "topic": 'robot_description',
-                    }
-                ],
+                parameters=parameters,
             )
         )
-
+        self.entities[entity.name] = entity
         self.node.do_launch(launch_description)
 
         return True
@@ -221,7 +238,10 @@ class GazeboSimulator(BaseSimulator):
     def delete_entity(self, name: str):
         self.node.get_logger().info(
             f"Attempting to delete entity: {name}")
-
+        
+        if name in self.entities:
+            del self.entities[name]
+            
         launch_description = launch.LaunchDescription()
 
         launch_description.add_action(
