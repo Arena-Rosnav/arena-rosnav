@@ -79,7 +79,7 @@ class TM_Random(TM_Obstacles):
                 "N_DYNAMIC_OBSTACLES", [0, 0], parse=param_to_tuple),
 
             MODELS_STATIC_OBSTACLES=self.node.ROSParam[List[str]](
-                'MODELS_STATIC_OBSTACLES', 'chair;table;shelf', parse=functools.partial(param_to_modellist, self._PROPS.model_loader)),
+                'MODELS_STATIC_OBSTACLES', '', parse=functools.partial(param_to_modellist, self._PROPS.model_loader)),
             MODELS_INTERACTIVE_OBSTACLES=self.node.ROSParam[List[str]](
                 'MODELS_INTERACTIVE_OBSTACLES', '', parse=functools.partial(param_to_modellist, self._PROPS.model_loader)),
             MODELS_DYNAMIC_OBSTACLES=self.node.ROSParam[List[str]](
