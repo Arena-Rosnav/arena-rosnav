@@ -126,10 +126,10 @@ def dummy():
         def spawn_robot(self, robot: Robot):
             self.__logger.debug(f'spawning robot {robot.name}')
             self._simulator.spawn_entity(robot)
-            import time
-            time.sleep(10)
-            self.__logger.debug(f'removing robot {robot.name}')
-            self._simulator.delete_entity(robot.name)
+        
+        def remove_robot(self, name: str):
+            self.__logger.debug(f'removing robot {name}')
+            self._simulator.delete_entity(name)
 
         def move_robot(self, name: str, position: PositionOrientation):
             self.__logger.debug(

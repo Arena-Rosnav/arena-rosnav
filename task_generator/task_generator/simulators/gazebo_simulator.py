@@ -232,7 +232,7 @@ class GazeboSimulator(BaseSimulator):
                 parameters=[
                     {
                         "world": "default",
-                        "string": launch_ros.parameter_descriptions.ParameterValue(name, value_type=str),
+                        "entity_name": name,
                     }
                 ],
             )

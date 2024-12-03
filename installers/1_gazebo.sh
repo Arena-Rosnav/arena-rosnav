@@ -33,12 +33,17 @@ sudo apt-get update
 # Install Gazebo binaries and ROS-Gazebo bridge
 sudo apt-get install -y \
   gz-${GAZEBO_VERSION} \
-  ros-${ARENA_ROS_DISTRO}-ros-gz \
   libsdformat14-dev
 
 
 export GZ_VERSION=${GAZEBO_VERSION}
-cd "${ARENA_WS_DIR}/src"
+if [ ! -d "${ARENA_WS_DIR}/src/gazebo" ]; then
+    mkdir -p "${ARENA_WS_DIR}/src/gazebo"
+    echo "Directory ${ARENA_WS_DIR}/src/gazebo created."
+else
+    echo "Directory ${ARENA_WS_DIR}/src/gazebo already exists."
+fi
+cd "${ARENA_WS_DIR}/src/gazebo"
 git clone https://github.com/gazebosim/ros_gz.git -b ros2
 cd "${ARENA_WS_DIR}"
 rosdep install -r --from-paths src -i -y --rosdistro rolling
