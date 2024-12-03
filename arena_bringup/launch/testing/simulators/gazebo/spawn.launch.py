@@ -15,7 +15,6 @@ class LaunchArgument(launch.actions.DeclareLaunchArgument):
 
 def generate_launch_description():
     # Set environment variables
-
     name = LaunchArgument(
         name='name'
     )
@@ -41,8 +40,8 @@ def generate_launch_description():
         parameters=[
             {
                 "world": "default",
-                "string": name.substitution,
-                "name": description.substitution,
+                "string": description.substitution,
+                "name": name.substitution,
                 "allow_renaming": False,
                 "topic": 'robot_description',
             }
@@ -52,8 +51,8 @@ def generate_launch_description():
     # Return the LaunchDescription with all the nodes/actions
     return launch.LaunchDescription(
         [
-            name.parameter,
-            description.parameter,
+            name,
+            description,
             spawn_model,
         ]
     )

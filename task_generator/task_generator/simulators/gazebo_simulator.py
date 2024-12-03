@@ -109,7 +109,7 @@ class GazeboSimulator(BaseSimulator):
 
         launch_arguments = {
             "world": "default",
-            "string": description,
+            "description": description,
             "name": entity.name,
             "allow_renaming": False,
             "topic": 'robot_description',
