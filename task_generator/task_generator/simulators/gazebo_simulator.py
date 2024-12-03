@@ -219,6 +219,26 @@ class GazeboSimulator(BaseSimulator):
             return False
 
     def delete_entity(self, name: str):
+        self.node.get_logger().info(
+            f"Attempting to delete entity: {name}")
+
+        launch_description = launch.LaunchDescription()
+
+        launch_description.add_action(
+            launch_ros.actions.Node(
+                package="ros_gz_sim",
+                executable="remove",
+                output="screen",
+                parameters=[
+                    {
+                        "world": "default",
+                        "string": launch_ros.parameter_descriptions.ParameterValue(name, value_type=str),
+                    }
+                ],
+            )
+        )
+
+        self.node.do_launch(launch_description)
         return True
         self.node.get_logger().info(f"Attempting to delete entity: {name}")
         request = DeleteEntity.Request()

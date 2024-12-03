@@ -36,7 +36,12 @@ sudo apt-get install -y \
   ros-${ARENA_ROS_DISTRO}-ros-gz \
   libsdformat14-dev
 
-# Set Gazebo version environment variable
+
 export GZ_VERSION=${GAZEBO_VERSION}
+cd "${ARENA_WS_DIR}/src"
+git clone https://github.com/gazebosim/ros_gz.git -b ros2
+cd "${ARENA_WS_DIR}"
+rosdep install -r --from-paths src -i -y --rosdistro rolling
+
 
 echo "Gazebo ${GAZEBO_VERSION} and ROS-Gazebo bridge installed successfully!"
