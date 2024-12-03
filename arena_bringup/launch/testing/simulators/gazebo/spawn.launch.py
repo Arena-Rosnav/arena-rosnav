@@ -40,8 +40,8 @@ def generate_launch_description():
         parameters=[
             {
                 "world": "default",
-                "string": description.substitution,
-                "name": name.substitution,
+                "string": launch_ros.parameter_descriptions.ParameterValue(description.substitution, value_type=str),
+                "name": launch_ros.parameter_descriptions.ParameterValue(name.substitution, value_type=str),
                 "allow_renaming": False,
                 "topic": 'robot_description',
             }
