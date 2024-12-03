@@ -94,8 +94,7 @@ class GazeboSimulator(BaseSimulator):
                 return False
 
             self.node.get_logger().info(
-                f"Move result for {name}: {
-                    result.success}")
+                f"Move result for {name}: {result.success}")
             return result.success
 
         except Exception as e:
@@ -117,35 +116,20 @@ class GazeboSimulator(BaseSimulator):
             self.node.get_logger().error(repr(e))
             return True
 
-        # Default parameters
-        parameters = [
-            {
-                "world": "default",
-                "string": launch_ros.parameter_descriptions.ParameterValue(description, value_type=str),
-                "name": launch_ros.parameter_descriptions.ParameterValue(entity.name, value_type=str),
-                "allow_renaming": False,
-                "topic": 'robot_description',
-                "x": launch_ros.parameter_descriptions.ParameterValue(entity.position.x, value_type=float),
-                "y": launch_ros.parameter_descriptions.ParameterValue(entity.position.y, value_type=float),
-                "Y": launch_ros.parameter_descriptions.ParameterValue(entity.position.orientation, value_type=float)
-            }
-        ]
-
         launch_description.add_action(
             launch_ros.actions.Node(
                 package="ros_gz_sim",
                 executable="create",
                 output="screen",
-                # arguments=[
-                #     '-world', 'default',
-                #     '-string', robot_description,
-                #     '-name', robot_model,
-                #     '-allow_renaming', 'false',
-                #     '-x', '0',
-                #     '-y', '0',
-                #     '-z', '0',
-                # ],
-                parameters=parameters,
+                arguments=[
+                    '-world', 'default',
+                    '-string', description,
+                    '-name', entity.name,
+                    '-allow_renaming', 'false',
+                    '-x', str(entity.position.x),
+                    '-y', str(entity.position.y),
+                    '-X', str(entity.position.orientation),
+                ],
             )
         )
         self.entities[entity.name] = entity
@@ -170,9 +154,7 @@ class GazeboSimulator(BaseSimulator):
             request.entity_factory.sdf = model_description
 
             self.node.get_logger().info(
-                f"Model description length for {
-                    entity.name}: {
-                    len(model_description)}")
+                f"Model description length for {entity.name}: { len(model_description)}")
 
             # Set pose
             request.entity_factory.pose = Pose(
@@ -187,16 +169,12 @@ class GazeboSimulator(BaseSimulator):
             )
 
             self.node.get_logger().info(
-                f"Spawn position for {
-                    entity.name}: x={
-                    entity.position.x}, y={
-                    entity.position.y}")
+                f"Spawn position for {entity.name}: x={entity.position.x}, y={entity.position.y}")
 
             # For robots, declare additional parameters
             if isinstance(entity, RobotProps):
                 self.node.get_logger().info(
-                    f"Entity {
-                        entity.name} is a robot, declaring additional parameters")
+                    f"Entity {entity.name} is a robot, declaring additional parameters")
                 self.node.declare_parameter(
                     Namespace(entity.name)("robot_description"),
                     entity.model.get(self.MODEL_TYPES).description
@@ -208,29 +186,23 @@ class GazeboSimulator(BaseSimulator):
 
             # Send spawn request
             self.node.get_logger().info(
-                f"Sending spawn request for {
-                    entity.name}")
+                f"Sending spawn request for {entity.name}")
             future = self._spawn_entity.call_async(request)
             rclpy.spin_until_future_complete(self.node, future)
             result = future.result()
 
             if result is None:
                 self.node.get_logger().error(
-                    f"Spawn service call failed for {
-                        entity.name}")
+                    f"Spawn service call failed for {entity.name}")
                 return False
 
             self.node.get_logger().info(
-                f"Spawn result for {
-                    entity.name}: {
-                    result.success}")
+                f"Spawn result for {entity.name}: {result.success}")
             return result.success
 
         except Exception as e:
             self.node.get_logger().error(
-                f"Error spawning entity {
-                    entity.name}: {
-                    str(e)}")
+                f"Error spawning entity {entity.name}: {str(e)}")
             traceback.print_exc()
             return False
 
@@ -274,8 +246,7 @@ class GazeboSimulator(BaseSimulator):
                 return False
 
             self.node.get_logger().info(
-                f"Delete result for {name}: {
-                    result.success}")
+                f"Delete result for {name}: {result.success}")
             return result.success
 
         except Exception as e:
@@ -360,10 +331,7 @@ class GazeboSimulator(BaseSimulator):
 
     def _publish_goal(self, goal: PositionOrientation):
         self.node.get_logger().info(
-            f"Publishing goal: x={
-                goal.x}, y={
-                goal.y}, orientation={
-                goal.orientation}")
+            f"Publishing goal: x={goal.x}, y={goal.y}, orientation={goal.orientation}")
         goal_msg = PoseStamped()
         goal_msg.header.stamp = self.node.get_clock().now().to_msg()
         goal_msg.header.frame_id = "map"
