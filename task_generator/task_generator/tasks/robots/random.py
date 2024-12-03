@@ -12,13 +12,6 @@ class TM_Random(TM_Robots):
     Inherits from TM_Robots class.
     """
 
-    @classmethod
-    def prefix(cls, *args):
-        return super().prefix("random", *args)
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def reset(self, **kwargs):
         """
         Reset the task generator.
@@ -74,3 +67,6 @@ class TM_Random(TM_Robots):
 
         for robot, pos in zip(self._PROPS.robot_managers, ROBOT_POSITIONS):
             robot.reset(start_pos=pos[0], goal_pos=pos[1])
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)

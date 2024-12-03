@@ -1,35 +1,28 @@
+import dataclasses
+import functools
 import itertools
+import typing
 from typing import Callable, Dict, Iterator, List
 
 import numpy as np
-from task_generator.shared import (
-    DynamicObstacle,
-    Obstacle,
-    PositionOrientation,
-    PositionRadius
-)
+
+from task_generator.shared import (DynamicObstacle, Obstacle,
+                                   PositionOrientation, PositionRadius)
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
-
-import dataclasses
-
-# New imports for ROS 2
-from rcl_interfaces.msg import SetParametersResult
+from task_generator.utils import ModelLoader
+from task_generator.utils.ros_params import ROSParam
 
 
 @dataclasses.dataclass
 class _Config:
-    MIN_STATIC_OBSTACLES: int
-    MIN_INTERACTIVE_OBSTACLES: int
-    MIN_DYNAMIC_OBSTACLES: int
+    N_STATIC_OBSTACLES: ROSParam[typing.Tuple[int, int]]
+    N_INTERACTIVE_OBSTACLES: ROSParam[typing.Tuple[int, int]]
+    N_DYNAMIC_OBSTACLES: ROSParam[typing.Tuple[int, int]]
 
-    MAX_STATIC_OBSTACLES: int
-    MAX_INTERACTIVE_OBSTACLES: int
-    MAX_DYNAMIC_OBSTACLES: int
-
-    MODELS_STATIC_OBSTACLES: List[str]
-    MODELS_INTERACTIVE_OBSTACLES: List[str]
-    MODELS_DYNAMIC_OBSTACLES: List[str]
+    MODELS_STATIC_OBSTACLES: ROSParam[List[str]]
+    MODELS_INTERACTIVE_OBSTACLES: ROSParam[List[str]]
+    MODELS_DYNAMIC_OBSTACLES: ROSParam[List[str]]
 
 
 class TM_Random(TM_Obstacles):
@@ -50,69 +43,6 @@ class TM_Random(TM_Obstacles):
     """
 
     _config: _Config
-
-    @classmethod
-    def prefix(cls, *args):
-        return super().prefix("random", *args)
-
-    def __init__(self, **kwargs):
-        TM_Obstacles.__init__(self, **kwargs)
-
-        self.node.declare_parameters(
-            namespace='',
-            parameters=[
-                ('RANDOM_static_min', 0),
-                ('RANDOM_interactive_min', 0),
-                ('RANDOM_dynamic_min', 0),
-                ('RANDOM_static_max', 10),
-                ('RANDOM_interactive_max', 10),
-                ('RANDOM_dynamic_max', 10),
-                ('RANDOM_static_models', ''),
-                ('RANDOM_interactive_models', ''),
-                ('RANDOM_dynamic_models', ''),
-            ]
-        )
-
-        self.node.add_on_set_parameters_callback(self.parameters_callback)
-        self.reconfigure(self.node.get_parameters([
-            'RANDOM_static_min', 'RANDOM_interactive_min', 'RANDOM_dynamic_min',
-            'RANDOM_static_max', 'RANDOM_interactive_max', 'RANDOM_dynamic_max',
-            'RANDOM_static_models', 'RANDOM_interactive_models', 'RANDOM_dynamic_models'
-        ]))
-
-    def parameters_callback(self, params):
-        for param in params:
-            if param.name in [
-                'RANDOM_static_min', 'RANDOM_interactive_min', 'RANDOM_dynamic_min',
-                'RANDOM_static_max', 'RANDOM_interactive_max', 'RANDOM_dynamic_max',
-                'RANDOM_static_models', 'RANDOM_interactive_models', 'RANDOM_dynamic_models'
-            ]:
-                self.reconfigure(params)
-        return SetParametersResult(successful=True)
-
-    def reconfigure(self, config):
-        """
-        Reconfigures the obstacle parameters based on the provided configuration.
-
-        Args:
-            params: The parameter list containing the obstacle parameters.
-
-        Returns:
-            None
-        """
-        config = {param.name: param.value for param in config}
-        self._config = _Config(
-            MIN_STATIC_OBSTACLES=config['RANDOM_static_min'],
-            MIN_INTERACTIVE_OBSTACLES=config['RANDOM_interactive_min'],
-            MIN_DYNAMIC_OBSTACLES=config['RANDOM_dynamic_min'],
-            MAX_STATIC_OBSTACLES=config['RANDOM_static_max'],
-            MAX_INTERACTIVE_OBSTACLES=config['RANDOM_interactive_max'],
-            MAX_DYNAMIC_OBSTACLES=config['RANDOM_dynamic_max'],
-            MODELS_STATIC_OBSTACLES=config['RANDOM_static_models'].split(";"),
-            MODELS_INTERACTIVE_OBSTACLES=config['RANDOM_interactive_models'].split(
-                ";"),
-            MODELS_DYNAMIC_OBSTACLES=config['RANDOM_dynamic_models'].split(";")
-        )
 
     def reset(self, **kwargs) -> Obstacles:
         """
@@ -135,48 +65,65 @@ class TM_Random(TM_Obstacles):
         N_STATIC_OBSTACLES: int = kwargs.get(
             "N_STATIC_OBSTACLES",
             self.node.conf.General.RNG.value.integers(
-                self._config.MIN_STATIC_OBSTACLES,
-                self._config.MAX_STATIC_OBSTACLES,
+                *self._config.N_STATIC_OBSTACLES.value,
                 endpoint=True
             ),
         )
         N_INTERACTIVE_OBSTACLES: int = kwargs.get(
             "N_INTERACTIVE_OBSTACLES",
             self.node.conf.General.RNG.value.integers(
-                self._config.MIN_INTERACTIVE_OBSTACLES,
-                self._config.MAX_INTERACTIVE_OBSTACLES,
-                endpoint=True
-            ),
-        )
-        N_DYNAMIC_OBSTACLES: int = kwargs.get(
-            "N_DYNAMIC_OBSTACLES",
-            self.node.conf.General.RNG.value.integers(
-                self._config.MIN_DYNAMIC_OBSTACLES,
-                self._config.MAX_DYNAMIC_OBSTACLES,
+                *self._config.N_INTERACTIVE_OBSTACLES.value,
                 endpoint=True
             ),
         )
 
-        MODELS_STATIC_OBSTACLES: Dict[str, float] = dict.fromkeys(
+        N_DYNAMIC_OBSTACLES: int = kwargs.get(
+            "N_DYNAMIC_OBSTACLES",
+            self.node.conf.General.RNG.value.integers(
+                *self._config.N_DYNAMIC_OBSTACLES.value,
+                endpoint=True
+            ),
+        )
+
+        class ModelList(dict[str, float]):
+
+            @classmethod
+            def fromkeys(cls, *args, **kwargs) -> "ModelList":
+                return cls(super().fromkeys(*args, **kwargs))
+
+            @property
+            def a(self) -> typing.List[str]:
+                return list(self.keys())
+
+            @property
+            def p(self) -> typing.List[float]:
+                _p = np.array(list(self.values()), dtype=float)
+                _p /= _p.sum()
+                return _p.tolist()
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        MODELS_STATIC_OBSTACLES = ModelList.fromkeys(
             kwargs.get(
                 "MODELS_STATIC_OBSTACLES",
-                self._config.MODELS_STATIC_OBSTACLES)
-            or self._PROPS.model_loader.models,
+                self._config.MODELS_STATIC_OBSTACLES.value
+            ),
             1,
         )
-        MODELS_INTERACTIVE_OBSTACLES: Dict[str, float] = dict.fromkeys(
+        MODELS_INTERACTIVE_OBSTACLES = ModelList.fromkeys(
             kwargs.get(
                 "MODELS_INTERACTIVE_OBSTACLES",
-                self._config.MODELS_INTERACTIVE_OBSTACLES,
-            )
-            or self._PROPS.model_loader.models,
+                self._config.MODELS_INTERACTIVE_OBSTACLES.value
+            ),
             1,
         )
-        MODELS_DYNAMIC_OBSTACLES: Dict[str, float] = dict.fromkeys(
+
+        MODELS_DYNAMIC_OBSTACLES = ModelList.fromkeys(
             kwargs.get(
-                "MODELS_DYNAMIC_OBSTACLES", self._config.MODELS_DYNAMIC_OBSTACLES
-            )
-            or self._PROPS.dynamic_model_loader.models,
+                "MODELS_DYNAMIC_OBSTACLES",
+                self._config.MODELS_DYNAMIC_OBSTACLES.value
+            ),
             1,
         )
 
@@ -202,7 +149,10 @@ class TM_Random(TM_Obstacles):
 
         _positions = [
             PositionOrientation(
-                *pos, 2 * np.pi * self.node.conf.General.RNG.value.random())
+                x=pos.x,
+                y=pos.y,
+                orientation=2 * np.pi * self.node.conf.General.RNG.value.random(),
+            )
             for pos in points[
                 : (N_STATIC_OBSTACLES + N_INTERACTIVE_OBSTACLES + N_DYNAMIC_OBSTACLES)
             ]
@@ -210,7 +160,7 @@ class TM_Random(TM_Obstacles):
         positions = iter(_positions)
 
         _waypoints = [
-            PositionRadius(*pos, 1)
+            PositionRadius(pos.x, pos.y, 1)
             for pos in points[
                 (N_STATIC_OBSTACLES + N_INTERACTIVE_OBSTACLES + N_DYNAMIC_OBSTACLES):
             ]
@@ -222,17 +172,17 @@ class TM_Random(TM_Obstacles):
         # Create static obstacles
         if N_STATIC_OBSTACLES:
             index = indexer()
-
             obstacles += [
                 ITF_Obstacle.create_obstacle(
+                    self.node,
                     self._PROPS,
                     name=f"S_{model}_{index(model)}",
                     model=self._PROPS.model_loader.bind(model),
                     position=next(positions),
                 )
                 for model in self.node.conf.General.RNG.value.choice(
-                    a=list(MODELS_STATIC_OBSTACLES.keys()),
-                    p=list(MODELS_STATIC_OBSTACLES.values()),
+                    a=MODELS_STATIC_OBSTACLES.a,
+                    p=MODELS_STATIC_OBSTACLES.p,
                     size=N_STATIC_OBSTACLES,
                 )
             ]
@@ -243,14 +193,15 @@ class TM_Random(TM_Obstacles):
 
             obstacles += [
                 ITF_Obstacle.create_obstacle(
+                    self.node,
                     self._PROPS,
                     name=f"I_{model}_{index(model)}",
                     model=self._PROPS.model_loader.bind(model),
                     position=next(positions),
                 )
                 for model in self.node.conf.General.RNG.value.choice(
-                    a=list(MODELS_INTERACTIVE_OBSTACLES.keys()),
-                    p=list(MODELS_INTERACTIVE_OBSTACLES.values()),
+                    a=MODELS_INTERACTIVE_OBSTACLES.a,
+                    p=MODELS_INTERACTIVE_OBSTACLES.p,
                     size=N_INTERACTIVE_OBSTACLES,
                 )
             ]
@@ -264,6 +215,7 @@ class TM_Random(TM_Obstacles):
 
             dynamic_obstacles += [
                 ITF_Obstacle.create_dynamic_obstacle(
+                    self.node,
                     self._PROPS,
                     name=f"D_{model}_{index(model)}",
                     model=self._PROPS.dynamic_model_loader.bind(model),
@@ -274,10 +226,41 @@ class TM_Random(TM_Obstacles):
                     position=next(positions),
                 )
                 for model in self.node.conf.General.RNG.value.choice(
-                    a=list(MODELS_DYNAMIC_OBSTACLES.keys()),
-                    p=list(MODELS_DYNAMIC_OBSTACLES.values()),
+                    a=MODELS_DYNAMIC_OBSTACLES.a,
+                    p=MODELS_DYNAMIC_OBSTACLES.p,
                     size=N_DYNAMIC_OBSTACLES,
                 )
             ]
 
         return obstacles, dynamic_obstacles
+
+    def __init__(self, **kwargs):
+        TM_Obstacles.__init__(self, **kwargs)
+
+        def param_to_tuple(v: typing.Any) -> typing.Tuple[int, int]:
+            lo = int(v[0])
+            hi = int(v[1] if len(v) >= 2 else v[0])
+            lo, hi = min(lo, hi), max(lo, hi)
+            return lo, hi
+
+        def param_to_modellist(loader: ModelLoader,
+                               v: typing.Any) -> typing.List[str]:
+            if len(v):
+                return v.split(';')
+            return list(loader.models)
+
+        self._config = _Config(
+            N_STATIC_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
+                "N_STATIC_OBSTACLES", [5, 15], parse=param_to_tuple),
+            N_INTERACTIVE_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
+                "N_INTERACTIVE_OBSTACLES", [0, 0], parse=param_to_tuple),
+            N_DYNAMIC_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
+                "N_DYNAMIC_OBSTACLES", [0, 0], parse=param_to_tuple),
+
+            MODELS_STATIC_OBSTACLES=self.node.ROSParam[List[str]](
+                'MODELS_STATIC_OBSTACLES', '', parse=functools.partial(param_to_modellist, self._PROPS.model_loader)),
+            MODELS_INTERACTIVE_OBSTACLES=self.node.ROSParam[List[str]](
+                'MODELS_INTERACTIVE_OBSTACLES', '', parse=functools.partial(param_to_modellist, self._PROPS.model_loader)),
+            MODELS_DYNAMIC_OBSTACLES=self.node.ROSParam[List[str]](
+                'MODELS_DYNAMIC_OBSTACLES', 'actor1', parse=functools.partial(param_to_modellist, self._PROPS.dynamic_model_loader)),
+        )

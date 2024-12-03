@@ -14,17 +14,6 @@ class TM_Explore(TM_Random):
 
     _timeouts: Dict[int, Time]
 
-    @classmethod
-    def prefix(cls, *args):
-        return super().prefix("explore", *args)
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        self._timeouts = dict()
-        for i in range(len(self._PROPS.robot_managers)):
-            self._reset_timeout(i)
-
     @property
     def done(self) -> bool:
         """
@@ -36,20 +25,20 @@ class TM_Explore(TM_Random):
         for i, robot in enumerate(self._PROPS.robot_managers):
             if robot.is_done:
                 waypoint = self._PROPS.world_manager.get_position_on_map(
-                    safe_dist=robot._robot_radius, forbid=False
+                    safe_dist=robot.safe_distance, forbid=False
                 )
                 self._set_goal(
                     i, PositionOrientation(
-                        *waypoint, self.node.conf.General.RNG.value.random() * 2 * math.pi)
+                        waypoint.x, waypoint.y, self.node.conf.General.RNG.value.random() * 2 * math.pi)
                 )
 
-            elif (self._PROPS.clock.clock - self._timeouts[i]).sec > self.node.conf.Robot.TIMEOUT.value:
+            elif (self._PROPS.clock.clock.sec - self._timeouts[i].sec) > self.node.conf.Robot.TIMEOUT.value:
                 waypoint = self._PROPS.world_manager.get_position_on_map(
-                    safe_dist=robot._robot_radius, forbid=False
+                    safe_dist=robot.safe_distance, forbid=False
                 )
                 self._set_position(
                     i, PositionOrientation(
-                        *waypoint, self.node.conf.General.RNG.value.random() * 2 * math.pi)
+                        waypoint.x, waypoint.y, self.node.conf.General.RNG.value.random() * 2 * math.pi)
                 )
 
         return False
@@ -84,3 +73,10 @@ class TM_Explore(TM_Random):
         """
         self._reset_timeout(index)
         self._PROPS.robot_managers[index].reset(None, position)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self._timeouts = {}
+        for i in range(len(self._PROPS.robot_managers)):
+            self._reset_timeout(i)

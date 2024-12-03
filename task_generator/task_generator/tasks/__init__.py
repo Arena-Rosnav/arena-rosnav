@@ -1,18 +1,19 @@
+import abc
 import os
 from typing import List
+
+import rclpy.node
+import rclpy.publisher
+
+import rosgraph_msgs.msg as rosgraph_msgs
+
 from task_generator import NodeInterface
 from task_generator.constants import Constants
-
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.world_manager import WorldManager
 from task_generator.shared import Namespace, PositionOrientation
-
 from task_generator.utils import ModelLoader
-
-import rosgraph_msgs.msg as rosgraph_msgs
-
-import rclpy.node
 from task_generator.utils.ros_params import ROSParamServer
 
 
@@ -36,57 +37,16 @@ class Props_(Props_Manager, Props_Modelloader, Props_Namespace):
     clock: rosgraph_msgs.Clock
 
 
-class Reconfigurable:
-    """
-    A class representing a reconfigurable object.
-
-    Attributes:
-        NODE_CONFIGURATION (Namespace): The namespace for the task generator server.
-    """
-
-    # TOPIC_RECONFIGURE = "RECONFIGURE"
-
-    def reconfigure(self, config):
-        ...
-
-    NODE_CONFIGURATION = Namespace(
-        os.path.join(
-            "",  # rospy.get_namespace(),
-            Constants.TASK_GENERATOR_SERVER_NODE)
-    )
-
-    @classmethod
-    def prefix(cls, *args) -> Namespace:
-        """
-        Returns a Namespace object with the given arguments as the suffix.
-
-        Args:
-            *args: Variable length argument list.
-
-        Returns:
-            Namespace: A Namespace object with the given arguments as the suffix.
-        """
-        return Namespace("~configuration", *args)
-
-    def __init__(self):
-        # rospy.Subscriber(
-        #     name=self.prefix(self.TOPIC_RECONFIGURE),
-        #     data_class=std_msgs.Empty,
-        #     callback=self.reconfigure
-        # )
-        ...
-
-
-class TaskMode(Reconfigurable, NodeInterface):
+class TaskMode(NodeInterface):
     _PROPS: Props_
 
     def __init__(self, props: Props_, **kwargs):
-        Reconfigurable.__init__(self)
+
         NodeInterface.__init__(self)
         self._PROPS = props
 
 
-class Task(Props_):
+class Task(Props_, abc.ABC):
     """
     Base class for defining tasks in the task generator module.
 
@@ -136,6 +96,7 @@ class Task(Props_):
     __reset_end: rclpy.publisher.Publisher
     __reset_mutex: bool
 
+    @abc.abstractmethod
     def __init__(
         self,
         obstacle_manager: ObstacleManager,
@@ -145,8 +106,9 @@ class Task(Props_):
         *args,
         **kwargs
     ):
-        raise NotImplementedError()
+        ...
 
+    @abc.abstractmethod
     def reset(self, **kwargs) -> None:
         ...
 
@@ -165,9 +127,11 @@ class Task(Props_):
     def _clock_callback(self, clock: rosgraph_msgs.Clock):
         self.clock = clock
 
+    @abc.abstractmethod
     def set_robot_position(self, position: PositionOrientation):
         ...
 
+    @abc.abstractmethod
     def set_robot_goal(self, position: PositionOrientation):
         ...
 

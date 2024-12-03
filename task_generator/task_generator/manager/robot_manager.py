@@ -155,12 +155,9 @@ class RobotManager(NodeInterface):
             self.move_robot_to_pos(start_pos)
 
             if self._robot.record_data_dir is not None:
-                self.node.set_parameter(
-                    rclpy.parameter.Parameter(
-                        self.namespace("start"),
-                        rclpy.Parameter.Type.DOUBLE_ARRAY,
-                        [float(v) for v in self._start_pos]
-                    )
+                self.node.rosparam[list[float]].set(
+                    self.namespace("start"),
+                    [self.start_pos.x, self.start_pos.y, self.start_pos.orientation]
                 )
 
         if goal_pos is not None:
@@ -168,16 +165,15 @@ class RobotManager(NodeInterface):
             self._publish_goal(self._goal_pos)
 
             if self._robot.record_data_dir is not None:
-                self.node.set_parameter(
-                    rclpy.parameter.Parameter(
-                        self.namespace("goal"),
-                        rclpy.Parameter.Type.DOUBLE_ARRAY,
-                        [float(v) for v in self._goal_pos]
-                    )
+                self.node.rosparam[list[float]].set(
+                    self.namespace("goal"),
+                    [self.goal_pos.x, self.goal_pos.y,
+                        self.goal_pos.orientation]
                 )
 
-        if self._clear_costmaps_srv.wait_for_service(timeout_sec=1.0):
-            self._clear_costmaps_srv.call_async(std_srvs.Empty.Request())
+        # TODO
+        # if self._clear_costmaps_srv.wait_for_service(timeout_sec=1.0):
+        #     self._clear_costmaps_srv.call_async(std_srvs.Empty.Request())
 
         return self._position, self._goal_pos
 

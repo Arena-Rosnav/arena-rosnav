@@ -1,10 +1,12 @@
 #! /usr/bin/env python3
-import multiprocessing
-import typing
-import rclpy
-import launch
-import queue
 import asyncio
+import multiprocessing
+import queue
+import typing
+
+import launch
+import rclpy
+import rclpy.executors
 
 
 def init_launch_service(

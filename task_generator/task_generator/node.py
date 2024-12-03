@@ -1,44 +1,39 @@
 import dataclasses
 import os
 import traceback
-from typing import Dict, List
 import typing
+from typing import Dict, List
 
+import nav_msgs.msg as nav_msgs
 import numpy as np
 
 import rclpy
-import rclpy.node
 import rclpy.executors
-import launch
+import rclpy.node
+import rclpy.callback_groups
 
+import std_srvs.srv as std_srvs
 import yaml
 from ament_index_python.packages import get_package_share_directory
+from std_msgs.msg import Empty, Int16
+from std_srvs.srv import Empty as EmptySrv
+
+import launch
+import task_generator.utils.arena as Utils
+from task_generator import NodeInterface
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Configuration
-
-
-from task_generator.simulators import BaseSimulator, SimulatorRegistry
-from task_generator.manager.entity_manager import EntityManager, EntityManagerRegistry
-from task_generator.manager.world_manager import WorldManager
+from task_generator.manager.entity_manager import (EntityManager,
+                                                   EntityManagerRegistry)
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.utils import WorldMap
-from task_generator.shared import (
-    ModelWrapper,
-    Namespace,
-    Robot,
-    gen_init_pos
-)
-
+from task_generator.manager.world_manager import WorldManager
+from task_generator.shared import ModelWrapper, Namespace, Robot, gen_init_pos
+from task_generator.simulators import BaseSimulator, SimulatorRegistry
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils import ModelLoader
-import task_generator.utils.arena as Utils
-
-from std_msgs.msg import Int16, Empty
-import std_srvs.srv as std_srvs
-from std_srvs.srv import Empty as EmptySrv
-import nav_msgs.msg as nav_msgs
 from task_generator.utils.ros_params import ROSParamServer
 
 
@@ -86,7 +81,7 @@ def read_robot_setup_file(setup_file: str) -> List[Dict]:
         raise Exception("Failed to read robot setup file")
 
 
-class TaskGenerator(ROSParamServer, rclpy.node.Node):
+class TaskGenerator(NodeInterface.Taskgen_T):
     """
     Task Generator Node
     Will initialize and reset all tasks. The task to use is read from the `/task_mode` param.
@@ -114,26 +109,26 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
         self.do_launch = do_launch
         self._namespace = Namespace(namespace)
 
-        # Declare all parameters
-        self.declare_parameters(
-            namespace='',
-            parameters=[
-                ('auto_reset', True),
-                ('robot', 'jackal'),
-                ('train_mode', False),
-                ('robot_setup_file', ''),
-                ('inter_planner', ''),
-                ('local_planner', ''),
-                ('agent_name', ''),
-                ('robot_names', []),
-                ('task_generator_setup_finished', False),
-            ]
-        )
+        # # Declare all parameters
+        # self.declare_parameters(
+        #     namespace='',
+        #     parameters=[
+        #         ('auto_reset', True),
+        #         ('robot', 'jackal'),
+        #         ('train_mode', False),
+        #         ('robot_setup_file', ''),
+        #         ('inter_planner', ''),
+        #         ('local_planner', ''),
+        #         ('agent_name', ''),
+        #         ('robot_names', []),
+        #         ('task_generator_setup_finished', False),
+        #     ]
+        # )
 
         Task.declare_parameters(self)
 
-        self._auto_reset = self.get_parameter('auto_reset').value
-        self._train_mode = self.get_parameter('train_mode').value
+        self._auto_reset = self.rosparam[bool].get('auto_reset', True)
+        self._train_mode = self.rosparam[bool].get('train_mode', False)
 
         # Publishers
         if not self._train_mode:
@@ -169,7 +164,8 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
 
         self._start_time = self.get_clock().now().seconds_nanoseconds()[0]
         self._task = self._get_predefined_task()
-        self.rosparam[list[str]].set('robot_names', self._task.robot_names)
+        self.rosparam[list[str]].set(
+            'robot_names', self._task.robot_names)
 
         self._number_of_resets = 0
 
@@ -280,18 +276,21 @@ class TaskGenerator(ROSParamServer, rclpy.node.Node):
 
     def _create_robot_managers(self) -> List[RobotManager]:
         # Read robot setup file
-        robot_setup_file: str = self.rosparam[str].get('robot_setup_file')
-        robot_model: str = self.get_parameter('robot').value
+        robot_setup_file: str = self.rosparam[str].get(
+            'robot_setup_file',
+            ''
+        )
+        robot: str = self.rosparam[str].get('robot', '')
 
         if robot_setup_file == "":
             robots = create_default_robot_list(
-                robot_model=self._robot_loader.bind(robot_model),
-                inter_planner=self.get_parameter("inter_planner").value,
-                local_planner=self.get_parameter("local_planner").value,
-                agent=self.get_parameter("agent_name").value,
-                name=f"{self._namespace[1:]}_{robot_model}"
+                robot_model=self._robot_loader.bind(robot),
+                inter_planner=self.rosparam[str].get("inter_planner", ''),
+                local_planner=self.rosparam[str].get("local_planner", ''),
+                agent=self.rosparam[str].get("agent_name", ''),
+                name=f"{self._namespace[1:]}_{robot}"
                 if self._train_mode
-                else robot_model,
+                else robot,
             )
         else:
             robots = [
