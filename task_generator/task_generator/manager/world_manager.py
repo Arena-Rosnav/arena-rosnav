@@ -145,9 +145,9 @@ class WorldManager(NodeInterface):
 
         forbidden_zones_in_cells: List[PositionRadius] = [
             PositionRadius(
-                math.ceil(point[0] / self.world.map.resolution),
-                math.ceil(point[1] / self.world.map.resolution),
-                math.ceil(point[2] / self.world.map.resolution)
+                math.ceil(point.x / self.world.map.resolution),
+                math.ceil(point.y / self.world.map.resolution),
+                math.ceil(point.radius / self.world.map.resolution)
             )
             for point in self._classic_forbidden_zones + (forbidden_zones if forbidden_zones is not None else [])
         ]
@@ -229,7 +229,7 @@ class WorldManager(NodeInterface):
             for _ in range(n):
                 pos = self._classic_get_random_pos_on_map(
                     safe_dist=safe_dist, forbidden_zones=forbidden_zones)
-                posr = PositionRadius(*pos, safe_dist)
+                posr = PositionRadius(pos.x, pos.y, safe_dist)
                 fork.occupy(*self.world.map.tf_posr2rect(posr))
                 forbidden_zones.append(posr)
                 points.append(pos)

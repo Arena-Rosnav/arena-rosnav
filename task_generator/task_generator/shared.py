@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import collections
 import dataclasses
 import enum
 import os
@@ -9,13 +8,14 @@ from typing import (Callable, Collection, Dict, Iterable, List, Optional,
                     Tuple, Type, TypeVar, overload)
 
 import attr
+import geometry_msgs.msg as geometry_msgs
 import rclpy
 import rclpy.node
 import yaml
 from ament_index_python.packages import get_package_share_directory
-from task_generator.utils.geometry import euler_from_quaternion
 
-import geometry_msgs.msg as geometry_msgs
+import rclpy.parameter
+from task_generator.utils.geometry import euler_from_quaternion
 
 _node: rclpy.node.Node
 
@@ -39,7 +39,6 @@ def rosparam_get(
     @default: Default value. Raise ValueError is default is unset and parameter can't be found.
     """
     # if "task_generator_node" not in  get_nodes():
-    global _node
     return _node.get_parameter_or(param_name, DefaultParameter(default)).value
 
     if val == _notfound:
@@ -125,11 +124,8 @@ class Model:
         return dataclasses.replace(self, **kwargs)
 
 
-Position = collections.namedtuple("Position", ("x", "y"))
-
-
 @attr.frozen()
-class Posisiton:
+class Position:
     """
     2D position
     """
@@ -138,7 +134,7 @@ class Posisiton:
 
 
 @attr.frozen()
-class PositionOrientation(Posisiton):
+class PositionOrientation(Position):
     """
     2D position with 2D yaw
     """
@@ -161,7 +157,12 @@ class PositionOrientation(Posisiton):
         )
 
 
-PositionRadius = collections.namedtuple("PositionRadius", ("x", "y", "radius"))
+@attr.frozen()
+class PositionRadius(Position):
+    """
+    2D position with 2D yaw
+    """
+    radius: float = attr.field(converter=lambda x: max(0., float(x)))
 
 
 class ModelWrapper:
@@ -517,5 +518,8 @@ class Robot(RobotProps):
         )
 
 
-class DefaultParameter(typing.NamedTuple):
-    value: typing.Any
+def DefaultParameter(value: typing.Any) -> rclpy.parameter.Parameter:
+    return rclpy.parameter.Parameter(
+        '',
+        value=value,
+    )

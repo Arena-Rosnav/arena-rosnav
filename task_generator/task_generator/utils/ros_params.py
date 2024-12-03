@@ -1,7 +1,12 @@
 import typing
 import abc
+
 import rclpy
+import rclpy.exceptions
+import rclpy.node
 import rcl_interfaces.msg
+
+import rclpy.parameter
 from task_generator.shared import DefaultParameter
 
 
@@ -156,24 +161,39 @@ class ROSParamServer(rclpy.node.Node):
             ...
 
         @classmethod
-        def get(cls, param_name: str,
-                default: "T | typing.Type[_unspecified]" = _unspecified) -> T:
+        def declare_safe(cls, param_name: str,
+                         value: typing.Any, **kwargs) -> None:
+            try:
+                cls._node.declare_parameter(param_name, value, **kwargs)
+            except rclpy.exceptions.ParameterAlreadyDeclaredException:
+                pass
+
+        @classmethod
+        def get_unsafe(cls, param_name: str,
+                       default: "T | typing.Type[_unspecified]" = _unspecified) -> T:
             """
             Get value of parameter.
             """
 
-            value = cls._node.get_parameter_or(
-                param_name, DefaultParameter(default)
-            ).value
-            if value is cls._unspecified:
+            result = cls._node.get_parameter_or(
+                param_name
+            )
+            if result.type_ is rclpy.parameter.Parameter.Type.NOT_SET:
                 raise ValueError(
                     f'parameter {param_name} is unset and no default passed'
                 )
-
-            return value
+            return result.value
 
         @classmethod
-        def set(cls, param_name: str, value: T) -> bool:
+        def get(cls, param_name: str, default: T) -> T:
+            """
+            Get value of parameter. Declare if undeclared.
+            """
+            cls.declare_safe(param_name, default)
+            return cls.get_unsafe(param_name)
+
+        @classmethod
+        def set_unsafe(cls, param_name: str, value: T) -> bool:
             """
             Set value of parameter.
             """
@@ -181,6 +201,18 @@ class ROSParamServer(rclpy.node.Node):
             return cls._node.set_parameters([
                 rclpy.parameter.Parameter(param_name, value=value)
             ])[0].successful
+
+        @classmethod
+        def set(cls, param_name: str, value: T) -> bool:
+            """
+            Set value of parameter. Declare if undeclared.
+            """
+
+            try:
+                return cls.set_unsafe(param_name, value)
+            except rclpy.exceptions.ParameterNotDeclaredException:
+                cls._node.declare_parameter(param_name, value)
+                return True
 
     def __init__(self):
         self.rosparam._node = self

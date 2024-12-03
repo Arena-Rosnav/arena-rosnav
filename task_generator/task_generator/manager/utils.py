@@ -335,14 +335,21 @@ def RLE_2D(grid: np.ndarray) -> WorldWalls:
 
 
 def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[[
-                       Tuple[int, int]], Position]] = None) -> WorldWalls:
+                       Tuple[float, float]], Position]] = None) -> WorldWalls:
     walls = RLE_2D(grid=WorldOccupancy.not_full(occupancy_grid))
 
     if transform is None:
-        def _transform(p): return Position(x=p[0], y=p[1])
+        def _transform(p):
+            return Position(x=p[0], y=p[1])
         transform = _transform
 
-    return [(transform(wall[0]), transform(wall[1])) for wall in walls]
+    return [
+        (
+            transform((wall[0].x, wall[0].y)),
+            transform((wall[1].x, wall[1].y))
+        )
+        for wall in walls
+    ]
 
 
 _world_model_loader = ModelLoader(

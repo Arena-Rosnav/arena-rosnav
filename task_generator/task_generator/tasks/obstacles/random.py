@@ -1,24 +1,17 @@
+import dataclasses
 import functools
 import itertools
-from typing import Callable, Dict, Iterator, List
 import typing
+from typing import Callable, Dict, Iterator, List
 
 import numpy as np
-from task_generator.shared import (
-    DynamicObstacle,
-    Obstacle,
-    PositionOrientation,
-    PositionRadius
-)
-from task_generator.utils import ModelLoader
-from task_generator.utils.ros_params import ROSParam
+
+from task_generator.shared import (DynamicObstacle, Obstacle,
+                                   PositionOrientation, PositionRadius)
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
-
-import dataclasses
-
-# New imports for ROS 2
-from rcl_interfaces.msg import SetParametersResult
+from task_generator.utils import ModelLoader
+from task_generator.utils.ros_params import ROSParam
 
 
 @dataclasses.dataclass
@@ -50,41 +43,6 @@ class TM_Random(TM_Obstacles):
     """
 
     _config: _Config
-
-    @classmethod
-    def prefix(cls, *args):
-        return super().prefix("random", *args)
-
-    def __init__(self, **kwargs):
-        TM_Obstacles.__init__(self, **kwargs)
-
-        def param_to_tuple(v: typing.Any) -> typing.Tuple[int, int]:
-            lo = int(v[0])
-            hi = int(v[1] if len(v) >= 2 else v[0])
-            lo, hi = min(lo, hi), max(lo, hi)
-            return lo, hi
-
-        def param_to_modellist(loader: ModelLoader,
-                               v: typing.Any) -> typing.List[str]:
-            if len(v):
-                return v.split(';')
-            return list(loader.models)
-
-        self._config = _Config(
-            N_STATIC_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
-                "N_STATIC_OBSTACLES", [5, 15], parse=param_to_tuple),
-            N_INTERACTIVE_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
-                "N_INTERACTIVE_OBSTACLES", [0, 0], parse=param_to_tuple),
-            N_DYNAMIC_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
-                "N_DYNAMIC_OBSTACLES", [0, 0], parse=param_to_tuple),
-
-            MODELS_STATIC_OBSTACLES=self.node.ROSParam[List[str]](
-                'MODELS_STATIC_OBSTACLES', '', parse=functools.partial(param_to_modellist, self._PROPS.model_loader)),
-            MODELS_INTERACTIVE_OBSTACLES=self.node.ROSParam[List[str]](
-                'MODELS_INTERACTIVE_OBSTACLES', '', parse=functools.partial(param_to_modellist, self._PROPS.model_loader)),
-            MODELS_DYNAMIC_OBSTACLES=self.node.ROSParam[List[str]](
-                'MODELS_DYNAMIC_OBSTACLES', 'actor1', parse=functools.partial(param_to_modellist, self._PROPS.dynamic_model_loader)),
-        )
 
     def reset(self, **kwargs) -> Obstacles:
         """
@@ -191,7 +149,10 @@ class TM_Random(TM_Obstacles):
 
         _positions = [
             PositionOrientation(
-                *pos, 2 * np.pi * self.node.conf.General.RNG.value.random())
+                x=pos.x,
+                y=pos.y,
+                orientation=2 * np.pi * self.node.conf.General.RNG.value.random(),
+            )
             for pos in points[
                 : (N_STATIC_OBSTACLES + N_INTERACTIVE_OBSTACLES + N_DYNAMIC_OBSTACLES)
             ]
@@ -199,7 +160,7 @@ class TM_Random(TM_Obstacles):
         positions = iter(_positions)
 
         _waypoints = [
-            PositionRadius(*pos, 1)
+            PositionRadius(pos.x, pos.y, 1)
             for pos in points[
                 (N_STATIC_OBSTACLES + N_INTERACTIVE_OBSTACLES + N_DYNAMIC_OBSTACLES):
             ]
@@ -213,6 +174,7 @@ class TM_Random(TM_Obstacles):
             index = indexer()
             obstacles += [
                 ITF_Obstacle.create_obstacle(
+                    self.node,
                     self._PROPS,
                     name=f"S_{model}_{index(model)}",
                     model=self._PROPS.model_loader.bind(model),
@@ -231,6 +193,7 @@ class TM_Random(TM_Obstacles):
 
             obstacles += [
                 ITF_Obstacle.create_obstacle(
+                    self.node,
                     self._PROPS,
                     name=f"I_{model}_{index(model)}",
                     model=self._PROPS.model_loader.bind(model),
@@ -252,6 +215,7 @@ class TM_Random(TM_Obstacles):
 
             dynamic_obstacles += [
                 ITF_Obstacle.create_dynamic_obstacle(
+                    self.node,
                     self._PROPS,
                     name=f"D_{model}_{index(model)}",
                     model=self._PROPS.dynamic_model_loader.bind(model),
@@ -269,3 +233,34 @@ class TM_Random(TM_Obstacles):
             ]
 
         return obstacles, dynamic_obstacles
+
+    def __init__(self, **kwargs):
+        TM_Obstacles.__init__(self, **kwargs)
+
+        def param_to_tuple(v: typing.Any) -> typing.Tuple[int, int]:
+            lo = int(v[0])
+            hi = int(v[1] if len(v) >= 2 else v[0])
+            lo, hi = min(lo, hi), max(lo, hi)
+            return lo, hi
+
+        def param_to_modellist(loader: ModelLoader,
+                               v: typing.Any) -> typing.List[str]:
+            if len(v):
+                return v.split(';')
+            return list(loader.models)
+
+        self._config = _Config(
+            N_STATIC_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
+                "N_STATIC_OBSTACLES", [5, 15], parse=param_to_tuple),
+            N_INTERACTIVE_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
+                "N_INTERACTIVE_OBSTACLES", [0, 0], parse=param_to_tuple),
+            N_DYNAMIC_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
+                "N_DYNAMIC_OBSTACLES", [0, 0], parse=param_to_tuple),
+
+            MODELS_STATIC_OBSTACLES=self.node.ROSParam[List[str]](
+                'MODELS_STATIC_OBSTACLES', '', parse=functools.partial(param_to_modellist, self._PROPS.model_loader)),
+            MODELS_INTERACTIVE_OBSTACLES=self.node.ROSParam[List[str]](
+                'MODELS_INTERACTIVE_OBSTACLES', '', parse=functools.partial(param_to_modellist, self._PROPS.model_loader)),
+            MODELS_DYNAMIC_OBSTACLES=self.node.ROSParam[List[str]](
+                'MODELS_DYNAMIC_OBSTACLES', 'actor1', parse=functools.partial(param_to_modellist, self._PROPS.dynamic_model_loader)),
+        )
