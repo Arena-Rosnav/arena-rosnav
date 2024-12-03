@@ -107,25 +107,31 @@ class GazeboSimulator(BaseSimulator):
         except FileNotFoundError:
             return True
 
-        launch_arguments = {
-            # "world": "default",
-            "description": description,
-            "name": entity.name,
-            # "allow_renaming": False,
-            # "topic": 'robot_description',
-        }
-
         launch_description.add_action(
-            launch.actions.IncludeLaunchDescription(
-                launch.launch_description_sources.PythonLaunchDescriptionSource(
-                    os.path.join(
-                        ament_index_python.packages.get_package_share_directory(
-                            'arena_bringup'),
-                        'launch/testing/simulators/gazebo/spawn.launch.py'
-                    )
-                ),
-                launch_arguments=launch_arguments.items(),
-            ))
+            launch_ros.actions.Node(
+                package="ros_gz_sim",
+                executable="create",
+                output="screen",
+                # arguments=[
+                #     '-world', 'default',
+                #     '-string', robot_description,
+                #     '-name', robot_model,
+                #     '-allow_renaming', 'false',
+                #     '-x', '0',
+                #     '-y', '0',
+                #     '-z', '0',
+                # ],
+                parameters=[
+                    {
+                        "world": "default",
+                        "string": launch_ros.parameter_descriptions.ParameterValue(description, value_type=str),
+                        "name": launch_ros.parameter_descriptions.ParameterValue(entity.name, value_type=str),
+                        "allow_renaming": False,
+                        "topic": 'robot_description',
+                    }
+                ],
+            )
+        )
 
         self.node.do_launch(launch_description)
 
