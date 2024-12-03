@@ -60,7 +60,7 @@ class TM_Random(TM_Obstacles):
 
         def param_to_tuple(v: typing.Any) -> typing.Tuple[int, int]:
             lo = int(v[0])
-            hi = int(v[1])
+            hi = int(v[1] if len(v) >= 2 else v[0])
             lo, hi = min(lo, hi), max(lo, hi)
             return lo, hi
 
