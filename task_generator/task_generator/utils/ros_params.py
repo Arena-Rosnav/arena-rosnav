@@ -5,10 +5,24 @@ import rcl_interfaces.msg
 from task_generator.shared import DefaultParameter
 
 
-class RosParam(abc.ABC):
+class ROSParam[T](abc.ABC):
+
+    @abc.abstractmethod
+    def __init__(
+        self,
+        /,
+        name: str,
+        value: typing.Any,
+        *,
+        parse: typing.Optional[typing.Callable[[
+            typing.Any], T]] = None,
+        **kwargs,
+    ) -> None:
+        ...
+
     @property
     @abc.abstractmethod
-    def value(self) -> typing.Any:
+    def value(self) -> T:
         """
         Get cached value.
         """
@@ -26,7 +40,7 @@ U = typing.TypeVar('U')
 
 class ROSParamServer(rclpy.node.Node):
 
-    class _ROSParam[T](RosParam, abc.ABC):
+    class _ROSParam[T](ROSParam, abc.ABC):
         """
         Wrapper that handles callbacks.
         """
@@ -125,9 +139,9 @@ class ROSParamServer(rclpy.node.Node):
         """
         Typed ROS2 parameter class with callbacks.
         """
-        class ROSParam[T](self._ROSParam[T]):
+        class _ROSParam[T](self._ROSParam[T]):
             _node = self
-        return ROSParam
+        return _ROSParam
 
     class rosparam[T]:
         """

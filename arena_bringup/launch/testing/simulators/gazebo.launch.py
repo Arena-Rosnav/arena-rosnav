@@ -53,6 +53,9 @@ def generate_launch_description():
             workspace_root, "src", "arena", "simulation-setup", "entities", "obstacles", "static"
         ),
         os.path.join(
+            workspace_root, "src", "arena", "simulation-setup", "entities", "obstacles", "robots"
+        ),
+        os.path.join(
             workspace_root,
             "src",
             "arena",
@@ -207,8 +210,8 @@ def generate_launch_description():
         ],
     )
 
-    gz_topic = '/model/robot'
-    joint_state_gz_topic = '/world/default' + gz_topic + '/joint_state'
+    gz_topic = '/world/default/model/jackal'
+    joint_state_gz_topic = gz_topic + '/joint_state'
     link_pose_gz_topic = gz_topic + '/pose'
 
     # Bridge to connect Gazebo and ROS2

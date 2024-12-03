@@ -1,7 +1,7 @@
+import launch
 import typing
 from .utils.ros_params import ROSParamServer
 import rclpy
-import launch
 
 
 class NodeInterface:

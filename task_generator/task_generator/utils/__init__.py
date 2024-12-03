@@ -129,10 +129,10 @@ class ModelLoader:
         return workspace_root
 
 
-@ModelLoader.model(ModelType.YAML)
+@ ModelLoader.model(ModelType.YAML)
 class _ModelLoader_YAML(_ModelLoader):
 
-    @staticmethod
+    @ staticmethod
     def load(model_dir, model, **kwargs):
 
         model_path = os.path.join(model_dir, model, "yaml", f"{model}.yaml")
@@ -153,10 +153,10 @@ class _ModelLoader_YAML(_ModelLoader):
             return model_obj
 
 
-@ModelLoader.model(ModelType.SDF)
+@ ModelLoader.model(ModelType.SDF)
 class _ModelLoader_SDF(_ModelLoader):
 
-    @staticmethod
+    @ staticmethod
     def load(model_dir, model, **kwargs):
 
         model_path = os.path.join(model_dir, model, "sdf", f"{model}.sdf")
@@ -177,10 +177,10 @@ class _ModelLoader_SDF(_ModelLoader):
             return model_obj
 
 
-@ModelLoader.model(ModelType.URDF)
+@ ModelLoader.model(ModelType.URDF)
 class _ModelLoader_URDF(_ModelLoader):
 
-    @staticmethod
+    @ staticmethod
     def load(model_dir, model, **kwargs):
 
         namespace: Optional[str] = kwargs.get("namespace", None)
@@ -193,7 +193,8 @@ class _ModelLoader_URDF(_ModelLoader):
 
         try:
             model_desc = subprocess.check_output([
-                "rosrun",
+                "ros2",
+                "run",
                 "xacro",
                 "xacro",
                 model_path,
