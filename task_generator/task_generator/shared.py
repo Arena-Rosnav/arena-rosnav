@@ -4,8 +4,8 @@ import dataclasses
 import enum
 import os
 import typing
-from typing import (Callable, Collection, Dict, Iterable, List, Optional,
-                    Tuple, Type, TypeVar, overload)
+from typing import (Callable, Collection, Dict, List, Optional, Tuple,
+                    Type, TypeVar, overload)
 
 import attr
 import geometry_msgs.msg as geometry_msgs
