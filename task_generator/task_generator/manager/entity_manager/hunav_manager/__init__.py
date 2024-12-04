@@ -12,7 +12,7 @@ from ament_index_python.packages import get_package_share_directory
 
 @dataclasses.dataclass(frozen=True)
 class HunavObstacleProps(DynamicObstacleProps):
-    
+
     @dataclasses.dataclass(frozen=True)
     class Behavior:
         type: int
@@ -45,6 +45,7 @@ class HunavObstacleProps(DynamicObstacleProps):
     goal_radius: float
     closest_obs: list
 
+
 class HunavDynamicObstacle(HunavObstacleProps):
 
     class Behavior(HunavObstacleProps.Behavior):
@@ -63,23 +64,30 @@ class HunavDynamicObstacle(HunavObstacleProps):
         )
 
         @classmethod
-        def parse(cls, obj: dict) -> "HunavDynamicObstacle.Behavior":
+        def parse(cls, obj: dict) -> typing.Self:
             return cls(
                 type=obj.get('type', cls._default.type),
-                state = obj.get('state', cls._default.state),
-                configuration=obj.get('configuration', cls._default.configuration),
-                duration = obj.get('duration', cls._default.duration),
-                once = obj.get('once', cls._default.once),
-                vel = obj.get('vel', cls._default.vel),
-                dist = obj.get('dist', cls._default.dist),
-                social_force_factor = obj.get('social_force_factor', cls._default.social_force_factor),
-                goal_force_factor = obj.get('goal_force_factor', cls._default.goal_force_factor),
-                obstacle_force_factor = obj.get('obstacle_force_factor', cls._default.obstacle_force_factor),
-                other_force_factor = obj.get('other_force_factor', cls._default.other_force_factor),
+                state=obj.get('state', cls._default.state),
+                configuration=obj.get(
+                    'configuration', cls._default.configuration),
+                duration=obj.get('duration', cls._default.duration),
+                once=obj.get('once', cls._default.once),
+                vel=obj.get('vel', cls._default.vel),
+                dist=obj.get('dist', cls._default.dist),
+                social_force_factor=obj.get(
+                    'social_force_factor',
+                    cls._default.social_force_factor),
+                goal_force_factor=obj.get(
+                    'goal_force_factor', cls._default.goal_force_factor),
+                obstacle_force_factor=obj.get(
+                    'obstacle_force_factor',
+                    cls._default.obstacle_force_factor),
+                other_force_factor=obj.get(
+                    'other_force_factor', cls._default.other_force_factor),
             )
 
     _default: typing.ClassVar["HunavObstacleProps"] = HunavObstacleProps(
-        position=PositionOrientation(x=0,y=0,orientation=0),
+        position=PositionOrientation(x=0, y=0, orientation=0),
         name='',
         model=ModelWrapper(''),
         extra={},
@@ -102,27 +110,27 @@ class HunavDynamicObstacle(HunavObstacleProps):
     )
 
     @classmethod
-    def parse(cls, obj: dict, model: ModelWrapper) -> "HunavDynamicObstacle":
+    def parse(cls, obj: dict, model: ModelWrapper) -> typing.Self:
 
         base = DynamicObstacle.parse(obj, model)
 
         return cls(
             **dataclasses.asdict(base),
-            id = obj.get("id", cls._default.id),
-            behavior = cls.Behavior.parse(obj.get('behavior', {})),
-            type = obj.get('type', cls._default.type),
-            skin = obj.get('skin', cls._default.skin),
-            group_id = obj.get('group_id', cls._default.group_id),
-            yaw = obj.get('yaw', cls._default.yaw),
-            velocity = None,
-            desired_velocity = obj.get('max_vel', cls._default.desired_velocity),
-            radius = obj.get('radius', cls._default.radius),
-            linear_vel = cls._default.linear_vel,
-            angular_vel = cls._default.angular_vel,
-            goals = [],
-            cyclic_goals = obj.get('cyclic_goals',cls._default.cyclic_goals),
-            goal_radius = obj.get('goal_radius',cls._default.goal_radius),
-            closest_obs = [],
+            id=obj.get("id", cls._default.id),
+            behavior=cls.Behavior.parse(obj.get('behavior', {})),
+            type=obj.get('type', cls._default.type),
+            skin=obj.get('skin', cls._default.skin),
+            group_id=obj.get('group_id', cls._default.group_id),
+            yaw=obj.get('yaw', cls._default.yaw),
+            velocity=None,
+            desired_velocity=obj.get('max_vel', cls._default.desired_velocity),
+            radius=obj.get('radius', cls._default.radius),
+            linear_vel=cls._default.linear_vel,
+            angular_vel=cls._default.angular_vel,
+            goals=[],
+            cyclic_goals=obj.get('cyclic_goals', cls._default.cyclic_goals),
+            goal_radius=obj.get('goal_radius', cls._default.goal_radius),
+            closest_obs=[],
         )
 
 
@@ -143,9 +151,10 @@ def _load_config(filename: str = "default.yaml") -> "HunavDynamicObstacle":
 
         agent_config = config['hunav_loader']['ros__parameters']['agent1']
         return HunavDynamicObstacle.parse(agent_config, ModelWrapper(''))
-    
+
     except Exception as e:
         raise RuntimeError(f"Error loading config from {config_path}") from e
+
 
 HunavDynamicObstacle._default = _load_config()
 HunavDynamicObstacle.Behavior._default = HunavDynamicObstacle._default.behavior
@@ -160,6 +169,7 @@ SKIN_TYPES: dict[int, str] = {
     4: 'worker_man.dae',
     5: 'walk.dae'
 }
+
 
 class ANIMATION_TYPES(str, enum.Enum):
     WALK = '07_01-walk.bvh',
