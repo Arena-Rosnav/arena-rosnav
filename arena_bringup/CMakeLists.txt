@@ -51,6 +51,11 @@ install(
   DESTINATION share/${PROJECT_NAME}/
 )
 
+install(
+  DIRECTORY configs
+  DESTINATION share/${PROJECT_NAME}/
+)
+
 # Mark executables for installation
 # install(TARGETS ${PROJECT_NAME}_node
 #   DESTINATION lib/${PROJECT_NAME}

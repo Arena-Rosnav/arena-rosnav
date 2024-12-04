@@ -37,15 +37,12 @@ sudo apt-get install -y \
 
 
 export GZ_VERSION=${GAZEBO_VERSION}
-if [ ! -d "${ARENA_WS_DIR}/src/gazebo" ]; then
-    mkdir -p "${ARENA_WS_DIR}/src/gazebo"
-    echo "Directory ${ARENA_WS_DIR}/src/gazebo created."
-else
-    echo "Directory ${ARENA_WS_DIR}/src/gazebo already exists."
-fi
+mkdir -p "${ARENA_WS_DIR}/src/gazebo"
 
 pushd "${ARENA_WS_DIR}/src/gazebo"
-  git clone https://github.com/gazebosim/ros_gz.git -b ros2
+  if [ ! -d ros_gz ] ; then
+    git clone https://github.com/gazebosim/ros_gz.git -b ros2
+  fi
 popd
 
 rosdep install -r --from-paths src -i -y --rosdistro ${ARENA_ROS_DISTRO} 

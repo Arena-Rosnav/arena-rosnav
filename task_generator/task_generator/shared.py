@@ -144,7 +144,7 @@ class PositionOrientation(Position):
     def from_pose(
         cls,
         pose: geometry_msgs.Pose
-    ) -> typing.Self:
+    ) -> "PositionOrientation":
         return cls(
             x=pose.position.x,
             y=pose.position.y,
@@ -284,8 +284,7 @@ class ModelWrapper:
                     return models[model_type]
             else:
                 raise LookupError(
-                    f"no matching model found for {
-                        name} (available: {list(models.keys())}, requested: {list(only)})"
+                    f"no matching model found for {name} (available: {list(models.keys())}, requested: {list(only)})"
                 )
 
         return ModelWrapper.bind(name, get)
@@ -332,10 +331,9 @@ class RobotProps(EntityProps):
     record_data_dir: Optional[str] = None
 
 
-@dataclasses.dataclass(frozen=True)
 class Obstacle(ObstacleProps):
-    @staticmethod
-    def parse(obj: Dict, model: ModelWrapper) -> "Obstacle":
+    @classmethod
+    def parse(cls, obj: Dict, model: ModelWrapper) -> "Obstacle":
         name = str(obj.get("name", ""))
         position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
 
@@ -346,125 +344,18 @@ class Obstacle(ObstacleProps):
             extra=obj,
         )
 
-
-def load_config(filename: str = "default.yaml") -> dict:
-    """Load config from YAML file in arena_bringup configs."""
-    # first priority: Source space
-    source_path = os.path.join(
-        os.environ.get('HOME', ''),
-        "arena4_ws/src/arena/arena-rosnav/arena_bringup/configs/hunav_agents",
-        filename
-    )
-
-    # second priority: Install space
-    install_path = os.path.join(
-        get_package_share_directory("arena_bringup"),
-        "configs",
-        "hunav_agents",
-        filename
-    )
-
-    print(f"\n========== TRYING CONFIG PATHS ==========")
-    print(f"Source path: {source_path}")
-    print(f"Install path: {install_path}")
-
-    # try first source, then install path
-    if os.path.exists(source_path):
-        config_path = source_path
-        print(f"\nUsing source space config: {config_path}")
-    elif os.path.exists(install_path):
-        config_path = install_path
-        print(f"\nUsing install space config: {config_path}")
-    else:
-        raise FileNotFoundError(
-            f"Config file not found in either:\n- {source_path}\n- {install_path}")
-
-    try:
-        with open(config_path, 'r') as f:
-            config = yaml.safe_load(f)
-            params = config['hunav_loader']['ros__parameters']
-
-            print("\n========== FULL PARAMETER OVERVIEW ==========")
-            print("\n=== Available Agents ===")
-            print(f"Agents: {params['agents']}")
-
-            print("\n=== Individual Agent Configurations ===")
-            for agent in params['agents']:
-                agent_config = params[agent]
-                print(f"\nAgent: {agent}")
-                print("Basic Properties:")
-                print(f"- ID: {agent_config.get('id')}")
-                print(f"- Skin: {agent_config.get('skin')}")
-                print(f"- Group ID: {agent_config.get('group_id')}")
-                print(f"- Max Velocity: {agent_config.get('max_vel')}")
-                print(f"- Radius: {agent_config.get('radius')}")
-
-                print("\nBehavior:")
-                behavior = agent_config.get('behavior', {})
-                print(
-                    f"- Type: {behavior.get('type')}  # REGULAR=1, IMPASSIVE=2, SURPRISED=3, SCARED=4, CURIOUS=5, THREATENING=6")
-                print(
-                    f"- Configuration: {behavior.get('configuration')}  # default=0, custom=1, random_normal=2, random_uniform=3")
-                print(f"- Duration: {behavior.get('duration')}")
-                print(f"- Once: {behavior.get('once')}")
-                print(f"- Velocity: {behavior.get('vel')}")
-                print(f"- Distance: {behavior.get('dist')}")
-                print(
-                    f"- Goal Force Factor: {behavior.get('goal_force_factor')}")
-                print(
-                    f"- Obstacle Force Factor: {behavior.get('obstacle_force_factor')}")
-                print(
-                    f"- Social Force Factor: {behavior.get('social_force_factor')}")
-                print(
-                    f"- Other Force Factor: {behavior.get('other_force_factor')}")
-
-                print("\nInitial Pose:")
-                init_pose = agent_config.get('init_pose', {})
-                print(f"- X: {init_pose.get('x')}")
-                print(f"- Y: {init_pose.get('y')}")
-                print(f"- Z: {init_pose.get('z')}")
-                print(f"- H: {init_pose.get('h')}")
-
-                print("\nGoals:")
-                print(f"- Goal Radius: {agent_config.get('goal_radius')}")
-                print(f"- Cyclic Goals: {agent_config.get('cyclic_goals')}")
-                print(f"- Goals List: {agent_config.get('goals')}")
-
-                # Print individual goal positions
-                for goal_id in agent_config.get('goals', []):
-                    goal_data = agent_config.get(goal_id, {})
-                    print(f"\n  {goal_id}:")
-                    print(f"  - X: {goal_data.get('x')}")
-                    print(f"  - Y: {goal_data.get('y')}")
-                    print(f"  - H: {goal_data.get('h')}")
-
-            print("\n============================================")
-
-            return params
-
-    except Exception as e:
-        print(f"Error loading config from {config_path}: {e}")
-        raise
-
-
-# load the hunav params
-# DEFAULT_AGENT_CONFIG = load_config()
-
-@dataclasses.dataclass(frozen=True)
 class DynamicObstacle(DynamicObstacleProps):
-    waypoints: Iterable[PositionRadius]
 
-    @staticmethod
-    def parse(obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
-        name = str(obj.get("name", ""))
-        position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
-        waypoints = [PositionRadius(*waypoint)
-                     for waypoint in obj.get("waypoints", [])]
+    @classmethod
+    def parse(cls, obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
+
+        base = Obstacle.parse(obj, model)
+        waypoints = [PositionRadius(*waypoint) for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
-            name=name, position=position, model=model, waypoints=waypoints, extra=obj
+            **dataclasses.asdict(base),
+            waypoints=waypoints,
         )
-
 
 @dataclasses.dataclass(frozen=True)
 class WallObstacle:

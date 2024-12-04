@@ -88,7 +88,7 @@ class TM_Random(TM_Obstacles):
         class ModelList(dict[str, float]):
 
             @classmethod
-            def fromkeys(cls, *args, **kwargs) -> typing.Self:
+            def fromkeys(cls, *args, **kwargs) -> "ModelList":
                 return cls(super().fromkeys(*args, **kwargs))
 
             @property

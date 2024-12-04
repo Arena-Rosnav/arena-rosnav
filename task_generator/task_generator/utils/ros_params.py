@@ -9,8 +9,11 @@ import rcl_interfaces.msg
 import rclpy.parameter
 from task_generator.shared import DefaultParameter
 
+T = typing.TypeVar('T')
+U = typing.TypeVar('U')
 
-class ROSParam[T](abc.ABC):
+
+class ROSParam(abc.ABC, typing.Generic[T]):
 
     @abc.abstractmethod
     def __init__(
@@ -40,12 +43,9 @@ class ROSParam[T](abc.ABC):
         """
 
 
-U = typing.TypeVar('U')
-
-
 class ROSParamServer(rclpy.node.Node):
 
-    class _ROSParam[T](ROSParam, abc.ABC):
+    class _ROSParam(ROSParam, abc.ABC, typing.Generic[T]):
         """
         Wrapper that handles callbacks.
         """
@@ -144,11 +144,11 @@ class ROSParamServer(rclpy.node.Node):
         """
         Typed ROS2 parameter class with callbacks.
         """
-        class _ROSParam[T](self._ROSParam[T]):
+        class _ROSParam(self._ROSParam[T], typing.Generic[T]):
             _node = self
         return _ROSParam
 
-    class rosparam[T]:
+    class rosparam(typing.Generic[T]):
         """
         Light-weight stateless interface for singular typed rosparam actions (short-lived).
         Runtime checks are not performed.
@@ -170,13 +170,14 @@ class ROSParamServer(rclpy.node.Node):
 
         @classmethod
         def get_unsafe(cls, param_name: str,
-                       default: "T | typing.Type[_unspecified]" = _unspecified) -> T:
+                       default: typing.Optional[T] = None) -> T:
             """
             Get value of parameter.
             """
 
             result = cls._node.get_parameter_or(
-                param_name
+                param_name,
+                default,
             )
             if result.type_ is rclpy.parameter.Parameter.Type.NOT_SET:
                 raise ValueError(

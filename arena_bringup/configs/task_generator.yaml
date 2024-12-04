@@ -24,3 +24,16 @@
     STAGED:
       curriculum: default.yaml
       index: 0
+    hunavsim:     
+      dynamic:
+        max: 15
+        min: 3
+        models:
+        - actor1   
+      seed: -1
+      parameters:
+        max_vel: 0.3
+        force_factor_desired: 1.0
+        force_factor_obstacle: 1.0
+        force_factor_social: 5.0
+        force_factor_robot: 0.0

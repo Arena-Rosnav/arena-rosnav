@@ -87,7 +87,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-a
 
 # for building python
 echo "Installing Python deps..." 
-sudo apt-get install -y build-essential python3-pip zlib1g-dev libffi-dev libssl-dev libbz2-dev libreadline-dev libsqlite3-dev liblzma-dev libncurses-dev llvm-14
+sudo apt-get install -y build-essential python3-pip zlib1g-dev libffi-dev libssl-dev libbz2-dev libreadline-dev libsqlite3-dev liblzma-dev libncurses-dev tk-dev python3-dev
 
 if [ ! -d src/arena/arena-rosnav/tools ] ; then
   mkdir -p src/arena/arena-rosnav/tools
@@ -117,6 +117,7 @@ else
   popd
 fi
 python -m pip install -e vcstool
+alias vcs="$HOME/.pyenv/shims/vcs" # avoid reopening shell
 
 # Getting Packages
 echo "Installing deps...:"
@@ -169,8 +170,12 @@ if [ ! -f src/ros2/compiled ] ; then
     --ignore-src \
     --rosdistro "${ARENA_ROS_DISTRO}" \
     -y \
-    --skip-keys \
     || echo 'rosdep failed to install all dependencies'
+
+  # fix rosidl error that was caused upstream https://github.com/ros2/rosidl/issues/822#issuecomment-2403368061
+  pushd src/ros2/ros2/rosidl
+    git -c user.name='Arena' -c user.email='anonymous@arena-rosnav.org' cherry-pick 654d6f5658b59009147b9fad9b724919633f38fe || echo 'already cherry picked'
+  popd
 
   . src/arena/arena-rosnav/tools/colcon_build --paths src/ros2/*
   touch src/ros2/compiled
@@ -202,7 +207,6 @@ rosdep install -y \
   || echo 'rosdep failed to install all dependencies'
 . poetry_install
 touch "$INSTALLED"
-
 
 #run installers
 # sudo apt upgrade

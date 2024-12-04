@@ -1,0 +1,82 @@
+hunav_loader:
+  ros__parameters:
+    map: map_empty  #   Arena Default
+    publish_people: true
+    agents:
+      - agent1
+      - agent2
+    agent1:
+      id: 1
+      skin: 2
+      group_id: -1
+      max_vel: 1.5
+      radius: 0.4
+      behavior: 
+        type: 4  # REGULAR=1, IMPASSIVE=2, SURPRISED=3, SCARED=4, CURIOUS=5, THREATENING=6
+        configuration: 0  # def: 0, custom:1, random_normal:2, random_uniform:3
+        duration: 40.0  # seg
+        once: true
+        vel: 0.6
+        dist: 0.0
+        goal_force_factor: 2.0
+        obstacle_force_factor: 10.0
+        social_force_factor: 5.0
+        other_force_factor: 20.0
+      init_pose:
+        x: -3.973340
+        y: -8.576801
+        z: 1.250000
+        h: 0.0
+      goal_radius: 0.3
+      cyclic_goals: true
+      goals:
+        - g0
+        - g1
+        - g2
+      g0:
+        x: -3.133759
+        y: -4.166653
+        h: 1.250000
+      g1:
+        x: 0.997901
+        y: -4.131655
+        h: 1.250000
+      g2:
+        x: -0.227549
+        y: -10.187146
+        h: 1.250000
+    agent2:
+      id: 2
+      skin: 3
+      group_id: -1
+      max_vel: 1.5
+      radius: 0.4
+      behavior: 
+        type: 6 
+        configuration: 2  
+        duration: 40.0
+        once: true
+        vel: 0.6
+        dist: 0.0
+        goal_force_factor: 2.0
+        obstacle_force_factor: 10.0
+        social_force_factor: 5.0
+        other_force_factor: 20.0
+      init_pose:
+        x: 2.924233
+        y: 5.007970
+        z: 1.250000
+        h: 0.0
+      goal_radius: 0.3
+      cyclic_goals: true
+      goals:
+        - g0
+        - g1
+      g0:
+        x: -2.644067
+        y: 2.066231
+        h: 1.250000
+      g1:
+        x: -1.663169
+        y: -3.291318
+        h: 1.250000
