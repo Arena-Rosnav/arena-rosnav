@@ -1,4 +1,3 @@
-
 from enum import Enum
 import enum
 import typing
@@ -6,9 +5,7 @@ from task_generator.shared import Namespace
 
 
 class Constants:
-
     DEFAULT_PEDESTRIAN_MODEL = "actor1"
-
     TASK_GENERATOR_SERVER_NODE = Namespace("task_generator_server")
 
     class Simulator(Enum):
@@ -23,8 +20,7 @@ class Constants:
 
     class EntityManager(Enum):
         DUMMY = "dummy"
-        PEDSIM = "pedsim"
-        CROWDSIM = "crowdsim"
+        HUNAV = "hunav"  # Added Hunavsim
 
     class TaskMode:
         @enum.unique

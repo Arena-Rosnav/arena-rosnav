@@ -44,6 +44,15 @@ repositories:
     url: https://github.com/jackal/jackal.git
     version: foxy-devel
 
+  deps/hunav/hunav_sim:
+    type: git
+    url: https://github.com/robotics-upo/hunav_sim.git
+    version: humble@61f65cc
+  deps/hunav/people_msgs:
+    type: git
+    url: https://github.com/wg-perception/people.git
+    version: ros2@0ae47f6
+
 #  arena/utils/3rd-party-robot-packages:
 #    type: git
 #    url: https://github.com/Arena-Rosnav/3rd-party-robot-packages

@@ -137,3 +137,10 @@ def dummy():
             self._simulator.move_entity(name, position)
 
     return DummyEntityManager
+
+
+@EntityManagerRegistry.register(Constants.EntityManager.HUNAV)
+def lazy_hunavsim():
+
+    from .hunav_manager.hunav_manager import HunavManager
+    return HunavManager

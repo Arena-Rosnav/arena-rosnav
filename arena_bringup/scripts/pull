@@ -31,8 +31,8 @@ if [ -f src/arena/arena-rosnav/.installed ] ; then
         fi
     done < src/arena/arena-rosnav/.installed
 fi
-run '(rosdep update && rosdep install --from-paths src --ignore-src -r -y --skip-keys "${ROSDEP_EXCLUDES}" || echo rosdep failed to install all dependencies)' 
-run '(. src/arena/arena-rosnav/tools/poetry_install);'
+run '(rosdep update --rosdistro humble && rosdep install --from-paths src --ignore-src -r -y --skip-keys "${ROSDEP_EXCLUDES}" || echo rosdep failed to install all dependencies)' 
+run '(. src/arena/arena-rosnav/tools/poetry_install)'
 
 
 if [ $FATAL -ne 0 ] ;
