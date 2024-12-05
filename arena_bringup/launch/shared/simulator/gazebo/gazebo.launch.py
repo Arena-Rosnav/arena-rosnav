@@ -231,6 +231,7 @@ def generate_launch_description():
             # Velocity and odometry (Gazebo -> ROS2)
             gz_topic + '/cmd_vel@geometry_msgs/msg/Twist[gz.msgs.Twist',
             gz_topic + '/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+            '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
         ],
         remappings=[
             (joint_state_gz_topic, 'joint_states'),
