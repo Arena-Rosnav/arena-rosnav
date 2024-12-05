@@ -1,49 +1,50 @@
 
+import os
 import launch
+import launch.actions
+import launch.launch_description_sources
 import launch_ros.actions
-from launch.substitutions import LaunchConfiguration
-from launch.conditions import IfCondition, UnlessCondition
+
+from ament_index_python.packages import get_package_share_directory
+
 
 def generate_launch_description():
     ld = launch.LaunchDescription([
-        launch.actions.DeclareLaunchArgument(
-            name='map_file'
-        ),
-        launch.actions.DeclareLaunchArgument(
-            name='map_path'
+        # launch.actions.IncludeLaunchDescription(
+        #     launch.launch_description_sources.PythonLaunchDescriptionSource(
+        #         os.path.join(get_package_share_directory('nav2_bringup'), 'launch/bringup_launch.py')),
+        #     launch_arguments={
+        #         'autostart': 'False',
+        #         'use_composition': 'False',
+        #         'use_namespace': 'True',
+        #         'namespace': 'nav2'
+        #     }.items(),
+        # ),
+        launch_ros.actions.Node(
+            package='nav2_lifecycle_manager',
+            executable='lifecycle_manager',
+            name='lifecycle_manager_map_server',
+            output='screen',
+            parameters=[
+                {
+                    'node_names': ['map_server'],
+                    'autostart': True,
+                }
+            ]
         ),
         launch_ros.actions.Node(
-            package='map_server',
+            package='nav2_map_server',
             executable='map_server',
             name='map_server',
-            condition=UnlessCondition(LaunchConfiguration('map_file').perform == 'dynamic_map')
+            parameters=[{
+                'topic_name': 'map',
+                'frame_id': 'map',
+                'yaml_filename': '',
+            }],
         ),
-        launch_ros.actions.Node(
-            package='map_generator',
-            executable='map_generator_node.py',
-            name='map_generator_node',
-            condition=IfCondition(LaunchConfiguration('map_file').perform == 'dynamic_map')
-        ),
-        launch_ros.actions.Node(
-            package='map_generator',
-            executable='map_server.py',
-            name='map_server_starter'
-        ),
-        launch_ros.actions.Node(
-            package='map_distance_server',
-            executable='map_distance_node.py',
-            name='distance_server',
-            output='screen'
-        ),
-        launch_ros.actions.Node(
-            package='map_clock_simulator',
-            executable='node.py',
-            name='map_clock_simulator',
-            output='screen'
-        )
     ])
     return ld
 
+
 if __name__ == '__main__':
     generate_launch_description()
-

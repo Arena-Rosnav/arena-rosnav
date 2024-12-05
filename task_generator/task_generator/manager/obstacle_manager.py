@@ -5,7 +5,7 @@ import itertools
 
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import ObstacleLayer
-from task_generator.manager.utils import World
+from task_generator.manager.world_manager.utils import World
 from task_generator.manager.world_manager import WorldManager
 from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.simulators import BaseSimulator
@@ -20,7 +20,8 @@ class ObstacleManager:
 
     id_generator: Iterator[int]
 
-    def __init__(self, namespace, world_manager, simulator: BaseSimulator, entity_manager: EntityManager):
+    def __init__(self, namespace, world_manager,
+                 simulator: BaseSimulator, entity_manager: EntityManager):
         self._world_manager = world_manager
         self._namespace = namespace
         self._simulator = simulator

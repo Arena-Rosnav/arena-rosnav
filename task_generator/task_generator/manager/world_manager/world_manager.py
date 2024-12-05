@@ -1,3 +1,4 @@
+from task_generator.shared import Position, PositionRadius
 import itertools
 from math import floor
 from typing import Collection, List, Optional, Tuple
@@ -5,8 +6,7 @@ import numpy as np
 import scipy.signal
 from task_generator import NodeInterface
 
-from task_generator.manager.utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls
-from task_generator.shared import Position, PositionRadius
+from .utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls
 
 
 class WorldManager(NodeInterface):
@@ -55,7 +55,7 @@ class WorldManager(NodeInterface):
     ):
 
         if world_obstacles is None:
-            """this is OK because maps may not have preset entities"""
+            # this is OK because maps may not have preset entities
             world_obstacles = list()
 
         walls = occupancy_to_walls(
@@ -178,7 +178,7 @@ class WorldManager(NodeInterface):
                 break
 
         else:
-            raise Exception("can't find any non-occupied spaces")
+            raise RuntimeError("can't find any non-occupied spaces")
 
         point = PositionRadius(
             float(np.round(float(x) * self.world.map.resolution +
@@ -327,7 +327,8 @@ class WorldManager(NodeInterface):
     def get_position_on_map(
             self, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> Position:
         return self.get_positions_on_map(
-            n=1, safe_dist=safe_dist, forbidden_zones=forbidden_zones)[0]
+            n=1, safe_dist=safe_dist, forbidden_zones=forbidden_zones, forbid=forbid
+        )[0]
 
     id_gen = itertools.count()
 

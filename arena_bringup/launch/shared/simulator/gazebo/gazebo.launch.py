@@ -246,27 +246,6 @@ def generate_launch_description():
         ],
     )
 
-    # RViz configuration path
-    rviz_config_file = os.path.join(
-        workspace_root,
-        "src",
-        "deps",
-        "navigation2",
-        "nav2_bringup",
-        "rviz",
-        "nav2_default_view.rviz",
-    )
-
-    # Launch RViz node
-    rviz = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2",
-        arguments=["-d", rviz_config_file],
-        parameters=[{"use_sim_time": use_sim_time}],
-        output="screen",
-    )
-
     # random_spawn_launch_file = PathJoinSubstitution(
     #     [
     #         workspace_root,
@@ -284,9 +263,6 @@ def generate_launch_description():
     # random_spawn_spawn = IncludeLaunchDescription(
     #     PythonLaunchDescriptionSource(random_spawn_launch_file)
     # )
-
-    # Delay RViz launch to ensure other nodes start first
-    delayed_rviz = TimerAction(period=5.0, actions=[rviz])
 
     # Return the LaunchDescription with all the nodes/actions
     return LaunchDescription(
@@ -316,7 +292,6 @@ def generate_launch_description():
             # joint_state_publisher,
             # spawn_robot,
             bridge,
-            delayed_rviz,
             # IncludeLaunchDescription(
             #     PythonLaunchDescriptionSource(random_spawn_launch_file),
             #     condition=IfCondition(random_spawn_test),

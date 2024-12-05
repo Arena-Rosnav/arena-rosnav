@@ -1,7 +1,7 @@
 import rospy
 
 from task_generator.shared import Namespace, rosparam_get
-from task_generator.manager.utils import WorldWalls
+from task_generator.manager.world_manager.utils import WorldWalls
 from tf.transformations import quaternion_from_euler
 from task_generator.constants import UnityConstants
 from task_generator.constants.runtime import Configuration

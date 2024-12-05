@@ -9,7 +9,7 @@ import numpy as np
 
 import yaml
 from task_generator.constants import Constants
-from task_generator.manager.utils import WorldMap, WorldOccupancy
+from task_generator.manager.world_manager.utils import WorldMap, WorldOccupancy
 
 from task_generator.shared import (
     Model,

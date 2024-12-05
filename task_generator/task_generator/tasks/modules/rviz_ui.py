@@ -37,7 +37,7 @@ class Mod_OverrideRobot(TM_Module):
         )
 
         self.node.create_subscription(
-            geometry_msgs.PoseWithCovarianceStamped,
+            geometry_msgs.PointStamped,
             self.TOPIC_NEW_SCENARIO,
             self._cb_new_scenario,
             1

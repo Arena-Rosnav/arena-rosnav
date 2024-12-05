@@ -152,6 +152,13 @@ def generate_launch_description():
         launch.actions.IncludeLaunchDescription(
             launch.launch_description_sources.PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory(
+                    'arena_bringup'), 'launch/utils/map_server.launch.py')
+            )
+        ),
+
+        launch.actions.IncludeLaunchDescription(
+            launch.launch_description_sources.PythonLaunchDescriptionSource(
+                os.path.join(get_package_share_directory(
                     'arena_bringup'), 'launch/shared/simulator/simulator.launch.py')
             ),
             launch_arguments={
@@ -181,6 +188,13 @@ def generate_launch_description():
                 'global_frame_id': launch.substitutions.LaunchConfiguration('global_frame_id'),
                 'odom_frame_id': launch.substitutions.LaunchConfiguration('odom_frame_id')
             }.items()
+        ),
+        launch.actions.IncludeLaunchDescription(
+            launch.launch_description_sources.PythonLaunchDescriptionSource(
+                os.path.join(get_package_share_directory(
+                    'arena_bringup'), 'launch/utils/rviz.launch.py')
+            ),
+            launch_arguments={}.items()
         ),
     ])
     return ld
@@ -384,16 +398,5 @@ if __name__ == '__main__':
     #         'model': launch.substitutions.LaunchConfiguration('model'),
     #         'show_rviz': launch.substitutions.LaunchConfiguration('show_rviz'),
     #         'headless': launch.substitutions.LaunchConfiguration('headless')
-    #     }.items()
-    # ),
-
-    # launch.actions.IncludeLaunchDescription(
-    #     launch.launch_description_sources.PythonLaunchDescriptionSource(
-    #         os.path.join(get_package_share_directory(
-    #             'arena_bringup'), 'launch/utils/map_server.launch.py')
-    #     ),
-    #     launch_arguments={
-    #         'map_file': launch.substitutions.LaunchConfiguration('map_file'),
-    #         'map_path': launch.substitutions.LaunchConfiguration('map_path')
     #     }.items()
     # ),

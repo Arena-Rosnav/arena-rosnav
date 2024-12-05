@@ -4,13 +4,12 @@ import traceback
 import typing
 from typing import Dict, List
 
-import nav_msgs.msg as nav_msgs
-import numpy as np
 
 import rclpy
 import rclpy.executors
 import rclpy.node
 import rclpy.callback_groups
+import rclpy.parameter
 
 import std_srvs.srv as std_srvs
 import yaml
@@ -27,7 +26,6 @@ from task_generator.manager.entity_manager import (EntityManager,
                                                    EntityManagerRegistry)
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
-from task_generator.manager.utils import WorldMap
 from task_generator.manager.world_manager import WorldManager
 from task_generator.shared import ModelWrapper, Namespace, Robot, gen_init_pos
 from task_generator.simulators import BaseSimulator, SimulatorRegistry
@@ -202,38 +200,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
                 self._namespace
             )
 
-        # cli = self.create_client(map_distance_server_srvs.GetDistanceMap, '/distance_map')
-        # while not cli.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('service not available, waiting again...')
-
-        # req = map_distance_server_srvs.GetDistanceMap.Request()
-        # future = cli.call_async(req)
-        # rclpy.spin_until_future_complete(self, future)
-        # map_response = future.result()
-
-        DUMMY_MAP_SHAPE = (200, 200)
-        DUMMY_MAP = nav_msgs.OccupancyGrid(
-            info=nav_msgs.MapMetaData(
-                height=DUMMY_MAP_SHAPE[0],
-                width=DUMMY_MAP_SHAPE[1],
-                resolution=0.1,
-            ),
-            data=list(
-                np.pad(
-                    np.zeros(
-                        (DUMMY_MAP_SHAPE[0] - 2, DUMMY_MAP_SHAPE[1] - 2),
-                        dtype=int,
-                    ),
-                    ((1, 1), (1, 1)),
-                    mode='constant',
-                    constant_values=1
-                ).flat
-            )
-        )
-
-        self._world_manager = WorldManager(
-            world_map=WorldMap.from_occupancy_grid(occupancy_grid=DUMMY_MAP)
-        )
+        self._world_manager = WorldManager()
 
         self._entity_manager = EntityManagerRegistry.get(self.conf.Arena.ENTITY_MANAGER.value)(
             namespace=self._namespace,

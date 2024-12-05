@@ -284,7 +284,8 @@ class ModelWrapper:
                     return models[model_type]
             else:
                 raise LookupError(
-                    f"no matching model found for {name} (available: {list(models.keys())}, requested: {list(only)})"
+                    f"no matching model found for {
+                        name} (available: {list(models.keys())}, requested: {list(only)})"
                 )
 
         return ModelWrapper.bind(name, get)
@@ -344,18 +345,21 @@ class Obstacle(ObstacleProps):
             extra=obj,
         )
 
+
 class DynamicObstacle(DynamicObstacleProps):
 
     @classmethod
     def parse(cls, obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
 
         base = Obstacle.parse(obj, model)
-        waypoints = [PositionRadius(*waypoint) for waypoint in obj.get("waypoints", [])]
+        waypoints = [PositionRadius(*waypoint)
+                     for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
             **dataclasses.asdict(base),
             waypoints=waypoints,
         )
+
 
 @dataclasses.dataclass(frozen=True)
 class WallObstacle:
