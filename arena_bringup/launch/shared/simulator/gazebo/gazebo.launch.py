@@ -266,23 +266,23 @@ def generate_launch_description():
         output="screen",
     )
 
-    random_spawn_launch_file = PathJoinSubstitution(
-        [
-            workspace_root,
-            "src",
-            "arena",
-            "arena-rosnav",
-            "arena_bringup",
-            "launch",
-            "testing",
-            "simulators",
-            "gazebo_entity_spawn.py",
-        ]
-    )
+    # random_spawn_launch_file = PathJoinSubstitution(
+    #     [
+    #         workspace_root,
+    #         "src",
+    #         "arena",
+    #         "arena-rosnav",
+    #         "arena_bringup",
+    #         "launch",
+    #         "testing",
+    #         "simulators",
+    #         "gazebo_entity_spawn.py",
+    #     ]
+    # )
 
-    random_spawn_spawn = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(random_spawn_launch_file)
-    )
+    # random_spawn_spawn = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource(random_spawn_launch_file)
+    # )
 
     # Delay RViz launch to ensure other nodes start first
     delayed_rviz = TimerAction(period=5.0, actions=[rviz])
@@ -316,10 +316,10 @@ def generate_launch_description():
             # spawn_robot,
             bridge,
             delayed_rviz,
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(random_spawn_launch_file),
-                condition=IfCondition(random_spawn_test),
-            ),
+            # IncludeLaunchDescription(
+            #     PythonLaunchDescriptionSource(random_spawn_launch_file),
+            #     condition=IfCondition(random_spawn_test),
+            # ),
         ]
     )
 
