@@ -720,23 +720,33 @@ class HunavManager(EntityManager):
             action()
 
     def move_robot(self, name: str, position: PositionOrientation):
-        """Move robot to new position"""
+        """Move robot to new position using HuNavSim's move_agent service"""
         try:
             if not self._move_agent_client.service_is_ready():
                 self.node.get_logger().warn("Move agent service not ready yet")
                 return
 
-            request = MoveAgent.Request()
-            request.agent_id = 0  # TODO addressable robots
-            request.pose = Pose()
-            request.pose.position = Point(x=position.x, y=position.y, z=0.0)
+            # Create Robot Agent
+            robot_agent = Agent()
+            robot_agent.id = 0  # Robot typically uses ID 0
+            robot_agent.name = name
+            robot_agent.type = Agent.ROBOT
+            robot_agent.position.position.x = position.x
+            robot_agent.position.position.y = position.y
             quat = quaternion_from_euler(0.0, 0.0, position.orientation)
-            request.pose.orientation = Quaternion(
-                x=quat[0], y=quat[1], z=quat[2], w=quat[3])
+            robot_agent.position.orientation = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
+            robot_agent.yaw = position.orientation
+
+            # Create service request
+            request = MoveAgent.Request()
+            request.agent_id = 0
+            request.robot = robot_agent
+            request.current_agents = Agents()
+            request.current_agents.header.stamp = self.node.get_clock().now().to_msg()
+            request.current_agents.header.frame_id = "map"
 
             future = self._move_agent_client.call_async(request)
-
-            # Add timeout to prevent hanging
+            
             timeout_sec = 1.0
             start_time = time.time()
             while not future.done() and time.time() - start_time < timeout_sec:
