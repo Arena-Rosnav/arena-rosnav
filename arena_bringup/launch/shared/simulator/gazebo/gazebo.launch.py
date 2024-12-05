@@ -19,52 +19,35 @@ from launch.conditions import IfCondition
 
 def generate_launch_description():
     # Set environment variables
-    current_dir = os.path.abspath(__file__)
-    workspace_root = current_dir
-    while not workspace_root.endswith("arena4_ws"):
-        workspace_root = os.path.dirname(workspace_root)
-    if not workspace_root.endswith("arena4_ws"):
-        raise ValueError(
-            "Could not find the 'arena4_ws' directory in the current path."
-        )
+    package_root = get_package_share_directory('arena_bringup')
+    ss_root = get_package_share_directory('simulation-setup')
 
     # Set paths for Gazebo, Physics Engine, and Resource
-    GZ_CONFIG_PATHS = [
-        os.path.join(workspace_root, "install", "gz-sim8", "share", "gz"),
-        # os.path.join(workspace_root, 'install', 'gz-tools2', 'share', 'gz'),
-    ]
 
-    GZ_SIM_PHYSICS_ENGINE_PATH = os.path.join(
-        workspace_root, "build", "gz-physics7"
-    )
+    # GZ_CONFIG_PATHS = [
+    #     # os.path.join(get_package_share_directory('gz-sim8'), "gz"),
+    #     # os.path.join(workspace_root, 'install', 'gz-tools2', 'share', 'gz'),
+    # ]
+
+    # GZ_SIM_PHYSICS_ENGINE_PATH = os.path.join(
+    #     workspace_root, "build", "gz-physics7"
+    # )
 
     GZ_SIM_RESOURCE_PATHS = [
-        os.path.join(workspace_root, "src", "deps", "robots", "jackal"),
+        os.path.join(ss_root, "configs", "gazebo"),
+        os.path.join(ss_root, "entities"),
+        os.path.join(ss_root, "worlds"),
+        os.path.join(ss_root, "gazebo_models"),
+        os.path.join(ss_root, "entities", "obstacles", "static"),
+        os.path.join(ss_root, "entities", "obstacles", "robots"),
         os.path.join(
-            workspace_root, "src", "arena", "simulation-setup", "entities"
-        ),
-        os.path.join(
-            workspace_root, "src", "arena", "simulation-setup", "worlds"
-        ),
-        os.path.join(
-            workspace_root, "src", "arena", "simulation-setup", "gazebo_models"
-        ),
-        os.path.join(
-            workspace_root, "src", "arena", "simulation-setup", "entities", "obstacles", "static"
-        ),
-        os.path.join(
-            workspace_root, "src", "arena", "simulation-setup", "entities", "obstacles", "robots"
-        ),
-        os.path.join(
-            workspace_root,
-            "src",
-            "arena",
-            "simulation-setup",
+            ss_root,
             "gazebo_models",
             "Cafe table",
             "materials",
             "textures",
         ),
+        get_package_share_directory("jackal_description"),
     ]
     # GZ_CONFIG_PATH = ":".join(GZ_CONFIG_PATHS)
     GZ_CONFIG_PATH = "/usr/share/gz"
@@ -73,29 +56,22 @@ def generate_launch_description():
 
     # Update environment variables
     # os.environ['GZ_CONFIG_PATH'] = GZ_CONFIG_PATH
-    os.environ["GZ_CONFIG_PATH"] = GZ_CONFIG_PATH
-    os.environ["GZ_SIM_PHYSICS_ENGINE_PATH"] = GZ_SIM_PHYSICS_ENGINE_PATH
+    # os.environ["GZ_CONFIG_PATH"] = GZ_CONFIG_PATH
+    # os.environ["GZ_SIM_PHYSICS_ENGINE_PATH"] = GZ_SIM_PHYSICS_ENGINE_PATH
     os.environ["GZ_SIM_RESOURCE_PATH"] = GZ_SIM_RESOURCE_PATHS_COMBINED
+
+    default_world_path = os.path.join(
+        package_root,
+        'configs',
+        'gazebo',
+        'empty.sdf',
+    )
 
     # Launch Arguments
     use_sim_time = LaunchConfiguration("use_sim_time")
     world_file = LaunchConfiguration("world_file")
     robot_model = LaunchConfiguration("model")
     random_spawn_test = LaunchConfiguration("random_spawn_test")
-
-    # Construct the full world file path
-    world_file_path = PathJoinSubstitution(
-        [
-            workspace_root,
-            "src",
-            "arena",
-            "simulation-setup",
-            "worlds",
-            world_file,
-            "worlds",
-            PythonExpression(['"', world_file, '.world"']),
-        ]
-    )
 
     # Gazebo launch
     gz_sim_launch_file = os.path.join(
@@ -106,7 +82,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(gz_sim_launch_file),
         launch_arguments={
             "gz_args": [
-                world_file_path,
+                world_file,
                 " -v 4",
                 " -r",
                 " --render-engine ogre",
@@ -183,11 +159,7 @@ def generate_launch_description():
 
     # Bridge configuration
     bridge_config = os.path.join(
-        workspace_root,
-        "src",
-        "arena",
-        "arena-rosnav",
-        "arena_bringup",
+        package_root,
         "launch",
         "testing",
         "simulators",
@@ -265,25 +237,26 @@ def generate_launch_description():
     # )
 
     # Return the LaunchDescription with all the nodes/actions
+
     return LaunchDescription(
         [
             DeclareLaunchArgument(
                 "use_sim_time",
-                default_value="true",
+                default_value='True',
                 description="Use simulation (Gazebo) clock if true",
             ),
             DeclareLaunchArgument(
                 "world_file",
-                default_value="map_empty",
+                default_value=default_world_path,
                 description="World file name",
             ),
             DeclareLaunchArgument(
                 "model", default_value="jackal", description="Robot model name"
             ),
             SetEnvironmentVariable("GZ_CONFIG_PATH", GZ_CONFIG_PATH),
-            SetEnvironmentVariable(
-                "GZ_SIM_PHYSICS_ENGINE_PATH", GZ_SIM_PHYSICS_ENGINE_PATH
-            ),
+            # SetEnvironmentVariable(
+            #     "GZ_SIM_PHYSICS_ENGINE_PATH", GZ_SIM_PHYSICS_ENGINE_PATH
+            # ),
             SetEnvironmentVariable(
                 "GZ_SIM_RESOURCE_PATH", GZ_SIM_RESOURCE_PATHS_COMBINED
             ),
