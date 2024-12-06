@@ -108,7 +108,7 @@ class TM_Scenario(TM_Robots):
         TM_Robots.__init__(self, **kwargs)
 
         self._config = self.node.ROSParam[List[_RobotGoal]](
-            'SCENARIO_file',
+            self.namespace('file'),
             'default.json',
             parse=self._parse_scenario,
         )

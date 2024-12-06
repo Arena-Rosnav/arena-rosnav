@@ -22,6 +22,7 @@ class ROSParam(abc.ABC, typing.Generic[T]):
         name: str,
         value: typing.Any,
         *,
+        type_: typing.Optional[rclpy.parameter.Parameter.Type] = None,
         parse: typing.Optional[typing.Callable[[
             typing.Any], T]] = None,
         **kwargs,
@@ -72,6 +73,7 @@ class ROSParamServer(rclpy.node.Node):
             name: str,
             value: typing.Any,
             *,
+            type_: typing.Optional[rclpy.parameter.Parameter.Type] = None,
             parse: typing.Optional[typing.Callable[[
                 typing.Any], T]] = None,
             **kwargs,
@@ -84,6 +86,13 @@ class ROSParamServer(rclpy.node.Node):
 
             self._parameter_value = value
             self._value = parse(self._parameter_value)
+
+            if type_ is not None:
+                self._node.rosparam.declare_safe(
+                    self.name,
+                    type_,
+                )
+
             self._node.register_param(self, value, **kwargs)
 
         @property
@@ -162,7 +171,7 @@ class ROSParamServer(rclpy.node.Node):
 
         @classmethod
         def declare_safe(cls, param_name: str,
-                         value: typing.Any, **kwargs) -> None:
+                         value: typing.Any = None, **kwargs) -> None:
             try:
                 cls._node.declare_parameter(param_name, value, **kwargs)
             except rclpy.exceptions.ParameterAlreadyDeclaredException:

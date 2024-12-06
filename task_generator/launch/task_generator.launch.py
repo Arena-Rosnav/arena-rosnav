@@ -2,6 +2,9 @@
 import launch
 import launch_ros.actions
 
+import os
+from ament_index_python.packages import get_package_share_directory
+
 
 class LaunchArgument(launch.actions.DeclareLaunchArgument):
     @property
@@ -37,9 +40,12 @@ def generate_launch_description():
     tm_modules = LaunchArgument(
         name='tm_modules',
     )
-
     world = LaunchArgument(
         name='world',
+    )
+
+    parameter_file = LaunchArgument(
+        name='parameter_file'
     )
 
     task_generator_node = launch_ros.actions.Node(
@@ -47,7 +53,8 @@ def generate_launch_description():
         executable='task_generator_node',
         name='task_generator_node',
         output='screen',
-        parameters=[{
+        parameters=[
+            {
                 **simulator.parameter,
                 **entity_manager.parameter,
                 **robot.parameter,
@@ -55,7 +62,12 @@ def generate_launch_description():
                 **tm_obstacles.parameter,
                 **tm_modules.parameter,
                 **world.parameter,
-        }],
+            },
+            os.path.join(
+                get_package_share_directory('arena_bringup'),
+                'configs',
+                'task_generator.yaml'),
+        ],
     )
 
     ld = launch.LaunchDescription([

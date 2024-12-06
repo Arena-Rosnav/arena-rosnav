@@ -148,7 +148,7 @@ class TM_Parametrized(TM_Obstacles):
         TM_Obstacles.__init__(self, **kwargs)
 
         self._config = self.node.ROSParam[_ParsedConfig](
-            "PARAMETRIZED_file",
+            self.namespace('file'),
             '',
             parse=self._parse_xml
         )

@@ -8,8 +8,8 @@ from task_generator.constants import Constants
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.world_manager import WorldManager
-from task_generator.shared import DefaultParameter, PositionOrientation, rosparam_set
-from task_generator.tasks import Task
+from task_generator.shared import DefaultParameter, Namespace, PositionOrientation, rosparam_set
+from task_generator.tasks import Namespaced, Task
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.robots import TM_Robots
@@ -23,13 +23,15 @@ from task_generator.utils import ModelLoader
 import task_generator.utils.arena as Utils
 
 
-class TaskFactory:
+class TaskFactory(Namespaced):
     registry_obstacles: typing.Dict[Constants.TaskMode.TM_Obstacles,
                                     typing.Callable[[], typing.Type[TM_Obstacles]]] = {}
     registry_robots: typing.Dict[Constants.TaskMode.TM_Robots,
                                  typing.Callable[[], typing.Type[TM_Robots]]] = {}
     registry_module: typing.Dict[Constants.TaskMode.TM_Module,
                                  typing.Callable[[], typing.Type[TM_Module]]] = {}
+
+    _namespace: typing.ClassVar[Namespace] = Namespaced.namespace('task')
 
     @classmethod
     def register_obstacles(cls, name: Constants.TaskMode.TM_Obstacles):
@@ -39,7 +41,12 @@ class TaskFactory:
                 name not in cls.registry_obstacles
             ), f"TaskMode '{name}' for obstacles already exists!"
 
-            cls.registry_obstacles[name] = loader
+            def namespaced_loader():
+                class Inner(loader()):
+                    _namespace = cls._namespace(name.value)
+                return Inner
+
+            cls.registry_obstacles[name] = namespaced_loader
             return loader
 
         return inner_wrapper
@@ -51,7 +58,12 @@ class TaskFactory:
                 name not in cls.registry_obstacles
             ), f"TaskMode '{name}' for robots already exists!"
 
-            cls.registry_robots[name] = loader
+            def namespaced_loader():
+                class Inner(loader()):
+                    _namespace = cls._namespace(name.value)
+                return Inner
+
+            cls.registry_robots[name] = namespaced_loader
             return loader
 
         return inner_wrapper
@@ -63,7 +75,12 @@ class TaskFactory:
                 name not in cls.registry_obstacles
             ), f"TaskMode '{name}' for module already exists!"
 
-            cls.registry_module[name] = loader
+            def namespaced_loader():
+                class Inner(loader()):
+                    _namespace = cls._namespace(name.value)
+                return Inner
+
+            cls.registry_module[name] = namespaced_loader
             return loader
 
         return inner_wrapper

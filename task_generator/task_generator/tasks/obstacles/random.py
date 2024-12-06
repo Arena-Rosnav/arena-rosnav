@@ -6,8 +6,11 @@ from typing import Callable, Dict, Iterator, List
 
 import numpy as np
 
-from task_generator.shared import (DynamicObstacle, Obstacle,
-                                   PositionOrientation, PositionRadius)
+import rclpy.parameter
+import rcl_interfaces.msg
+
+from task_generator.shared import (DynamicObstacle, Obstacle, PositionOrientation,
+                                   PositionRadius)
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 from task_generator.utils import ModelLoader
@@ -246,21 +249,55 @@ class TM_Random(TM_Obstacles):
         def param_to_modellist(loader: ModelLoader,
                                v: typing.Any) -> typing.List[str]:
             if len(v):
-                return v.split(';')
+                return v
             return list(loader.models)
+
+        STATIC = 'static'
+        INTERACTIVE = 'interactive'
+        DYNAMIC = 'dynamic'
 
         self._config = _Config(
             N_STATIC_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
-                "N_STATIC_OBSTACLES", [5, 15], parse=param_to_tuple),
+                self.namespace(STATIC, 'n'),
+                [5, 15],
+                parse=param_to_tuple
+            ),
             N_INTERACTIVE_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
-                "N_INTERACTIVE_OBSTACLES", [0, 0], parse=param_to_tuple),
+                self.namespace(INTERACTIVE, 'n'),
+                [0, 0],
+                parse=param_to_tuple
+            ),
             N_DYNAMIC_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
-                "N_DYNAMIC_OBSTACLES", [1, 5], parse=param_to_tuple),
+                self.namespace(DYNAMIC, 'n'),
+                [1, 5],
+                parse=param_to_tuple
+            ),
 
             MODELS_STATIC_OBSTACLES=self.node.ROSParam[List[str]](
-                'MODELS_STATIC_OBSTACLES', '', parse=functools.partial(param_to_modellist, self._PROPS.model_loader)),
+                self.namespace(STATIC, 'models'),
+                [],
+                type_=rclpy.parameter.Parameter.Type.STRING_ARRAY,
+                parse=functools.partial(
+                    param_to_modellist,
+                    self._PROPS.model_loader
+                )
+            ),
             MODELS_INTERACTIVE_OBSTACLES=self.node.ROSParam[List[str]](
-                'MODELS_INTERACTIVE_OBSTACLES', '', parse=functools.partial(param_to_modellist, self._PROPS.model_loader)),
+                self.namespace(INTERACTIVE, 'models'),
+                [],
+                type_=rclpy.parameter.Parameter.Type.STRING_ARRAY,
+                parse=functools.partial(
+                    param_to_modellist,
+                    self._PROPS.model_loader
+                )
+            ),
             MODELS_DYNAMIC_OBSTACLES=self.node.ROSParam[List[str]](
-                'MODELS_DYNAMIC_OBSTACLES', 'ugly', parse=functools.partial(param_to_modellist, self._PROPS.dynamic_model_loader)),
+                self.namespace(DYNAMIC, 'models'),
+                ['ugly'],
+                type_=rclpy.parameter.Parameter.Type.STRING_ARRAY,
+                parse=functools.partial(
+                    param_to_modellist,
+                    self._PROPS.dynamic_model_loader
+                )
+            ),
         )

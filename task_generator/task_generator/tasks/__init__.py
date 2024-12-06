@@ -1,5 +1,6 @@
 import abc
 from typing import List
+import typing
 
 import rclpy.node
 import rclpy.publisher
@@ -36,12 +37,19 @@ class Props_(Props_Manager, Props_Modelloader, Props_Namespace):
     clock: rosgraph_msgs.Clock
 
 
-class TaskMode(NodeInterface):
+class Namespaced:
+    _namespace: typing.ClassVar[Namespace] = Namespace('').ParamNamespace()
+
+    @classmethod
+    def namespace(cls, *path: str) -> Namespace:
+        return cls._namespace(*path)
+
+
+class TaskMode(NodeInterface, Namespaced):
     _PROPS: Props_
 
     def __init__(self, props: Props_, **kwargs):
-
-        NodeInterface.__init__(self)
+        NodeInterface.__init__(self, **kwargs)
         self._PROPS = props
 
 
@@ -98,11 +106,11 @@ class Task(Props_, abc.ABC):
     @abc.abstractmethod
     def __init__(
         self,
+        *args,
         obstacle_manager: ObstacleManager,
         robot_managers: List[RobotManager],
         world_manager: WorldManager,
         namespace: str = "",
-        *args,
         **kwargs
     ):
         ...

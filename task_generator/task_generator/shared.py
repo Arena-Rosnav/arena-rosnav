@@ -68,6 +68,9 @@ class Namespace(str):
     def __call__(self, *args: str) -> Namespace:
         return Namespace(os.path.join(self, *args)).remove_double_slash()
 
+    def ParamNamespace(self) -> ParamNamespace:
+        return ParamNamespace('')(*self.split('/'))
+
     @property
     def simulation_ns(self) -> Namespace:
         if len(self.split("/")) < 3:
@@ -80,6 +83,19 @@ class Namespace(str):
 
     def remove_double_slash(self) -> Namespace:
         return Namespace(self.replace("//", "/"))
+
+
+class ParamNamespace(Namespace):
+    def __call__(self, *args: str) -> ParamNamespace:
+        return ParamNamespace(
+            '.'.join((
+                *((self,) if self else []),
+                *args)
+            )
+        )
+
+    def SlashNamespace(self) -> Namespace:
+        return Namespace('')(*self.split('.'))
 
 
 yaml.add_representer(
