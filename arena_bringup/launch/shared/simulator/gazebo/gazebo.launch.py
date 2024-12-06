@@ -47,7 +47,7 @@ def generate_launch_description():
             "materials",
             "textures",
         ),
-        get_package_share_directory("jackal_description"),
+        os.path.join(get_package_share_directory("jackal_description"), '..'),
     ]
     # GZ_CONFIG_PATH = ":".join(GZ_CONFIG_PATHS)
     GZ_CONFIG_PATH = "/usr/share/gz"
