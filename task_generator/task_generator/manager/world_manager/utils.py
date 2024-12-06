@@ -5,19 +5,17 @@
 import dataclasses
 import itertools
 import os
+from typing import Callable, Collection, Dict, List, Optional, Tuple
+
+import nav_msgs.msg
 import numpy as np
-from typing import Callable, Collection, Optional, Tuple, Dict, List
 import scipy.interpolate
 
-
-from task_generator.shared import Obstacle, Position, PositionOrientation, PositionRadius
-
-from builtin_interfaces.msg import Time
-from task_generator.utils import ModelLoader
-
-from nav_msgs.msg import OccupancyGrid
-
 import task_generator.utils.arena as Utils
+from task_generator.shared import (Obstacle, Position, PositionOrientation,
+                                   PositionRadius)
+from task_generator.utils import ModelLoader
+from task_generator.utils.time import Time
 
 # TYPES
 
@@ -187,7 +185,8 @@ class WorldMap:
     time: Time
 
     @staticmethod
-    def from_occupancy_grid(occupancy_grid: OccupancyGrid) -> "WorldMap":
+    def from_costmap(
+            occupancy_grid: nav_msgs.msg.OccupancyGrid) -> "WorldMap":
         # Convert occupancy grid data to numpy array
         grid_data = np.array(
             occupancy_grid.data).reshape(
@@ -208,7 +207,7 @@ class WorldMap:
                 occupancy_grid.info.origin.position.x
             ),
             resolution=occupancy_grid.info.resolution,
-            time=occupancy_grid.info.map_load_time
+            time=Time.from_time(occupancy_grid.info.map_load_time)
         )
 
     @property
@@ -219,7 +218,7 @@ class WorldMap:
         return np.round((position.y - self.origin.y) / self.resolution), np.round(
             self.shape[1] - (position.x - self.origin.x) / self.resolution)
 
-    def tf_grid2pos(self, grid_pos: Tuple[int, int]) -> Position:
+    def tf_grid2pos(self, grid_pos: Tuple[float, float]) -> Position:
         return Position(x=grid_pos[1] * self.resolution + self.origin.y,
                         y=(grid_pos[0]) * self.resolution + self.origin.x)
 

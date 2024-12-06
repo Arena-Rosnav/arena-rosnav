@@ -27,7 +27,7 @@ from task_generator.utils.geometry import quaternion_from_euler
 class HunavManager(EntityManager):
     # Class constants
     WALLS_ENTITY = "walls"  # Definition for walls_entity
-    
+
     # Service Names
     SERVICE_COMPUTE_AGENT = 'compute_agent'
     SERVICE_COMPUTE_AGENTS = 'compute_agents'
@@ -157,7 +157,9 @@ class HunavManager(EntityManager):
                 for agent in response.updated_agents.agents:
                     self.node.get_logger().info(
                         f"\nAgent {agent.name} (ID: {agent.id}):"
-                        f"\n  Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
+                        f"\n  Position: ({
+                            agent.position.position.x:.2f}, {
+                            agent.position.position.y:.2f})"
                         f"\n  Behavior Type: {agent.behavior.type}"
                         f"\n  Current State: {agent.behavior.state}"
                         f"\n  Linear Velocity: {agent.linear_vel:.2f}"
@@ -185,8 +187,12 @@ class HunavManager(EntityManager):
                 self.node.get_logger().info(
                     f"\nCompute_agent response:"
                     f"\n  Agent: {agent.name} (ID: {agent.id})"
-                    f"\n  Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
-                    f"\n  Behavior: Type={agent.behavior.type}, State={agent.behavior.state}"
+                    f"\n  Position: ({
+                        agent.position.position.x:.2f}, {
+                        agent.position.position.y:.2f})"
+                    f"\n  Behavior: Type={
+                        agent.behavior.type}, State={
+                        agent.behavior.state}"
                 )
         except Exception as e:
             self.node.get_logger().error(
@@ -212,7 +218,9 @@ class HunavManager(EntityManager):
                 self.node.get_logger().info(
                     f"\nMove_agent response:"
                     f"\n  Agent: {agent.name} (ID: {agent.id})"
-                    f"\n  New Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
+                    f"\n  New Position: ({
+                        agent.position.position.x:.2f}, {
+                        agent.position.position.y:.2f})"
                     f"\n  New Yaw: {agent.yaw:.2f}"
                     f"\n  Behavior State: {agent.behavior.state}"
                 )
@@ -335,7 +343,8 @@ class HunavManager(EntityManager):
 
         for _obstacle in obstacles:
 
-            obstacle = HunavDynamicObstacle.parse(_obstacle.extra, _obstacle.model)
+            obstacle = HunavDynamicObstacle.parse(
+                _obstacle.extra, _obstacle.model)
 
             # print("\n=============== NEW OBSTACLE PROCESSING ===============")
             # print(f"Processing obstacle: {obstacle.name}")
@@ -416,7 +425,8 @@ class HunavManager(EntityManager):
                 # print(f"- Social: {obstacle.behavior.social_force_factor}")
                 # print(f"- Other: {obstacle.behavior.other_force_factor}")
                 # self.node.get_logger().error(
-                #     f"Behavior Data - Type: {obstacle.behavior.type}, Config: {obstacle.behavior.configuration}")
+                # f"Behavior Data - Type: {obstacle.behavior.type}, Config:
+                # {obstacle.behavior.configuration}")
 
                 # Set behavior
                 agent.behavior = AgentBehavior()
@@ -443,7 +453,8 @@ class HunavManager(EntityManager):
                 # print(f"Cyclic goals: {obstacle.cyclic_goals}")
                 # print(f"Goal radius: {obstacle.goal_radius}")
                 # self.node.get_logger().error(
-                #     f"Goals Data - Count: {len(obstacle.goals)}, Cyclic: {obstacle.cyclic_goals}")
+                # f"Goals Data - Count: {len(obstacle.goals)}, Cyclic:
+                # {obstacle.cyclic_goals}")
 
                 # Set goals
                 agent.goals = obstacle.goals
@@ -639,7 +650,10 @@ class HunavManager(EntityManager):
             if known is not None:
                 if known.obstacle.name != obstacle.name:
                     raise RuntimeError(
-                        f"New model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {obstacle.name}"
+                        f"New model name {
+                            obstacle.name} does not match model name {
+                            known.obstacle.name} of known obstacle {
+                            obstacle.name}"
                     )
                 known.layer = ObstacleLayer.INUSE
             else:
@@ -667,7 +681,7 @@ class HunavManager(EntityManager):
 
         self._simulator.spawn_entity(obstacle)
 
-    def remove_obstacles(self, purge = ObstacleLayer.WORLD):
+    def remove_obstacles(self, purge=ObstacleLayer.WORLD):
         """Remove obstacles based on purge level"""
         if not self._is_paused:
             self._is_paused = True
@@ -706,23 +720,33 @@ class HunavManager(EntityManager):
             action()
 
     def move_robot(self, name: str, position: PositionOrientation):
-        """Move robot to new position"""
+        """Move robot to new position using HuNavSim's move_agent service"""
         try:
             if not self._move_agent_client.service_is_ready():
                 self.node.get_logger().warn("Move agent service not ready yet")
                 return
 
-            request = MoveAgent.Request()
-            request.agent_id = 0  #TODO addressable robots
-            request.pose = Pose()
-            request.pose.position = Point(x=position.x, y=position.y, z=0.0)
+            # Create Robot Agent
+            robot_agent = Agent()
+            robot_agent.id = 0  # Robot typically uses ID 0
+            robot_agent.name = name
+            robot_agent.type = Agent.ROBOT
+            robot_agent.position.position.x = position.x
+            robot_agent.position.position.y = position.y
             quat = quaternion_from_euler(0.0, 0.0, position.orientation)
-            request.pose.orientation = Quaternion(
-                x=quat[0], y=quat[1], z=quat[2], w=quat[3])
+            robot_agent.position.orientation = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
+            robot_agent.yaw = position.orientation
+
+            # Create service request
+            request = MoveAgent.Request()
+            request.agent_id = 0
+            request.robot = robot_agent
+            request.current_agents = Agents()
+            request.current_agents.header.stamp = self.node.get_clock().now().to_msg()
+            request.current_agents.header.frame_id = "map"
 
             future = self._move_agent_client.call_async(request)
-
-            # Add timeout to prevent hanging
+            
             timeout_sec = 1.0
             start_time = time.time()
             while not future.done() and time.time() - start_time < timeout_sec:

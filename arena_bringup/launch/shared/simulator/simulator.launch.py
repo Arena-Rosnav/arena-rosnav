@@ -45,7 +45,7 @@ def generate_launch_description():
 
     simulator = LaunchArgument(
         name='simulator',
-        choices=['dummy', 'gazebo'],
+        choices=['dummy', 'gazebo', 'isaac'],
     )
 
     use_sim_time = LaunchArgument(
@@ -65,6 +65,20 @@ def generate_launch_description():
             launch.launch_description_sources.PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory(
                     'arena_bringup'), 'launch/shared/simulator/gazebo/gazebo.launch.py')
+            ),
+            launch_arguments={
+                'use_sim_time': use_sim_time.substitution,
+                # 'headless': headless.substitution
+            }.items(),
+        )
+    )
+
+    launch_simulator.add(
+        'isaac',
+        launch.actions.IncludeLaunchDescription(
+            launch.launch_description_sources.PythonLaunchDescriptionSource(
+                os.path.join(get_package_share_directory(
+                    'arena_bringup'), 'launch/shared/simulator/isaac/isaac.launch.py')
             ),
             launch_arguments={
                 'use_sim_time': use_sim_time.substitution,

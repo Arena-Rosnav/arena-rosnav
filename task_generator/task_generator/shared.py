@@ -4,8 +4,8 @@ import dataclasses
 import enum
 import os
 import typing
-from typing import (Callable, Collection, Dict, Iterable, List, Optional,
-                    Tuple, Type, TypeVar, overload)
+from typing import (Callable, Collection, Dict, List, Optional, Tuple,
+                    Type, TypeVar, overload)
 
 import attr
 import geometry_msgs.msg as geometry_msgs
@@ -284,7 +284,8 @@ class ModelWrapper:
                     return models[model_type]
             else:
                 raise LookupError(
-                    f"no matching model found for {name} (available: {list(models.keys())}, requested: {list(only)})"
+                    f"no matching model found for {
+                        name} (available: {list(models.keys())}, requested: {list(only)})"
                 )
 
         return ModelWrapper.bind(name, get)
@@ -303,6 +304,14 @@ class ModelWrapper:
         wrapper = ModelWrapper("__EMPTY")
         wrapper._get = EMPTY_LOADER
         return wrapper
+
+
+@dataclasses.dataclass(frozen=True)
+class Wall:
+    Start: Position
+    End: Position
+    height: float = 2.0
+    texture_material: str = ''  # not implemented
 
 
 @dataclasses.dataclass(frozen=True)
@@ -344,18 +353,21 @@ class Obstacle(ObstacleProps):
             extra=obj,
         )
 
+
 class DynamicObstacle(DynamicObstacleProps):
 
     @classmethod
     def parse(cls, obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
 
         base = Obstacle.parse(obj, model)
-        waypoints = [PositionRadius(*waypoint) for waypoint in obj.get("waypoints", [])]
+        waypoints = [PositionRadius(*waypoint)
+                     for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
             **dataclasses.asdict(base),
             waypoints=waypoints,
         )
+
 
 @dataclasses.dataclass(frozen=True)
 class WallObstacle:

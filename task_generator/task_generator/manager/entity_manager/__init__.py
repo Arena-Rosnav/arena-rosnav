@@ -5,7 +5,7 @@ from geometry_msgs.msg import PoseStamped
 
 from task_generator import NodeInterface
 from task_generator.manager.entity_manager.utils import ObstacleLayer
-from task_generator.manager.utils import WorldMap, WorldWalls
+from task_generator.manager.world_manager.utils import WorldMap, WorldWalls
 from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot
 from task_generator.simulators import BaseSimulator
 from typing import Collection
@@ -134,7 +134,6 @@ def dummy():
         def move_robot(self, name: str, position: PositionOrientation):
             self.__logger.debug(
                 f'moving robot {name} to {repr(position)}')
-            self._simulator.move_entity(name, position)
 
     return DummyEntityManager
 

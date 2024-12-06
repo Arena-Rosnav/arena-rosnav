@@ -3,7 +3,7 @@ import typing
 
 from task_generator import NodeInterface
 from task_generator.constants import Constants
-from task_generator.shared import ModelType, EntityProps, Namespace, PositionOrientation
+from task_generator.shared import ModelType, EntityProps, Namespace, PositionOrientation, Wall
 from task_generator.utils.registry import Registry
 
 
@@ -63,6 +63,18 @@ class BaseSimulator(NodeInterface):
     def delete_entity(self, name: str) -> bool:
         raise NotImplementedError()
 
+    def spawn_walls(self, walls: list[Wall]) -> bool:
+        """
+        Add a list of walls to the simulator.
+        """
+        raise NotImplementedError()
+
+    def remove_walls(self) -> bool:
+        """
+        Remove every spawned wall from the simulator.
+        """
+        raise NotImplementedError()
+
 
 SimulatorRegistry = Registry[Constants.Simulator, BaseSimulator]()
 
@@ -89,3 +101,9 @@ def lazy_gazebo():
 def lazy_unity():
     from .unity_simulator import UnitySimulator
     return UnitySimulator
+
+
+@SimulatorRegistry.register(Constants.Simulator.ISAAC)
+def lazy_isaac():
+    from .isaac_simulator import IsaacSimulator
+    return IsaacSimulator

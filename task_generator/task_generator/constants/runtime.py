@@ -37,14 +37,16 @@ def Configuration(server: ROSParamServer):
             )
 
             @classmethod
-            def get_world_path(cls) -> str:
+            def get_world_path(cls, world: str | None = None) -> str:
                 """
                 Get absolute path of current world directory.
                 """
+                if world is None:
+                    world = str(cls.WORLD.value)
                 return os.path.join(
                     get_simulation_setup_path(),
                     'worlds',
-                    cls.WORLD.value,
+                    world,
                 )
 
             WORLD = server.ROSParam[str](

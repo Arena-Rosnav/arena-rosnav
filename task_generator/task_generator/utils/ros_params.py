@@ -115,16 +115,16 @@ class ROSParamServer(rclpy.node.Node):
             self.param = value
             return True
 
-    __callbacks: typing.Dict[
+    _callbacks: typing.Dict[
         str,
         typing.Set[typing.Callable[[typing.Any], bool]]
     ]
 
     def register_param(self, param: _ROSParam, value: typing.Any, **kwargs):
 
-        parameter_known = param.name in self.__callbacks
+        parameter_known = param.name in self._callbacks
 
-        self.__callbacks.setdefault(param.name, set()).add(param.callback)
+        self._callbacks.setdefault(param.name, set()).add(param.callback)
 
         if not parameter_known:
             try:
@@ -135,7 +135,7 @@ class ROSParamServer(rclpy.node.Node):
     def _callback(self, params):
         successful = True
         for param in params:
-            for callback in self.__callbacks.get(param.name, set()):
+            for callback in self._callbacks.get(param.name, set()):
                 successful &= callback(param.value)
         return rcl_interfaces.msg.SetParametersResult(successful=successful)
 
@@ -175,9 +175,13 @@ class ROSParamServer(rclpy.node.Node):
             Get value of parameter.
             """
 
+            default_value = None
+            if default is not None:
+                default_value = DefaultParameter(default)
+
             result = cls._node.get_parameter_or(
                 param_name,
-                default,
+                default_value,
             )
             if result.type_ is rclpy.parameter.Parameter.Type.NOT_SET:
                 raise ValueError(
@@ -215,7 +219,23 @@ class ROSParamServer(rclpy.node.Node):
                 cls._node.declare_parameter(param_name, value)
                 return True
 
+        @classmethod
+        def callback(
+            cls,
+            param_name: str,
+            callback: typing.Callable[[typing.Any], bool]
+        ):
+            try:
+                value = cls.get_unsafe(param_name)
+            except ValueError:
+                value = None
+
+            cls._node._callbacks.setdefault(param_name, set()).add(callback)
+
+            if value is not None:
+                callback(value)
+
     def __init__(self):
         self.rosparam._node = self
-        self.__callbacks = {}
+        self._callbacks = {}
         self.add_on_set_parameters_callback(self._callback)
