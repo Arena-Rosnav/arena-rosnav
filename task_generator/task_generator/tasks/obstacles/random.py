@@ -255,12 +255,12 @@ class TM_Random(TM_Obstacles):
             N_INTERACTIVE_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
                 "N_INTERACTIVE_OBSTACLES", [0, 0], parse=param_to_tuple),
             N_DYNAMIC_OBSTACLES=self.node.ROSParam[typing.Tuple[int, int]](
-                "N_DYNAMIC_OBSTACLES", [0, 0], parse=param_to_tuple),
+                "N_DYNAMIC_OBSTACLES", [1, 5], parse=param_to_tuple),
 
             MODELS_STATIC_OBSTACLES=self.node.ROSParam[List[str]](
                 'MODELS_STATIC_OBSTACLES', '', parse=functools.partial(param_to_modellist, self._PROPS.model_loader)),
             MODELS_INTERACTIVE_OBSTACLES=self.node.ROSParam[List[str]](
                 'MODELS_INTERACTIVE_OBSTACLES', '', parse=functools.partial(param_to_modellist, self._PROPS.model_loader)),
             MODELS_DYNAMIC_OBSTACLES=self.node.ROSParam[List[str]](
-                'MODELS_DYNAMIC_OBSTACLES', 'actor1', parse=functools.partial(param_to_modellist, self._PROPS.dynamic_model_loader)),
+                'MODELS_DYNAMIC_OBSTACLES', 'ugly', parse=functools.partial(param_to_modellist, self._PROPS.dynamic_model_loader)),
         )
