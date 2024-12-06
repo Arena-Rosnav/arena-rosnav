@@ -307,6 +307,14 @@ class ModelWrapper:
 
 
 @dataclasses.dataclass(frozen=True)
+class Wall:
+    Start: Position
+    End: Position
+    height: float = 2.0
+    texture_material: str = ''  # not implemented
+
+
+@dataclasses.dataclass(frozen=True)
 class EntityProps:
     position: PositionOrientation
     name: str

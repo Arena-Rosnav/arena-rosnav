@@ -32,7 +32,6 @@ def generate_launch_description():
         launch.actions.DeclareLaunchArgument(
             name='simulator',
             default_value='dummy',
-            choices='[dummy, gazebo]'
         ),
         launch.actions.DeclareLaunchArgument(
             name='headless',
