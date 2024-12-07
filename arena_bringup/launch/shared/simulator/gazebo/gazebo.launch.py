@@ -204,6 +204,7 @@ def generate_launch_description():
             gz_topic + '/cmd_vel@geometry_msgs/msg/Twist[gz.msgs.Twist',
             gz_topic + '/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+            # '/imu/data@sensor_msgs/msg/Imu[gz.msgs.IMU'
         ],
         remappings=[
             (joint_state_gz_topic, 'joint_states'),
