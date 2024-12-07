@@ -204,12 +204,13 @@ def generate_launch_description():
             gz_topic + '/cmd_vel@geometry_msgs/msg/Twist[gz.msgs.Twist',
             gz_topic + '/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
-            # '/imu/data@sensor_msgs/msg/Imu[gz.msgs.IMU'
+            gz_topic + '/link/base_link/sensor/imu_sensor/imu@sensor_msgs/msg/Imu[gz.msgs.IMU'
         ],
         remappings=[
             (joint_state_gz_topic, 'joint_states'),
             (link_pose_gz_topic, '/tf'),
             (link_pose_gz_topic + '_static', '/tf_static'),
+            ('/world/default/model/jackal/link/base_link/sensor/imu_sensor/imu', '/imu/data'),
         ],
         parameters=[
             {
