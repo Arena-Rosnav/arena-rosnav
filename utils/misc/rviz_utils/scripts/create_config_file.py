@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import rospy
 import rospkg
 import rostopic
@@ -14,8 +16,8 @@ from std_msgs.msg import String
 
 class ConfigFileGenerator:
     def __init__(self):
-        self.srv_start_setup = rospy.Service("task_generator_setup_finished", Empty, self.start_setup_callback)
-
+        self.srv_start_setup = rospy.Service(
+            "task_generator_setup_finished", Empty, self.start_setup_callback)
 
     def start_setup_callback(self, _):
         default_file = ConfigFileGenerator.read_default_file()
@@ -35,7 +37,8 @@ class ConfigFileGenerator:
             color = Utils.get_random_rviz_color()
 
             for topic in published_topics:
-                config = ConfigFileGenerator.create_display_for_topic(robot_name, topic, color)
+                config = ConfigFileGenerator.create_display_for_topic(
+                    robot_name, topic, color)
 
                 if not config:
                     continue
@@ -64,7 +67,7 @@ class ConfigFileGenerator:
             (Matcher.LOCAL_COSTMAP, Config.create_local_map_display),
             (Matcher.CURRENT_GOAL, Config.create_pose_display),
             (Matcher.SUBGOAL, Config.create_pose_display),
-            (Matcher.MODEL, Config.create_model_display) 
+            (Matcher.MODEL, Config.create_model_display)
         ]
 
         for matcher, function in matchers:
@@ -85,7 +88,7 @@ class ConfigFileGenerator:
             "config",
             "rviz_default.yaml"
         )
-        
+
         with open(file_path) as file:
             return yaml.safe_load(file)
 
@@ -98,7 +101,7 @@ class ConfigFileGenerator:
 
         try:
             os.mkdir(dir_path)
-        except:
+        except BaseException:
             pass
 
         file_path = os.path.join(
