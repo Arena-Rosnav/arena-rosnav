@@ -734,7 +734,8 @@ class HunavManager(EntityManager):
             robot_agent.position.position.x = position.x
             robot_agent.position.position.y = position.y
             quat = quaternion_from_euler(0.0, 0.0, position.orientation)
-            robot_agent.position.orientation = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
+            robot_agent.position.orientation = Quaternion(
+                x=quat[0], y=quat[1], z=quat[2], w=quat[3])
             robot_agent.yaw = position.orientation
 
             # Create service request
@@ -746,7 +747,7 @@ class HunavManager(EntityManager):
             request.current_agents.header.frame_id = "map"
 
             future = self._move_agent_client.call_async(request)
-            
+
             timeout_sec = 1.0
             start_time = time.time()
             while not future.done() and time.time() - start_time < timeout_sec:
@@ -767,6 +768,9 @@ class HunavManager(EntityManager):
     def spawn_robot(self, robot: Robot):
         """Spawn robot in simulation"""
         self._simulator.spawn_entity(robot)
+
+    def remove_robot(self, name: str):
+        return self._simulator.delete_entity(name)
 
     def _normalize_angle(self, angle: float) -> float:
         """Normalize angle to [-pi, pi] (from HuNavPlugin)"""

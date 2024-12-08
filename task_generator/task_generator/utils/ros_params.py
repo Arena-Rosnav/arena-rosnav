@@ -1,3 +1,4 @@
+import traceback
 import typing
 import abc
 
@@ -164,7 +165,9 @@ class ROSParamServer(rclpy.node.Node):
                         f'setting parameter {
                             param.name} with value {
                             param.value} failed: {e}')
-                    reason.append(repr(e))
+                    reason.append(
+                        ''.join(
+                            traceback.TracebackException.from_exception(e).format()))
                     successful = False
 
         if not successful:

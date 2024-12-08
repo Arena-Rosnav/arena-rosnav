@@ -50,13 +50,17 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
         self.node.declare_parameter('num_envs', 1)
         self.node.declare_parameter(MAP_GENERATOR_NS('episode_per_map'), 1)
 
-        num_envs = self.node.get_parameter(
-            'num_envs').value if "eval_sim" not in self._TASK.robot_managers[0].namespace else 1
-        self._target_eps_num = self.node.get_parameter(
-            MAP_GENERATOR_NS('episode_per_map')).value * num_envs
+        num_envs: int = self.node.rosparam[int].get(
+            'num_envs',
+            1
+        ) if "eval_sim" not in next(iter(self._TASK.robot_managers.values())).namespace else 1
+        self._target_eps_num = self.node.rosparam[float].get(
+            MAP_GENERATOR_NS('episode_per_map'),
+            1
+        ) * num_envs
 
         self._episodes = 0
-        self.add_on_set_parameters_callback(self.parameters_callback)
+        self.node.add_on_set_parameters_callback(self.parameters_callback)
 
     def parameters_callback(self, params):
         for param in params:

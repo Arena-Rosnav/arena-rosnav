@@ -4,7 +4,11 @@ import typing
 
 import numpy as np
 import scipy.spatial.transform
+
 import rclpy
+import rclpy.publisher
+import rclpy.timer
+import rclpy.client
 
 from task_generator import NodeInterface
 import task_generator.utils.arena as Utils
@@ -41,6 +45,10 @@ class RobotManager(NodeInterface):
     _move_base_goal_pub: rclpy.publisher.Publisher
     _pub_goal_timer: rclpy.timer.Timer
     _clear_costmaps_srv: rclpy.client.Client
+
+    @property
+    def robot(self) -> Robot:
+        return self._robot
 
     @property
     def start_pos(self) -> PositionOrientation:
@@ -227,6 +235,7 @@ class RobotManager(NodeInterface):
                 'simulator': self.node.conf.Arena.SIMULATOR.value.value,
                 'name': self.name,
                 'namespace': self.namespace,
+                'use_namespace': 'True',
                 'frame': f"{self.name}/" if self.name else '',
                 'inter_planner': self._robot.inter_planner,
                 'local_planner': self._robot.local_planner,
@@ -257,7 +266,9 @@ class RobotManager(NodeInterface):
 
         # TODO
         # base_frame: str = self.node.get_parameter_or(self.namespace("robot_base_frame"), DefaultParameter('')).value
-        # sensor_frame: str = self.node.get_parameter_or(self.namespace("robot_sensor_frame"), DefaultParameter('')).value
+        # sensor_frame: str =
+        # self.node.get_parameter_or(self.namespace("robot_sensor_frame"),
+        # DefaultParameter('')).value
 
         # self.node.set_parameters([
         #     Parameter(self.namespace("move_base", "global_costmap", "robot_base_frame"),
@@ -283,3 +294,16 @@ class RobotManager(NodeInterface):
             current_position.position.y,
             rot.as_euler("xyz")[2],
         )
+
+    def update(self):
+        """
+        Live-update some kwargs of robot
+        """
+        # TODO implement record data dir
+
+    def destroy(self):
+        """
+        Destroy robot and remove from simulation and navigation stack.
+        """
+        self._entity_manager.remove_robot(self.name)
+        # TODO kill node in navigation stack
