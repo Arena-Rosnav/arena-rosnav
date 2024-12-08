@@ -135,12 +135,18 @@ class ROSParamServer(rclpy.node.Node):
 
         self._callbacks.setdefault(param.name, set()).add(param.callback)
 
-        self._callback([
+        result = self._callback([
             rclpy.parameter.Parameter(
                 name=param.name,
                 value=current_value
             )
         ])
+
+        if not result.successful:
+            raise RuntimeError(
+                f'initial configuration of parameter {
+                    param.name} failed with {
+                    result.reason}')
 
     def _callback(self, params: list[rclpy.parameter.Parameter]):
         successful = True
