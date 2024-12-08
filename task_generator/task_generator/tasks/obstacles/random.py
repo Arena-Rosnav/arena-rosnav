@@ -293,7 +293,7 @@ class TM_Random(TM_Obstacles):
             ),
             MODELS_DYNAMIC_OBSTACLES=self.node.ROSParam[List[str]](
                 self.namespace(DYNAMIC, 'models'),
-                ['ugly'],
+                [],
                 type_=rclpy.parameter.Parameter.Type.STRING_ARRAY,
                 parse=functools.partial(
                     param_to_modellist,
