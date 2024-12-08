@@ -199,6 +199,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         #     pass
 
         self._initialized = True
+        self.rosparam[bool].set('initialized', True)
 
     def _get_predefined_task(self, **kwargs):
         """
