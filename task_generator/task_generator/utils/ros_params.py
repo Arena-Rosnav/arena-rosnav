@@ -84,9 +84,6 @@ class ROSParamServer(rclpy.node.Node):
                 parse = self.identity
             self._from_param = parse
 
-            self._parameter_value = value
-            self._value = parse(self._parameter_value)
-
             if type_ is not None:
                 self._node.rosparam.declare_safe(
                     self.name,
@@ -131,22 +128,48 @@ class ROSParamServer(rclpy.node.Node):
 
     def register_param(self, param: _ROSParam, value: typing.Any, **kwargs):
 
-        parameter_known = param.name in self._callbacks
+        current_value = self.rosparam.get(
+            param.name,
+            value
+        )
 
         self._callbacks.setdefault(param.name, set()).add(param.callback)
 
-        if not parameter_known:
-            try:
-                self.declare_parameter(param.name, value, **kwargs)
-            except rclpy.exceptions.ParameterAlreadyDeclaredException:
-                pass
+        self._callback([
+            rclpy.parameter.Parameter(
+                name=param.name,
+                value=current_value
+            )
+        ])
 
-    def _callback(self, params):
+    def _callback(self, params: list[rclpy.parameter.Parameter]):
         successful = True
+        reason: list[str] = []
         for param in params:
             for callback in self._callbacks.get(param.name, set()):
-                successful &= callback(param.value)
-        return rcl_interfaces.msg.SetParametersResult(successful=successful)
+                self.get_logger().debug(
+                    f"setting param {
+                        param.name} with value {
+                        param.value} (callback {callback})")
+                try:
+                    successful &= callback(param.value)
+                except BaseException as e:
+                    self.get_logger().warn(
+                        f'setting parameter {
+                            param.name} with value {
+                            param.value} failed: {e}')
+                    reason.append(repr(e))
+                    successful = False
+
+        if not successful:
+            # this function can cause inconsistent states when some callbacks
+            # succeed, some fail. revert back to old value here.
+            ...
+
+        return rcl_interfaces.msg.SetParametersResult(
+            successful=successful,
+            reason="\n".join(reason)
+        )
 
     @property
     def ROSParam(self) -> typing.Type["_ROSParam"]:

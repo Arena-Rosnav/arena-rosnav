@@ -211,7 +211,7 @@ class RobotManager(NodeInterface):
         self._move_base_goal_pub.publish(goal_msg)
 
     def _launch_robot(self):
-        self.node.get_logger().warn(f"START WITH MODEL {self.namespace}")
+        self.node.get_logger().warn(f"START WITH MODEL {self.name}")
 
         if Utils.get_arena_type() != Constants.ArenaType.TRAINING:
             launch_description = launch.LaunchDescription()

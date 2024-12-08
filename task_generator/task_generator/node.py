@@ -93,9 +93,15 @@ class TaskGenerator(NodeInterface.Taskgen_T):
 
     do_launch: typing.Callable[[launch.LaunchDescription], None]
 
+    def service_namespace(self, *args: str) -> Namespace:
+        """
+        `rclpy.node.Node.create_service` doesn't utilize the node namespace (contrary to the doc). Use this to prefix service names until fixed.
+        """
+        return Namespace(self.get_namespace())(self.get_name(), *args)
+
     def __init__(
         self,
-        namespace: str = "",
+        namespace: str = "task_generator_node",
         *,
         do_launch: typing.Callable[[launch.LaunchDescription], None]
 
@@ -136,8 +142,11 @@ class TaskGenerator(NodeInterface.Taskgen_T):
                 Empty, 'scenario_finished', 10)
 
             # Services
-            self.create_service(EmptySrv, 'reset_task',
-                                self._reset_task_srv_callback)
+            self.create_service(
+                EmptySrv,
+                self.service_namespace('reset_task'),
+                self._reset_task_srv_callback
+            )
 
         self._initialized = False
         self.create_timer(
@@ -190,6 +199,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         #     pass
 
         self._initialized = True
+        self.rosparam[bool].set('initialized', True)
 
     def _get_predefined_task(self, **kwargs):
         """
