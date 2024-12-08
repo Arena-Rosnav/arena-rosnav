@@ -1,3 +1,4 @@
+import typing
 import rclpy
 import rclpy.publisher
 import rclpy.node
@@ -97,44 +98,7 @@ EntityManagerRegistry = Registry[Constants.EntityManager, EntityManager]()
 @EntityManagerRegistry.register(Constants.EntityManager.DUMMY)
 def dummy():
 
-    class DummyEntityManager(EntityManager):
-        def __init__(self, namespace: Namespace, simulator: BaseSimulator):
-            super().__init__(namespace, simulator)
-            self.__logger = self.node.get_logger().get_child('dummy_EM')
-
-        def spawn_obstacles(self, obstacles: Collection[Obstacle]):
-            self.__logger.debug(f'spawning {len(obstacles)} static obstacles')
-            for obstacle in obstacles:
-                self._simulator.spawn_entity(obstacle)
-
-        def spawn_dynamic_obstacles(
-                self, obstacles: Collection[DynamicObstacle]):
-            self.__logger.debug(f'spawning {len(obstacles)} dynamic obstacles')
-            for obstacle in obstacles:
-                self._simulator.spawn_entity(obstacle)
-
-        def spawn_walls(self, walls: WorldWalls, heightmap: WorldMap):
-            self.__logger.debug(f'spawning {len(walls)} walls')
-
-        def unuse_obstacles(self):
-            self.__logger.debug(f'unusing obstacles')
-
-        def remove_obstacles(
-                self, purge: ObstacleLayer = ObstacleLayer.UNUSED):
-            self.__logger.debug(f'removing obstacles (level {purge})')
-
-        def spawn_robot(self, robot: Robot):
-            self.__logger.debug(f'spawning robot {robot.name}')
-            self._simulator.spawn_entity(robot)
-
-        def remove_robot(self, name: str):
-            self.__logger.debug(f'removing robot {name}')
-            self._simulator.delete_entity(name)
-
-        def move_robot(self, name: str, position: PositionOrientation):
-            self.__logger.debug(
-                f'moving robot {name} to {repr(position)}')
-
+    from .dummy_manager import DummyEntityManager
     return DummyEntityManager
 
 
