@@ -117,7 +117,7 @@ else
   popd
 fi
 python -m pip install -e vcstool
-alias vcs="$HOME/.pyenv/shims/vcs" # avoid reopening shell
+alias vcs='$HOME/.pyenv/shims/vcs' # avoid reopening shell
 
 # Getting Packages
 echo "Installing deps...:"
