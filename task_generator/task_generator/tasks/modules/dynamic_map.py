@@ -79,8 +79,7 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
         config_generator = config.get(generator, dict())
         for key, value in config_generator.items():
             log += f"\t{key}={value}"
-            rosparam_set(f"{self.PARAM_GENERATOR_CONFIGS}.{
-                         generator}.{key}", value)
+            rosparam_set(f"{self.PARAM_GENERATOR_CONFIGS}.{generator}.{key}", value)
         self.node.get_logger().info(log)
 
     def _cb_task_reset(self, msg):

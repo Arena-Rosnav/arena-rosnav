@@ -266,9 +266,7 @@ class Mod_Benchmark(TM_Module):
         # first run
         if not rosparam_get(bool, "benchmark_resume", False):
             self._taskgen_backup()
-            self._runid = f"{
-                self._contest.name}_{
-                datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S')}"
+            self._runid = f"{self._contest.name}_{datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S')}"
             self._contest_index = self._contest.min_index
             self._suite_index = self._suite.min_index
             self._headless = rosparam_get(int, "headless", 1)
@@ -280,10 +278,8 @@ class Mod_Benchmark(TM_Module):
             os.makedirs(self.LOG_DIR, exist_ok=True)
             with open(self.LOG_DIR(f"{self._runid}.log"), "w") as f:
                 f.write(f"run {self._runid}\n")
-                f.write(f"of contest {self._contest.name} with {
-                        len(self._contest.contestants)} contestants\n")
-                f.write(f"on suite {self._suite.name} with {
-                        len(self._suite.stages)} stages\n")
+                f.write(f"of contest {self._contest.name} with {len(self._contest.contestants)} contestants\n")
+                f.write(f"on suite {self._suite.name} with {len(self._suite.stages)} stages\n")
                 f.write(f"total of {len(self._contest.contestants) * sum([int(self._config.suite.scale_episodes * self._suite.config(
                     Suite.Index(index)).episodes) for index in range(self._suite.min_index, self._suite.max_index + 1)])} episodes\n")
                 f.write("\n")
@@ -326,12 +322,10 @@ class Mod_Benchmark(TM_Module):
         return self._logger_object
 
     def _log_contest(self):
-        self._logger.info(f"\tC [{1 + self.contest_index:0>{len(str(1 + self._contest.max_index))}}/{
-                          1 + self._contest.max_index}] {self._contest.config(self._contest_index).name}")
+        self._logger.info(f"\tC [{1 + self.contest_index:0>{len(str(1 + self._contest.max_index))}}/{1 + self._contest.max_index}] {self._contest.config(self._contest_index).name}")
 
     def _log_suite(self):
-        self._logger.info(f"\t\tS [{1 + self.suite_index:0>{len(str(1 + self._suite.max_index))}}/{
-                          1 + self._suite.max_index}] {self._suite.config(self._suite_index).name}")
+        self._logger.info(f"\t\tS [{1 + self.suite_index:0>{len(str(1 + self._suite.max_index))}}/{1 + self._suite.max_index}] {self._suite.config(self._suite_index).name}")
 
     def _log_episode(self):
         if self._episode < 0:
@@ -409,8 +403,7 @@ class Mod_Benchmark(TM_Module):
     def _reincarnate(self):
 
         with open(self.DIR(self.LOCK_FILE), "w") as f:
-            f.write(f"{self._runid} {self._contest_index} {
-                    self._suite_index} {self._headless}")
+            f.write(f"{self._runid} {self._contest_index} {self._suite_index} {self._headless}")
 
         config = self._config
         contest_config = self._contest.config(self._contest_index)
@@ -427,8 +420,7 @@ class Mod_Benchmark(TM_Module):
             suite_config.config
         )
 
-        record_data_dir = f"{
-            self._runid}/{contest_config.name}/{suite_config.name}"
+        record_data_dir = f"{self._runid}/{contest_config.name}/{suite_config.name}"
 
         if self._requires_restart:
             self._logger.info(f"{_get_rosmaster_pid()}")
@@ -468,8 +460,7 @@ class Mod_Benchmark(TM_Module):
 
         else:
             rospy.ServiceProxy(
-                f"/{
-                    suite_config.robot}/change_directory",
+                f"/{suite_config.robot}/change_directory",
                 arena_evaluation_srvs.ChangeDirectory).call(
                 arena_evaluation_srvs.ChangeDirectoryRequest(record_data_dir))
             self._episode = 0

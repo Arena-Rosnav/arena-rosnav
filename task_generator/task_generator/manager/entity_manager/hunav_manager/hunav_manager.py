@@ -157,9 +157,7 @@ class HunavManager(EntityManager):
                 for agent in response.updated_agents.agents:
                     self.node.get_logger().info(
                         f"\nAgent {agent.name} (ID: {agent.id}):"
-                        f"\n  Position: ({
-                            agent.position.position.x:.2f}, {
-                            agent.position.position.y:.2f})"
+                        f"\n  Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
                         f"\n  Behavior Type: {agent.behavior.type}"
                         f"\n  Current State: {agent.behavior.state}"
                         f"\n  Linear Velocity: {agent.linear_vel:.2f}"
@@ -187,12 +185,8 @@ class HunavManager(EntityManager):
                 self.node.get_logger().info(
                     f"\nCompute_agent response:"
                     f"\n  Agent: {agent.name} (ID: {agent.id})"
-                    f"\n  Position: ({
-                        agent.position.position.x:.2f}, {
-                        agent.position.position.y:.2f})"
-                    f"\n  Behavior: Type={
-                        agent.behavior.type}, State={
-                        agent.behavior.state}"
+                    f"\n  Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
+                    f"\n  Behavior: Type={agent.behavior.type}, State={agent.behavior.state}"
                 )
         except Exception as e:
             self.node.get_logger().error(
@@ -218,9 +212,7 @@ class HunavManager(EntityManager):
                 self.node.get_logger().info(
                     f"\nMove_agent response:"
                     f"\n  Agent: {agent.name} (ID: {agent.id})"
-                    f"\n  New Position: ({
-                        agent.position.position.x:.2f}, {
-                        agent.position.position.y:.2f})"
+                    f"\n  New Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
                     f"\n  New Yaw: {agent.yaw:.2f}"
                     f"\n  Behavior State: {agent.behavior.state}"
                 )
@@ -298,8 +290,7 @@ class HunavManager(EntityManager):
         )
 
         # Height adjustment based on skin type (from HuNavPlugin)
-        height_adjustments = {
-            'elegant_man.dae': 0.96,
+        height_adjustments = {'elegant_man.dae': 0.96,
             'casual_man.dae': 0.97,
             'elegant_woman.dae': 0.93,
             'regular_man.dae': 0.93,
@@ -650,10 +641,7 @@ class HunavManager(EntityManager):
             if known is not None:
                 if known.obstacle.name != obstacle.name:
                     raise RuntimeError(
-                        f"New model name {
-                            obstacle.name} does not match model name {
-                            known.obstacle.name} of known obstacle {
-                            obstacle.name}"
+                        f"New model name {obstacle.name} does not match model name {known.obstacle.name} of known obstacle {obstacle.name}"
                     )
                 known.layer = ObstacleLayer.INUSE
             else:
