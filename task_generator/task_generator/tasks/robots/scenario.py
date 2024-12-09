@@ -76,7 +76,7 @@ class TM_Scenario(TM_Robots):
         SCENARIO_ROBOTS = self._config.value
 
         # check robot manager length
-        managed_robots = self._PROPS.robot_managers
+        managed_robots = list(self._PROPS.robot_managers.values())
 
         scenario_robots_length = len(SCENARIO_ROBOTS)
         setup_robot_length = len(managed_robots)
@@ -108,7 +108,7 @@ class TM_Scenario(TM_Robots):
         TM_Robots.__init__(self, **kwargs)
 
         self._config = self.node.ROSParam[List[_RobotGoal]](
-            'SCENARIO_file',
+            self.namespace('file'),
             'default.json',
             parse=self._parse_scenario,
         )

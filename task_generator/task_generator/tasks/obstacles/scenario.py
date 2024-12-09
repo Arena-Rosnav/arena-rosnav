@@ -61,7 +61,7 @@ class TM_Scenario(TM_Obstacles):
     def __init__(self, **kwargs):
         TM_Obstacles.__init__(self, **kwargs)
         self._config = self.node.ROSParam[_ParsedConfig](
-            'SCENARIO_file',
+            self.namespace('file'),
             'default.json',
             parse=self._parse_scenario,
         )

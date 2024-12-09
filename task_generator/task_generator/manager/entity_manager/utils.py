@@ -78,7 +78,6 @@ class ObstacleLayer(enum.IntEnum):
 @dataclasses.dataclass
 class KnownObstacle:
     obstacle: ObstacleProps
-    pedsim_spawned: bool = False
     hunav_spawned: bool = False
     layer: ObstacleLayer = ObstacleLayer.UNUSED
 

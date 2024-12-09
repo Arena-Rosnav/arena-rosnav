@@ -145,6 +145,7 @@ def generate_launch_description():
                 'tm_modules': launch.substitutions.LaunchConfiguration('tm_modules'),
                 'robot': launch.substitutions.LaunchConfiguration('robot'),
                 'world': launch.substitutions.LaunchConfiguration('world'),
+                'parameter_file': os.path.join(get_package_share_directory('arena_bringup'), 'configs', 'task_generator.yaml'),
             }.items(),
         ),
 

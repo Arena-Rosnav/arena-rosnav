@@ -68,6 +68,9 @@ class Namespace(str):
     def __call__(self, *args: str) -> Namespace:
         return Namespace(os.path.join(self, *args)).remove_double_slash()
 
+    def ParamNamespace(self) -> ParamNamespace:
+        return ParamNamespace('')(*self.split('/'))
+
     @property
     def simulation_ns(self) -> Namespace:
         if len(self.split("/")) < 3:
@@ -80,6 +83,19 @@ class Namespace(str):
 
     def remove_double_slash(self) -> Namespace:
         return Namespace(self.replace("//", "/"))
+
+
+class ParamNamespace(Namespace):
+    def __call__(self, *args: str) -> ParamNamespace:
+        return ParamNamespace(
+            '.'.join((
+                *((self,) if self else []),
+                *args)
+            )
+        )
+
+    def SlashNamespace(self) -> Namespace:
+        return Namespace('')(*self.split('.'))
 
 
 yaml.add_representer(
@@ -339,6 +355,20 @@ class RobotProps(EntityProps):
     agent: str
     record_data_dir: Optional[str] = None
 
+    def compatible(self, value: RobotProps) -> bool:
+        return self.model.name == value.model.name \
+            and self.local_planner == value.local_planner \
+            and self.agent == value.agent \
+
+
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, RobotProps):
+            return False
+
+        return self.compatible(value) \
+            and self.name == value.name \
+            and self.record_data_dir == value.record_data_dir
+
 
 class Obstacle(ObstacleProps):
     @classmethod
@@ -397,7 +427,8 @@ class Robot(RobotProps):
     @staticmethod
     def parse(obj: Dict, model: ModelWrapper) -> "Robot":
         name = str(obj.get("name", ""))
-        position = PositionOrientation(*obj.get("pos", next(gen_init_pos)))
+        position = PositionOrientation(
+            *obj.get("pos", attr.astuple(next(gen_init_pos))))
         inter_planner = str(
             obj.get("inter_planner", rosparam_get(str, "inter_planner", ""))
         )

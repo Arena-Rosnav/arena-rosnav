@@ -89,7 +89,7 @@ class HunavDynamicObstacle(HunavObstacleProps):
     _default: typing.ClassVar["HunavObstacleProps"] = HunavObstacleProps(
         position=PositionOrientation(x=0, y=0, orientation=0),
         name='',
-        model=ModelWrapper(''),
+        model=ModelWrapper.EMPTY(),
         extra={},
         waypoints=[],
         id=0,

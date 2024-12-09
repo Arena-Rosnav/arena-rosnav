@@ -50,14 +50,14 @@ class TM_Guided(TM_Random):
         Returns:
             bool: True if the guided task is done, False otherwise.
         """
-        for robot in self._PROPS.robot_managers:
-            if robot.is_done:
+        for robot, manager in self._PROPS.robot_managers.items():
+            if manager.is_done:
                 waypoints = self._waypoints or [None]
-                self._waypoint_states[robot.name] += 1
-                self._waypoint_states[robot.name] %= len(waypoints)
-                robot.reset(
+                self._waypoint_states[manager.name] += 1
+                self._waypoint_states[manager.name] %= len(waypoints)
+                manager.reset(
                     start_pos=None,
-                    goal_pos=waypoints[self._waypoint_states[robot.name]],
+                    goal_pos=waypoints[self._waypoint_states[robot]],
                 )
 
         return False
@@ -94,7 +94,7 @@ class TM_Guided(TM_Random):
         )
 
         if len(self._waypoints) == 1:
-            for robot in self._PROPS.robot_managers:
+            for robot in self._PROPS.robot_managers.values():
                 robot.reset(None, position)
 
     def _reset_waypoints(self, *args, **kwargs):
@@ -108,10 +108,18 @@ class TM_Guided(TM_Random):
         Returns:
             None
         """
+
+        self._waypoints = []
+        self._waypoint_states = {
+            name: 0
+            for name
+            in self._PROPS.robot_managers.keys()
+        }
+
         for robot in self._waypoint_states:
             self._waypoint_states[robot] = 0
 
-        for robot in self._PROPS.robot_managers:
+        for robot in self._PROPS.robot_managers.values():
             robot.reset(robot.start_pos, robot.start_pos)
 
         self._waypoints = []
@@ -120,7 +128,4 @@ class TM_Guided(TM_Random):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self._waypoints = []
-        self._waypoint_states = {
-            robot.name: 0 for robot in self._PROPS.robot_managers}
         self._reset_waypoints()

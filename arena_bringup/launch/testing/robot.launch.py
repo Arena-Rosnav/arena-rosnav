@@ -106,7 +106,7 @@ def generate_launch_description():
                     False,
                     False,
                 ],
-                "imu0": "/imu",
+                "imu0": "/imu0",
                 "imu0_config": [
                     False,
                     False,

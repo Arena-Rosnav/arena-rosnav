@@ -29,7 +29,9 @@ class TM_Random(TM_Robots):
             Tuple[PositionOrientation, PositionOrientation]
         ] = kwargs.get("ROBOT_POSITIONS", [])
         biggest_robot = max(
-            robot.safe_distance for robot in self._PROPS.robot_managers)
+            (robot.safe_distance for robot in self._PROPS.robot_managers.values()),
+            default=0
+        )
 
         for robot_start, robot_goal in ROBOT_POSITIONS:
             self._PROPS.world_manager.forbid(
@@ -65,7 +67,8 @@ class TM_Random(TM_Robots):
                 zip(generated_positions[::2], generated_positions[1::2])
             )
 
-        for robot, pos in zip(self._PROPS.robot_managers, ROBOT_POSITIONS):
+        for robot, pos in zip(
+                self._PROPS.robot_managers.values(), ROBOT_POSITIONS):
             robot.reset(start_pos=pos[0], goal_pos=pos[1])
 
     def __init__(self, **kwargs):

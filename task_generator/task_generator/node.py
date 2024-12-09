@@ -18,14 +18,15 @@ from std_msgs.msg import Empty, Int16
 from std_srvs.srv import Empty as EmptySrv
 
 import launch
-import task_generator.utils.arena as Utils
+from task_generator.manager.robot_manager import RobotsManagerROS
+from task_generator.manager.robot_manager.robot_manager import RobotManager
+from task_generator.manager.robot_manager.robots_manager_ros import RobotsManager
 from task_generator import NodeInterface
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Configuration
 from task_generator.manager.entity_manager import (EntityManager,
                                                    EntityManagerRegistry)
 from task_generator.manager.obstacle_manager import ObstacleManager
-from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.world_manager import WorldManager
 from task_generator.shared import ModelWrapper, Namespace, Robot, gen_init_pos
 from task_generator.simulators import BaseSimulator, SimulatorRegistry
@@ -87,15 +88,22 @@ class TaskGenerator(NodeInterface.Taskgen_T):
 
     _world_manager: WorldManager
     _entity_manager: EntityManager
+    _robots_manager: RobotsManager
     _simulator: BaseSimulator
 
     _initialized: bool
 
     do_launch: typing.Callable[[launch.LaunchDescription], None]
 
+    def service_namespace(self, *args: str) -> Namespace:
+        """
+        `rclpy.node.Node.create_service` doesn't utilize the node namespace (contrary to the doc). Use this to prefix service names until fixed.
+        """
+        return Namespace(self.get_namespace())(self.get_name(), *args)
+
     def __init__(
         self,
-        namespace: str = "",
+        namespace: str = "task_generator_node",
         *,
         do_launch: typing.Callable[[launch.LaunchDescription], None]
 
@@ -136,8 +144,11 @@ class TaskGenerator(NodeInterface.Taskgen_T):
                 Empty, 'scenario_finished', 10)
 
             # Services
-            self.create_service(EmptySrv, 'reset_task',
-                                self._reset_task_srv_callback)
+            self.create_service(
+                EmptySrv,
+                self.service_namespace('reset_task'),
+                self._reset_task_srv_callback
+            )
 
         self._initialized = False
         self.create_timer(
@@ -150,14 +161,6 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         # Vars
         self._simulator = SimulatorRegistry.get(self.conf.Arena.SIMULATOR.value)(
             namespace=self._namespace
-        )
-
-        self._robot_loader = ModelLoader(
-            os.path.join(
-                Utils.get_simulation_setup_path(),
-                'entities',
-                'robots',
-            ),
         )
 
         self._start_time = self.get_clock().now().seconds_nanoseconds()[0]
@@ -190,6 +193,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         #     pass
 
         self._initialized = True
+        self.rosparam[bool].set('initialized', True)
 
     def _get_predefined_task(self, **kwargs):
         """
@@ -216,12 +220,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
 
         obstacle_manager.spawn_world_obstacles(self._world_manager.world)
 
-        robot_managers = self._create_robot_managers()
-
-        # For every robot
-        # - Create a unique namespace name
-        # - Create a robot manager
-        # - Launch the robot.launch file
+        self._robots_manager = RobotsManagerROS(self._entity_manager)
 
         tm_modules = self.conf.TaskMode.TM_MODULES.value
         tm_modules.append(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
@@ -231,71 +230,13 @@ class TaskGenerator(NodeInterface.Taskgen_T):
             tm_modules.append(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
 
         self.get_logger().debug("utils calls task factory")
-        task = TaskFactory.combine(tm_modules)(
+        return TaskFactory.combine(tm_modules)(
             obstacle_manager=obstacle_manager,
-            robot_managers=robot_managers,
+            robots_manager=self._robots_manager,
             world_manager=self._world_manager,
             namespace=self._namespace,
             **kwargs,
         )
-
-        return task
-
-    def _create_robot_managers(self) -> List[RobotManager]:
-        # Read robot setup file
-        robot_setup_file: str = self.rosparam[str].get(
-            'robot_setup_file',
-            ''
-        )
-        robot: str = self.rosparam[str].get('robot', '')
-
-        if robot_setup_file == "":
-            robots = create_default_robot_list(
-                robot_model=self._robot_loader.bind(robot),
-                inter_planner=self.rosparam[str].get("inter_planner", ''),
-                local_planner=self.rosparam[str].get("local_planner", ''),
-                agent=self.rosparam[str].get("agent_name", ''),
-                name=f"{self._namespace[1:]}_{robot}"
-                if self._train_mode
-                else robot,
-            )
-        else:
-            robots = [
-                dataclasses.replace(
-                    Robot.parse(
-                        robot,
-                        model=self._robot_loader.bind(robot["model"]),
-                    ),
-                    name=f'{robot["model"]}_{i}_{robot.get("amount", 1) - 1}'
-                )
-                for robot in read_robot_setup_file(robot_setup_file)
-                for i in range(robot.get("amount", 1))
-            ]
-
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            return [
-                RobotManager(
-                    namespace=self._namespace,
-                    entity_manager=self._entity_manager,
-                    robot=robots[0],
-                )
-            ]
-
-        robot_managers: List[RobotManager] = []
-
-        for robot in robots:
-            robot_managers.append(
-                # RobotManager(os.path.join(namespace, name), simulator, robot)
-                # old but working due to namespace issue with "/" prefix in
-                # robot name
-                RobotManager(
-                    namespace=self._namespace,
-                    entity_manager=self._entity_manager,
-                    robot=robot,
-                )
-            )
-
-        return robot_managers
 
     # RUNTIME
     def reset_task(self, **kwargs):
