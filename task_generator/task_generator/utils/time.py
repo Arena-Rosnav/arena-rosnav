@@ -25,7 +25,7 @@ class Time:
         return self.sec < value.sec or self.nanosec < value.nanosec
 
     @classmethod
-    def from_time(cls, v: builtin_interfaces.msg.Time) -> typing.Self:
+    def from_time(cls, v: builtin_interfaces.msg.Time) -> "Time":
         """
         Create instance from builtin_interfaces.msg.Time object.
         """
