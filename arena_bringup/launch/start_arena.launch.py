@@ -165,6 +165,7 @@ def generate_launch_description():
                 'simulator': launch.substitutions.LaunchConfiguration('simulator'),
                 'use_sim_time': launch.substitutions.LaunchConfiguration('use_sim_time'),
                 'headless': launch.substitutions.LaunchConfiguration('headless'),
+                'world': launch.substitutions.LaunchConfiguration('world'),
             }.items(),
         ),
         launch.actions.IncludeLaunchDescription(
