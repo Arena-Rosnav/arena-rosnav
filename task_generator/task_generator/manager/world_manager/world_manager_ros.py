@@ -9,6 +9,7 @@ import rclpy
 import rclpy.callback_groups
 import rclpy.client
 
+from task_generator.constants import Constants
 from task_generator.utils.time import Time
 
 from .utils import WorldMap
@@ -38,7 +39,17 @@ _DUMMY_MAP = nav_msgs.msg.OccupancyGrid(
 class WorldManagerROS(WorldManager):
     cli: rclpy.client.Client
 
+    first_world: bool
+
     def _world_callback(self, value: typing.Any) -> bool:
+
+        if not self.first_world and \
+                (simulator := self.node.conf.Arena.SIMULATOR.value) in (Constants.Simulator.GAZEBO,):
+            raise RuntimeError(
+                f'Simulator {simulator.value} does not support world reloading.')
+
+        self.first_world = False
+
         world_name = str(value)
         self.node.get_logger().warn(f'LOADING WORLD {value}')
         map_yaml = os.path.join(
@@ -92,4 +103,5 @@ class WorldManagerROS(WorldManager):
 
     def __init__(self) -> None:
         WorldManager.__init__(self, WorldMap.from_costmap(_DUMMY_MAP))
+        self.first_world = True
         self._setup_world_callbacks()

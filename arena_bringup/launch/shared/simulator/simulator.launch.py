@@ -57,6 +57,11 @@ def generate_launch_description():
         choices=['0', '1', '2'],
     )
 
+    # TODO temporary
+    world = LaunchArgument(
+        name='world'
+    )
+
     launch_simulator = SelectAction(simulator.substitution)
 
     launch_simulator.add(
@@ -68,7 +73,8 @@ def generate_launch_description():
             ),
             launch_arguments={
                 'use_sim_time': use_sim_time.substitution,
-                # 'headless': headless.substitution
+                # 'headless': headless.substitution,
+                'world': world.substitution,
             }.items(),
         )
     )
@@ -90,6 +96,7 @@ def generate_launch_description():
     ld = launch.LaunchDescription([
         simulator,
         headless,
+        world,
         launch_simulator.action,
     ])
     return ld
