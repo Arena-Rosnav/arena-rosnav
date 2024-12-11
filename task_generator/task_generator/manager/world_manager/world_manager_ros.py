@@ -82,6 +82,14 @@ class WorldManagerROS(WorldManager):
 
     def _setup_world_callbacks(self):
 
+        # retrieving map from map_server
+        self.node.create_subscription(
+            nav_msgs.msg.OccupancyGrid,
+            '/map',
+            self._map_callback,
+            1,
+        )
+
         # publishing map to map_server
         self.cli = self.node.create_client(
             nav2_msgs.srv.LoadMap,
@@ -94,14 +102,6 @@ class WorldManagerROS(WorldManager):
         self.node.rosparam.callback(
             'world',
             self._world_callback,
-        )
-
-        # retrieving map from map_server
-        self.node.create_subscription(
-            nav_msgs.msg.OccupancyGrid,
-            'map',
-            self._map_callback,
-            1,
         )
 
     def __init__(self) -> None:
