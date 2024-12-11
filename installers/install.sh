@@ -218,14 +218,8 @@ fi
 # sudo apt upgrade
 
 compile(){
-  rosdep install \
-    --from-paths src \
-    --ignore-src \
-    --rosdistro ${ARENA_ROS_DISTRO} \
-    -y \
-    --skip-keys "transforms3d" \
-    || echo 'rosdep failed to install all dependencies'
   cd "${ARENA_WS_DIR}"
+  ros2 run arena_bringup pull
   . colcon_build
 }
 
