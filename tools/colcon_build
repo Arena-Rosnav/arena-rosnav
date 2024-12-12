@@ -1,7 +1,4 @@
 #! /usr/bin/bash
-
-export BUILD_EXCLUDES=""
-
 ARENA_WS_DIR="$(pwd)"
 ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-humble}
 

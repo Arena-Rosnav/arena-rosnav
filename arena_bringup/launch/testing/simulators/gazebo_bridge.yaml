@@ -37,7 +37,7 @@
 # Joint states
 - ros_topic_name: "/joint_states"
   ros_type_name: "sensor_msgs/msg/JointState"
-  gz_topic_name: "/world/default/model/${robot_model}/joint_state"
+  gz_topic_name: "/world/default/model/jackal/joint_state"
   gz_type_name: "gz.msgs.Model"
 
 # Odometry
