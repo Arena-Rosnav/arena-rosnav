@@ -1,19 +1,13 @@
 #!/usr/bin/env python3
 import argparse
-import os
 import sys
-from urllib import parse
-
-import numpy as np
 import rospy
 from geometry_msgs.msg import Twist
-from rl_utils.utils.observation_collector.observation_manager import ObservationManager
 from rosgraph_msgs.msg import Clock
-from rosnav import *
-from rosnav.srv import GetAction, GetActionRequest
+from rosnav_rl.srv import GetAction, GetActionRequest
 from task_generator.shared import Namespace
 
-sys.modules["rl_agent"] = sys.modules["rosnav"]
+sys.modules["rl_agent"] = sys.modules["rosnav_rl"]
 
 
 ACTION_FREQUENCY = 5  # in Hz
