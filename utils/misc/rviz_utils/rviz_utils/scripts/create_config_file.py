@@ -56,7 +56,7 @@ class ConfigFileGenerator(Node):
         file_path = ConfigFileGenerator.safe_tmp_config_file(default_file)
 
         print(f"Attempting to call /rviz/load_config with file: {file_path}")
-        subprocess.run(f"""ros2 service call /rviz/load_config std_srvs/srv/Empty {{}}""", shell=True)
+        subprocess.run(f"""ros2 service call /rviz/load_config_file rcl_interfaces/srv/SetString "data: '{file_path}'" """, shell=True)
         print("Call to /rviz/load_config completed.")
         return response
     def create_display_for_topic(robot_name, topic, color):
