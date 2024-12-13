@@ -17,7 +17,7 @@ colcon build \
     $@
 
 cd $ARENA_WS_DIR
-if [ -f "/opt/ros/${ARlsENA_ROS_DISTRO}/setup.bash" ] ; then
+if [ -f "/opt/ros/${ARENA_ROS_DISTRO}/setup.bash" ] ; then
     . "/opt/ros/${ARENA_ROS_DISTRO}/setup.bash"
 fi
 source install/local_setup.bash
