@@ -18,6 +18,8 @@
   <depend>std_msgs</depend>
   <depend>transforms3d</depend>
 
+  <exec_depend>arena_bringup</exec_depend>
+
   <member_of_group>rosidl_interface_packages</member_of_group>
   <export>
     <!-- Other tools can request additional information be placed here -->

@@ -80,6 +80,9 @@ install(
   scripts/repos
   DESTINATION lib/${PROJECT_NAME})
 
+# Install Python modules
+ament_python_install_package(${PROJECT_NAME})
+
 # ament package
 ament_package()
 

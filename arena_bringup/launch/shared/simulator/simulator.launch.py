@@ -1,44 +1,10 @@
 import os
 import launch
+import launch.actions
+import launch.substitutions
 from ament_index_python.packages import get_package_share_directory
 
-
-class LaunchArgument(launch.actions.DeclareLaunchArgument):
-    @property
-    def substitution(self):
-        return launch.substitutions.LaunchConfiguration(self.name)
-
-    @property
-    def parameter(self):
-        return {self.name: self.substitution}
-
-
-class SelectAction:
-    _actions: list[launch.actions.GroupAction]
-    _selector: launch.substitutions.LaunchConfiguration
-
-    def __init__(
-        self,
-        selector: launch.substitutions.LaunchConfiguration
-    ) -> None:
-        self._actions = []
-        self._selector = selector
-
-    def add(self, value: str, action: launch.Action):
-        self._actions.append(
-            launch.actions.GroupAction(
-                [action],
-                condition=launch.conditions.IfCondition(launch.substitutions.PythonExpression(
-                    ['"', self._selector, '"', f'=="{value}"'])
-                ),
-            )
-        )
-
-    @property
-    def action(self) -> launch.actions.GroupAction:
-        return launch.actions.GroupAction(
-            self._actions
-        )
+from arena_bringup.substitutions import LaunchArgument, SelectAction
 
 
 def generate_launch_description():
@@ -97,7 +63,7 @@ def generate_launch_description():
         simulator,
         headless,
         world,
-        launch_simulator.action,
+        launch_simulator,
     ])
     return ld
 
