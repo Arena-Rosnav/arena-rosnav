@@ -14,8 +14,8 @@ from rl_utils.utils.observation_collector import (
     get_required_observation_units,
 )
 from rl_utils.utils.type_alias.observation import InformationDict, ObservationDict
-from rosnav_rl.reward.reward_function import RewardFunction
-from rosnav_rl.spaces import EncodedObservationDict, RosnavSpaceManager
+from rosnav_rl.rl_agent import RL_Agent
+from rosnav_rl.spaces import EncodedObservationDict
 from std_srvs.srv import Empty
 from task_generator.task_generator_node import TaskGenerator
 from task_generator.tasks import Task
@@ -29,8 +29,7 @@ class FlatlandEnv(gymnasium.Env):
     def __init__(
         self,
         ns: Union[str, Namespace],
-        space_manager: RosnavSpaceManager,
-        reward_function: Optional[RewardFunction] = None,
+        rl_agent: RL_Agent,
         simulation_state_container: Optional[SimulationStateContainer] = None,
         max_steps_per_episode=100,
         init_by_call: bool = False,
@@ -57,18 +56,20 @@ class FlatlandEnv(gymnasium.Env):
             **kwargs: Additional keyword arguments.
         """
         super(FlatlandEnv, self).__init__()
-
         self.ns = Namespace(ns)
 
         self._debug_mode = rospy.get_param("/debug_mode", False)
         self._is_train_mode = rospy.get_param("/train_mode", default=True)
         self._step_size = rospy.get_param("/step_size")
 
-        if not self._debug_mode:
+        if self._is_train_mode and rl_agent.reward_function is None:
+            raise ValueError("Reward function is required for the training.")
+
+        if not self._debug_mode and not init_by_call:
             rospy.init_node(f"env_{self.ns.simulation_ns}".replace("/", "_"))
 
-        self._model_space_manager = space_manager
-        self._reward_function = reward_function
+        self._model_space_manager = rl_agent.space_manager
+        self._reward_function = rl_agent.reward_function
         self.__simulation_state_container = simulation_state_container
 
         self._obs_unit_kwargs = obs_unit_kwargs if obs_unit_kwargs else {}
@@ -150,6 +151,22 @@ class FlatlandEnv(gymnasium.Env):
         return self._model_space_manager.observation_space
 
     def _setup_env_for_training(self):
+        """
+        Sets up the environment for training by initializing necessary components.
+
+        This method performs the following tasks:
+        1. Instantiates the task manager using the TaskGenerator class.
+        2. Retrieves a predefined task and assigns it to the `self.task` attribute.
+        3. Sets up the agent action publisher to publish Twist messages to the 'cmd_vel' topic.
+        4. Configures the step world service and publisher for stepping the simulation world.
+
+        Attributes:
+            task (Type[Task]): The predefined task for the environment.
+            agent_action_pub (rospy.Publisher): Publisher for agent actions.
+            _service_name_step (str): Name of the step world service.
+            _step_world_publisher (rospy.Publisher): Publisher for stepping the simulation world.
+            _step_world_srv (rospy.ServiceProxy): Service proxy for the step world service.
+        """
         # instantiate task manager
         task_generator = TaskGenerator(
             namespace=self.ns.simulation_ns,
@@ -268,7 +285,7 @@ class FlatlandEnv(gymnasium.Env):
         # )
 
         return (
-            self._encode_observation(obs_dict),
+            self._encode_observation(obs_dict, is_done=done),
             reward,
             done,
             False,

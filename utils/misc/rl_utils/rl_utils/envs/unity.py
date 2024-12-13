@@ -8,8 +8,8 @@ from rl_utils.topic import Namespace
 from rl_utils.utils.arena_unity_utils.unity_timer import UnityTimer
 from rl_utils.utils.type_alias.observation import ObservationDict
 from rosgraph_msgs.msg import Clock
-from rosnav_rl.reward.reward_function import RewardFunction
-from rosnav_rl.spaces import EncodedObservationDict, RosnavSpaceManager
+from rosnav_rl.rl_agent import RL_Agent
+from rosnav_rl.spaces import EncodedObservationDict
 
 from .flatland_gymnasium_env import FlatlandEnv
 from .utils import determine_termination
@@ -29,8 +29,7 @@ class UnityEnv(FlatlandEnv):
     def __init__(
         self,
         ns: Union[str, Namespace],
-        space_manager: RosnavSpaceManager,
-        reward_function: Optional[RewardFunction] = None,
+        rl_agent: RL_Agent,
         simulation_state_container: Optional[SimulationStateContainer] = None,
         max_steps_per_episode=100,
         init_by_call: bool = False,
@@ -43,8 +42,7 @@ class UnityEnv(FlatlandEnv):
         rospy.loginfo("[Unity Env:" + ns + "]: Starting intialization")
         super().__init__(
             ns,
-            space_manager,
-            reward_function,
+            rl_agent,
             simulation_state_container,
             max_steps_per_episode,
             init_by_call,
