@@ -11,8 +11,6 @@ fi
 
 echo "nvidia-driver was installed"
 
-python -m pip install empy==3.3.2 lark catkin_pkg pyyaml
-
 #Optional choice: install a CUDA-enabled PyTorch 2.4.0 build based on the CUDA version available on your system
 python -m pip install torch==2.4.0 --index-url https://download.pytorch.org/whl/cu121
 
