@@ -133,8 +133,7 @@ def _init_env_fnc(
     def _init_env() -> Union[gym.Env, gym.Wrapper]:
         return env_cls(
             ns=ns,
-            space_manager=rl_agent.space_manager,
-            reward_function=rl_agent.reward_function,
+            rl_agent=rl_agent,
             simulation_state_container=simulation_state_container,
             max_steps_per_episode=max_steps_per_episode,
             init_by_call=init_by_call,
@@ -197,7 +196,7 @@ def sb3_wrap_env(
                 normalization_cfg=normalization_cfg,
                 agent_name=agent_cfg.name,
                 resume=bool(agent_cfg.framework.model.resume),
-                checkpoint_name=agent_cfg.framework.model.resume.checkpoint,
+                checkpoint_name=agent_cfg.framework.algorithm.checkpoint,
                 is_training=is_training,
             )
             if normalization_cfg is not None
@@ -232,11 +231,11 @@ def sb3_wrap_env(
     train_env = create_train_env()
     eval_env = create_eval_env()
 
-    train_env = apply_vec_framestack(train_env)
-    eval_env = apply_vec_framestack(eval_env)
+    # train_env = apply_vec_framestack(train_env)
+    # eval_env = apply_vec_framestack(eval_env)
 
-    train_env = apply_vec_normalize(train_env, is_training=True)
-    eval_env = apply_vec_normalize(eval_env, is_training=False)
+    # train_env = apply_vec_normalize(train_env, is_training=True)
+    # eval_env = apply_vec_normalize(eval_env, is_training=False)
 
     train_env = apply_vec_stats_recorder(train_env)
     eval_env = apply_vec_stats_recorder(eval_env)
