@@ -27,7 +27,7 @@ class RosPackages:
     """Centralized ROS package paths"""
 
     SIMULATION_SETUP: Path = Path(rospkg.RosPack().get_path("arena_simulation_setup"))
-    ROSNAV: Path = Path(rospkg.RosPack().get_path("rosnav"))
+    ROSNAV: Path = Path(rospkg.RosPack().get_path("rosnav_rl"))
     ARENA_BRINGUP: Path = Path(rospkg.RosPack().get_path("arena_bringup"))
 
 
