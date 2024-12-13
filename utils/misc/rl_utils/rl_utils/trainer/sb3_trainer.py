@@ -3,6 +3,11 @@ from typing import TYPE_CHECKING, Any
 
 import rl_utils.utils.paths as Paths
 import rosnav_rl.rl_agent as Rosnav_RL
+from rosnav_rl.utils.agent_state import (
+    AgentStateContainer,
+    ActionSpaceState,
+    ObservationSpaceState,
+)
 
 if TYPE_CHECKING:
     from rl_utils.cfg import TrainingCfg
@@ -21,27 +26,13 @@ from tools.states import get_arena_states
 
 
 @dataclass
-class SB3TrainingArguments(TrainingArguments):
-    total_timesteps: int
-    callback: Any
-    progress_bar: bool = True
-
-
-@dataclass
 class SB3Environment:
     train_env: VecEnv
     eval_env: VecEnv
 
 
 class StableBaselines3Trainer(ArenaTrainer):
-    """
-    Trainer class for Stable Baselines 3 (SB3) framework.
-
-    Attributes:
-        FRAMEWORK (TrainingFramework): The training framework used (SB3).
-    """
-
-    framework = RLFramework.SB3
+    __framework = RLFramework.SB3
     config_manager: SB3ConfigManager
     environment: SB3Environment
 
@@ -96,13 +87,16 @@ class StableBaselines3Trainer(ArenaTrainer):
             TrainingHookStages.BEFORE_SETUP,
             [_set_curriculum_file, _set_curriculum_stage],
         )
-        self.hook_manager.register(TrainingHookStages.AFTER_SETUP, _transfer_weights)
+        self.hook_manager.register(
+            TrainingHookStages.AFTER_SETUP,
+            [_transfer_weights],
+        )
 
     def _setup_agent(self) -> None:
         """Initialize the RL agent with configuration."""
         self.agent = Rosnav_RL.RL_Agent(
             agent_cfg=self.agent_cfg,
-            simulation_state_container=self.simulation_state_container,
+            agent_state_container=self.agent_state_container,
         )
 
     def _setup_environment(self) -> None:
@@ -113,18 +107,19 @@ class StableBaselines3Trainer(ArenaTrainer):
 
     def _create_environments(self) -> None:
         """Create training and evaluation environments."""
-        self.environment = SB3Environment(
-            *make_envs(
-                rl_agent=self.agent,
-                simulation_state_container=self.simulation_state_container,
-                agent_cfg=self.agent_cfg,
-                general_cfg=self.general_cfg,
-                callback_cfg=self.callbacks_cfg,
-                normalization_cfg=self.normalization_cfg,
-                monitoring_cfg=self.monitoring_cfg,
-                profiling_cfg=self.profiling_cfg,
-            )
+        train_env, eval_env = make_envs(
+            rl_agent=self.agent,
+            simulation_state_container=self.simulation_state_container,
+            agent_cfg=self.agent_cfg,
+            general_cfg=self.general_cfg,
+            callback_cfg=self.callbacks_cfg,
+            normalization_cfg=self.normalization_cfg,
+            monitoring_cfg=self.monitoring_cfg,
+            profiling_cfg=self.profiling_cfg,
         )
+        train_env = self.agent.model.setup_environment(train_env)
+        eval_env = self.agent.model.setup_environment(eval_env, is_training=False)
+        self.environment = SB3Environment(train_env, eval_env)
 
     def _setup_callbacks(self, train_env: VecEnv, eval_env: VecEnv) -> None:
         """Initialize training callbacks."""
@@ -150,6 +145,12 @@ class StableBaselines3Trainer(ArenaTrainer):
             task_modules_cfg=self.task_cfg,
         )
 
+    def _setup_agent_state_container(self) -> None:
+        self._setup_simulation_state_container()
+        self.agent_state_container: AgentStateContainer = (
+            self.simulation_state_container.to_agent_state_container()
+        )
+
     def _setup_monitoring(self) -> None:
         """Set up monitoring tools if not in debug mode."""
         if not self.general_cfg.debug_mode and self.monitoring_cfg.wandb:
@@ -157,12 +158,26 @@ class StableBaselines3Trainer(ArenaTrainer):
 
     def _train_impl(self, *args, **kwargs) -> None:
         """Implementation of training logic."""
+        # observation_collector = self.environment.train_env.get_attr(
+        #     "observation_collector", 0
+        # )
+
+        # self.environment.train_env.reset()
+
+        # import rosnav_rl.node.arena_node as arena_node
+
+        # arena_node.StableBaselinesNode(
+        #     model_path="/home/tar/catkin_ws/src/planners/rosnav/agents/jackal_AGENT_5_2024_11_11__20_17_06/best_model.zip"
+        # )
+
+        # for _ in range(100):
+        #     observation = observation_collector[0].get_observations()
+        #     self.agent.model.get_action(observation)
+
         self.agent.model.train(
-            **SB3TrainingArguments(
-                total_timesteps=self.general_cfg.n_timesteps,
-                callback=self.eval_cb,
-                progress_bar=self.general_cfg.show_progress_bar,
-            ).to_dict()
+            total_timesteps=self.general_cfg.n_timesteps,
+            callback=self.eval_cb,
+            progress_bar=self.general_cfg.show_progress_bar,
         )
 
     def _complete_model_initialization(self, train_env: VecEnv) -> None:
@@ -172,7 +187,7 @@ class StableBaselines3Trainer(ArenaTrainer):
             if not self.general_cfg.debug_mode
             else None
         )
-        resume_model_file = (
+        checkpoint_path = (
             None
             if not self.is_resume
             else self.paths[Paths.Agent].path
@@ -183,7 +198,7 @@ class StableBaselines3Trainer(ArenaTrainer):
             env=train_env,
             no_gpu=self.general_cfg.no_gpu,
             tensorboard_log_path=tensorboard_log_path,
-            resume_model_file=resume_model_file,
+            checkpoint_path=checkpoint_path,
         )
 
 

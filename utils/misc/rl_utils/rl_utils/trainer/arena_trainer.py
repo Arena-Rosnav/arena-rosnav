@@ -46,7 +46,7 @@ class ArenaTrainer(ABC):
         hook_manager (HookManager): Manages hooks for different stages of the training process.
     """
 
-    framework: RLFramework
+    __framework: RLFramework
 
     config: "TrainingCfg"
     paths: PathsDict
@@ -92,7 +92,7 @@ class ArenaTrainer(ABC):
         This method ensures that all necessary components are initialized and ready for training.
         """
         setup_steps = [
-            self._setup_simulation_state_container,
+            self._setup_agent_state_container,
             self._setup_agent,
             self._setup_environment,
             self._setup_monitoring,
@@ -197,8 +197,8 @@ class ArenaTrainer(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _setup_simulation_state_container(self, *args, **kwargs) -> None:
-        """Initialize simulation state container."""
+    def _setup_agent_state_container(self, *args, **kwargs) -> None:
+        """Initialize agent state container."""
         raise NotImplementedError()
 
     @property
