@@ -167,7 +167,7 @@ class YAMLMergeSubstitution(launch.Substitution):
 class _YAMLReplacer:
     @dataclasses.dataclass(frozen=True)
     class Replacement:
-        ...
+        value: typing.Any
 
     @dataclasses.dataclass(frozen=True)
     class NoReplacement(Replacement):
@@ -186,6 +186,48 @@ class _YAMLReplacer:
         value: list
 
     _substitutions: dict
+
+    def _replace_inter_string(self, v: str) -> NoReplacement | None:
+        counter: int = 0
+        replacements: list[tuple[int, int]] = []
+        opening: int = 0
+        for i, c in enumerate(v):
+            if v[i:i + 2] == '${':
+                if counter == 0:
+                    opening = i
+                counter += 1
+            if c == '}':
+                counter -= 1
+                if counter < 0:
+                    break
+                if counter == 0:
+                    replacements.append((opening, i + 1))
+
+        if counter == 0 and replacements:
+
+            # abandon inter-string substitution
+            if replacements[0] == (0, len(v)):
+                return None
+
+            result = ''
+            last_end: int = 0
+            for start, end in replacements:
+                result += v[last_end:start]
+
+                matchable = v[start:end]
+
+                match = self._sub_match(matchable)
+
+                if not isinstance(match.value, str):
+                    raise ValueError(f'misplaced substitution {matchable} of type {type(match.value)} in {v}')
+
+                result += match.value
+                last_end = end
+
+            result += v[last_end:]
+            return self.NoReplacement(value=result)
+
+        return None
 
     def _sub_match(self, v: str) -> "Replacement":
 
@@ -272,6 +314,8 @@ class _YAMLReplacer:
 
     def _replace_str(self, obj: str) -> typing.Any:
         replacement = self._sub_match(obj)
+        if (inter_v := self._replace_inter_string(obj)) is not None:
+            return inter_v.value
         if isinstance(replacement, self.DictSpreadReplacement):
             raise ValueError('dict spread argument placed outside dict')
         elif isinstance(replacement, self.ListSpreadReplacement):
