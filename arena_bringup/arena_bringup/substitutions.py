@@ -33,7 +33,7 @@ class LaunchArgument(launch.actions.DeclareLaunchArgument):
 
 class SelectAction(launch.Action):
     _actions: dict[str, list[launch.Action]]
-    _selector: launch.SomeSubstitutionsType
+    _selector: list[launch.Substitution]
 
     def __init__(
         self,
@@ -41,7 +41,7 @@ class SelectAction(launch.Action):
     ) -> None:
         launch.Action.__init__(self)
         self._actions = {}
-        self._selector = selector
+        self._selector = launch.utilities.normalize_to_list_of_substitutions(selector)
 
     def add(self, value: str, action: launch.Action):
         self._actions.setdefault(value, []).append(
@@ -49,14 +49,13 @@ class SelectAction(launch.Action):
         )
 
     def execute(self, context: launch.LaunchContext):
-        key = launch.utilities.perform_substitutions(
-            context, (self._selector,))
+        key = launch.utilities.perform_substitutions(context, self._selector)
         return self._actions.get(key, [])
 
 
 class YAMLFileSubstitution(launch.Substitution):
 
-    _path: launch.SomeSubstitutionsType
+    _path: list[launch.Substitution]
     _default: typing.Optional[dict | typing.Self]
     _substitute: bool
 
@@ -68,7 +67,7 @@ class YAMLFileSubstitution(launch.Substitution):
         substitute: bool = False,
     ):
         launch.Substitution.__init__(self)
-        self._path = path
+        self._path = launch.utilities.normalize_to_list_of_substitutions(path)
         self._default = default
         self._substitute = substitute
 
