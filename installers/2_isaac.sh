@@ -57,4 +57,16 @@ license agreement from NVIDIA CORPORATION is strictly prohibited.</license>
     </participant>
 </profiles>' > ~/.ros/fastdds.xml
 
+SETUP_FILE = "~/.local/share/ov/pkg/isaac-sim-4.2.0/setup.bash"
+# Write the content to the file
+cat << 'EOF' > "$SETUP_FILE"
+#!/bin/bash
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+MY_DIR="$(realpath -s "$SCRIPT_DIR")"
+export CARB_APP_PATH=$SCRIPT_DIR/kit
+export EXP_PATH=$MY_DIR/apps
+export ISAAC_PATH=$MY_DIR
+. ${MY_DIR}/setup_python_env.sh
+EOF
+
 echo "Completed download Isaac sim" 
