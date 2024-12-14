@@ -12,6 +12,11 @@ import launch.conditions
 import launch.utilities
 
 
+class NoAliasDumper(yaml.Dumper):
+    def ignore_aliases(self, data):
+        return True
+
+
 def _yaml_iter(obj: list | dict):
     if isinstance(obj, dict):
         return obj.keys()
@@ -105,7 +110,7 @@ class YAMLFileSubstitution(launch.Substitution):
             contents = substitute_recursive(contents)
 
         yaml_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
-        yaml.safe_dump(contents, yaml_file)
+        yaml.dump(contents, yaml_file, Dumper=NoAliasDumper)
         yaml_file.close()
 
         return yaml_file.name
