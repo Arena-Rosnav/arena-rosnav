@@ -1,5 +1,5 @@
 import copy
-import os
+import dataclasses
 import re
 import tempfile
 import typing
@@ -120,7 +120,7 @@ class YAMLFileSubstitution(launch.Substitution):
         return content
 
     @classmethod
-    def from_dict(cls, obj: dict, /, *, substitute: bool = False):
+    def from_dict(cls, obj: dict, /, *, substitute: bool = True):
         return cls(path=[], default=obj, substitute=substitute)
 
 
@@ -164,6 +164,146 @@ class YAMLMergeSubstitution(launch.Substitution):
         return YAMLFileSubstitution.from_dict(combined).perform(context)
 
 
+class _YAMLReplacer:
+    @dataclasses.dataclass(frozen=True)
+    class Replacement:
+        ...
+
+    @dataclasses.dataclass(frozen=True)
+    class NoReplacement(Replacement):
+        value: typing.Any
+
+    @dataclasses.dataclass(frozen=True)
+    class StringReplacement(Replacement):
+        value: typing.Any
+
+    @dataclasses.dataclass(frozen=True)
+    class DictSpreadReplacement(Replacement):
+        value: dict
+
+    @dataclasses.dataclass(frozen=True)
+    class ListSpreadReplacement(Replacement):
+        value: list
+
+    _substitutions: dict
+
+    def _sub_match(self, v: str) -> "Replacement":
+
+        str_v: str | None = v
+        replacement: None | _YAMLReplacer.Replacement = None
+
+        while str_v is not None:
+            if (match := re.match(r'^\$\{(.*)\}$', str_v)) is None:
+                return self.NoReplacement(value=str_v)
+
+            sub, *defaults = match.group(1).split(':-', 1)
+            default = defaults[0] if defaults else None
+
+            if sub.startswith('**'):
+                if isinstance((substitution := self._substitutions.get(sub[len('**'):])), dict):
+                    return self.DictSpreadReplacement(value=substitution)
+
+            if sub.startswith('*'):
+                if isinstance((substitution := self._substitutions.get(sub[len('*'):])), list):
+                    return self.ListSpreadReplacement(value=substitution)
+
+            if sub in self._substitutions:
+                return self.StringReplacement(value=self._substitutions[sub])
+
+            str_v = default
+
+        if replacement is None:
+            raise ValueError(f'could not find substitution for {v}')
+
+        return replacement
+
+    def _replace_list(self, obj: list) -> list:
+        to_insert: list[tuple[int, list]] = []
+
+        for k, v in enumerate(obj):
+            if isinstance(v, str):
+                replacement = self._sub_match(v)
+
+                if isinstance(replacement, self.DictSpreadReplacement):
+                    raise ValueError('dict spread argument placed outside dict')
+                elif isinstance(replacement, self.ListSpreadReplacement):
+                    to_insert.append((k, replacement.value))
+                    continue
+                elif isinstance(replacement, self.StringReplacement):
+                    obj[k] = replacement.value
+
+            obj[k] = self.replace(obj[k])
+
+        offset: int = 0
+        for i, insertions in to_insert:
+            expanded = self._replace_list(insertions)
+            obj.pop(i + offset)
+            obj[i + offset:i + offset] = expanded
+            offset += len(expanded) - 1
+
+        return obj
+
+    def _replace_dict(self, obj: dict) -> dict:
+        to_insert: list[tuple[str, dict]] = []
+
+        for k, v in obj.items():
+
+            if isinstance(replacement := self._sub_match(k), self.DictSpreadReplacement):
+                to_insert.append((k, replacement.value))
+                continue
+
+            if isinstance(v, str):
+                replacement = self._sub_match(v)
+
+                if isinstance(replacement, self.DictSpreadReplacement):
+                    raise ValueError('dict spreads should be placed in dict keys')
+                elif isinstance(replacement, self.ListSpreadReplacement):
+                    raise ValueError('list spread argument placed outside list')
+                elif isinstance(replacement, self.StringReplacement):
+                    obj[k] = replacement.value
+
+            obj[k] = self.replace(v)
+
+        for key, insertions in to_insert:
+            obj.pop(key)
+            obj.update(self._replace_dict(insertions))
+
+        return obj
+
+    def _replace_str(self, obj: str) -> typing.Any:
+        replacement = self._sub_match(obj)
+        if isinstance(replacement, self.DictSpreadReplacement):
+            raise ValueError('dict spread argument placed outside dict')
+        elif isinstance(replacement, self.ListSpreadReplacement):
+            raise ValueError('list spread argument placed outside list')
+        elif isinstance(replacement, self.StringReplacement):
+            return self.replace(replacement.value)
+        elif isinstance(replacement, self.NoReplacement):
+            return replacement.value
+        return obj
+
+    @typing.overload
+    def replace(self, obj: dict) -> dict: ...
+
+    @typing.overload
+    def replace(self, obj: list) -> list: ...
+
+    @typing.overload
+    def replace(self, obj: str) -> str: ...
+
+    def replace(self, obj: typing.Any) -> typing.Any:
+        if isinstance(obj, list):
+            return self._replace_list(obj)
+        if isinstance(obj, dict):
+            return self._replace_dict(obj)
+        if isinstance(obj, str):
+            return self._replace_str(obj)
+        return obj
+
+    def __init__(self, substitutions: dict):
+        self._substitutions = substitutions
+
+
 class YAMLReplaceSubstitution(launch.Substitution):
 
     _substitutions: YAMLFileSubstitution
@@ -183,22 +323,9 @@ class YAMLReplaceSubstitution(launch.Substitution):
 
         substitutions = self._substitutions.perform_load(context)
 
-        def recurse(obj: list | dict):
-            for k in _yaml_iter(obj):
-                if isinstance(obj[k], str) and \
-                        (match := re.match(r'\$\{([^\}]*)\}', obj[k])) is not None:
+        replacer = _YAMLReplacer(substitutions)
 
-                    sub = match.group(1)
-                    if sub in substitutions:
-                        obj[k] = substitutions[sub]
-
-                if isinstance(obj[k], (dict, list)):
-                    obj[k] = recurse(obj[k])
-
-            return obj
-
-        result = recurse(self._obj.perform_load(context))
-        assert isinstance(result, dict)
+        result = replacer.replace(self._obj.perform_load(context))
 
         return YAMLFileSubstitution.from_dict(
             result,
