@@ -11,6 +11,7 @@ from launch.substitutions import (
     LaunchConfiguration,
     PathJoinSubstitution,
     PythonExpression,
+    IfElseSubstitution,
 )
 from launch_ros.actions import Node
 from launch.actions import TimerAction
@@ -20,7 +21,7 @@ from launch.conditions import IfCondition
 def generate_launch_description():
     # Set environment variables
     package_root = get_package_share_directory('arena_bringup')
-    ss_root = get_package_share_directory('simulation-setup')
+    ss_root = get_package_share_directory('arena_simulation_setup')
 
     # Set paths for Gazebo, Physics Engine, and Resource
 
@@ -60,16 +61,31 @@ def generate_launch_description():
     # os.environ["GZ_SIM_PHYSICS_ENGINE_PATH"] = GZ_SIM_PHYSICS_ENGINE_PATH
     os.environ["GZ_SIM_RESOURCE_PATH"] = GZ_SIM_RESOURCE_PATHS_COMBINED
 
-    default_world_path = os.path.join(
-        package_root,
-        'configs',
-        'gazebo',
-        'empty.sdf',
+    world = LaunchConfiguration("world")
+
+    world_path = IfElseSubstitution(
+        condition=PythonExpression(['"', world, '" == ""']),
+        if_value=PathJoinSubstitution(
+            [
+                package_root,
+                'configs',
+                'gazebo',
+                'empty.sdf',
+            ]
+        ),
+        else_value=PathJoinSubstitution(
+            [
+                ss_root,
+                "worlds",
+                world,
+                "worlds",
+                PythonExpression(['"', world, '.world"']),
+            ]
+        )
     )
 
     # Launch Arguments
     use_sim_time = LaunchConfiguration("use_sim_time")
-    world_file = LaunchConfiguration("world_file")
     robot_model = LaunchConfiguration("model")
     random_spawn_test = LaunchConfiguration("random_spawn_test")
 
@@ -82,7 +98,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(gz_sim_launch_file),
         launch_arguments={
             "gz_args": [
-                world_file,
+                world_path,
                 " -v 4",
                 " -r",
                 " --render-engine ogre",
@@ -96,7 +112,7 @@ def generate_launch_description():
     #     workspace_root,
     #     "src",
     #     "arena",
-    #     "simulation-setup",
+    #     "arena_simulation_setup",
     #     "entities",
     #     "robots",
     #     "jackal",
@@ -175,7 +191,7 @@ def generate_launch_description():
             {
                 "use_sim_time": use_sim_time,
                 "robot_name": robot_model,
-                "world_frame": world_file,
+                "world_frame": world,
                 "robot_frame": "base_link",
                 "odom_frame": "odom",
             }
@@ -204,7 +220,8 @@ def generate_launch_description():
             gz_topic + '/cmd_vel@geometry_msgs/msg/Twist[gz.msgs.Twist',
             gz_topic + '/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
-            gz_topic + '/link/base_link/sensor/imu_sensor/imu@sensor_msgs/msg/Imu[gz.msgs.IMU'
+            gz_topic + \
+                '/link/base_link/sensor/imu_sensor/imu@sensor_msgs/msg/Imu[gz.msgs.IMU'
         ],
         remappings=[
             (joint_state_gz_topic, 'joint_states'),
@@ -248,9 +265,9 @@ def generate_launch_description():
                 description="Use simulation (Gazebo) clock if true",
             ),
             DeclareLaunchArgument(
-                "world_file",
-                default_value=default_world_path,
-                description="World file name",
+                "world",
+                default_value='',
+                description="World name",
             ),
             DeclareLaunchArgument(
                 "model", default_value="jackal", description="Robot model name"

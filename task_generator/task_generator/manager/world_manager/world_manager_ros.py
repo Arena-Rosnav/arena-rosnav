@@ -9,6 +9,7 @@ import rclpy
 import rclpy.callback_groups
 import rclpy.client
 
+from task_generator.constants import Constants
 from task_generator.utils.time import Time
 
 from .utils import WorldMap
@@ -38,8 +39,20 @@ _DUMMY_MAP = nav_msgs.msg.OccupancyGrid(
 class WorldManagerROS(WorldManager):
     cli: rclpy.client.Client
 
+    _first_world: bool
+    _world_name: str
+
     def _world_callback(self, value: typing.Any) -> bool:
         world_name = str(value)
+
+        if world_name != self._world_name and \
+                not self._first_world and \
+                (simulator := self.node.conf.Arena.SIMULATOR.value) in (Constants.Simulator.GAZEBO,):
+            raise RuntimeError(
+                f'Simulator {simulator.value} does not support world reloading.')
+
+        self._first_world = False
+
         self.node.get_logger().warn(f'LOADING WORLD {value}')
         map_yaml = os.path.join(
             self.node.conf.Arena.get_world_path(world_name),
@@ -60,6 +73,7 @@ class WorldManagerROS(WorldManager):
             raise RuntimeError(
                 f'failed to load map for world {world_name}: status code {response.result}')
 
+        self._world_name = world_name
         return True
 
     def _map_callback(self, costmap: nav_msgs.msg.OccupancyGrid):
@@ -67,6 +81,14 @@ class WorldManagerROS(WorldManager):
             self.update_world(WorldMap.from_costmap(costmap))
 
     def _setup_world_callbacks(self):
+
+        # retrieving map from map_server
+        self.node.create_subscription(
+            nav_msgs.msg.OccupancyGrid,
+            '/map',
+            self._map_callback,
+            1,
+        )
 
         # publishing map to map_server
         self.cli = self.node.create_client(
@@ -82,14 +104,8 @@ class WorldManagerROS(WorldManager):
             self._world_callback,
         )
 
-        # retrieving map from map_server
-        self.node.create_subscription(
-            nav_msgs.msg.OccupancyGrid,
-            'map',
-            self._map_callback,
-            1,
-        )
-
     def __init__(self) -> None:
         WorldManager.__init__(self, WorldMap.from_costmap(_DUMMY_MAP))
+        self._first_world = True
+        self._world_name = ''
         self._setup_world_callbacks()

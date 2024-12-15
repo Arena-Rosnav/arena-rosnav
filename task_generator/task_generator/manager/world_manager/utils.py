@@ -195,7 +195,7 @@ class WorldMap:
 
         # Normalize data to 0-255 range (0 = occupied, 255 = free)
         normalized_data = np.interp(
-            grid_data, (0, 100), (WorldOccupancy.FULL, WorldOccupancy.EMPTY)).astype(
+            grid_data, (100, 0), (WorldOccupancy.EMPTY, WorldOccupancy.FULL)).astype(
             np.uint8)
 
         return WorldMap(
