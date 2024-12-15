@@ -21,7 +21,7 @@ from launch.conditions import IfCondition
 def generate_launch_description():
     # Set environment variables
     package_root = get_package_share_directory('arena_bringup')
-    ss_root = get_package_share_directory('simulation-setup')
+    ss_root = get_package_share_directory('arena_simulation_setup')
 
     # Set paths for Gazebo, Physics Engine, and Resource
 
@@ -112,7 +112,7 @@ def generate_launch_description():
     #     workspace_root,
     #     "src",
     #     "arena",
-    #     "simulation-setup",
+    #     "arena_simulation_setup",
     #     "entities",
     #     "robots",
     #     "jackal",

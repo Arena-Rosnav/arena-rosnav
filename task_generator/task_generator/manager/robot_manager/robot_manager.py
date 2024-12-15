@@ -251,9 +251,8 @@ class RobotManager(NodeInterface):
                 launch.actions.IncludeLaunchDescription(
                     launch.launch_description_sources.PythonLaunchDescriptionSource(
                         os.path.join(
-                            ament_index_python.packages.get_package_share_directory(
-                                'arena_bringup'),
-                            'launch/testing/robot.launch.py'
+                            ament_index_python.packages.get_package_share_directory('arena_simulation_setup'),
+                            'launch/robot.launch.py'
                         )
                     ),
                     launch_arguments=launch_arguments.items(),

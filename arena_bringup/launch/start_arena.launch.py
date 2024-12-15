@@ -181,18 +181,6 @@ def generate_launch_description():
         launch.actions.IncludeLaunchDescription(
             launch.launch_description_sources.PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory(
-                    'arena_bringup'), 'launch/utils/fake_localization.launch.py')
-            ),
-            launch_arguments={
-                'ns': '',
-                'robot_name': launch.substitutions.LaunchConfiguration('robot'),
-                'global_frame_id': launch.substitutions.LaunchConfiguration('global_frame_id'),
-                'odom_frame_id': launch.substitutions.LaunchConfiguration('odom_frame_id')
-            }.items()
-        ),
-        launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                os.path.join(get_package_share_directory(
                     'arena_bringup'), 'launch/utils/rviz.launch.py')
             ),
             launch_arguments={}.items()

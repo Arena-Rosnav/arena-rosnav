@@ -1,5 +1,6 @@
 import copy
 import dataclasses
+import os
 import re
 import tempfile
 import typing
@@ -126,6 +127,42 @@ class YAMLFileSubstitution(launch.Substitution):
     @classmethod
     def from_dict(cls, obj: dict, /, *, substitute: bool = True):
         return cls(path=[], default=obj, substitute=substitute)
+
+
+class YAMLRetrieveSubstitution(launch.Substitution):
+    _obj: YAMLFileSubstitution
+    _key: list[launch.Substitution]
+
+    def __init__(
+        self,
+        obj: YAMLFileSubstitution,
+        key: launch.SomeSubstitutionsType,
+    ):
+        launch.Substitution.__init__(self)
+        self._obj = obj
+        self._key = launch.utilities.normalize_to_list_of_substitutions(key)
+
+    def perform(self, context: launch.LaunchContext):
+        obj = self._obj.perform_load(context)
+        key = launch.utilities.perform_substitutions(context, self._key)
+
+        remainder: str = key
+
+        while len(remainder):
+            if remainder in _yaml_iter(obj):
+                return obj[remainder]
+
+            newkey, *remainders = remainder.split(os.sep, 1)
+            remainder = ''.join(remainders)
+
+            try:
+                newkey = int(newkey)
+            except ValueError:
+                pass
+
+            obj = obj[newkey]
+
+        return str(obj)
 
 
 class YAMLMergeSubstitution(launch.Substitution):

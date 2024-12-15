@@ -60,7 +60,7 @@ def generate_launch_description():
         workspace_root,
         "src",
         "arena",
-        "simulation-setup",
+        "arena_simulation_setup",
         "entities",
         "obstacles",
         "static",
