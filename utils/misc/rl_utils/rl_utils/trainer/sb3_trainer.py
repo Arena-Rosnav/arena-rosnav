@@ -21,8 +21,9 @@ from rl_utils.utils.dynamic_reconfigure import set_dynamic_reconfigure_parameter
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from tools.config import SB3ConfigManager, load_training_config
 from tools.env_utils import make_envs
-from tools.model_utils import init_sb3_callbacks, setup_wandb
+from tools.model_utils import setup_wandb
 from tools.states import get_arena_states
+from rosnav_rl.utils.stable_baselines3.callbacks import init_sb3_callbacks
 
 
 @dataclass
@@ -124,7 +125,6 @@ class StableBaselines3Trainer(ArenaTrainer):
     def _setup_callbacks(self, train_env: VecEnv, eval_env: VecEnv) -> None:
         """Initialize training callbacks."""
         self.eval_cb = init_sb3_callbacks(
-            train_env=train_env,
             eval_env=eval_env,
             n_envs=self.general_cfg.n_envs,
             tm_modules=self.task_cfg.tm_modules,
