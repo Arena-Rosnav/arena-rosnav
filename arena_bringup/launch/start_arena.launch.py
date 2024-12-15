@@ -3,6 +3,8 @@ import os
 import launch
 from ament_index_python.packages import get_package_share_directory
 
+import launch_ros.actions
+
 
 def generate_launch_description():
     ld = launch.LaunchDescription([
@@ -178,12 +180,11 @@ def generate_launch_description():
                 'world_file': launch.substitutions.LaunchConfiguration('world'),
             }.items()
         ),
-        launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                os.path.join(get_package_share_directory(
-                    'arena_bringup'), 'launch/utils/rviz.launch.py')
-            ),
-            launch_arguments={}.items()
+        launch_ros.actions.Node(
+            package="rviz_utils",
+            executable="rviz_config",
+            name="rviz_config",
+            output="screen",
         ),
     ])
     return ld
