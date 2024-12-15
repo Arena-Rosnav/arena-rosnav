@@ -1,4 +1,10 @@
 #!/bin/bash -i
+sudo apt install libfuse
+
+curl -O "https://install.launcher.omniverse.nvidia.com/installers/omniverse-launcher-linux.AppImage" 
+chmod +x omniverse-launcher-linux-AppImage
+./omniverse-launcher-linux-AppImage &
+
 cd "${ARENA_WS_DIR}"
 
 source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
