@@ -19,7 +19,7 @@ from task_generator.utils.ros_params import ROSParamServer
 
 class Props_Manager:
     obstacle_manager: ObstacleManager
-    robot_managers: List[RobotManager]
+    robot_managers: dict[str, RobotManager]
     world_manager: WorldManager
 
 
@@ -72,7 +72,7 @@ class Task(Props_, abc.ABC):
 
     Args:
         obstacle_manager (ObstacleManager): The obstacle manager.
-        robot_managers (List[RobotManager]): The list of robot managers.
+        robot_managers (dict[str, RobotManager]): The dict of robot managers.
         world_manager (WorldManager): The world manager.
         namespace (str, optional): The namespace for the task. Defaults to "".
 
@@ -83,7 +83,6 @@ class Task(Props_, abc.ABC):
         reset(**kwargs): Reset the task.
         is_done() -> bool: Check if the task is done.
         robot_names() -> List[str]: Get the names of the robots in the task.
-        set_up_robot_managers(): Set up the robot managers.
         _clock_callback(clock: rosgraph_msgs.Clock): Callback function for the clock message.
         set_robot_position(position: PositionOrientation): Set the position of the robot.
         set_robot_goal(position: PositionOrientation): Set the goal position of the robot.
@@ -108,7 +107,7 @@ class Task(Props_, abc.ABC):
         self,
         *args,
         obstacle_manager: ObstacleManager,
-        robot_managers: List[RobotManager],
+        robot_managers: dict[str, RobotManager],
         world_manager: WorldManager,
         namespace: str = "",
         **kwargs
@@ -125,11 +124,7 @@ class Task(Props_, abc.ABC):
 
     @property
     def robot_names(self) -> List[str]:
-        return [manager.name for manager in self.robot_managers]
-
-    def set_up_robot_managers(self):
-        for manager in self.robot_managers:
-            manager.set_up_robot()
+        return list(self.robot_managers.keys())
 
     def _clock_callback(self, clock: rosgraph_msgs.Clock):
         self.clock = clock

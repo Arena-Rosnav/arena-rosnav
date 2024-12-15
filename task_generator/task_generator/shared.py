@@ -355,6 +355,20 @@ class RobotProps(EntityProps):
     agent: str
     record_data_dir: Optional[str] = None
 
+    def compatible(self, value: RobotProps) -> bool:
+        return self.model.name == value.model.name \
+            and self.local_planner == value.local_planner \
+            and self.agent == value.agent \
+
+
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, RobotProps):
+            return False
+
+        return self.compatible(value) \
+            and self.name == value.name \
+            and self.record_data_dir == value.record_data_dir
+
 
 class Obstacle(ObstacleProps):
     @classmethod
@@ -413,7 +427,8 @@ class Robot(RobotProps):
     @staticmethod
     def parse(obj: Dict, model: ModelWrapper) -> "Robot":
         name = str(obj.get("name", ""))
-        position = PositionOrientation(*obj.get("pos", next(gen_init_pos)))
+        position = PositionOrientation(
+            *obj.get("pos", attr.astuple(next(gen_init_pos))))
         inter_planner = str(
             obj.get("inter_planner", rosparam_get(str, "inter_planner", ""))
         )

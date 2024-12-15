@@ -5,15 +5,7 @@ import launch_ros.actions
 import os
 from ament_index_python.packages import get_package_share_directory
 
-
-class LaunchArgument(launch.actions.DeclareLaunchArgument):
-    @property
-    def substitution(self):
-        return launch.substitutions.LaunchConfiguration(self.name)
-
-    @property
-    def parameter(self):
-        return {self.name: self.substitution}
+from arena_bringup.substitutions import LaunchArgument
 
 
 def generate_launch_description():

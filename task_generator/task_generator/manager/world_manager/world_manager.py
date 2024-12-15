@@ -270,7 +270,7 @@ class WorldManager(NodeInterface):
                         if to_produce > len(available_positions):
                             raise RuntimeError()
 
-                        candidates = available_positions[self.node.conf.General.RNG.choice(
+                        candidates = available_positions[self.node.conf.General.RNG.value.choice(
                             len(available_positions), to_produce, replace=False), :]
 
                         for candidate in candidates:
@@ -310,12 +310,10 @@ class WorldManager(NodeInterface):
                                 int((i % 5) * self._shape[0] / 5)
                             )
                         ) for i in range(to_produce)]
-                    # rospy.logerr(
-                    # f"Couldn't find enough empty cells for {to_produce}
-                    # requests")
+                    self.node.get_logger().warn(
+                        f"Couldn't find enough empty cells for {to_produce} requests")
 
-                finally:
-                    return result
+                return result
 
             points = list(sample(n))
 
@@ -347,10 +345,14 @@ class WorldManager(NodeInterface):
             fillvalue=int(WorldOccupancy.FULL)
         )
 
-        # import cv2
-        # cv2.imwrite("_debug1.png", occupancy)
-        # cv2.imwrite("_debug2.png", WorldOccupancy.not_full(occupancy).astype(np.uint8) * np.iinfo(np.uint8).max)
-        # cv2.imwrite("_debug3.png", spread)
-        # cv2.imwrite("_debug4.png", WorldOccupancy.empty(spread).astype(np.uint8) * np.iinfo(np.uint8).max)
+        import cv2
+
+        def visual(mat: np.ndarray) -> np.ndarray:
+            return (mat / mat.max()).astype(np.uint8) * np.iinfo(np.uint8).max
+
+        cv2.imwrite("_debug1.png", visual(occupancy))
+        cv2.imwrite("_debug2.png", visual(WorldOccupancy.not_full(occupancy)))
+        cv2.imwrite("_debug3.png", visual(spread))
+        cv2.imwrite("_debug4.png", visual(WorldOccupancy.empty(spread)))
 
         return np.transpose(np.where(WorldOccupancy.empty(spread)))

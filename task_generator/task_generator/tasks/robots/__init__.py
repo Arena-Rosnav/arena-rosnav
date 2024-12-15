@@ -30,8 +30,8 @@ class TM_Robots(TaskMode):
             position (PositionOrientation): The desired position and orientation.
 
         """
-        for robot in self._PROPS.robot_managers:
-            robot.reset(position, None)
+        for robot_manager in self._PROPS.robot_managers.values():
+            robot_manager.reset(position, None)
 
     def set_goal(self, position: PositionOrientation):
         """
@@ -41,8 +41,8 @@ class TM_Robots(TaskMode):
             position (PositionOrientation): The desired goal position and orientation.
 
         """
-        for robot in self._PROPS.robot_managers:
-            robot.reset(None, position)
+        for robot_manager in self._PROPS.robot_managers.values():
+            robot_manager.reset(None, position)
 
     @property
     def done(self):
@@ -57,4 +57,5 @@ class TM_Robots(TaskMode):
                 > self.node.conf.Robot.TIMEOUT.value:
             return True
 
-        return all(robot.is_done for robot in self._PROPS.robot_managers)
+        return all(
+            robot_manager.is_done for robot_manager in self._PROPS.robot_managers.values())

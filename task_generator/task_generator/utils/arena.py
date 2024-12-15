@@ -10,7 +10,7 @@ import nav_msgs.msg as nav_msgs
 import ament_index_python.packages
 
 _simulation_setup_path: str = ament_index_python.packages.get_package_share_directory(
-    'simulation-setup'
+    'arena_simulation_setup'
 )
 
 

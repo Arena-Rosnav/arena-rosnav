@@ -12,7 +12,13 @@ class TM_Explore(TM_Random):
     It inherits from the TM_Random class.
     """
 
-    _timeouts: Dict[int, Time]
+    _timeouts: Dict[str, Time]
+
+    def reset(self, **kwargs):
+        super().reset(**kwargs)
+        self._timeouts = {}
+        for name in self._PROPS.robot_managers.keys():
+            self._reset_timeout(name)
 
     @property
     def done(self) -> bool:
@@ -22,61 +28,59 @@ class TM_Explore(TM_Random):
         Returns:
             bool: True if the task is done for all robots, False otherwise.
         """
-        for i, robot in enumerate(self._PROPS.robot_managers):
-            if robot.is_done:
+        for robot, manager in self._PROPS.robot_managers.items():
+            if manager.is_done:
                 waypoint = self._PROPS.world_manager.get_position_on_map(
-                    safe_dist=robot.safe_distance, forbid=False
+                    safe_dist=manager.safe_distance, forbid=False
                 )
                 self._set_goal(
-                    i, PositionOrientation(
+                    robot,
+                    PositionOrientation(
                         waypoint.x, waypoint.y, self.node.conf.General.RNG.value.random() * 2 * math.pi)
                 )
 
-            elif (self._PROPS.clock.clock.sec - self._timeouts[i].sec) > self.node.conf.Robot.TIMEOUT.value:
+            elif (self._PROPS.clock.clock.sec - self._timeouts[robot].sec) > self.node.conf.Robot.TIMEOUT.value:
                 waypoint = self._PROPS.world_manager.get_position_on_map(
-                    safe_dist=robot.safe_distance, forbid=False
+                    safe_dist=manager.safe_distance, forbid=False
                 )
                 self._set_position(
-                    i, PositionOrientation(
+                    robot,
+                    PositionOrientation(
                         waypoint.x, waypoint.y, self.node.conf.General.RNG.value.random() * 2 * math.pi)
                 )
 
         return False
 
-    def _reset_timeout(self, index: int):
+    def _reset_timeout(self, robot: str):
         """
         Resets the timeout for a specific robot.
 
         Args:
-            index (int): The index of the robot.
+            robot (str): The name of the robot.
         """
-        self._timeouts[index] = self._PROPS.clock.clock
+        self._timeouts[robot] = self._PROPS.clock.clock
 
-    def _set_position(self, index: int, position: PositionOrientation):
+    def _set_position(self, name: str, position: PositionOrientation):
         """
         Sets the position of a specific robot and resets the timeout.
 
         Args:
-            index (int): The index of the robot.
+            name (str): The name of the robot.
             position (PositionOrientation): The new position of the robot.
         """
-        self._reset_timeout(index)
-        self._PROPS.robot_managers[index].reset(position, None)
+        self._reset_timeout(name)
+        self._PROPS.robot_managers[name].reset(position, None)
 
-    def _set_goal(self, index: int, position: PositionOrientation):
+    def _set_goal(self, name: str, position: PositionOrientation):
         """
         Sets the goal position of a specific robot and resets the timeout.
 
         Args:
-            index (int): The index of the robot.
+            name (str): The name of the robot.
             position (PositionOrientation): The new goal position of the robot.
         """
-        self._reset_timeout(index)
-        self._PROPS.robot_managers[index].reset(None, position)
+        self._reset_timeout(name)
+        self._PROPS.robot_managers[name].reset(None, position)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-        self._timeouts = {}
-        for i in range(len(self._PROPS.robot_managers)):
-            self._reset_timeout(i)

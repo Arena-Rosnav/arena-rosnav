@@ -76,7 +76,7 @@ class TM_Scenario(TM_Robots):
         SCENARIO_ROBOTS = self._config.value
 
         # check robot manager length
-        managed_robots = self._PROPS.robot_managers
+        managed_robots = list(self._PROPS.robot_managers.values())
 
         scenario_robots_length = len(SCENARIO_ROBOTS)
         setup_robot_length = len(managed_robots)

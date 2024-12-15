@@ -7,7 +7,7 @@ task_generator_node:
         dynamic:
           n: [3, 15]
           models:
-          - ugly
+          - gazebo_actor
         interactive:
           n: [0, 0]
           models:

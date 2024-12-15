@@ -7,6 +7,7 @@ from task_generator import NodeInterface
 from task_generator.constants import Constants
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
+from task_generator.manager.robot_manager.robots_manager_ros import RobotsManager
 from task_generator.manager.world_manager import WorldManager
 from task_generator.shared import DefaultParameter, Namespace, PositionOrientation, rosparam_set
 from task_generator.tasks import Namespaced, Task
@@ -109,11 +110,13 @@ class TaskFactory(Namespaced):
 
             _force_reset: bool
 
+            _robots_manager: RobotsManager
+
             def __init__(
                 self,
                 *args,
                 obstacle_manager: ObstacleManager,
-                robot_managers: typing.List[RobotManager],
+                robots_manager: RobotsManager,
                 world_manager: WorldManager,
                 namespace: str = "",
                 **kwargs,
@@ -123,7 +126,7 @@ class TaskFactory(Namespaced):
 
                 Args:
                     obstacle_manager (ObstacleManager): The obstacle manager for the task.
-                    robot_managers (typing.List[RobotManager]): The typing.List of robot managers for the task.
+                    robot_managers (dict[, strRobotManager]): The dict of robot managers for the task.
                     world_manager (WorldManager): The world manager for the task.
                     namespace (str, optional): The namespace for the task. Defaults to "".
                     *args: Variable length argument typing.List.
@@ -134,8 +137,10 @@ class TaskFactory(Namespaced):
                 self._force_reset = False
                 self.namespace = namespace
 
+                self._robots_manager = robots_manager
+
                 self.obstacle_manager = obstacle_manager
-                self.robot_managers = robot_managers
+                self.robot_managers = self._robots_manager.robot_managers
                 self.world_manager = world_manager
 
                 self.__modules = [
@@ -156,9 +161,7 @@ class TaskFactory(Namespaced):
                 self.last_reset_time = 0
                 self.clock = rosgraph_msgs.Clock()
 
-                self.set_up_robot_managers()
-
-                workspace_root = ModelLoader.getArenaDir()
+                robots_manager.set_up()
 
                 self.model_loader = ModelLoader(
                     os.path.join(
@@ -227,6 +230,8 @@ class TaskFactory(Namespaced):
                 """
                 try:
                     self.__reset_start.publish(std_msgs.Empty())
+
+                    self._robots_manager.set_up()
 
                     if not self._train_mode:
                         if (

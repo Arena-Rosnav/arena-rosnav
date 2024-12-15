@@ -233,34 +233,45 @@ class HunavManager(EntityManager):
     def setup_services(self):
         """Initialize all required services"""
         self.node.get_logger().info("Setting up Hunavservices...")
+        
+        # Debug namespace information
+        self.node.get_logger().info(f"Node namespace: {self.node.get_namespace()}")
+        self.node.get_logger().info(f"Task generator namespace: {self._namespace}")
+        
+        # Create service names with full namespace path (now using root namespace)
+        service_names = {
+            'compute_agent': f'/{self.SERVICE_COMPUTE_AGENT}',        # Added leading slash
+            'compute_agents': f'/{self.SERVICE_COMPUTE_AGENTS}',      # Added leading slash
+            'move_agent': f'/{self.SERVICE_MOVE_AGENT}',             # Added leading slash
+            'reset_agents': f'/{self.SERVICE_RESET_AGENTS}'          # Added leading slash
+        }
+        
+        # Log service names
+        for service, full_name in service_names.items():
+            self.node.get_logger().info(f"Creating service client for {service} at: {full_name}")
 
-        # First create Service-Clients
+        # Create service clients
         self._compute_agent_client = self.node.create_client(
             ComputeAgent,
-            self._namespace(self.SERVICE_COMPUTE_AGENT)
+            service_names['compute_agent']
         )
         self._compute_agents_client = self.node.create_client(
             ComputeAgents,
-            self._namespace(self.SERVICE_COMPUTE_AGENTS)
+            service_names['compute_agents']
         )
-        # self._get_agents_client = self.node.create_client(
-        #     GetAgents,
-        #     self._namespace(self.SERVICE_GET_AGENTS)
-        # )
         self._move_agent_client = self.node.create_client(
             MoveAgent,
-            self._namespace(self.SERVICE_MOVE_AGENT)
+            service_names['move_agent']
         )
         self._reset_agents_client = self.node.create_client(
             ResetAgents,
-            self._namespace(self.SERVICE_RESET_AGENTS)
+            service_names['reset_agents']
         )
 
         # Wait for Services
         required_services = [
             (self._compute_agent_client, 'compute_agent'),
             (self._compute_agents_client, 'compute_agents'),
-            # (self._get_agents_client, 'get_agents'),
             (self._move_agent_client, 'move_agent'),
             (self._reset_agents_client, 'reset_agents')
         ]
@@ -274,11 +285,15 @@ class HunavManager(EntityManager):
                     break
                 attempts += 1
                 self.node.get_logger().warn(
-                    f'Waiting for service {name} (attempt {attempts}/{max_attempts})')
+                    f'Waiting for service {name} (attempt {attempts}/{max_attempts})\n'
+                    f'Looking for service at: {service_names[name]}'
+                )
 
             if attempts >= max_attempts:
                 self.node.get_logger().error(
-                    f'Service {name} not available after {max_attempts} attempts')
+                    f'Service {name} not available after {max_attempts} attempts\n'
+                    f'Was looking for service at: {service_names[name]}'
+                )
                 return False
 
         self.node.get_logger().info("All services are ready")
@@ -734,7 +749,8 @@ class HunavManager(EntityManager):
             robot_agent.position.position.x = position.x
             robot_agent.position.position.y = position.y
             quat = quaternion_from_euler(0.0, 0.0, position.orientation)
-            robot_agent.position.orientation = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
+            robot_agent.position.orientation = Quaternion(
+                x=quat[0], y=quat[1], z=quat[2], w=quat[3])
             robot_agent.yaw = position.orientation
 
             # Create service request
@@ -746,7 +762,7 @@ class HunavManager(EntityManager):
             request.current_agents.header.frame_id = "map"
 
             future = self._move_agent_client.call_async(request)
-            
+
             timeout_sec = 1.0
             start_time = time.time()
             while not future.done() and time.time() - start_time < timeout_sec:
@@ -767,6 +783,9 @@ class HunavManager(EntityManager):
     def spawn_robot(self, robot: Robot):
         """Spawn robot in simulation"""
         self._simulator.spawn_entity(robot)
+
+    def remove_robot(self, name: str):
+        return self._simulator.delete_entity(name)
 
     def _normalize_angle(self, angle: float) -> float:
         """Normalize angle to [-pi, pi] (from HuNavPlugin)"""

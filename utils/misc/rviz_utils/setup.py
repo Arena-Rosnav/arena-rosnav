@@ -44,7 +44,7 @@ setup(
     # scripts here.
     entry_points={
         'console_scripts': [
-            'create_config_file = rviz_utils.scripts.create_config_file:main'
+            'rviz_config = rviz_utils.scripts.rviz_config:main'
         ],
     },
 )

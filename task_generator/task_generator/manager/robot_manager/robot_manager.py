@@ -4,7 +4,11 @@ import typing
 
 import numpy as np
 import scipy.spatial.transform
+
 import rclpy
+import rclpy.publisher
+import rclpy.timer
+import rclpy.client
 
 from task_generator import NodeInterface
 import task_generator.utils.arena as Utils
@@ -41,6 +45,10 @@ class RobotManager(NodeInterface):
     _move_base_goal_pub: rclpy.publisher.Publisher
     _pub_goal_timer: rclpy.timer.Timer
     _clear_costmaps_srv: rclpy.client.Client
+
+    @property
+    def robot(self) -> Robot:
+        return self._robot
 
     @property
     def start_pos(self) -> PositionOrientation:
@@ -136,7 +144,7 @@ class RobotManager(NodeInterface):
                 f"{self._namespace}{self._namespace}_{self.model_name}"
             )
 
-        return self._namespace(self._robot.name)
+        return self._namespace(self.name)
 
     @property
     def is_done(self) -> bool:
@@ -217,27 +225,25 @@ class RobotManager(NodeInterface):
             launch_description = launch.LaunchDescription()
 
             launch_arguments = {
-                'robot_path': os.path.join(
-                    Utils.get_simulation_setup_path(),
-                    'entities',
-                    'robots',
-                    self.model_name,
-                ),
-                'world_path': self.node.conf.Arena.get_world_path(),
-                'simulator': self.node.conf.Arena.SIMULATOR.value.value,
-                'name': self.name,
+                'robot': self.model_name,
+                # 'world_path': self.node.conf.Arena.get_world_path(),
+                # 'simulator': self.node.conf.Arena.SIMULATOR.value.value,
+                # 'name': self.name,
                 'namespace': self.namespace,
+                # 'use_namespace': 'True',
                 'frame': f"{self.name}/" if self.name else '',
-                'inter_planner': self._robot.inter_planner,
+                # 'inter_planner': self._robot.inter_planner,
+                'global_planner': 'dummy',
                 'local_planner': self._robot.local_planner,
                 # 'complexity': self.node.declare_parameter('complexity', 1).value,
                 # 'train_mode': self.node.declare_parameter('train_mode', False).value,
                 'agent_name': self._robot.agent,
+                'use_sim_time': 'True',
             }
 
             if self._robot.record_data_dir:
                 launch_arguments.update({
-                    'record_data': 'true',
+                    'record_data': 'True',
                     'record_data_dir': self._robot.record_data_dir,
                 })
 
@@ -245,9 +251,8 @@ class RobotManager(NodeInterface):
                 launch.actions.IncludeLaunchDescription(
                     launch.launch_description_sources.PythonLaunchDescriptionSource(
                         os.path.join(
-                            ament_index_python.packages.get_package_share_directory(
-                                'arena_bringup'),
-                            'launch/testing/robot.launch.py'
+                            ament_index_python.packages.get_package_share_directory('arena_simulation_setup'),
+                            'launch/robot.launch.py'
                         )
                     ),
                     launch_arguments=launch_arguments.items(),
@@ -257,7 +262,9 @@ class RobotManager(NodeInterface):
 
         # TODO
         # base_frame: str = self.node.get_parameter_or(self.namespace("robot_base_frame"), DefaultParameter('')).value
-        # sensor_frame: str = self.node.get_parameter_or(self.namespace("robot_sensor_frame"), DefaultParameter('')).value
+        # sensor_frame: str =
+        # self.node.get_parameter_or(self.namespace("robot_sensor_frame"),
+        # DefaultParameter('')).value
 
         # self.node.set_parameters([
         #     Parameter(self.namespace("move_base", "global_costmap", "robot_base_frame"),
@@ -283,3 +290,16 @@ class RobotManager(NodeInterface):
             current_position.position.y,
             rot.as_euler("xyz")[2],
         )
+
+    def update(self):
+        """
+        Live-update some kwargs of robot
+        """
+        # TODO implement record data dir
+
+    def destroy(self):
+        """
+        Destroy robot and remove from simulation and navigation stack.
+        """
+        self._entity_manager.remove_robot(self.name)
+        # TODO kill node in navigation stack

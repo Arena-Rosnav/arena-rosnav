@@ -91,6 +91,13 @@ class EntityManager(NodeInterface):
         """
         raise NotImplementedError()
 
+    def remove_robot(self, name: str):
+        """
+        Removes a robot from the simulation.
+        @name: Robot name
+        """
+        raise NotImplementedError()
+
 
 EntityManagerRegistry = Registry[Constants.EntityManager, EntityManager]()
 
