@@ -116,6 +116,7 @@ class ModelType(enum.Enum):
     URDF = "urdf"
     SDF = "sdf"
     YAML = "yaml"
+    USD = "usd"
 
 
 @dataclasses.dataclass(frozen=True)
