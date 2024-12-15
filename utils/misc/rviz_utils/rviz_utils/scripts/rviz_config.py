@@ -80,6 +80,7 @@ class ConfigFileGenerator(Node):
         default_file["Visualization Manager"]["Displays"] = displays
 
         file_path = self._tmp_config_file(default_file)
+        self.get_logger().info(f'created config file at {file_path}')
 
         return file_path
 
@@ -141,7 +142,7 @@ def main():
                     package="rviz2",
                     executable="rviz2",
                     name="rviz2",
-                    arguments=[config_file],
+                    arguments=['-d', config_file],
                     parameters=[{"use_sim_time": True}],
                     output="screen",
                 )
