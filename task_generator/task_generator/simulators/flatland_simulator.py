@@ -193,5 +193,4 @@ class FlatlandSimulator(BaseSimulator):
                 return
         else:
             rospy.logerr(
-                f"failed to resume in {
-                    self.SERVICE_CALL_TRIES} tries")
+                f"failed to resume in {self.SERVICE_CALL_TRIES} tries")

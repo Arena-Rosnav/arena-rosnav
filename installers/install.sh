@@ -2,8 +2,8 @@
 set -e
 
 export ARENA_ROSNAV_REPO=${ARENA_ROSNAV_REPO:-voshch/arena-rosnav}
-export ARENA_BRANCH=${ARENA_BRANCH:-humble}
-export ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-humble}
+export ARENA_BRANCH=${ARENA_BRANCH:-jazzy}
+export ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-jazzy}
 
 # == read inputs ==
 echo 'Configuring arena-rosnav...'
@@ -153,7 +153,7 @@ if [ ! -d src/deps ] ; then
     git clone --filter=tree:0 --depth 1 https://github.com/rudislabs/actuator_msgs.git
     git clone --filter=tree:0 --depth 1 https://github.com/swri-robotics/gps_umd.git -b ros2-devel
     git clone --filter=tree:0 --depth 1 https://github.com/ros-perception/vision_msgs.git -b ros2
-    git clone --filter=tree:0 --depth 1 https://github.com/ros-perception/vision_opencv.git -b humble
+    git clone --filter=tree:0 --depth 1 https://github.com/ros-perception/vision_opencv.git -b rolling
   popd
 fi
 
@@ -216,6 +216,7 @@ fi
 
 #run installers
 # sudo apt upgrade
+. colcon_build
 
 compile(){
   cd "${ARENA_WS_DIR}"

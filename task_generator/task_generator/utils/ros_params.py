@@ -145,9 +145,7 @@ class ROSParamServer(rclpy.node.Node):
 
         if not result.successful:
             raise RuntimeError(
-                f'initial configuration of parameter {
-                    param.name} failed with {
-                    result.reason}')
+                f'initial configuration of parameter {param.name} failed with {result.reason}')
 
     def _callback(self, params: list[rclpy.parameter.Parameter]):
         successful = True
@@ -155,16 +153,12 @@ class ROSParamServer(rclpy.node.Node):
         for param in params:
             for callback in self._callbacks.get(param.name, set()):
                 self.get_logger().debug(
-                    f"setting param {
-                        param.name} with value {
-                        param.value} (callback {callback})")
+                    f"setting param {param.name} with value {param.value} (callback {callback})")
                 try:
                     successful &= callback(param.value)
                 except BaseException as e:
                     self.get_logger().warn(
-                        f'setting parameter {
-                            param.name} with value {
-                            param.value} failed: {e}')
+                        f'setting parameter {param.name} with value {param.value} failed: {e}')
                     reason.append(
                         ''.join(
                             traceback.TracebackException.from_exception(e).format()))
