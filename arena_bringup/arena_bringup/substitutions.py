@@ -62,14 +62,14 @@ class SelectAction(launch.Action):
 class YAMLFileSubstitution(launch.Substitution):
 
     _path: list[launch.Substitution]
-    _default: typing.Optional[dict | typing.Self]
+    _default: "typing.Optional[dict | YAMLFileSubstitution]"
     _substitute: bool
 
     def __init__(
         self,
         path: launch.SomeSubstitutionsType,
         *,
-        default: typing.Optional[dict | typing.Self] = None,
+        default: "typing.Optional[dict | YAMLFileSubstitution]" = None,
         substitute: bool = False,
     ):
         launch.Substitution.__init__(self)

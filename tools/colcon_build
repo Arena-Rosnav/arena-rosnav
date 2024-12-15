@@ -1,9 +1,11 @@
 #! /usr/bin/bash
-
-export BUILD_EXCLUDES=""
-
 ARENA_WS_DIR="$(pwd)"
 ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-humble}
+
+export FASTRTPS_DEFAULT_PROFILES_FILE=~/.ros/fastdds.xml
+export ROS_DOMAIN_ID=1
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ros/humble/lib/
 
 source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
 colcon build \
@@ -19,3 +21,7 @@ if [ -f "/opt/ros/${ARENA_ROS_DISTRO}/setup.bash" ] ; then
     . "/opt/ros/${ARENA_ROS_DISTRO}/setup.bash"
 fi
 source install/local_setup.bash
+
+if [ -f src/arena/arena-rosnav/isaac_setup.bash ] ; then
+    . src/arena/arena-rosnav/isaac_setup.bash
+fi

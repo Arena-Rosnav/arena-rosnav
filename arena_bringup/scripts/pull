@@ -27,11 +27,11 @@ if [ -f src/arena/arena-rosnav/.installed ] ; then
     while read -r installed; do 
         name="$(echo $installed | cut -d. -f1)"
         if [ -f "src/arena/arena-rosnav/.repos/${name}.repos" ] ; then
-            run "(vcs import src/${name} < src/arena/arena-rosnav/.repos/${name}.repos);" '$? > 1'
+            run "(vcs import src < src/arena/arena-rosnav/.repos/${name}.repos);" '$? > 1'
         fi
     done < src/arena/arena-rosnav/.installed
 fi
-run '(rosdep update --rosdistro humble && rosdep install --from-paths src --ignore-src -r -y --skip-keys "${ROSDEP_EXCLUDES}" || echo rosdep failed to install all dependencies)' 
+run '(rosdep update --rosdistro "${ARENA_ROS_DISTRO:-humble}" && rosdep install --from-paths src --ignore-src -r -y --skip-keys "${ROSDEP_EXCLUDES}" || echo rosdep failed to install all dependencies)' 
 run '(. src/arena/arena-rosnav/tools/poetry_install)'
 
 

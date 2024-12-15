@@ -107,16 +107,8 @@ if [ ! -f "${ARENA_WS_DIR}/src/arena/arena-rosnav/pyproject.toml" ] ; then
 fi
 . src/arena/arena-rosnav/tools/poetry_install
 
-# vcstool fork (always reinstall)
-if [ ! -d vcstool/.git ] ; then
-  rm -f vcstool
-  git clone https://github.com/voshch/vcstool.git vcstool
-else
-  pushd vcstool
-    git pull
-  popd
-fi
-python -m pip install -e vcstool
+# vcstool fork
+python -m pip install git+https://github.com/voshch/vcstool.git
 alias vcs='$HOME/.pyenv/shims/vcs' # avoid reopening shell
 
 # Getting Packages
@@ -219,7 +211,8 @@ fi
 
 compile(){
   cd "${ARENA_WS_DIR}"
-  ros2 run arena_bringup pull
+  . colcon_build #TODO get rid of this
+  ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO} ros2 run arena_bringup pull
   . colcon_build
 }
 

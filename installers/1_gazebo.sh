@@ -45,7 +45,7 @@ pushd "${ARENA_WS_DIR}/src/gazebo"
   fi
 popd
 
-rosdep install -r --from-paths src -i -y --rosdistro ${ARENA_ROS_DISTRO} 
+rosdep install -r --from-paths src -i -y --rosdistro "${ARENA_ROS_DISTRO}" 
 
 
 echo "Gazebo ${GAZEBO_VERSION} and ROS-Gazebo bridge installed successfully!"

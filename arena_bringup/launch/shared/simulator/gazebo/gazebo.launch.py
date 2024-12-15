@@ -11,12 +11,48 @@ from launch.substitutions import (
     LaunchConfiguration,
     PathJoinSubstitution,
     PythonExpression,
-    IfElseSubstitution,
 )
+import launch
 from launch_ros.actions import Node
 from launch.actions import TimerAction
 from launch.conditions import IfCondition
+from launch.utilities import normalize_to_list_of_substitutions, perform_substitutions
+from launch.utilities.type_utils import perform_typed_substitution
 
+#polyfill
+class IfElseSubstitution(launch.Substitution):
+    def __init__(self, condition,
+                 if_value = '',
+                 else_value = ''):
+        super().__init__()
+        if if_value == else_value == '':
+            raise RuntimeError('One of if_value and else_value must be specified')
+        self._condition = normalize_to_list_of_substitutions(condition)
+        self._if_value = normalize_to_list_of_substitutions(if_value)
+        self._else_value = normalize_to_list_of_substitutions(else_value)
+
+    @property
+    def condition(self):
+        return self._condition
+
+    @property
+    def if_value(self):
+        return self._if_value
+
+    @property
+    def else_value(self):
+        return self._else_value
+
+    def perform(self, context):
+        try:
+            condition = perform_typed_substitution(context, self.condition, bool)
+        except (TypeError, ValueError) as e:
+            raise e
+
+        if condition:
+            return perform_substitutions(context, self.if_value)
+        else:
+            return perform_substitutions(context, self.else_value)
 
 def generate_launch_description():
     # Set environment variables
