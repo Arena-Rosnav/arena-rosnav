@@ -193,7 +193,7 @@ fi
 
 vcs import src < src/arena/arena-rosnav/arena.repos
 rosdep install -y \
-  --from-paths src/deps \
+  --from-paths src \
   --ignore-src \
   --rosdistro "$ARENA_ROS_DISTRO" \
   || echo 'rosdep failed to install all dependencies'
