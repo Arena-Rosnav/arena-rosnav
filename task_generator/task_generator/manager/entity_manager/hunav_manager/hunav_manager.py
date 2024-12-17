@@ -16,8 +16,7 @@ from hunav_msgs.srv import (ComputeAgent, ComputeAgents, GetAgents, MoveAgent,
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.hunav_manager import HunavDynamicObstacle
 from task_generator.manager.entity_manager.utils import (KnownObstacles,
-                                                         ObstacleLayer,
-                                                         walls_to_obstacle)
+                                                         ObstacleLayer)
 from task_generator.shared import (DynamicObstacle, Model, ModelType,
                                    Namespace, PositionOrientation, Robot)
 from task_generator.simulators import BaseSimulator
@@ -26,7 +25,6 @@ from task_generator.utils.geometry import quaternion_from_euler
 
 class HunavManager(EntityManager):
     # Class constants
-    WALLS_ENTITY = "walls"  # Definition for walls_entity
 
     # Service Names
     SERVICE_COMPUTE_AGENT = 'compute_agent'
@@ -158,8 +156,8 @@ class HunavManager(EntityManager):
                     self.node.get_logger().info(
                         f"\nAgent {agent.name} (ID: {agent.id}):"
                         f"\n  Position: ({
-                            agent.position.position.x:.2f}, {
-                            agent.position.position.y:.2f})"
+                            agent.position.position.x: .2f}, {
+                            agent.position.position.y: .2f})"
                         f"\n  Behavior Type: {agent.behavior.type}"
                         f"\n  Current State: {agent.behavior.state}"
                         f"\n  Linear Velocity: {agent.linear_vel:.2f}"
@@ -188,8 +186,8 @@ class HunavManager(EntityManager):
                     f"\nCompute_agent response:"
                     f"\n  Agent: {agent.name} (ID: {agent.id})"
                     f"\n  Position: ({
-                        agent.position.position.x:.2f}, {
-                        agent.position.position.y:.2f})"
+                        agent.position.position.x: .2f}, {
+                        agent.position.position.y: .2f})"
                     f"\n  Behavior: Type={
                         agent.behavior.type}, State={
                         agent.behavior.state}"
@@ -219,8 +217,8 @@ class HunavManager(EntityManager):
                     f"\nMove_agent response:"
                     f"\n  Agent: {agent.name} (ID: {agent.id})"
                     f"\n  New Position: ({
-                        agent.position.position.x:.2f}, {
-                        agent.position.position.y:.2f})"
+                        agent.position.position.x: .2f}, {
+                        agent.position.position.y: .2f})"
                     f"\n  New Yaw: {agent.yaw:.2f}"
                     f"\n  Behavior State: {agent.behavior.state}"
                 )
@@ -233,11 +231,11 @@ class HunavManager(EntityManager):
     def setup_services(self):
         """Initialize all required services"""
         self.node.get_logger().info("Setting up Hunavservices...")
-        
+
         # Debug namespace information
         self.node.get_logger().info(f"Node namespace: {self.node.get_namespace()}")
         self.node.get_logger().info(f"Task generator namespace: {self._namespace}")
-        
+
         # Create service names with full namespace path (now using root namespace)
         service_names = {
             'compute_agent': f'/{self.SERVICE_COMPUTE_AGENT}',        # Added leading slash
@@ -245,7 +243,7 @@ class HunavManager(EntityManager):
             'move_agent': f'/{self.SERVICE_MOVE_AGENT}',             # Added leading slash
             'reset_agents': f'/{self.SERVICE_RESET_AGENTS}'          # Added leading slash
         }
-        
+
         # Log service names
         for service, full_name in service_names.items():
             self.node.get_logger().info(f"Creating service client for {service} at: {full_name}")
@@ -681,20 +679,9 @@ class HunavManager(EntityManager):
 
             self._simulator.spawn_entity(obstacle)
 
-    def spawn_walls(self, walls, heightmap):
+    def spawn_walls(self, walls):
         """Spawn walls in simulation"""
-        if self.WALLS_ENTITY in self._known_obstacles:
-            return
-
-        obstacle = walls_to_obstacle(heightmap)
-        self._known_obstacles.create_or_get(
-            name=self.WALLS_ENTITY,
-            obstacle=obstacle,
-            layer=ObstacleLayer.WORLD,
-            hunav_spawned=False,
-        )
-
-        self._simulator.spawn_entity(obstacle)
+        self._simulator.spawn_walls(walls)
 
     def remove_obstacles(self, purge=ObstacleLayer.WORLD):
         """Remove obstacles based on purge level"""

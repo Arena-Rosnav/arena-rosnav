@@ -1,8 +1,7 @@
 import typing
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import KnownObstacles, ObstacleLayer
-from task_generator.manager.world_manager.utils import WorldMap, WorldWalls
-from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot
+from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot, Wall
 from task_generator.simulators import BaseSimulator
 
 
@@ -42,8 +41,9 @@ class DummyEntityManager(EntityManager):
                 self._simulator.move_entity(obstacle.name, obstacle.position)
             known.layer = ObstacleLayer.INUSE
 
-    def spawn_walls(self, walls: WorldWalls, heightmap: WorldMap):
+    def spawn_walls(self, walls: list[Wall]):
         self.__logger.debug(f'spawning {len(walls)} walls')
+        self._simulator.spawn_walls(walls)
 
     def unuse_obstacles(self):
         self.__logger.debug(f'unusing obstacles')
