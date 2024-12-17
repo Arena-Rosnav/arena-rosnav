@@ -63,3 +63,4 @@ __pycache__/
 
 # arena specific
 .installed
+isaac_setup.bash
