@@ -6,8 +6,7 @@ from geometry_msgs.msg import PoseStamped
 
 from task_generator import NodeInterface
 from task_generator.manager.entity_manager.utils import ObstacleLayer
-from task_generator.manager.world_manager.utils import WorldMap, WorldWalls
-from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot
+from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot, Wall
 from task_generator.simulators import BaseSimulator
 from typing import Collection
 
@@ -57,7 +56,7 @@ class EntityManager(NodeInterface):
         """
         raise NotImplementedError()
 
-    def spawn_walls(self, walls: WorldWalls, heightmap: WorldMap):
+    def spawn_walls(self, walls: list[Wall]):
         """
         Adds walls to the simulator.
         """
