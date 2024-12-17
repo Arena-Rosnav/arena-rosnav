@@ -171,6 +171,9 @@ if [ ! -f src/ros2/compiled ] ; then
 
   . src/arena/arena-rosnav/tools/colcon_build --paths src/ros2/*
   touch src/ros2/compiled
+  
+  # don't even ask
+  rm -rf build/foonathan_memory_vendor
 fi
 
 # == install arena on top of ros2 ==
