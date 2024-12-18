@@ -38,8 +38,8 @@ class ObstacleManager:
 
         self._entity_manager.spawn_walls([
             Wall(
-                Start=Position(*start),
-                End=Position(*end),
+                Start=start if isinstance(start, Position) else Position(*start),
+                End=end if isinstance(end, Position) else Position(*end),
             )
             for start, end
             in world.entities.walls

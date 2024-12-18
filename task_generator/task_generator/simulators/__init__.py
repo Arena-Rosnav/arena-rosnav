@@ -67,6 +67,7 @@ class BaseSimulator(NodeInterface):
         """
         Add a list of walls to the simulator.
         """
+        return True
         raise NotImplementedError()
 
     def remove_walls(self) -> bool:
