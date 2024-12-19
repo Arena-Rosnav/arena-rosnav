@@ -7,7 +7,20 @@ export ROS_DOMAIN_ID=1
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ros/humble/lib/
 
-source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
+pushd src/arena/arena-rosnav
+    venv_path="$(poetry env info -p)"
+    if [ "$venv_path" != "$VIRTUAL_ENV" ] ; then
+        source "$venv_path"/bin/activate
+        dirs=("$venv_path"/lib/*/site-packages)
+        _IFS=$IFS IFS=':'
+        export PYTHONPATH="${dirs[*]}:$PYTHONPATH"
+        IFS=$_IFS
+        unset _IFS
+        unset dirs
+    fi
+    unset venv_path
+popd
+
 colcon build \
     --symlink-install \
     --continue-on-error \
