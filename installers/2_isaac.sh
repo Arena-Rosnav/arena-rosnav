@@ -11,17 +11,19 @@ while [ ! -d "~/.local/share/ov/pkg/isaac-sim-4.2.0/" ] ; do
   echo "2. Open Omniverse Isaac Sim launcher and change the bridge to ros2"
   read -p "Confirm installation by pressing [Enter]" 
 done
-echo "Successfully detected xyz installation"
+echo "Successfully detected Isaac Sim installation"
 
 cd "${ARENA_WS_DIR}"
 
 source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
 
-echo "Checking installed nvidia driver"
-if ! command -v nvidia-smi &> /dev/null; then
-    echo "Warning: nvidia-smi command not found. Terminating script."
-    exit 1
-fi
+while [! command which nvidia-smi &> /dev/null] ; do
+    echo "Warning: nvidia-smi command not found. Please install nvidia driver using"
+    echo "sudo apt-get install nvidia-open"
+    read -p "Confirm installation by pressing [Enter]" 
+done
+echo "Successfully detected NVIDIA driver installation"
+
 
 echo "nvidia-driver was installed"
 
