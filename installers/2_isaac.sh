@@ -5,6 +5,14 @@ curl -O "https://install.launcher.omniverse.nvidia.com/installers/omniverse-laun
 chmod +x omniverse-launcher-linux-AppImage
 ./omniverse-launcher-linux-AppImage &
 
+while [ ! -d "~/.local/share/ov/pkg/isaac-sim-4.2.0/" ] ; do
+  echo "No Isaac Sim installation detected!"
+  echo "1. Open Omniverse launcher and insall Omniverse Cache and Isaac Sim"
+  echo "2. Open Omniverse Isaac Sim launcher and change the bridge to ros2"
+  read -p "Confirm installation by pressing [Enter]" 
+done
+echo "Successfully detected xyz installation"
+
 cd "${ARENA_WS_DIR}"
 
 source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
@@ -76,3 +84,5 @@ export ISAAC_PATH=$MY_DIR
 EOF
 
 echo "Completed download Isaac sim" 
+
+echo 'yes' > src/arena/arena-rosnav/.venv/lib/python3.10/site-packages/omni/EULA_ACCEPTED
