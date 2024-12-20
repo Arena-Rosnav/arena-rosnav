@@ -19,7 +19,6 @@ from std_srvs.srv import Empty as EmptySrv
 
 import launch
 from task_generator.manager.robot_manager import RobotsManagerROS
-from task_generator.manager.robot_manager.robot_manager import RobotManager
 from task_generator.manager.robot_manager.robots_manager_ros import RobotsManager
 from task_generator import NodeInterface
 from task_generator.constants import Constants

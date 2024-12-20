@@ -132,6 +132,43 @@ class GazeboSimulator(BaseSimulator):
                 ],
             )
         )
+        
+        gz_topic = '/world/default/model/' + entity.name
+        joint_state_gz_topic = gz_topic + '/joint_state'
+        link_pose_gz_topic = gz_topic + '/pose'
+
+        # Bridge to connect Gazebo and ROS2
+        launch_description.add_action(
+            launch_ros.actions.Node(
+                package='ros_gz_bridge',
+                executable='parameter_bridge',
+                output='screen',
+                arguments=[
+                    # Joint states (Gazebo -> ROS2)
+                    joint_state_gz_topic + '@sensor_msgs/msg/JointState[gz.msgs.Model',
+                    # Link poses (Gazebo -> ROS2)
+                    link_pose_gz_topic + '@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+                    link_pose_gz_topic + \
+                        '_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+                    # Velocity and odometry (Gazebo -> ROS2)
+                    gz_topic + '/cmd_vel@geometry_msgs/msg/Twist[gz.msgs.Twist',
+                    gz_topic + '/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+                    '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan'
+                ],
+                remappings=[
+                    (joint_state_gz_topic, entity.name + '/joint_states'),
+                    (link_pose_gz_topic, entity.name + '/tf'),
+                    (link_pose_gz_topic + '_static', entity.name+ + '/tf_static'),
+                    (gz_topic + '/link/base_link/sensor/imu_sensor/imu', entity.name+'/imu/data'),
+                ],
+                parameters=[
+                    {
+                        'qos_overrides./tf_static.publisher.durability': 'transient_local',
+                        'use_sim_time': True
+                    }
+                ],
+            )
+        )
         self.entities[entity.name] = entity
         self.node.do_launch(launch_description)
 
