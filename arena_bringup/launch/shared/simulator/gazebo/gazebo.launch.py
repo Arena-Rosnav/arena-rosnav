@@ -198,43 +198,6 @@ def generate_launch_description():
         ],
     )
 
-    gz_topic = '/world/default/model/' + robot_model
-    joint_state_gz_topic = gz_topic + '/joint_state'
-    link_pose_gz_topic = gz_topic + '/pose'
-
-    # Bridge to connect Gazebo and ROS2
-    bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        output='screen',
-        arguments=[
-            # Existing clock bridge
-            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-            # Joint states (Gazebo -> ROS2)
-            joint_state_gz_topic + '@sensor_msgs/msg/JointState[gz.msgs.Model',
-            # Link poses (Gazebo -> ROS2)
-            link_pose_gz_topic + '@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-            link_pose_gz_topic + \
-                '_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-            # Velocity and odometry (Gazebo -> ROS2)
-            gz_topic + '/cmd_vel@geometry_msgs/msg/Twist[gz.msgs.Twist',
-            gz_topic + '/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
-            '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan'
-        ],
-        remappings=[
-            (joint_state_gz_topic, 'joint_states'),
-            (link_pose_gz_topic, '/tf'),
-            (link_pose_gz_topic + '_static', '/tf_static'),
-            ('/world/default/model/jackal/link/base_link/sensor/imu_sensor/imu', '/imu/data'),
-        ],
-        parameters=[
-            {
-                'qos_overrides./tf_static.publisher.durability': 'transient_local',
-                'use_sim_time': use_sim_time
-            }
-        ],
-    )
-
     # random_spawn_launch_file = PathJoinSubstitution(
     #     [
     #         workspace_root,
@@ -281,7 +244,6 @@ def generate_launch_description():
             # robot_state_publisher,
             # joint_state_publisher,
             # spawn_robot,
-            bridge,
             # IncludeLaunchDescription(
             #     PythonLaunchDescriptionSource(random_spawn_launch_file),
             #     condition=IfCondition(random_spawn_test),
