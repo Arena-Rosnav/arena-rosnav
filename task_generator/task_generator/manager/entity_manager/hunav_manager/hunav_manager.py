@@ -442,7 +442,6 @@ class HunavManager(EntityManager):
                 
                 # Create agent
                 self.node.get_logger().warn("Creating Hunav Agent")
-                request = ComputeAgent.Request()
                 agent = Agent()
 
                 # Set basic properties
@@ -499,7 +498,7 @@ class HunavManager(EntityManager):
                 # Create a new obstacle with the spawn model
                 spawn_obstacle = dataclasses.replace(
                     obstacle,
-                model=ModelWrapper.from_model(spawn_model) 
+                    model=ModelWrapper.from_model(spawn_model) 
                 )
 
                 # Spawn in simulator
@@ -514,8 +513,22 @@ class HunavManager(EntityManager):
 
                 # Register with HuNav
                 self.node.get_logger().warn("Registering with HuNav")
-                request.agent = agent
-                future = self._compute_agent_client.call(request)
+                request = ComputeAgents.Request() 
+                
+                # Create new Agents message and setup header
+                request.current_agents = Agents()
+                request.current_agents.header.stamp = self.node.get_clock().now().to_msg()
+                request.current_agents.header.frame_id = "map"
+
+                # Get agents list and add our pedestrian
+                agents_list = request.current_agents.agents
+                agents_list.append(agent)
+
+                # Add empty robot state (required by service)
+                request.robot = Agent()
+
+                # Call service and get future
+                future = self._compute_agents_client.call(request)
                 
                 if future.result():
                     self.node.get_logger().warn(f"Successfully registered {obstacle.name} with HuNav")
@@ -538,12 +551,6 @@ class HunavManager(EntityManager):
             self.node.get_logger().warn(f"--- Completed processing {obstacle.name} ---")
 
         self.node.get_logger().warn("=== SPAWN_DYNAMIC_OBSTACLES COMPLETE ===")
-
-        #     print("\n=============== OBSTACLE PROCESSING COMPLETE ===============")
-        #     self.node.get_logger().error("OBSTACLE PROCESSING COMPLETE")
-
-        # print("\n==================== SPAWN PROCESS COMPLETE ====================")
-        # self.node.get_logger().error("SPAWN PROCESS COMPLETE")
 
 
 
@@ -623,18 +630,23 @@ class HunavManager(EntityManager):
 
 
     def move_robot(self, name: str, position: PositionOrientation):
-
-        #return 
-        
         """Move robot to new position using HuNavSim's move_agent service"""
-        try:
-            if not self._move_agent_client.service_is_ready():
-                self.node.get_logger().warn("Move agent service not ready yet")
-                return
+        self.node.get_logger().info(f"Moving robot {name}")
 
-            # Create Robot Agent
+        # Basic validation
+        if not name or not position:
+            self.node.get_logger().warn("Invalid move parameters")
+            return
+
+        # Wait for services
+        if not self._move_agent_client.wait_for_service(timeout_sec=1.0):
+            self.node.get_logger().warn("Move agent service not available")
+            return
+
+        try:
+            # Create Robot Agent safely
             robot_agent = Agent()
-            robot_agent.id = 0  # Robot typically uses ID 0
+            robot_agent.id = 0  # Robot uses ID 0
             robot_agent.name = name
             robot_agent.type = Agent.ROBOT
             robot_agent.position.position.x = position.x
@@ -644,7 +656,7 @@ class HunavManager(EntityManager):
                 x=quat[0], y=quat[1], z=quat[2], w=quat[3])
             robot_agent.yaw = position.orientation
 
-            # Create service request
+            # Create empty agents message
             request = MoveAgent.Request()
             request.agent_id = 0
             request.robot = robot_agent
@@ -652,8 +664,9 @@ class HunavManager(EntityManager):
             request.current_agents.header.stamp = self.node.get_clock().now().to_msg()
             request.current_agents.header.frame_id = "map"
 
+            # Call service with timeout
             future = self._move_agent_client.call_async(request)
-
+            
             timeout_sec = 1.0
             start_time = time.time()
             while not future.done() and time.time() - start_time < timeout_sec:
