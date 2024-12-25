@@ -447,7 +447,9 @@ class HunavManager(EntityManager):
                 # Set basic properties
                 self.node.get_logger().warn("Setting basic properties")
                 agent.id = obstacle.id
-                agent.type = obstacle.type
+                self.node.get_logger().warn(f"Agent ID: {agent.id}")
+                agent.type = self.parse_ped_type(obstacle.type)
+                self.node.get_logger().warn(f"Agent TYPE: {agent.type}")
                 agent.skin = obstacle.skin
                 agent.name = obstacle.name
                 agent.group_id = obstacle.group_id
@@ -630,6 +632,7 @@ class HunavManager(EntityManager):
 
 
     def move_robot(self, name: str, position: PositionOrientation):
+
         """Move robot to new position using HuNavSim's move_agent service"""
         self.node.get_logger().info(f"Moving robot {name}")
 
@@ -810,3 +813,21 @@ class HunavManager(EntityManager):
         return normalized
 
   
+    def parse_ped_type(self, t: str | int) -> int:
+        """Convert various pedestrian type formats to HuNav's expected numeric types.
+        
+        Args:
+            t: The type value, either as string or integer
+            
+        Returns:
+            int: Corresponding HuNav agent type value
+        """
+        if isinstance(t, int):
+            return t
+        if isinstance(t, str):
+            t = t.lower()
+            if t in ('adult', 'elder', 'child'):
+                return 1  # Agent.PERSON
+            if t == 'robot':
+                return 2  # Agent.ROBOT
+        return 3  # Agent.OTHER
