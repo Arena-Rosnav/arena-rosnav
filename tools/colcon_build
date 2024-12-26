@@ -9,7 +9,8 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ros/humble/lib/
 
 pushd src/arena/arena-rosnav
     venv_path="$(poetry env info -p)"
-    if [ "$venv_path" != "$VIRTUAL_ENV" ] ; then
+    if [ -z ${ARENA_SOURCED+x} ] ; then
+    # if [ "$venv_path" != "$VIRTUAL_ENV" ] ; then
         source "$venv_path"/bin/activate
         dirs=("$venv_path"/lib/*/site-packages)
         _IFS=$IFS IFS=':'
@@ -17,6 +18,7 @@ pushd src/arena/arena-rosnav
         IFS=$_IFS
         unset _IFS
         unset dirs
+        export ARENA_SOURCED=1
     fi
     unset venv_path
 popd
