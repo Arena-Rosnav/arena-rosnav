@@ -343,8 +343,8 @@ class HunavManager(EntityManager):
         """Create SDF description for pedestrian"""
         # Get skin type
         skin_type = self.SKIN_TYPES.get(agent_config.skin, 'casual_man.dae')
-
-        # Get workspace root - helper function
+        
+        # Get workspace root 
         def get_workspace_root():
             current_dir = os.path.abspath(__file__)
             workspace_root = current_dir
@@ -356,37 +356,32 @@ class HunavManager(EntityManager):
                 
             return workspace_root
             
-        # Construct mesh path like in the launch file
+        # Construct mesh path
         mesh_path = os.path.join(
             get_workspace_root(),
             'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/models',
             skin_type
         )
-        
-        # Height adjustments based on skin type
-        height_adjustments = {
-            'elegant_man.dae': 0.96,
-            'casual_man.dae': 0.97,
-            'elegant_woman.dae': 0.93,
-            'regular_man.dae': 0.93,
-            'worker_man.dae': 0.97
-        }
-        z_pos = height_adjustments.get(skin_type, 1.0)
 
         sdf = f"""<?xml version="1.0" ?>
         <sdf version="1.6">
             <model name="{agent_config.name}">
                 <static>false</static>
-                <pose>0 0 {z_pos} 0 0 0</pose>
+                <pose>0 0 0 0 0 0</pose>
                 <link name="link">
-                    <visual name="visual">
-                        <geometry>
-                            <mesh>
-                                <uri>file://{mesh_path}</uri>
-                            </mesh>
-                        </geometry>
-                    </visual>
+                    <inertial>
+                        <mass>70.0</mass>
+                        <inertia>
+                            <ixx>0.83</ixx>
+                            <ixy>0.0</ixy>
+                            <ixz>0.0</ixz>
+                            <iyy>0.83</iyy>
+                            <iyz>0.0</iyz>
+                            <izz>0.083</izz>
+                        </inertia>
+                    </inertial>
                     <collision name="collision">
+                        <pose>0 0 0.85 0 0 0</pose>
                         <geometry>
                             <cylinder>
                                 <radius>{agent_config.radius}</radius>
@@ -394,12 +389,18 @@ class HunavManager(EntityManager):
                             </cylinder>
                         </geometry>
                     </collision>
+                    <visual name="visual">
+                        <pose>0 0 0.85 0 0 0</pose>
+                        <geometry>
+                            <mesh>
+                                <uri>file://{mesh_path}</uri>
+                                <scale>1.0 1.0 1.0</scale>
+                            </mesh>
+                        </geometry>
+                    </visual>
                 </link>
             </model>
         </sdf>"""
-        
-        # Log the mesh path for debugging
-        self.__logger.debug(f"Using mesh path: {mesh_path}")
         
         return sdf
 
