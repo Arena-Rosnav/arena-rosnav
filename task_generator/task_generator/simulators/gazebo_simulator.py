@@ -9,7 +9,7 @@ import traceback
 from task_generator.utils.geometry import quaternion_from_euler
 from task_generator.simulators import BaseSimulator
 
-from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
+from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps, Robot
 
 import launch
 import launch_ros
@@ -128,15 +128,45 @@ class GazeboSimulator(BaseSimulator):
                     '-allow_renaming', 'false',
                     '-x', str(entity.position.x),
                     '-y', str(entity.position.y),
-                    '-X', str(entity.position.orientation),
+                    '-X', str(entity.position.orientation)
                 ],
             )
         )
+
+        gz_topic = '/model/' + entity.name
+
+        # Bridge to connect Gazebo and ROS2
+        if isinstance(entity, Robot):
+            launch_description.add_action(
+                launch_ros.actions.Node(
+                    package='ros_gz_bridge',
+                    executable='parameter_bridge',
+                    output='screen',
+                    arguments=[
+                        # Odometry (Gazebo -> ROS2)
+                        gz_topic + '/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+                        # IMU (Gazebo -> ROS2)
+                        '/world/default/model/' + entity.name + '/link/base_link/sensor/imu_sensor/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
+                        # Velocity command (ROS2 -> Gazebo)
+                        gz_topic + '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist'
+                    ],
+                    remappings=[
+                        # Remap Gazebo topics to ROS2 topics
+                        (gz_topic + '/odometry', entity.name + '/odom'),
+                        ('/world/default/model/' + entity.name + '/link/base_link/sensor/imu_sensor/imu', entity.name + '/imu/data'),
+                        (gz_topic + '/cmd_vel', entity.name + '/cmd_vel')
+                    ],
+                    parameters=[
+                        {
+                            'use_sim_time': True
+                        }
+                    ],
+                )
+            )
+
         self.entities[entity.name] = entity
         self.node.do_launch(launch_description)
-
         return True
-
         # Check service availability
         if not self._spawn_entity.wait_for_service(timeout_sec=10.0):
             self.node.get_logger().error("Spawn service not available!")
