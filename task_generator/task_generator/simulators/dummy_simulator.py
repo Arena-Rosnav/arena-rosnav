@@ -1,5 +1,6 @@
 from task_generator.simulators import BaseSimulator
 from task_generator.shared import EntityProps, Namespace, PositionOrientation
+from task_generator.shared import Wall
 
 
 class DummySimulator(BaseSimulator):
@@ -27,4 +28,8 @@ class DummySimulator(BaseSimulator):
 
     def delete_entity(self, name: str) -> bool:
         self._logger.debug(f"deleting {name}")
+        return True
+
+    def spawn_walls(self, walls: list[Wall]) -> bool:
+        self._logger.debug(f'spawning {len(walls)} walls')
         return True
