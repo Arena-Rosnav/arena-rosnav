@@ -8,6 +8,7 @@ from typing import Any, Callable, Collection, Dict, List
 import typing
 
 import rclpy
+import geometry_msgs
 from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import Point, Pose, Quaternion, Twist
 from hunav_msgs.msg import Agent, AgentBehavior, Agents
@@ -51,6 +52,7 @@ from task_generator.shared import (DynamicObstacle, Model,ModelWrapper, ModelTyp
                                    Namespace, PositionOrientation, Robot)
 from task_generator.simulators import BaseSimulator
 from task_generator.utils.geometry import quaternion_from_euler
+import traceback
 
 
 class HunavManager(EntityManager):
@@ -75,7 +77,6 @@ class HunavManager(EntityManager):
         """Initialize HunavManager with debug logging"""
         self.__logger = self.node.get_logger().get_child('hunav_EM')
         self.node.get_logger().warn("=== HUNAVMANAGER INIT START ===")
-        
         super().__init__(namespace=namespace, simulator=simulator)
         self.node.get_logger().warn("Parent class initialized")
 
@@ -108,13 +109,14 @@ class HunavManager(EntityManager):
         time.sleep(2.0)
         self.node.get_logger().warn("Service wait complete")
 
+        #self.test_hunav_services()
         # Setup timer for pedestrian updates
-        self.node.get_logger().warn("Setting up update timer...")
-        self._update_timer = self.node.create_timer(
-            self._update_rate,
-            self._update_pedestrians
-        )
-        self.node.get_logger().warn("Update timer setup complete")
+        #self.node.get_logger().warn("Setting up update timer...")
+        #self._update_timer = self.node.create_timer(
+        #    self._update_rate,
+        #    self._update_pedestrians
+        #)
+        #self.node.get_logger().warn("Update timer setup complete")
 
         # Initialize JAIL_POS generator
         self.node.get_logger().warn("Initializing JAIL_POS generator...")
@@ -186,7 +188,6 @@ class HunavManager(EntityManager):
         test_robot.yaw = 0.0
         test_robot.radius = 0.3
 
-        # Test compute_agents service
         try:
             self.node.get_logger().warn("Testing compute_agents service...")
             request = ComputeAgents.Request()
@@ -194,11 +195,10 @@ class HunavManager(EntityManager):
             request.current_agents = test_agents
 
             self.node.get_logger().warn(f"Sending request with {len(request.current_agents.agents)} agents")
-            future = self._compute_agents_client.call(request)
-            rclpy.spin_until_future_complete(self.node, future)
-
-            if future.result():
-                response = future.result()
+            # Change this line:
+            response = self._compute_agents_client.call(request) # Use synchronous call
+            
+            if response:
                 self.node.get_logger().warn(f"Received response with {len(response.updated_agents.agents)} agents")
                 for agent in response.updated_agents.agents:
                     self.node.get_logger().warn(
@@ -211,27 +211,6 @@ class HunavManager(EntityManager):
                     )
         except Exception as e:
             self.node.get_logger().error(f"compute_agents service test failed: {str(e)}")
-
-        # Test compute_agent service
-        try:
-            self.node.get_logger().warn("Testing compute_agent service...")
-            request = ComputeAgent.Request()
-            request.id = test_agent.id
-
-            future = self._compute_agent_client.call_async(request)
-            rclpy.spin_until_future_complete(self.node, future)
-
-            if future.result():
-                response = future.result()
-                agent = response.updated_agent
-                self.node.get_logger().warn(
-                    f"Compute_agent response:"
-                    f"\n  Agent: {agent.name} (ID: {agent.id})"
-                    f"\n  Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
-                    f"\n  Behavior: Type={agent.behavior.type}, State={agent.behavior.state}"
-                )
-        except Exception as e:
-            self.node.get_logger().error(f"compute_agent service test failed: {str(e)}")
 
         # Test move_agent service
         try:
@@ -260,7 +239,6 @@ class HunavManager(EntityManager):
         self.node.get_logger().warn("=== TEST_HUNAV_SERVICES COMPLETE ===")
 
     def setup_services(self):
-
         """Initialize all required services with debug logging"""
         self.node.get_logger().warn("=== SETUP_SERVICES START ===")
         
@@ -304,6 +282,7 @@ class HunavManager(EntityManager):
             ResetAgents,
             service_names['reset_agents']
         )
+        
 
         # Wait for Services
         required_services = [
@@ -445,63 +424,117 @@ class HunavManager(EntityManager):
 
         self.node.get_logger().warn("=== SPAWN_OBSTACLES COMPLETE ===")
 
-    def spawn_dynamic_obstacles(
-            self, obstacles: typing.Collection[DynamicObstacle]):
-        """Spawn dynamic obstacles including HuNav pedestrians"""
-        self.__logger.debug(f'spawning {len(obstacles)} dynamic obstacles')
-        
-        for obstacle in obstacles:
-            try:
-                # Get or create known obstacle
-                known = self._known_obstacles.get(obstacle.name)
 
-                if known is None:
-                    # Try to parse as HuNav obstacle first
-                    try:
-                        # HuNav pedestrian specific handling
-                        hunav_obstacle = HunavDynamicObstacle.parse(obstacle.extra, obstacle.model)
-                        
-                        # Create SDF model for HuNav pedestrian
-                        sdf = self.create_pedestrian_sdf(hunav_obstacle)
-                        spawn_model = Model(
-                            description=sdf,
-                            type=ModelType.SDF,
-                            name=str(hunav_obstacle.id), 
-                            path=''
+
+    
+    
+    def spawn_dynamic_obstacles(self, obstacles: typing.Collection[DynamicObstacle]):
+        """Test all HuNav services with debug logging"""
+        self.__logger.info("=== SPAWN_DYNAMIC_OBSTACLES START (Testing) ===")
+
+        try:
+            # Create test agents
+            self.__logger.info("[TEST PHASE 1] Creating test agents...")
+            test_agents = Agents()
+            test_agents.header.stamp = self.node.get_clock().now().to_msg()
+            test_agents.header.frame_id = "map"
+
+            # Create test agent
+            self.__logger.info("[TEST PHASE 2] Creating test pedestrian...")
+            test_agent = Agent()
+            test_agent.id = 1
+            test_agent.name = "test_pedestrian"
+            test_agent.type = Agent.PERSON
+            test_agent.position.position.x = 2.0
+            test_agent.position.position.y = 2.0
+            test_agent.yaw = 0.0
+            test_agent.desired_velocity = 1.0
+            test_agent.radius = 0.35
+
+            # Set behavior
+            self.__logger.info("[TEST PHASE 3] Setting behavior...")
+            test_agent.behavior = AgentBehavior()
+            test_agent.behavior.type = AgentBehavior.BEH_REGULAR
+            test_agent.behavior.configuration = AgentBehavior.BEH_CONF_DEFAULT
+            test_agent.behavior.duration = 40.0
+            test_agent.behavior.once = True
+            test_agent.behavior.goal_force_factor = 2.0
+            test_agent.behavior.obstacle_force_factor = 10.0
+            test_agent.behavior.social_force_factor = 5.0
+
+            # Add goals
+            self.__logger.info("[TEST PHASE 4] Adding goals...")
+            goal = Pose()
+            goal.position.x = 5.0
+            goal.position.y = 5.0
+            test_agent.goals.append(goal)
+            test_agent.cyclic_goals = True
+            test_agent.goal_radius = 0.3
+
+            test_agents.agents.append(test_agent)
+
+            # Create robot
+            self.__logger.info("[TEST PHASE 5] Creating test robot...")
+            test_robot = Agent()
+            test_robot.id = 0
+            test_robot.name = "test_robot"
+            test_robot.type = Agent.ROBOT
+            test_robot.position.position.x = 0.0
+            test_robot.position.position.y = 0.0
+            test_robot.yaw = 0.0
+            test_robot.radius = 0.3
+
+            self.__logger.info("[TEST PHASE 6] Testing compute_agents service...")
+            request = ComputeAgents.Request()
+            request.robot = test_robot
+            request.current_agents = test_agents
+
+            self.__logger.info("Calling compute_agents service...")
+            # Asynchroner Call
+            future = self._compute_agents_client.call_async(request)
+            rclpy.spin_until_future_complete(self.node, future, timeout_sec=5.0)
+
+            if future.result():
+                response = future.result()
+                self.__logger.info(f"[TEST PHASE 7] Got response with {len(response.updated_agents.agents)} agents")
+                
+                # Wenn Service erfolgreich war, spawne die Modelle
+                for obstacle in obstacles:
+                    hunav_obstacle = HunavDynamicObstacle.parse(obstacle.extra, obstacle.model)
+                    sdf = self.create_pedestrian_sdf(hunav_obstacle)
+                    spawn_model = Model(
+                        description=sdf,
+                        type=ModelType.SDF, 
+                        name=str(hunav_obstacle.id),
+                        path=''
+                    )
+                    
+                    spawn_obstacle = dataclasses.replace(
+                        obstacle,
+                        model=ModelWrapper.from_model(spawn_model)
+                    )
+                    
+                    success = self._simulator.spawn_entity(spawn_obstacle)
+                    
+                    if success:
+                        self.__logger.info(f"Successfully spawned {obstacle.name}")
+                        self._known_obstacles.create_or_get(
+                            name=str(hunav_obstacle.id),
+                            obstacle=spawn_obstacle,
+                            hunav_spawned=True,
+                            layer=ObstacleLayer.INUSE
                         )
+                    else:
+                        self.__logger.error(f"Failed to spawn {obstacle.name}")
+            else:
+                self.__logger.error("Service call failed or timed out")
+                
+        except Exception as e:
+            self.__logger.error(f"Error in spawn_dynamic_obstacles: {str(e)}")
+            traceback.print_exc()
 
-                        # Create spawn obstacle with HuNav SDF
-                        spawn_obstacle = dataclasses.replace(
-                            obstacle,
-                            model=ModelWrapper.from_model(spawn_model)
-                        )
+        self.__logger.info("=== SPAWN_DYNAMIC_OBSTACLES END ===")
 
-                        # Create known obstacle entry and spawn
-                        known = self._known_obstacles.create_or_get(
-                            name=obstacle.name,
-                            obstacle=spawn_obstacle
-                        )
-                        self._simulator.spawn_entity(spawn_obstacle)
-
-                    except (ValueError, AttributeError):
-                        # Regular obstacle handling if not a HuNav pedestrian
-                        known = self._known_obstacles.create_or_get(
-                            name=obstacle.name,
-                            obstacle=obstacle
-                        )
-                        self._simulator.spawn_entity(obstacle)
-
-                else:
-                    # Move existing obstacle
-                    self._simulator.move_entity(obstacle.name, obstacle.position)
-
-                known.layer = ObstacleLayer.INUSE
-
-            except Exception as e:
-                self.__logger.error(f"Error spawning obstacle {obstacle.name}: {str(e)}")
-                import traceback
-                self.__logger.error(traceback.format_exc())
-            
 
 
 
@@ -722,3 +755,5 @@ class HunavManager(EntityManager):
             if t == 'robot':
                 return 2  # Agent.ROBOT
         return 3  # Agent.OTHER
+
+
