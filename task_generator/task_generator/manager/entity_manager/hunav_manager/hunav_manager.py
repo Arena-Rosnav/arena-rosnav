@@ -431,42 +431,69 @@ class HunavManager(EntityManager):
     def register_pedestrian(self, obstacle: HunavDynamicObstacle) -> bool:
         try:
             # Create test agents structure
-            test_agents = Agents()
-            test_agents.header.stamp = self.node.get_clock().now().to_msg()
-            test_agents.header.frame_id = "map"
+            peds = Agents()
+            self.node.get_logger().warn(f"Agents Objekt: {peds}")
+            peds.header.stamp = self.node.get_clock().now().to_msg()
+            self.node.get_logger().warn(f"peds.header.stamp {peds.header.stamp}")
+            peds.header.frame_id = "map"
+            self.node.get_logger().warn(f"peds.header.frame_id {peds.header.frame_id}")
 
             # Create agent message using HunavDynamicObstacle values
             agent_msg = Agent()
-            agent_msg.id = 1
-            agent_msg.name = "test_pedestrian"
+            self.node.get_logger().warn(f"agent_msg {agent_msg}")
+            agent_msg.id = obstacle.id
+            self.node.get_logger().warn(f"agent_msg.id {agent_msg.id}")
+            agent_msg.name = obstacle.name
+            self.node.get_logger().warn(f"agent_msg.name {agent_msg.name}")
             agent_msg.type = Agent.PERSON
-            agent_msg.position.position.x = 2.0
-            agent_msg.position.position.y = 2.0
-            agent_msg.yaw = 0.0  # Use obstacle yaw
-            agent_msg.desired_velocity = 1.0  # Use obstacle velocity
-            agent_msg.radius = 0.35  # Use obstacle radius
+            self.node.get_logger().warn(f"agent_msg.type {agent_msg.type}")
+            agent_msg.position= obstacle.position
+            self.node.get_logger().warn(f"agent_msg.position {agent_msg.position}")
+            #agent_msg.position.position.x = obstacle.position.position.x
+            #agent_msg.position.position.y = obstacle.position.position.y
+            agent_msg.yaw = obstacle.yaw  # Use obstacle yaw
+            self.node.get_logger().warn(f"agent_msg.yaw {agent_msg.yaw}")
+            agent_msg.desired_velocity = obstacle.desired_velocity  # Use obstacle velocity
+            self.node.get_logger().warn(f"agent_msg.desired_velocity {agent_msg.desired_velocity}")
+            agent_msg.radius = obstacle.radius  # Use obstacle radius
+            self.node.get_logger().warn(f"agent_msg.radius {agent_msg.radius}")
 
             # Use behavior from obstacle
             agent_msg.behavior = AgentBehavior()
-            agent_msg.behavior.type = AgentBehavior.BEH_REGULAR
-            agent_msg.behavior.configuration = AgentBehavior.BEH_CONF_DEFAULT
-            agent_msg.behavior.duration = 40.0
-            agent_msg.behavior.once = True
+            self.node.get_logger().warn(f"agent_msg.behavior {agent_msg.behavior}")
+            agent_msg.behavior.type = agent_msg.behavior.type
+            self.node.get_logger().warn(f"agent_msg.behavior.type {agent_msg.behavior.type}")
+            agent_msg.behavior.configuration = agent_msg.behavior.configuration
+            self.node.get_logger().warn(f"agent_msg.behavior.configuration {agent_msg.behavior.configuration}")
+            agent_msg.behavior.duration = agent_msg.behavior.duration
+            self.node.get_logger().warn(f"agent_msg.behavior.duration {agent_msg.behavior.duration}")
+            agent_msg.behavior.once = agent_msg.behavior.once
+            self.node.get_logger().warn(f"agent_msg.behavior.once {agent_msg.behavior.once}")
             #agent_msg.behavior.vel = obstacle.behavior.vel
             #agent_msg.behavior.dist = obstacle.behavior.dist
-            agent_msg.behavior.social_force_factor = 5.0
-            agent_msg.behavior.goal_force_factor =2.0
-            agent_msg.behavior.obstacle_force_factor =  10.0
+            agent_msg.behavior.social_force_factor = agent_msg.behavior.social_force_factor
+            self.node.get_logger().warn(f"agent_msg.behavior.social_force_factor {agent_msg.behavior.social_force_factor}")
+            agent_msg.behavior.goal_force_factor =agent_msg.behavior.goal_force_factor
+            self.node.get_logger().warn(f"agent_msg.behavior.goal_force_factor {agent_msg.behavior.goal_force_factor}")
+            agent_msg.behavior.obstacle_force_factor =  agent_msg.behavior.obstacle_force_factor
+            self.node.get_logger().warn(f"agent_msg.behavior.obstacle_force_factor {agent_msg.behavior.obstacle_force_factor}")
             #agent_msg.behavior.other_force_factor = obstacle.behavior.other_force_factor
 
             goal = Pose()
+            #self.node.get_logger().warn(f"Creating new known obstacle for {obstacle.name}")
             goal.position.x = 5.0
+            #self.node.get_logger().warn(f"Creating new known obstacle for {obstacle.name}")
             goal.position.y = 5.0
+            #self.node.get_logger().warn(f"Creating new known obstacle for {obstacle.name}")
             agent_msg.goals.append(goal)
+            #self.node.get_logger().warn(f"Creating new known obstacle for {obstacle.name}")
             agent_msg.cyclic_goals = True
+            #self.node.get_logger().warn(f"Creating new known obstacle for {obstacle.name}")
             agent_msg.goal_radius = 0.3
+            #self.node.get_logger().warn(f"Creating new known obstacle for {obstacle.name}")
 
-            test_agents.agents.append(agent_msg)
+            peds.agents.append(agent_msg)
+            #self.node.get_logger().warn(f"Creating new known obstacle for {obstacle.name}")
 
             # Create robot (same as test)
             test_robot = Agent()
@@ -481,7 +508,7 @@ class HunavManager(EntityManager):
             # Make service request
             request = ComputeAgents.Request()
             request.robot = test_robot
-            request.current_agents = test_agents
+            request.current_agents = peds
 
             # Call service synchronously
             response = self._compute_agents_client.call(request)
@@ -551,9 +578,6 @@ class HunavManager(EntityManager):
                 self.__logger.error(f"Error processing {obstacle.name}: {str(e)}")
                 import traceback
                 self.__logger.error(traceback.format_exc())
-
-
-
 
 
     def spawn_walls(self, walls: WorldWalls, heightmap: WorldMap):
