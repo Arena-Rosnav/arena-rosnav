@@ -203,8 +203,8 @@ class WorldMap:
                 walls=WorldOccupancy(normalized_data)
             ),
             origin=Position(
-                occupancy_grid.info.origin.position.y,
-                occupancy_grid.info.origin.position.x
+                x=occupancy_grid.info.origin.position.y,
+                y=occupancy_grid.info.origin.position.x
             ),
             resolution=occupancy_grid.info.resolution,
             time=Time.from_time(occupancy_grid.info.map_load_time)
@@ -219,23 +219,25 @@ class WorldMap:
             self.shape[1] - (position.x - self.origin.x) / self.resolution)
 
     def tf_grid2pos(self, grid_pos: Tuple[float, float]) -> Position:
-        return Position(x=grid_pos[1] * self.resolution + self.origin.y,
-                        y=(grid_pos[0]) * self.resolution + self.origin.x)
+        return Position(
+            x=grid_pos[1] * self.resolution + self.origin.y,
+            y=(grid_pos[0]) * self.resolution + self.origin.x
+        )
 
     def tf_posr2rect(
             self, posr: PositionRadius) -> Tuple[Tuple[int, int], Tuple[int, int]]:
         lo = self.tf_pos2grid(
             Position(
-                posr.x -
-                posr.radius,
-                posr.y -
-                posr.radius))
+                x=posr.x - posr.radius,
+                y=posr.y - posr.radius,
+            )
+        )
         hi = self.tf_pos2grid(
             Position(
-                posr.x +
-                posr.radius,
-                posr.y +
-                posr.radius))
+                x=posr.x + posr.radius,
+                y=posr.y + posr.radius,
+            )
+        )
         return (lo, hi)
 
 
@@ -303,10 +305,10 @@ class _WallLines(Dict[float, List[Tuple[float, float]]]):
         get WorldWalls object
         """
         if not self._inverted:
-            return set([(Position(start, major), Position(end, major))
+            return set([(Position(x=start, y=major), Position(x=end, y=major))
                        for major, segment in self.items() for start, end in segment])
         else:
-            return set([(Position(major, start), Position(major, end))
+            return set([(Position(x=major, y=start), Position(x=major, y=end))
                        for major, segment in self.items() for start, end in segment])
 
 

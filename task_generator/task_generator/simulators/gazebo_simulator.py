@@ -1,6 +1,9 @@
 import dataclasses
+import math
+import typing
 
 import rclpy
+import numpy as np
 
 from ros_gz_interfaces.srv import SpawnEntity, DeleteEntity, SetEntityPose, ControlWorld
 from ros_gz_interfaces.msg import EntityFactory, WorldControl
@@ -9,7 +12,7 @@ import traceback
 from task_generator.utils.geometry import quaternion_from_euler
 from task_generator.simulators import BaseSimulator
 
-from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps, Robot
+from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps, Robot, Wall
 
 import launch
 import launch_ros
@@ -17,6 +20,9 @@ import ament_index_python
 
 
 class GazeboSimulator(BaseSimulator):
+
+    _walls_entities: typing.List[str]
+
     def __init__(self, namespace):
         """Initialize GazeboSimulator
 
@@ -34,6 +40,7 @@ class GazeboSimulator(BaseSimulator):
             10
         )
         self.entities = {}
+        self._walls_entities = []
 
     def before_reset_task(self):
         self.node.get_logger().info("Pausing simulation before reset")
@@ -372,3 +379,133 @@ class GazeboSimulator(BaseSimulator):
 
         self._goal_pub.publish(goal_msg)
         self.node.get_logger().info("Goal published")
+
+    def spawn_walls(self, walls) -> bool:
+        wall_name = f"custom_wall_{len(self._walls_entities)}"
+        # wall_positions = [(0, 0), (5, 0), (5, 5), (0, 5), (0, 0)]  # A square wall
+        wall_height = 3.0  # Wall height in meters
+        wall_thickness = 0.2  # Wall thickness in meters
+        base_position = (0, 0, 0)  # Offset the wall to (10, 10, 0)
+
+        self.node.get_logger().info(f"Attempting to spawn walls: {wall_name}")
+
+        launch_description = launch.LaunchDescription()
+
+        # Generate the SDF string for walls
+        wall_sdf = self.generate_wall_sdf(
+            name=wall_name,
+            walls=walls,
+            height=wall_height,
+            thickness=wall_thickness,
+            base_position=base_position
+        )
+
+        if not wall_sdf:
+            self.node.get_logger().error(f"Failed to generate SDF for walls: {wall_name}")
+            return False
+
+        # Add the wall spawning node
+        launch_description.add_action(
+            launch_ros.actions.Node(
+                package="ros_gz_sim",
+                executable="create",
+                output="screen",
+                arguments=[
+                    '-world', 'default',
+                    '-string', wall_sdf,
+                    '-name', wall_name,
+                    '-allow_renaming', 'false',
+                ],
+            )
+        )
+
+        # Store the wall entity and launch
+        self._walls_entities.append(wall_name)
+        self.node.do_launch(launch_description)
+
+        return True
+
+    def remove_walls(self) -> bool:
+        for entity in self._walls_entities:
+            self.delete_entity(entity)
+        self._walls_entities = []
+        return True
+
+    def generate_wall_sdf(
+        self,
+        name: str,
+        walls: typing.List[Wall],
+        height: float,
+        thickness: float,
+        base_position: typing.Tuple[float, float, float] = (0, 0, 0),
+    ) -> str:
+        """
+        Generate an SDF string for a wall structure based on given parameters and base position.
+        """
+        try:
+            sdf_template = """
+            <sdf version="1.6">
+                <model name="{name}">
+                    <pose>{base_x} {base_y} {base_z} 0 0 0</pose>
+                    {links}
+                    <static>true</static>
+                </model>
+            </sdf>
+            """
+            link_template = """
+            <link name="wall_segment_{index}">
+                <visual name="visual">
+                    <geometry>
+                        <box>
+                            <size>{length} {thickness} {height}</size>
+                        </box>
+                    </geometry>
+                    <material>
+                        <ambient>0.7 0.7 0.7 1</ambient>
+                    </material>
+                </visual>
+                <collision name="collision">
+                    <geometry>
+                        <box>
+                            <size>{length} {thickness} {height}</size>
+                        </box>
+                    </geometry>
+                </collision>
+                <pose>{x} {y} {z} 0 0 {orientation}</pose>
+            </link>
+            """
+            links = []
+            base_x, base_y, base_z = base_position
+            z = height / 2.0  # Center the wall height relative to the base
+
+            for i, w in enumerate(walls):
+                x1, y1, x2, y2 = w.Start.x, w.Start.y, w.End.x, w.End.y
+                length = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+                orientation = math.atan2(y2 - y1, x2 - x1)
+                x = (x1 + x2) / 2 + base_x
+                y = (y1 + y2) / 2 + base_y
+
+                links.append(
+                    link_template.format(
+                        index=i,
+                        length=length,
+                        thickness=thickness,
+                        height=height,
+                        x=x,
+                        y=y,
+                        z=z + base_z,
+                        orientation=orientation
+                    )
+                )
+
+            return sdf_template.format(
+                name=name,
+                base_x=base_x,
+                base_y=base_y,
+                base_z=base_z,
+                links="\n".join(links)
+            )
+
+        except Exception as e:
+            self.node.get_logger().error(f"Error generating SDF: {repr(e)}")
+            return None
