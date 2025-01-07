@@ -6,17 +6,18 @@ import rospy
 from flatland_msgs.msg import StepWorld  # type: ignore
 from geometry_msgs.msg import Twist
 from rl_utils.state_container import SimulationStateContainer
-from rl_utils.topic import Namespace, Topic
-from rl_utils.utils.observation_collector import (
+from rl_utils.utils.type_alias.observation import InformationDict
+from rosnav_rl.observations import (
     DoneObservation,
     FullRangeLaserCollector,
     ObservationManager,
     get_required_observation_units,
 )
-from rl_utils.utils.type_alias.observation import InformationDict, ObservationDict
 from rosnav_rl.rl_agent import RL_Agent
-from rosnav_rl.spaces import EncodedObservationDict
+from rosnav_rl.utils.rostopic import Namespace
+from rosnav_rl.utils.type_aliases import ObservationDict, EncodedObservationDict
 from std_srvs.srv import Empty
+
 from task_generator.task_generator_node import TaskGenerator
 from task_generator.tasks import Task
 
@@ -56,7 +57,7 @@ class FlatlandEnv(gymnasium.Env):
             **kwargs: Additional keyword arguments.
         """
         super(FlatlandEnv, self).__init__()
-        self.ns = Namespace(ns)
+        self.ns = Namespace(ns) if type(ns) is str else ns
 
         self._debug_mode = rospy.get_param("/debug_mode", False)
         self._is_train_mode = rospy.get_param("/train_mode", default=True)

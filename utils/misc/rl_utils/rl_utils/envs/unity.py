@@ -6,10 +6,9 @@ from geometry_msgs.msg import Twist
 from rl_utils.state_container import SimulationStateContainer
 from rl_utils.topic import Namespace
 from rl_utils.utils.arena_unity_utils.unity_timer import UnityTimer
-from rl_utils.utils.type_alias.observation import ObservationDict
 from rosgraph_msgs.msg import Clock
 from rosnav_rl.rl_agent import RL_Agent
-from rosnav_rl.spaces import EncodedObservationDict
+from rosnav_rl.utils.type_aliases import EncodedObservationDict, ObservationDict
 
 from .flatland_gymnasium_env import FlatlandEnv
 from .utils import determine_termination

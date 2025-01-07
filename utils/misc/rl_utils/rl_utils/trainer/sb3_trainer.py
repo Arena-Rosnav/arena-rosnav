@@ -1,20 +1,15 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import rl_utils.utils.paths as Paths
 import rosnav_rl.rl_agent as Rosnav_RL
-from rosnav_rl.utils.agent_state import (
-    AgentStateContainer,
-    ActionSpaceState,
-    ObservationSpaceState,
-)
+from rosnav_rl.utils.agent_state import AgentStateContainer
 
 if TYPE_CHECKING:
     from rl_utils.cfg import TrainingCfg
 from rl_utils.trainer.arena_trainer import (
     ArenaTrainer,
     RLFramework,
-    TrainingArguments,
     TrainingHookStages,
 )
 from rl_utils.utils.dynamic_reconfigure import set_dynamic_reconfigure_parameter
@@ -103,7 +98,7 @@ class StableBaselines3Trainer(ArenaTrainer):
     def _setup_environment(self) -> None:
         """Set up training and evaluation environments."""
         self._create_environments()
-        self._setup_callbacks(self.environment.train_env, self.environment.eval_env)
+        self._setup_callbacks(self.environment)
         self._complete_model_initialization(self.environment.train_env)
 
     def _create_environments(self) -> None:
@@ -122,10 +117,10 @@ class StableBaselines3Trainer(ArenaTrainer):
         eval_env = self.agent.model.setup_environment(eval_env, is_training=False)
         self.environment = SB3Environment(train_env, eval_env)
 
-    def _setup_callbacks(self, train_env: VecEnv, eval_env: VecEnv) -> None:
+    def _setup_callbacks(self, environment: SB3Environment) -> None:
         """Initialize training callbacks."""
         self.eval_cb = init_sb3_callbacks(
-            eval_env=eval_env,
+            eval_env=environment.eval_env,
             n_envs=self.general_cfg.n_envs,
             tm_modules=self.task_cfg.tm_modules,
             callback_cfg=self.callbacks_cfg,

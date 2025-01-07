@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from rl_utils.utils.observation_collector.constants import DONE_REASONS
+from rosnav_rl.observations import DONE_REASONS
 
 
 def determine_termination(
@@ -35,7 +35,7 @@ def determine_termination(
 
     if curr_steps >= max_steps:
         terminated = True
-        info["done_reason"] = DONE_REASONS.STEP_LIMIT.name
+        info["done_reason"] = DONE_REASONS.STEP_LIMIT
         info["is_success"] = 0
         info["episode_length"] = curr_steps
 

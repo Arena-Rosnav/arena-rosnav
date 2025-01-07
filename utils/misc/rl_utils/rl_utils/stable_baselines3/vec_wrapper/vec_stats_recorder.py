@@ -1,8 +1,7 @@
 import time
 
 import numpy as np
-from rl_utils.utils.observation_collector import LastActionCollector
-from rl_utils.utils.observation_collector.constants import DONE_REASONS
+from rosnav_rl.observations import LastActionCollector, DONE_REASONS
 from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
 from stable_baselines3.common.vec_env.base_vec_env import VecEnvObs
 import rospy
@@ -101,7 +100,7 @@ class VecStatsRecorder(VecEnvWrapper):
                 self.cum_rewards[idx] = 0.0
 
                 self.episode_lengths.append(infos[idx]["episode_length"])
-                self.done_reasons[infos[idx]["done_reason"]] += 1
+                self.done_reasons[infos[idx]["done_reason"].name] += 1
 
                 self.num_episodes += 1
 
