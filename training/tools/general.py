@@ -4,6 +4,7 @@ import warnings
 from typing import TYPE_CHECKING
 
 import rosnode
+import rospkg
 import rospy
 import yaml
 from pydantic import BaseModel
@@ -151,6 +152,15 @@ def load_config(file_path: str) -> dict:
     with open(file_path, "r", encoding="utf-8") as target:
         config = yaml.load(target, Loader=yaml.FullLoader)
     return config
+
+
+def get_robot_yaml_path(robot_model: str = None) -> str:
+    robot_model = rospy.get_param(os.path.join(rospy.get_namespace(), "model"))
+
+    simulation_setup_path = rospkg.RosPack().get_path("arena_simulation_setup")
+    return os.path.join(
+        simulation_setup_path, "entities", "robots", robot_model, f"model_params.yaml"
+    )
 
 
 def setup_paths_dictionary(
