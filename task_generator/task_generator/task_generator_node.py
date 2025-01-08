@@ -11,8 +11,9 @@ import rospy
 import std_msgs.msg as std_msgs
 import std_srvs.srv as std_srvs
 import yaml
-from rl_utils.state_container import RobotState
+from rosnav_rl.states.simulation import RobotState, TaskState
 from rospkg import RosPack
+
 from task_generator.constants import Config, Constants
 from task_generator.manager.entity_manager.crowdsim_manager import CrowdsimManager
 from task_generator.manager.entity_manager.entity_manager import EntityManager
@@ -37,8 +38,6 @@ from task_generator.simulators.unity_simulator import UnitySimulator  # noqa
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils import ModelLoader, Utils
-
-from rl_utils.state_container import TaskState
 
 
 def create_default_robot_list(

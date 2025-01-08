@@ -17,7 +17,7 @@ from task_generator.shared import ModelType, PositionOrientation, Robot
 from task_generator.utils import Utils, rosparam_get
 from tf.transformations import quaternion_from_euler
 
-from rl_utils.state_container import RobotState
+from rosnav_rl.states.simulation import RobotState
 
 
 class RobotManager:

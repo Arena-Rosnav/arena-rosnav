@@ -5,7 +5,7 @@ import numpy as np
 import rospy
 from flatland_msgs.msg import StepWorld  # type: ignore
 from geometry_msgs.msg import Twist
-from rl_utils.state_container import SimulationStateContainer
+from rosnav_rl.states import SimulationStateContainer
 from rl_utils.utils.type_alias.observation import InformationDict
 from rosnav_rl.observations import (
     DoneObservation,

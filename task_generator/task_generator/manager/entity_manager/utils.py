@@ -23,7 +23,7 @@ from task_generator.shared import (
     PositionOrientation,
 )
 from task_generator.utils import Utils
-from rl_utils.state_container import RobotState
+from rosnav_rl.states.simulation import RobotState
 
 
 class SDFUtil:

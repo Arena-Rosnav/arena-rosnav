@@ -8,9 +8,9 @@ import rospy
 
 if TYPE_CHECKING:
     from rl_utils.cfg.train import TrainingCfg
-from rl_utils.state_container import SimulationStateContainer
+from rosnav_rl.states import SimulationStateContainer
 from rl_utils.utils.hooks import HookManager, TrainingHookStages, bind_hooks
-from rl_utils.utils.type_alias.enums import RLFramework
+from rosnav_rl.utils.type_aliases import SupportedRLFrameworks
 from rl_utils.utils.type_alias.observation import EnvironmentType, PathsDict
 from rosnav_rl.rl_agent import RL_Agent
 from tools.config import ConfigManager
@@ -46,7 +46,7 @@ class ArenaTrainer(ABC):
         hook_manager (HookManager): Manages hooks for different stages of the training process.
     """
 
-    __framework: RLFramework
+    __framework: SupportedRLFrameworks
 
     config: "TrainingCfg"
     paths: PathsDict

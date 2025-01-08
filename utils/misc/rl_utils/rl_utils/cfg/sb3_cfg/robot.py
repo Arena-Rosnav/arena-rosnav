@@ -1,8 +1,9 @@
 from typing import Dict, List, Optional
 
 import rospy
-from pydantic import BaseModel, Field, field_validator, model_validator
-from rosnav_rl.utils.utils import get_robot_yaml_path, load_yaml
+from pydantic import BaseModel, Field
+from rosnav_rl.utils.utils import load_yaml
+from tools.general import get_robot_yaml_path
 
 
 class DiscreteAction(BaseModel):

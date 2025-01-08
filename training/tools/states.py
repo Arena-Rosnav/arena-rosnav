@@ -1,4 +1,4 @@
-from rl_utils.state_container import (
+from rosnav_rl.states.simulation import (
     SimulationStateContainer,
     RobotState,
     TaskState,
@@ -9,7 +9,6 @@ from rl_utils.state_container import (
     TaskModuleState,
 )
 from rl_utils.cfg import RobotCfg, TaskCfg
-import rospy
 
 
 # states from configs are parsed as args

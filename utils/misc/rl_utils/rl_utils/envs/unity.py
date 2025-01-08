@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Type, Union
 import numpy as np
 import rospy
 from geometry_msgs.msg import Twist
-from rl_utils.state_container import SimulationStateContainer
+from rosnav_rl.states import SimulationStateContainer
 from rl_utils.topic import Namespace
 from rl_utils.utils.arena_unity_utils.unity_timer import UnityTimer
 from rosgraph_msgs.msg import Clock

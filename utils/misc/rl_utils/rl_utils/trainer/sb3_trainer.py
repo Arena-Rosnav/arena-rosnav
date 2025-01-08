@@ -3,22 +3,22 @@ from typing import TYPE_CHECKING
 
 import rl_utils.utils.paths as Paths
 import rosnav_rl.rl_agent as Rosnav_RL
-from rosnav_rl.utils.agent_state import AgentStateContainer
-
-if TYPE_CHECKING:
-    from rl_utils.cfg import TrainingCfg
+from rl_utils.stable_baselines3.eval_callbacks.initialization import init_sb3_callbacks
 from rl_utils.trainer.arena_trainer import (
     ArenaTrainer,
-    RLFramework,
+    SupportedRLFrameworks,
     TrainingHookStages,
 )
 from rl_utils.utils.dynamic_reconfigure import set_dynamic_reconfigure_parameter
+from rosnav_rl.states import AgentStateContainer
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from tools.config import SB3ConfigManager, load_training_config
 from tools.env_utils import make_envs
 from tools.model_utils import setup_wandb
 from tools.states import get_arena_states
-from rosnav_rl.utils.stable_baselines3.callbacks import init_sb3_callbacks
+
+if TYPE_CHECKING:
+    from rl_utils.cfg import TrainingCfg
 
 
 @dataclass
@@ -28,7 +28,7 @@ class SB3Environment:
 
 
 class StableBaselines3Trainer(ArenaTrainer):
-    __framework = RLFramework.SB3
+    __framework = SupportedRLFrameworks.STABLE_BASELINES3
     config_manager: SB3ConfigManager
     environment: SB3Environment
 

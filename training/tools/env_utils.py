@@ -1,8 +1,15 @@
 import os
-from typing import Union, Tuple, List
+from typing import List, Tuple, Union
 
 import gym
 import rospy
+from rl_utils.cfg import (
+    CallbacksCfg,
+    GeneralCfg,
+    MonitoringCfg,
+    NormalizationCfg,
+    ProfilingCfg,
+)
 from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
 from rl_utils.envs.unity import UnityEnv
 from rl_utils.stable_baselines3.vec_wrapper import (
@@ -11,27 +18,17 @@ from rl_utils.stable_baselines3.vec_wrapper import (
     VecStatsRecorder,
 )
 from rosnav_rl.cfg import AgentCfg
-from rosnav_rl.spaces.observation_space.observation_space_manager import (
-    ObservationSpaceManager,
-)
+from rosnav_rl.rl_agent import RL_Agent as Rosnav_RL_Agent
+from rosnav_rl.states import SimulationStateContainer
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack, VecNormalize
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
+
 from task_generator.constants import Constants
 from task_generator.shared import Namespace
 from task_generator.utils import Utils
 
 from .constants import SIMULATION_NAMESPACES, TRAINING_CONSTANTS
-
-from rosnav_rl.rl_agent import RL_Agent as Rosnav_RL_Agent
-from rl_utils.state_container import SimulationStateContainer
-from rl_utils.cfg import (
-    GeneralCfg,
-    CallbacksCfg,
-    NormalizationCfg,
-    MonitoringCfg,
-    ProfilingCfg,
-)
 
 
 def load_vec_normalize(

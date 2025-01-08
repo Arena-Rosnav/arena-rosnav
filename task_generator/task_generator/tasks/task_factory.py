@@ -17,7 +17,7 @@ from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.robots import TM_Robots
 from task_generator.utils import ModelLoader
 
-from rl_utils.state_container import TaskState
+from rosnav_rl.states.simulation import TaskState
 
 
 class TaskFactory:
