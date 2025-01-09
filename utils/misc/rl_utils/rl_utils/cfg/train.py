@@ -7,6 +7,8 @@ from .sb3_cfg import SB3Cfg
 
 
 class TrainingCfg(BaseModel):
+    __version__ = "0.1.0"
+
     framework_cfg: SB3Cfg
     agent_cfg: AgentCfg
     resume: bool = False
