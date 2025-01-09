@@ -139,44 +139,40 @@ class HunavManager(EntityManager):
     def _update_agents(self):
         """Updates agent positions"""
         try:
-            if not self._pedestrians:  # Skip if no pedestrians registered
+            if not self._pedestrians:  
                 return
                 
             with self._lock:
-                # Create robot message
-                robot_msg = Agent()
-                robot_msg.id = 0
-                robot_msg.name = "robot"
-                robot_msg.type = Agent.ROBOT
-                robot_msg.position.position.x = 0.0
-                robot_msg.position.position.y = 0.0
-                robot_msg.yaw = 0.0
-                robot_msg.radius = 0.3
-
-                # Create request
                 request = ComputeAgents.Request()
-                request.robot = robot_msg
+                request.robot = self._create_robot_message()
                 request.current_agents = self._get_current_agents()
 
-                # Call service
                 response = self._compute_agents_client.call(request)
                 
                 if response and response.updated_agents.agents:
                     for agent in response.updated_agents.agents:
-                        # Update position
-                        new_position = PositionOrientation(
-                            x=agent.position.position.x,
-                            y=agent.position.position.y,
-                            orientation=agent.yaw
-                        )
-                        self._simulator.move_entity(str(agent.id), new_position)
+                 
+                        entity_name = f"agent{agent.id}"
                         
-                        # Update internal state
-                        if agent.id in self._pedestrians:
-                            self._pedestrians[agent.id].update({
-                                'last_update': self.node.get_clock().now(),
-                                'current_state': agent.behavior.state
-                            })
+                        # Debug logging
+                        self.__logger.warn(f"Trying to move entity: {entity_name}")
+                        self.__logger.warn(f"Available entities: {list(self._simulator.entities.keys())}")
+                        
+                        if entity_name in self._simulator.entities:
+                            new_position = PositionOrientation(
+                                x=agent.position.position.x,
+                                y=agent.position.position.y,
+                                orientation=agent.yaw
+                            )
+                            self._simulator.move_entity(entity_name, new_position)
+                            
+                            if entity_name in self._pedestrians:
+                                self._pedestrians[entity_name].update({
+                                    'last_update': self.node.get_clock().now(),
+                                    'current_state': agent.behavior.state
+                                })
+                        else:
+                            self.__logger.error(f"Entity {entity_name} not found in simulator entities")
 
         except Exception as e:
             self.__logger.error(f"Error in agent update: {str(e)}")
@@ -387,7 +383,10 @@ class HunavManager(EntityManager):
 
 
 
-    
+    #def track_entity(self, entity_id: str, entity) -> None:
+    #    """Track entity in simulator's entity dictionary"""
+    #    self._simulator.entities[entity_id] = entity
+    #    self.__logger.info(f"Entity {entity_id} tracked for movement")  
     
     def register_pedestrian(self) -> bool:
         """Create and register a single HuNav agent using default.yaml configuration"""
@@ -462,11 +461,14 @@ class HunavManager(EntityManager):
 
             response = self._compute_agents_client.call(request)
             
+            entity_name = "agent1"
             if response:
+                # Store in pedestrians
                 self._pedestrians[agent_msg.id] = {
                     'last_update': time.time(),
                     'current_state': agent_msg.behavior.state,
-                    'agent': agent_msg  # Store the complete configuration
+                    'agent': agent_msg,
+                    'animation_time': 0.0  # Add this
                 }
                 
                 # Create and spawn visual model
@@ -520,14 +522,43 @@ class HunavManager(EntityManager):
                     closest_obs=[]
                 )
                 
-                return self._simulator.spawn_entity(spawn_obstacle)
+                # Store the entity in simulator's dictionary before spawning
+                self._simulator.entities[entity_name] = spawn_obstacle
+                self.__logger.warn(f"Before spawning - entities in simulator: {list(self._simulator.entities.keys())}")
+                
+                # Track entity before spawning
+                #self.track_entity(str(agent_msg.id), spawn_obstacle)
+                
+                self.__logger.warn(f"After tracking - entities in simulator: {list(self._simulator.entities.keys())}")
+                
+                # Spawn the entity
+                success = self._simulator.spawn_entity(spawn_obstacle)
+                
 
-            return False
+                if success:
+                    self.__logger.warn(f"Successfully spawned agent: {entity_name}")
+                    self.__logger.warn(f"Entities after spawn: {list(self._simulator.entities.keys())}")
+                    
+                return success
 
         except Exception as e:
             self.__logger.error(f"Error creating/registering agent: {str(e)}")
             self.__logger.error(traceback.format_exc())
             return False
+
+
+
+    def _create_robot_message(self):
+        """Creates a standard robot message for HuNav communication"""
+        robot_msg = Agent()
+        robot_msg.id = 0
+        robot_msg.name = "robot"
+        robot_msg.type = Agent.ROBOT
+        robot_msg.position.position.x = 0.0
+        robot_msg.position.position.y = 0.0
+        robot_msg.yaw = 0.0
+        robot_msg.radius = 0.3
+        return robot_msg
 
 
 
