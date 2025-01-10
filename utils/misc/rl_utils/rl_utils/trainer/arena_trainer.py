@@ -170,7 +170,7 @@ class ArenaTrainer(ABC):
         """Save the trained model."""
         if not self.is_debug_mode:
             self.agent.model.save(
-                dirpath=self.paths[Paths.Agent].path, checkpoint_name=checkpoint
+                dirpath=self.paths[Paths.Agent].path, file_name=checkpoint
             )
 
     def _register_framework_specific_hooks(self):
@@ -180,6 +180,7 @@ class ArenaTrainer(ABC):
     def _train_impl(self, *args, **kwargs) -> None:
         """Implementation of training logic."""
         self.agent.model.train()
+        self._save_model(checkpoint="last_model")
 
     @abstractmethod
     def _setup_agent(self, *args, **kwargs) -> None:
