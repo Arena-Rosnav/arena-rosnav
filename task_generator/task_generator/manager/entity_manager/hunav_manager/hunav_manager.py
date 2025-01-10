@@ -139,7 +139,7 @@ class HunavManager(EntityManager):
     def _update_agents(self):
         """Updates agent positions"""
         try:
-            if not self._pedestrians:  
+            if not self._pedestrians:
                 return
                 
             with self._lock:
@@ -151,28 +151,26 @@ class HunavManager(EntityManager):
                 
                 if response and response.updated_agents.agents:
                     for agent in response.updated_agents.agents:
-                 
-                        entity_name = f"agent{agent.id}"
-                        
-                        # Debug logging
-                        self.__logger.warn(f"Trying to move entity: {entity_name}")
-                        self.__logger.warn(f"Available entities: {list(self._simulator.entities.keys())}")
-                        
-                        if entity_name in self._simulator.entities:
-                            new_position = PositionOrientation(
-                                x=agent.position.position.x,
-                                y=agent.position.position.y,
-                                orientation=agent.yaw
-                            )
-                            self._simulator.move_entity(entity_name, new_position)
+                        agent_id = agent.id
+                        if agent_id in self._pedestrians:
+                            entity_name = f"agent{agent_id}"
                             
-                            if entity_name in self._pedestrians:
-                                self._pedestrians[entity_name].update({
+                            if entity_name in self._simulator.entities:
+                                new_position = PositionOrientation(
+                                    x=agent.position.position.x,
+                                    y=agent.position.position.y,
+                                    orientation=agent.yaw
+                                )
+                                self._simulator.move_entity(entity_name, new_position)
+                                
+                                self._pedestrians[agent_id].update({
                                     'last_update': self.node.get_clock().now(),
                                     'current_state': agent.behavior.state
                                 })
+                            else:
+                                self.__logger.warn(f"Entity {entity_name} not found in simulator")
                         else:
-                            self.__logger.error(f"Entity {entity_name} not found in simulator entities")
+                            self.__logger.warn(f"Agent {agent_id} not found in pedestrians")
 
         except Exception as e:
             self.__logger.error(f"Error in agent update: {str(e)}")
@@ -342,8 +340,6 @@ class HunavManager(EntityManager):
 
 
 
-
-
     def spawn_obstacles(self, obstacles):
         """Spawn static obstacles with debug logging"""
         self.node.get_logger().warn("=== SPAWN_OBSTACLES START ===")
@@ -383,60 +379,130 @@ class HunavManager(EntityManager):
 
 
 
-    #def track_entity(self, entity_id: str, entity) -> None:
-    #    """Track entity in simulator's entity dictionary"""
-    #    self._simulator.entities[entity_id] = entity
-    #    self.__logger.info(f"Entity {entity_id} tracked for movement")  
+
+    def spawn_dynamic_obstacles(self, obstacles: typing.Collection[DynamicObstacle]):
+        """Spawn dynamic obstacles as HuNav agents"""
+        self.__logger.info(f"Attempting to spawn {len(list(obstacles))} dynamic obstacles")
+        
+        # Create HunavDynamicObstacle with default values
+        hunav_obstacle = HunavDynamicObstacle(
+            position=PositionOrientation(x=-3.973340, y=-8.576801, orientation=0.0),
+            name="agent1",  # Fixed name for testing
+            model=ModelWrapper.EMPTY(),
+            extra={},
+            waypoints=[],
+            id=1,
+            type=1,  # PERSON
+            skin=1,
+            group_id=-1,
+            yaw=0.0,
+            velocity=None,
+            desired_velocity=1.5,
+            radius=0.4,
+            linear_vel=0.0,
+            angular_vel=0.0,
+            behavior=HunavDynamicObstacle.Behavior(
+                type=4,  # SCARED
+                state=0,
+                configuration=0,
+                duration=40.0,
+                once=True,
+                vel=0.6,
+                dist=0.0,
+                social_force_factor=5.0,
+                goal_force_factor=2.0,
+                obstacle_force_factor=10.0,
+                other_force_factor=20.0
+            ),
+            goals=[],
+            cyclic_goals=True,
+            goal_radius=0.3,
+            closest_obs=[]
+        )
+        
+        # Check if obstacle is already known
+        known = self._known_obstacles.get(hunav_obstacle.name)
+        if known is not None:
+            self.__logger.info(f"{hunav_obstacle.name} is already known and hunav_spawned: {known.hunav_spawned}")
+            if known.hunav_spawned:
+                self.__logger.info(f"Skipping spawn for {hunav_obstacle.name} as it's already registered")
+                return
+            known.layer = ObstacleLayer.INUSE
+        else:
+            self.__logger.info(f"Creating new known obstacle for {hunav_obstacle.name}")
+            known = self._known_obstacles.create_or_get(
+                name=hunav_obstacle.name,
+                obstacle=hunav_obstacle,
+                hunav_spawned=False,
+                layer=ObstacleLayer.INUSE,
+            )
+
+        # Register and spawn if not already done
+        success = self.register_pedestrian(hunav_obstacle)
+        if success:
+            known.hunav_spawned = True
+            self.__logger.info(f"Successfully registered and spawned {hunav_obstacle.name}")
     
-    def register_pedestrian(self) -> bool:
-        """Create and register a single HuNav agent using default.yaml configuration"""
+    def register_pedestrian(self, hunav_obstacle: HunavDynamicObstacle) -> bool:
+        """Register and spawn a HuNav agent"""
+
         try:
-            # Create base agent message
+            entity_name = hunav_obstacle.name
+            self.__logger.info(f"Registering pedestrian {entity_name}")
+            
+            # Check if already in simulator
+            if entity_name in self._simulator.entities:
+                self.__logger.warn(f"Entity {entity_name} already exists in simulator")
+                return False
+            # Create agent message from HunavDynamicObstacle
             agent_msg = Agent()
-            agent_msg.id = 1
-            agent_msg.name = "agent1"
-            agent_msg.type = Agent.PERSON
-            agent_msg.skin = 0
-            agent_msg.group_id = -1
-            agent_msg.desired_velocity = 1.5
-            agent_msg.radius = 0.4
+            agent_msg.id = hunav_obstacle.id
+            agent_msg.name = hunav_obstacle.name
+            agent_msg.type = hunav_obstacle.type
+            agent_msg.skin = hunav_obstacle.skin
+            agent_msg.group_id = hunav_obstacle.group_id
+            agent_msg.desired_velocity = hunav_obstacle.desired_velocity
+            agent_msg.radius = hunav_obstacle.radius
 
-            # Set initial position
+            # Set position
             agent_msg.position = geometry_msgs.msg.Pose()
-            agent_msg.position.position.x = -3.973340
-            agent_msg.position.position.y = -8.576801
+            agent_msg.position.position.x = hunav_obstacle.position.x
+            agent_msg.position.position.y = hunav_obstacle.position.y
             agent_msg.position.position.z = 1.250000
-            agent_msg.yaw = 0.0
+            agent_msg.yaw = hunav_obstacle.yaw
 
-            # Set behavior parameters
+            # Set behavior
             agent_msg.behavior = AgentBehavior()
-            agent_msg.behavior.type = 4  # SCARED behavior
-            agent_msg.behavior.configuration = 0  # Default configuration
-            agent_msg.behavior.duration = 40.0
-            agent_msg.behavior.once = True
-            agent_msg.behavior.vel = 0.6
-            agent_msg.behavior.dist = 0.0
-            agent_msg.behavior.goal_force_factor = 2.0
-            agent_msg.behavior.obstacle_force_factor = 10.0
-            agent_msg.behavior.social_force_factor = 5.0
-            agent_msg.behavior.other_force_factor = 20.0
+            agent_msg.behavior.type = hunav_obstacle.behavior.type
+            agent_msg.behavior.configuration = hunav_obstacle.behavior.configuration
+            agent_msg.behavior.duration = hunav_obstacle.behavior.duration
+            agent_msg.behavior.once = hunav_obstacle.behavior.once
+            agent_msg.behavior.vel = hunav_obstacle.behavior.vel
+            agent_msg.behavior.dist = hunav_obstacle.behavior.dist
+            agent_msg.behavior.goal_force_factor = hunav_obstacle.behavior.goal_force_factor
+            agent_msg.behavior.obstacle_force_factor = hunav_obstacle.behavior.obstacle_force_factor
+            agent_msg.behavior.social_force_factor = hunav_obstacle.behavior.social_force_factor
+            agent_msg.behavior.other_force_factor = hunav_obstacle.behavior.other_force_factor
 
             # Set goals
-            agent_msg.goal_radius = 0.3
-            agent_msg.cyclic_goals = True
+            agent_msg.goal_radius = hunav_obstacle.goal_radius
+            agent_msg.cyclic_goals = hunav_obstacle.cyclic_goals
             
-            # Add predefined goals
-            goals = [
-                (-3.133759, -4.166653, 1.250000),
-                (0.997901, -4.131655, 1.250000),
-                (-0.227549, -10.187146, 1.250000)
-            ]
-            
-            for x, y, h in goals:
-                goal = geometry_msgs.msg.Pose()
-                goal.position.x = x
-                goal.position.y = y
-                agent_msg.goals.append(goal)
+            # Add predefined goals if none exist
+            if not hunav_obstacle.goals:
+                goals = [
+                    (-3.133759, -4.166653, 1.250000),
+                    (0.997901, -4.131655, 1.250000),
+                    (-0.227549, -10.187146, 1.250000)
+                ]
+                
+                for x, y, h in goals:
+                    goal = geometry_msgs.msg.Pose()
+                    goal.position.x = x
+                    goal.position.y = y
+                    agent_msg.goals.append(goal)
+            else:
+                agent_msg.goals = hunav_obstacle.goals
 
             # Create agents message container
             peds = Agents()
@@ -444,102 +510,46 @@ class HunavManager(EntityManager):
             peds.header.frame_id = "map"
             peds.agents.append(agent_msg)
 
-            # Create robot message
-            robot_msg = Agent()
-            robot_msg.id = 0
-            robot_msg.name = "robot"
-            robot_msg.type = Agent.ROBOT
-            robot_msg.position.position.x = 0.0
-            robot_msg.position.position.y = 0.0
-            robot_msg.yaw = 0.0
-            robot_msg.radius = 0.3
-
             # Register with HuNav
             request = ComputeAgents.Request()
-            request.robot = robot_msg
+            request.robot = self._create_robot_message()
             request.current_agents = peds
 
             response = self._compute_agents_client.call(request)
             
-            entity_name = "agent1"
             if response:
-                # Store in pedestrians
-                self._pedestrians[agent_msg.id] = {
+                # Store in pedestrians dictionary
+                self._pedestrians[hunav_obstacle.id] = {
                     'last_update': time.time(),
                     'current_state': agent_msg.behavior.state,
                     'agent': agent_msg,
-                    'animation_time': 0.0  # Add this
+                    'animation_time': 0.0
                 }
                 
                 # Create and spawn visual model
-                sdf = self.create_pedestrian_sdf(agent_msg)
-                spawn_model = Model(
-                    description=sdf,
-                    type=ModelType.SDF,
-                    name=str(agent_msg.id),
-                    path=''
+                sdf = self.create_pedestrian_sdf(hunav_obstacle)
+                
+                spawn_obstacle = Obstacle(
+                    position=hunav_obstacle.position,
+                    name=entity_name,
+                    model=ModelWrapper.from_model(Model(
+                        type=ModelType.SDF,
+                        name=entity_name,
+                        description=sdf,
+                        path=''
+                    )),
+                    extra=hunav_obstacle.extra
                 )
-                
-                # Create HunavDynamicObstacle for spawning
-                spawn_position = PositionOrientation(
-                    x=agent_msg.position.position.x,
-                    y=agent_msg.position.position.y,
-                    orientation=agent_msg.yaw
-                )
-                
-                spawn_obstacle = HunavDynamicObstacle(
-                    position=spawn_position,
-                    name=agent_msg.name,
-                    model=ModelWrapper.from_model(spawn_model),
-                    extra={},
-                    waypoints=[],
-                    id=agent_msg.id,
-                    type=agent_msg.type,
-                    skin=agent_msg.skin,
-                    group_id=agent_msg.group_id,
-                    yaw=agent_msg.yaw,
-                    velocity=None,
-                    desired_velocity=agent_msg.desired_velocity,
-                    radius=agent_msg.radius,
-                    linear_vel=agent_msg.linear_vel,
-                    angular_vel=agent_msg.angular_vel,
-                    behavior=HunavDynamicObstacle.Behavior(
-                        type=agent_msg.behavior.type,
-                        state=agent_msg.behavior.state,
-                        configuration=agent_msg.behavior.configuration,
-                        duration=agent_msg.behavior.duration,
-                        once=agent_msg.behavior.once,
-                        vel=agent_msg.behavior.vel,
-                        dist=agent_msg.behavior.dist,
-                        social_force_factor=agent_msg.behavior.social_force_factor,
-                        goal_force_factor=agent_msg.behavior.goal_force_factor,
-                        obstacle_force_factor=agent_msg.behavior.obstacle_force_factor,
-                        other_force_factor=agent_msg.behavior.other_force_factor
-                    ),
-                    goals=agent_msg.goals,
-                    cyclic_goals=agent_msg.cyclic_goals,
-                    goal_radius=agent_msg.goal_radius,
-                    closest_obs=[]
-                )
-                
-                # Store the entity in simulator's dictionary before spawning
-                self._simulator.entities[entity_name] = spawn_obstacle
-                self.__logger.warn(f"Before spawning - entities in simulator: {list(self._simulator.entities.keys())}")
-                
-                # Track entity before spawning
-                #self.track_entity(str(agent_msg.id), spawn_obstacle)
-                
-                self.__logger.warn(f"After tracking - entities in simulator: {list(self._simulator.entities.keys())}")
-                
-                # Spawn the entity
+
+                # Store and spawn
+                self._simulator.entities[hunav_obstacle.name] = spawn_obstacle
                 success = self._simulator.spawn_entity(spawn_obstacle)
-                
 
                 if success:
                     self.__logger.warn(f"Successfully spawned agent: {entity_name}")
-                    self.__logger.warn(f"Entities after spawn: {list(self._simulator.entities.keys())}")
-                    
-                return success
+                    return True
+
+            return False
 
         except Exception as e:
             self.__logger.error(f"Error creating/registering agent: {str(e)}")
@@ -561,13 +571,6 @@ class HunavManager(EntityManager):
         return robot_msg
 
 
-
-    def spawn_dynamic_obstacles(self, obstacles: typing.Collection[DynamicObstacle]):
-        """Spawn single HuNav agent"""
-        self.__logger.info("Creating and registering HuNav agent")
-        success = self.register_pedestrian()
-        if not success:
-            self.__logger.error("Failed to create and register agent")
 
 
     def spawn_walls(self, walls: WorldWalls, heightmap: WorldMap):
@@ -614,80 +617,6 @@ class HunavManager(EntityManager):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def _update_pedestrians(self):
-        """Update pedestrians with debug logging"""
-        with self._lock:
-            self.node.get_logger().warn("=== UPDATE_PEDESTRIANS START ===")
-            current_time = time.time()
-
-            # Get updates from Hunav
-            self.node.get_logger().warn("Requesting agent updates from HuNav")
-            request = ComputeAgents.Request()
-            future = self._compute_agents_client.call(request)
-
-            if future.result() is not None:
-                agents = future.result().agents
-                self.node.get_logger().warn(f"Received updates for {len(agents)} agents")
-                
-                for agent in agents:
-                    if agent.id in self._pedestrians:
-                        self.node.get_logger().warn(f"Updating pedestrian {agent.id}")
-                        ped_data = self._pedestrians[agent.id]
-
-                        # Update position
-                        pos = PositionOrientation(
-                            x=agent.position.position.x,
-                            y=agent.position.position.y,
-                            orientation=agent.yaw
-                        )
-                        self.node.get_logger().warn(f"Moving entity {agent.id} to new position")
-                        self._simulator.move_entity(name=agent.id, position=pos)
-
-                        # Update animation
-                        dt = current_time - ped_data['last_update']
-                        animation_factor = self._get_animation_factor(agent.behavior)
-                        ped_data['animation_time'] += dt * animation_factor
-
-                        # Update animation state if needed
-                        if agent.behavior.state != ped_data.get('current_state'):
-                            self.node.get_logger().warn(f"Updating animation state for {agent.id}")
-                            self._update_agent_animation(agent.id, agent.behavior)
-                            ped_data['current_state'] = agent.behavior.state
-
-                        ped_data['last_update'] = current_time
-                    else:
-                        self.node.get_logger().warn(f"Agent {agent.id} not found in pedestrians")
-
-            self.node.get_logger().warn("=== UPDATE_PEDESTRIANS COMPLETE ===")
 
     def _get_animation_factor(self, behavior: AgentBehavior) -> float:
         """Get animation factor with debug logging"""
