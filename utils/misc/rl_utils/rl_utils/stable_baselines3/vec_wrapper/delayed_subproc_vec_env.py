@@ -36,7 +36,8 @@ def _worker(
                     observation, reset_info = env.reset()
                 remote.send((observation, reward, done, info, reset_info))
             elif cmd == "reset":
-                observation, reset_info = env.reset(seed=data)
+                maybe_options = {"options": data[1]} if data[1] else {}
+                observation, reset_info = env.reset(seed=data[0], **maybe_options)
                 remote.send((observation, reset_info))
             elif cmd == "render":
                 remote.send(env.render())
@@ -47,10 +48,10 @@ def _worker(
             elif cmd == "get_spaces":
                 remote.send((env.observation_space, env.action_space))
             elif cmd == "env_method":
-                method = getattr(env, data[0])
+                method = env.get_wrapper_attr(data[0])
                 remote.send(method(*data[1], **data[2]))
             elif cmd == "get_attr":
-                remote.send(getattr(env, data))
+                remote.send(env.get_wrapper_attr(data))
             elif cmd == "set_attr":
                 remote.send(setattr(env, data[0], data[1]))  # type: ignore[func-returns-value]
             elif cmd == "is_wrapped":
@@ -95,7 +96,7 @@ class DelayedSubprocVecEnv(SubprocVecEnv):
 
             remote.send(("init", None))
             success = remote.recv()
-            
+
             time.sleep(1)
 
         self.remotes[0].send(("get_spaces", None))
@@ -116,6 +117,8 @@ class DelayedSubprocVecEnv(SubprocVecEnv):
         self.reset_infos: List[Dict[str, Any]] = [{} for _ in range(num_envs)]
         # seeds to be used in the next call to env.reset()
         self._seeds: List[Optional[int]] = [None for _ in range(num_envs)]
+        # options to be used in the next call to env.reset()
+        self._options: List[Dict[str, Any]] = [{} for _ in range(num_envs)]
 
         try:
             render_modes = self.get_attr("render_mode")
