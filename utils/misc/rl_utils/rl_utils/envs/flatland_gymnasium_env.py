@@ -66,7 +66,7 @@ class FlatlandEnv(gymnasium.Env):
         if self._is_train_mode and rl_agent.reward_function is None:
             raise ValueError("Reward function is required for the training.")
 
-        if not self._debug_mode and not init_by_call:
+        if not self._debug_mode:
             rospy.init_node(f"env_{self.ns.simulation_ns}".replace("/", "_"))
 
         self._model_space_manager = rl_agent.space_manager
