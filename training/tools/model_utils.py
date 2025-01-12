@@ -48,7 +48,7 @@ def setup_wandb(train_cfg: "TrainingCfg", rl_model: "RL_Model") -> None:
         project="Arena-RL",
         entity=None,
         sync_tensorboard=True,
-        monitor_gym=True,
+        monitor_gym=False,
         save_code=False,
         config=train_cfg.model_dump(),
     )
