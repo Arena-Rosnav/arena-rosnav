@@ -17,6 +17,7 @@ from rl_utils.stable_baselines3.vec_wrapper import (
     ProfilingVecEnv,
     VecStatsRecorder,
 )
+from rl_utils.utils.constants import Simulator
 from rosnav_rl.cfg import AgentCfg
 from rosnav_rl.rl_agent import RL_Agent as Rosnav_RL_Agent
 from rosnav_rl.states import SimulationStateContainer
@@ -24,7 +25,6 @@ from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack, VecNormalize
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 
-from task_generator.constants import Constants
 from task_generator.shared import Namespace
 from task_generator.utils import Utils
 
@@ -118,8 +118,8 @@ def _init_env_fnc(
     """
     sim = Utils.get_simulator()
     env_cls = {
-        Constants.Simulator.UNITY: UnityEnv,
-        Constants.Simulator.FLATLAND: FlatlandEnv,
+        Simulator.UNITY: UnityEnv,
+        Simulator.FLATLAND: FlatlandEnv,
     }.get(sim)
 
     if env_cls is None:

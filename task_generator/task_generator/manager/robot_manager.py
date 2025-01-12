@@ -10,14 +10,15 @@ import rospy
 import scipy.spatial.transform
 import std_srvs.srv as std_srvs
 from rl_utils.topic import Namespace
+from rl_utils.utils.constants import ArenaType
+from rosnav_rl.states.simulation import RobotState
+from tf.transformations import quaternion_from_euler
+
 from task_generator.constants import Config, Constants
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.shared import ModelType, PositionOrientation, Robot
 from task_generator.utils import Utils, rosparam_get
-from tf.transformations import quaternion_from_euler
-
-from rosnav_rl.states.simulation import RobotState
 
 
 class RobotManager:
@@ -164,7 +165,7 @@ class RobotManager:
 
     @property
     def namespace(self) -> Namespace:
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+        if Utils.get_arena_type() == ArenaType.TRAINING:
             return Namespace(
                 f"{self._namespace(f'{self._namespace}_{self.model_name}')}"
             )  # schizophrenia
@@ -250,7 +251,7 @@ class RobotManager:
     def _launch_robot(self):
         rospy.logwarn(f"START WITH MODEL {self.namespace}")
 
-        if Utils.get_arena_type() != Constants.ArenaType.TRAINING:
+        if Utils.get_arena_type() != ArenaType.TRAINING:
             roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(  # type: ignore
                 ["arena_bringup", "robot.launch"]
             )

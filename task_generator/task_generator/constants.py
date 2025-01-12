@@ -17,15 +17,6 @@ class Constants:
 
     TASK_GENERATOR_SERVER_NODE = Namespace("/task_generator_server")
 
-    class Simulator(Enum):
-        FLATLAND = "flatland"
-        GAZEBO = "gazebo"
-        UNITY = "unity"
-
-    class ArenaType(Enum):
-        TRAINING = "training"
-        DEPLOYMENT = "deployment"
-
     class EntityManager(Enum):
         PEDSIM = "pedsim"
         FLATLAND = "flatland"
@@ -91,16 +82,22 @@ class Constants:
 
 @dataclasses.dataclass
 class TaskConfig_General:
-    WAIT_FOR_SERVICE_TIMEOUT: float = dataclasses.field(default_factory=lambda:rosparam_get(float, "timeout_wait_for_service", 60))
-    MAX_RESET_FAIL_TIMES: int = dataclasses.field(default_factory=lambda:rosparam_get(int, "max_reset_fail_times", 10))
-    RNG: np.random.Generator = dataclasses.field(default_factory=lambda:np.random.default_rng())
+    WAIT_FOR_SERVICE_TIMEOUT: float = dataclasses.field(
+        default_factory=lambda: rosparam_get(float, "timeout_wait_for_service", 60)
+    )
+    MAX_RESET_FAIL_TIMES: int = dataclasses.field(
+        default_factory=lambda: rosparam_get(int, "max_reset_fail_times", 10)
+    )
+    RNG: np.random.Generator = dataclasses.field(
+        default_factory=lambda: np.random.default_rng()
+    )
     DESIRED_EPISODES: float = float("inf")
 
 
 @dataclasses.dataclass
 class TaskConfig_Robot:
     GOAL_TOLERANCE_RADIUS: float = 1.0
-    GOAL_TOLERANCE_ANGLE: float = 30 * math.pi/180
+    GOAL_TOLERANCE_ANGLE: float = 30 * math.pi / 180
     SPAWN_ROBOT_SAFE_DIST: float = 0.25
     TIMEOUT: float = float("inf")
 
@@ -112,27 +109,43 @@ class TaskConfig_Obstacles:
 
 @dataclasses.dataclass
 class TaskConfig:
-    General: TaskConfig_General = dataclasses.field(default_factory=lambda:TaskConfig_General())
-    Robot: TaskConfig_Robot = dataclasses.field(default_factory=lambda:TaskConfig_Robot())
-    Obstacles: TaskConfig_Obstacles = dataclasses.field(default_factory=lambda:TaskConfig_Obstacles())
+    General: TaskConfig_General = dataclasses.field(
+        default_factory=lambda: TaskConfig_General()
+    )
+    Robot: TaskConfig_Robot = dataclasses.field(
+        default_factory=lambda: TaskConfig_Robot()
+    )
+    Obstacles: TaskConfig_Obstacles = dataclasses.field(
+        default_factory=lambda: TaskConfig_Obstacles()
+    )
 
 
+# def get_task_config():
+# global Config
+# Config = TaskConfig()
+# return Config
 Config = TaskConfig()
+
 
 def _cb_reconfigure(config):
     global Config
 
-    Config.General.RNG=np.random.default_rng((lambda x: x if x >= 0 else None)(config["RANDOM_seed"]))
-    Config.General.DESIRED_EPISODES=(lambda x: float("inf") if x<0 else x)(config["episodes"])
-    
-    Config.Robot.GOAL_TOLERANCE_RADIUS=config["goal_radius"]
-    Config.Robot.GOAL_TOLERANCE_ANGLE=config["goal_tolerance_angle"]
-    Config.Robot.TIMEOUT=(lambda x: float("inf") if x<0 else x)(config["timeout"])
+    Config.General.RNG = np.random.default_rng(
+        (lambda x: x if x >= 0 else None)(config["RANDOM_seed"])
+    )
+    Config.General.DESIRED_EPISODES = (lambda x: float("inf") if x < 0 else x)(
+        config["episodes"]
+    )
 
-dynamic_reconfigure.client.Client(
-    name=Constants.TASK_GENERATOR_SERVER_NODE,
-    config_callback=_cb_reconfigure
-)
+    Config.Robot.GOAL_TOLERANCE_RADIUS = config["goal_radius"]
+    Config.Robot.GOAL_TOLERANCE_ANGLE = config["goal_tolerance_angle"]
+    Config.Robot.TIMEOUT = (lambda x: float("inf") if x < 0 else x)(config["timeout"])
+
+
+def init_task_generator_dr_client():
+    dynamic_reconfigure.client.Client(
+        name=Constants.TASK_GENERATOR_SERVER_NODE, config_callback=_cb_reconfigure
+    )
 
 
 class FlatlandRandomModel:
@@ -161,8 +174,8 @@ class FlatlandRandomModel:
 
 
 # no ~configuration possible because node is not fully initialized at this point
-pedsim_ns = Namespace(
-    "task_generator_node/configuration/pedsim/default_actor_config")
+pedsim_ns = Namespace("task_generator_node/configuration/pedsim/default_actor_config")
+
 
 # TODO make everything dynamic_reconfigure
 def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
@@ -173,18 +186,17 @@ def lp(parameter: str, fallback: Any) -> Callable[[Optional[Any]], Any]:
     # load once at the start
     val = rospy.get_param(pedsim_ns(parameter), fallback)
 
-    def gen(): return val
+    def gen():
+        return val
 
     if isinstance(val, list):
         lo, hi = val[:2]
 
-        def gen(): return min(
-            hi,
-            max(
-                lo,
-                Config.General.RNG.normal((hi + lo) / 2, (hi - lo) / 6)
+        def gen():
+            return min(
+                hi, max(lo, Config.General.RNG.normal((hi + lo) / 2, (hi - lo) / 6))
             )
-        )
+
         # gen = lambda: random.uniform(lo, hi)
 
     return lambda x: x if x is not None else gen()
@@ -198,12 +210,10 @@ class Pedsim:
     CHATTING_PROBABILITY = lp("CHATTING_PROBABILITY", 0.0)
     TELL_STORY_PROBABILITY = lp("TELL_STORY_PROBABILITY", 0.0)
     GROUP_TALKING_PROBABILITY = lp("GROUP_TALKING_PROBABILITY", 0.0)
-    TALKING_AND_WALKING_PROBABILITY = lp(
-        "TALKING_AND_WALKING_PROBABILITY", 0.0)
+    TALKING_AND_WALKING_PROBABILITY = lp("TALKING_AND_WALKING_PROBABILITY", 0.0)
     REQUESTING_SERVICE_PROBABILITY = lp("REQUESTING_SERVICE_PROBABILITY", 0.0)
     REQUESTING_GUIDE_PROBABILITY = lp("REQUESTING_GUIDE_PROBABILITY", 0.0)
-    REQUESTING_FOLLOWER_PROBABILITY = lp(
-        "REQUESTING_FOLLOWER_PROBABILITY", 0.0)
+    REQUESTING_FOLLOWER_PROBABILITY = lp("REQUESTING_FOLLOWER_PROBABILITY", 0.0)
     MAX_TALKING_DISTANCE = lp("MAX_TALKING_DISTANCE", 5.0)
     MAX_SERVICING_RADIUS = lp("MAX_SERVICING_RADIUS", 5.0)
     TALKING_BASE_TIME = lp("TALKING_BASE_TIME", 10.0)
