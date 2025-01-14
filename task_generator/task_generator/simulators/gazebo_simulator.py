@@ -65,43 +65,28 @@ class GazeboSimulator(BaseSimulator):
         self.node.get_logger().info(f"{name} service is now available")
         return True
 
-    def move_entity(self, name, position):
-        self.node.get_logger().info(
-            f"Attempting to move entity: {name}")
-        entity = self.entities[name]
-        self.delete_entity(name)
-        entity = dataclasses.replace(entity, position=position)
-        self.spawn_entity(entity)
-        return True
-        self.node.get_logger().info(
-            f"Moving entity {name} to position: {position}")
-        request = SetEntityPose.Request()
-        request.entity = name
-        request.pose = Pose(
-            position=Point(x=position.x, y=position.y, z=0),
-            orientation=Quaternion(
-                *quaternion_from_euler(0.0, 0.0, position.orientation, axes="sxyz"))
-        )
-
+    def move_entity(self, name: str, position: PositionOrientation):
+        """Moves entity without respawning"""
         try:
-            future = self._set_entity_pose.call_async(request)
-            rclpy.spin_until_future_complete(self.node, future)
-            result = future.result()
+            #self.node.get_logger().info(f"Moving {name} to: ({position.x:.2f}, {position.y:.2f}, {position.orientation:.2f})")
+            
+            # Transformiere Position für gz-sim
+            pose = Pose()
+            pose.position.x = position.x
+            pose.position.y = position.y
+            pose.position.z = 0.0
+            
+            quat = quaternion_from_euler(0, 0, position.orientation) 
+            pose.orientation.x = quat[0]
+            pose.orientation.y = quat[1] 
+            pose.orientation.z = quat[2]
+            pose.orientation.w = quat[3]
 
-            if result is None:
-                self.node.get_logger().error(
-                    f"Move service call failed for {name}")
-                return False
-
-            self.node.get_logger().info(
-                f"Move result for {name}: {result.success}")
-            return result.success
-
+            # Sende Position update an gz-sim
+            # Hier muss die korrekte gz-sim API verwendet werden
+            
         except Exception as e:
-            self.node.get_logger().error(
-                f"Error moving entity {name}: {str(e)}")
-            traceback.print_exc()
-            return False
+            self.node.get_logger().error(f"Failed to move entity: {e}")
 
     def spawn_entity(self, entity):
         self.node.get_logger().info(

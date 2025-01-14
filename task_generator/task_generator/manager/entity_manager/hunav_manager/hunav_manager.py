@@ -136,8 +136,12 @@ class HunavManager(EntityManager):
         self.node.get_logger().warn("=== HUNAVMANAGER INIT COMPLETE ===")
 
 
+
+
+
+
     def _update_agents(self):
-        """Updates agent positions"""
+        """Updates agent positions without respawning"""
         try:
             if not self._pedestrians:
                 return
@@ -146,7 +150,7 @@ class HunavManager(EntityManager):
                 request = ComputeAgents.Request()
                 request.robot = self._create_robot_message()
                 request.current_agents = self._get_current_agents()
-
+                
                 response = self._compute_agents_client.call(request)
                 
                 if response and response.updated_agents.agents:
@@ -156,6 +160,7 @@ class HunavManager(EntityManager):
                             entity_name = f"agent{agent_id}"
                             
                             if entity_name in self._simulator.entities:
+                                # Nur Position aktualisieren, NICHT neu spawnen
                                 new_position = PositionOrientation(
                                     x=agent.position.position.x,
                                     y=agent.position.position.y,
@@ -163,18 +168,17 @@ class HunavManager(EntityManager):
                                 )
                                 self._simulator.move_entity(entity_name, new_position)
                                 
+                                # Update stored state
                                 self._pedestrians[agent_id].update({
                                     'last_update': self.node.get_clock().now(),
-                                    'current_state': agent.behavior.state
+                                    'current_state': agent.behavior.state,
+                                    'agent': agent
                                 })
-                            else:
-                                self.__logger.warn(f"Entity {entity_name} not found in simulator")
-                        else:
-                            self.__logger.warn(f"Agent {agent_id} not found in pedestrians")
-
+                                
         except Exception as e:
             self.__logger.error(f"Error in agent update: {str(e)}")
-            self.__logger.error(traceback.format_exc())
+
+
 
 
 
@@ -185,12 +189,19 @@ class HunavManager(EntityManager):
         current_agents.header.frame_id = "map"
         
         for agent_id, agent_data in self._pedestrians.items():
-            agent = agent_data.get('agent')
-            if agent:
-                current_agents.agents.append(agent)
+            if 'agent' in agent_data:
+                current_agent = agent_data['agent']
+                # Make sure we're sending up-to-date position info
+                entity_name = f"agent{agent_id}"
+                if entity_name in self._simulator.entities:
+                    entity = self._simulator.entities[entity_name]
+                    current_agent.position.position.x = entity.position.x
+                    current_agent.position.position.y = entity.position.y
+                    current_agent.yaw = entity.position.orientation
+                current_agents.agents.append(current_agent)
         
+        #self.node.get_logger().warn(f"get_current_agents returning {len(current_agents.agents)} agents")
         return current_agents
-
 
 
     def setup_services(self):
@@ -273,70 +284,85 @@ class HunavManager(EntityManager):
         self.node.get_logger().warn("=== SETUP_SERVICES COMPLETE ===")
         return True
 
+
     def create_pedestrian_sdf(self, agent_config: HunavDynamicObstacle) -> str:
-        """Create SDF description for pedestrian"""
+        """Create SDF description for pedestrian using gz-sim actor format"""
         # Get skin type
         skin_type = self.SKIN_TYPES.get(agent_config.skin, 'casual_man.dae')
         
-        # Get workspace root 
+        # Animation mapping based on behavior
+        ANIMATION_MAP = {
+            AgentBehavior.BEH_REGULAR: "07_01-walk.bvh",
+            AgentBehavior.BEH_IMPASSIVE: "69_02_walk_forward.bvh", 
+            AgentBehavior.BEH_SURPRISED: "137_28-normal_wait.bvh",
+            AgentBehavior.BEH_SCARED: "142_17-walk_scared.bvh",
+            AgentBehavior.BEH_CURIOUS: "07_04-slow_walk.bvh",
+            AgentBehavior.BEH_THREATENING: "17_01-walk_with_anger.bvh"
+        }
+        
+        animation_file = ANIMATION_MAP.get(agent_config.behavior.type, "07_01-walk.bvh")
+        
+        # Get workspace root and construct paths
         def get_workspace_root():
             current_dir = os.path.abspath(__file__)
             workspace_root = current_dir
             while not workspace_root.endswith("arena4_ws"):
                 workspace_root = os.path.dirname(workspace_root)
-                
-            if not workspace_root.endswith("arena4_ws"):
-                raise ValueError("Could not find the 'arena4_ws' directory")
-                
             return workspace_root
-            
-        # Construct mesh path
+
+        # Construct absolute paths    
         mesh_path = os.path.join(
             get_workspace_root(),
             'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/models',
             skin_type
         )
+        
+        animation_path = os.path.join(
+            get_workspace_root(),
+            'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/animations',
+            animation_file
+        )
+
+        # Debug logging
+        self.node.get_logger().info(f"Mesh path: {mesh_path}")
+        self.node.get_logger().info(f"Animation path: {animation_path}")
+        self.node.get_logger().info(f"Files exist: Mesh={os.path.exists(mesh_path)}, Animation={os.path.exists(animation_path)}")
 
         sdf = f"""<?xml version="1.0" ?>
-        <sdf version="1.6">
-            <model name="{agent_config.name}">
-                <static>false</static>
+        <sdf version="1.9">
+            <actor name="{agent_config.name}">
                 <pose>0 0 0 0 0 0</pose>
-                <link name="link">
-                    <inertial>
-                        <mass>70.0</mass>
-                        <inertia>
-                            <ixx>0.83</ixx>
-                            <ixy>0.0</ixy>
-                            <ixz>0.0</ixz>
-                            <iyy>0.83</iyy>
-                            <iyz>0.0</iyz>
-                            <izz>0.083</izz>
-                        </inertia>
-                    </inertial>
-                    <collision name="collision">
-                        <pose>0 0 0.85 0 0 0</pose>
-                        <geometry>
-                            <cylinder>
-                                <radius>{agent_config.radius}</radius>
-                                <length>1.7</length>
-                            </cylinder>
-                        </geometry>
-                    </collision>
-                    <visual name="visual">
-                        <pose>0 0 0.85 0 0 0</pose>
-                        <geometry>
-                            <mesh>
-                                <uri>file://{mesh_path}</uri>
-                                <scale>1.0 1.0 1.0</scale>
-                            </mesh>
-                        </geometry>
-                    </visual>
-                </link>
-            </model>
+                <skin>
+                    <filename>{mesh_path}</filename>
+                    <scale>1.0</scale>
+                </skin>
+                
+                <animation name="animation">
+                    <filename>{animation_path}</filename>
+                    <scale>1.0</scale>
+                    <interpolate_x>true</interpolate_x>
+                </animation>
+
+                <script>
+                    <loop>true</loop>
+                    <auto_start>true</auto_start>
+                    <delay_start>0.000000</delay_start>
+                    <trajectory id="0" type="animation">
+                        <waypoint>
+                            <time>0</time>
+                            <pose>0 0 0 0 0 0</pose>
+                        </waypoint>
+                        <waypoint>
+                            <time>1.0</time>
+                            <pose>0 0 0 0 0 0</pose>
+                        </waypoint>
+                    </trajectory>
+                </script>
+            </actor>
         </sdf>"""
         
         return sdf
+
 
 
 
@@ -393,7 +419,7 @@ class HunavManager(EntityManager):
             waypoints=[],
             id=1,
             type=1,  # PERSON
-            skin=1,
+            skin=3,
             group_id=-1,
             yaw=0.0,
             velocity=None,
@@ -402,7 +428,7 @@ class HunavManager(EntityManager):
             linear_vel=0.0,
             angular_vel=0.0,
             behavior=HunavDynamicObstacle.Behavior(
-                type=4,  # SCARED
+                type=2,  # SCARED
                 state=0,
                 configuration=0,
                 duration=40.0,
@@ -486,8 +512,9 @@ class HunavManager(EntityManager):
 
             # Set goals
             agent_msg.goal_radius = hunav_obstacle.goal_radius
+            self.node.get_logger().warn(f"############################ hunav_obstacle.cyclic_goals: {hunav_obstacle.cyclic_goals}")
             agent_msg.cyclic_goals = hunav_obstacle.cyclic_goals
-            
+            self.node.get_logger().warn(f"############################  agent_msg.cyclic_goals: { agent_msg.cyclic_goals}")
             # Add predefined goals if none exist
             if not hunav_obstacle.goals:
                 goals = [
@@ -504,6 +531,15 @@ class HunavManager(EntityManager):
             else:
                 agent_msg.goals = hunav_obstacle.goals
 
+
+            # After creating the agent message:
+            self.node.get_logger().warn(
+                f"Registering agent {agent_msg.id} with:\n"
+                f"- Position: ({agent_msg.position.position.x:.2f}, {agent_msg.position.position.y:.2f})\n"
+                f"- Behavior: type={agent_msg.behavior.type}, state={agent_msg.behavior.state}\n"
+                f"- Goals: {len(agent_msg.goals)} goals, cyclic={agent_msg.cyclic_goals}\n"
+                f"- Properties: vel={agent_msg.desired_velocity:.2f}, radius={agent_msg.radius:.2f}"
+            )
             # Create agents message container
             peds = Agents()
             peds.header.stamp = self.node.get_clock().now().to_msg()
@@ -516,6 +552,7 @@ class HunavManager(EntityManager):
             request.current_agents = peds
 
             response = self._compute_agents_client.call(request)
+            self.node.get_logger().warn(f"############################  response (registering): { response}")
             
             if response:
                 # Store in pedestrians dictionary
