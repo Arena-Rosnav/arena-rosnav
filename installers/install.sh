@@ -75,7 +75,7 @@ sudo apt-get install -y curl
 
 echo "Installing tzdata...:"
 export DEBIAN_FRONTEND=noninteractive
-sudo apt install -y tzdata libompl-dev
+sudo apt-get install -y tzdata libompl-dev
 sudo dpkg-reconfigure --frontend noninteractive tzdata
 
 # ROS
@@ -209,7 +209,7 @@ if [ ! -d /usr/local/include/lightsfm ] ; then
   rm -rf lightsfm || echo 'failed to install lightsfm'
 fi
 
-#run installers
+# run installers
 # sudo apt upgrade
 
 compile(){

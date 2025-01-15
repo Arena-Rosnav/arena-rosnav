@@ -9,16 +9,23 @@ import nav_msgs.msg as nav_msgs
 
 import ament_index_python.packages
 
-_simulation_setup_path: str = ament_index_python.packages.get_package_share_directory(
-    'arena_simulation_setup'
-)
+_ARENA_WS_DIR = os.path.realpath(os.path.join(ament_index_python.packages.get_package_share_directory('task_generator'), '..', '..', '..', '..'))
+
+_SS_PATH: str = os.path.join(_ARENA_WS_DIR, 'src', 'arena', 'simulation-setup')
+
+
+def get_arena_ws() -> str:
+    """
+    Get path to ARENA_WS_DIR
+    """
+    return _ARENA_WS_DIR
 
 
 def get_simulation_setup_path() -> str:
     """
-    Get path to simulation_setup package.
+    Get path to arena_simulation_setup package (src).
     """
-    return _simulation_setup_path
+    return _SS_PATH
 
 
 def get_arena_type() -> Constants.ArenaType:

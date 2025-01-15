@@ -46,7 +46,7 @@ import launch_ros
 import ament_index_python
 
 class IsaacSimulator(BaseSimulator):
-    
+
     def init_service_clients(self):
         """Initialize all ROS 2 service clients."""
         self.urdf_to_usd_client = self.node.create_client(
@@ -54,7 +54,7 @@ class IsaacSimulator(BaseSimulator):
             'isaac/urdf_to_usd',
             callback_group=MutuallyExclusiveCallbackGroup()
         )
-        
+
         self.spawn_entity_client = self.node.create_client(
             ImportUsd,
             'isaac/import_usd',
@@ -83,42 +83,30 @@ class IsaacSimulator(BaseSimulator):
 
         # Wait for all services to be available
         self.wait_for_services()
-    
+
     def spawn_entity(self, entity):
         self.node.get_logger().info(
             f"Attempting to spawn entitiy: {entity.name}"
         )
-        
-        try:
-            model = entity.model.get(
-                [ModelType.USD, ModelType.URDF, ModelType.SDF])
-        except FileNotFoundError as e:
-            self.node.get_logger().error(repr(e))
-            return True
-        
-        model = entity.model.get([ModelType.USD, ModelType.URDF, ModelType.SDF])
-        
-        if model.type == ModelType.SDF:
-            return True #TODO
-        
-        description = model.description
+
+        model = entity.model.get([ModelType.URDF, ModelType.USD])
 
         if model.type == ModelType.URDF:
             usd_path = self.urdf_to_usd_client.call(
                 UrdfToUsd.Request(
-                    name = entity.name,
-                    urdf_path = model.path
+                    name=entity.name,
+                    urdf_path=model.path
                 )
             ).usd_path
 
         else:
             usd_path = model.path
-            
+
         response = self.spawn_entity_client.call(
             ImportUsd.Request(
-                name = entity.name,
-                usd_path = usd_path,
-                prim_path = "/World"                
+                name=entity.name,
+                usd_path=usd_path,
+                prim_path="/World"
             )
         )
         if response is None:
@@ -130,20 +118,20 @@ class IsaacSimulator(BaseSimulator):
                 f'failed to spawn entity: status code {response.result}')
 
         return True
-    
-    def move_entity(self,name,position,orientation):
+
+    def move_entity(self, name, position, orientation):
         self.node.get_logger().info(
             f"Attempting to move entitiy: {name}"
         )
         prim_path = f"/World/{name}"
-        
+
         response = self.spawn_entity_client.call(
             MovePrim.Request(
-                name = name.name,
-                prim_path = prim_path,
-                values = [
+                name=name.name,
+                prim_path=prim_path,
+                values=[
                     Values(values=position),
-                    Values(values=orientation)]               
+                    Values(values=orientation)]
             )
         )
         if response is None:
@@ -155,18 +143,18 @@ class IsaacSimulator(BaseSimulator):
                 f'failed to move entity: status code {response.result}')
 
         return True
-    
-    def delete_entity(self,name):
+
+    def delete_entity(self, name):
         self.node.get_logger().info(
             f"Attempting to delete prim named {name}"
         )
-        
+
         prim_path = f"/World/{name}"
 
         response = self.spawn_entity_client.call(
             MovePrim.Request(
-                name = name.name,
-                prim_path = prim_path         
+                name=name.name,
+                prim_path=prim_path
             )
         )
         if response is None:
@@ -179,25 +167,25 @@ class IsaacSimulator(BaseSimulator):
 
         return True
 
-    def spawn_wall(self,walls):
+    def spawn_wall(self, walls):
         self.node.get_logger().info(
             f"Attempting to spawn walls"
         )
-        
+
         world_path = "/World"
-        
-        for i,wall in enumerate(walls):
-            start = [wall.Start.x,wall.Start.y]
-            end = [wall.End.x,wall.End.y]
+
+        for i, wall in enumerate(walls):
+            start = [wall.Start.x, wall.Start.y]
+            end = [wall.End.x, wall.End.y]
             response = self.spawn_entity_client.call(
-            SpawnWall.Request(
-                name = f"wall_{i+1}",
-                world_path = world_path,
-                start = start,
-                end = end,
-                height = wall.height   
+                SpawnWall.Request(
+                    name=f"wall_{i+1}",
+                    world_path=world_path,
+                    start=start,
+                    end=end,
+                    height=wall.height
+                )
             )
-        )
             if response is None:
                 raise RuntimeError(
                     f'failed to spawn wall number {i}: service timed out')
@@ -207,7 +195,7 @@ class IsaacSimulator(BaseSimulator):
                     f'failed to spawn wall number {i}: status code {response.result}')
 
         return True
-            
+
     def __init__(self, namespace):
         """Initialize IsaacSimulator
 
@@ -217,6 +205,5 @@ class IsaacSimulator(BaseSimulator):
 
         self.node.get_logger().info(
             f"Initializing IsaacSimulator with namespace: {namespace}")
-        
+
         self.init_service_clients()
-        
