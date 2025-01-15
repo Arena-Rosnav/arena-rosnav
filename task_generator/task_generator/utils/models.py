@@ -2,9 +2,11 @@ import abc
 import functools
 import os
 import subprocess
+import tempfile
 from typing import Collection, Dict, Optional, Set, Tuple, Type
 
 from task_generator.shared import Model, ModelType, ModelWrapper
+import task_generator.utils.arena as Utils
 
 
 class _ModelLoader(abc.ABC):
@@ -185,13 +187,13 @@ class _ModelLoader_URDF(_ModelLoader):
 class _ModelLoader_USD(_ModelLoader):
     @classmethod
     def load(cls, model_dir, model, **kwargs):
-        model_path = os.path.join(model_dir, model, "sdf", f"{model}.sdf")
+        model_path = os.path.join(model_dir, model, "usd", f"{model}.usd")
         try:
-            with open(model_path) as f:
+            with open(model_path, 'rb') as f:
                 return Model(
                     type=ModelType.USD,
                     name=model,
-                    description=f.read(),
+                    description="",  # TODO add bytes compat
                     path=model_path
                 )
         except FileNotFoundError:
@@ -206,18 +208,32 @@ class _ModelLoader_USD(_ModelLoader):
     def convert(cls, model_dir: str, model: Model, **kwargs) -> Model | None:
         if model.type == ModelType.SDF:
             try:
-                sdf_contents = model.description
-                usd_contents = None  # TODO
-                return None
-
                 model_path = os.path.join(model_dir, model.name, "usd", f"{model.name}.usd")
                 os.makedirs(os.path.dirname(model_path), exist_ok=True)
-                with open(model_path, 'w') as f:
-                    f.write(usd_contents)
+
+                ARENA_WS_DIR = Utils.get_arena_ws()
+
+                env = os.environ.copy()
+                env['ARENA_WS_DIR'] = ARENA_WS_DIR
+                with tempfile.NamedTemporaryFile('w') as f:
+                    f.write(model.description)
+                    f.flush()
+                    subprocess.check_output(
+                        [
+                            f'{ARENA_WS_DIR}/src/arena/arena-rosnav/tools/sdf2usd',
+                            f.name,
+                            model_path
+                        ],
+                        env=env,
+                        # shell=True,
+                    )
 
                 return cls.load(model_dir, model.name, **kwargs)
 
-            except Exception:
-                pass
+            except Exception as e:
+                print('AAAA', repr(e))
+                import traceback
+                traceback.print_exc()
+                raise e
 
         return None

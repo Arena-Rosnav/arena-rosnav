@@ -24,6 +24,7 @@ pushd src/arena/arena-rosnav
 popd
 
 colcon build \
+    --base-paths src \
     --symlink-install \
     --continue-on-error \
     --packages-skip-build-finished \
