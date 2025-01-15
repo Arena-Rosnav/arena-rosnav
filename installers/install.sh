@@ -209,29 +209,6 @@ if [ ! -d /usr/local/include/lightsfm ] ; then
   rm -rf lightsfm || echo 'failed to install lightsfm'
 fi
 
-if [ ! -f install/*/bin/sdf2usd ] ; then
-  rm -rf tools/OpenUSD
-  rm -rf src/tools/gz-usd
-  
-  mkdir -p tools
-  pushd tools
-    git clone --depth 1 -b v24.08 https://github.com/PixarAnimationStudios/OpenUSD.git
-    sudo apt-get install -y libpyside2-dev python3-opengl cmake libglu1-mesa-dev freeglut3-dev mesa-common-dev
-    export USD_PATH="$(pwd)/OpenUSD/install"
-    cd OpenUSD
-    python3 build_scripts/build_usd.py --build-variant release --no-tests --no-examples --no-imaging --onetbb --no-tutorials --no-docs --no-python $USD_PATH
-    export PATH=$USD_PATH/bin:$PATH
-    export LD_LIBRARY_PATH=$USD_PATH/lib:$LD_LIBRARY_PATH
-    export CMAKE_PREFIX_PATH=$USD_PATH:$CMAKE_PREFIX_PATH
-  popd
-
-  mkdir -p src/tools
-  pushd src/tools
-    git clone -b garden https://github.com/gazebosim/gz-usd
-  popd
-  . colcon_build
-fi
-
 # run installers
 # sudo apt upgrade
 
