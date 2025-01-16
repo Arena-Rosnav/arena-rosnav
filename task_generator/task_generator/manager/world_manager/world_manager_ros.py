@@ -2,6 +2,7 @@
 import os
 import typing
 
+import yaml
 import nav_msgs.msg
 import nav2_msgs.srv
 import numpy as np
@@ -11,8 +12,9 @@ import rclpy.client
 
 from task_generator.constants import Constants
 from task_generator.utils.time import Time
+from task_generator.shared import Position
 
-from .utils import WorldMap
+from .utils import WorldMap, WorldWalls, WorldObstacleConfiguration, WorldObstacleConfigurations
 from .world_manager import WorldManager
 
 _DUMMY_MAP_SHAPE = (200, 200)
@@ -41,6 +43,39 @@ class WorldManagerROS(WorldManager):
 
     _first_world: bool
     _world_name: str
+    _callbacks: typing.List[typing.Callable[[], None]]
+
+    @classmethod
+    def _load_walls(cls, yaml_path: str) -> WorldWalls | None:
+        try:
+            with open(yaml_path) as f:
+                walls_yaml = yaml.safe_load(f)
+            walls: WorldWalls = [
+                (
+                    Position(x=x1, y=y1),
+                    Position(x=x2, y=y2),
+                )
+                for ((x1, y1), (x2, y2))
+                in walls_yaml['walls']
+            ]
+            return walls
+        except Exception:
+            return None
+
+    @classmethod
+    def _load_obstacles(cls, yaml_path: str) -> WorldObstacleConfigurations | None:
+        try:
+            with open(yaml_path) as f:
+                obstacles_yaml = yaml.safe_load(f)
+
+            obstacles: WorldObstacleConfigurations = [
+                WorldObstacleConfiguration.parse(obstacle)
+                for obstacle
+                in obstacles_yaml['static']
+            ]
+            return obstacles
+        except Exception:
+            return None
 
     def _world_callback(self, value: typing.Any) -> bool:
         world_name = str(value)
@@ -51,9 +86,10 @@ class WorldManagerROS(WorldManager):
             raise RuntimeError(
                 f'Simulator {simulator.value} does not support world reloading.')
 
+        self.node.get_logger().warn(f'LOADING WORLD {world_name}')
+        self._world_name = world_name
         self._first_world = False
 
-        self.node.get_logger().warn(f'LOADING WORLD {value}')
         map_yaml = os.path.join(
             self.node.conf.Arena.get_world_path(world_name),
             'map',
@@ -73,12 +109,36 @@ class WorldManagerROS(WorldManager):
             raise RuntimeError(
                 f'failed to load map for world {world_name}: status code {response.result}')
 
-        self._world_name = world_name
         return True
 
     def _map_callback(self, costmap: nav_msgs.msg.OccupancyGrid):
+        if self._first_world:
+            return
         if self._world.map.time < costmap.info.map_load_time:
-            self.update_world(WorldMap.from_costmap(costmap))
+            obstacles = self._load_obstacles(
+                os.path.join(
+                    self.node.conf.Arena.get_world_path(self._world_name),
+                    'map',
+                    'obstacles.yaml',
+                )
+            )
+            walls = self._load_walls(
+                os.path.join(
+                    self.node.conf.Arena.get_world_path(self._world_name),
+                    'map',
+                    'walls.yaml',
+                )
+            )
+            self.update_world(
+                WorldMap.from_costmap(costmap),
+                obstacles=obstacles,
+                walls=walls,
+            )
+            for callback in self._callbacks:
+                try:
+                    callback()
+                except Exception:
+                    pass
 
     def _setup_world_callbacks(self):
 
@@ -104,8 +164,13 @@ class WorldManagerROS(WorldManager):
             self._world_callback,
         )
 
+    def on_world_change(self, callback: typing.Callable[[], None]):
+        self._callbacks.append(callback)
+
     def __init__(self) -> None:
-        WorldManager.__init__(self, WorldMap.from_costmap(_DUMMY_MAP))
+        WorldManager.__init__(self)
+        self._callbacks = []
+        self.update_world(world_map=WorldMap.from_costmap(_DUMMY_MAP), obstacles=None, walls=[])
         self._first_world = True
         self._world_name = ''
         self._setup_world_callbacks()

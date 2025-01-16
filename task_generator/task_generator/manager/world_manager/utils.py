@@ -34,6 +34,26 @@ class WorldObstacleConfiguration:
     model_name: str
     extra: Dict
 
+    @classmethod
+    def parse(cls, obj: dict) -> "WorldObstacleConfiguration":
+
+        x = obj['position'][0]
+        y = obj['position'][1]
+        θ = obj['position'][2]
+
+        return cls(
+            position=PositionOrientation(
+                x=x,
+                y=y,
+                orientation=θ,
+            ),
+            model_name=obj['model'],
+            extra=obj,
+        )
+
+
+WorldObstacleConfigurations = Collection[WorldObstacleConfiguration]
+
 
 @dataclasses.dataclass
 class WorldEntities:

@@ -6,7 +6,7 @@ import numpy as np
 import scipy.signal
 from task_generator import NodeInterface
 
-from .utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls
+from .utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldObstacleConfigurations, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls
 
 
 class WorldManager(NodeInterface):
@@ -20,13 +20,10 @@ class WorldManager(NodeInterface):
     _classic_forbidden_zones: List[PositionRadius]
 
     def __init__(
-        self,
-        world_map: WorldMap,
-        world_obstacles: Optional[Collection[WorldObstacleConfiguration]] = None
+        self
     ):
         NodeInterface.__init__(self)
         self._classic_forbidden_zones = []
-        self.update_world(world_map=world_map, world_obstacles=world_obstacles)
 
     @property
     def world(self) -> World:
@@ -51,24 +48,25 @@ class WorldManager(NodeInterface):
     def update_world(
         self,
         world_map: WorldMap,
-        world_obstacles: Optional[Collection[WorldObstacleConfiguration]] = None
+        obstacles: Optional[WorldObstacleConfigurations] = None,
+        walls: Optional[WorldWalls] = None,
     ):
 
-        if world_obstacles is None:
-            # this is OK because maps may not have preset entities
-            world_obstacles = list()
+        if obstacles is None:
+            obstacles = []
 
-        walls = occupancy_to_walls(
-            occupancy_grid=world_map.occupancy._walls.grid,
-            transform=world_map.tf_grid2pos
-        )
+        if walls is None:
+            walls = occupancy_to_walls(
+                occupancy_grid=world_map.occupancy._walls.grid,
+                transform=world_map.tf_grid2pos
+            )
 
-        obstacles = configurations_to_obstacles(
-            configurations=world_obstacles
+        parsed_obstacles = configurations_to_obstacles(
+            configurations=obstacles
         )
 
         entities = WorldEntities(
-            obstacles=obstacles,
+            obstacles=parsed_obstacles,
             walls=walls
         )
 
