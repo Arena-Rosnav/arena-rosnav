@@ -301,8 +301,8 @@ class HunavManager(EntityManager):
         }
         
         animation_file = ANIMATION_MAP.get(agent_config.behavior.type, "07_01-walk.bvh")
-        
-        # Get workspace root and construct paths
+
+        # Get workspace root
         def get_workspace_root():
             current_dir = os.path.abspath(__file__)
             workspace_root = current_dir
@@ -310,7 +310,7 @@ class HunavManager(EntityManager):
                 workspace_root = os.path.dirname(workspace_root)
             return workspace_root
 
-        # Construct absolute paths    
+        # Construct paths    
         mesh_path = os.path.join(
             get_workspace_root(),
             'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/models',
@@ -323,21 +323,17 @@ class HunavManager(EntityManager):
             animation_file
         )
 
-        # Debug logging
-        self.node.get_logger().info(f"Mesh path: {mesh_path}")
-        self.node.get_logger().info(f"Animation path: {animation_path}")
-        self.node.get_logger().info(f"Files exist: Mesh={os.path.exists(mesh_path)}, Animation={os.path.exists(animation_path)}")
-
         sdf = f"""<?xml version="1.0" ?>
         <sdf version="1.9">
             <actor name="{agent_config.name}">
-                <pose>0 0 0 0 0 0</pose>
+                <pose>{agent_config.position.x} {agent_config.position.y} {self._get_agent_height(agent_config.skin)} 0 0 {agent_config.yaw}</pose>
+                
                 <skin>
                     <filename>{mesh_path}</filename>
                     <scale>1.0</scale>
                 </skin>
                 
-                <animation name="animation">
+                <animation name="walking">
                     <filename>{animation_path}</filename>
                     <scale>1.0</scale>
                     <interpolate_x>true</interpolate_x>
@@ -347,14 +343,14 @@ class HunavManager(EntityManager):
                     <loop>true</loop>
                     <auto_start>true</auto_start>
                     <delay_start>0.000000</delay_start>
-                    <trajectory id="0" type="animation">
+                    <trajectory id="0" type="walking">
                         <waypoint>
                             <time>0</time>
-                            <pose>0 0 0 0 0 0</pose>
+                            <pose>{agent_config.position.x} {agent_config.position.y} {self._get_agent_height(agent_config.skin)} 0 0 {agent_config.yaw}</pose>
                         </waypoint>
                         <waypoint>
-                            <time>1.0</time>
-                            <pose>0 0 0 0 0 0</pose>
+                            <time>0.5</time>
+                            <pose>{agent_config.position.x + 1.0} {agent_config.position.y} {self._get_agent_height(agent_config.skin)} 0 0 {agent_config.yaw}</pose>
                         </waypoint>
                     </trajectory>
                 </script>
@@ -362,6 +358,21 @@ class HunavManager(EntityManager):
         </sdf>"""
         
         return sdf
+
+    def _get_agent_height(self, skin_type: int) -> float:
+        """Get correct height based on skin type"""
+        heights = {
+            0: 0.96,  # Elegant man
+            1: 0.97,  # Casual man  
+            2: 0.93,  # Elegant woman
+            3: 0.93,  # Regular man
+            4: 0.97,  # Worker man
+            5: 1.05,  # Balds
+            6: 1.05,
+            7: 1.05,
+            8: 1.05
+        }
+        return heights.get(skin_type, 1.0)
 
 
 
@@ -409,7 +420,16 @@ class HunavManager(EntityManager):
     def spawn_dynamic_obstacles(self, obstacles: typing.Collection[DynamicObstacle]):
         """Spawn dynamic obstacles as HuNav agents"""
         self.__logger.info(f"Attempting to spawn {len(list(obstacles))} dynamic obstacles")
-        
+
+        velocity_twist = geometry_msgs.msg.Twist()
+        # Set forward velocity in walking direction
+        velocity_twist.linear.x = 0.6  # Typical walking speed ~0.6 m/s
+        velocity_twist.linear.y = 0.0  
+        velocity_twist.linear.z = 0.0
+        # Small angular velocity for natural turning
+        velocity_twist.angular.x = 0.0
+        velocity_twist.angular.y = 0.0 
+        velocity_twist.angular.z = 0.1  # Small rotation rate
         # Create HunavDynamicObstacle with default values
         hunav_obstacle = HunavDynamicObstacle(
             position=PositionOrientation(x=-3.973340, y=-8.576801, orientation=0.0),
@@ -422,19 +442,19 @@ class HunavManager(EntityManager):
             skin=3,
             group_id=-1,
             yaw=0.0,
-            velocity=None,
+            velocity=velocity_twist,
             desired_velocity=1.5,
             radius=0.4,
-            linear_vel=0.0,
-            angular_vel=0.0,
+            linear_vel=0.6,
+            angular_vel=0.1,
             behavior=HunavDynamicObstacle.Behavior(
-                type=2,  # SCARED
+                type=4,  # SCARED
                 state=0,
                 configuration=0,
                 duration=40.0,
                 once=True,
                 vel=0.6,
-                dist=0.0,
+                dist=3.0,
                 social_force_factor=5.0,
                 goal_force_factor=2.0,
                 obstacle_force_factor=10.0,
@@ -488,6 +508,8 @@ class HunavManager(EntityManager):
             agent_msg.skin = hunav_obstacle.skin
             agent_msg.group_id = hunav_obstacle.group_id
             agent_msg.desired_velocity = hunav_obstacle.desired_velocity
+            agent_msg.linear_vel=hunav_obstacle.linear_vel
+            agent_msg.angular_vel=hunav_obstacle.angular_vel
             agent_msg.radius = hunav_obstacle.radius
 
             # Set position
@@ -520,7 +542,7 @@ class HunavManager(EntityManager):
                 goals = [
                     (-3.133759, -4.166653, 1.250000),
                     (0.997901, -4.131655, 1.250000),
-                    (-0.227549, -10.187146, 1.250000)
+                    (-0.227549, -20.187146, 1.250000)
                 ]
                 
                 for x, y, h in goals:
