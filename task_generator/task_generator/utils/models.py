@@ -230,10 +230,7 @@ class _ModelLoader_USD(_ModelLoader):
 
                 return cls.load(model_dir, model.name, **kwargs)
 
-            except Exception as e:
-                print('AAAA', repr(e))
-                import traceback
-                traceback.print_exc()
-                raise e
+            except Exception:
+                return None
 
         return None
