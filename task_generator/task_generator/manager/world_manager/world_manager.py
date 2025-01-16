@@ -81,9 +81,9 @@ class WorldManager(NodeInterface):
             self.world.map.occupancy.obstacle_occupy(
                 *self.world.map.tf_posr2rect(
                     PositionRadius(
-                        obstacle.position.x,
-                        obstacle.position.y,
-                        1   # TODO actual radius
+                        x=obstacle.position.x,
+                        y=obstacle.position.y,
+                        radius=1,   # TODO actual radius
                     )
                 )
             )
@@ -145,9 +145,9 @@ class WorldManager(NodeInterface):
 
         forbidden_zones_in_cells: List[PositionRadius] = [
             PositionRadius(
-                math.ceil(point.x / self.world.map.resolution),
-                math.ceil(point.y / self.world.map.resolution),
-                math.ceil(point.radius / self.world.map.resolution)
+                x=math.ceil(point.x / self.world.map.resolution),
+                y=math.ceil(point.y / self.world.map.resolution),
+                radius=math.ceil(point.radius / self.world.map.resolution),
             )
             for point in self._classic_forbidden_zones + (forbidden_zones if forbidden_zones is not None else [])
         ]
@@ -181,20 +181,22 @@ class WorldManager(NodeInterface):
             raise RuntimeError("can't find any non-occupied spaces")
 
         point = PositionRadius(
-            float(np.round(float(x) * self.world.map.resolution +
-                  self.world.map.origin.x, 3)),
-            float(np.round(float(y) * self.world.map.resolution +
-                  self.world.map.origin.y, 3)),
-            safe_dist
+            x=np.round(float(x) * self.world.map.resolution + self.world.map.origin.x, 3),
+            y=np.round(float(y) * self.world.map.resolution + self.world.map.origin.y, 3),
+            radius=safe_dist,
         )
 
         if forbid:
             self._classic_forbidden_zones.append(point)
 
-        return Position(point.x, point.y)
+        return Position(x=point.x, y=point.y)
 
-    def get_positions_on_map(self, n: int, safe_dist: float,
-                             forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> List[Position]:
+    def get_positions_on_map(
+        self,
+        n: int, safe_dist: float,
+        forbidden_zones: Optional[List[PositionRadius]] = None,
+        forbid: bool = True
+    ) -> List[Position]:
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both
@@ -229,7 +231,7 @@ class WorldManager(NodeInterface):
             for _ in range(n):
                 pos = self._classic_get_random_pos_on_map(
                     safe_dist=safe_dist, forbidden_zones=forbidden_zones)
-                posr = PositionRadius(pos.x, pos.y, safe_dist)
+                posr = PositionRadius(x=pos.x, y=pos.y, radius=safe_dist)
                 fork.occupy(*self.world.map.tf_posr2rect(posr))
                 forbidden_zones.append(posr)
                 points.append(pos)
@@ -243,9 +245,9 @@ class WorldManager(NodeInterface):
                 fork.occupy(
                     *self.world.map.tf_posr2rect(
                         PositionRadius(
-                            zone.x,
-                            zone.y,
-                            zone.radius / self.resolution
+                            x=zone.x,
+                            y=zone.y,
+                            radius=zone.radius / self.resolution,
                         )
                     )
                 )
@@ -345,14 +347,14 @@ class WorldManager(NodeInterface):
             fillvalue=int(WorldOccupancy.FULL)
         )
 
-        import cv2
+        # import cv2
 
-        def visual(mat: np.ndarray) -> np.ndarray:
-            return (mat / mat.max()).astype(np.uint8) * np.iinfo(np.uint8).max
+        # def visual(mat: np.ndarray) -> np.ndarray:
+        #     return (mat / mat.max()).astype(np.uint8) * np.iinfo(np.uint8).max
 
-        cv2.imwrite("_debug1.png", visual(occupancy))
-        cv2.imwrite("_debug2.png", visual(WorldOccupancy.not_full(occupancy)))
-        cv2.imwrite("_debug3.png", visual(spread))
-        cv2.imwrite("_debug4.png", visual(WorldOccupancy.empty(spread)))
+        # cv2.imwrite("_debug1.png", visual(occupancy))
+        # cv2.imwrite("_debug2.png", visual(WorldOccupancy.not_full(occupancy)))
+        # cv2.imwrite("_debug3.png", visual(spread))
+        # cv2.imwrite("_debug4.png", visual(WorldOccupancy.empty(spread)))
 
         return np.transpose(np.where(WorldOccupancy.empty(spread)))
