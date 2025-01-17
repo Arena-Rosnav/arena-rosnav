@@ -12,7 +12,7 @@ import rclpy.client
 
 from task_generator.constants import Constants
 from task_generator.utils.time import Time
-from task_generator.shared import Position
+from task_generator.shared import Position, Wall
 
 from .utils import WorldMap, WorldWalls, WorldObstacleConfiguration, WorldObstacleConfigurations
 from .world_manager import WorldManager
@@ -51,11 +51,8 @@ class WorldManagerROS(WorldManager):
             with open(yaml_path) as f:
                 walls_yaml = yaml.safe_load(f)
             walls: WorldWalls = [
-                (
-                    Position(x=x1, y=y1),
-                    Position(x=x2, y=y2),
-                )
-                for ((x1, y1), (x2, y2))
+                Wall.parse(wall)
+                for wall
                 in walls_yaml['walls']
             ]
             return walls

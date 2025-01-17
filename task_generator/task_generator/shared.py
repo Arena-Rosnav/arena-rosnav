@@ -322,12 +322,23 @@ class ModelWrapper:
         return wrapper
 
 
-@dataclasses.dataclass(frozen=True)
+@attr.frozen()
 class Wall:
     Start: Position
     End: Position
-    height: float = 2.0
+    height: float = attr.field(converter=float, default=2.)
     texture_material: str = ''  # not implemented
+
+    @classmethod
+    def parse(cls, obj: list) -> "Wall":
+        kwargs = {}
+        if len(obj) > 2 and isinstance(obj[2], dict):
+            kwargs = obj[2]
+        return cls(
+            **kwargs,
+            Start=Position(x=obj[0][0], y=obj[0][1]),
+            End=Position(x=obj[1][0], y=obj[1][1]),
+        )
 
 
 @dataclasses.dataclass(frozen=True)
