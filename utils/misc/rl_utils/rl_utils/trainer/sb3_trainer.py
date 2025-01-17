@@ -1,5 +1,5 @@
-from typing import TYPE_CHECKING
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import rl_utils.utils.paths as Paths
 import rosnav_rl.rl_agent as Rosnav_RL
@@ -195,6 +195,7 @@ class StableBaselines3Trainer(ArenaTrainer):
             tensorboard_log_path=tensorboard_log_path,
             checkpoint_path=checkpoint_path,
         )
+        self.agent.model.environment = train_env
 
 
 def main():
