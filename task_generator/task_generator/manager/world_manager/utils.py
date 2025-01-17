@@ -13,15 +13,14 @@ import scipy.interpolate
 
 import task_generator.utils.arena as Utils
 from task_generator.shared import (Obstacle, Position, PositionOrientation,
-                                   PositionRadius)
+                                   PositionRadius, Wall)
 from task_generator.utils import ModelLoader
 from task_generator.utils.time import Time
 
 # TYPES
 
 
-_WorldWall = Tuple[Position, Position]
-WorldWalls = Collection[_WorldWall]
+WorldWalls = Collection[Wall]
 WorldObstacles = Collection[Obstacle]
 
 
@@ -33,6 +32,26 @@ class WorldObstacleConfiguration:
     position: PositionOrientation
     model_name: str
     extra: Dict
+
+    @classmethod
+    def parse(cls, obj: dict) -> "WorldObstacleConfiguration":
+
+        x = obj['position'][0]
+        y = obj['position'][1]
+        θ = obj['position'][2]
+
+        return cls(
+            position=PositionOrientation(
+                x=x,
+                y=y,
+                orientation=θ,
+            ),
+            model_name=obj['model'],
+            extra=obj,
+        )
+
+
+WorldObstacleConfigurations = Collection[WorldObstacleConfiguration]
 
 
 @dataclasses.dataclass
@@ -305,11 +324,23 @@ class _WallLines(Dict[float, List[Tuple[float, float]]]):
         get WorldWalls object
         """
         if not self._inverted:
-            return set([(Position(x=start, y=major), Position(x=end, y=major))
-                       for major, segment in self.items() for start, end in segment])
+            return set([
+                Wall(
+                    Start=Position(x=start, y=major),
+                    End=Position(x=end, y=major)
+                )
+                for major, segment in self.items()
+                for start, end in segment]
+            )
         else:
-            return set([(Position(x=major, y=start), Position(x=major, y=end))
-                       for major, segment in self.items() for start, end in segment])
+            return set([
+                Wall(
+                    Start=Position(x=major, y=start),
+                    End=Position(x=major, y=end)
+                )
+                for major, segment in self.items()
+                for start, end in segment]
+            )
 
 
 def RLE_2D(grid: np.ndarray) -> WorldWalls:
@@ -335,8 +366,11 @@ def RLE_2D(grid: np.ndarray) -> WorldWalls:
     return set().union(walls_x.lines, walls_y.lines)
 
 
-def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[[
-                       Tuple[float, float]], Position]] = None) -> WorldWalls:
+def occupancy_to_walls(
+    occupancy_grid: np.ndarray,
+    transform: Optional[Callable[[Tuple[float, float]], Position]] = None
+) -> WorldWalls:
+
     walls = RLE_2D(grid=WorldOccupancy.not_full(occupancy_grid))
 
     if transform is None:
@@ -345,9 +379,9 @@ def occupancy_to_walls(occupancy_grid: np.ndarray, transform: Optional[Callable[
         transform = _transform
 
     return [
-        (
-            transform((wall[0].x, wall[0].y)),
-            transform((wall[1].x, wall[1].y))
+        Wall(
+            Start=transform((wall.Start.x, wall.Start.y)),
+            End=transform((wall.End.x, wall.End.y)),
         )
         for wall in walls
     ]

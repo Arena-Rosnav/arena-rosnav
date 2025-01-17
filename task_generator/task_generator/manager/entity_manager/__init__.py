@@ -56,7 +56,7 @@ class EntityManager(NodeInterface):
         """
         raise NotImplementedError()
 
-    def spawn_walls(self, walls: list[Wall]):
+    def spawn_walls(self, walls: Collection[Wall]):
         """
         Adds walls to the simulator.
         """
