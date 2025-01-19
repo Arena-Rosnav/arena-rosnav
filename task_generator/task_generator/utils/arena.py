@@ -11,7 +11,7 @@ import ament_index_python.packages
 
 _ARENA_WS_DIR = os.path.realpath(os.path.join(ament_index_python.packages.get_package_share_directory('task_generator'), '..', '..', '..', '..'))
 
-_SS_PATH: str = os.path.join(_ARENA_WS_DIR, 'src', 'arena', 'simulation-setup')
+_SS_PATH: str = ament_index_python.packages.get_package_share_directory('arena_simulation_setup')
 
 
 def get_arena_ws() -> str:

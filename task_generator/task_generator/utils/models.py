@@ -152,9 +152,11 @@ class _ModelLoader_URDF(_ModelLoader):
 
         namespace: Optional[str] = kwargs.get("namespace", None)
 
-        model_path = os.path.join(model_dir, model, "urdf", f"{model}.urdf.xacro")
+        base_path = os.path.join(model_dir, model, "urdf")
+        xacro_path = os.path.join(base_path, f"{model}.urdf.xacro")
+        model_path = os.path.join(base_path, f"{model}.urdf")
 
-        if not os.path.isfile(model_path):
+        if not os.path.isfile(xacro_path):
             return None
 
         try:
@@ -163,24 +165,25 @@ class _ModelLoader_URDF(_ModelLoader):
                 "run",
                 "xacro",
                 "xacro",
-                model_path,
+                xacro_path,
                 *([f"""robot_namespace:={namespace}"""] if namespace is not None else [])
             ]).decode("utf-8")
+
+            with open(model_path, 'w') as f:
+                f.write(model_desc)
+
+            return Model(
+                type=ModelType.URDF,
+                name=model,
+                description=model_desc,
+                path=model_path
+            )
 
         except subprocess.CalledProcessError as e:
             # rospy.logerr_once(
             # f"error processing model {model} URDF file {model_path}. refusing
             # to load.\n{e}\n{e.output.decode('utf-8')}")
             return None
-
-        else:
-            model_obj = Model(
-                type=ModelType.URDF,
-                name=model,
-                description=model_desc,
-                path=model_path
-            )
-            return model_obj
 
 
 @ModelLoader.model(ModelType.USD)
