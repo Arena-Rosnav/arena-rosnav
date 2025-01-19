@@ -27,7 +27,7 @@ if [ -f src/arena/arena-rosnav/.installed ] ; then
     while read -r installed; do 
         name="$(echo $installed | cut -d. -f1)"
         if [ -f "src/arena/arena-rosnav/.repos/${name}.repos" ] ; then
-            run "(vcs import src < src/arena/arena-rosnav/.repos/${name}.repos);" '$? > 1'
+            run "(vcs import --input src/arena/arena-rosnav/.repos/${name}.repos --recursive src);" '$? > 1'
         fi
     done < src/arena/arena-rosnav/.installed
 fi
