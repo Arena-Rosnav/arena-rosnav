@@ -83,7 +83,10 @@ class ModelLoader:
                 return self._cache[(model_type, model)]
 
         for model_type in only:  # try to convert
-            match = self._load(model, only=self._registry[model_type].convertable())
+            targets = self._registry[model_type].convertable()
+            if not targets:
+                continue
+            match = self._load(model, only=targets)
             if match is not None:
                 converted = self._registry[model_type].convert(self._model_dir, match, **kwargs)
                 if converted is None:
