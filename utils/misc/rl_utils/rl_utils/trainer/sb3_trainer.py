@@ -169,7 +169,7 @@ class StableBaselines3Trainer(ArenaTrainer):
         #     observation = observation_collector[0].get_observations()
         #     self.agent.model.get_action(observation)
 
-        self.agent.model.train(
+        self.agent.train(
             total_timesteps=self.general_cfg.n_timesteps,
             callback=self.eval_cb,
             progress_bar=self.general_cfg.show_progress_bar,
