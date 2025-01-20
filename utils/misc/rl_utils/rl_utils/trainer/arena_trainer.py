@@ -137,10 +137,10 @@ class ArenaTrainer(ABC):
                 lambda _: print_base_model(self.config),
                 lambda _: setup_debug_node(self.is_debug_mode),
                 lambda _: setup_paths_dictionary(self, self.is_debug_mode),
+                lambda _: self._write_config(),
             ],
             TrainingHookStages.AFTER_SETUP: [
                 lambda _: self._set_resume_true(),
-                lambda _: self._write_config(),
                 lambda _: self.simulation_state_container.distribute(),
             ],
             TrainingHookStages.AFTER_TRAINING: [
