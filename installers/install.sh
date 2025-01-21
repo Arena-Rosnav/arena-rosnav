@@ -123,7 +123,13 @@ sudo apt-get install -y \
     libcunit1-dev \
     libpcl-dev \
     libboost-python-dev \
-    python3-rosdep
+    python3-rosdep \
+    libgps-dev \
+    libgraphicsmagick1-dev \
+    nlohmann-json3-dev \
+    libxtensor-dev \
+    libceres-dev \
+    libsuitesparse-dev
 
 # Check if the default ROS sources.list file already exists
 ros_sources_list="/etc/ros/rosdep/sources.list.d/20-default.list"
