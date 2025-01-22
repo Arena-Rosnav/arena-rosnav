@@ -36,7 +36,9 @@ class ObstacleManager:
         the map file is retrieved from launch parameter "map_file"
         """
 
-        self._entity_manager.spawn_walls(world.entities.walls)
+        walls = world.entities.walls
+        if walls:
+            self._entity_manager.spawn_walls(walls)
         self._entity_manager.spawn_obstacles(world.entities.obstacles)
 
     def spawn_dynamic_obstacles(self, setups: Collection[DynamicObstacle]):
