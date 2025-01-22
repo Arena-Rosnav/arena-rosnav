@@ -22,6 +22,8 @@ task_generator_node:
       staged:
         curriculum: default.yaml
         index: 0
+      environment:
+        file: default.yaml
     hunavsim:       
       parameters:
         max_vel: 0.3

@@ -185,6 +185,12 @@ def declare_obstacles():
     def _scenario():
         from .obstacles.scenario import TM_Scenario
         return TM_Scenario
+    
+    @TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.ENVIRONMENT)
+    def _environment():
+        from .obstacles.environment import TM_Environment
+        return TM_Environment
+
 
 
 def declare_robots():
@@ -207,7 +213,7 @@ def declare_robots():
     def _scenario():
         from .robots.scenario import TM_Scenario
         return TM_Scenario
-
+    
 
 declare_modules()
 declare_obstacles()

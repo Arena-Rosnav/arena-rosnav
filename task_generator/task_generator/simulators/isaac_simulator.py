@@ -1,123 +1,108 @@
-import rclpy.client
 from task_generator.simulators import BaseSimulator
-# Use the isaacsim to import SimulationApp
-from isaacsim import SimulationApp
-
-# Setting the config for simulation and make an simulation.
-CONFIG = {"renderer": "RayTracedLighting", "headless": False}
-simulation_app = SimulationApp(CONFIG)
-
 # Import dependencies.
-import carb
-import math
-import omni
-import omni.graph.core as og
-import usdrt.Sdf
-import numpy as np
-import matplotlib.pyplot as plt
-import yaml
-from omni.isaac.core import SimulationContext
-from omni.isaac.core.utils.rotations import quat_to_euler_angles
-from omni.isaac.core.utils import extensions, stage, nucleus
-from omni.isaac.nucleus import get_assets_root_path
-from omni.kit.viewport.utility import get_active_viewport
-from omni.isaac.core.utils.extensions import get_extension_path_from_name
-from omni.isaac.core.utils.prims import delete_prim,get_prim_at_path,set_prim_attribute_value,get_prim_attribute_value,get_prim_attribute_names
-from omni.isaac.core.world import World
-from omni.importer.urdf import _urdf
-from omni.isaac.sensor import Camera, LidarRtx
-from omni.isaac.range_sensor import _range_sensor
-import omni.replicator.core as rep
-import omni.syntheticdata._syntheticdata as sd
-import omni.isaac.core.utils.numpy.rotations as rot_utils
-from pxr import Gf, Usd, UsdGeom
-import omni.kit.commands as commands
-import numpy as np
 import rclpy
-from rclpy.node import Node
-from isaacsim_msgs.msg import Euler, Quat, Env, Values
-from isaacsim_msgs.srv import ImportUsd, ImportUrdf, UrdfToUsd, DeletePrim, GetPrimAttributes, MovePrim, ImportYaml, ScalePrim, SpawnWall
-from sensor_msgs.msg import JointState
+import numpy as np
+from isaacsim_msgs.msg import Values
+from isaacsim_msgs.srv import ImportUsd, ImportUrdf, UrdfToUsd, DeletePrim, GetPrimAttributes, MovePrim, ImportYaml, SpawnWall, ImportObstacles
 
 from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-import launch
-import launch_ros
-import ament_index_python
-
+import os
 class IsaacSimulator(BaseSimulator):
 
     def init_service_clients(self):
-        """Initialize all ROS 2 service clients."""
-        self.urdf_to_usd_client = self.node.create_client(
-            UrdfToUsd,
-            'isaac/urdf_to_usd',
-            callback_group=MutuallyExclusiveCallbackGroup()
-        )
+        """
+        Initialize all ROS 2 service clients and wait for their availability.
+        """
+        self.node.get_logger().info("Initializing service clients...")
+        self.client = {}
+        # Define services with their corresponding client attributes
+        services = {
+            'urdf_to_usd': {
+                'service_type': UrdfToUsd,
+                'service_name': 'isaac/urdf_to_usd',
+                'client_attr': 'urdf_to_usd_client'
+            },
+            'import_usd': {
+                'service_type': ImportUsd,
+                'service_name': 'isaac/import_usd',
+                'client_attr': 'spawn_entity_client'
+            },
+            'delete_prim': {
+                'service_type': DeletePrim,
+                'service_name': 'isaac/delete_prim',
+                'client_attr': 'delete_entity_client'
+            },
+            'get_prim_attributes': {
+                'service_type': GetPrimAttributes,
+                'service_name': 'isaac/get_prim_attributes',
+                'client_attr': 'get_entity_attributes_client'
+            },
+            'move_prim': {
+                'service_type': MovePrim,
+                'service_name': 'isaac/move_prim',
+                'client_attr': 'move_entity_client'
+            },
+            'spawn_wall': {
+                'service_type': SpawnWall,
+                'service_name': 'isaac/spawn_wall',
+                'client_attr': 'spawn_wall_client'
+            },
+            'import_obstacle': {
+                'service_type': ImportObstacles,
+                'service_name': 'isaac/import_obstacle',
+                'client_attr': 'spawn_obstacle_client'
+            },
+        }
 
-        self.spawn_entity_client = self.node.create_client(
-            ImportUsd,
-            'isaac/import_usd',
-            callback_group=MutuallyExclusiveCallbackGroup(),
-        )
-        self.delete_entity_client = self.node.create_client(
-            DeletePrim,
-            'isaac/delete_prim',
-            callback_group=MutuallyExclusiveCallbackGroup(),
-        )
-        self.get_entity_attributes_client = self.node.create_client(
-            GetPrimAttributes,
-            'isaac/get_prim_attributes',
-            callback_group=MutuallyExclusiveCallbackGroup(),
-        )
-        self.move_entity_client = self.node.create_client(
-            MovePrim,
-            'isaac/move_prim',
-            callback_group=MutuallyExclusiveCallbackGroup(),
-        )
-        self.spawn_wall_client = self.node.create_client(
-            SpawnWall,
-            'isaac/spawn_wall',
-            callback_group=MutuallyExclusiveCallbackGroup(),
-        )
+        # Initialize and wait for each service client
+        for service_key, service_info in services.items():
+            service_type = service_info['service_type']
+            service_name = service_info['service_name']
+            client_attr = service_info['client_attr']
 
-        # Wait for all services to be available
-        self.wait_for_services()
+            # Create the service client
+            self.client[client_attr] = self.node.create_client(service_type, service_name)
 
+            self.node.get_logger().info(f'Waiting for service "{service_name}"...')
+            
+            # Wait for the service to become available
+            while not self.client[client_attr].wait_for_service(timeout_sec=10.0):
+                self.node.get_logger().error(f'Service "{service_name}" not available after waiting')
+                # raise TimeoutError(f'Service "{service_name}" not available')
+
+            self.node.get_logger().info(f'Service "{service_name}" is now available.')
+
+        self.node.get_logger().info("All service clients initialized and available.")
+        
     def spawn_entity(self, entity):
-        self.node.get_logger().info(
-            f"Attempting to spawn entitiy: {entity.name}"
-        )
-
-        model = entity.model.get([ModelType.URDF, ModelType.USD])
-
-        if model.type == ModelType.URDF:
-            usd_path = self.urdf_to_usd_client.call(
-                UrdfToUsd.Request(
-                    name=entity.name,
-                    urdf_path=model.path
-                )
-            ).usd_path
-
-        else:
-            usd_path = model.path
-
-        response = self.spawn_entity_client.call(
-            ImportUsd.Request(
-                name=entity.name,
-                usd_path=usd_path,
-                prim_path="/World"
+        if entity.name not in ["1","2","3"]:
+            self.node.get_logger().info(
+                f"Attempting to spawn model: {entity.name}"
             )
-        )
-        if response is None:
-            raise RuntimeError(
-                f'failed to spawn entity: service timed out')
 
-        if response.result > 0:
-            raise RuntimeError(
-                f'failed to spawn entity: status code {response.result}')
-
-        return True
+            model = entity.model.get([ModelType.URDF, ModelType.USD])
+            print(os.path.abspath(model.path))
+            if model.type == ModelType.URDF:
+                reponse = self.client['urdf_to_usd_client'].call_async(
+                    UrdfToUsd.Request(
+                        name=entity.name,
+                        urdf_path=os.path.abspath(model.path)
+                    )
+                )
+                return True
+            else:
+                usd_path = os.path.abspath(model.path)
+                self.node.get_logger().info(usd_path)
+                response = self.client['spawn_obstacle_client'].call_async(
+                ImportObstacles.Request(
+                    name=entity.name,
+                    usd_path=usd_path,
+                    )
+                )
+            return True
+        else:
+            return True
 
     def move_entity(self, name, position, orientation):
         self.node.get_logger().info(
@@ -125,7 +110,7 @@ class IsaacSimulator(BaseSimulator):
         )
         prim_path = f"/World/{name}"
 
-        response = self.spawn_entity_client.call(
+        response = self.client['move_entity_client'].call_async(
             MovePrim.Request(
                 name=name.name,
                 prim_path=prim_path,
@@ -151,7 +136,7 @@ class IsaacSimulator(BaseSimulator):
 
         prim_path = f"/World/{name}"
 
-        response = self.spawn_entity_client.call(
+        response = self.client['delete_entity_client'].call_async(
             MovePrim.Request(
                 name=name.name,
                 prim_path=prim_path
@@ -167,35 +152,44 @@ class IsaacSimulator(BaseSimulator):
 
         return True
 
-    def spawn_wall(self, walls):
+    def spawn_walls(self, walls):
+        # return True
         self.node.get_logger().info(
             f"Attempting to spawn walls"
         )
 
         world_path = "/World"
-
         for i, wall in enumerate(walls):
-            start = [wall.Start.x, wall.Start.y]
-            end = [wall.End.x, wall.End.y]
-            response = self.spawn_entity_client.call(
-                SpawnWall.Request(
-                    name=f"wall_{i+1}",
-                    world_path=world_path,
-                    start=start,
-                    end=end,
-                    height=wall.height
+            try:
+                start = [wall.Start.x, wall.Start.y]
+                end = [wall.End.x, wall.End.y]
+                future = self.client['spawn_wall_client'].call_async(
+                    SpawnWall.Request(
+                        name=f"wall_{i+1}",
+                        world_path=world_path,
+                        start=start,
+                        end=end,
+                        height=wall.height
+                    )
                 )
-            )
-            if response is None:
-                raise RuntimeError(
-                    f'failed to spawn wall number {i}: service timed out')
+                
+                self.node.get_logger().info(f"Successfully spawned wall {i+1}")
 
-            if response.result > 0:
-                raise RuntimeError(
-                    f'failed to spawn wall number {i}: status code {response.result}')
+            except Exception as e:
+                self.node.get_logger().error(str(e))
+                raise  # Re-raise exception after logging
 
+        self.node.get_logger().info("All walls spawned successfully.")
         return True
-
+    
+    #TODO: update
+    def before_reset_task(self):
+        return True
+    
+    #TODO: update
+    def after_reset_task(self):
+        return True
+    
     def __init__(self, namespace):
         """Initialize IsaacSimulator
 
@@ -207,3 +201,6 @@ class IsaacSimulator(BaseSimulator):
             f"Initializing IsaacSimulator with namespace: {namespace}")
 
         self.init_service_clients()
+        
+        self.node.get_logger().info(
+            f"Done initializing Isaac Sim")
