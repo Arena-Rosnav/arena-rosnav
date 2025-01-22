@@ -18,9 +18,9 @@ void SpacialHorizon::init(ros::NodeHandle &nh)
     nh.param("fsm/publish_goal_on_subgoal_fail", publish_goal_on_subgoal_fail, true);
     nh.param("fsm/goal_tolerance", goal_tolerance, 0.2);
     nh.param("fsm/subgoal_tolerance", subgoal_tolerance, 1.0);
-    nh.param("fsm/subgoal_reach_tolerance", subgoal_reach_tolerance, 1.5);
-    nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 5.0);
-    nh.param("fsm/update_global_period", update_global_period, 2.0);
+    nh.param("fsm/subgoal_reach_tolerance", subgoal_reach_tolerance, 1.0);
+    nh.param("fsm/subgoal_pub_period", subgoal_pub_period, 6.0);
+    nh.param("fsm/update_global_period", update_global_period, 2.5);
     nh.param("fsm/planning_horizon", planning_horizon, 5.0);
     
     /* ros communication with public node */
@@ -111,7 +111,7 @@ void SpacialHorizon::odomCallback(const nav_msgs::OdometryConstPtr &msg)
     if (has_goal && subgoal_pos.norm() > 0)
     {
         double dist_to_subgoal = (odom_pos - subgoal_pos).norm();
-        if (dist_to_subgoal >= 8.0)
+        if (dist_to_subgoal >= 10.0)
         {
             ROS_ERROR("[SpacialHorizon] ==============> Too far away from subgoal. Recomputing subgoal... <==============");
             tryUpdateGlobalplanAndSubgoal();

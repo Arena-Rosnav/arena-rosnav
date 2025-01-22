@@ -288,11 +288,14 @@ class Mod_Staged(TM_Module):
         if (
             self.IS_EVAL_SIM and self.__current_stage != self.__target_stage
         ):  # TODO reconsider if this check is needed
-            rospy.set_param(self.PARAM_CURR_STAGE, self.__target_stage)
-            rospy.set_param(
-                self.PARAM_LAST_STAGE_REACHED,
-                self.__target_stage == self.MAX_STAGE,
-            )
+            try:
+                rospy.set_param(self.PARAM_CURR_STAGE, self.__target_stage)
+                rospy.set_param(
+                    self.PARAM_LAST_STAGE_REACHED,
+                    self.__target_stage == self.MAX_STAGE,
+                )
+            except Exception as e:
+                rospy.logwarn(e)
             os.system(
                 f"rosrun dynamic_reconfigure dynparam set /task_generator_server {self.PARAM_INDEX} {self.__target_stage}"
             )
