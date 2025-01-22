@@ -13,7 +13,7 @@ def generate_launch_description():
         Node(
             package='ros2isaacsim',
             executable='run_isaacsim',
-            output='screen', 
-            arguments=['--ros-args', '--log-level', logger]
+            # output='screen', 
+            # arguments=['--ros-args', '--log-level', logger]
         ),
     ])

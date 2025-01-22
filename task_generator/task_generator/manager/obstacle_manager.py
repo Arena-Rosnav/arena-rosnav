@@ -21,7 +21,7 @@ class ObstacleManager:
     id_generator: Iterator[int]
 
     def __init__(self, namespace, world_manager,
-                 simulator: BaseSimulator, entity_manager: EntityManager):
+            simulator: BaseSimulator, entity_manager: EntityManager):
         self._world_manager = world_manager
         self._namespace = namespace
         self._simulator = simulator
