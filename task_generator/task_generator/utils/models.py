@@ -216,6 +216,8 @@ class _ModelLoader_USD(_ModelLoader):
             try:
                 model_path = os.path.join(model_dir, model.name, "usd", f"{model.name}.usd")
                 os.makedirs(os.path.dirname(model_path), exist_ok=True)
+                if os.path.islink(model_path) and not os.path.exists(model_path): # broken symlink
+                    os.unlink(model_path)
 
                 ARENA_WS_DIR = Utils.get_arena_ws()
 
