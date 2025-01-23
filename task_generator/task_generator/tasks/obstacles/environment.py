@@ -2,7 +2,7 @@ import dataclasses
 import json
 import os
 import yaml
-from typing import List
+from typing import List, Dict
 import math
 import random
 
@@ -150,26 +150,11 @@ class TM_Environment(TM_Obstacles):
 
         with open(environment_path) as f:
             environment = yaml.safe_load(f)
+            self.node.get_logger().info("Environment:")
             print(environment)
 
-        obstacles: List[Obstacle] = []
-        static_obstacles = [
-            Obstacle.parse(
-                obs,
-                model=self._PROPS.model_loader.bind(obs["model"])
-            )
-            for obs in environment.get("obstacles", {}).get("static", [])
-            + environment.get("obstacles", {}).get("interactive", [])
-        ]
-
-        dynamic_obstacles = [
-            DynamicObstacle.parse(
-                obs,
-                model=self._PROPS.dynamic_model_loader.bind(
-                    obs.get("model", Constants.DEFAULT_PEDESTRIAN_MODEL))
-            )
-            for obs in environment.get("obstacles", {}).get("dynamic", [])
-        ]
+        static_obstacles: List[Obstacle] = []
+        dynamic_obstacles: List[DynamicObstacle] = []
         rooms = self._create_rooms_from_walls()
         if not rooms:
             print("[WARNING] No rooms found! (check your walls data)")
@@ -221,8 +206,9 @@ class TM_Environment(TM_Obstacles):
                                 margin=margin,
                                 rotation_deg=rotation_deg
                             ):
-                                group_entities = group.get("entities", [])
-                                for j, entity in enumerate(group_entities):
+                                group_static_entities = group.get("entities", {}).get('static',[])
+                                group_dynamic_entites = group.get('entities',{}).get('dynamic',[])
+                                for j, entity in enumerate(group_static_entities):
                                     ex_off, ey_off, e_theta = entity["position"]
 
                                     radians = math.radians(rotation_deg)
@@ -235,18 +221,16 @@ class TM_Environment(TM_Obstacles):
 
                                     obs_name = f"G_{group_name}_{n_groups}_{entity['model']}_{j}"
                                     new_obstacle = Obstacle.parse(
+                                        Dict(
                                         {
                                             "name": obs_name,
                                             "position": [obstacle_x, obstacle_y, rot_theta],
                                             "model": entity["model"],
-                                        },
+                                        }
+                                        ),
                                         model=self._PROPS.model_loader.bind(entity["model"])
                                     )
-                                    obstacles.append(new_obstacle)
-
-                                # Mark region as occupied
-                                # (Here, do the same bounding box -> grid region
-                                #  and set occupancy = 1, for instance.)
+                                    static_obstacles.append(new_obstacle)
                                 self._mark_region_occupied(
                                     occupancy_grid,
                                     x, y,
@@ -259,27 +243,26 @@ class TM_Environment(TM_Obstacles):
                                 n_groups += 1
                         x += step_x
                     y += step_y
-
+        print(static_obstacles)
         return _ParsedConfig(
             static=[
                 Obstacle.parse(
                     obs,
                     model=self._PROPS.model_loader.bind(obs["model"])
                 )
-                for obs
+                for obs 
                 in
-                environment.get("obstacles", {}).get("static", []) +
-                environment.get("obstacles", {}).get("interactive", [])
+                static_obstacles
             ],
             dynamic=[
-                DynamicObstacle.parse(
-                    obs,
-                    model=self._PROPS.dynamic_model_loader.bind(
-                        obs.get("model", Constants.DEFAULT_PEDESTRIAN_MODEL))
-                )
-                for obs
-                in
-                environment.get("obstacles", {}).get("dynamic", [])
+                # DynamicObstacle.parse(
+                #     obs,
+                #     model=self._PROPS.dynamic_model_loader.bind(
+                #         obs.get("model", Constants.DEFAULT_PEDESTRIAN_MODEL))
+                # )
+                # for obs
+                # in
+                # environment.get("obstacles", {}).get("dynamic", [])
             ]
         )
 
