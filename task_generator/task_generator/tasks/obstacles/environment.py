@@ -42,8 +42,8 @@ class TM_Environment(TM_Obstacles):
         #   [{"points": [(x1, y1), (x2, y2), ... ]}, ...]
         # and each item defines a closed polygon. Adapt as needed.
         polygons = []
-        for wall in self._PROPS.world_manager.walls:
-            poly = Polygon(wall["points"])
+        for wall in list(self._PROPS.world_manager.walls) + list(self._PROPS.world_manager.detected_walls):
+            poly = Polygon([[wall.Start.x, wall.End.x], [wall.End.x, wall.End.y]])
             if poly.is_valid and not poly.is_empty:
                 polygons.append(poly)
         return polygons
@@ -206,8 +206,8 @@ class TM_Environment(TM_Obstacles):
                                 margin=margin,
                                 rotation_deg=rotation_deg
                             ):
-                                group_static_entities = group.get("entities", {}).get('static',[])
-                                group_dynamic_entites = group.get('entities',{}).get('dynamic',[])
+                                group_static_entities = group.get("entities", {}).get('static', [])
+                                group_dynamic_entites = group.get('entities', {}).get('dynamic', [])
                                 for j, entity in enumerate(group_static_entities):
                                     ex_off, ey_off, e_theta = entity["position"]
 
@@ -222,11 +222,11 @@ class TM_Environment(TM_Obstacles):
                                     obs_name = f"G_{group_name}_{n_groups}_{entity['model']}_{j}"
                                     new_obstacle = Obstacle.parse(
                                         Dict(
-                                        {
-                                            "name": obs_name,
-                                            "position": [obstacle_x, obstacle_y, rot_theta],
-                                            "model": entity["model"],
-                                        }
+                                            {
+                                                "name": obs_name,
+                                                "position": [obstacle_x, obstacle_y, rot_theta],
+                                                "model": entity["model"],
+                                            }
                                         ),
                                         model=self._PROPS.model_loader.bind(entity["model"])
                                     )
@@ -250,7 +250,7 @@ class TM_Environment(TM_Obstacles):
                     obs,
                     model=self._PROPS.model_loader.bind(obs["model"])
                 )
-                for obs 
+                for obs
                 in
                 static_obstacles
             ],
