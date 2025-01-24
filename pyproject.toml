@@ -33,6 +33,7 @@ watchdog = "^3.0.0"
 regex = "^2024.5.15"
 shapely = "^2.0.4"
 pydantic = "^2.7.2"
+gymnasium = "^1.0.0"
 [tool.poetry.group.planner.dependencies]
 torch = "^1.11.0" # applr, crowdnav, lflh, rlca, sarl, trail
 seaborn = "^0.12.2" # lflh
