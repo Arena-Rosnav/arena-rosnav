@@ -1,3 +1,3 @@
-action_frequency: 4
+action_frequency: 5
 laser_update_rate: 10
 disable_intermediate_planner: false

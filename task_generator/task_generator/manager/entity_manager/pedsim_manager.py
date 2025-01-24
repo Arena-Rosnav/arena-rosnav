@@ -3,16 +3,15 @@ import functools
 import json
 import math
 import time
+from typing import Callable, List
 
-import rospy
-
-
-import pedsim_msgs.msg as pedsim_msgs
 import geometry_msgs.msg as geometry_msgs
+import pedsim_msgs.msg as pedsim_msgs
 import pedsim_srvs.srv as pedsim_srvs
+import rospy
 import std_srvs.srv as std_srvs
-
-import functools
+from rl_utils.utils.constants import Simulator
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 from task_generator.constants import Config, Constants, Pedsim
 from task_generator.manager.entity_manager.entity_manager import EntityManager
@@ -33,13 +32,10 @@ from task_generator.shared import (
     Robot,
 )
 from task_generator.simulators.flatland_simulator import FlatlandSimulator
-
-from typing import Callable, List
-
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
 from task_generator.simulators.unity_simulator import UnitySimulator
 from task_generator.utils import Utils, rosparam_get
-from tf.transformations import quaternion_from_euler, euler_from_quaternion
+
 
 # TODO structure these together
 def process_SDF(name: str, base_model: Model) -> Model:
@@ -159,23 +155,49 @@ class PedsimManager(EntityManager):
 
         self._known_obstacles = KnownObstacles()
 
-        rospy.wait_for_service(self._namespace(self.SERVICE_SPAWN_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-        rospy.wait_for_service(self._namespace(self.SERVICE_RESPAWN_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-        rospy.wait_for_service(self._namespace(self.SERVICE_RESET_ALL_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-        rospy.wait_for_service(self._namespace(self.SERVICE_REMOVE_ALL_PEDS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-
-        rospy.wait_for_service(self._namespace(self.SERVICE_ADD_WALLS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-        rospy.wait_for_service(self._namespace(self.SERVICE_CLEAR_WALLS), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-
-        rospy.wait_for_service(self._namespace(self.SERVICE_SPAWN_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
         rospy.wait_for_service(
-            self._namespace(self.SERVICE_RESPAWN_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
+            self._namespace(self.SERVICE_SPAWN_PEDS),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
         )
         rospy.wait_for_service(
-            self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT
+            self._namespace(self.SERVICE_RESPAWN_PEDS),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_RESET_ALL_PEDS),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_REMOVE_ALL_PEDS),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
         )
 
-        rospy.wait_for_service(self._namespace(self.SERVICE_REGISTER_ROBOT), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_ADD_WALLS),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_CLEAR_WALLS),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_SPAWN_OBSTACLES),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_RESPAWN_OBSTACLES),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_REMOVE_ALL_OBSTACLES),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+
+        rospy.wait_for_service(
+            self._namespace(self.SERVICE_REGISTER_ROBOT),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
 
         self._spawn_peds_srv = rospy.ServiceProxy(
             self._namespace(self.SERVICE_SPAWN_PEDS),
@@ -526,7 +548,9 @@ class PedsimManager(EntityManager):
 
             for obstacle_id, obstacle in self._known_obstacles.items():
                 if purge >= obstacle.layer:
-                    if isinstance(self._simulator, GazeboSimulator) or isinstance(self._simulator, UnitySimulator):
+                    if isinstance(self._simulator, GazeboSimulator) or isinstance(
+                        self._simulator, UnitySimulator
+                    ):
                         # TODO remove this once actors can be deleted properly
                         if isinstance(obstacle.obstacle, DynamicObstacle):
 
@@ -591,9 +615,9 @@ class PedsimManager(EntityManager):
         if not Utils.is_synthetic_map():
             return
 
-        if Utils.get_simulator() in [Constants.Simulator.FLATLAND]:
+        if Utils.get_simulator() in [Simulator.FLATLAND]:
             return
-        
+
         if isinstance(self._simulator, UnitySimulator):
             return
 

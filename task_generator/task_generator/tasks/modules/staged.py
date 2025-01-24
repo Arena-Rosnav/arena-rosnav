@@ -55,7 +55,6 @@ class Mod_Staged(TM_Module):
         __config (Config): The configuration object for the staged tasks.
         __target_stage (StageIndex): The target stage index.
         __current_stage (StageIndex): The current stage index.
-        __training_config_path (Optional[Namespace]): The path to the training configuration.
         __debug_mode (bool): Flag indicating whether debug mode is enabled.
         __config_lock (FileLock): The lock for the training configuration file.
 
@@ -78,7 +77,6 @@ class Mod_Staged(TM_Module):
     __target_stage: StageIndex
     __current_stage: StageIndex
 
-    __training_config_path: Optional[Namespace]
     __debug_mode: bool
     __config_lock: FileLock
 
@@ -111,12 +109,6 @@ class Mod_Staged(TM_Module):
 
         self.__debug_mode = rosparam_get(bool, "debug_mode", False)
 
-        self.__training_config_path = (
-            rosparam_get(str, "training_config_path", None)
-            if not self.__debug_mode
-            else None
-        )
-
         def cb_next(*args, **kwargs):
             self.stage_index += 1
 
@@ -140,13 +132,6 @@ class Mod_Staged(TM_Module):
             std_msgs.Bool,
             cb_previous,
         )
-
-        if self.__training_config_path is not None:
-            assert os.path.isfile(
-                self.__training_config_path
-            ), f"Found no 'training_config.yaml' at {self.__training_config_path}"
-
-            self.__config_lock = FileLock(f"{self.__training_config_path}.lock")
 
         self.__current_stage = -1
 
@@ -199,22 +184,6 @@ class Mod_Staged(TM_Module):
                     )
 
                 self._dmre_client.update_configuration(obs_config)
-
-            # The current stage is stored inside the config file for when the training is stopped and later continued, the correct stage can be restored.
-            if self.__training_config_path is not None:
-                pass
-                # self.__config_lock.acquire()
-
-                # with open(self.__training_config_path, "r", encoding="utf-8") as target:
-                #     config = yaml.load(target, Loader=yaml.FullLoader)
-                #     config["callbacks"]["training_curriculum"][
-                #         "curr_stage"
-                #     ] = self.stage.serialize()
-
-                # with open(self.__training_config_path, "w", encoding="utf-8") as target:
-                #     yaml.dump(config, target, allow_unicode=True, indent=4)
-
-                # self.__config_lock.release()
 
     def reconfigure(self, config):
         """
@@ -319,11 +288,14 @@ class Mod_Staged(TM_Module):
         if (
             self.IS_EVAL_SIM and self.__current_stage != self.__target_stage
         ):  # TODO reconsider if this check is needed
-            rospy.set_param(self.PARAM_CURR_STAGE, self.__target_stage)
-            rospy.set_param(
-                self.PARAM_LAST_STAGE_REACHED,
-                self.__target_stage == self.MAX_STAGE,
-            )
+            try:
+                rospy.set_param(self.PARAM_CURR_STAGE, self.__target_stage)
+                rospy.set_param(
+                    self.PARAM_LAST_STAGE_REACHED,
+                    self.__target_stage == self.MAX_STAGE,
+                )
+            except Exception as e:
+                rospy.logwarn(e)
             os.system(
                 f"rosrun dynamic_reconfigure dynparam set /task_generator_server {self.PARAM_INDEX} {self.__target_stage}"
             )

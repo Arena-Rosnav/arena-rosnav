@@ -1,18 +1,20 @@
 import dataclasses
 import enum
-from io import StringIO
 import os
-from typing import Any, Dict, List, Optional, Union
 import xml.etree.ElementTree as ET
+from io import StringIO
+from typing import Any, Dict, List, Optional, Union
+
 import cv2
 import numpy as np
 import rospkg
-
-import yaml
 import rospy
-from task_generator.constants import Constants, Config
-from task_generator.manager.utils import WorldMap, WorldOccupancy
+import yaml
+from rl_utils.utils.constants import ArenaType
+from rosnav_rl.states.simulation import RobotState
 
+from task_generator.constants import Config, Constants
+from task_generator.manager.utils import WorldMap, WorldOccupancy
 from task_generator.shared import (
     Model,
     ModelType,
@@ -186,11 +188,14 @@ class YAMLUtil:
         return f"{namespace.robot_ns}/{frame_id}"
 
     @staticmethod
-    def update_plugins(namespace: Namespace, description: Any) -> Any:
+    def update_plugins(
+        namespace: Namespace, description: Any, robot_state: Optional[RobotState] = None
+    ) -> Any:
         plugins: List[Dict] = description.get("plugins", [])
 
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
-            if rospy.get_param("laser/full_range_laser", False):
+        if Utils.get_arena_type() == ArenaType.TRAINING:
+            # if rospy.get_param("laser/full_range_laser", False):
+            if robot_state.laser_state.attach_full_range_laser:
                 plugins.append(Constants.PLUGIN_FULL_RANGE_LASER.copy())
 
             for plugin in plugins:

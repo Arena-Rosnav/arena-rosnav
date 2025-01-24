@@ -1,20 +1,17 @@
-from typing import Tuple
+from typing import Optional, Tuple, Type, Union
 
 import numpy as np
 import rospy
 from geometry_msgs.msg import Twist
+from rosnav_rl.states import SimulationStateContainer
+from rl_utils.topic import Namespace
 from rl_utils.utils.arena_unity_utils.unity_timer import UnityTimer
-from rl_utils.utils.observation_collector import (
-    CollisionCollector,
-    ObservationDict
-)
 from rosgraph_msgs.msg import Clock
-from rosnav.utils.observation_space import EncodedObservationDict
-from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
-from rl_utils.utils.observation_collector.observation_manager import ObservationManager
+from rosnav_rl.rl_agent import RL_Agent
+from rosnav_rl.utils.type_aliases import EncodedObservationDict, ObservationDict
 
-from .flatland_gymnasium_env import BaseAgent, FlatlandEnv, determine_termination
-
+from .flatland_gymnasium_env import FlatlandEnv
+from .utils import determine_termination
 
 
 class UnityEnv(FlatlandEnv):
@@ -30,76 +27,34 @@ class UnityEnv(FlatlandEnv):
 
     def __init__(
         self,
-        ns: str,
-        agent_description: BaseAgent,
-        reward_fnc: str,
+        ns: Union[str, Namespace],
+        rl_agent: RL_Agent,
+        simulation_state_container: Optional[SimulationStateContainer] = None,
         max_steps_per_episode=100,
         init_by_call: bool = False,
-        wait_for_obs: bool = True,
+        wait_for_obs: bool = False,
         obs_unit_kwargs=None,
-        reward_fnc_kwargs=None,
         task_generator_kwargs=None,
         *args,
         **kwargs,
     ):
-        rospy.loginfo("[Unity Env ns:" + ns + "]: Starting intialization")
+        rospy.loginfo("[Unity Env:" + ns + "]: Starting intialization")
         super().__init__(
             ns,
-            agent_description,
-            reward_fnc,
+            rl_agent,
+            simulation_state_container,
             max_steps_per_episode,
             init_by_call,
             wait_for_obs,
             obs_unit_kwargs,
-            reward_fnc_kwargs,
             task_generator_kwargs,
             *args,
             **kwargs,
         )
-        rospy.loginfo("[Unity Env ns:" + ns + "]: Step size " + str(self._step_size))
-        rospy.loginfo("[Unity Env ns:" + self.ns + "]: Intialization done")
+        rospy.loginfo("[Unity Env:" + ns + "]: Step size " + str(self._step_size))
+        rospy.loginfo("[Unity Env:" + self.ns + "]: Intialization done")
 
-    def init(self):
-        """
-        Initializes the environment.
-
-        Returns:
-            bool: True if the initialization is successful, False otherwise.
-        """
-        self.model_space_encoder = RosnavSpaceManager(
-            ns=self.ns,
-            space_encoder_class=self._agent_description.space_encoder_class,
-            observation_spaces=self._agent_description.observation_spaces,
-            observation_space_kwargs=self._agent_description.observation_space_kwargs,
-        )
-
-        if self._is_train_mode:
-            self._setup_env_for_training(
-                self._reward_fnc, **self._task_generator_kwargs
-            )
-
-        obs_structure = set(self.reward_calculator.required_observations).union(
-            set(self.model_space_encoder.encoder.required_observations)
-        )
-        obs_structure.add(CollisionCollector)
-
-        self.observation_collector = ObservationManager(
-            ns=self.ns,
-            obs_structur=list(obs_structure),
-            obs_unit_kwargs=self._obs_unit_kwargs,
-            wait_for_obs=self._wait_for_obs,
-        )
-        return True
-
-    def _setup_env_for_training(self, reward_fnc: str, **kwargs):
-        """
-        Set up the environment for training.
-
-        Args:
-            reward_fnc (str): The name of the reward function to use.
-            **kwargs: Additional keyword arguments.
-
-        """
+    def _setup_env_for_training(self, **kwargs):
         # Unity specific
         clock_topic = self.ns.simulation_ns("clock")
         clock_msg = rospy.wait_for_message(clock_topic, Clock, timeout=30)
@@ -108,7 +63,7 @@ class UnityEnv(FlatlandEnv):
             rospy.Time(clock_msg.clock.secs, clock_msg.clock.nsecs),
             clock_topic,
         )
-        super()._setup_env_for_training(reward_fnc, **kwargs)
+        super()._setup_env_for_training()
 
     def step(
         self, action: np.ndarray
@@ -133,7 +88,7 @@ class UnityEnv(FlatlandEnv):
         obs_dict: ObservationDict = self.observation_collector.get_observations()
 
         # calculate reward
-        reward, reward_info = self.reward_calculator.get_reward(obs_dict=obs_dict)
+        reward, reward_info = self._reward_function.get_reward(obs_dict=obs_dict)
 
         self._steps_curr_episode += 1
 
@@ -151,25 +106,6 @@ class UnityEnv(FlatlandEnv):
             False,
             info,
         )
-
-    def render(self):
-        """
-        Render the environment.
-
-        This method is currently empty.
-
-        """
-        pass
-
-    def close(self):
-        """
-        Close the environment.
-
-        This method logs a message indicating that the environment is being closed.
-
-        """
-        rospy.loginfo("[Unity Env ns:" + self.ns + "]: Closing environment.")
-        rospy.signal_shutdown("Closing Unity environment.")
 
     def _before_task_reset(self):
         """

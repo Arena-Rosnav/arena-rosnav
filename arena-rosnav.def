@@ -1,0 +1,144 @@
+Bootstrap: docker
+From: mzahana/base-ubuntu20-cuda11.4.2:latest
+
+# Set environment variables
+%environment
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+    export QT_X11_NO_MITSHM=1
+    export FROM_LOCAL=${FROM_LOCAL:-false}
+    export ARENA_BRANCH=${ARENA_BRANCH:-observation_refactor}
+    export ARENA_ROOT=${ARENA_ROOT:-/arena}
+    export ARENA_WS=${ARENA_WS:-arena_ws}
+    export ROS_DISTRO=${ROS_DISTRO:-noetic}
+
+    export POETRY_HTTP_TIMEOUT=1000
+
+# Install required packages
+%post
+    # Export build arguments as environment variables
+    export FROM_LOCAL=${FROM_LOCAL:-false}
+    export ARENA_BRANCH=${ARENA_BRANCH:-observation_refactor}
+    export ARENA_ROOT=${ARENA_ROOT:-/arena}
+    export ARENA_WS=${ARENA_WS:-arena_ws}
+    export ROS_DISTRO=${ROS_DISTRO:-noetic}
+
+    export PATH="${ARENA_ROOT}/.local/bin:$PATH"
+    echo "ARENA_ROOT: $ARENA_ROOT"
+    echo "ARENA_WS: $ARENA_WS"
+    echo "FROM_LOCAL: $FROM_LOCAL"
+    echo "ARENA_BRANCH: $ARENA_BRANCH"
+    echo "ROS_DISTRO: $ROS_DISTRO"
+
+    # Add Gazebo repository and install dependencies
+    wget --quiet http://packages.osrfoundation.org/gazebo.key -O - | apt-key add - \
+        && sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -sc` main" > /etc/apt/sources.list.d/gazebo-stable.list' \
+        && apt-get update \
+        && DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends install \
+            software-properties-common \
+            apt-utils \
+            ant \
+            binutils \
+            bc \
+            net-tools \
+            bash-completion \
+            dirmngr \
+            gazebo11 \
+            gstreamer1.0-plugins-bad \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good \
+            gstreamer1.0-plugins-ugly \
+            libeigen3-dev \
+            libgazebo11-dev \
+            libgstreamer-plugins-base1.0-dev \
+            libimage-exiftool-perl \
+            libopencv-dev \
+            libxml2-utils \
+            mesa-utils \
+            protobuf-compiler \
+            x-window-system \
+            ignition-edifice \
+        && apt-get -y autoremove \
+        && apt-get clean autoclean
+
+    # Setup ROS keys
+    curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add - \
+        && sh -c 'echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-latest.list' \
+        && sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-shadow.list' \
+        && apt-get update \
+        && apt-get -y --quiet --no-install-recommends install \
+            geographiclib-tools \
+            libeigen3-dev \
+            libgeographic-dev \
+            libopencv-dev \
+            libyaml-cpp-dev \
+            python3-rosdep \
+            python3-catkin-tools \
+            python3-catkin-lint \
+            ros-$ROS_DISTRO-gazebo-ros-pkgs \
+            ros-$ROS_DISTRO-mavlink \
+            ros-$ROS_DISTRO-mavros \
+            ros-$ROS_DISTRO-mavros-extras \
+            ros-$ROS_DISTRO-octomap \
+            ros-$ROS_DISTRO-octomap-msgs \
+            ros-$ROS_DISTRO-pcl-conversions \
+            ros-$ROS_DISTRO-pcl-msgs \
+            ros-$ROS_DISTRO-pcl-ros \
+            ros-$ROS_DISTRO-ros-base \
+            ros-$ROS_DISTRO-rostest \
+            ros-$ROS_DISTRO-rosunit \
+            ros-$ROS_DISTRO-tf-conversions \
+            ros-$ROS_DISTRO-rqt-tf-tree \
+            ros-$ROS_DISTRO-rviz \
+            xvfb \
+            libopencv-dev \
+            liblua5.2-dev \
+            libarmadillo-dev \
+            ros-noetic-nlopt \
+            liblcm-dev \
+        && geographiclib-get-geoids egm96-5 \
+        && apt-get -y autoremove \
+        && apt-get clean autoclean 
+    
+    # Remove conflicting packages
+    sudo apt remove -y python3-pyasn1-modules  python3-mpi4py
+
+    # Install additional dependencies
+    apt-get install -y python3 python-is-python3 git python3-rosdep python3-pip python3-rosinstall-generator python3-vcstool build-essential python3-catkin-tools ca-certificates
+
+    export POETRY_HOME="$ARENA_ROOT/.local"
+    
+    # Install Poetry
+    curl -sSL https://install.python-poetry.org | python3 -
+    # python3 -m pip install --user poetry
+
+    # Check if Poetry is installed
+    $ARENA_ROOT/.local/bin/poetry --version
+
+    # Bootstrap rosdep
+    rosdep init && rosdep update
+
+    # Install Arena-Rosnav
+    if [ -d $ARENA_ROOT/arena_ws/src/arena ]; then \
+        echo "Install Folder $ARENA_ROOT/arena_ws/src/arena/arena-rosnav already exists." && \
+        echo "This indicates Arena Rosnav is already installed." && \
+        echo "If you wish to reinstall, please delete $ARENA_ROOT/arena_ws"; \
+    fi
+
+    # Clone Arena-Rosnav if not from local
+    if [ "$FROM_LOCAL" = "false" ]; then \
+        rm -rf "$ARENA_ROOT/arena_ws/src/arena/arena-rosnav" && \
+        git clone --branch $ARENA_BRANCH https://github.com/Arena-Rosnav/arena-rosnav.git $ARENA_ROOT/arena_ws/src/arena/arena-rosnav; \
+    fi
+
+    # Pull all dependencies
+    git config --global http.postBuffer 524288000
+    cd $ARENA_ROOT/arena_ws
+    until vcs import src < src/arena/arena-rosnav/.repos ; do echo "failed to update, retrying..." ; done
+
+# Set the working directory
+# %files
+#    . /home/fe/le/projects/arena_ws/src/arena/arena-rosnav
+
+%runscript
+    exec bash

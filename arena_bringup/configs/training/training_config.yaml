@@ -1,140 +1,163 @@
-### General
-# in debug_mode no agent directories will be created and no models will be saved
-# further no wandb logging and fake (simulated) multiprocessing for traceback
-debug_mode: true
-# number of parallel environments
-n_envs: 4
-# gpu yes or no
-no_gpu: false
+# CONTAINS THE AGENT CONFIGURATION FOR TRAINING
+resume: false
 
-### General Training
-tm_robots: "random"
-tm_obstacles: "random"
-tm_modules: ""
+agent_cfg:
+  name: null # agent name (should be unique)
 
-# number of simulation timesteps
-n_timesteps: 4000000
-max_num_moves_per_eps: 500
-goal_radius: 0.25
-safety_distance: 0.5
-
-### Training Monitoring
-monitoring:
-  cmd_line_logging:
-    # display training metrics
-    training_metrics:
-      enabled: true
-    # display episode statistics (avg. success rate, reward, eps length..)
-    episode_statistics:
-      enabled: true
-      last_n_eps: 25
-  # weights and biases logging
-  use_wandb: false
-  # save evaluation stats during training in log file
-  eval_log: false
-
-callbacks:
-  ### Periodic Eval
-  periodic_eval:
-    # max number of steps per episode
-    max_num_moves_per_eps: 1250
-    # number of evaluation episodes
-    n_eval_episodes: 50
-    # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
-    eval_freq: 10000
-
-  ### Training Curriculum
-  # threshold metric to be considered during evaluation
-  # can be either "succ" (success rate) or "rew" (reward)
-  training_curriculum:
-    # file for the robot's learning curriculum
-    training_curriculum_file: "semantic.yaml"
-    curr_stage: 0
-    threshold_type: "succ"
-    upper_threshold: 0.90
-    lower_threshold: 0.65
-
-  ### Stop Training on Threshold
-  # stops training when last stage reached and threshold satisfied
-  stop_training:
-    threshold_type: "succ"
-    threshold: 0.98
-
-### Agent Specs: Training Hyperparameter and Network Architecture
-rl_agent:
-  # name of architecture defined in the Policy factory
-  architecture_name: "RosnavResNet_simple"
-  # path to latest checkpoint; if provided the training will be resumed from that checkpoint
-  resume: null # "jackal_AGENT_25_RobotSpecificEncoder_2023_01_21__03_01"
-  checkpoint: "last_model" # gonna be ignored if resume is not null
-  weight_transfer:
-    model_path: "" #"/home/tar/catkin_ws/src/planners/rosnav/agents/jackal_RosnavResNet_8_norm_2024_04_28__03_44_35/last_model.zip"
-    include: # regex to include layers
-      - "^features_extractor"
-    exclude:
-      - ""
-
-  frame_stacking:
-    enabled: false
-    stack_size: 6
-
-  reward_fnc: "base_semantic"
-  # whether unity collider-based or laser-based safety distance is used
-  # if true, reward_fnc must include ped_safe_dist and obs_safe_dist
-  distinguished_safe_dist: false
-  reward_fnc_kwargs: 
-    placeholder: 0 # placeholder kwarg
-  
-  # subgoal mode: if true, the agent follows the subgoal given by the spcial horizon planner
-  # if false, the agent follows the global goal
-  # (intermediate planner params are located in robot-specific simulation setup directory)
-  subgoal_mode: true
-
-  normalize:
-    enabled: true
-    settings:
-      norm_obs: true
-      norm_reward: false # Whether to normalize rewards or not
-      clip_obs: 30.0 # Max absolute value for observation
-      clip_reward: 20.0 # Max value absolute for discounted reward
-      gamma: 0.99 # discount factor
-
-  laser:
-    full_range_laser: true # additional laser covering 360° covering blind spots -> additional collision check
-    # NOTE: full range laser is not supported by Arena Unity
-    reduce_num_beams:
-      enabled: false
-      num_beams: 200
-  
-  rgbd:
-    enabled: false
-
+  # action space
   action_space:
-    discrete: true
-    custom_discretization: # only used if discrete is true, otherwise ignored
-      enabled: true
-      # number of buckets for each action dimension
-      # (only non-holonomic robots with 2D action space supported)
-      buckets_linear_vel: 12
-      buckets_angular_vel: 16
+    is_discrete: false
+    custom_discretization: null
 
-  lr_schedule:
-    # learning rate schedule
-    enabled: true
-    type: "linear"
-    settings:
-      initial_value: 0.001
-      final_value: 0.0001
+  framework:
+    __name__: stable_baselines3  # framework name
+    algorithm: # training algorithm configuration
+      architecture_name: AGENT_5
+      checkpoint: last_model
+      # transfer_weights:
+      #   source_dir: /home/tar/catkin_ws/src/planners/rosnav/agents/AGENT_5
+      #   source_checkpoint: best_model
+      #   include: 
+      #     - .*
+      #   exclude: null
+      parameters:
+        batch_size: 256  # Number of samples per gradient update
+        clip_range: 0.2  # Clipping parameter for PPO
+        clip_range_vf: null  # Clipping parameter for value function (if None, no clipping)
+        device: auto  # Device to use for training (cpu, cuda, auto)
+        ent_coef: 0.0  # Entropy coefficient for the loss calculation
+        gae_lambda: 0.95  # Lambda for generalized advantage estimation
+        gamma: 0.99  # Discount factor
+        learning_rate:  # Learning rate schedule
+          type: linear  # Type of learning rate schedule (linear, constant, etc.)
+          kwargs:
+            initial_value: 0.001  # Initial learning rate
+            final_value: 0.0001  # Final learning rate
+        max_grad_norm: 0.5  # Maximum norm for gradient clipping
+        n_epochs: 5  # Number of epochs to update the policy
+        n_steps: null  # Number of steps to run for each environment per update
+        normalize_advantage: true  # Whether to normalize advantages
+        sde_sample_freq: -1  # Frequency of sampling for state-dependent exploration (if -1, no sampling)
+        seed: null  # Seed for the random number generator
+        stats_window_size: 100  # Window size for the rolling statistics
+        target_kl: 1.0  # Target KL divergence threshold
+        tensorboard_log: null  # Directory for tensorboard logs (if None, no logging)
+        total_batch_size: 512  # Total batch size for training
+        use_sde: false  # Whether to use state-dependent exploration
+        verbose: 2  # Verbosity level (0: no output, 1: info, 2: debug)
+        vf_coef: 0.22  # Coefficient for the value function loss
+    normalization: null
+      
 
-  ppo:
-    batch_size: 20480
-    gamma: 0.99
-    n_steps: 1200
-    ent_coef: 0.005
-    learning_rate: 0.0003
-    vf_coef: 0.22
-    max_grad_norm: 0.5
-    gae_lambda: 0.95
-    m_batch_size: 512
-    n_epochs: 3
-    clip_range: 0.25
+  # reward function
+  reward:
+    reward_function_dict: 
+      goal_reached:
+        reward: 15
+
+      factored_safe_distance:
+        factor: -0.2
+
+      collision:
+        reward: -15
+
+      approach_goal:
+        pos_factor: 0.4
+        neg_factor: 0.5
+        _goal_update_threshold: 0.25
+        _follow_subgoal: true
+        _on_safe_dist_violation: true
+
+      factored_reverse_drive:
+        factor: 0.05
+        threshold: 0.0
+        _on_safe_dist_violation: true
+
+      # approach_globalplan:
+      #   pos_factor: 0.05
+      #   neg_factor: 0.05
+      #   _on_safe_dist_violation: true
+
+      two_factor_velocity_difference:
+        alpha: 0.005
+        beta: 0.0
+        _on_safe_dist_violation: true
+
+      # active_heading_direction:
+      #   r_angle: 0.7
+      #   iters: 60
+      #   _on_safe_dist_violation: true
+
+      ped_type_collision:
+        type_reward_pairs:
+          0: -2.5
+          1: -5
+
+      ped_type_factored_safety_distance:
+        type_factor_pairs:
+          0: -0.1
+          1: -0.2
+        safety_distance: 1.2
+
+      max_steps_exceeded:
+        reward: -15
+
+      angular_vel_constraint:
+        penalty_factor: -0.05
+        threshold: 0.5
+
+      linear_vel_boost:
+        reward_factor: 0.01
+        threshold: 0.0
+    reward_unit_kwargs: null
+    verbose: false # print reward values
+
+# CONTAINS THE FRAMEWORK CONFIGURATION FOR TRAINING 
+framework_cfg:
+  # currently only Stable-Baselines3 implemented as framework
+  # and PPO as algorithm
+
+  # general training configuration
+  general:
+    # in debug_mode no agent directories will be created and no models will be saved
+    # further no wandb logging and fake (simulated) multiprocessing for traceback
+    debug_mode: true
+    goal_radius: 0.5
+    max_num_moves_per_eps: 200
+    n_envs: 2 # number of parallel environments
+    n_timesteps: 4000000
+    no_gpu: false
+    safety_distance: 1.0
+    show_progress_bar: false
+
+  # task modules
+  task:
+    tm_modules: staged
+    tm_obstacles: random
+    tm_robots: random
+
+  monitoring:
+    wandb: true  # weights and biases logging
+    episode_logging:  # display episode statistics (avg. success rate, reward, eps length..)
+      last_n_episodes: 25
+      record_actions: true
+    eval_metrics: false # save evaluation stats during training in log file
+    training_metrics: true  # display training metrics
+
+  callbacks:
+    periodic_evaluation:
+      eval_freq: 1000  # evaluation frequency, evaluation after every n_envs * eval_freq timesteps
+      max_num_moves_per_eps: 200  # max number of steps per episode
+      n_eval_episodes: 10 # number of evaluation episodes
+    stop_training_on_threshold:
+      threshold: 0.9
+      threshold_type: succ  # can be either "succ" (success rate) or "rew" (reward)
+      verbose: 1
+    training_curriculum:
+      current_stage: 0
+      curriculum_file: semantic.yaml
+      lower_threshold: 0.3
+      threshold_type: succ  # can be either "succ" (success rate) or "rew" (reward)
+      upper_threshold: 0.9
+
+  profiling: null

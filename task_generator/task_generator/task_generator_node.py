@@ -3,52 +3,51 @@
 import dataclasses
 import os
 import traceback
-from typing import Dict, List
+from typing import Dict, List, Optional
 
+import map_distance_server.srv as map_distance_server_srvs
 import rospkg
 import rospy
+import std_msgs.msg as std_msgs
+import std_srvs.srv as std_srvs
 import yaml
+from rosnav_rl.states.simulation import RobotState, TaskState
 from rospkg import RosPack
-from task_generator.constants import Config, Constants
+
+from task_generator.constants import Config, Constants, init_task_generator_dr_client
+from task_generator.manager.entity_manager.crowdsim_manager import CrowdsimManager
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.flatland_manager import FlatlandManager
 from task_generator.manager.entity_manager.pedsim_manager import PedsimManager
-from task_generator.manager.entity_manager.crowdsim_manager import CrowdsimManager
-
-from task_generator.manager.world_manager import WorldManager
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.utils import WorldMap
+from task_generator.manager.world_manager import WorldManager
 from task_generator.shared import (
     ModelWrapper,
     Namespace,
     Robot,
     gen_init_pos,
-    rosparam_get
+    rosparam_get,
 )
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.flatland_simulator import FlatlandSimulator  # noqa
 from task_generator.simulators.gazebo_simulator import GazeboSimulator  # noqa
-from task_generator.simulators.unity_simulator import UnitySimulator  # noqa
 from task_generator.simulators.simulator_factory import SimulatorFactory
+from task_generator.simulators.unity_simulator import UnitySimulator  # noqa
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils import ModelLoader, Utils
 
-from task_generator.manager.world_manager import WorldManager
-from task_generator.manager.obstacle_manager import ObstacleManager
-
-import map_distance_server.srv as map_distance_server_srvs
-import std_msgs.msg as std_msgs
-import std_srvs.srv as std_srvs
+from rl_utils.utils.constants import ArenaType
 
 
 def create_default_robot_list(
     robot_model: ModelWrapper,
     name: str,
-    inter_planner:str,
+    inter_planner: str,
     local_planner: str,
-    agent: str
+    agent: str,
 ) -> List[Robot]:
     return [
         Robot(
@@ -91,6 +90,9 @@ class TaskGenerator:
     Will initialize and reset all tasks. The task to use is read from the `/task_mode` param.
     """
 
+    __task_state: Optional[TaskState] = None
+    __robot_state: Optional[RobotState] = None
+
     _entity_mode: Constants.EntityManager
     _auto_reset: bool
 
@@ -105,11 +107,22 @@ class TaskGenerator:
     _start_time: float
     _number_of_resets: int
 
-    def __init__(self, namespace: str = "/") -> None:
+    def __init__(
+        self,
+        namespace: str = "/",
+        task_state: Optional[TaskState] = None,
+        robot_state: Optional[RobotState] = None,
+        *args,
+        **kwargs,
+    ) -> None:
         self._namespace = Namespace(namespace)
 
-        # Params
+        self.__task_state = task_state
+        self.__robot_state = robot_state
 
+        init_task_generator_dr_client()
+
+        # Params
         self._entity_mode = Constants.EntityManager(rosparam_get(str, "entity_manager"))
         self._auto_reset = rosparam_get(bool, "~auto_reset", True)
         self._train_mode = rosparam_get(bool, "train_mode", False)
@@ -133,7 +146,9 @@ class TaskGenerator:
 
         # Loaders
         self._robot_loader = ModelLoader(
-            os.path.join(RosPack().get_path("arena_simulation_setup"), "entities", "robots")
+            os.path.join(
+                RosPack().get_path("arena_simulation_setup"), "entities", "robots"
+            )
         )
 
         if not self._train_mode:
@@ -143,16 +158,17 @@ class TaskGenerator:
 
             self._number_of_resets = 0
 
+            rospy.wait_for_service("start_model_visualization")
             self.srv_start_model_visualization = rospy.ServiceProxy(
                 "start_model_visualization", std_srvs.Empty
             )
             self.srv_start_model_visualization(std_srvs.EmptyRequest())
 
-            rospy.sleep(1)
+            rospy.sleep(10)
 
             self.reset_task(first_map=True)
 
-            rospy.sleep(1)
+            rospy.sleep(5)
 
             try:
                 rospy.set_param("task_generator_setup_finished", True)
@@ -250,6 +266,7 @@ class TaskGenerator:
             robot_managers=robot_managers,
             world_manager=world_manager,
             namespace=self._namespace,
+            task_state=self.__task_state,
             **kwargs,
         )
 
@@ -261,16 +278,17 @@ class TaskGenerator:
 
         robot_model: str = rosparam_get(str, "/model")
 
-
         if robot_setup_file == "":
             robots = create_default_robot_list(
                 robot_model=self._robot_loader.bind(robot_model),
                 inter_planner=rosparam_get(str, "/inter_planner", ""),
                 local_planner=rosparam_get(str, "/local_planner", ""),
                 agent=rosparam_get(str, "/agent_name", ""),
-                name=f"{self._namespace[1:]}_{robot_model}"
-                if self._train_mode
-                else robot_model,
+                name=(
+                    f"{self._namespace[1:]}_{robot_model}"
+                    if self._train_mode
+                    else robot_model
+                ),
             )
         else:
             robots = [
@@ -279,18 +297,19 @@ class TaskGenerator:
                         robot,
                         model=self._robot_loader.bind(robot["model"]),
                     ),
-                    name=f'{robot["model"]}_{i}_{robot.get("amount", 1)-1}'
+                    name=f'{robot["model"]}_{i}_{robot.get("amount", 1)-1}',
                 )
                 for robot in read_robot_setup_file(robot_setup_file)
                 for i in range(robot.get("amount", 1))
             ]
 
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+        if Utils.get_arena_type() == ArenaType.TRAINING:
             return [
                 RobotManager(
                     namespace=self._namespace,
                     entity_manager=self._entity_manager,
                     robot=robots[0],
+                    robot_state=self.__robot_state,
                 )
             ]
 
@@ -304,6 +323,7 @@ class TaskGenerator:
                     namespace=self._namespace,
                     entity_manager=self._entity_manager,
                     robot=robot,
+                    robot_state=self.__robot_state,
                 )
             )
 
@@ -347,7 +367,9 @@ class TaskGenerator:
         if self._number_of_resets < Config.General.DESIRED_EPISODES:
             return
 
-        rospy.loginfo(f"Shutting down. All {int(Config.General.DESIRED_EPISODES)} tasks completed")
+        rospy.loginfo(
+            f"Shutting down. All {int(Config.General.DESIRED_EPISODES)} tasks completed"
+        )
 
         rospy.signal_shutdown("Finished all episodes of the current scenario")
 

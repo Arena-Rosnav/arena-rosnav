@@ -1,20 +1,20 @@
 import time
-import rospy
-import flatland_msgs.srv as flatland_srvs
-import std_srvs.srv as std_srvs
 
 import flatland_msgs.msg as flatland_msgs
+import flatland_msgs.srv as flatland_srvs
 import geometry_msgs.msg as geometry_msgs
+import rospy
+import std_srvs.srv as std_srvs
+from rl_utils.utils.constants import Simulator
 
+from task_generator.constants import Config
 from task_generator.shared import ModelType, Namespace
-
-from task_generator.utils import rosparam_get
-
-from task_generator.constants import Constants, Config
 from task_generator.simulators.base_simulator import BaseSimulator
 from task_generator.simulators.simulator_factory import SimulatorFactory
+from task_generator.utils import rosparam_get
 
-@SimulatorFactory.register(Constants.Simulator.FLATLAND)
+
+@SimulatorFactory.register(Simulator.FLATLAND)
 class FlatlandSimulator(BaseSimulator):
     """
     This is the flatland encoder for connecting
@@ -54,24 +54,30 @@ class FlatlandSimulator(BaseSimulator):
 
         self._tmp_model_path = str(rosparam_get(str, "tmp_model_path", "/tmp"))
 
-        rospy.wait_for_service(self._namespace("move_model"), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-        rospy.wait_for_service(self._namespace("spawn_model"), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
-        rospy.wait_for_service(self._namespace("delete_model"), timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT)
+        rospy.wait_for_service(
+            self._namespace("move_model"),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+        rospy.wait_for_service(
+            self._namespace("spawn_model"),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
+        rospy.wait_for_service(
+            self._namespace("delete_model"),
+            timeout=Config.General.WAIT_FOR_SERVICE_TIMEOUT,
+        )
 
         self._move_model_srv = rospy.ServiceProxy(
             self._namespace("move_model"), flatland_srvs.MoveModel, persistent=True
         )
         self._spawn_model_srv = rospy.ServiceProxy(
-            self._namespace(
-                "spawn_model_from_string"), flatland_srvs.SpawnModel
+            self._namespace("spawn_model_from_string"), flatland_srvs.SpawnModel
         )
         self._spawn_model[ModelType.YAML] = rospy.ServiceProxy(
-            self._namespace(
-                "spawn_model_from_string"), flatland_srvs.SpawnModel
+            self._namespace("spawn_model_from_string"), flatland_srvs.SpawnModel
         )
         self._spawn_models_from_string_srv = rospy.ServiceProxy(
-            self._namespace(
-                "spawn_models_from_string"), flatland_srvs.SpawnModels
+            self._namespace("spawn_models_from_string"), flatland_srvs.SpawnModels
         )
         self._delete_model_srv = rospy.ServiceProxy(
             self._namespace("delete_model"), flatland_srvs.DeleteModel
@@ -80,16 +86,11 @@ class FlatlandSimulator(BaseSimulator):
             self._namespace("delete_models"), flatland_srvs.DeleteModels
         )
 
-        self._pause_srv = rospy.ServiceProxy(
-            self._namespace("pause"), std_srvs.Empty
-        )
+        self._pause_srv = rospy.ServiceProxy(self._namespace("pause"), std_srvs.Empty)
 
-        self._resume_srv = rospy.ServiceProxy(
-            self._namespace("resume"), std_srvs.Empty
-        )
+        self._resume_srv = rospy.ServiceProxy(self._namespace("resume"), std_srvs.Empty)
 
-        self._synchronous = rosparam_get(
-            bool, self._namespace("synchronous"), False)
+        self._synchronous = rosparam_get(bool, self._namespace("synchronous"), False)
 
     def before_reset_task(self):
         self._pause()
@@ -164,17 +165,27 @@ class FlatlandSimulator(BaseSimulator):
     SERVICE_CALL_TRIES = 5
 
     def _pause(self):
-        if not self._synchronous: return
+        if not self._synchronous:
+            return
         for _ in range(self.SERVICE_CALL_TRIES):
-            try: self._pause_srv()
-            except rospy.ServiceException: time.sleep(0.1)
-            else: return
-        else: rospy.logerr(f"failed to pause in {self.SERVICE_CALL_TRIES} tries")
+            try:
+                self._pause_srv()
+            except rospy.ServiceException:
+                time.sleep(0.1)
+            else:
+                return
+        else:
+            rospy.logerr(f"failed to pause in {self.SERVICE_CALL_TRIES} tries")
 
     def _resume(self):
-        if not self._synchronous: return
+        if not self._synchronous:
+            return
         for _ in range(self.SERVICE_CALL_TRIES):
-            try: self._resume_srv()
-            except rospy.ServiceException: time.sleep(0.1)
-            else: return
-        else: rospy.logerr(f"failed to resume in {self.SERVICE_CALL_TRIES} tries")
+            try:
+                self._resume_srv()
+            except rospy.ServiceException:
+                time.sleep(0.1)
+            else:
+                return
+        else:
+            rospy.logerr(f"failed to resume in {self.SERVICE_CALL_TRIES} tries")

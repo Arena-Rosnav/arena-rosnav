@@ -1,10 +1,10 @@
 algorithm: rosnav
-episode_per_map: 5
+episode_per_map: 10
 generation_timeout: 10
 
 map_properties:
-  width: 60
-  height: 60
+  width: 70
+  height: 70
   resolution: 0.5 # should stay fixed during runtime
 
 algorithm_config:
@@ -15,8 +15,8 @@ algorithm_config:
 
   # indoor parameters
   indoor:
-    corridor_radius: 4 # total corridor diameter = 1+2*corridor_radius
-    iterations: 50 # number of nodes for the indoor map algorithm
+    corridor_radius: 2 # total corridor diameter = 1+2*corridor_radius
+    iterations: 90 # number of nodes for the indoor map algorithm
   
   # outdoor parameters
   outdoor:

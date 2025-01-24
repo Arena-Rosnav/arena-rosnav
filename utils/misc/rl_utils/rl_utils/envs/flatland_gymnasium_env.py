@@ -1,102 +1,84 @@
-#! /usr/bin/env python3
-from typing import Tuple, Type
+from typing import Optional, Tuple, Type, Union
 
 import gymnasium
 import numpy as np
 import rospy
 from flatland_msgs.msg import StepWorld  # type: ignore
 from geometry_msgs.msg import Twist
-from rl_utils.utils.observation_collector import (
+from rl_utils.utils.type_alias.observation import InformationDict
+from rosnav_rl.observations import (
     DoneObservation,
     FullRangeLaserCollector,
-    ObservationDict,
+    ObservationManager,
+    get_required_observation_units,
 )
-from rl_utils.utils.observation_collector.observation_manager import ObservationManager
-from rl_utils.utils.rewards.reward_function import RewardFunction
-from rosnav.model.base_agent import BaseAgent
-from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
-from rosnav.utils.observation_space import EncodedObservationDict
+from rosnav_rl.rl_agent import RL_Agent
+from rosnav_rl.states import SimulationStateContainer
+from rosnav_rl.utils.rostopic import Namespace
+from rosnav_rl.utils.type_aliases import EncodedObservationDict, ObservationDict
 from std_srvs.srv import Empty
-from rl_utils.topic import Namespace, Topic
+
 from task_generator.task_generator_node import TaskGenerator
 from task_generator.tasks import Task
-from task_generator.utils import rosparam_get
 
 from .utils import determine_termination
 
 
 class FlatlandEnv(gymnasium.Env):
-    """
-    FlatlandEnv is an environment class that represents the Flatland environment for reinforcement learning.
-
-    Args:
-        ns (str): The namespace of the environment.
-        agent_description (BaseAgent): The agent description.
-        reward_fnc (str): The reward function.
-        max_steps_per_episode (int): The maximum number of steps per episode. Default is 100.
-        trigger_init (bool): Whether to trigger the initialization of the environment. Default is False.
-        obs_unit_kwargs (dict): Additional keyword arguments for the observation unit. Default is None.
-        reward_fnc_kwargs (dict): Additional keyword arguments for the reward function. Default is None.
-        task_generator_kwargs (dict): Additional keyword arguments for the task generator. Default is None.
-        *args: Additional positional arguments.
-        **kwargs: Additional keyword arguments.
-
-    Attributes:
-        metadata (dict): The metadata of the environment.
-
-    """
-
     metadata = {"render_modes": ["human"]}
 
     def __init__(
         self,
-        ns: str,
-        agent_description: BaseAgent,
-        reward_fnc: str,
+        ns: Union[str, Namespace],
+        rl_agent: RL_Agent,
+        simulation_state_container: Optional[SimulationStateContainer] = None,
         max_steps_per_episode=100,
         init_by_call: bool = False,
         wait_for_obs: bool = False,
         obs_unit_kwargs=None,
-        reward_fnc_kwargs=None,
         task_generator_kwargs=None,
         *args,
         **kwargs,
     ):
         """
-        Initializes the FlatlandEnv class.
+        Initializes the FlatlandEnv environment.
 
         Args:
-            ns (str): The namespace for the environment.
-            agent_description (BaseAgent): The agent description.
-            reward_fnc (str): The reward function.
-            max_steps_per_episode (int, optional): The maximum number of steps per episode. Defaults to 100.
-            init_by_call (bool, optional): Whether to trigger initialization from outside. Defaults to False.
-            obs_unit_kwargs (dict, optional): Additional keyword arguments for the observation unit. Defaults to None.
-            reward_fnc_kwargs (dict, optional): Additional keyword arguments for the reward function. Defaults to None.
-            task_generator_kwargs (dict, optional): Additional keyword arguments for the task generator. Defaults to None.
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
+            ns (Union[str, Namespace]): The namespace for the environment.
+            space_manager (RosnavSpaceManager): The space manager for ROS navigation.
+            reward_function (Optional[RewardFunction], optional): The reward function to use. Defaults to None.
+            simulation_state_container (Optional[SimulationStateContainer], optional): Container for simulation state. Defaults to None.
+            max_steps_per_episode (int, optional): Maximum steps per episode. Defaults to 100.
+            init_by_call (bool, optional): Whether to initialize by call. Defaults to False.
+            wait_for_obs (bool, optional): Whether to wait for observations. Defaults to False.
+            obs_unit_kwargs (dict, optional): Keyword arguments for observation unit. Defaults to None.
+            task_generator_kwargs (dict, optional): Keyword arguments for task generator. Defaults to None.
+            *args: Additional arguments.
+            **kwargs: Additional keyword arguments.
         """
         super(FlatlandEnv, self).__init__()
-
-        self.ns = Namespace(ns)
-        self._agent_description = agent_description
+        self.ns = Namespace(ns) if type(ns) is str else ns
 
         self._debug_mode = rospy.get_param("/debug_mode", False)
         self._is_train_mode = rospy.get_param("/train_mode", default=True)
         self._step_size = rospy.get_param("/step_size")
 
+        if self._is_train_mode and rl_agent.reward_function is None:
+            raise ValueError("Reward function is required for the training.")
+
         if not self._debug_mode:
             rospy.init_node(f"env_{self.ns.simulation_ns}".replace("/", "_"))
 
-        self._reward_fnc = reward_fnc
-        self._reward_fnc_kwargs = reward_fnc_kwargs if reward_fnc_kwargs else {}
+        self._model_space_manager = rl_agent.space_manager
+        self._reward_function = rl_agent.reward_function
+        self.__simulation_state_container = simulation_state_container
+
         self._obs_unit_kwargs = obs_unit_kwargs if obs_unit_kwargs else {}
         self._task_generator_kwargs = (
             task_generator_kwargs if task_generator_kwargs else {}
         )
 
-        self._wait_for_obs = wait_for_obs
+        self.__wait_for_obs = wait_for_obs
 
         self._steps_curr_episode = 0
         self._episode = 0
@@ -107,91 +89,101 @@ class FlatlandEnv(gymnasium.Env):
 
     def init(self):
         """
-        Initializes the environment.
+        Initializes the environment for training or evaluation.
 
-        Returns:
-            bool: True if the initialization is successful, False otherwise.
+        If the environment is in training mode, it sets up the environment accordingly.
+        It then determines the required observation units based on the reward function
+        and the observation space list. If a full range laser is attached to the robot,
+        it adds the FullRangeLaserCollector to the observation units.
+
+        Finally, it initializes the ObservationManager with the required observation units
+        and other necessary parameters.
+
+        Attributes:
+            is_train_mode (bool): Indicates if the environment is in training mode.
+            _setup_env_for_training (function): Sets up the environment for training.
+            _reward_function (object): The reward function used in the environment.
+            _model_space_manager (object): Manages the observation space list.
+            __simulation_state_container (object): Contains the state of the simulation.
+            _obs_unit_kwargs (dict): Additional keyword arguments for observation units.
+            __wait_for_obs (bool): Indicates if the environment should wait for observations.
+            ns (str): Namespace for the observation manager.
         """
-        self.model_space_encoder = RosnavSpaceManager(
-            ns=self.ns,
-            space_encoder_class=self._agent_description.space_encoder_class,
-            observation_spaces=self._agent_description.observation_spaces,
-            observation_space_kwargs=self._agent_description.observation_space_kwargs,
+        if self.is_train_mode:
+            self._setup_env_for_training()
+
+        required_obs_units = get_required_observation_units(
+            self._reward_function.reward_units
+            + self._model_space_manager.observation_space_list
+            if self.is_train_mode
+            else self._model_space_manager.observation_space_list
         )
 
-        if self._is_train_mode:
-            self._setup_env_for_training(
-                self._reward_fnc, **self._task_generator_kwargs
-            )
-
-        obs_structure = set(self.reward_calculator.required_observations).union(
-            set(self.model_space_encoder.encoder.required_observations)
-        )
-        obs_structure.add(FullRangeLaserCollector)
+        # get obs structure
+        if self.__simulation_state_container.robot.laser_state.attach_full_range_laser:
+            required_obs_units.append(FullRangeLaserCollector)
 
         self.observation_collector = ObservationManager(
             ns=self.ns,
-            obs_structur=list(obs_structure),
+            obs_structur=required_obs_units,
+            simulation_state_container=self.__simulation_state_container,
             obs_unit_kwargs=self._obs_unit_kwargs,
-            wait_for_obs=self._wait_for_obs,
+            wait_for_obs=self.__wait_for_obs,
         )
-        return True
 
     @property
-    def action_space(self):
+    def action_space(self) -> gymnasium.spaces.Box:
         """
         Returns the action space of the environment.
 
         Returns:
             action_space (object): The action space of the environment.
         """
-        return self.model_space_encoder.get_action_space()
+        return self._model_space_manager.action_space
 
     @property
-    def observation_space(self):
+    def observation_space(self) -> gymnasium.spaces.Dict:
         """
         Returns the observation space of the environment.
 
         Returns:
             gym.Space: The observation space of the environment.
         """
-        return self.model_space_encoder.get_observation_space()
+        return self._model_space_manager.observation_space
 
-    def _setup_env_for_training(self, reward_fnc: str, **kwargs):
+    def _setup_env_for_training(self):
         """
-        Set up the environment for training.
+        Sets up the environment for training by initializing necessary components.
 
-        Args:
-            reward_fnc (str): The name of the reward function.
-            **kwargs: Additional keyword arguments.
+        This method performs the following tasks:
+        1. Instantiates the task manager using the TaskGenerator class.
+        2. Retrieves a predefined task and assigns it to the `self.task` attribute.
+        3. Sets up the agent action publisher to publish Twist messages to the 'cmd_vel' topic.
+        4. Configures the step world service and publisher for stepping the simulation world.
 
-        Returns:
-            None
+        Attributes:
+            task (Type[Task]): The predefined task for the environment.
+            agent_action_pub (rospy.Publisher): Publisher for agent actions.
+            _service_name_step (str): Name of the step world service.
+            _step_world_publisher (rospy.Publisher): Publisher for stepping the simulation world.
+            _step_world_srv (rospy.ServiceProxy): Service proxy for the step world service.
         """
         # instantiate task manager
-        task_generator = TaskGenerator(self.ns.simulation_ns)
-        self.task: Type[Task] = task_generator._get_predefined_task(**kwargs)
-
-        # reward calculator
-        self.reward_calculator = RewardFunction(
-            rew_func_name=reward_fnc,
-            holonomic=self.model_space_encoder._is_holonomic,
-            robot_radius=self.task.robot_managers[0]._robot_radius,
-            safe_dist=self.task.robot_managers[0].safe_distance,
-            goal_radius=rosparam_get(float, "goal_radius", 0.3),
-            distinguished_safe_dist=rosparam_get(
-                bool, "rl_agent/distinguished_safe_dist", False
-            ),
-            ns=self.ns,
-            max_steps=self._max_steps_per_episode,
-            **self._reward_fnc_kwargs,
+        task_generator = TaskGenerator(
+            namespace=self.ns.simulation_ns,
+            task_state=self.__simulation_state_container.task,
+            robot_state=self.__simulation_state_container.robot,
+        )
+        self.task: Type[Task] = task_generator._get_predefined_task(
+            **self._task_generator_kwargs
         )
 
+        # agent action publisher
         self.agent_action_pub = rospy.Publisher(
             str(self.ns("cmd_vel")), Twist, queue_size=1
         )
 
-        # service clients
+        # step world service and publisher
         self._service_name_step = str(self.ns.simulation_ns("step_world"))
         self._step_world_publisher = rospy.Publisher(
             self._service_name_step, StepWorld, queue_size=10
@@ -230,7 +222,7 @@ class FlatlandEnv(gymnasium.Env):
         Returns:
             np.ndarray: The decoded action.
         """
-        return self.model_space_encoder.decode_action(action)
+        return self._model_space_manager.decode_action(action)
 
     def _encode_observation(
         self, observation: ObservationDict, *args, **kwargs
@@ -245,32 +237,39 @@ class FlatlandEnv(gymnasium.Env):
             The encoded observation.
 
         """
-        return self.model_space_encoder.encode_observation(observation, **kwargs)
+        return self._model_space_manager.encode_observation(observation, **kwargs)
 
     def step(
         self, action: np.ndarray
-    ) -> Tuple[EncodedObservationDict, float, bool, bool, dict]:
+    ) -> Tuple[EncodedObservationDict, float, bool, bool, InformationDict]:
         """
-        Take a step in the environment.
+        Execute one step in the environment using the given action.
 
         Args:
-            action (np.ndarray): The action to take.
+            action (np.ndarray): The action to be taken in the environment.
 
         Returns:
-            tuple: A tuple containing the encoded observation, reward, done flag, info dictionary, and False flag.
-
+            Tuple[EncodedObservationDict, float, bool, bool, dict]: A tuple containing:
+                - EncodedObservationDict: The encoded observation dictionary after applying the model space manager.
+                - float: The reward obtained after taking the action.
+                - bool: A flag indicating if the episode has ended.
+                - bool: A flag indicating if the episode was truncated (always False in this implementation).
+                - InformationDict: Additional information about the step.
         """
+        self._pub_action(self._decode_action(action))
 
-        decoded_action = self._decode_action(action)
-        self._pub_action(decoded_action)
-
-        if self._is_train_mode:
+        if self.is_train_mode:
             self._call_service_takeSimStep()
 
-        obs_dict: ObservationDict = self.observation_collector.get_observations()
+        obs_dict: ObservationDict = self.observation_collector.get_observations(
+            simulation_state_container=self.__simulation_state_container
+        )
 
         # calculate reward
-        reward, reward_info = self.reward_calculator.get_reward(obs_dict=obs_dict)
+        reward, reward_info = self._reward_function.get_reward(
+            obs_dict=obs_dict,
+            simulation_state_container=self.__simulation_state_container,
+        )
 
         self._steps_curr_episode += 1
 
@@ -281,27 +280,33 @@ class FlatlandEnv(gymnasium.Env):
             max_steps=self._max_steps_per_episode,
         )
 
+        # pickle.dump(
+        #     self._encode_observation(obs_dict),
+        #     open(f"obs_dict_{self._steps_curr_episode}.pkl", "wb"),
+        # )
+
         return (
-            self._encode_observation(obs_dict),
+            self._encode_observation(obs_dict, is_done=done),
             reward,
             done,
             False,
             info,
         )
 
-    def reset(self, seed=None, options=None) -> Tuple[EncodedObservationDict, dict]:
+    def reset(
+        self, seed=None, options=None
+    ) -> Tuple[EncodedObservationDict, InformationDict]:
         """
-        Reset the environment.
+        Resets the environment to an initial state and returns an initial observation.
 
         Args:
-            seed: The random seed for the environment.
-            options: Additional options for resetting the environment.
+            seed (int, optional): The seed for random number generation. Defaults to None.
+            options (dict, optional): Additional options for the reset. Defaults to None.
 
         Returns:
-            tuple: A tuple containing the encoded observation and an empty info dictionary.
-
+            Tuple[EncodedObservationDict, InformationDict]:
+                A tuple containing the encoded observation dictionary and an information dictionary.
         """
-
         super().reset(seed=seed)
         self._episode += 1
 
@@ -313,7 +318,7 @@ class FlatlandEnv(gymnasium.Env):
             first_map=first_map,
             reset_after_new_map=self._steps_curr_episode == 0,
         )
-        self.reward_calculator.reset()
+        self._reward_function.reset()
         self._steps_curr_episode = 0
 
         self._after_task_reset()
@@ -340,7 +345,7 @@ class FlatlandEnv(gymnasium.Env):
         """
         # make sure all simulation components are ready before first episode
         if self._episode <= 1:
-            for _ in range(6):
+            for _ in range(4):
                 self.agent_action_pub.publish(Twist())
                 self._call_service_takeSimStep()
 
@@ -349,16 +354,32 @@ class FlatlandEnv(gymnasium.Env):
         Perform any necessary steps after resetting the task.
 
         """
-        if self._is_train_mode:
+        if self.is_train_mode:
             # extra step for planning serivce to provide global plan
-            for _ in range(3):
+            for _ in range(4):
                 self.agent_action_pub.publish(Twist())
                 self._call_service_takeSimStep()
 
     def _call_service_takeSimStep(self, t: float = None, srv_call: bool = True):
+        """
+        Calls the service to take a simulation step in the Flatland environment.
+
+        Args:
+            t (float, optional): The time duration for the simulation step. If None,
+                                 the default step size is used. Defaults to None.
+            srv_call (bool, optional): Flag to determine whether to call the service
+                                       to step the world. Defaults to True.
+
+        """
         if srv_call:
             self._step_world_srv()
+            return
+
         request = StepWorld()
         request.required_time = self._step_size if t is None else t
 
         self._step_world_publisher.publish(request)
+
+    @property
+    def is_train_mode(self) -> bool:
+        return self._is_train_mode

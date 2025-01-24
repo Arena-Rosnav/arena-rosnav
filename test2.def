@@ -1,0 +1,30 @@
+Bootstrap: localimage
+From: arena.sif
+
+%post
+    alias poetry=$ARENA_ROOT/.local/bin/poetry
+    # poetry config virtualenvs.create false
+
+    cd $ARENA_ROOT/arena_ws/src/arena/arena-rosnav \
+    && poetry lock --no-update \
+    && poetry install --no-interaction --no-ansi --no-root --with training,social
+
+    # Install rosdeps
+    cd $ARENA_ROOT/arena_ws
+    rosdep install --from-paths src --ignore-src -r -y
+
+    # Build workspace
+    . /opt/ros/$ROS_DISTRO/setup.sh
+    catkin_make
+
+    # Source workspace
+    . $ARENA_ROOT/$ARENA_WS/devel/setup.sh
+
+    # Setup Xvfb
+    export DISPLAY=99
+    Xvfb :99 -screen 0 1024x768x16 &
+    Xvfb :99 -screen 0 1024x768x16 &
+    exec "$@"
+
+
+    

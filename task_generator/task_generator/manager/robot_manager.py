@@ -1,26 +1,24 @@
 import dataclasses
+import os
 from typing import Optional
 
+import geometry_msgs.msg as geometry_msgs
+import nav_msgs.msg as nav_msgs
 import numpy as np
-import rospy
 import roslaunch
-import os
+import rospy
 import scipy.spatial.transform
+import std_srvs.srv as std_srvs
+from rl_utils.topic import Namespace
+from rl_utils.utils.constants import ArenaType
+from rosnav_rl.states.simulation import RobotState
+from tf.transformations import quaternion_from_euler
 
-import roslaunch
-import rospy
-from task_generator.constants import Constants, Config
+from task_generator.constants import Config, Constants
 from task_generator.manager.entity_manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.shared import ModelType, PositionOrientation, Robot
 from task_generator.utils import Utils, rosparam_get
-from rl_utils.topic import Namespace
-
-from tf.transformations import quaternion_from_euler
-
-import nav_msgs.msg as nav_msgs
-import geometry_msgs.msg as geometry_msgs
-import std_srvs.srv as std_srvs
 
 
 class RobotManager:
@@ -32,6 +30,7 @@ class RobotManager:
     _namespace: Namespace
 
     _entity_manager: EntityManager
+    _robot_state: Optional[RobotState]
 
     _start_pos: PositionOrientation
     _goal_pos: PositionOrientation
@@ -43,6 +42,10 @@ class RobotManager:
     @property
     def goal_pos(self) -> PositionOrientation:
         return self._goal_pos
+
+    @property
+    def robot_state(self) -> Optional[RobotState]:
+        return self._robot_state
 
     _position: PositionOrientation
 
@@ -58,27 +61,34 @@ class RobotManager:
     _clear_costmaps_srv: rospy.ServiceProxy
 
     def __init__(
-        self, namespace: Namespace, entity_manager: EntityManager, robot: Robot
+        self,
+        namespace: Namespace,
+        entity_manager: EntityManager,
+        robot: Robot,
+        robot_state: Optional[RobotState] = None,
     ):
         self._namespace = namespace
 
         self._entity_manager = entity_manager
+        self._robot_state = robot_state
 
         self._start_pos = PositionOrientation(0, 0, 0)
         self._goal_pos = PositionOrientation(0, 0, 0)
 
-        self._goal_tolerance_distance = rosparam_get(
-            float, "goal_radius", Config.Robot.GOAL_TOLERANCE_RADIUS
-        )  # + self._robot_radius
+        self._goal_tolerance_distance = 1.5
         self._goal_tolerance_angle = rosparam_get(
             float, "goal_tolerance_angle", Config.Robot.GOAL_TOLERANCE_ANGLE
         )
 
         self._robot = robot
-        self._safety_distance = rosparam_get(
-            float,
-            f"{robot.name}/safety_distance",
-            Config.Robot.SPAWN_ROBOT_SAFE_DIST,
+        self._safety_distance = (
+            rosparam_get(
+                float,
+                f"{robot.name}/safety_distance",
+                Config.Robot.SPAWN_ROBOT_SAFE_DIST,
+            )
+            if self.robot_state is None
+            else self.robot_state.safety_distance
         )
 
         self._position = self._start_pos
@@ -93,6 +103,7 @@ class RobotManager:
                         YAMLUtil.update_plugins(
                             namespace=self.namespace,
                             description=YAMLUtil.parse_yaml(model.description),
+                            robot_state=self.robot_state,
                         )
                     )
                 ),
@@ -113,8 +124,12 @@ class RobotManager:
             str(_gen_goal_topic), geometry_msgs.PoseStamped, queue_size=10
         )
 
+        # self._pub_goal_timer = rospy.Timer(
+        #     rospy.Duration(nsecs=int(500000000000000)), self._publish_goal_periodically
+        # )
+
         self._pub_goal_timer = rospy.Timer(
-            rospy.Duration(nsecs=int(0.25e9)), self._publish_goal_periodically
+            rospy.Duration(nsecs=int(5.0e9)), self._publish_goal_periodically
         )
 
         rospy.Subscriber(
@@ -125,7 +140,11 @@ class RobotManager:
         #     return
 
         self._launch_robot()
-        self._robot_radius = rosparam_get(float, self.namespace("robot_radius"))
+        self._robot_radius = (
+            rosparam_get(float, self.namespace("robot_radius"))
+            if self.robot_state is None
+            else self.robot_state.radius
+        )
 
         # rospy.wait_for_service(os.path.join(self.namespace, "move_base", "clear_costmaps"))
         self._clear_costmaps_srv = rospy.ServiceProxy(
@@ -146,7 +165,7 @@ class RobotManager:
 
     @property
     def namespace(self) -> Namespace:
-        if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
+        if Utils.get_arena_type() == ArenaType.TRAINING:
             return Namespace(
                 f"{self._namespace(f'{self._namespace}_{self.model_name}')}"
             )  # schizophrenia
@@ -207,10 +226,8 @@ class RobotManager:
         # https://gamedev.stackexchange.com/a/4472
         angle_to_goal: float = np.pi - np.abs(np.abs(goal[2] - start[2]) - np.pi)
 
-        return (
-            distance_to_goal < self._goal_tolerance_distance
-            and angle_to_goal < self._goal_tolerance_angle
-        )
+        # rospy.loginfo(f'{distance_to_goal}<{self._goal_tolerance_distance}, {angle_to_goal} < {self._goal_tolerance_angle}')
+        return distance_to_goal < self._goal_tolerance_distance
 
     def _publish_goal_periodically(self, *args, **kwargs):
         if self._goal_pos is not None:
@@ -234,7 +251,7 @@ class RobotManager:
     def _launch_robot(self):
         rospy.logwarn(f"START WITH MODEL {self.namespace}")
 
-        if Utils.get_arena_type() != Constants.ArenaType.TRAINING:
+        if Utils.get_arena_type() != ArenaType.TRAINING:
             roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(  # type: ignore
                 ["arena_bringup", "robot.launch"]
             )

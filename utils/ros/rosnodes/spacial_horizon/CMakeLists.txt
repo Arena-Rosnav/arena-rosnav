@@ -12,6 +12,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall")
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
+  std_srvs
   nav_msgs
   roscpp
   rospy
@@ -118,7 +119,7 @@ set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES spacial_horizon
-  CATKIN_DEPENDS visualization_msgs geometry_msgs nav_msgs roscpp rospy std_msgs tf actionlib
+  CATKIN_DEPENDS visualization_msgs geometry_msgs nav_msgs roscpp rospy std_msgs tf actionlib std_srvs
 #  DEPENDS system_lib
 )
 

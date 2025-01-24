@@ -45,7 +45,7 @@ source ~/.bashrc
 
 # Getting Packages
 echo "Installing Deps...:"
-sudo apt install -y python3 python-is-python3 git python3-rosdep python3-pip python3-rosinstall-generator python3-vcstool build-essential python3-catkin-tools
+sudo apt install -y python3 python-is-python3 git python3-rosdep python3-pip python3-rosinstall-generator python3-vcstool build-essential python3-catkin-tools python3.9-dev libopenmpi-dev
 
 # Poetry
 echo "Installing Poetry...:"

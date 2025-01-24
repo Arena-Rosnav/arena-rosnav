@@ -3,16 +3,14 @@ import functools
 import json
 import math
 import time
+from typing import Callable, List
 
-import rospy
-
-
-import pedsim_msgs.msg as pedsim_msgs
 import geometry_msgs.msg as geometry_msgs
+import pedsim_msgs.msg as pedsim_msgs
 import pedsim_srvs.srv as pedsim_srvs
+import rospy
 import std_srvs.srv as std_srvs
-
-import functools
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 from task_generator.constants import Config, Constants, Pedsim
 from task_generator.manager.entity_manager.entity_manager import EntityManager
@@ -33,14 +31,10 @@ from task_generator.shared import (
     Robot,
 )
 from task_generator.simulators.flatland_simulator import FlatlandSimulator
-
-from typing import Callable, List
-
 from task_generator.simulators.gazebo_simulator import GazeboSimulator
 from task_generator.simulators.unity_simulator import UnitySimulator
 from task_generator.utils import Utils, rosparam_get
-
-from tf.transformations import quaternion_from_euler, euler_from_quaternion
+from rl_utils.utils.constants import Simulator
 
 
 # TODO retrieve this from pedsim registry
@@ -561,7 +555,7 @@ class CrowdsimManager(EntityManager):
         if not Utils.is_synthetic_map():
             return
 
-        if Utils.get_simulator() in [Constants.Simulator.FLATLAND]:
+        if Utils.get_simulator() in [Simulator.FLATLAND]:
             return
 
         entity = self._known_obstacles.get(self.WALLS_ENTITY)

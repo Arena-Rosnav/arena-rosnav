@@ -13,6 +13,7 @@
 #include <nav_msgs/Path.h>
 #include <nav_msgs/GetPlan.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <std_srvs/Empty.h>
 
 #include <boost/foreach.hpp>
 #define forEach BOOST_FOREACH
@@ -24,6 +25,7 @@
 #define PUB_TOPIC_SUBGOAL "subgoal"
 #define PUB_TOPIC_GLOBAL_PLAN "global_plan"
 #define SERVICE_GLOBAL_PLANNER "move_base_flex/NavfnROS/make_plan"
+#define SERVICE_STEP_WORLD "step_world"
 
 class SpacialHorizon
 {
@@ -38,6 +40,8 @@ private:
     Eigen::Vector2d odom_pos, odom_vel, initial_pos;
 
     Eigen::Vector2d end_pos;
+    Eigen::Vector2d subgoal_pos;
+
 
     // subscriber
     ros::Subscriber sub_goal, sub_odom, sub_initial_pose;
@@ -46,7 +50,7 @@ private:
     ros::Publisher pub_subgoal, pub_global_plan;
 
     // service
-    ros::ServiceClient global_planner_srv;
+    ros::ServiceClient global_planner_srv, step_world_srv;
 
     // plan with global path from move base
     nav_msgs::GetPlan global_plan;
@@ -57,6 +61,7 @@ private:
     bool publish_goal_on_subgoal_fail = false;
     double goal_tolerance;    // meter
     double subgoal_tolerance; // meter
+    double subgoal_reach_tolerance; // meter
     double subgoal_pub_period;
     double planning_horizon;
     double update_global_period;
@@ -66,6 +71,7 @@ private:
 
     /* init methods */
     void initializeGlobalPlanningService();
+    void initializeStepWorldService();
     void initializeTimers();
 
     /* ros related callback*/
@@ -75,12 +81,14 @@ private:
 
     bool getSubgoal(Eigen::Vector2d &subgoal);
     void updateSubgoalCallback(const ros::TimerEvent &e);
+    void publishSubgoal(Eigen::Vector2d &subgoal);
+    bool tryUpdateGlobalplanAndSubgoal(int try_count = 0);
 
     /* get global plan from move base */
     void getGlobalPath();
     void getGlobalPath(const ros::TimerEvent &e);
     void fillPathRequest(nav_msgs::GetPlan::Request &request);
-    void callPlanningService(ros::ServiceClient &serviceClient, nav_msgs::GetPlan &srv);
+    bool callPlanningService(ros::ServiceClient &serviceClient, nav_msgs::GetPlan &srv);
 
 public:
     SpacialHorizon(/* args */) {}
