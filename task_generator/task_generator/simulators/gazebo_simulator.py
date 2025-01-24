@@ -135,7 +135,7 @@ class GazeboSimulator(BaseSimulator):
                     '-allow_renaming', 'false',
                     '-x', str(entity.position.x),
                     '-y', str(entity.position.y),
-                    '-X', str(entity.position.orientation)
+                    '-Y', str(entity.position.orientation)  # Corrected from '-X' to '-Y'
                 ],
             )
         )
@@ -155,13 +155,16 @@ class GazeboSimulator(BaseSimulator):
                         # IMU (Gazebo -> ROS2)
                         '/world/default/model/' + entity.name + '/link/base_link/sensor/imu_sensor/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
                         # Velocity command (ROS2 -> Gazebo)
-                        gz_topic + '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist'
+                        gz_topic + '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
+                        # LiDAR (Gazebo -> ROS2)
+                        '/world/default/model/' + entity.name + '/link/lidar_link/sensor/gpu_lidar/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan'
                     ],
                     remappings=[
                         # Remap Gazebo topics to ROS2 topics
                         (gz_topic + '/odometry', entity.name + '/odom'),
                         ('/world/default/model/' + entity.name + '/link/base_link/sensor/imu_sensor/imu', entity.name + '/imu/data'),
-                        (gz_topic + '/cmd_vel', entity.name + '/cmd_vel')
+                        (gz_topic + '/cmd_vel', entity.name + '/cmd_vel'),
+                        ('/world/default/model/' + entity.name + '/link/lidar_link/sensor/gpu_lidar/scan', entity.name + '/lidar/scan')
                     ],
                     parameters=[
                         {

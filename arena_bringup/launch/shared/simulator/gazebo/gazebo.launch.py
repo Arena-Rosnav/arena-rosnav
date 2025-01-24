@@ -84,7 +84,10 @@ def generate_launch_description():
             "materials",
             "textures",
         ),
+        # Add Jackle paths
         os.path.join(get_package_share_directory("jackal_description"), '..'),
+        os.path.join(get_package_share_directory("turtlebot4_description"), '..'),
+        os.path.join(get_package_share_directory("irobot_create_description"), '..'),
     ]
     # GZ_CONFIG_PATH = ":".join(GZ_CONFIG_PATHS)
     GZ_CONFIG_PATH = "/usr/share/gz"
@@ -92,10 +95,14 @@ def generate_launch_description():
     GZ_SIM_RESOURCE_PATHS_COMBINED = ":".join(GZ_SIM_RESOURCE_PATHS)
 
     # Update environment variables
+    model_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
+    if model_path:
+        GZ_SIM_RESOURCE_PATHS_COMBINED = f"{model_path}:{GZ_SIM_RESOURCE_PATHS_COMBINED}"
+    os.environ["GZ_SIM_RESOURCE_PATH"] = GZ_SIM_RESOURCE_PATHS_COMBINED
+    os.environ["GAZEBO_MODEL_PATH"] = GZ_SIM_RESOURCE_PATHS_COMBINED
     # os.environ['GZ_CONFIG_PATH'] = GZ_CONFIG_PATH
     # os.environ["GZ_CONFIG_PATH"] = GZ_CONFIG_PATH
     # os.environ["GZ_SIM_PHYSICS_ENGINE_PATH"] = GZ_SIM_PHYSICS_ENGINE_PATH
-    os.environ["GZ_SIM_RESOURCE_PATH"] = GZ_SIM_RESOURCE_PATHS_COMBINED
 
     world = LaunchConfiguration("world")
 

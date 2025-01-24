@@ -6,7 +6,7 @@ repositories:
   arena/simulation-setup:
     type: git
     url: https://github.com/voshch/arena-simulation-setup.git
-    version: humble@b191fff
+    version: humble@7a45353
 
   # deps/xacro:
   #   type: git
@@ -43,6 +43,16 @@ repositories:
     type: git
     url: https://github.com/jackal/jackal.git
     version: foxy-devel
+
+  deps/robots/turtlebot4:
+    type: git
+    url: https://github.com/turtlebot/turtlebot4.git
+    version: humble
+
+  deps/irobot_create_msgs:
+    type: git
+    url: https://github.com/iRobotEducation/irobot_create_msgs.git
+    version: humble
 
   deps/hunav/hunav_sim:
     type: git

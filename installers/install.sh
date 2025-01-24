@@ -227,6 +227,11 @@ compile(){
 
 compile
 
+# robot dependencies
+
+sudo apt install -y ros-${ROS_DISTRO}-irobot-create-description
+sudo apt install -y ros-${ROS_DISTRO}-irobot-create-msgs
+
 for installer in $(ls src/arena/arena-rosnav/installers | grep -E '^[0-9]+_.*.sh') ; do 
 
   name=$(echo $installer | cut -d '_' -f 2)
