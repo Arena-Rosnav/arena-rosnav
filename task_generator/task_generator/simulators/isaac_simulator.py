@@ -93,7 +93,7 @@ class IsaacSimulator(BaseSimulator):
                 return True
             else:
                 usd_path = os.path.abspath(model.path)
-                self.node.get_logger().info(usd_path)
+                # self.node.get_logger().info(usd_path)
                 response = self.client['spawn_obstacle_client'].call_async(
                 ImportObstacles.Request(
                     name=entity.name,

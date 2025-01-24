@@ -23,6 +23,7 @@ class WorldManager(NodeInterface):
         self
     ):
         NodeInterface.__init__(self)
+        self._detected_walls = None
         self._classic_forbidden_zones = []
 
     @property
@@ -45,21 +46,30 @@ class WorldManager(NodeInterface):
     def walls(self) -> WorldWalls:
         return self._world.entities.walls
 
+    _detected_walls: Optional[WorldWalls]
+
+    @property
+    def detected_walls(self) -> WorldWalls:
+        if self._detected_walls is None:
+            self._detected_walls = occupancy_to_walls(
+                occupancy_grid=self._world.map.occupancy._walls.grid,
+                transform=self._world.map.tf_grid2pos
+            )
+        return self._detected_walls
+
     def update_world(
         self,
         world_map: WorldMap,
         obstacles: Optional[WorldObstacleConfigurations] = None,
         walls: Optional[WorldWalls] = None,
     ):
+        self._detected_walls = None
 
         if obstacles is None:
             obstacles = []
 
         if walls is None:
-            walls = occupancy_to_walls(
-                occupancy_grid=world_map.occupancy._walls.grid,
-                transform=world_map.tf_grid2pos
-            )
+            walls = self.detected_walls
 
         parsed_obstacles = configurations_to_obstacles(
             configurations=obstacles
