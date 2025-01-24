@@ -170,7 +170,33 @@ class GazeboSimulator(BaseSimulator):
                     ],
                 )
             )
+            launch_description.add_action(
+                launch_ros.actions.Node(
+                    package='robot_state_publisher',
+                    executable='robot_state_publisher',
+                    output='screen',
+                    parameters=[
+                        {'use_sim_time': True},
+                        {'robot_description': description},
+                        {'frame_prefix': entity.name + '/'}
+                    ],
+                    remappings=[
+                        ('/tf', 'tf'), 
+                        ('/tf_static', 'tf_static')
+                    ]
+                )
+            )
 
+            launch_description.add_action(
+                launch_ros.actions.Node(
+                    package='joint_state_publisher',
+                    executable='joint_state_publisher',
+                    output='screen',
+                    parameters=[
+                        {'use_sim_time': True}
+                    ]
+                )
+            )
         self.entities[entity.name] = entity
         self.node.do_launch(launch_description)
         return True

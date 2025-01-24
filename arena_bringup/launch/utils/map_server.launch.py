@@ -27,8 +27,9 @@ def generate_launch_description():
             output='screen',
             parameters=[
                 {
-                    'node_names': ['map_server'],
+                    'node_names': ['map_server', 'amcl'],
                     'autostart': True,
+                    'use_sim_time': True,
                 }
             ]
         ),
@@ -42,6 +43,14 @@ def generate_launch_description():
                 'yaml_filename': '',
             }],
         ),
+        launch_ros.actions.Node(
+            package='nav2_amcl',
+            executable='amcl',
+            name='amcl',
+            parameters=[{
+                'use_sim_time': True
+            }]
+        )
     ])
     return ld
 

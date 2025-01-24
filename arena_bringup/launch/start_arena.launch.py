@@ -181,10 +181,10 @@ def generate_launch_description():
             }.items()
         ),
         launch_ros.actions.Node(
-            package="rviz_utils",
-            executable="rviz_config",
-            name="rviz_config",
-            output="screen",
+            package="rviz2",
+            executable="rviz2",
+            name="rviz2",
+            arguments=['-d', '/path/to/default.rviz']
         ),
     ])
     return ld
