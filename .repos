@@ -6,7 +6,7 @@ repositories:
   arena/simulation-setup:
     type: git
     url: https://github.com/Arena-Rosnav/arena-simulation-setup.git
-    version: training_refactor
+    version: 56e5ddd
   arena/utils/3rd-party-robot-packages:
     type: git
     url: https://github.com/Arena-Rosnav/3rd-party-robot-packages
@@ -14,7 +14,7 @@ repositories:
   arena/utils/crowdsim:
     type: git
     url: https://github.com/tuananhroman/crowdsim.git
-    version: robust_pysocial
+    version: deb6dfb
   arena/utils/flatland:
     type: git
     url: https://github.com/Arena-Rosnav/flatland.git
@@ -94,7 +94,7 @@ repositories:
   planners/rosnav:
     type: git
     url: https://github.com/Arena-Rosnav/rosnav-rl.git
-    version: refactor
+    version: 4a05492
   planners/sarl-star:
     type: git
     url: https://github.com/Arena-Rosnav/sarl-star.git
