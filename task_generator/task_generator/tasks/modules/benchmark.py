@@ -12,8 +12,7 @@ import yaml
 import subprocess
 
 import ament_index_python
-from rosros import rospify as rospy
-import arena_evaluation_msgs.srv as arena_evaluation_srvs
+import arena_evaluation_msgs.srv
 
 import logging
 
@@ -30,6 +29,7 @@ class _Config(typing.NamedTuple):
 
     @classmethod
     def parse(cls, obj: typing.Dict):
+        print(obj)
         return cls(
             suite=cls.Suite(**obj["suite"]),
             contest=cls.Contest(**obj["contest"]),
@@ -280,8 +280,7 @@ class Mod_Benchmark(TM_Module):
                 f.write(f"run {self._runid}\n")
                 f.write(f"of contest {self._contest.name} with {len(self._contest.contestants)} contestants\n")
                 f.write(f"on suite {self._suite.name} with {len(self._suite.stages)} stages\n")
-                f.write(f"total of {len(self._contest.contestants) * sum([int(self._config.suite.scale_episodes * self._suite.config(
-                    Suite.Index(index)).episodes) for index in range(self._suite.min_index, self._suite.max_index + 1)])} episodes\n")
+                f.write(f"total of {len(self._contest.contestants) * sum([int(self._config.suite.scale_episodes * self._suite.config(Suite.Index(index)).episodes) for index in range(self._suite.min_index, self._suite.max_index + 1)])} episodes\n")
                 f.write("\n")
                 f.write(f"Simulator: {self._config.general.simulator}\n")
                 f.write(f"Base Config: {json.dumps(base_config)}\n")
@@ -422,7 +421,7 @@ class Mod_Benchmark(TM_Module):
 
         record_data_dir = f"{self._runid}/{contest_config.name}/{suite_config.name}"
 
-        if self._requires_restart:
+        if False and self._requires_restart:
             self._logger.info(f"{_get_rosmaster_pid()}")
             subprocess.Popen(
                 [
@@ -461,10 +460,11 @@ class Mod_Benchmark(TM_Module):
         else:
             rospy.ServiceProxy(
                 f"/{suite_config.robot}/change_directory",
-                arena_evaluation_srvs.ChangeDirectory).call(
-                arena_evaluation_srvs.ChangeDirectoryRequest(record_data_dir))
+                arena_evaluation_msgs.srv.ChangeDirectory).call(
+                arena_evaluation_msgs.srv.ChangeDirectoryRequest(record_data_dir))
             self._episode = 0
 
     def _suicide(self):
-        subprocess.run(["kill", f"{_get_rosmaster_pid()}"])
-        rospy.signal_shutdown("goodbye cruel world")
+        return
+        # subprocess.run(["kill", f"{_get_rosmaster_pid()}"])
+        # rospy.signal_shutdown("goodbye cruel world")
