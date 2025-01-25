@@ -20,40 +20,13 @@ from task_generator.manager.entity_manager.hunav_manager import HunavDynamicObst
 from task_generator.manager.entity_manager.utils import (KnownObstacles,
                                                          ObstacleLayer,
                                                          walls_to_obstacle)
-from task_generator.shared import (DynamicObstacle, Model, ModelType,
+
+from task_generator.shared import (DynamicObstacle, Model,ModelWrapper, ModelType,
                                    Namespace, PositionOrientation, Robot, Obstacle)
 from task_generator.simulators import BaseSimulator
 from task_generator.utils.geometry import quaternion_from_euler
 from task_generator.manager.world_manager.utils import WorldMap, WorldWalls
 from .import SKIN_TYPES 
-
-
-import dataclasses
-import functools
-import math
-import os
-import time
-from threading import Lock
-from typing import Any, Callable, Collection, Dict, List
-import typing
-
-import rclpy
-import geometry_msgs
-from ament_index_python.packages import get_package_share_directory
-from geometry_msgs.msg import Point, Pose, Quaternion, Twist
-from hunav_msgs.msg import Agent, AgentBehavior, Agents
-from hunav_msgs.srv import (ComputeAgent, ComputeAgents, GetAgents, MoveAgent,
-                            ResetAgents)
-
-from task_generator.manager.entity_manager import EntityManager
-from task_generator.manager.entity_manager.hunav_manager import HunavDynamicObstacle
-from task_generator.manager.entity_manager.utils import (KnownObstacles,
-                                                         ObstacleLayer,
-                                                         walls_to_obstacle)
-from task_generator.shared import (DynamicObstacle, Model,ModelWrapper, ModelType,
-                                   Namespace, PositionOrientation, Robot)
-from task_generator.simulators import BaseSimulator
-from task_generator.utils.geometry import quaternion_from_euler
 import traceback
 
 
@@ -352,7 +325,7 @@ class HunavManager(EntityManager):
                         </waypoint>
                         <waypoint>
                             <time>0.5</time>
-                            <pose>{agent_config.position.x + 1.0} {agent_config.position.y} {self._get_agent_height(agent_config.skin)} 0 0 {agent_config.yaw}</pose>
+                            <pose>{agent_config.position.x} {agent_config.position.y} {self._get_agent_height(agent_config.skin)} 0 0 {agent_config.yaw}</pose>
                         </waypoint>
                     </trajectory>
                 </script>
