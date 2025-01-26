@@ -208,6 +208,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         self._entity_manager = EntityManagerRegistry.get(self.conf.Arena.ENTITY_MANAGER.value)(
             namespace=self._namespace,
             simulator=self._simulator,
+            world_manager=self._world_manager
         )
 
         obstacle_manager = ObstacleManager(

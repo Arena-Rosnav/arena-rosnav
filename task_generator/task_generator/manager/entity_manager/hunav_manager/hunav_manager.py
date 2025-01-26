@@ -26,6 +26,7 @@ from task_generator.shared import (DynamicObstacle, Model,ModelWrapper, ModelTyp
 from task_generator.simulators import BaseSimulator
 from task_generator.utils.geometry import quaternion_from_euler
 from task_generator.manager.world_manager.utils import WorldMap, WorldWalls
+from task_generator.manager.world_manager import WorldManager
 from .import SKIN_TYPES 
 import traceback
 
@@ -48,13 +49,15 @@ class HunavManager(EntityManager):
             5: 'walk.dae'
         }
 
-    def __init__(self, namespace: Namespace, simulator: BaseSimulator):
+    def __init__(self, namespace: Namespace, simulator: BaseSimulator, world_manager: WorldManager):
+        super().__init__(namespace=namespace, simulator=simulator)
+        self._world_manager = world_manager   ## To get wallobstacles from worldmanager
         """Initialize HunavManager with debug logging"""
         self.__logger = self.node.get_logger().get_child('hunav_EM')
         self.node.get_logger().warn("=== HUNAVMANAGER INIT START ===")
         super().__init__(namespace=namespace, simulator=simulator)
         self.node.get_logger().warn("Parent class initialized")
-
+    
         # Initialize state variables
         self.node.get_logger().warn("Initializing state variables...")
         self._is_paused = False
@@ -64,7 +67,6 @@ class HunavManager(EntityManager):
         self._lock = Lock()
         self._update_rate = 0.1
         self.node.get_logger().warn("State variables initialized")
-
         # Initialize collections
         self.node.get_logger().warn("Initializing collections...")
         self._known_obstacles = KnownObstacles()
@@ -84,8 +86,6 @@ class HunavManager(EntityManager):
         time.sleep(2.0)
         self.node.get_logger().warn("Service wait complete")
 
- 
-       
 
         # Create timer after services are ready
         self._update_timer = self.node.create_timer(
@@ -111,8 +111,32 @@ class HunavManager(EntityManager):
         self.node.get_logger().warn("=== HUNAVMANAGER INIT COMPLETE ===")
 
 
+    @property 
+    def world(self):
+        return self._world_manager.world
 
-
+    def _get_wall_points(self) -> List[geometry_msgs.msg.Point]:
+        points = []
+        # Get walls from world manager property
+        walls = self.world.entities.walls
+        
+        POINT_SPACING = 0.5  # Distance between sampled points
+        
+        for wall in walls:
+            dx = wall.End.x - wall.Start.x 
+            dy = wall.End.y - wall.Start.y
+            length = math.sqrt(dx*dx + dy*dy)
+            steps = max(1, int(length / POINT_SPACING))
+            
+            for i in range(steps + 1):  # +1 to include endpoint
+                t = i/steps
+                point = geometry_msgs.msg.Point()
+                point.x = wall.Start.x + t*dx
+                point.y = wall.Start.y + t*dy
+                point.z = 0.0
+                points.append(point)
+                
+        return points
 
 
     def _update_agents(self):
@@ -125,7 +149,10 @@ class HunavManager(EntityManager):
                 request = ComputeAgents.Request()
                 request.robot = self._create_robot_message()
                 request.current_agents = self._get_current_agents()
-                
+                # Update obstacles for each agent
+                for agent in request.current_agents.agents:
+                    self._update_agent_obstacles(agent)   
+
                 response = self._compute_agents_client.call(request)
                 
                 if response and response.updated_agents.agents:
@@ -506,6 +533,8 @@ class HunavManager(EntityManager):
             else:
                 agent_msg.goals = hunav_obstacle.goals
 
+            # Add wall obstacles
+            self._update_agent_obstacles(agent_msg)
 
             # After creating the agent message:
             self.node.get_logger().warn(f"""            ##Complete Debug for the set attributes
@@ -631,6 +660,11 @@ class HunavManager(EntityManager):
             layer=ObstacleLayer.INUSE  # Change to INUSE from WORLD
         )
 
+
+    def _update_agent_obstacles(self, agent_msg: Agent):
+        """Update agent's closest_obs with wall points"""
+        wall_points = self._get_wall_points()
+        agent_msg.closest_obs.extend(wall_points)
 
     def unuse_obstacles(self):
         self.__logger.debug(f'unusing obstacles')
