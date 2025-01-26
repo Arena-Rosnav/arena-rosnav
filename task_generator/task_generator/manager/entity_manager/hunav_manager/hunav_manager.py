@@ -396,6 +396,8 @@ class HunavManager(EntityManager):
         self.__logger.info(f"Attempting to spawn {len(list(obstacles))} dynamic obstacles")
         
         for obstacle in obstacles:
+            self.node.get_logger().warn(f"ObstacleDEBUG: {obstacle}")
+
             try:
                 
                 hunav_obstacle = HunavDynamicObstacle.parse(obstacle.extra, obstacle.model)
@@ -443,7 +445,7 @@ class HunavManager(EntityManager):
     
     def register_pedestrian(self, hunav_obstacle: HunavDynamicObstacle) -> bool:
         """Register and spawn a HuNav agent"""
-
+        self.__logger.info(f"HUNAVOBSTACLEREGISTER {hunav_obstacle}")
         try:
             entity_name = hunav_obstacle.name
             self.__logger.info(f"Registering pedestrian {entity_name}")
@@ -466,9 +468,9 @@ class HunavManager(EntityManager):
 
             # Set position
             agent_msg.position = geometry_msgs.msg.Pose()
-            agent_msg.position.position.x = hunav_obstacle.position.x
-            agent_msg.position.position.y = hunav_obstacle.position.y
-            agent_msg.position.position.z = 1.250000
+            agent_msg.position.position.x = hunav_obstacle.position.x ##
+            agent_msg.position.position.y = hunav_obstacle.position.y ##
+            agent_msg.position.position.z = 1.250000 ##
             agent_msg.yaw = hunav_obstacle.yaw
 
             # Set behavior

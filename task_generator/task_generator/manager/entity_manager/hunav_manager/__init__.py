@@ -114,6 +114,13 @@ class HunavDynamicObstacle(HunavObstacleProps):
 
         base = DynamicObstacle.parse(obj, model)
 
+        # Get init_pose from object
+        init_pose = obj.get('init_pose', {})
+        position = PositionOrientation(
+            x=init_pose.get('x', cls._default.position.x),
+            y=init_pose.get('y', cls._default.position.y), 
+            orientation=init_pose.get('h', cls._default.position.orientation)
+        )
         return cls(
             **dataclasses.asdict(base),
             id=obj.get("id", cls._default.id),
