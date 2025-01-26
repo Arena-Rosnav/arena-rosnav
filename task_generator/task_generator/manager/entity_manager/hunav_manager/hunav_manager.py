@@ -115,27 +115,32 @@ class HunavManager(EntityManager):
     def world(self):
         return self._world_manager.world
 
-    def _get_wall_points(self) -> List[geometry_msgs.msg.Point]:
+    def _get_wall_points(self):
         points = []
-        # Get walls from world manager property
-        walls = self.world.entities.walls
-        
-        POINT_SPACING = 0.5  # Distance between sampled points
+        walls = self._world_manager.detected_walls  # Nutze detected_walls statt entities.walls
+        self.node.get_logger().warn(f"Found {len(walls)} walls from detected_walls")
         
         for wall in walls:
-            dx = wall.End.x - wall.Start.x 
-            dy = wall.End.y - wall.Start.y
-            length = math.sqrt(dx*dx + dy*dy)
-            steps = max(1, int(length / POINT_SPACING))
+            wall_points = self._wall_to_points(wall)
+            self.node.get_logger().warn(f"Wall: {wall.Start} -> {wall.End}: {len(wall_points)} points")
+            points.extend(wall_points)
             
-            for i in range(steps + 1):  # +1 to include endpoint
-                t = i/steps
-                point = geometry_msgs.msg.Point()
-                point.x = wall.Start.x + t*dx
-                point.y = wall.Start.y + t*dy
-                point.z = 0.0
-                points.append(point)
-                
+        return points
+
+    def _wall_to_points(self, wall, spacing=0.5):
+        points = []
+        dx = wall.End.x - wall.Start.x 
+        dy = wall.End.y - wall.Start.y
+        length = math.sqrt(dx*dx + dy*dy)
+        steps = max(1, int(length / spacing))
+        
+        for i in range(steps + 1):
+            t = i/steps
+            point = geometry_msgs.msg.Point()
+            point.x = wall.Start.x + t*dx
+            point.y = wall.Start.y + t*dy
+            point.z = 0.0
+            points.append(point)
         return points
 
 
