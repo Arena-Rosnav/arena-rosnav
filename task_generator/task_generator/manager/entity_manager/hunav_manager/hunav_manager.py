@@ -461,6 +461,7 @@ class HunavManager(EntityManager):
             agent_msg.type = hunav_obstacle.type
             agent_msg.skin = hunav_obstacle.skin
             agent_msg.group_id = hunav_obstacle.group_id
+            agent_msg.velocity = hunav_obstacle.velocity
             agent_msg.desired_velocity = hunav_obstacle.desired_velocity
             agent_msg.linear_vel=hunav_obstacle.linear_vel
             agent_msg.angular_vel=hunav_obstacle.angular_vel
@@ -468,10 +469,10 @@ class HunavManager(EntityManager):
 
             # Set position
             agent_msg.position = geometry_msgs.msg.Pose()
-            agent_msg.position.position.x = hunav_obstacle.position.x ##
-            agent_msg.position.position.y = hunav_obstacle.position.y ##
-            agent_msg.position.position.z = 1.250000 ##
-            agent_msg.yaw = hunav_obstacle.yaw
+            agent_msg.position.position.x = hunav_obstacle.position.x 
+            agent_msg.position.position.y = hunav_obstacle.position.y 
+            agent_msg.position.position.z = 1.250000 
+            agent_msg.yaw = hunav_obstacle.position.orientation
 
             # Set behavior
             agent_msg.behavior = AgentBehavior()

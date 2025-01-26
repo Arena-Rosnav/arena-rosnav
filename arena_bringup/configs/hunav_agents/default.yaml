@@ -9,7 +9,7 @@ hunav_loader:
       id: 1
       skin: 3
       group_id: -1
-      max_vel: 5.0
+      max_vel: 1.0
       radius: 0.4
       behavior: 
         type: 4  # REGULAR=1, IMPASSIVE=2, SURPRISED=3, SCARED=4, CURIOUS=5, THREATENING=6

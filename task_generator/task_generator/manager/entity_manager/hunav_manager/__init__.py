@@ -111,7 +111,6 @@ class HunavDynamicObstacle(HunavObstacleProps):
 
     @classmethod
     def parse(cls, obj: dict, model: ModelWrapper) -> "HunavDynamicObstacle":
-
         base = DynamicObstacle.parse(obj, model)
 
         # Get init_pose from object
@@ -121,8 +120,13 @@ class HunavDynamicObstacle(HunavObstacleProps):
             y=init_pose.get('y', cls._default.position.y), 
             orientation=init_pose.get('h', cls._default.position.orientation)
         )
+
         return cls(
-            **dataclasses.asdict(base),
+            name=base.name,
+            model=base.model,
+            extra=base.extra,
+            waypoints=base.waypoints,
+            position=position,
             id=obj.get("id", cls._default.id),
             behavior=cls.Behavior.parse(obj.get('behavior', {})),
             type=obj.get('type', cls._default.type),
