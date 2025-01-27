@@ -25,11 +25,10 @@ opencv-python = "^4.2.0"
 attrs = "^24.2.0"
 shapely = "^2.0.6"
 numpy = "^1.25.4"
-usd-core = "^25.2"
 
 [tool.poetry.group.planners]
 # all planners except rosnav and aio
-optional = true
+optional = true                                                                                                                                                                 
 [tool.poetry.group.planners.dependencies]
 torch = "^1.11.0"       # applr, crowdnav, lflh, rlca, sarl, trail
 seaborn = "^0.12.2"     # lflh

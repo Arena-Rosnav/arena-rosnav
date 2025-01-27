@@ -1,7 +1,7 @@
 #!/bin/bash -i
 sudo apt install libfuse2
 
-while [ ! -d "~/.local/share/ov/pkg/isaac-sim-4.2.0/" ] ; do
+while [ ! -d ~/.local/share/ov/pkg/isaac-sim-4.2.0/ ] ; do
   echo "No Isaac Sim installation detected!"
   echo "1. Open Omniverse launcher and insall Omniverse Cache and Isaac Sim"
   echo "2. Open Omniverse Isaac Sim launcher and change the bridge to ros2"
