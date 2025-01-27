@@ -8,6 +8,7 @@ from isaacsim_msgs.srv import ImportUsd, ImportUrdf, UrdfToUsd, DeletePrim, GetP
 from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 import os
+# from omni.isaac.core.utils.rotations import euler_angles_to_quat
 class IsaacSimulator(BaseSimulator):
 
     def init_service_clients(self):
@@ -80,9 +81,8 @@ class IsaacSimulator(BaseSimulator):
             self.node.get_logger().info(
                 f"Attempting to spawn model: {entity.name}"
             )
-
+            # self.node.get_logger().info(entity.position)
             model = entity.model.get([ModelType.URDF, ModelType.USD])
-            print(os.path.abspath(model.path))
             if model.type == ModelType.URDF:
                 reponse = self.client['urdf_to_usd_client'].call_async(
                     UrdfToUsd.Request(
@@ -98,6 +98,8 @@ class IsaacSimulator(BaseSimulator):
                 ImportObstacles.Request(
                     name=entity.name,
                     usd_path=usd_path,
+                    position = [entity.position.x,entity.position.y,0.0],
+                    orientation = [0.0,0.0,entity.position.orientation],
                     )
                 )
             return True
@@ -157,10 +159,11 @@ class IsaacSimulator(BaseSimulator):
         self.node.get_logger().info(
             f"Attempting to spawn walls"
         )
-
+        # print(walls)
         world_path = "/World"
         for i, wall in enumerate(walls):
             try:
+                # print(f"wall {i+1}: {wall}")
                 start = [wall.Start.x, wall.Start.y]
                 end = [wall.End.x, wall.End.y]
                 future = self.client['spawn_wall_client'].call_async(

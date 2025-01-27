@@ -7,6 +7,7 @@ from typing import Collection, Dict, Optional, Set, Tuple, Type
 
 from task_generator.shared import Model, ModelType, ModelWrapper
 import task_generator.utils.arena as Utils
+from pxr import Usd
 
 
 class _ModelLoader(abc.ABC):
@@ -235,7 +236,17 @@ class _ModelLoader_USD(_ModelLoader):
                         env=env,
                         # shell=True,
                     )
-
+                # print(file_path)
+                stage = Usd.Stage.Open(model_path)
+                for prim in stage.Traverse():
+                    if prim.GetTypeName() == "Xform":
+                        first_xform_prim = prim
+                        break
+                prim_path = first_xform_prim.GetPath()
+                # print(prim_path)
+                stage.SetDefaultPrim(first_xform_prim)
+                root_layer = stage.GetRootLayer()
+                root_layer.Save()
                 return cls.load(model_dir, model.name, **kwargs)
 
             except Exception:

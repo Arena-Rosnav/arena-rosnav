@@ -219,7 +219,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
 
         def on_world_change():
             obstacle_manager.reset()
-            print(self._world_manager.detected_walls)
+            # print(self._world_manager.detected_walls)
             obstacle_manager.spawn_world_obstacles(self._world_manager.world)
         self._world_manager.on_world_change(on_world_change)
 
