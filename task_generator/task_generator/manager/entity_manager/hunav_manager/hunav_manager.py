@@ -55,15 +55,10 @@ class HunavManager(EntityManager):
         """Initialize HunavManager with debug logging"""
         self.__logger = self.node.get_logger().get_child('hunav_EM')
         self.node.get_logger().warn("=== HUNAVMANAGER INIT START ===")
-        super().__init__(namespace=namespace, simulator=simulator)
         self.node.get_logger().warn("Parent class initialized")
     
         # Initialize state variables
         self.node.get_logger().warn("Initializing state variables...")
-        self._is_paused = False
-        self._semaphore_reset = False
-        self._agents_initialized = False
-        self._robot_initialized = False
         self._lock = Lock()
         self._update_rate = 0.1
         self.node.get_logger().warn("State variables initialized")
@@ -428,12 +423,11 @@ class HunavManager(EntityManager):
         self.__logger.info(f"Attempting to spawn {len(list(obstacles))} dynamic obstacles")
         
         for obstacle in obstacles:
-            self.node.get_logger().warn(f"ObstacleDEBUG: {obstacle}")
 
             try:
                 
                 hunav_obstacle = HunavDynamicObstacle.parse(obstacle.extra, obstacle.model)
-                self.node.get_logger().warn(f"\nHunavObstacle: {hunav_obstacle}")    
+ 
                 # Set name based on ID
                 hunav_obstacle = dataclasses.replace(hunav_obstacle, name=f"agent{hunav_obstacle.id}")
                 self.node.get_logger().warn(f"\nProcessing Agent with name: {hunav_obstacle.name}")
@@ -594,7 +588,7 @@ class HunavManager(EntityManager):
             request.current_agents = peds
 
             response = self._compute_agents_client.call(request)
-            self.node.get_logger().warn(f"############################  response (registering): { response}")
+            #self.node.get_logger().warn(f"############################  response (registering): { response}")
             
             if response:
                 # Store in pedestrians dictionary
@@ -666,7 +660,7 @@ class HunavManager(EntityManager):
         )
 
 
-    def _update_agent_obstacles(self, agent_msg: Agent):
+    def _update_agent_obstacles(self, agent_msg: Agent): 
         """Update agent's closest_obs with wall points"""
         wall_points = self._get_wall_points()
         agent_msg.closest_obs.extend(wall_points)
@@ -727,58 +721,6 @@ class HunavManager(EntityManager):
         self.node.get_logger().warn(f"Returning animation factor: {factor}")
         return factor
 
-    def _update_agent_animation(self, agent_id: str, behavior: AgentBehavior):
-        """Update agent animation with debug logging"""
-        self.node.get_logger().warn(f"=== UPDATE_ANIMATION for agent {agent_id} ===")
-        
-        animation = 'WALK'
-        if behavior.state == AgentBehavior.BEH_NO_ACTIVE:
-            animation = 'NORMAL_WAIT'
-        else:
-            if behavior.type == AgentBehavior.BEH_REGULAR:
-                animation = 'WALK'
-            elif behavior.type == AgentBehavior.BEH_IMPASSIVE:
-                animation = 'WALK_FORWARD'
-            elif behavior.type == AgentBehavior.BEH_SURPRISED:
-                animation = 'NORMAL_WAIT'
-            elif behavior.type == AgentBehavior.BEH_THREATENING:
-                animation = 'WALK_ANGRY'
-            elif behavior.type == AgentBehavior.BEH_SCARED:
-                animation = 'WALK_SCARED'
-            elif behavior.type == AgentBehavior.BEH_CURIOUS:
-                animation = 'SLOW_WALK'
-
-        self.node.get_logger().warn(f"Selected animation: {animation}")
-        if agent_id in self._pedestrians:
-            self._pedestrians[agent_id]['current_animation'] = animation
-            self.node.get_logger().warn(f"Animation updated for agent {agent_id}")
-        else:
-            self.node.get_logger().warn(f"Agent {agent_id} not found in pedestrians")
-
-
-    def _load_agent_config(self, agent_id: str) -> Dict[str, Any]:
-        """Load configuration for a specific agent
-
-        Args:
-            agent_id (str): ID of the agent
-
-        Returns:
-            Dict[str, Any]: Configuration dictionary
-        """
-        if agent_id not in self.agent_config:
-            self.node.get_logger().warn(
-                f"No configuration found for agent {agent_id}")
-            return {}
-        return self.agent_config[agent_id]
-
-
-
-
-    def _normalize_angle(self, angle: float) -> float:
-        """Normalize angle with debug logging"""
-        normalized = math.fmod(angle, math.pi)
-        self.node.get_logger().warn(f"Normalized angle from {angle} to {normalized}")
-        return normalized
 
   
     def parse_ped_type(self, t: str | int) -> int:
