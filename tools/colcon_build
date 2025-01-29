@@ -27,7 +27,6 @@ colcon build \
     --base-paths src \
     --symlink-install \
     --continue-on-error \
-    --packages-skip-build-finished \
     --packages-skip qt_gui_core rqt qt_gui_cpp rqt_gui_cpp \
     --cmake-args -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p) -DBUILD_TESTING=OFF \
     $@
