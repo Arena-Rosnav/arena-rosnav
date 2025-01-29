@@ -8,7 +8,7 @@ import math
 import random
 
 from task_generator.constants import Constants
-from task_generator.shared import DynamicObstacle, Obstacle, ModelWrapper
+from task_generator.shared import DynamicObstacle, Obstacle, ModelWrapper, PositionOrientation
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.utils.ros_params import ROSParam
 
@@ -463,13 +463,11 @@ class TM_Environment(TM_Obstacles):
                                     obstacle_y = y + rot_y
 
                                     obs_name = f"G_{group_name}_{n_groups}_{entity['model']}_{j}"
-                                    new_obstacle = Obstacle.parse(
-                                        {
-                                            "name": obs_name,
-                                            "position": [obstacle_x, obstacle_y, rot_theta],
-                                            "model": entity["model"],
-                                        },
-                                        model=self._PROPS.model_loader.bind(entity["model"])
+                                    new_obstacle = Obstacle(
+                                        name=obs_name,
+                                        position=PositionOrientation(x=obstacle_x, y=obstacle_y, orientation=rot_theta),
+                                        model=self._PROPS.model_loader.bind(entity["model"]),
+                                        extra={},
                                     )
                                     static_obstacles.append(new_obstacle)
                                 self._mark_region_occupied(
