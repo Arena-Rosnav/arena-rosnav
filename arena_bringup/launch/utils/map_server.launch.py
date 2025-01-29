@@ -25,7 +25,7 @@ def generate_launch_description():
             name='lifecycle_manager_map_server',
             output='screen',
             parameters=[{
-                'node_names': ['map_server', 'amcl'],
+                'node_names': ['map_server'],
                 'autostart': True,
                 'use_sim_time': True,
             }]
@@ -39,6 +39,7 @@ def generate_launch_description():
                 'topic_name': 'map',
                 'frame_id': 'map',
                 'yaml_filename': '',
+                'use_sim_time': True,
             }],
         )
     ])
