@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import os
+import shapely
 import yaml
 from typing import List, Dict
 import math
@@ -21,8 +22,7 @@ import numpy as np
 from rcl_interfaces.msg import SetParametersResult
 from task_generator.utils.arena import get_simulation_setup_path
 from collections import defaultdict
-import matplotlib as mpl
-import matplotlib.pyplot as plt
+
 
 @dataclasses.dataclass
 class _ParsedConfig:
@@ -38,7 +38,7 @@ class TM_Environment(TM_Obstacles):
         all_walls = list(self._PROPS.world_manager.walls) + list(self._PROPS.world_manager.detected_walls)
         x_min = y_min = np.inf
         x_max = y_max = -np.inf
-        
+
         for wall in all_walls:
             x1, y1 = wall.Start.x, wall.Start.y
             x2, y2 = wall.End.x, wall.End.y
@@ -46,11 +46,11 @@ class TM_Environment(TM_Obstacles):
             x_max = max(x_max, x1, x2)
             y_min = min(y_min, y1, y2)
             y_max = max(y_max, y1, y2)
-            
+
         return x_min, x_max, y_min, y_max
 
     def merge_walls(self, door_threshold=2.0):
-    # Convert door_threshold to float if list is passed
+        # Convert door_threshold to float if list is passed
         if isinstance(door_threshold, list):
             door_threshold = float(door_threshold[0]) if door_threshold else 2.0
         else:
@@ -113,12 +113,12 @@ class TM_Environment(TM_Obstacles):
         return merged_h, merged_v
 
     def find_matching_vertical(self, vertical_index, x, y):
-        return [(vy1, vy2) for (vy1, vy2) in vertical_index.get(x, []) 
+        return [(vy1, vy2) for (vy1, vy2) in vertical_index.get(x, [])
                 if vy1 <= y <= vy2]
 
     def has_matching_top_wall(self, horizontal_index, x1, x2, top_y):
-        return any(x1 <= wx1 and wx2 <= x2 
-                for wx1, wx2 in horizontal_index.get(top_y, []))
+        return any(x1 <= wx1 and wx2 <= x2
+                   for wx1, wx2 in horizontal_index.get(top_y, []))
 
     def find_room_polygons(self, horizontal, vertical, door_threshold):
         vertical_index = defaultdict(list)
@@ -152,7 +152,7 @@ class TM_Environment(TM_Obstacles):
                                 top_y,
                                 door_threshold
                             )
-                            
+
                             if left_ok and right_ok:
                                 room = [
                                     (x1, bottom_y), (x2, bottom_y),
@@ -173,16 +173,16 @@ class TM_Environment(TM_Obstacles):
         segments = sorted(segments, key=lambda x: x[0])
         coverage_start = y_start
         coverage_end = y_start
-        
+
         for seg in segments:
             seg_start, seg_end = seg
             if seg_start > coverage_end + max_gap:
                 return False  # Gap too large
-            
+
             coverage_end = max(coverage_end, seg_end)
             if coverage_end >= y_end:
                 return True
-        
+
         return coverage_end >= y_end
 
     def is_duplicate(self, new_room, existing_rooms):
@@ -195,8 +195,8 @@ class TM_Environment(TM_Obstacles):
     def filter_world_rooms(self, rooms, x_min, x_max, y_min, y_max):
         filtered = []
         world_corners = {(x_min, y_min), (x_max, y_min),
-                        (x_max, y_max), (x_min, y_max)}
-        
+                         (x_max, y_max), (x_min, y_max)}
+
         for room in rooms:
             room_corners = set(room)
             if not room_corners.issuperset(world_corners):
@@ -209,21 +209,21 @@ class TM_Environment(TM_Obstacles):
             (x_min, y_min), (x_max, y_min),
             (x_max, y_max), (x_min, y_max)
         }
-        
+
         for room in rooms:
             room_edges = set(room)
             if not room_edges.issuperset(world_edges):
                 filtered.append(room)
-        
+
         return filtered
 
     def filter_rooms(self, rooms):
         filtered = []
         for room in rooms:
             points = np.array(room)
-            dx = max(points[:,0]) - min(points[:,0])
-            dy = max(points[:,1]) - min(points[:,1])
-            
+            dx = max(points[:, 0]) - min(points[:, 0])
+            dy = max(points[:, 1]) - min(points[:, 1])
+
             if dx > 0 and dy > 0 and (dx * dy) > 10:
                 filtered.append(room)
         return filtered
@@ -232,54 +232,55 @@ class TM_Environment(TM_Obstacles):
         # Check if room_a is entirely inside room_b
         a_points = np.array(room_a)
         b_points = np.array(room_b)
-        return (np.all(a_points[:,0] >= b_points[:,0].min()) and
-                np.all(a_points[:,0] <= b_points[:,0].max()) and
-                np.all(a_points[:,1] >= b_points[:,1].min()) and
-                np.all(a_points[:,1] <= b_points[:,1].max()))
+        return (np.all(a_points[:, 0] >= b_points[:, 0].min()) and
+                np.all(a_points[:, 0] <= b_points[:, 0].max()) and
+                np.all(a_points[:, 1] >= b_points[:, 1].min()) and
+                np.all(a_points[:, 1] <= b_points[:, 1].max()))
 
-    
     def _create_rooms_from_walls(self, door_threshold=4.0):  # Increased threshold for example scenario
         x_min, x_max, y_min, y_max = self.calculate_world_bounds()
         merged_h, merged_v = self.merge_walls(door_threshold)
         rooms = self.find_room_polygons(merged_h, merged_v, door_threshold)
         return self.filter_world_rooms(rooms, x_min, x_max, y_min, y_max)
-    
+
     def visualize_rooms(self, walls, rooms, bounds=None):
+
+        import matplotlib as mpl
+        import matplotlib.pyplot as plt
         """Visualize walls and detected rooms"""
         fig, ax = plt.subplots(figsize=(10, 10))
-        
+
         # Draw walls
         for wall in walls:
             start = (wall.Start.x, wall.Start.y)
             end = (wall.End.x, wall.End.y)
             ax.plot([start[0], end[0]], [start[1], end[1]], 'k-', linewidth=2)
-        
+
         # Draw rooms with transparency
         for i, room in enumerate(rooms):
-            polygon = mpl.patches.Polygon(room, closed=True, alpha=0.3, 
-                            edgecolor='blue', facecolor=f'C{i%10}')
+            polygon = mpl.patches.Polygon(room, closed=True, alpha=0.3,
+                                          edgecolor='blue', facecolor=f'C{i%10}')
             ax.add_patch(polygon)
             # Add room number annotation
-            center_x = sum(p[0] for p in room)/4
-            center_y = sum(p[1] for p in room)/4
-            ax.text(center_x, center_y, str(i+1), 
-                ha='center', va='center', fontsize=8)
-        
+            center_x = sum(p[0] for p in room) / 4
+            center_y = sum(p[1] for p in room) / 4
+            ax.text(center_x, center_y, str(i + 1),
+                    ha='center', va='center', fontsize=8)
+
         # Set plot limits using bounds if provided
         if bounds:
             ax.set_xlim(bounds['x_min'] - 2, bounds['x_max'] + 2)
             ax.set_ylim(bounds['y_min'] - 2, bounds['y_max'] + 2)
         else:
             ax.autoscale()
-        
+
         ax.set_aspect('equal')
         plt.xlabel('X')
         plt.ylabel('Y')
         plt.title('Room Detection Visualization')
         plt.grid(True)
-        plt.savefig('test.png')  
-    
-    
+        plt.savefig('test.png')
+
     def _is_region_free(
         self,
         occupancy_grid: np.ndarray,
@@ -384,13 +385,17 @@ class TM_Environment(TM_Obstacles):
             environment = yaml.safe_load(f)
             self.node.get_logger().info("Environment:")
             print(environment)
-        walls = list(self._PROPS.world_manager.walls) + list(self._PROPS.world_manager.detected_walls)
-        # print(walls)
-        rooms = [] 
+
         static_obstacles: List[Obstacle] = []
         dynamic_obstacles: List[DynamicObstacle] = []
-        rooms = self._create_rooms_from_walls()
-        # if not rooms:
+
+        if (zones := self.node._world_manager.zones):
+            rooms = [zone.polygon for zone in zones]
+        else:
+            walls = list(self._PROPS.world_manager.walls) + list(self._PROPS.world_manager.detected_walls)
+            # print(walls)
+            rooms = [shapely.Polygon(room) for room in self._create_rooms_from_walls()]
+            # if not rooms:
             # print("[WARNING] No rooms found! (check your walls data)")
             # return _ParsedConfig(
             #     static=static_obstacles,
@@ -398,7 +403,7 @@ class TM_Environment(TM_Obstacles):
             # )
         print(len(rooms))
         print(rooms)
-        self.visualize_rooms(walls,rooms)
+        # self.visualize_rooms(walls, rooms)
         for i in range(len(environment["groups"])):
             group = self.node.conf.General.RNG.value.choice(
                 environment["groups"]
@@ -420,6 +425,7 @@ class TM_Environment(TM_Obstacles):
             # This is just an example. You can do more advanced sampling or logic.
             n_groups = 0
             for idx, room_polygon in enumerate(rooms):
+                print('aaa', room_polygon, type(room_polygon))
                 minx, miny, maxx, maxy = room_polygon.bounds
 
                 # Start from a half-size offset
@@ -458,13 +464,11 @@ class TM_Environment(TM_Obstacles):
 
                                     obs_name = f"G_{group_name}_{n_groups}_{entity['model']}_{j}"
                                     new_obstacle = Obstacle.parse(
-                                        Dict(
-                                            {
-                                                "name": obs_name,
-                                                "position": [obstacle_x, obstacle_y, rot_theta],
-                                                "model": entity["model"],
-                                            }
-                                        ),
+                                        {
+                                            "name": obs_name,
+                                            "position": [obstacle_x, obstacle_y, rot_theta],
+                                            "model": entity["model"],
+                                        },
                                         model=self._PROPS.model_loader.bind(entity["model"])
                                     )
                                     static_obstacles.append(new_obstacle)
@@ -482,15 +486,7 @@ class TM_Environment(TM_Obstacles):
                     y += step_y
         print(static_obstacles)
         return _ParsedConfig(
-            static=[
-                Obstacle.parse(
-                    obs,
-                    model=self._PROPS.model_loader.bind(obs["model"])
-                )
-                for obs
-                in
-                static_obstacles
-            ],
+            static=static_obstacles,
             dynamic=[
                 # DynamicObstacle.parse(
                 #     obs,
