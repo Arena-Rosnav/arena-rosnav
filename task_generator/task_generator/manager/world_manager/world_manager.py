@@ -6,7 +6,7 @@ import numpy as np
 import scipy.signal
 from task_generator import NodeInterface
 
-from .utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldObstacleConfigurations, WorldOccupancy, WorldWalls, configurations_to_obstacles, occupancy_to_walls
+from .utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldObstacleConfigurations, WorldOccupancy, WorldWalls, WorldZones, configurations_to_obstacles, occupancy_to_walls
 
 
 class WorldManager(NodeInterface):
@@ -57,11 +57,16 @@ class WorldManager(NodeInterface):
             )
         return self._detected_walls
 
+    @property
+    def zones(self) -> WorldZones:
+        return self.world.zones
+
     def update_world(
         self,
         world_map: WorldMap,
         obstacles: Optional[WorldObstacleConfigurations] = None,
         walls: Optional[WorldWalls] = None,
+        zones: Optional[WorldZones] = None,
     ):
         self._detected_walls = None
 
@@ -69,7 +74,10 @@ class WorldManager(NodeInterface):
             obstacles = []
 
         if walls is None:
-            walls = self.detected_walls
+            walls = []
+
+        if zones is None:
+            zones = []
 
         parsed_obstacles = configurations_to_obstacles(
             configurations=obstacles
@@ -82,7 +90,8 @@ class WorldManager(NodeInterface):
 
         self._world = World(
             entities=entities,
-            map=world_map
+            map=world_map,
+            zones=zones,
         )
 
         for obstacle in self.world.entities.obstacles:
