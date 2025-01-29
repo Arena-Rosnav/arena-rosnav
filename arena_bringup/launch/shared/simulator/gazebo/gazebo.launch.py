@@ -10,8 +10,8 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     LaunchConfiguration,
     PathJoinSubstitution,
-    PythonExpression,
 )
+from arena_bringup.future import PythonExpression
 import launch
 from launch_ros.actions import Node
 from launch.actions import TimerAction
@@ -19,11 +19,13 @@ from launch.conditions import IfCondition
 from launch.utilities import normalize_to_list_of_substitutions, perform_substitutions
 from launch.utilities.type_utils import perform_typed_substitution
 
-#polyfill
+# polyfill
+
+
 class IfElseSubstitution(launch.Substitution):
     def __init__(self, condition,
-                 if_value = '',
-                 else_value = ''):
+                 if_value='',
+                 else_value=''):
         super().__init__()
         if if_value == else_value == '':
             raise RuntimeError('One of if_value and else_value must be specified')
@@ -53,6 +55,7 @@ class IfElseSubstitution(launch.Substitution):
             return perform_substitutions(context, self.if_value)
         else:
             return perform_substitutions(context, self.else_value)
+
 
 def generate_launch_description():
     # Set environment variables
@@ -106,8 +109,18 @@ def generate_launch_description():
 
     world = LaunchConfiguration("world")
 
+    desired_world = PathJoinSubstitution(
+        [
+            ss_root,
+            "worlds",
+            world,
+            "worlds",
+            PythonExpression(['"', world, '.world"']),
+        ]
+    )
+
     world_path = IfElseSubstitution(
-        condition=PythonExpression(['"', world, '" == ""']),
+        condition=PythonExpression(['not os.path.isfile("', desired_world, '")'], python_modules=['os']),
         if_value=PathJoinSubstitution(
             [
                 package_root,
@@ -116,15 +129,7 @@ def generate_launch_description():
                 'empty.sdf',
             ]
         ),
-        else_value=PathJoinSubstitution(
-            [
-                ss_root,
-                "worlds",
-                world,
-                "worlds",
-                PythonExpression(['"', world, '.world"']),
-            ]
-        )
+        else_value=desired_world,
     )
 
     # Launch Arguments
