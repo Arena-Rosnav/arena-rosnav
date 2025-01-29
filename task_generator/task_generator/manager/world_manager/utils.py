@@ -387,11 +387,12 @@ def occupancy_to_walls(
     ]
 
 
-_world_model_loader = ModelLoader(
+_obstacles_loader = ModelLoader(
     os.path.join(
         Utils.get_simulation_setup_path(),
-        'worlds',
-    )
+        'entities',
+        'obstacles',
+        'static')
 )
 
 
@@ -404,6 +405,6 @@ def configurations_to_obstacles(
     return [Obstacle(
         position=configuration.position,
         name=f"world_obstacle_{next(name_gen)}",
-        model=_world_model_loader.bind(configuration.model_name),
+        model=_obstacles_loader.bind(configuration.model_name),
         extra=configuration.extra
     ) for configuration in configurations]
