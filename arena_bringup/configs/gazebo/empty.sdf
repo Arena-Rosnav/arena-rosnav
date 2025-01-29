@@ -51,7 +51,7 @@
           <geometry>
             <plane>
               <normal>0 0 1</normal>
-              <size>255 255</size>
+              <size>1250 1250</size>
             </plane>
           </geometry>
         </collision>
@@ -59,7 +59,7 @@
           <geometry>
             <plane>
               <normal>0 0 1</normal>
-              <size>250 250</size>
+              <size>1255 1255</size>
             </plane>
           </geometry>
           <material>
