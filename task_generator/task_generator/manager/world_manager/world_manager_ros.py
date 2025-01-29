@@ -14,7 +14,7 @@ from task_generator.constants import Constants
 from task_generator.utils.time import Time
 from task_generator.shared import Position, Wall
 
-from .utils import WorldMap, WorldWalls, WorldObstacleConfiguration, WorldObstacleConfigurations
+from .utils import WorldMap, WorldWalls, WorldObstacleConfiguration, WorldObstacleConfigurations, WorldZones, Zone
 from .world_manager import WorldManager
 
 _DUMMY_MAP_SHAPE = (200, 200)
@@ -74,6 +74,21 @@ class WorldManagerROS(WorldManager):
         except Exception:
             return None
 
+    @classmethod
+    def _load_zones(cls, yaml_path: str) -> WorldZones | None:
+        try:
+            with open(yaml_path) as f:
+                zones_yaml = yaml.safe_load(f)
+
+            zones: WorldZones = [
+                Zone.parse(zone)
+                for zone
+                in zones_yaml
+            ]
+            return zones
+        except Exception:
+            return None
+
     def _world_callback(self, value: typing.Any) -> bool:
         world_name = str(value)
 
@@ -126,10 +141,18 @@ class WorldManagerROS(WorldManager):
                     'walls.yaml',
                 )
             )
+            zones = self._load_zones(
+                os.path.join(
+                    self.node.conf.Arena.get_world_path(self._world_name),
+                    'map',
+                    'zones.yaml',
+                )
+            )
             self.update_world(
                 WorldMap.from_costmap(costmap),
                 obstacles=obstacles,
                 walls=walls,
+                zones=zones,
             )
             for callback in self._callbacks:
                 try:

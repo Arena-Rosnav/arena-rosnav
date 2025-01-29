@@ -6,6 +6,10 @@ import dataclasses
 import itertools
 import os
 from typing import Callable, Collection, Dict, List, Optional, Tuple
+import typing
+
+import attrs
+import shapely
 
 import nav_msgs.msg
 import numpy as np
@@ -17,11 +21,48 @@ from task_generator.shared import (Obstacle, Position, PositionOrientation,
 from task_generator.utils import ModelLoader
 from task_generator.utils.time import Time
 
+# CONVERTERS
+
+T = typing.TypeVar('T')
+
+
+def list_from_any(v: T | List[T]) -> List[T]:
+    if not isinstance(v, list):
+        return list((v,))
+    return v
+
+
+def check_list(t: typing.Type[T], l: List[T]) -> List[T]:
+    """
+    runtime check list for type
+    """
+    if any((not isinstance(v, t) for v in l)):
+        raise RuntimeError(f'list {l} contains value not of type {t}')
+    return l
+
 # TYPES
 
 
 WorldWalls = Collection[Wall]
 WorldObstacles = Collection[Obstacle]
+
+
+@attrs.frozen
+class Zone:
+    label: str
+    category: List[str]
+    polygon: shapely.Polygon
+
+    @classmethod
+    def parse(cls, obj: Dict) -> "Zone":
+        return cls(
+            label=obj.get('label', ''),
+            category=[str(v) for v in list_from_any(obj.get('category', []))],
+            polygon=shapely.Polygon(obj['polygon']),
+        )
+
+
+WorldZones = Collection[Zone]
 
 
 @dataclasses.dataclass
@@ -264,6 +305,7 @@ class WorldMap:
 class World:
     entities: WorldEntities
     map: WorldMap
+    zones: WorldZones
 
 # END TYPES
 
