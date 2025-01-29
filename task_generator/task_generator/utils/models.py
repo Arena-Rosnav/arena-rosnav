@@ -7,7 +7,6 @@ from typing import Collection, Dict, Optional, Set, Tuple, Type
 
 from task_generator.shared import Model, ModelType, ModelWrapper
 import task_generator.utils.arena as Utils
-from pxr import Usd
 
 
 class _ModelLoader(abc.ABC):
@@ -217,7 +216,7 @@ class _ModelLoader_USD(_ModelLoader):
             try:
                 model_path = os.path.join(model_dir, model.name, "usd", f"{model.name}.usd")
                 os.makedirs(os.path.dirname(model_path), exist_ok=True)
-                if os.path.islink(model_path) and not os.path.exists(model_path): # broken symlink
+                if os.path.islink(model_path) and not os.path.exists(model_path):  # broken symlink
                     os.unlink(model_path)
 
                 ARENA_WS_DIR = Utils.get_arena_ws()
@@ -237,6 +236,7 @@ class _ModelLoader_USD(_ModelLoader):
                         # shell=True,
                     )
                 # print(file_path)
+                from pxr import Usd
                 stage = Usd.Stage.Open(model_path)
                 for prim in stage.Traverse():
                     if prim.GetTypeName() == "Xform":
