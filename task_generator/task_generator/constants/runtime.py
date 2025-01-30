@@ -73,8 +73,8 @@ def Configuration(server: ROSParamServer):
 
             RNG = server.ROSParam[np.random.Generator](
                 'rng',
-                30,
-                parse=np.random.default_rng
+                -1,
+                parse=lambda x: np.random.default_rng(x) if x >= 0 else np.random.default_rng()
             )
             DESIRED_EPISODES = server.ROSParam[float](
                 'episodes',
