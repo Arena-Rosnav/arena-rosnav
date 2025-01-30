@@ -356,7 +356,7 @@ class _YAMLReplacer:
     def _replace_str(self, obj: str) -> typing.Any:
         replacement = self._sub_match(obj)
         if (inter_v := self._replace_inter_string(obj)) is not None:
-            return inter_v.value
+            return self.replace(inter_v.value)
         if isinstance(replacement, self.DictSpreadReplacement):
             raise ValueError('dict spread argument placed outside dict')
         elif isinstance(replacement, self.ListSpreadReplacement):
