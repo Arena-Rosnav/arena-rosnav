@@ -23,6 +23,7 @@ _DUMMY_MAP = nav_msgs.msg.OccupancyGrid(
         height=_DUMMY_MAP_SHAPE[0],
         width=_DUMMY_MAP_SHAPE[1],
         resolution=0.1,
+        map_load_time=Time(-1, 0).to_time(),
     ),
     data=list(
         np.pad(
