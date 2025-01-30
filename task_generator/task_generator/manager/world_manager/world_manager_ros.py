@@ -127,7 +127,7 @@ class WorldManagerROS(WorldManager):
     def _map_callback(self, costmap: nav_msgs.msg.OccupancyGrid):
         if self._first_world:
             return
-        if self._world.map.time < costmap.info.map_load_time:
+        if True or self._world.map.time < costmap.info.map_load_time:
             obstacles = self._load_obstacles(
                 os.path.join(
                     self.node.conf.Arena.get_world_path(self._world_name),
