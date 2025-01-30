@@ -1,4 +1,5 @@
 import dataclasses
+import itertools
 import json
 import os
 import shapely
@@ -403,19 +404,20 @@ class TM_Environment(TM_Obstacles):
             # )
         print(len(rooms))
         print(rooms)
+
+        groups = environment["groups"]
+        offset = random.randint(0, len(groups))
+        groups_selection = list(itertools.islice(itertools.cycle(groups), offset, offset + len(rooms)))
+        random.shuffle(groups_selection)
+        groups_iter = iter(groups_selection)
+
         # self.visualize_rooms(walls, rooms)
-        for i in range(len(environment["groups"])):
-            group = self.node.conf.General.RNG.value.choice(
-                environment["groups"]
-            )
+        for idx, room_polygon in enumerate(rooms):
+            group = next(groups_iter)
             print(group)
             group_name = group["name"]
             group_size = group["size"]    # [width, height]
             margin = group.get("margin", 0.5)  # Extra margin
-            # Possible angles: 0°, 60°, 90°, 120°, 180°, ...
-            possible_rotations = [0, 60, 90, 120, 180, 240, 270, 300]
-            # For demonstration, pick a single rotation for the entire group:
-            rotation_deg = random.choice(possible_rotations)
 
             # Occupancy grid
             occupancy_grid = self._PROPS.world_manager.world.map.occupancy.grid
@@ -424,64 +426,65 @@ class TM_Environment(TM_Obstacles):
             # to top-right in some stride to see if we can place the group.
             # This is just an example. You can do more advanced sampling or logic.
             n_groups = 0
-            for idx, room_polygon in enumerate(rooms):
-                print('aaa', room_polygon, type(room_polygon))
-                minx, miny, maxx, maxy = room_polygon.bounds
+            minx, miny, max_x, max_y = room_polygon.bounds
 
-                # Start from a half-size offset
-                step_x = group_size[0] + margin
-                step_y = group_size[1] + margin
+            # Start from a half-size offset
+            step_x = group_size[0] + margin
+            step_y = group_size[1] + margin
+            x = minx + step_x / 2.0
+            y = miny + step_y / 2.0
+
+            while y + step_y / 2.0 <= max_y:
                 x = minx + step_x / 2.0
-                y = miny + step_y / 2.0
+                while x + step_x / 2.0 <= max_x:
+                    candidate = Point(x, y)
+                    if room_polygon.contains(candidate):
+                        # Check occupancy
+                        if True or self._is_region_free(
+                            occupancy_grid,
+                            x,
+                            y,
+                            group_size[0],
+                            group_size[1],
+                            margin=margin,
+                            rotation_deg=0,
+                        ):
+                            # Possible angles: 0°, 60°, 90°, 120°, 180°, ...
+                            rotation_deg = self.node.conf.General.RNG.value.choice(group.get('rotations', [0]))
 
-                while y + step_y / 2.0 <= maxy:
-                    x = minx + step_x / 2.0
-                    while x + step_x / 2.0 <= maxx:
-                        candidate = Point(x, y)
-                        if room_polygon.contains(candidate):
-                            # Check occupancy
-                            if self._is_region_free(
+                            group_static_entities = group.get("entities", {}).get('static', [])
+                            group_dynamic_entites = group.get('entities', {}).get('dynamic', [])
+                            for j, entity in enumerate(group_static_entities):
+                                ex_off, ey_off, e_theta = entity["position"]
+
+                                radians = math.radians(rotation_deg)
+                                rot_x = ex_off * math.cos(radians) - ey_off * math.sin(radians)
+                                rot_y = ex_off * math.sin(radians) + ey_off * math.cos(radians)
+                                rot_theta = math.fmod(e_theta + rotation_deg, 360) / 180 * math.pi
+
+                                obstacle_x = x + rot_x
+                                obstacle_y = y + rot_y
+
+                                obs_name = f"G_{group_name}_{n_groups}_{entity['model']}_{j}"
+                                new_obstacle = Obstacle(
+                                    name=obs_name,
+                                    position=PositionOrientation(x=obstacle_x, y=obstacle_y, orientation=rot_theta),
+                                    model=self._PROPS.model_loader.bind(entity["model"]),
+                                    extra={},
+                                )
+                                static_obstacles.append(new_obstacle)
+                            self._mark_region_occupied(
                                 occupancy_grid,
-                                x,
-                                y,
+                                x, y,
                                 group_size[0],
                                 group_size[1],
                                 margin=margin,
                                 rotation_deg=rotation_deg
-                            ):
-                                group_static_entities = group.get("entities", {}).get('static', [])
-                                group_dynamic_entites = group.get('entities', {}).get('dynamic', [])
-                                for j, entity in enumerate(group_static_entities):
-                                    ex_off, ey_off, e_theta = entity["position"]
+                            )
 
-                                    radians = math.radians(rotation_deg)
-                                    rot_x = ex_off * math.cos(radians) - ey_off * math.sin(radians)
-                                    rot_y = ex_off * math.sin(radians) + ey_off * math.cos(radians)
-                                    rot_theta = e_theta + rotation_deg
-
-                                    obstacle_x = x + rot_x
-                                    obstacle_y = y + rot_y
-
-                                    obs_name = f"G_{group_name}_{n_groups}_{entity['model']}_{j}"
-                                    new_obstacle = Obstacle(
-                                        name=obs_name,
-                                        position=PositionOrientation(x=obstacle_x, y=obstacle_y, orientation=rot_theta),
-                                        model=self._PROPS.model_loader.bind(entity["model"]),
-                                        extra={},
-                                    )
-                                    static_obstacles.append(new_obstacle)
-                                self._mark_region_occupied(
-                                    occupancy_grid,
-                                    x, y,
-                                    group_size[0],
-                                    group_size[1],
-                                    margin=margin,
-                                    rotation_deg=rotation_deg
-                                )
-
-                                n_groups += 1
-                        x += step_x
-                    y += step_y
+                            n_groups += 1
+                    x += step_x
+                y += step_y
         print(static_obstacles)
         return _ParsedConfig(
             static=static_obstacles,
