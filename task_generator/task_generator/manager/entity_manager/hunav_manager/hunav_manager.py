@@ -113,11 +113,11 @@ class HunavManager(EntityManager):
     def _get_wall_points(self):
         points = []
         walls = self._world_manager.detected_walls  # Nutze detected_walls statt entities.walls
-        self.node.get_logger().warn(f"Found {len(walls)} walls from detected_walls")
+        #self.node.get_logger().warn(f"Found {len(walls)} walls from detected_walls")
         
         for wall in walls:
             wall_points = self._wall_to_points(wall)
-            self.node.get_logger().warn(f"Wall: {wall.Start} -> {wall.End}: {len(wall_points)} points")
+            #self.node.get_logger().warn(f"Wall: {wall.Start} -> {wall.End}: {len(wall_points)} points")
             points.extend(wall_points)
             
         return points
@@ -140,69 +140,81 @@ class HunavManager(EntityManager):
 
 
     def _update_agents(self):
-        """Updates agent positions without respawning"""
+        """Updates agent positions"""
         try:
+            self.node.get_logger().warn(f"PEDESTRIANS UPDATE: {self._pedestrians}")
             if not self._pedestrians:
                 return
                 
+            self.node.get_logger().warn(f"Starting update for {len(self._pedestrians)} pedestrians")
+            
             with self._lock:
+                # Erstelle Request mit aktuellen Agenten
                 request = ComputeAgents.Request()
                 request.robot = self._create_robot_message()
                 request.current_agents = self._get_current_agents()
-                # Update obstacles for each agent
-                for agent in request.current_agents.agents:
-                    self._update_agent_obstacles(agent)   
-
+                
+                # Sende an HuNav
+                self.node.get_logger().warn("Sending request to HuNav")
                 response = self._compute_agents_client.call(request)
                 
                 if response and response.updated_agents.agents:
+                    self.node.get_logger().warn("Received updated positions from HuNav")
+                    
+                    # Für jeden aktualisierten Agenten
                     for agent in response.updated_agents.agents:
-                        agent_id = agent.id
-                        if agent_id in self._pedestrians:
-                            entity_name = f"agent{agent_id}"
+                        self.node.get_logger().warn(
+                            f"Processing updates for {agent.name}:"
+                            f"\n Old pos: ({self._pedestrians[agent.id]['agent'].position.position.x:.2f}, "
+                            f"{self._pedestrians[agent.id]['agent'].position.position.y:.2f})"
+                            f"\n New pos: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
+                        )
+                        
+                        # Update Position in Gazebo
+                        entity_name = f"agent{agent.id}"
+                        if entity_name in self._simulator.entities:
+                            new_position = PositionOrientation(
+                                x=agent.position.position.x,
+                                y=agent.position.position.y,
+                                orientation=agent.yaw
+                            )
                             
-                            if entity_name in self._simulator.entities:
-                                # Nur Position aktualisieren, NICHT neu spawnen
-                                new_position = PositionOrientation(
-                                    x=agent.position.position.x,
-                                    y=agent.position.position.y,
-                                    orientation=agent.yaw
-                                )
-                                self._simulator.move_entity(entity_name, new_position)
-                                
-                                # Update stored state
-                                self._pedestrians[agent_id].update({
-                                    'last_update': self.node.get_clock().now(),
-                                    'current_state': agent.behavior.state,
-                                    'agent': agent
-                                })
-                                
+                            # Bewege in Simulator
+                            success = self._simulator.move_entity(entity_name, new_position)
+                            
+                            if success:
+                                # Update gespeicherten Zustand
+                                self._pedestrians[agent.id]['agent'] = agent
+                                self._pedestrians[agent.id]['last_update'] = self.node.get_clock().now()
+                                self.node.get_logger().warn(f"Successfully updated {agent.name}")
+                    
         except Exception as e:
             self.__logger.error(f"Error in agent update: {str(e)}")
-
-
+            self.__logger.error(traceback.format_exc())
 
 
 
     def _get_current_agents(self) -> Agents:
         """Creates current agents message for service call"""
+        self.node.get_logger().warn("Creating current agents message")
         current_agents = Agents()
         current_agents.header.stamp = self.node.get_clock().now().to_msg()
         current_agents.header.frame_id = "map"
         
+        # Log was wir in _pedestrians haben
+        self.node.get_logger().warn(f"Current pedestrians: {list(self._pedestrians.keys())}")
+        
         for agent_id, agent_data in self._pedestrians.items():
+            self.node.get_logger().warn(f"iteration_agent_id: {agent_id}")
+            self.node.get_logger().warn(f"iteration_agent_data: {agent_data}")
             if 'agent' in agent_data:
                 current_agent = agent_data['agent']
-                # Make sure we're sending up-to-date position info
-                entity_name = f"agent{agent_id}"
-                if entity_name in self._simulator.entities:
-                    entity = self._simulator.entities[entity_name]
-                    current_agent.position.position.x = entity.position.x
-                    current_agent.position.position.y = entity.position.y
-                    current_agent.yaw = entity.position.orientation
+                self.node.get_logger().warn(
+                    f"Adding agent {current_agent.name} at position "
+                    f"({current_agent.position.position.x}, {current_agent.position.position.y})"
+                )
                 current_agents.agents.append(current_agent)
         
-        #self.node.get_logger().warn(f"get_current_agents returning {len(current_agents.agents)} agents")
         return current_agents
 
 
@@ -592,12 +604,13 @@ class HunavManager(EntityManager):
             
             if response:
                 # Store in pedestrians dictionary
-                self._pedestrians[hunav_obstacle.id] = {
+                self._pedestrians[agent_msg.id] = {
                     'last_update': time.time(),
                     'current_state': agent_msg.behavior.state,
                     'agent': agent_msg,
                     'animation_time': 0.0
                 }
+                self.__logger.info(f"self._pedestrians{self._pedestrians}")
                 
                 # Create and spawn visual model
                 sdf = self.create_pedestrian_sdf(hunav_obstacle)
@@ -648,7 +661,7 @@ class HunavManager(EntityManager):
 
     def spawn_walls(self, walls: WorldWalls, heightmap: WorldMap):
         """Spawn walls"""
-        self.node.get_logger().debug(f'spawning {len(walls)} walls')
+        #self.node.get_logger().debug(f'spawning {len(walls)} walls')
         # Convert walls to obstacle and spawn it
         wall_obstacle = walls_to_obstacle(heightmap)
         self._simulator.spawn_entity(wall_obstacle)
