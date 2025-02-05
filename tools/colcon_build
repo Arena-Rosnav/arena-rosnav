@@ -38,7 +38,7 @@ fi
 source install/local_setup.bash
 
 if [ -f src/arena/arena-rosnav/isaac_setup.bash ] ; then
-    if [ -z ${ISAAC_PATH+x} ] ; then
+    if [ -z ${ISAAC_PATH+} ] ; then
         . src/arena/arena-rosnav/isaac_setup.bash
     fi
 fi

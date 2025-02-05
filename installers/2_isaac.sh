@@ -82,13 +82,13 @@ SETUP_FILE="src/arena/arena-rosnav/isaac_setup.bash"
 # Write the content to the file
 cat << 'EOF' > "$SETUP_FILE"
 #!/bin/bash
-MY_DIR="$HOME/.local/share/ov/pkg/isaac-sim-4.2.0"
+MY_DIR=$HOME/.local/share/ov/pkg/isaac-sim-4.2.0
 export CARB_APP_PATH=$SCRIPT_DIR/kit
 export EXP_PATH=$MY_DIR/apps
-export ISAAC_PATH=$MY_DIR
 if [ -f "${MY_DIR}/setup_python_env.sh" ] ; then 
     . ${MY_DIR}/setup_python_env.sh
 fi
+export ISAAC_PATH=$MY_DIR
 EOF
 
 echo "Completed download Isaac sim" 
