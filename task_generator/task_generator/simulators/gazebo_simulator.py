@@ -161,7 +161,10 @@ class GazeboSimulator(BaseSimulator):
                         # LiDAR Point Cloud (Gazebo -> ROS2)
                         '/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
                         # Sensors Marker (if needed, Gazebo -> ROS2)
-                        '/sensors/marker@visualization_msgs/msg/Marker[gz.msgs.Visual'
+                        '/sensors/marker@visualization_msgs/msg/Marker[gz.msgs.Visual',
+                        # TF Data (Gazebo -> ROS2)
+                        gz_topic + '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+                        gz_topic + '/tf_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
                     ],
                     remappings=[
                         # Remap Gazebo topics to ROS2 topics
@@ -187,7 +190,7 @@ class GazeboSimulator(BaseSimulator):
                     parameters=[
                         {'use_sim_time': True},
                         {'robot_description': description},
-                        {'frame_prefix': entity.name + '/'}
+                        {'frame_prefix': entity.name}
                     ],
                     remappings=[
                         ('/tf', 'tf'), 
