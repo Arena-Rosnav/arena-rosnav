@@ -380,6 +380,12 @@ class RobotProps(EntityProps):
             and self.name == value.name \
             and self.record_data_dir == value.record_data_dir
 
+    @property
+    def frame(self) -> str:
+        if not self.name:
+            return ''
+        return self.name + '/'
+
 
 class Obstacle(ObstacleProps):
     @classmethod

@@ -137,6 +137,9 @@ class RobotManager(NodeInterface):
     def name(self) -> str:
         return self._robot.name
 
+    def frame(self) -> str:
+        return self._robot.frame
+
     @property
     def namespace(self) -> Namespace:
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
@@ -231,7 +234,7 @@ class RobotManager(NodeInterface):
                 # 'name': self.name,
                 'namespace': self.namespace,
                 # 'use_namespace': 'True',
-                'frame': f"{self.name}/" if self.name else '',
+                'frame': self._robot.frame,
                 # 'inter_planner': self._robot.inter_planner,
                 'global_planner': 'dummy',
                 'local_planner': self._robot.local_planner,

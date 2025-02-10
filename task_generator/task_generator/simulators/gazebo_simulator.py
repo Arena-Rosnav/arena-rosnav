@@ -143,7 +143,7 @@ class GazeboSimulator(BaseSimulator):
         gz_topic = '/model/' + entity.name
 
         # Bridge to connect Gazebo and ROS2
-        if isinstance(entity, Robot):
+        if isinstance(entity, RobotProps):
             launch_description.add_action(
                 launch_ros.actions.Node(
                     package='ros_gz_bridge',
@@ -190,10 +190,10 @@ class GazeboSimulator(BaseSimulator):
                     parameters=[
                         {'use_sim_time': True},
                         {'robot_description': description},
-                        {'frame_prefix': entity.name}
+                        {'frame_prefix': entity.frame}
                     ],
                     remappings=[
-                        ('/tf', 'tf'), 
+                        ('/tf', 'tf'),
                         ('/tf_static', 'tf_static')
                     ]
                 )
