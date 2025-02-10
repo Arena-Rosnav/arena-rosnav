@@ -194,6 +194,7 @@ if [ ! -f "$INSTALLED" ] ; then
   rm -rf src/arena/.arena-rosnav
 
 
+  ln -fs src/arena/arena-rosnav/tools/source.bash ./arena.bash
   ln -fs src/arena/arena-rosnav/tools/poetry_install .
   ln -fs src/arena/arena-rosnav/tools/colcon_build .
 

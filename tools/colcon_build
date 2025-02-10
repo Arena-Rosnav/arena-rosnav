@@ -1,44 +1,13 @@
-#! /usr/bin/bash
-ARENA_WS_DIR="$(pwd)"
-ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-humble}
+#! /usr/bin/env bash
 
-export FASTRTPS_DEFAULT_PROFILES_FILE=~/.ros/fastdds.xml
-export ROS_DOMAIN_ID=1
-export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ros/humble/lib/
-
-pushd src/arena/arena-rosnav
-    venv_path="$(poetry env info -p)"
-    if [ -z ${ARENA_SOURCED+x} ] ; then
-    # if [ "$venv_path" != "$VIRTUAL_ENV" ] ; then
-        source "$venv_path"/bin/activate
-        dirs=("$venv_path"/lib/*/site-packages)
-        _IFS=$IFS IFS=':'
-        export PYTHONPATH="${dirs[*]}:$PYTHONPATH"
-        IFS=$_IFS
-        unset _IFS
-        unset dirs
-        export ARENA_SOURCED=1
-    fi
-    unset venv_path
-popd
+. "${ARENA_WS_DIR:-.}/src/arena/arena-rosnav/tools/source.bash" || return $?
 
 colcon build \
-    --base-paths src \
+    --base-paths "${ARENA_WS_DIR}/src" \
     --symlink-install \
     --continue-on-error \
     --packages-skip qt_gui_core rqt qt_gui_cpp rqt_gui_cpp \
-    --cmake-args -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p) -DBUILD_TESTING=OFF \
+    --cmake-args -DPython3_ROOT_DIR=$(cd "${ARENA_WS_DIR}/src/arena/arena-rosnav" && poetry env info -p) -DBUILD_TESTING=OFF \
     $@
 
-cd $ARENA_WS_DIR
-if [ -f "/opt/ros/${ARENA_ROS_DISTRO}/setup.bash" ] ; then
-    . "/opt/ros/${ARENA_ROS_DISTRO}/setup.bash"
-fi
-source install/local_setup.bash
-
-if [ -f src/arena/arena-rosnav/isaac_setup.bash ] ; then
-    if [ -z ${ISAAC_PATH+} ] ; then
-        . src/arena/arena-rosnav/isaac_setup.bash
-    fi
-fi
+. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/source.bash"
