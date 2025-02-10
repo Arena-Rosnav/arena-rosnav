@@ -168,6 +168,7 @@ class GazeboSimulator(BaseSimulator):
                     ],
                     remappings=[
                         # Remap Gazebo topics to ROS2 topics
+                        (gz_topic + '/tf', '/tf'),
                         (gz_topic + '/odometry', entity.name + '/odom'),
                         ('/world/default/model/' + entity.name + '/link/base_link/sensor/imu_sensor/imu', entity.name + '/imu/data'),
                         (gz_topic + '/cmd_vel', entity.name + '/cmd_vel'),
