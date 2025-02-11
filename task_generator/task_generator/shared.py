@@ -452,6 +452,7 @@ class Robot(RobotProps):
         local_planner = str(
             obj.get("local_planner", rosparam_get(str, "local_planner", ""))
         )
+        raise ValueError(local_planner)
         agent = str(obj.get("agent", rosparam_get(str, "agent_name", "")))
         record_data = obj.get(
             "record_data_dir", rosparam_get(str, "record_data_dir", None)
