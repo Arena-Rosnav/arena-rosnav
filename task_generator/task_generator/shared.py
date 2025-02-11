@@ -38,19 +38,7 @@ def rosparam_get(
     @param_name: Name of parameter on parameter server
     @default: Default value. Raise ValueError is default is unset and parameter can't be found.
     """
-    # if "task_generator_node" not in  get_nodes():
-    return _node.get_parameter_or(param_name, DefaultParameter(default)).value
-
-    if val == _notfound:
-        if isinstance(default, _UNSPECIFIED):
-            raise ValueError(f"required parameter {param_name} is not set")
-        return default
-
-    try:
-        return cast(val)
-    except ValueError as e:
-        raise ValueError(
-            f"could not cast {val} to {cast} of param {param_name}") from e
+    return _node.rosparam[T].get(param_name, default)
 
 
 def rosparam_set(
@@ -59,9 +47,7 @@ def rosparam_set(
     """
     # TODO deprecate in favor of ROSParamServer.rosparam[T].set
     """
-    global _node
-    return _node.set_parameters(
-        [rclpy.parameter.Parameter(param_name, value=value)])[0].successful
+    return _node.rosparam.set(param_name, value)
 
 
 class Namespace(str):
@@ -452,7 +438,6 @@ class Robot(RobotProps):
         local_planner = str(
             obj.get("local_planner", rosparam_get(str, "local_planner", ""))
         )
-        raise ValueError(local_planner)
         agent = str(obj.get("agent", rosparam_get(str, "agent_name", "")))
         record_data = obj.get(
             "record_data_dir", rosparam_get(str, "record_data_dir", None)
