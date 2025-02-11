@@ -71,7 +71,6 @@ if [ ! -f install/*/bin/sdf2usd ] ; then
   pushd src/tools
     git clone -b garden https://github.com/gazebosim/gz-usd
   popd
-  . colcon_build
 
   echo "Successfully installed gz-usd"
 fi
