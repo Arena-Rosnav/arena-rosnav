@@ -125,6 +125,7 @@ sudo apt-get install -y \
     libboost-python-dev \
     python3-rosdep \
     libgps-dev \
+    graphicsmagick \
     libgraphicsmagick1-dev \
     nlohmann-json3-dev \
     libxtensor-dev \
