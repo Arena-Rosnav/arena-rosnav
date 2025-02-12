@@ -29,7 +29,7 @@ T = TypeVar("T")
 
 
 def rosparam_get(
-    cast: Type[T], param_name: str, default: typing.Optional[T]
+    cast: Type[T], param_name: str, default: T
 ) -> T:
     """
     # TODO deprecate in favor of ROSParamServer.rosparam[T].get
@@ -38,7 +38,7 @@ def rosparam_get(
     @param_name: Name of parameter on parameter server
     @default: Default value. Raise ValueError is default is unset and parameter can't be found.
     """
-    return _node.rosparam[T].get(param_name, default)
+    return _node.rosparam[cast].get(param_name, default)
 
 
 def rosparam_set(
@@ -57,13 +57,13 @@ class Namespace(str):
     def ParamNamespace(self) -> ParamNamespace:
         return ParamNamespace('')(*self.split('/'))
 
-    @property
+    @ property
     def simulation_ns(self) -> Namespace:
         if len(self.split("/")) < 3:
             return self
         return Namespace(os.path.dirname(self))
 
-    @property
+    @ property
     def robot_ns(self) -> Namespace:
         return Namespace(os.path.basename(os.path.normpath(self)))
 
@@ -455,7 +455,11 @@ class Robot(RobotProps):
         )
 
 
-def DefaultParameter(value: typing.Any) -> rclpy.parameter.Parameter:
+def DefaultParameter(value: typing.Any) -> rclpy.parameter.Parameter | None:
+    if value is None:
+        return None
+    # if isinstance(value, rclpy.parameter.Parameter.Type):
+    #     return None
     return rclpy.parameter.Parameter(
         '',
         value=value,

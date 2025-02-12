@@ -33,7 +33,7 @@ def Configuration(server: ROSParamServer):
 
             WORLD = server.ROSParam[str](
                 'world',
-                rclpy.parameter.Parameter.Type.STRING,
+                type_=rclpy.parameter.Parameter.Type.STRING,
             )
 
             @classmethod
@@ -48,11 +48,6 @@ def Configuration(server: ROSParamServer):
                     'worlds',
                     world,
                 )
-
-            WORLD = server.ROSParam[str](
-                'world',
-                'map_empty'
-            )
 
             ENTITY_MANAGER = server.ROSParam[Constants.EntityManager](
                 'entity_manager',

@@ -225,6 +225,6 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
 
         self._robot_configurations = self.node.ROSParam[_RobotDiff](
             'robot',
-            rclpy.parameter.Parameter.Type.STRING,
+            type_=rclpy.parameter.Parameter.Type.STRING,
             parse=self._parse_robot_configurations,
         )
