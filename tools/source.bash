@@ -12,6 +12,7 @@ if [ -z ${ARENA_SOURCED+x} ] ; then
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ros/humble/lib/
 
     pushd src/arena/arena-rosnav
+        export VIRTUAL_ENV_DISABLE_PROMPT=1
         venv_path="$(poetry env info -p)"
         # if [ "$venv_path" != "$VIRTUAL_ENV" ] ; then
             source "$venv_path"/bin/activate
@@ -24,6 +25,7 @@ if [ -z ${ARENA_SOURCED+x} ] ; then
         unset venv_path
     popd
     export ARENA_SOURCED=1
+    export PS1="(arena) $PS1"
     echo 'sourced arena environment'
 fi
 
