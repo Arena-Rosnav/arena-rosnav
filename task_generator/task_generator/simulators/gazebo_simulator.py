@@ -164,7 +164,9 @@ class GazeboSimulator(BaseSimulator):
                         '/sensors/marker@visualization_msgs/msg/Marker[gz.msgs.Visual',
                         # TF Data (Gazebo -> ROS2)
                         gz_topic + '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-                        gz_topic + '/tf_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
+                        gz_topic + '/tf_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+                        # Clock message is necessary for the diff_drive_controller to accept commands https://github.com/ros-controls/gz_ros2_control/issues/106
+                        "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
                     ],
                     remappings=[
                         # Remap Gazebo topics to ROS2 topics
