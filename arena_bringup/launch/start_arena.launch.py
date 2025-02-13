@@ -28,7 +28,7 @@ def generate_launch_description():
         ),
         launch.actions.DeclareLaunchArgument(
             name='local_planner',
-            default_value='teb',
+            default_value='dwb',
             description='local planner type [teb, dwa, mpc, rlca, arena, rosnav, cohan]'
         ),
         launch.actions.DeclareLaunchArgument(
