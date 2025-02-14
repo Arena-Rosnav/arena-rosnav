@@ -33,7 +33,7 @@ class LaunchArgument(launch.actions.DeclareLaunchArgument):
         return launch.substitutions.LaunchConfiguration(self.name)
 
     @property
-    def parameter(self):
+    def dict(self):
         return {self.name: self.substitution}
 
 

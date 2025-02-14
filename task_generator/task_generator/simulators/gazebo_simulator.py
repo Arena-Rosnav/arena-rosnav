@@ -145,6 +145,11 @@ class GazeboSimulator(BaseSimulator):
         # Bridge to connect Gazebo and ROS2
         if isinstance(entity, RobotProps):
             launch_description.add_action(
+                launch_ros.actions.PushRosNamespace(
+                    namespace=self.node.service_namespace(entity.name)
+                )
+            )
+            launch_description.add_action(
                 launch_ros.actions.Node(
                     package='ros_gz_bridge',
                     executable='parameter_bridge',
@@ -171,12 +176,12 @@ class GazeboSimulator(BaseSimulator):
                     remappings=[
                         # Remap Gazebo topics to ROS2 topics
                         (gz_topic + '/tf', '/tf'),
-                        (gz_topic + '/odometry', entity.name + '/odom'),
-                        ('/world/default/model/' + entity.name + '/link/base_link/sensor/imu_sensor/imu', entity.name + '/imu/data'),
-                        (gz_topic + '/cmd_vel', entity.name + '/cmd_vel'),
-                        ('/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan', entity.name + '/lidar'),
-                        ('/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan/points', entity.name + '/lidar/points'),
-                        ('/sensors/marker', entity.name + '/marker')
+                        (gz_topic + '/odometry', 'odom'),
+                        ('/world/default/model/' + entity.name + '/link/base_link/sensor/imu_sensor/imu', '/imu/data'),
+                        (gz_topic + '/cmd_vel', 'cmd_vel'),
+                        ('/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan', 'lidar'),
+                        ('/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan/points', 'lidar/points'),
+                        ('/sensors/marker', 'marker')
                     ],
                     parameters=[
                         {
@@ -189,16 +194,13 @@ class GazeboSimulator(BaseSimulator):
                 launch_ros.actions.Node(
                     package='robot_state_publisher',
                     executable='robot_state_publisher',
+                    name='robot_state_publisher',
                     output='screen',
                     parameters=[
                         {'use_sim_time': True},
                         {'robot_description': description},
                         {'frame_prefix': entity.frame}
                     ],
-                    remappings=[
-                        ('/tf', 'tf'),
-                        ('/tf_static', 'tf_static')
-                    ]
                 )
             )
 

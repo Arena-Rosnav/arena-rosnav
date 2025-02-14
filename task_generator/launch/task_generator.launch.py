@@ -51,14 +51,14 @@ def generate_launch_description():
         output='screen',
         parameters=[
             {
-                **simulator.parameter,
-                **entity_manager.parameter,
-                **robot.parameter,
-                **tm_robots.parameter,
-                **tm_obstacles.parameter,
-                **tm_modules.parameter,
-                **world.parameter,
-                **local_planner.parameter,
+                **simulator.dict,
+                **entity_manager.dict,
+                **robot.dict,
+                **tm_robots.dict,
+                **tm_obstacles.dict,
+                **tm_modules.dict,
+                **world.dict,
+                **local_planner.dict,
             },
             os.path.join(
                 get_package_share_directory('arena_bringup'),
