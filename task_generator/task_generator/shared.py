@@ -349,12 +349,14 @@ class DynamicObstacleProps(ObstacleProps):
 class RobotProps(EntityProps):
     inter_planner: str
     local_planner: str
+    global_planner: str
     agent: str
     record_data_dir: Optional[str] = None
 
     def compatible(self, value: RobotProps) -> bool:
         return self.model.name == value.model.name \
             and self.local_planner == value.local_planner \
+            and self.global_planner == value.global_planner \
             and self.agent == value.agent \
 
 
@@ -438,6 +440,9 @@ class Robot(RobotProps):
         local_planner = str(
             obj.get("local_planner", rosparam_get(str, "local_planner", ""))
         )
+        global_planner = str(
+            obj.get("global_planner", rosparam_get(str, "global_planner", ""))
+        )
         agent = str(obj.get("agent", rosparam_get(str, "agent_name", "")))
         record_data = obj.get(
             "record_data_dir", rosparam_get(str, "record_data_dir", None)
@@ -448,6 +453,7 @@ class Robot(RobotProps):
             position=position,
             inter_planner=inter_planner,
             local_planner=local_planner,
+            global_planner=global_planner,
             model=model,
             agent=agent,
             record_data_dir=record_data,

@@ -39,6 +39,9 @@ def generate_launch_description():
     local_planner = LaunchArgument(
         name='local_planner',
     )
+    global_planner = LaunchArgument(
+        name='global_planner',
+    )
 
     parameter_file = LaunchArgument(
         name='parameter_file'
@@ -59,6 +62,7 @@ def generate_launch_description():
                 **tm_modules.dict,
                 **world.dict,
                 **local_planner.dict,
+                **global_planner.dict,
             },
             os.path.join(
                 get_package_share_directory('arena_bringup'),

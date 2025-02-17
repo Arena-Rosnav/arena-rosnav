@@ -32,6 +32,11 @@ def generate_launch_description():
             description='local planner type [teb, dwa, mpc, rlca, arena, rosnav, cohan]'
         ),
         launch.actions.DeclareLaunchArgument(
+            name='global_planner',
+            default_value='navfn',
+            description='global planner type [navfn]'
+        ),
+        launch.actions.DeclareLaunchArgument(
             name='simulator',
             default_value='dummy',
         ),
@@ -147,6 +152,7 @@ def generate_launch_description():
                 'tm_modules': launch.substitutions.LaunchConfiguration('tm_modules'),
                 'robot': launch.substitutions.LaunchConfiguration('robot'),
                 'local_planner': launch.substitutions.LaunchConfiguration('local_planner'),
+                'global_planner': launch.substitutions.LaunchConfiguration('global_planner'),
                 'world': launch.substitutions.LaunchConfiguration('world'),
                 'parameter_file': os.path.join(get_package_share_directory('arena_bringup'), 'configs', 'task_generator.yaml'),
             }.items(),

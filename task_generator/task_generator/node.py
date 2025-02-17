@@ -40,6 +40,7 @@ def create_default_robot_list(
     name: str,
     inter_planner: str,
     local_planner: str,
+    global_planner: str,
     agent: str
 
 ) -> List[Robot]:
@@ -48,6 +49,7 @@ def create_default_robot_list(
             model=robot_model,
             inter_planner=inter_planner,
             local_planner=local_planner,
+            global_planner=global_planner,
             agent=agent,
             position=next(gen_init_pos),
             name=name,
