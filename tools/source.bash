@@ -36,8 +36,9 @@ if [ -f install/local_setup.bash ] ; then
     . install/local_setup.bash
 fi 
 
-if [ grep -q "isaac.sh" "$INSTALLED" ] ; then
-    if [ -z ${ISAAC_PATH+x} ] ; then
+INSTALLED="${ARENA_WS_DIR}/src/arena/arena-rosnav/.installed"
+if [ -z ${ISAAC_PATH+x} ] ; then
+    if [ "grep -q isaac.sh $INSTALLED" ] ; then
         . src/arena/arena-rosnav/isaac_setup.bash
     fi
 fi
