@@ -402,8 +402,8 @@ class TM_Environment(TM_Obstacles):
             #     static=static_obstacles,
             #     dynamic=dynamic_obstacles
             # )
-        print(len(rooms))
-        print(rooms)
+        # print(len(rooms))
+        # print(rooms)
 
         groups = environment["groups"]
         offset = random.randint(0, len(groups))
@@ -414,7 +414,7 @@ class TM_Environment(TM_Obstacles):
         # self.visualize_rooms(walls, rooms)
         for idx, room_polygon in enumerate(rooms):
             group = next(groups_iter)
-            print(group)
+            # print(group)
             group_name = group["name"]
             group_size = group["size"]    # [width, height]
             margin = group.get("margin", 0.5)  # Extra margin

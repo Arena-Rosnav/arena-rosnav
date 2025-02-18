@@ -78,7 +78,7 @@ curl "https://install.launcher.omniverse.nvidia.com/installers/omniverse-launche
 chmod +x omniverse-launcher-linux.AppImage
 ./omniverse-launcher-linux.AppImage --no-sandbox &
 
-SETUP_FILE=src/arena/arena-rosnav/isaac_setup.bash
+SETUP_FILE=~/.local/share/ov/pkg/isaac-sim-4.2.0/setup.bash
 # Write the content to the file
 cat << 'EOF' > "$SETUP_FILE"
 #!/bin/bash

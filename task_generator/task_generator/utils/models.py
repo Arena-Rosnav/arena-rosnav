@@ -3,6 +3,9 @@ import functools
 import os
 import subprocess
 import tempfile
+from ament_index_python.packages import get_package_share_directory
+import xml.etree.ElementTree as ET
+import re
 from typing import Collection, Dict, Optional, Set, Tuple, Type
 
 from task_generator.shared import Model, ModelType, ModelWrapper
@@ -214,6 +217,47 @@ class _ModelLoader_USD(_ModelLoader):
     def convert(cls, model_dir: str, model: Model, **kwargs) -> Model | None:
         if model.type == ModelType.SDF:
             try:
+                # print(model_dir)
+                sdf_model_path = os.path.join(model_dir, model.name, "sdf", f"{model.name}.sdf")
+                materials_path = os.path.join(model_dir,model.name,'sdf','materials')
+                tree = ET.parse(sdf_model_path)
+                root = tree.getroot()
+                # First pass: resolve package:// URIs
+                model_uri_pattern = re.compile(r'^model://([^/]+)(.*)$')
+                package_uri_pattern = re.compile(r'^package://([^/]+)(.*)$')
+                for uri_elem in root.iter():
+                    if uri_elem.text:
+                        text = uri_elem.text.strip()
+                        match = model_uri_pattern.match(text)
+                        if match:
+                            package_name = match.group(1)
+                            remaining_path = match.group(2)
+                            # Get the absolute path for the package share directory.
+                            # Replace the package URI with the resolved directory plus remaining path.
+                            new_uri = model_dir + '/' + model.name  + remaining_path
+                            print(new_uri)
+                            # uri_elem.text = new_uri
+                            if (new_uri.endswith('.dae') or new_uri.endswith('.DAE')) and os.path.exists(new_uri):
+                                new_dae_path = Utils.process_dae(new_uri, materials_path)
+                                uri_elem.text = new_dae_path
+                            elif new_uri.endswith('.obj') and os.path.exists(new_uri):
+                                new_obj_path = Utils.process_obj(new_uri, materials_path)
+                                uri_elem.text = new_obj_path
+                        else:
+                            match = package_uri_pattern.match(text)
+                            if match:
+                                package_name = match.group(1)
+                                remaining_path = match.group(2)
+                                # Get the absolute path for the package share directory.
+                                # Replace the package URI with the resolved directory plus remaining path.
+                                new_uri = model_dir + '/' +model.name + remaining_path
+                                print(new_uri)
+                                if (new_uri.endswith('.dae') or new_uri.endswith('.DAE')) and os.path.exists(new_uri):
+                                    new_dae_path = Utils.process_dae(new_uri, materials_path)
+                                    uri_elem.text = new_dae_path
+                                elif new_uri.endswith('.obj') and os.path.exists(new_uri):
+                                    new_obj_path = Utils.process_obj(new_uri, materials_path)
+                                    uri_elem.text = new_obj_path
                 model_path = os.path.join(model_dir, model.name, "usd", f"{model.name}.usd")
                 os.makedirs(os.path.dirname(model_path), exist_ok=True)
                 if os.path.islink(model_path) and not os.path.exists(model_path):  # broken symlink
@@ -223,10 +267,13 @@ class _ModelLoader_USD(_ModelLoader):
 
                 env = os.environ.copy()
                 env['ARENA_WS_DIR'] = ARENA_WS_DIR
-                with tempfile.NamedTemporaryFile('w') as f:
-                    f.write(model.description)
+                with tempfile.NamedTemporaryFile(delete=False,mode='w') as f:
+                    tree.write(f,encoding='unicode')
                     f.flush()
+                    temp_file_path = f.name
+                    print("Temporary SDF file for converter:", temp_file_path)
                     subprocess.check_output(
+
                         [
                             f'{ARENA_WS_DIR}/src/arena/arena-rosnav/tools/sdf2usd',
                             f.name,
@@ -235,7 +282,7 @@ class _ModelLoader_USD(_ModelLoader):
                         env=env,
                         # shell=True,
                     )
-                # print(file_path)
+
                 from pxr import Usd
                 stage = Usd.Stage.Open(model_path)
                 for prim in stage.Traverse():
