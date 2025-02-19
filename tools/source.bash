@@ -10,6 +10,7 @@ if [ -z ${ARENA_SOURCED+x} ] ; then
     export ROS_DOMAIN_ID=1
     export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ros/humble/lib/
+    export INSTALLED=$ARENA_WS_DIR/src/arena/arena-rosnav/.installed
 
     pushd src/arena/arena-rosnav
         export VIRTUAL_ENV_DISABLE_PROMPT=1
@@ -36,9 +37,8 @@ if [ -f install/local_setup.bash ] ; then
     . install/local_setup.bash
 fi 
 
-INSTALLED="${ARENA_WS_DIR}/src/arena/arena-rosnav/.installed"
-if [ -z ${ISAAC_PATH+x} ] ; then
-    if [ "grep -q isaac.sh $INSTALLED" ] ; then
+if grep -q "isaac.sh" "$INSTALLED"; then
+    if [ -z ${ISAAC_PATH+x} ] ; then
         . src/arena/arena-rosnav/isaac_setup.bash
     fi
 fi
