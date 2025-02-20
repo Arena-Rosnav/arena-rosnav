@@ -12,7 +12,7 @@ import ament_index_python.packages
 import re
 import tempfile
 import xml.etree.ElementTree as ET
-import collada
+
 
 _ARENA_WS_DIR = os.path.realpath(os.path.join(ament_index_python.packages.get_package_share_directory('task_generator'), '..', '..', '..', '..'))
 
@@ -109,6 +109,7 @@ def process_dae(dae_file, package_dir):
     Load a .dae file, update its <init_from> elements by replacing any leading
     '../' with the package_dir, then write to a temporary file and return its path.
     """
+    import collada
     file = collada.Collada(dae_file)
     tree = file.xmlnode
     root = tree.getroot()
