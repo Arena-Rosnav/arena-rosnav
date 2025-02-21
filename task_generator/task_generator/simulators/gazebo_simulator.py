@@ -7,7 +7,7 @@ import numpy as np
 
 from ros_gz_interfaces.srv import SpawnEntity, DeleteEntity, SetEntityPose, ControlWorld
 from ros_gz_interfaces.msg import EntityFactory, WorldControl
-from geometry_msgs.msg import PoseStamped, Pose, Quaternion, Point
+from geometry_msgs.msg import PoseStamped, Pose, Quaternion, Point, PoseWithCovarianceStamped
 import traceback
 from task_generator.utils.geometry import quaternion_from_euler
 from task_generator.simulators import BaseSimulator
@@ -213,6 +213,21 @@ class GazeboSimulator(BaseSimulator):
                     remappings=[('/joint_states', '/task_generator_node/jackal/joint_states')]
                 )
             )
+            launch_description.add_action(
+                launch_ros.actions.Node(
+                    package="tf2_ros",
+                    executable="static_transform_publisher",
+                    name="map_to_odomframe_publisher",
+                    arguments=[str(entity.position.x), str(entity.position.y), "0", "0", "0", str(entity.position.orientation), "map", entity.frame +"odom"],
+                    parameters=[{'use_sim_time': True}],
+                ),
+            )
+            pose = PoseWithCovarianceStamped()
+            pose.pose.pose.position = Point(x=entity.position.x, y=entity.position.y)
+            x,y,z,w = quaternion_from_euler(0,0,entity.position.orientation)
+            pose.pose.pose.orientation = Quaternion(x=x,y=y,z=z,w=w)
+            pose.header.frame_id = "map"
+            self.node.create_publisher(PoseWithCovarianceStamped, self.node.service_namespace(entity.name)("initialpose"), qos_profile=1).publish(pose)
         self.entities[entity.name] = entity
         self.node.do_launch(launch_description)
         return True
