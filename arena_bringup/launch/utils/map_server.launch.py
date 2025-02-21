@@ -18,12 +18,17 @@ from arena_bringup.substitutions import LaunchArgument, YAMLFileSubstitution, YA
 
 
 def generate_launch_description():
+    
+    map_file = os.path.join(
+        get_package_share_directory('arena_simulation_setup'),
+        'worlds', 'map_empty', 'map', 'map.yaml'
+    )
+    
     ld = launch.LaunchDescription([
         launch_ros.actions.Node(
             package='nav2_lifecycle_manager',
             executable='lifecycle_manager',
             name='lifecycle_manager_map_server',
-            output='screen',
             parameters=[{
                 'node_names': ['map_server'],
                 'autostart': True,
@@ -38,7 +43,7 @@ def generate_launch_description():
             parameters=[{
                 'topic_name': 'map',
                 'frame_id': 'map',
-                'yaml_filename': '',
+                'yaml_filename': map_file,
                 'use_sim_time': True,
             }],
         )

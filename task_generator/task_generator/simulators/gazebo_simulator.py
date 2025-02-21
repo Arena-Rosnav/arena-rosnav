@@ -165,23 +165,20 @@ class GazeboSimulator(BaseSimulator):
                         '/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
                         # LiDAR Point Cloud (Gazebo -> ROS2)
                         '/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
-                        # Sensors Marker (if needed, Gazebo -> ROS2)
-                        '/sensors/marker@visualization_msgs/msg/Marker[gz.msgs.Visual',
                         # TF Data (Gazebo -> ROS2)
                         gz_topic + '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
                         gz_topic + '/tf_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-                        # Clock message is necessary for the diff_drive_controller to accept commands https://github.com/ros-controls/gz_ros2_control/issues/106
+                        # Clock message
                         "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
                     ],
                     remappings=[
                         # Remap Gazebo topics to ROS2 topics
                         (gz_topic + '/tf', '/tf'),
                         (gz_topic + '/odometry', 'odom'),
-                        ('/world/default/model/' + entity.name + '/link/base_link/sensor/imu_sensor/imu', '/imu/data'),
+                        ('/world/default/model/' + entity.name + '/link/base_link/sensor/imu_sensor/imu', 'imu/data'),
                         (gz_topic + '/cmd_vel', 'cmd_vel'),
                         ('/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan', 'lidar'),
                         ('/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan/points', 'lidar/points'),
-                        ('/sensors/marker', 'marker')
                     ],
                     parameters=[
                         {
@@ -210,8 +207,10 @@ class GazeboSimulator(BaseSimulator):
                     executable='joint_state_publisher',
                     output='screen',
                     parameters=[
-                        {'use_sim_time': True}
-                    ]
+                        {'use_sim_time': True},
+                        {'robot_description': description},  # Ensure URDF is passed here too
+                    ],
+                    remappings=[('/joint_states', '/task_generator_node/jackal/joint_states')]
                 )
             )
         self.entities[entity.name] = entity

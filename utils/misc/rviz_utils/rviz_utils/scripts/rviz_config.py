@@ -142,7 +142,7 @@ def main():
                     package="rviz2",
                     executable="rviz2",
                     name="rviz2",
-                    arguments=['-d', config_file],
+                    arguments=['-d', config_file, '--ros-args', '--clock'],
                     parameters=[{"use_sim_time": True}],
                     output="screen",
                 )
