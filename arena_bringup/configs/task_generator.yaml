@@ -23,7 +23,7 @@ task_generator_node:
         curriculum: default.yaml
         index: 0
       environment:
-        file: hospital.yaml
+        file: canteen.yaml
     hunavsim:       
       parameters:
         max_vel: 0.3
