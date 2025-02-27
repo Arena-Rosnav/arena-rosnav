@@ -162,7 +162,7 @@ class GazeboSimulator(BaseSimulator):
                         # Velocity command (ROS2 -> Gazebo)
                         gz_topic + '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
                         # LiDAR Scan (Gazebo -> ROS2)
-                        '/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+                        '/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
                         # LiDAR Point Cloud (Gazebo -> ROS2)
                         '/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
                         # TF Data (Gazebo -> ROS2)
@@ -172,7 +172,6 @@ class GazeboSimulator(BaseSimulator):
                         "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
                     ],
                     remappings=[
-                        # Remap Gazebo topics to ROS2 topics
                         (gz_topic + '/tf', '/tf'),
                         (gz_topic + '/odometry', 'odom'),
                         ('/world/default/model/' + entity.name + '/link/base_link/sensor/imu_sensor/imu', 'imu/data'),
@@ -180,11 +179,7 @@ class GazeboSimulator(BaseSimulator):
                         ('/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan', 'lidar'),
                         ('/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan/points', 'lidar/points'),
                     ],
-                    parameters=[
-                        {
-                            'use_sim_time': True
-                        }
-                    ],
+                    parameters=[{'use_sim_time': True}],
                 )
             )
             launch_description.add_action(
