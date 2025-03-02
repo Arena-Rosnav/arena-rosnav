@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Type, Union
+from typing import Optional, Tuple, Type, Union, Dict, Any
 
 import gymnasium
 import numpy as np
@@ -13,6 +13,8 @@ from rosnav_rl.observations import (
     get_required_observation_units,
 )
 from rosnav_rl.rl_agent import RL_Agent
+from rosnav_rl.reward.reward_function import RewardFunction
+from rosnav_rl.spaces import BaseSpaceManager
 from rosnav_rl.states import SimulationStateContainer
 from rosnav_rl.utils.rostopic import Namespace
 from rosnav_rl.utils.type_aliases import EncodedObservationDict, ObservationDict
@@ -30,31 +32,45 @@ class FlatlandEnv(gymnasium.Env):
     def __init__(
         self,
         ns: Union[str, Namespace],
-        rl_agent: RL_Agent,
-        simulation_state_container: Optional[SimulationStateContainer] = None,
+        space_manager: Union[BaseSpaceManager, Dict[str, Any]],
+        reward_function: Union[RewardFunction, Dict[str, Any]],
+        simulation_state_container: Optional[SimulationStateContainer],
         max_steps_per_episode=100,
         init_by_call: bool = False,
         wait_for_obs: bool = False,
         obs_unit_kwargs=None,
         task_generator_kwargs=None,
+        start_ros_node: bool = True,
         *args,
         **kwargs,
     ):
-        """
-        Initializes the FlatlandEnv environment.
+        """Initialize the Flatland Gymnasium Environment.
+
+        This class inherits from a base environment class and sets up a ROS-based simulation
+        environment for reinforcement learning in Flatland.
 
         Args:
-            ns (Union[str, Namespace]): The namespace for the environment.
-            space_manager (RosnavSpaceManager): The space manager for ROS navigation.
-            reward_function (Optional[RewardFunction], optional): The reward function to use. Defaults to None.
-            simulation_state_container (Optional[SimulationStateContainer], optional): Container for simulation state. Defaults to None.
-            max_steps_per_episode (int, optional): Maximum steps per episode. Defaults to 100.
-            init_by_call (bool, optional): Whether to initialize by call. Defaults to False.
-            wait_for_obs (bool, optional): Whether to wait for observations. Defaults to False.
-            obs_unit_kwargs (dict, optional): Keyword arguments for observation unit. Defaults to None.
-            task_generator_kwargs (dict, optional): Keyword arguments for task generator. Defaults to None.
-            *args: Additional arguments.
-            **kwargs: Additional keyword arguments.
+            ns (Union[str, Namespace]): Namespace for the simulation environment
+            rl_agent (RL_Agent): Reinforcement learning agent instance
+            simulation_state_container (Optional[SimulationStateContainer]): Container for simulation state management
+            max_steps_per_episode (int, optional): Maximum number of steps per episode. Defaults to 100
+            init_by_call (bool, optional): Whether to initialize environment on call. Defaults to False
+            wait_for_obs (bool, optional): Whether to wait for observations. Defaults to False
+            obs_unit_kwargs (dict, optional): Keyword arguments for observation unit. Defaults to None
+            task_generator_kwargs (dict, optional): Keyword arguments for task generator. Defaults to None
+            *args: Variable length argument list
+            **kwargs: Arbitrary keyword arguments
+
+        Raises:
+            ValueError: If in training mode and reward function is not provided
+
+        Attributes:
+            ns (Namespace): Namespace object for the simulation
+            _debug_mode (bool): Debug mode status from ROS parameter
+            _is_train_mode (bool): Training mode status from ROS parameter
+            _step_size (float): Step size from ROS parameter
+            _steps_curr_episode (int): Current step count in episode
+            _episode (int): Current episode number
         """
         super(FlatlandEnv, self).__init__()
         self.ns = Namespace(ns) if type(ns) is str else ns
@@ -63,14 +79,16 @@ class FlatlandEnv(gymnasium.Env):
         self._is_train_mode = rospy.get_param("/train_mode", default=True)
         self._step_size = rospy.get_param("/step_size")
 
-        if self._is_train_mode and rl_agent.reward_function is None:
+        if self._is_train_mode and reward_function is None:
             raise ValueError("Reward function is required for the training.")
 
-        if not self._debug_mode:
+        if not self._debug_mode or start_ros_node:
             rospy.init_node(f"env_{self.ns.simulation_ns}".replace("/", "_"))
 
-        self._model_space_manager = rl_agent.space_manager
-        self._reward_function = rl_agent.reward_function
+        self._initialize_agent_components(
+            space_manager=space_manager,
+            reward_function=reward_function,
+        )
         self.__simulation_state_container = simulation_state_container
 
         self._obs_unit_kwargs = obs_unit_kwargs if obs_unit_kwargs else {}
@@ -83,6 +101,7 @@ class FlatlandEnv(gymnasium.Env):
         self._steps_curr_episode = 0
         self._episode = 0
         self._max_steps_per_episode = max_steps_per_episode
+        self.__is_first = True
 
         if not init_by_call:
             self.init()
@@ -150,6 +169,30 @@ class FlatlandEnv(gymnasium.Env):
             gym.Space: The observation space of the environment.
         """
         return self._model_space_manager.observation_space
+
+    @property
+    def simulation_state_container(self) -> SimulationStateContainer:
+        return self.__simulation_state_container
+
+    def _initialize_agent_components(
+        self,
+        space_manager: BaseSpaceManager,
+        reward_function: RewardFunction,
+    ):
+        if isinstance(space_manager, BaseSpaceManager):
+            self._model_space_manager = space_manager
+
+        if isinstance(reward_function, RewardFunction):
+            self._reward_function = reward_function
+
+        if isinstance(space_manager, dict):
+            self._model_space_manager = BaseSpaceManager(**space_manager)
+
+        if isinstance(reward_function, dict):
+            self._reward_function = RewardFunction(**reward_function)
+
+        assert isinstance(self._model_space_manager, BaseSpaceManager)
+        assert isinstance(self._reward_function, RewardFunction)
 
     def _setup_env_for_training(self):
         """
@@ -262,7 +305,8 @@ class FlatlandEnv(gymnasium.Env):
             self._call_service_takeSimStep()
 
         obs_dict: ObservationDict = self.observation_collector.get_observations(
-            simulation_state_container=self.__simulation_state_container
+            simulation_state_container=self.__simulation_state_container,
+            is_first=self.__is_first,
         )
 
         # calculate reward
@@ -280,10 +324,8 @@ class FlatlandEnv(gymnasium.Env):
             max_steps=self._max_steps_per_episode,
         )
 
-        # pickle.dump(
-        #     self._encode_observation(obs_dict),
-        #     open(f"obs_dict_{self._steps_curr_episode}.pkl", "wb"),
-        # )
+        obs_dict.update({"is_terminal": done})
+        self.__is_first = False
 
         return (
             self._encode_observation(obs_dict, is_done=done),
@@ -323,12 +365,15 @@ class FlatlandEnv(gymnasium.Env):
 
         self._after_task_reset()
 
-        obs_dict = self.observation_collector.get_observations()
+        obs_dict = self.observation_collector.get_observations(
+            is_terminal=False, is_first=True
+        )
         obs_dict.update({DoneObservation.name: True})
-        info_dict = {}
+
+        self.__is_first = True
         return (
             self._encode_observation(obs_dict),
-            info_dict,
+            dict(),
         )
 
     def close(self):

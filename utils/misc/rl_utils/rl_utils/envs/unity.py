@@ -1,13 +1,15 @@
-from typing import Optional, Tuple, Type, Union
+from typing import Optional, Tuple, Dict, Union, Any
 
 import numpy as np
 import rospy
 from geometry_msgs.msg import Twist
-from rosnav_rl.states import SimulationStateContainer
 from rl_utils.topic import Namespace
 from rl_utils.utils.arena_unity_utils.unity_timer import UnityTimer
 from rosgraph_msgs.msg import Clock
-from rosnav_rl.rl_agent import RL_Agent
+
+from rosnav_rl.reward.reward_function import RewardFunction
+from rosnav_rl.spaces import BaseSpaceManager
+from rosnav_rl.states import SimulationStateContainer
 from rosnav_rl.utils.type_aliases import EncodedObservationDict, ObservationDict
 
 from .flatland_gymnasium_env import FlatlandEnv
@@ -28,7 +30,8 @@ class UnityEnv(FlatlandEnv):
     def __init__(
         self,
         ns: Union[str, Namespace],
-        rl_agent: RL_Agent,
+        space_manager: Union[BaseSpaceManager, Dict[str, Any]],
+        reward_function: Union[RewardFunction, Dict[str, Any]],
         simulation_state_container: Optional[SimulationStateContainer] = None,
         max_steps_per_episode=100,
         init_by_call: bool = False,
@@ -41,7 +44,8 @@ class UnityEnv(FlatlandEnv):
         rospy.loginfo("[Unity Env:" + ns + "]: Starting intialization")
         super().__init__(
             ns,
-            rl_agent,
+            space_manager,
+            reward_function,
             simulation_state_container,
             max_steps_per_episode,
             init_by_call,
