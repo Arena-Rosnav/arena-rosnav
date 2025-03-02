@@ -2,9 +2,10 @@ from dataclasses import dataclass, fields
 from typing import Any, Dict, Generic, Type, TypeVar, get_type_hints
 
 import rl_utils.cfg as cfg
+import rosnav_rl.cfg as rosnav_cfg
 from pydantic import BaseModel
 
-from tools.constants import TRAINING_CONSTANTS
+from rl_utils.tools.constants import TRAINING_CONSTANTS
 
 from .general import load_config
 
@@ -62,7 +63,7 @@ class SB3ConfigFields:
     callbacks: cfg.CallbacksCfg
     profiling: cfg.ProfilingCfg
     robot: cfg.RobotCfg
-    agent: cfg.AgentCfg
+    agent: rosnav_cfg.AgentCfg
 
 
 class SB3ConfigManager(ConfigManager[cfg.TrainingCfg, SB3ConfigFields]):

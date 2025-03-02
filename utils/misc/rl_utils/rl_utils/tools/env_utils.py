@@ -131,11 +131,14 @@ def _init_env_fnc(
         return env_cls(
             ns=ns,
             rl_agent=rl_agent,
+            space_manager=rl_agent.space_manager,
+            reward_function=rl_agent.reward_function,
             simulation_state_container=simulation_state_container,
             max_steps_per_episode=max_steps_per_episode,
             init_by_call=init_by_call,
             obs_unit_kwargs=obs_unit_kwargs,
             task_generator_kwargs=task_generator_kwargs,
+            start_ros_node=False,
         )
 
     set_random_seed(seed)

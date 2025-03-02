@@ -13,8 +13,8 @@ from rl_utils.utils.hooks import HookManager, TrainingHookStages, bind_hooks
 from rosnav_rl.utils.type_aliases import SupportedRLFrameworks
 from rl_utils.utils.type_alias.observation import EnvironmentType, PathsDict
 from rosnav_rl.rl_agent import RL_Agent
-from tools.config import ConfigManager
-from tools.general import (
+from rl_utils.tools.config import ConfigManager
+from rl_utils.tools.general import (
     print_base_model,
     setup_debug_node,
     setup_paths_dictionary,

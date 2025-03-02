@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import rl_utils.utils.paths as Paths
-import rosnav_rl.rl_agent as Rosnav_RL
 from rl_utils.stable_baselines3.eval_callbacks.initialization import init_sb3_callbacks
 from rl_utils.trainer.arena_trainer import (
     ArenaTrainer,
@@ -10,12 +9,12 @@ from rl_utils.trainer.arena_trainer import (
     TrainingHookStages,
 )
 from rl_utils.utils.dynamic_reconfigure import set_dynamic_reconfigure_parameter
-from rosnav_rl.states import AgentStateContainer
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
-from tools.config import SB3ConfigManager, load_training_config
-from tools.env_utils import make_envs
-from tools.model_utils import setup_wandb
-from tools.states import get_arena_states
+from rl_utils.tools.config import SB3ConfigManager, load_training_config
+from rl_utils.tools.env_utils import make_envs
+from rl_utils.tools.model_utils import setup_wandb
+from rl_utils.tools.states import get_arena_states
+import rosnav_rl
 
 if TYPE_CHECKING:
     from rl_utils.cfg import TrainingCfg
@@ -90,7 +89,7 @@ class StableBaselines3Trainer(ArenaTrainer):
 
     def _setup_agent(self) -> None:
         """Initialize the RL agent with configuration."""
-        self.agent = Rosnav_RL.RL_Agent(
+        self.agent = rosnav_rl.RL_Agent(
             agent_cfg=self.agent_cfg,
             agent_state_container=self.agent_state_container,
         )
@@ -142,7 +141,7 @@ class StableBaselines3Trainer(ArenaTrainer):
 
     def _setup_agent_state_container(self) -> None:
         self._setup_simulation_state_container()
-        self.agent_state_container: AgentStateContainer = (
+        self.agent_state_container: rosnav_rl.AgentStateContainer = (
             self.simulation_state_container.to_agent_state_container()
         )
 
