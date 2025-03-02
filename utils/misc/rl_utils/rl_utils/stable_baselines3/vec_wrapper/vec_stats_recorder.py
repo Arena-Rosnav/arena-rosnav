@@ -87,7 +87,7 @@ class VecStatsRecorder(VecEnvWrapper):
 
         if self._record_actions:
             mean_actions = (
-                obs[LastActionCollector.name.upper()][:, -1, :]
+                obs[LastActionCollector.name.upper()][:, :]
                 if LastActionCollector.name.upper() in obs
                 else BATCHED_ZERO_ACTION
             )
