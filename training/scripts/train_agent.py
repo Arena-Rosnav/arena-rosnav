@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 from rl_utils.trainer.sb3_trainer import StableBaselines3Trainer
-from tools.argsparser import parse_training_args
-from tools.config import load_training_config
+from rl_utils.tools.argsparser import parse_training_args
+from rl_utils.tools.config import load_training_config
 
 
 def main():
