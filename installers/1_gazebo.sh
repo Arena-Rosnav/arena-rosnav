@@ -51,8 +51,7 @@ rosdep install -r --from-paths src -i -y --rosdistro "${ARENA_ROS_DISTRO}"
 echo "Gazebo ${GAZEBO_VERSION} and ROS-Gazebo bridge installed successfully!"
 
 
-USD_PATH="$(pwd)/OpenUSD/install"
-export USD_PATH
+export USD_PATH="$ARENA_WS_DIR/tools/OpenUSD/install"
 
 if [ ! -d tools/OpenUSD ]; then
   echo "Installing OpenUSD"
@@ -74,6 +73,7 @@ if [ ! -d src/tools/gz-usd ]; then
   mkdir -p src/tools
   pushd src/tools
     git clone -b main https://github.com/gazebosim/gz-usd
+
   popd
 
   echo "Successfully installed gz-usd"
