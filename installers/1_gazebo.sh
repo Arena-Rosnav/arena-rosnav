@@ -50,22 +50,24 @@ rosdep install -r --from-paths src -i -y --rosdistro "${ARENA_ROS_DISTRO}"
 
 echo "Gazebo ${GAZEBO_VERSION} and ROS-Gazebo bridge installed successfully!"
 
-  
+
+USD_PATH="$(pwd)/OpenUSD/install"
+export USD_PATH
+
 if [ ! -d tools/OpenUSD ]; then
   echo "Installing OpenUSD"
   mkdir -p tools
   pushd tools
     git clone --depth 1 -b v24.08 https://github.com/PixarAnimationStudios/OpenUSD.git
     sudo apt-get install -y libpyside2-dev python3-opengl cmake libglu1-mesa-dev freeglut3-dev mesa-common-dev
-    USD_PATH="$(pwd)/OpenUSD/install"
-    export USD_PATH
     cd OpenUSD
     python3 build_scripts/build_usd.py --build-variant release --no-tests --no-examples --no-imaging --onetbb --no-tutorials --no-docs --no-python "$USD_PATH"
-    export PATH=$USD_PATH/bin:$PATH
-    export LD_LIBRARY_PATH=$USD_PATH/lib:$LD_LIBRARY_PATH
-    export CMAKE_PREFIX_PATH=$USD_PATH:$CMAKE_PREFIX_PATH
   popd
 fi
+
+export PATH=$USD_PATH/bin:$PATH
+export LD_LIBRARY_PATH=$USD_PATH/lib:$LD_LIBRARY_PATH
+export CMAKE_PREFIX_PATH=$USD_PATH:$CMAKE_PREFIX_PATH
 
 if [ ! -d src/tools/gz-usd ]; then
   echo "Installing gz-usd"
