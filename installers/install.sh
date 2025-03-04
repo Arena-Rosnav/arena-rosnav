@@ -237,8 +237,8 @@ compile
 sudo apt install -y "ros-${ROS_DISTRO}-irobot-create-description"
 sudo apt install -y "ros-${ROS_DISTRO}-irobot-create-msgs"
 
-grep -E '^[0-9]+_.*.sh' src/arena/arena-rosnav/installers | while IFS= read -r installer
-do
+for installer in $(ls src/arena/arena-rosnav/installers | grep -E '^[0-9]+_.*.sh') ;
+do 
   name=$(echo "$installer" | cut -d '_' -f 2)
 
   if grep -q "$name" "$INSTALLED" ; then
