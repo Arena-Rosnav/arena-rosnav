@@ -96,6 +96,7 @@ if [ ! -d src/arena/arena-rosnav/tools ] ; then
   pushd src/arena/arena-rosnav/tools
     curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/poetry_install" > poetry_install
     curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/colcon_build" > colcon_build
+    curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/source.bash" > source.bash
   popd
 fi
 
