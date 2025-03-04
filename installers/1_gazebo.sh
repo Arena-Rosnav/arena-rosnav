@@ -2,7 +2,7 @@
 set -e
 
 # Set Gazebo version if not provided
-export GAZEBO_VERSION=${GAZEBO_VERSION:-garden}
+export GAZEBO_VERSION=${GAZEBO_VERSION:-harmonic}
 
 # Define Arena workspace directory
 cd "${ARENA_WS_DIR}"
@@ -69,7 +69,7 @@ if [ ! -f install/*/bin/sdf2usd ] ; then
 
   mkdir -p src/tools
   pushd src/tools
-    git clone -b garden https://github.com/gazebosim/gz-usd
+    git clone -b main https://github.com/gazebosim/gz-usd
   popd
 
   echo "Successfully installed gz-usd"
