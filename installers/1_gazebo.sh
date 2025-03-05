@@ -41,14 +41,18 @@ mkdir -p "${ARENA_WS_DIR}/src/gazebo"
 
 pushd "${ARENA_WS_DIR}/src/gazebo"
   if [ ! -d ros_gz ] ; then
-    git clone https://github.com/voshch/ros_gz.git -b humble
+    git clone https://github.com/voshch/ros_gz.git -b "${ARENA_ROS_DISTRO}"
+  fi
+
+  if [ ! -d sdformat_urdf ]; then
+    git clone https://github.com/ros/sdformat_urdf.git -b "${ARENA_ROS_DISTRO}"
   fi
 popd
 
 rosdep install -r --from-paths src -i -y --rosdistro "${ARENA_ROS_DISTRO}" 
 
 
-echo "Gazebo ${GAZEBO_VERSION} and ROS-Gazebo bridge installed successfully!"
+echo "Gazebo ${GAZEBO_VERSION}, ros_gz, sdformat_urdf installed successfully!"
 
 
 export USD_PATH="$ARENA_WS_DIR/tools/OpenUSD/install"
@@ -70,10 +74,10 @@ export CMAKE_PREFIX_PATH=$USD_PATH:$CMAKE_PREFIX_PATH
 
 if [ ! -d src/tools/gz-usd ]; then
   echo "Installing gz-usd"
+  sudo apt-get install -y libgz-cmake4-dev libsdformat15-dev libgz-common6-dev
   mkdir -p src/tools
   pushd src/tools
     git clone -b main https://github.com/gazebosim/gz-usd
-
   popd
 
   echo "Successfully installed gz-usd"
