@@ -20,6 +20,9 @@
     <plugin filename="gz-sim-imu-system"
       name="gz::sim::systems::Imu">
     </plugin>
+    <!-- <plugin filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
+    </plugin> -->
     <!-- <plugin
       filename="gz-sim-sensors-system"
       name="gz::sim::systems::Sensors">
