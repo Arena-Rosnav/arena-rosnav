@@ -23,7 +23,7 @@ def generate_launch_description():
         ),
         launch.actions.DeclareLaunchArgument(
             name='inter_planner',
-            default_value='empty',
+            default_value='navigate_w_replanning_time',
             description='inter planner type (Behavior Tree)'
         ),
         launch.actions.DeclareLaunchArgument(
