@@ -42,9 +42,11 @@ class RobotManager(NodeInterface):
     _goal_tolerance_angle: float
     _robot: Robot
     _move_base_pub: rclpy.publisher.Publisher
-    _move_base_goal_pub: rclpy.publisher.Publisher
+    _goal_pub: rclpy.publisher.Publisher
     _pub_goal_timer: rclpy.timer.Timer
     _clear_costmaps_srv: rclpy.client.Client
+
+    _rate_setup: rclpy.timer.Rate
 
     @property
     def robot(self) -> Robot:
@@ -62,6 +64,7 @@ class RobotManager(NodeInterface):
         self, namespace: Namespace, entity_manager: EntityManager, robot: Robot
     ):
         NodeInterface.__init__(self)
+        self._rate_setup = self.node.create_rate(.1)
 
         self._namespace = namespace
         self._entity_manager = entity_manager
@@ -101,15 +104,12 @@ class RobotManager(NodeInterface):
 
         self._entity_manager.spawn_robot(self._robot)
 
-        _gen_goal_topic = self.namespace("move_base_simple", "goal")
+        _gen_goal_topic = self.namespace("goal_pose")
 
-        self._move_base_goal_pub = self.node.create_publisher(
+        self._goal_pub = self.node.create_publisher(
             geometry_msgs.PoseStamped, _gen_goal_topic, 10
         )
 
-        self._pub_goal_timer = self.node.create_timer(
-            0.25, self._publish_goal_periodically
-        )
         self.node.create_subscription(
             nav_msgs.Odometry, self.namespace(
                 "odom"), self._robot_pos_callback, 10
@@ -204,10 +204,6 @@ class RobotManager(NodeInterface):
             and angle_to_goal < self._goal_tolerance_angle
         )
 
-    def _publish_goal_periodically(self, *args, **kwargs):
-        if self._goal_pos is not None:
-            self._publish_goal(self._goal_pos)
-
     def _publish_goal(self, goal: PositionOrientation):
         goal_msg = geometry_msgs.PoseStamped()
         goal_msg.header.frame_id = "map"
@@ -219,7 +215,7 @@ class RobotManager(NodeInterface):
         orientation.x, orientation.y, orientation.z, orientation.w = quaternion_from_euler(
             0.0, 0.0, goal.orientation, axes="sxyz")
 
-        self._move_base_goal_pub.publish(goal_msg)
+        self._goal_pub.publish(goal_msg)
 
     def _launch_robot(self):
         self.node.get_logger().warn(f"START WITH MODEL {self.name}")
@@ -262,6 +258,10 @@ class RobotManager(NodeInterface):
                 )
             )
             self.node.do_launch(launch_description)
+
+            while 'bt_navigator' not in self.node.get_node_names():
+                # TODO redo this globally in the robots manager, every get_node_names call is expensive
+                self._rate_setup.sleep()  # we love race conditions
 
         # TODO
         # base_frame: str = self.node.get_parameter_or(self.namespace("robot_base_frame"), DefaultParameter('')).value
