@@ -23,8 +23,8 @@ def generate_launch_description():
         ),
         launch.actions.DeclareLaunchArgument(
             name='inter_planner',
-            default_value='bypass',
-            description='inter planner type [bypass, shortsighted, polite, aggressive, sideways]'
+            default_value='empty',
+            description='inter planner type (Behavior Tree)'
         ),
         launch.actions.DeclareLaunchArgument(
             name='local_planner',
@@ -151,6 +151,7 @@ def generate_launch_description():
                 'tm_robots': launch.substitutions.LaunchConfiguration('tm_robots'),
                 'tm_modules': launch.substitutions.LaunchConfiguration('tm_modules'),
                 'robot': launch.substitutions.LaunchConfiguration('robot'),
+                'inter_planner': launch.substitutions.LaunchConfiguration('inter_planner'),
                 'local_planner': launch.substitutions.LaunchConfiguration('local_planner'),
                 'global_planner': launch.substitutions.LaunchConfiguration('global_planner'),
                 'world': launch.substitutions.LaunchConfiguration('world'),

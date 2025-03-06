@@ -39,6 +39,9 @@ def generate_launch_description():
     local_planner = LaunchArgument(
         name='local_planner',
     )
+    inter_planner = LaunchArgument(
+        name='inter_planner',
+    )
     global_planner = LaunchArgument(
         name='global_planner',
     )
@@ -61,6 +64,7 @@ def generate_launch_description():
                 **tm_obstacles.dict,
                 **tm_modules.dict,
                 **world.dict,
+                **inter_planner.dict,
                 **local_planner.dict,
                 **global_planner.dict,
             },

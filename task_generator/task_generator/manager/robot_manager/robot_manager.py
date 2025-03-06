@@ -235,7 +235,7 @@ class RobotManager(NodeInterface):
                 'namespace': self.namespace,
                 # 'use_namespace': 'True',
                 'frame': self._robot.frame,
-                # 'inter_planner': self._robot.inter_planner,
+                'inter_planner': self._robot.inter_planner,
                 'global_planner': self._robot.global_planner,
                 'local_planner': self._robot.local_planner,
                 # 'complexity': self.node.declare_parameter('complexity', 1).value,
