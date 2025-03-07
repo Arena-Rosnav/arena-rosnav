@@ -1,0 +1,20 @@
+repositories:
+  # dependencies
+  planners/deps/nav2py:
+    type: git
+    url: https://github.com/voshch/nav2py
+    version: humble
+  planners/deps/ament_cmake_venv:
+    type: git
+    url: https://github.com/voshch/ament_cmake_venv
+    version: humble
+  planners/deps/ament_cmake_venv_uv:
+    type: git
+    url: https://github.com/voshch/ament_cmake_venv_uv
+    version: humble
+
+#   #planners
+#   planners/my_planner:
+#     type: git
+#     url: https://github.com/me/my_planner
+#     version: humble
