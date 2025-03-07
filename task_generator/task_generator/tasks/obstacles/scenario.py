@@ -3,56 +3,28 @@ import json
 import os
 from typing import List
 
-from task_generator import NodeInterface
-from ament_index_python.packages import get_package_share_directory
 from task_generator.constants import Constants
-from task_generator.shared import DynamicObstacle, Obstacle, rosparam_get
+from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
+from task_generator.utils.ros_params import ROSParam
 
-import rclpy
 from rcl_interfaces.msg import SetParametersResult
 
 
 @dataclasses.dataclass
-class _Config:
+class _ParsedConfig:
     static: List[Obstacle]
     dynamic: List[DynamicObstacle]
 
 
-class TM_Scenario(TM_Obstacles, NodeInterface):
+class TM_Scenario(TM_Obstacles):
 
-    _config: _Config
+    _config: ROSParam[_ParsedConfig]
 
-    @classmethod
-    def prefix(cls, *args):
-        return super().prefix("scenario", *args)
-    
-    def __init__(self, **kwargs):
-        NodeInterface.__init__(self)
-        TM_Obstacles.__init__(self, **kwargs)
-
-        self._node.declare_parameter('SCENARIO_file', '')
-        self._node.add_on_set_parameters_callback(self.parameters_callback)
-
-        # Initial configuration
-        self.reconfigure({'SCENARIO_file': self._node.get_parameter('SCENARIO_file').value})
-
-    def parameters_callback(self, params):
-        for param in params:
-            if param.name == 'SCENARIO_file':
-                self.reconfigure({'SCENARIO_file': param.value})
-        return SetParametersResult(successful=True)
-
-    def reconfigure(self, config):
-        scenario_file = config['SCENARIO_file']
-        
-        package_share_directory = get_package_share_directory('simulation-setup')
-        map_file = self._node.get_parameter('map_file').value
+    def _parse_scenario(self, scenario_file: str) -> _ParsedConfig:
 
         scenario_path = os.path.join(
-            package_share_directory,
-            "worlds",
-            map_file,
+            self.node.conf.Arena.get_world_path(),
             "scenarios",
             scenario_file
         )
@@ -60,22 +32,36 @@ class TM_Scenario(TM_Obstacles, NodeInterface):
         with open(scenario_path) as f:
             scenario = json.load(f)
 
-        self._config = _Config(
+        return _ParsedConfig(
             static=[
                 Obstacle.parse(
                     obs,
                     model=self._PROPS.model_loader.bind(obs["model"])
                 )
-                for obs in scenario.get("obstacles", {}).get("static", []) + scenario.get("obstacles", {}).get("interactive", [])
+                for obs
+                in
+                scenario.get("obstacles", {}).get("static", []) +
+                scenario.get("obstacles", {}).get("interactive", [])
             ],
             dynamic=[
                 DynamicObstacle.parse(
                     obs,
-                    model=self._PROPS.dynamic_model_loader.bind(obs.get("model", Constants.DEFAULT_PEDESTRIAN_MODEL))
+                    model=self._PROPS.dynamic_model_loader.bind(
+                        obs.get("model", Constants.DEFAULT_PEDESTRIAN_MODEL))
                 )
-                for obs in scenario.get("obstacles", {}).get("dynamic", [])
+                for obs
+                in
+                scenario.get("obstacles", {}).get("dynamic", [])
             ]
         )
 
     def reset(self, **kwargs) -> Obstacles:
-        return self._config.static, self._config.dynamic
+        return self._config.value.static, self._config.value.dynamic
+
+    def __init__(self, **kwargs):
+        TM_Obstacles.__init__(self, **kwargs)
+        self._config = self.node.ROSParam[_ParsedConfig](
+            self.namespace('file'),
+            'default.json',
+            parse=self._parse_scenario,
+        )

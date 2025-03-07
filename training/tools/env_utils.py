@@ -1,18 +1,15 @@
 import os
-import sys
-from typing import Tuple, Union
+from typing import Union
 
 import gym
 import rospy
 from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
 from rl_utils.utils.vec_wrapper.delayed_subproc_vec_env import DelayedSubprocVecEnv
 from rl_utils.utils.vec_wrapper.vec_stats_recorder import VecStatsRecorder
-from rl_utils.utils.vec_wrapper.profiler import ProfilingVecEnv
 from rosnav.model.base_agent import BaseAgent
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import (
     DummyVecEnv,
-    SubprocVecEnv,
     VecFrameStack,
     VecNormalize,
 )

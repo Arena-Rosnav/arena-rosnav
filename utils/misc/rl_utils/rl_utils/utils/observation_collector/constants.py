@@ -12,7 +12,7 @@ class TOPICS:
     LASER = "scan"
     FULL_RANGE_LASER = "full_scan"
     ROBOT_STATE = "odom"
-    GOAL = "move_base_simple/goal"
+    GOAL = "goal_pose"
     SUBGOAL = "subgoal"
 
     GLOBALPLAN = "global_plan"

@@ -1,39 +1,31 @@
+import typing
+
+import launch
+import rclpy
 import rclpy.node
 
-TASKGEN_CONFIG_NODE: rclpy.node.Node
-TASKGEN_NODE: rclpy.node.Node
+from .utils.ros_params import ROSParamServer
+
 
 class NodeInterface:
-    _node: rclpy.node.Node
+    class Taskgen_T(ROSParamServer, rclpy.node.Node):
+        ...
+
+    node: Taskgen_T
 
     def __init__(self) -> None:
-        from . import TASKGEN_NODE
-        self._node = TASKGEN_NODE
+        ...
 
-class ConfigNodeInterface:
-    _config_node: rclpy.node.Node
 
-    def __init__(self) -> None:
-        from . import TASKGEN_CONFIG_NODE
-        self._config_node = TASKGEN_CONFIG_NODE
+def init_task_gen_node(
+    do_launch: typing.Callable[[launch.LaunchDescription], None],
+) -> ROSParamServer:
 
-def init_task_gen_node(args=None):
-    global TASKGEN_NODE, TASKGEN_CONFIG_NODE
-    
-    from .constants.runtime import TaskGenerator_ConfigNode
     from .node import TaskGenerator
+    NodeInterface.node = TaskGenerator(do_launch=do_launch)
 
-    TASKGEN_CONFIG_NODE = TaskGenerator_ConfigNode()
-    TASKGEN_NODE = TaskGenerator()
-
+    # TODO deprecate
     from .shared import configure_node
-    configure_node(TASKGEN_NODE)
+    configure_node(NodeInterface.node)
 
-    TASKGEN_NODE.post_init()
-
-    while True:
-        print('step0')
-        rclpy.spin_once(TASKGEN_CONFIG_NODE)
-        print('step1')
-        rclpy.spin_once(TASKGEN_NODE)
-        print('step2')
+    return NodeInterface.node

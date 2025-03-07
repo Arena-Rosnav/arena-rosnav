@@ -1,26 +1,33 @@
-/**:
+task_generator_node:
   ros__parameters:
-    PARAMETRIZED:
-      file: default.xml
-    RANDOM:
-      dynamic:
-        max: 15
-        min: 3
-        models:
-        - actor1
-      interactive:
-        max: 0
-        min: 0
-        models:
-        - shelf
-      seed: -1
-      static:
-        max: 10
-        min: 5
-        models:
-        - shelf
-    SCENARIO:
-      file: default.json
-    STAGED:
-      curriculum: default.yaml
-      index: 0
+    task:
+      parametrized:
+        file: default.xml
+      random:
+        dynamic:
+          n: [3, 15]
+          models:
+          - gazebo_actor
+        interactive:
+          n: [0, 0]
+          models:
+          - shelf
+        static:
+          max: [5, 10]
+          models:
+          - shelf
+        seed: -1
+      scenario:
+        file: default.json
+      staged:
+        curriculum: default.yaml
+        index: 0
+      environment:
+        file: canteen.yaml
+    hunavsim:       
+      parameters:
+        max_vel: 0.3
+        force_factor_desired: 1.0
+        force_factor_obstacle: 1.0
+        force_factor_social: 5.0
+        force_factor_robot: 0.0

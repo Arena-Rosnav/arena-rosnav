@@ -27,8 +27,6 @@ def initialize_config(
     :param config: dictionary containing training configurations
     :param n_envs: number of envs
     """
-    import rosnav.model.custom_policy
-    import rosnav.model.custom_sb3_policy
 
     config["robot"] = rospy.get_param("model")
     # dynamically adapt n_steps according to batch size and n envs

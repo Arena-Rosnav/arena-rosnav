@@ -1,5 +1,3 @@
-from rosros import rospify as rospy
-from task_generator.constants.runtime import Config
 from task_generator.shared import PositionOrientation
 from task_generator.tasks import TaskMode
 
@@ -32,8 +30,8 @@ class TM_Robots(TaskMode):
             position (PositionOrientation): The desired position and orientation.
 
         """
-        for robot in self._PROPS.robot_managers:
-            robot.reset(position, None)
+        for robot_manager in self._PROPS.robot_managers.values():
+            robot_manager.reset(position, None)
 
     def set_goal(self, position: PositionOrientation):
         """
@@ -43,8 +41,8 @@ class TM_Robots(TaskMode):
             position (PositionOrientation): The desired goal position and orientation.
 
         """
-        for robot in self._PROPS.robot_managers:
-            robot.reset(None, position)
+        for robot_manager in self._PROPS.robot_managers.values():
+            robot_manager.reset(None, position)
 
     @property
     def done(self):
@@ -55,10 +53,9 @@ class TM_Robots(TaskMode):
             bool: True if all robots are done, False otherwise.
 
         """
-        if (self._PROPS.clock.clock.sec - self._last_reset) > Config.Robot.TIMEOUT:
-            rospy.logwarn(f"REACHED {Config.Robot.TIMEOUT}")
+        if (self._PROPS.clock.clock.sec - self._last_reset) \
+                > self.node.conf.Robot.TIMEOUT.value:
             return True
-        
-        return all(robot.is_done for robot in self._PROPS.robot_managers)
 
-
+        return len(self._PROPS.robot_managers) and all(
+            robot_manager.is_done for robot_manager in self._PROPS.robot_managers.values())

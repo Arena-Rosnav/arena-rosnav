@@ -1,11 +1,133 @@
-- # First item in the list
-  ros_topic_name: /world/default/remove
-  ros_type_name: ros_gz_interfaces/srv/DeleteEntity
-  ros_topic_name: /world/default/remove
-  gz_type_name: gz.srv.DeleteEntity
+# Clock synchronization
+- ros_topic_name: "/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_topic_name: "/world/default/clock"
+  gz_type_name: "gz.msgs.Clock"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "volatile"
+      history: "keep_last"
+      depth: 10
 
-- # Second item in the list
-  ros_topic_name: "/scan"
+# TF
+- ros_topic_name: "/tf"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_topic_name: "/world/default/dynamic_pose/info"
+  gz_type_name: "gz.msgs.Pose_V"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "volatile"
+      history: "keep_last"
+      depth: 10
+
+# Static TF
+- ros_topic_name: "/tf_static"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_topic_name: "/world/default/pose/info"
+  gz_type_name: "gz.msgs.Pose_V"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "transient_local"
+      history: "keep_last"
+      depth: 10
+
+# Joint states
+- ros_topic_name: "/joint_states"
+  ros_type_name: "sensor_msgs/msg/JointState"
+  gz_topic_name: "/world/default/model/${robot_model}/joint_state"
+  gz_type_name: "gz.msgs.Model"
+
+# Odometry
+- ros_topic_name: "/odom"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_topic_name: "/model/${robot_model}/odometry"
+  gz_type_name: "gz.msgs.Odometry"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "volatile"
+      history: "keep_last"
+      depth: 10
+
+# IMU
+- ros_topic_name: "/imu"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_topic_name: "/world/default/model/${robot_model}/imu"
+  gz_type_name: "gz.msgs.IMU"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "volatile"
+      history: "keep_last"
+      depth: 10
+
+# Command velocity
+- ros_topic_name: "/cmd_vel"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  gz_topic_name: "/model/${robot_model}/cmd_vel"
+  gz_type_name: "gz.msgs.Twist"
+
+
+# Laser scan
+- ros_topic_name: "scan"
+  gz_topic_name: "/scan"
   ros_type_name: "sensor_msgs/msg/LaserScan"
-  gz_topic_name: "/world/default/model/jackal/front/laser/scan"
   gz_type_name: "gz.msgs.LaserScan"
+
+# Map
+- ros_topic_name: "/map"
+  ros_type_name: "nav_msgs/msg/OccupancyGrid"
+  gz_topic_name: "/map"
+  gz_type_name: "gz.msgs.OccupancyGrid"
+  qos_overrides:
+    publisher:
+      reliability: "reliable"
+      durability: "transient_local"
+      history: "keep_last"
+      depth: 1
+
+
+# Hunavsim specific bridges
+
+# - ros_topic_name: "/hunav/agents"
+#   gz_topic_name: "/world/demo/agents"
+#   ros_type_name: "hunav_msgs/msg/Agents"  
+#   gz_type_name: "gz.msgs.Agents"
+#   direction: GZ_TO_ROS
+
+# - ros_topic_name: "/hunav/agent"
+#   gz_topic_name: "/world/demo/agent"
+#   ros_type_name: "hunav_msgs/msg/Agent"  
+#   gz_type_name: "gz.msgs.Agent"
+#   direction: GZ_TO_ROS
+
+# - ros_topic_name: "/hunav/behavior"
+#   gz_topic_name: "/world/demo/behavior"
+#   ros_type_name: "hunav_msgs/msg/AgentBehavior" 
+#   gz_type_name: "gz.msgs.AgentBehavior"
+#   direction: GZ_TO_ROS
+
+# Gazebo Service Bridges
+- ros_service_name: "/world/default/create"
+  gz_service_name: "/world/default/create"
+  ros_type_name: "ros_gz_interfaces.srv.SpawnEntity"
+  gz_type_name: "gz.msgs.EntityFactory"
+
+- ros_service_name: "/world/default/remove"
+  gz_service_name: "/world/default/remove"
+  ros_type_name: "ros_gz_interfaces.srv.DeleteEntity"
+  gz_type_name: "gz.msgs.Entity"
+
+- ros_service_name: "/world/default/set_pose"
+  gz_service_name: "/world/default/set_pose"
+  ros_type_name: "ros_gz_interfaces.srv.SetEntityPose"
+  gz_type_name: "gz.msgs.Pose"
+
+- ros_service_name: "/world/default/control"
+  gz_service_name: "/world/default/control"
+  ros_type_name: "ros_gz_interfaces.srv.ControlWorld"
+  gz_type_name: "gz.msgs.WorldControl"
+

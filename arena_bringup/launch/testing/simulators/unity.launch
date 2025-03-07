@@ -12,7 +12,7 @@
 
   <!--<arg 
         name="world_file_path" 
-        default="$(find arena-simulation-setup)/worlds/$(arg world)/worlds/$(arg world).world" 
+        default="$(find simulation_setup)/worlds/$(arg world)/worlds/$(arg world).world" 
     />
   <param name="world_file_path" value="$(arg world_file_path)" />-->
   <include file="$(find ros_tcp_endpoint)/launch/endpoint.launch">

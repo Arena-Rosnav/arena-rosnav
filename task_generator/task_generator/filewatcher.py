@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 
-import functools
 import json
 import os
 from typing import Any, Callable, List, Optional
@@ -13,7 +12,6 @@ from rosros import rospify as rospy
 import watchdog.observers
 import watchdog.events
 
-from task_generator.task_generator_node  import TaskGenerator
 
 def observe(file: str, callback: watchdog.events.FileSystemEventHandler):
     observer = watchdog.observers.Observer()

@@ -4,6 +4,7 @@ from task_generator.tasks import TaskMode
 
 Obstacles = Tuple[List[Obstacle], List[DynamicObstacle]]
 
+
 class TM_Obstacles(TaskMode):
 
     def __init__(self, **kwargs):

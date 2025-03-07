@@ -1,27 +1,51 @@
-#! /usr/bin/bash
+#! /usr/bin/env bash
 
-export BUILD_EXCLUDES=""
+. "${ARENA_WS_DIR:-.}/src/arena/arena-rosnav/tools/source.bash" || return $?
 
-ARENA_WS_DIR="$(pwd)"
+SKIP_OLD=1
 
-source $(cd src/arena/arena-rosnav && poetry env info -p)/bin/activate
-colcon build \
-    --symlink-install \
-    --continue-on-error \
-    --packages-skip-build-finished \
-    --packages-ignore vcstool qt_gui_cpp rqt_gui_cpp qt_gui_core rqt \
-    --cmake-args -DPython3_ROOT_DIR=$(cd src/arena/arena-rosnav && poetry env info -p) -DBUILD_TESTING=OFF \
-    $@
+BUILD_BASE='build'
+INSTALL_BASE='install'
+BASE_PATHS=(
+    "${ARENA_WS_DIR}/src"
+)
 
-cd $ARENA_WS_DIR
-source install/local_setup.bash
+OLD_PACKAGES=()
 
-for package in $(ls /opt/ros/humble/share/) ; do
-    setup_file="/opt/ros/humble/share/${package}/local_setup.bash"
-    install_setup_file="${ARENA_WS_DIR}/install/${package}/local_setup.bash"
-    if [ -f "$setup_file" ] ; then
-        if [ ! -f "$install_setup_file" ] ; then # avoid double sourcing
-            . "$setup_file"
-        fi
-    fi 
-done
+
+if [ -n "${SKIP_OLD}" ]; then
+
+    function recursive_mtime(){
+        find "$1" \! -type l -printf "%T@\n"  | sort | tail -1 | cut -d. -f1
+    }
+
+    function package_name(){
+        grep -oPm1 "(?<=<name>)[^<]+" < "$1"
+    }
+
+    for base in "${BASE_PATHS[@]}"; do
+        while IFS= read -r -d '' package_xml
+        do
+            package_path=$(dirname "$package_xml")
+            package=$(package_name "$package_xml")
+            
+            if [ -d "$INSTALL_BASE/$package" ] && [ "$(recursive_mtime "$INSTALL_BASE/$package")" -ge "$(recursive_mtime "$package_path")" ]; then
+                OLD_PACKAGES+=("$package")
+            fi
+        done < <(find "$base" -type f -name 'package.xml' -print0);
+    done
+fi
+
+ARGS=(
+    "--build-base ${BUILD_BASE}"
+    "--install-base ${INSTALL_BASE}"
+    "--base-paths ${BASE_PATHS[*]}"
+    "--symlink-install"
+    "--continue-on-error"
+    "--packages-skip ${OLD_PACKAGES[*]} qt_gui_core rqt qt_gui_cpp rqt_gui_cpp"
+    "--cmake-args '-DPython3_ROOT_DIR=$(cd "${ARENA_WS_DIR}/src/arena/arena-rosnav" && poetry env info -p) -DBUILD_TESTING=OFF'"
+)
+
+eval "colcon build ${ARGS[*]} $*"
+
+. "${ARENA_WS_DIR}/src/arena/arena-rosnav/tools/source.bash"

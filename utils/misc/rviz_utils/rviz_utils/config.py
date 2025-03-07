@@ -1,33 +1,4 @@
 class Config:
-    MAP = {
-        "Alpha": 0.6,
-        "Class": "rviz/Map",
-        "Color Scheme": "map",
-        "Draw Behind": "true",
-        "Enabled": "true",
-        "Name": "Map",
-        "Topic": "/map",
-        "Unreliable": "false",
-        "Use Timestamp": "false",
-        "Value": "true",
-    }
-    TF = {
-        "Class": "rviz/TF",
-        "Enabled": True,
-        "Frame Timeout": 15,
-        "Frames": {
-            "All Enabled": True
-        },
-        "Marker Alpha": 1,
-        "Marker Scale": 1,
-        "Name": "Transform",
-        "Show Arrows": False,
-        "Show Axes": True,
-        "Show Names": True,
-        "Update Interval": 0,
-        "Value": True,
-    }
-
     TRACKED_PERSONS = {
         "Alpha": 1,
         "Class": "spencer_tracking_rviz_plugin/TrackedPersons",

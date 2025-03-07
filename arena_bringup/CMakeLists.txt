@@ -51,6 +51,11 @@ install(
   DESTINATION share/${PROJECT_NAME}/
 )
 
+install(
+  DIRECTORY configs
+  DESTINATION share/${PROJECT_NAME}/
+)
+
 # Mark executables for installation
 # install(TARGETS ${PROJECT_NAME}_node
 #   DESTINATION lib/${PROJECT_NAME}
@@ -74,6 +79,9 @@ install(
   scripts/pull
   scripts/repos
   DESTINATION lib/${PROJECT_NAME})
+
+# Install Python modules
+ament_python_install_package(${PROJECT_NAME})
 
 # ament package
 ament_package()

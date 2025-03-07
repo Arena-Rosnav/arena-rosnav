@@ -19,14 +19,15 @@ def launch_unity():
     # find unity executable
     current_path = os.path.dirname(os.path.abspath(__file__))
     ws_src_path = os.path.join(current_path, "../../../../..")
-    unity_executable_path = os.path.join(ws_src_path, "arena-unity/Build/arena-unity")
+    unity_executable_path = os.path.join(
+        ws_src_path, "arena-unity/Build/arena-unity")
 
     # args
     args = list()
     # arena simulation setup path
     args += [
         "-arena_sim_setup_path",
-        os.path.join(ws_src_path, "simulation-setup")
+        os.path.join(ws_src_path, "simulation_setup")
     ]
     # headless arg
     headless = str(rospy.get_param('~headless', False))

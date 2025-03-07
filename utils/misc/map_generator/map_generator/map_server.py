@@ -5,11 +5,8 @@ Then starts the nav2_map_server node.
 """
 import rclpy
 from rclpy.node import Node
-from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node as LaunchNode
-from launch.actions import ExecuteProcess
-from nav2_common.launch import RewrittenYaml
 
 import os
 from map_generator.constants import MAP_FOLDER_NAME, ROSNAV_MAP_FOLDER, MAP_GENERATOR_NS
