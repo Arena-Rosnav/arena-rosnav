@@ -12,6 +12,10 @@ repositories:
     type: git
     url: https://github.com/voshch/ament_cmake_venv_uv
     version: humble
+  planners/CrowdNav_Prediction_AttnGraph:
+    type: git
+    url: https://github.com/hungwlor/crowdnav_arena
+    version: nav2py
 
 #   #planners
 #   planners/my_planner:
