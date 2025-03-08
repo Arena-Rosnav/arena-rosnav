@@ -18,8 +18,8 @@ repositories:
     version: nav2py
   planners/PaS_CrowdNav:
     type: git
-    url: https://github.com/zenghjian/nav2py_template
-    version: pas_crowdnav
+    url: https://github.com/zenghjian/Nav2_PaS_CrowdNav
+    version: humble
 
 #   #planners
 #   planners/my_planner:
