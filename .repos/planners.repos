@@ -16,6 +16,10 @@ repositories:
     type: git
     url: https://github.com/hungwlor/crowdnav_arena
     version: nav2py
+  planners/PaS_CrowdNav:
+    type: git
+    url: https://github.com/zenghjian/nav2py_template
+    version: pas_crowdnav
 
 #   #planners
 #   planners/my_planner:
