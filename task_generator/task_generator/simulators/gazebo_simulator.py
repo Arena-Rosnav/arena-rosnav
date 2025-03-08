@@ -122,6 +122,7 @@ class GazeboSimulator(BaseSimulator):
         except FileNotFoundError as e:
             self.node.get_logger().error(repr(e))
             return True
+        description = description.replace("jackal_default_name", entity.name)
 
         launch_description.add_action(
             launch_ros.actions.Node(
