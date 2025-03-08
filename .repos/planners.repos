@@ -20,7 +20,10 @@ repositories:
     type: git
     url: https://github.com/zenghjian/Nav2_PaS_CrowdNav
     version: humble
-
+  planners/Drl_vo:
+    type: git
+    url: https://github.com/Tonmanhkien/Nav2_pyif_drl_vo_new_template
+    version: humble
 #   #planners
 #   planners/my_planner:
 #     type: git
