@@ -23,7 +23,7 @@ repositories:
   planners/Drl_vo:
     type: git
     url: https://github.com/Tonmanhkien/Nav2_pyif_drl_vo_new_template
-    version: humble
+    version: master
 #   #planners
 #   planners/my_planner:
 #     type: git
