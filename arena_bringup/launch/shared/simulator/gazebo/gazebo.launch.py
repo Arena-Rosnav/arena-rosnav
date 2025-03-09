@@ -154,6 +154,8 @@ def generate_launch_description():
             "physics-engine": "gz-physics-dartsim",
         }.items(),
     )
+    
+    
 
     # # Robot URDF (Xacro) description
     # robot_desc_path = os.path.join(
@@ -245,6 +247,14 @@ def generate_launch_description():
             }
         ],
     )
+    
+    clock_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        output='screen',
+        arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
+        parameters=[{'use_sim_time': True}]
+    )
 
     # random_spawn_launch_file = PathJoinSubstitution(
     #     [
@@ -296,6 +306,7 @@ def generate_launch_description():
             #     PythonLaunchDescriptionSource(random_spawn_launch_file),
             #     condition=IfCondition(random_spawn_test),
             # ),
+            clock_bridge,
         ]
     )
 

@@ -122,6 +122,7 @@ class GazeboSimulator(BaseSimulator):
         except FileNotFoundError as e:
             self.node.get_logger().error(repr(e))
             return True
+        description = description.replace("jackal_default_name", entity.name)
 
         launch_description.add_action(
             launch_ros.actions.Node(
@@ -167,9 +168,7 @@ class GazeboSimulator(BaseSimulator):
                         '/world/default/model/' + entity.name + '/link/base_link/sensor/gpu_lidar/scan/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
                         # TF Data (Gazebo -> ROS2)
                         gz_topic + '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-                        gz_topic + '/tf_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-                        # Clock message
-                        "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
+                        gz_topic + '/tf_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
                     ],
                     remappings=[
                         (gz_topic + '/tf', '/tf'),
@@ -205,7 +204,7 @@ class GazeboSimulator(BaseSimulator):
                         {'use_sim_time': True},
                         {'robot_description': description},  # Ensure URDF is passed here too
                     ],
-                    remappings=[('/joint_states', '/task_generator_node/jackal/joint_states')]
+                    remappings=[('/joint_states', '/joint_states')]
                 )
             )
             launch_description.add_action(
