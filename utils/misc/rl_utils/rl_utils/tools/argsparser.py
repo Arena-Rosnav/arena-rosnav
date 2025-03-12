@@ -9,7 +9,7 @@ def new_training_args(parser):
         "--config",
         type=str,
         metavar="[config name]",
-        default="training_config.yaml",
+        default="sb_training_config.yaml",
         help="name of the config file",
     )
 

@@ -1,0 +1,165 @@
+# CONTAINS THE AGENT CONFIGURATION FOR TRAINING [STABLE BASELINES 3 - PPO - TEMPLATE]
+# Controls whether to continue training from a previous checkpoint
+resume: false
+
+agent_cfg:
+  name: null  # agent name (should be unique) - used for model identification
+
+  # action space configuration
+  action_space:
+    is_discrete: false  # false for continuous actions, true for discrete actions
+    custom_discretization: null  # optional custom discretization schema for action space
+
+  framework:
+    name: stable_baselines3  # ML framework name used for training
+    algorithm: # training algorithm configuration
+      architecture_name: AGENT_6  # neural network architecture identifier
+      checkpoint: last_model  # checkpoint to load when resuming training (last_model or best_model)
+      # transfer_weights:  # for transfer learning - uncomment to use
+      #   source_dir: /home/tar/catkin_ws/src/planners/rosnav/agents/AGENT_5
+      #   source_checkpoint: best_model
+      #   include:  # regex patterns for layers to include
+      #     - .*
+      #   exclude: null  # regex patterns for layers to exclude
+      parameters:
+        batch_size: 256  # Number of samples per gradient update
+        clip_range: 0.2  # Clipping parameter for PPO (limits policy update size)
+        clip_range_vf: null  # Clipping parameter for value function (if None, no clipping)
+        device: auto  # Device to use for training (cpu, cuda, auto)
+        ent_coef: 0.0  # Entropy coefficient for the loss calculation - higher values encourage exploration
+        gae_lambda: 0.95  # Lambda for generalized advantage estimation - balances bias vs. variance
+        gamma: 0.99  # Discount factor for future rewards (0-1)
+        learning_rate:  # Learning rate schedule configuration
+          type: linear  # Type of learning rate schedule (linear, constant, etc.)
+          kwargs:
+            initial_value: 0.001  # Initial learning rate at start of training
+            final_value: 0.0001  # Final learning rate at end of training
+        max_grad_norm: 0.5  # Maximum norm for gradient clipping (prevents exploding gradients)
+        n_epochs: 5  # Number of epochs to update the policy for each batch
+        n_steps: null  # Number of steps to run for each environment per update (if null, uses default)
+        normalize_advantage: true  # Whether to normalize advantages (stabilizes training)
+        sde_sample_freq: -1  # Frequency of sampling for state-dependent exploration (if -1, no sampling)
+        seed: null  # Seed for the random number generator (for reproducibility)
+        stats_window_size: 100  # Window size for the rolling statistics in evaluation
+        target_kl: 1.0  # Target KL divergence threshold (early stops policy updates if exceeded)
+        tensorboard_log: null  # Directory for tensorboard logs (if None, no tensorboard logging)
+        total_batch_size: 512  # Total batch size for training (across all environments)
+        use_sde: false  # Whether to use state-dependent exploration for action sampling
+        verbose: 2  # Verbosity level (0: no output, 1: info, 2: debug)
+        vf_coef: 0.22  # Coefficient for the value function loss in the total loss
+      transfer_weights: null  # Alternative way to specify transfer learning configuration
+    normalization: null  # Input normalization parameters (if needed)
+
+  # reward function configuration
+  reward:
+    reward_function_dict: 
+      goal_reached:
+        reward: 15  # Positive reward for reaching the goal
+
+      factored_safe_distance:
+        factor: -0.2  # Penalty factor for getting too close to obstacles
+
+      collision:
+        reward: -15  # Negative reward for colliding with obstacles
+
+      approach_goal:
+        pos_factor: 0.3  # Reward factor for moving toward the goal
+        neg_factor: 0.4  # Penalty factor for moving away from the goal
+        _goal_update_threshold: 0.25  # Threshold to update the goal reference point
+        _follow_subgoal: true  # Whether to follow subgoals along the global path
+        _on_safe_dist_violation: true  # Apply this reward component when safety distance is violated
+
+      factored_reverse_drive:
+        factor: 0.05  # Penalty factor for driving in reverse
+        threshold: 0.0  # Threshold below which reverse motion is penalized
+        _on_safe_dist_violation: true  # Apply this reward component when safety distance is violated
+
+      # approach_globalplan:  # Uncomment to reward following the global plan
+      #   pos_factor: 0.05  # Reward factor for approaching the global plan
+      #   neg_factor: 0.05  # Penalty factor for moving away from the global plan
+      #   _on_safe_dist_violation: true  # Apply when safety distance is violated
+
+      two_factor_velocity_difference:
+        alpha: 0.005  # Weight for linear velocity difference
+        beta: 0.0  # Weight for angular velocity difference
+        _on_safe_dist_violation: true  # Apply this reward component when safety distance is violated
+
+      # active_heading_direction:  # Uncomment to reward following an active heading direction
+      #   r_angle: 0.7  # Reward factor based on angle difference
+      #   iters: 60  # Number of iterations to consider
+      #   _on_safe_dist_violation: true  # Apply when safety distance is violated
+
+      ped_type_collision:
+        type_reward_pairs:  # Different collision penalties based on pedestrian type
+          0: -2.5  # Type 0 pedestrian collision penalty
+          1: -5    # Type 1 pedestrian collision penalty (more severe)
+
+      ped_type_factored_safety_distance:
+        type_factor_pairs:  # Different safety distance factors based on pedestrian type
+          0: -0.1  # Type 0 pedestrian safety distance factor
+          1: -0.2  # Type 1 pedestrian safety distance factor (more strict)
+        safety_distance: 1.0  # Minimum distance to maintain from pedestrians
+
+      # max_steps_exceeded:  # Uncomment to penalize exceeding maximum steps
+      #   reward: -15  # Penalty for exceeding maximum steps
+
+      angular_vel_constraint:
+        penalty_factor: -0.01  # Penalty factor for excessive angular velocity
+        threshold: 0.5  # Threshold above which angular velocity is penalized
+
+      linear_vel_boost:
+        reward_factor: 0.01  # Reward factor for maintaining forward velocity
+        threshold: 0.0  # Threshold above which velocity is rewarded
+    reward_unit_kwargs: null  # Additional arguments for reward units
+    verbose: false # Print detailed reward values during training
+
+# CONTAINS THE FRAMEWORK CONFIGURATION FOR TRAINING 
+arena_cfg:
+  # general training configuration
+  general:
+    # in debug_mode no agent directories will be created and no models will be saved
+    # further no wandb logging and fake (simulated) multiprocessing for traceback
+    debug_mode: true  # Enable debugging features (no saving, no wandb, simplified multiprocessing)
+    goal_radius: 0.5  # Radius within which the goal is considered reached
+    max_num_moves_per_eps: 200  # Maximum number of steps per episode before termination
+    n_envs: 2  # Number of parallel environments for training
+    n_timesteps: 4000000  # Total number of timesteps to train for
+    no_gpu: false  # Set to true to force CPU training even if GPU is available
+    safety_distance: 1.0  # Minimum distance to maintain from obstacles for safety
+    show_progress_bar: false  # Display progress bar during training
+
+  # task modules configuration
+  task:
+    tm_modules: staged  # Task module setup (staged for curriculum learning)
+    tm_obstacles: random  # Obstacle generation method (random placement)
+    tm_robots: random  # Robot spawning method (random positions)
+
+  monitoring:
+    wandb: # Weights and Biases logging configuration
+      project_name: Arena-RL  # W&B project name
+      group: null  # Group name for experiments (null for no grouping)
+      run_name: null  # Run name (null for auto-generated)
+      tags: null  # Tags for experiment organization
+    episode_logging:  # Statistics logging during episodes
+      last_n_episodes: 25  # Number of episodes to consider for rolling statistics
+      record_actions: true  # Whether to record agent actions
+    eval_metrics: false  # Save detailed evaluation statistics during training
+    training_metrics: true  # Display training performance metrics
+
+  callbacks:
+    periodic_evaluation:
+      eval_freq: 1000  # Evaluation frequency (in timesteps * n_envs)
+      max_num_moves_per_eps: 200  # Maximum steps per evaluation episode
+      n_eval_episodes: 10  # Number of episodes to evaluate on
+    stop_training_on_threshold:
+      threshold: 0.9  # Performance threshold to stop training
+      threshold_type: succ  # Metric to use: "succ" (success rate) or "rew" (reward)
+      verbose: 1  # Verbosity of logging when checking threshold
+    training_curriculum:
+      current_stage: 0  # Starting curriculum stage (0-indexed)
+      curriculum_file: semantic.yaml  # File defining curriculum stages
+      lower_threshold: 0.3  # Performance threshold to stay at current stage
+      threshold_type: succ  # Metric to use: "succ" (success rate) or "rew" (reward)
+      upper_threshold: 0.9  # Performance threshold to advance to next stage
+
+  profiling: null  # Performance profiling configuration (null for disabled)
