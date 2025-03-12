@@ -20,11 +20,10 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 import wandb
 
 if TYPE_CHECKING:
-    from rl_utils.cfg import TrainingCfg, CallbacksCfg
-    from rosnav_rl.model.model import RL_Model
+    from rl_utils.cfg import TrainingCfg
 
-
-def setup_wandb(train_cfg: "TrainingCfg", rl_model: "RL_Model") -> None:
+    
+def setup_wandb(run_name: str=None, group: str = None, config: "TrainingCfg"=None, agent_id:str=None, to_watch: List[torch.nn.Module] = []) -> None:
     """
     Set up Weights and Biases (wandb) for tracking and visualizing training.
 
@@ -43,16 +42,19 @@ def setup_wandb(train_cfg: "TrainingCfg", rl_model: "RL_Model") -> None:
     """
     wandb.login()
     wandb.init(
-        name=train_cfg.agent_cfg.name,
-        group=train_cfg.agent_cfg.framework.algorithm.architecture_name,
-        project="Arena-RL",
+        name=run_name if run_name else config.arena_cfg.monitoring.wandb.run_name,
+        group=group if group else config.arena_cfg.monitoring.wandb.group,
+        project=config.arena_cfg.monitoring.wandb.project_name,
+        tags=config.arena_cfg.monitoring.wandb.tags,
         entity=None,
         sync_tensorboard=True,
         monitor_gym=False,
         save_code=False,
-        config=train_cfg.model_dump(),
+        config=config.model_dump(),
+        id=agent_id,
     )
-    wandb.watch(rl_model.model.policy)
+    for module in to_watch:
+        wandb.watch(module, log_graph=True)
 
 
 def check_batch_size(n_envs: int, batch_size: int, mn_batch_size: int) -> None:
@@ -164,7 +166,7 @@ def init_sb3_callbacks(
     tm_modules: List[str],
     model_save_path: str,
     eval_log_path: str,
-    callback_cfg: "CallbacksCfg",
+    callback_cfg,
     debug_mode: bool,
 ) -> EvalCallback:
     """
@@ -220,145 +222,3 @@ def init_sb3_callbacks(
         callback_on_new_best=stoptraining_cb,
     )
     return eval_cb
-
-
-def transfer_weights(
-    model1: PPO, model2: PPO, include: List[str] = None, exclude: List[str] = None
-) -> PPO:
-    """
-    Transfer weights from model2 to model1 based on include and exclude lists.
-
-    Args:
-        model1 (PPO): The target model to which weights will be transferred.
-        model2 (PPO): The source model from which weights will be transferred.
-        include (List[str], optional): List of regex patterns to include specific weights. Defaults to None.
-        exclude (List[str], optional): List of substrings to exclude specific weights. Defaults to None.
-
-    Returns:
-        PPO: The target model (model1) with updated weights.
-    """
-    if include is None:
-        rospy.logwarn("No include list provided. Skipping weight transfer.")
-        return model1
-
-    exclude = exclude or ["---"]
-
-    state_dict_model1 = model1.policy.state_dict()
-    state_dict_model2 = model2.policy.state_dict()
-
-    weights_dict = {
-        key: value
-        for key, value in state_dict_model2.items()
-        if any(re.match(_key, key) for _key in include)
-        and not any(item in key for item in exclude)
-        and key in state_dict_model1
-        and state_dict_model1[key].shape == value.shape
-    }
-
-    rospy.loginfo(f"Transferring weights for {len(weights_dict.keys())} keys!")
-
-    state_dict_model1.update(weights_dict)
-    model1.policy.load_state_dict(state_dict_model1, strict=True)
-
-    return model1
-
-
-def freeze_weights(model: PPO, include: List[str] = None, exclude: List[str] = None):
-    if include is None:
-        rospy.logwarn("No include list provided. Skipping weight freezing.")
-        return model
-
-    exclude = exclude or []
-
-    if len(exclude) == 0 or exclude[0].lower() == "none" or exclude[0] == "":
-        exclude = ["---"]
-
-    state_dict_model = model.policy.state_dict()
-
-    weights_dict = {
-        key: value
-        for key, value in state_dict_model.items()
-        if any(re.match(_key, key) for _key in include)
-        and not any(item in key for item in exclude)
-    }
-
-    rospy.loginfo(f"Freezing weights for {len(weights_dict.keys())} keys!")
-
-    for name, param in model.policy.features_extractor.named_parameters():
-        if name in weights_dict.keys():
-            param.requires_grad = False
-
-    return model
-
-
-import yaml
-from gymnasium import spaces
-from sb3_contrib.common.recurrent.buffers import (
-    RecurrentDictRolloutBuffer,
-    RecurrentRolloutBuffer,
-)
-from sb3_contrib.common.recurrent.type_aliases import RNNStates
-
-
-def init_rppo_rollout_buffer(model: RecurrentPPO):
-    """
-    Initialize the rollout buffer for a Recurrent PPO (Proximal Policy Optimization) model.
-
-    This function sets up the appropriate rollout buffer class based on the type of observation space
-    (either a dictionary or a standard space). It also initializes the hidden and cell states for the
-    LSTM (Long Short-Term Memory) layers used in the actor and critic networks of the model.
-
-    Args:
-        model (RecurrentPPO): The Recurrent PPO model for which the rollout buffer is being initialized.
-
-    Attributes:
-        model._last_lstm_states (RNNStates): A tuple containing the hidden and cell states for both the
-                                             actor and critic LSTM networks, initialized to zeros.
-        model.rollout_buffer (RecurrentRolloutBuffer or RecurrentDictRolloutBuffer): The rollout buffer
-                                                                                     instance used for
-                                                                                     storing experiences
-                                                                                     during training.
-
-    Notes:
-        - The shape of the hidden and cell states is determined by the number of LSTM layers, the number
-          of environments, and the hidden size of the LSTM.
-        - The rollout buffer is initialized with parameters such as the number of steps, observation space,
-          action space, hidden state buffer shape, device, gamma, GAE lambda, and the number of environments.
-    """
-    buffer_cls = (
-        RecurrentDictRolloutBuffer
-        if isinstance(model.observation_space, spaces.Dict)
-        else RecurrentRolloutBuffer
-    )
-    lstm = model.policy.lstm_actor
-
-    single_hidden_state_shape = (lstm.num_layers, model.n_envs, lstm.hidden_size)
-    # hidden and cell states for actor and critic
-    model._last_lstm_states = RNNStates(
-        (
-            torch.zeros(single_hidden_state_shape, device=model.device),
-            torch.zeros(single_hidden_state_shape, device=model.device),
-        ),
-        (
-            torch.zeros(single_hidden_state_shape, device=model.device),
-            torch.zeros(single_hidden_state_shape, device=model.device),
-        ),
-    )
-
-    hidden_state_buffer_shape = (
-        model.n_steps,
-        lstm.num_layers,
-        model.n_envs,
-        lstm.hidden_size,
-    )
-
-    model.rollout_buffer = buffer_cls(
-        model.n_steps,
-        model.observation_space,
-        model.action_space,
-        hidden_state_buffer_shape,
-        model.device,
-        gamma=model.gamma,
-        gae_lambda=model.gae_lambda,
-        n_envs=model.n_envs,
-    )
