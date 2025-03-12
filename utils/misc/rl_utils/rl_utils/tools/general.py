@@ -169,3 +169,7 @@ def setup_paths_dictionary(
     trainer.paths = PathFactory.get_paths(trainer.config.agent_cfg.name)
     if not is_debug_mode:
         trainer.paths.create_all()
+
+def load_yaml(file_path: str) -> dict:
+    with open(file_path) as file:
+        return yaml.load(file, Loader=yaml.FullLoader)
