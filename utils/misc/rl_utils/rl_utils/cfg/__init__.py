@@ -1,11 +1,10 @@
-from .sb3_cfg import (
-    CallbacksCfg,
+from .arena_cfg import (
+    ArenaBaseCfg,
     GeneralCfg,
     MonitoringCfg,
-    NormalizationCfg,
     ProfilingCfg,
     RobotCfg,
-    SB3Cfg,
     TaskCfg,
 )
+from .sb3_cfg import ArenaSB3Cfg
 from .train import TrainingCfg

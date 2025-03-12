@@ -2,8 +2,7 @@ from typing import Dict, List, Optional
 
 import rospy
 from pydantic import BaseModel, Field
-from rosnav_rl.utils.utils import load_yaml
-from rl_utils.tools.general import get_robot_yaml_path
+from rl_utils.tools.general import get_robot_yaml_path, load_yaml
 
 
 class DiscreteAction(BaseModel):

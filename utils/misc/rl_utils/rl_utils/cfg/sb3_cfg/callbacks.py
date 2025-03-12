@@ -1,19 +1,8 @@
 import os
-from typing import Optional, Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, model_validator
-
-
-class StopTrainingOnThreshCfg(BaseModel):
-    threshold_type: Literal["rew", "succ"] = "succ"
-    threshold: float = 0.9
-    verbose: int = 1
-
-
-class PeriodicEvaluationCfg(BaseModel):
-    n_eval_episodes: int = 40
-    eval_freq: int = 20000
-    max_num_moves_per_eps: int = 250
+from rosnav_rl.model.stable_baselines3.cfg import CallbacksCfg
 
 
 class TrainingCurriculumCfg(BaseModel):
@@ -35,9 +24,5 @@ class TrainingCurriculumCfg(BaseModel):
         return self
 
 
-class CallbacksCfg(BaseModel):
-    periodic_evaluation: Optional[PeriodicEvaluationCfg] = PeriodicEvaluationCfg()
+class ArenaCallbacksCfg(CallbacksCfg):
     training_curriculum: Optional[TrainingCurriculumCfg] = TrainingCurriculumCfg()
-    stop_training_on_threshold: Optional[StopTrainingOnThreshCfg] = (
-        StopTrainingOnThreshCfg()
-    )

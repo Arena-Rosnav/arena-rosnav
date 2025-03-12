@@ -1,16 +1,19 @@
-from pydantic import BaseModel, ConfigDict, model_validator
-from rl_utils.cfg.sb3_cfg.robot import DiscreteAction
-from rl_utils.utils.type_alias.observation import CustomDiscreteActionList
-from rosnav_rl.cfg.agent import AgentCfg
+from typing import Union
 
-from .sb3_cfg import SB3Cfg
+import rosnav_rl
+from pydantic import BaseModel, ConfigDict, model_validator
+from rl_utils.cfg.arena_cfg.robot import DiscreteAction
+from rl_utils.utils.type_alias.observation import CustomDiscreteActionList
+
+from .arena_cfg import ArenaBaseCfg
+from .sb3_cfg import ArenaSB3Cfg
 
 
 class TrainingCfg(BaseModel):
     __version__ = "0.1.0"
 
-    framework_cfg: SB3Cfg
-    agent_cfg: AgentCfg
+    arena_cfg: Union[ArenaBaseCfg, ArenaSB3Cfg]
+    agent_cfg: rosnav_rl.AgentCfg
     resume: bool = False
 
     model_config = ConfigDict(
@@ -23,15 +26,15 @@ class TrainingCfg(BaseModel):
     def generate_custom_discrete_actions(self):
         if (
             self.agent_cfg.action_space.custom_discretization is not None
-            and self.framework_cfg.robot is not None
+            and self.arena_cfg.robot is not None
         ):
             custom_discrete_actions_list: CustomDiscreteActionList = (
                 self.agent_cfg.action_space.custom_discretization.generate_discrete_from_box_dict(
-                    self.framework_cfg.robot.robot_description.actions.continuous.linear_range,
-                    self.framework_cfg.robot.robot_description.actions.continuous.linear_range,
+                    self.arena_cfg.robot.robot_description.actions.continuous.linear_range,
+                    self.arena_cfg.robot.robot_description.actions.continuous.linear_range,
                 )
             )
-            self.framework_cfg.robot.robot_description.actions.discrete = [
+            self.arena_cfg.robot.robot_description.actions.discrete = [
                 DiscreteAction(**action) for action in custom_discrete_actions_list
             ]
         return self
