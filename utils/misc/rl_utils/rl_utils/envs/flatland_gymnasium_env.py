@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Type, Union, Dict, Any
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
 import gymnasium
 import numpy as np
@@ -12,7 +12,6 @@ from rosnav_rl.observations import (
     ObservationManager,
     get_required_observation_units,
 )
-from rosnav_rl.rl_agent import RL_Agent
 from rosnav_rl.reward.reward_function import RewardFunction
 from rosnav_rl.spaces import BaseSpaceManager
 from rosnav_rl.states import SimulationStateContainer
