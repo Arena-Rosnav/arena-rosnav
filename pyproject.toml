@@ -34,8 +34,9 @@ regex = "^2024.5.15"
 shapely = "^2.0.4"
 pydantic = "^2.7.2"
 gymnasium = "^1.0.0"
+
 [tool.poetry.group.planner.dependencies]
-torch = "^1.11.0" # applr, crowdnav, lflh, rlca, sarl, trail
+torch = "2.4.1" # applr, crowdnav, lflh, rlca, sarl, trail
 seaborn = "^0.12.2" # lflh
 tensorboard = "^2.12.2" # lflh
 torchdiffeq = "^0.2.3" # lflh
@@ -57,7 +58,7 @@ rosnav_rl = {path = "../../planners/rosnav", develop = true}
 pysocialforce = "^1.1.2"
 socialforce = "^0.2.3"
 pyinstrument = "^4.6.1"
-sismic = "^1.6.6"
+sismic = "^1.4.0"
 
 [tool.poetry.dev-dependencies]
 

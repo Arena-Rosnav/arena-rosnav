@@ -1,0 +1,267 @@
+# This is a configuration template for DreamerV3 agents in ROS-Nav
+# Use this template as a starting point for DreamerV3-based RL navigation
+
+agent_cfg:
+  name: dreamerv3-3  # Name of your agent - will be used for identifying model files
+  robot: jackal  # Target robot model (jackal, turtlebot, etc.)
+  
+  # Action space configuration
+  action_space:
+    is_discrete: false  # DreamerV3 works well with continuous actions
+    custom_discretization: null  # Not needed for continuous actions
+  
+  # DreamerV3-specific framework configuration
+  framework:
+    name: dreamerv3 
+
+    # General framework settings
+    general:
+      logdir: /home/tar/catkin_ws/src/planners/rosnav/agents  # Directory for logs and checkpoints
+      device: cpu  # Device to use (cpu, cuda:0, etc.)
+      seed: 0  # Random seed for reproducibility
+      precision: 32  # Floating point precision (16 or 32)
+      debug: false  # Enable debug mode
+      compile: true  # Use torch.compile for faster execution (requires PyTorch 2.0+)
+      deterministic_run: false  # Force deterministic execution
+      parallel: true  # Use parallel environments
+      log_every: 10000.0  # Log interval in steps
+      evaldir: null  # Directory for evaluation results
+      traindir: null  # Directory for training data
+      offline_traindir: ''  # Directory for offline training data
+      offline_evaldir: ''  # Directory for offline evaluation data
+      video_pred_log: false  # Log video predictions
+    
+    # Environment settings
+    environment:
+      action_repeat: 1  # Number of times to repeat each action
+      grayscale: false  # Convert observations to grayscale
+      reset_every: 0  # Reset environment every N episodes (0 = never)
+      reward_EMA: true  # Use exponential moving average for rewards
+    
+    # Model architecture and parameters
+    model:
+      # Core model architecture
+      units: 512  # Base unit size for networks
+      act: SiLU  # Activation function (SiLU, ReLU, ELU, etc.)
+      norm: true  # Use layer normalization
+      
+      # World model parameters
+      dyn_stoch: 32  # Stochastic state dimension
+      dyn_deter: 1024  # Deterministic state dimension
+      dyn_hidden: 512  # Hidden layer size in dynamics network
+      dyn_rec_depth: 1  # Depth of recurrent dynamics network
+      dyn_discrete: 32  # Number of categorical classes for discrete states
+      dyn_mean_act: none  # Mean activation for dynamics (none, tanh, sigmoid)
+      dyn_std_act: sigmoid2  # Std activation for dynamics
+      dyn_min_std: 0.1  # Minimum standard deviation for dynamics
+      dyn_scale: 0.5  # Scale for dynamics input
+      
+      # Encoder configuration
+      # Encoder configuration - processes observations into latent states
+      encoder:
+        act: SiLU  # Activation function (Sigmoid Linear Unit) - smooth alternative to ReLU
+        cnn_depth: 32  # Depth of convolutional networks for processing image-like inputs
+        cnn_keys: PEDESTRIAN_SOCIAL_STATE|PEDESTRIAN_TYPE|PEDESTRIAN_VEL_X|PEDESTRIAN_VEL_Y|STACKED_LASER_MAP  # Observation keys to process with CNNs
+        is_channels_first: true  # Whether input tensor format is channels-first (NCHW) vs channels-last (NHWC)
+        kernel_size: 4  # Size of convolutional kernels
+        minres: 5  # Minimum resolution for CNN processing
+        mlp_keys: DIST_ANGLE_TO_SUBGOAL  # Observation keys to process with MLPs
+        mlp_layers: 5  # Number of layers in MLPs
+        mlp_units: 1024  # Number of units per MLP layer
+        norm: true  # Whether to use layer normalization
+        symlog_inputs: true  # Apply symmetric logarithm transformation to inputs for better numerical stability
+
+      # Decoder configuration - reconstructs observations from latent states
+      decoder:
+        act: SiLU  # Activation function for decoder networks
+        cnn_depth: 32  # Depth of convolutional networks in decoder
+        cnn_keys: PEDESTRIAN_SOCIAL_STATE|PEDESTRIAN_TYPE|PEDESTRIAN_VEL_X|PEDESTRIAN_VEL_Y|STACKED_LASER_MAP  # Keys to reconstruct with CNNs
+        cnn_sigmoid: false  # Whether to apply sigmoid to CNN outputs
+        image_dist: mse  # Distribution for image reconstruction loss (mean squared error)
+        is_channels_first: true  # Channels-first format for image-like data
+        kernel_size: 4  # Kernel size for transpose convolutions
+        minres: 5  # Minimum resolution for CNN outputs
+        mlp_keys: DIST_ANGLE_TO_SUBGOAL  # Keys to reconstruct with MLPs
+        mlp_layers: 5  # Number of layers in decoder MLPs
+        mlp_units: 1024  # Units per decoder MLP layer
+        norm: true  # Use layer normalization in decoder
+        outscale: 1.0  # Output scaling factor
+        vector_dist: symlog_mse  # Distribution for vector reconstruction (symmetric log MSE)
+
+      # Behavior learning parameters - controls how the agent learns from experiences
+      behavior:
+        discount: 0.997  # Discount factor for future rewards (gamma) - high value emphasizes long-term planning
+        discount_lambda: 0.95  # Lambda parameter for GAE (Generalized Advantage Estimation)
+        imag_horizon: 15  # Number of steps to imagine into the future during planning
+        imag_gradient: dynamics  # Method for gradient computation in imagination (dynamics = more stable)
+        imag_gradient_mix: 0.0  # Mixing ratio between dynamics and reinforce gradients (0.0 = pure dynamics)
+        eval_state_mean: false  # Whether to use state mean instead of sampling during evaluation
+
+      # Actor network parameters - controls policy learning and action selection
+      actor:
+        dist: normal  # Action distribution type (Gaussian distribution for continuous actions)
+        layers: 2  # Number of hidden layers in actor network
+        units: 128  # Hidden units per layer
+        lr: 3.0e-05  # Learning rate for actor optimization
+        entropy: 0.0003  # Entropy regularization coefficient (encourages exploration)
+        grad_clip: 100.0  # Gradient clipping threshold to prevent exploding gradients
+        outscale: 1.0  # Scaling factor for network outputs
+        std: learned  # Standard deviation type (learned = model learns optimal noise level)
+        min_std: 0.1  # Minimum standard deviation for actions (prevents too deterministic behavior)
+        max_std: 1.0  # Maximum standard deviation for actions (limits excessive exploration)
+        temp: 0.1  # Temperature for action sampling (lower = more deterministic)
+        unimix_ratio: 0.01  # Ratio for mixing uniform distribution (ensures minimum exploration)
+        eps: 1.0e-05  # Epsilon for numerical stability in calculations
+
+      # Critic network parameters - evaluates expected returns for value-based learning
+      critic:
+        dist: symlog_disc  # Value distribution type (symmetric log discretized for better handling of large ranges)
+        layers: 2  # Number of hidden layers in critic network
+        units: 128  # Hidden units per layer
+        lr: 3.0e-05  # Learning rate for critic optimization
+        grad_clip: 100.0  # Gradient clipping threshold
+        outscale: 0.0  # Output scaling factor (0.0 uses default initialization)
+        eps: 1.0e-05  # Epsilon for numerical stability
+        slow_target: true  # Use slow-moving target network for more stable learning
+        slow_target_update: 1  # Update target network every N steps
+        slow_target_fraction: 0.02  # Polyak averaging coefficient for target network updates (smaller = slower updates)
+
+      # KL divergence settings - controls information bottleneck in world model
+      kl_free: 1.0  # Free bits in KL divergence (allows some divergence without penalty)
+      rep_scale: 0.1  # Scaling factor for representation loss
+
+      # Reward head configuration - predicts rewards in world model
+      reward_head:
+        dist: symlog_disc  # Reward distribution type (symmetric log discretized)
+        layers: 2  # Number of hidden layers in reward predictor
+        outscale: 0.0  # Output scaling factor
+        loss_scale: 1.0  # Scaling factor for reward prediction loss
+
+      # Continuation head configuration - predicts episode termination
+      cont_head:
+        layers: 2  # Number of hidden layers in continuation predictor
+        outscale: 1.0  # Output scaling factor
+        loss_scale: 1.0  # Scaling factor for continuation prediction loss
+
+      # Exploration settings - controls intrinsic motivation and exploration strategies
+      exploration:
+        extr_scale: 0.0  # Scaling for extrinsic rewards (0.0 = use only task rewards)
+        intr_scale: 1.0  # Scaling for intrinsic rewards (exploration bonuses)
+        behavior: greedy  # Exploration behavior strategy
+        until: 0  # Steps until exploration strategy changes (0 = never)
+        disag_action_cond: false  # Whether to condition disagreement on actions
+        disag_target: stoch  # Target for disagreement (stochastic state component)
+        disag_log: true  # Log disagreement metrics
+        disag_models: 10  # Number of ensemble models for disagreement calculation
+        disag_offset: 1  # Offset for disagreement calculation
+        disag_layers: 4  # Layers in disagreement models
+        disag_units: 400  # Units per layer in disagreement models
+
+      # Gradient heads - specifies which model components receive gradients during training
+      grad_heads:
+      - decoder  # Reconstruction loss gradients
+      - reward   # Reward prediction loss gradients
+      - cont     # Continuation prediction loss gradients
+
+      initial: learned  # Initial state distribution (learned from data vs. fixed)
+      unimix_ratio: 0.01  # Uniform mixture ratio for exploration
+      weight_decay: 0.0  # L2 regularization strength (0.0 = no weight decay)
+
+      # Training parameters - defines the overall training process
+      training:
+        steps: 1e8  # Total environment steps for training
+        batch_size: 16  # Number of sequences per batch
+        batch_length: 64  # Length of each sequence in batch
+        train_ratio: 16  # Ratio of gradient updates to environment steps
+        dataset_size: 200  # Replay buffer capacity in thousands of steps (200k steps)
+        prefill_steps: 200  # Initial random steps to fill buffer before training
+        pretrain_steps: 100  # World model pretraining steps before actor-critic learning
+        model_lr: 0.0001  # Learning rate for world model components
+        opt: adam  # Optimizer algorithm
+        opt_eps: 1.0e-08  # Epsilon parameter for optimizer numerical stability
+        grad_clip: 1000  # Global gradient clipping threshold
+        eval_episode_num: 20  # Number of episodes for each evaluation
+        eval_every: 1e4  # Evaluate every N updates
+  
+  # Reward function configuration - defines how agent is incentivized
+  reward:
+    reward_function_dict:
+      goal_reached:
+        reward: 15  # Reward for successfully reaching goal
+      
+      factored_safe_distance:
+        factor: -0.2  # Penalty for violating safe distance to obstacles
+      
+      collision:
+        reward: -15  # Penalty for collisions
+      
+      approach_goal:
+        pos_factor: 0.3  # Reward factor for approaching goal
+        neg_factor: 0.4  # Penalty factor for moving away from goal
+        _goal_update_threshold: 0.25  # When to update reference point
+        _follow_subgoal: true  # Whether to follow local subgoals
+        _on_safe_dist_violation: true  # Apply this component on safety violations
+      
+      factored_reverse_drive:
+        factor: 0.05  # Penalty factor for driving in reverse
+        threshold: 0.0  # Threshold for what constitutes reverse motion
+        _on_safe_dist_violation: true  # Apply when safety distance violated
+      
+      two_factor_velocity_difference:
+        alpha: 0.005  # Weight for linear velocity difference
+        beta: 0.0  # Weight for angular velocity difference
+        _on_safe_dist_violation: true  # Apply when safety distance violated
+      
+      ped_type_collision:
+        type_reward_pairs:  # Different penalties based on pedestrian type
+          0: -2.5  # Standard pedestrian collision penalty
+          1: -5    # Priority pedestrian collision penalty (higher)
+      
+      ped_type_factored_safety_distance:
+        safety_distance: 1.0  # Base safety distance to pedestrians
+        type_factor_pairs:  # Safety factors by pedestrian type
+          0: -0.1  # Standard pedestrian safety factor
+          1: -0.2  # Priority pedestrian safety factor (stricter)
+      
+      angular_vel_constraint:
+        penalty_factor: -0.01  # Penalty for excessive angular velocity
+        threshold: 0.5  # Threshold above which penalty applies
+      
+      linear_vel_boost:
+        reward_factor: 0.01  # Reward for maintaining forward velocity
+        threshold: 0.0  # Min velocity to receive reward
+    
+    reward_unit_kwargs: null  # Additional args for reward components
+    verbose: false  # Whether to print detailed reward info
+
+# Arena configuration - defines the training environment setup
+arena_cfg:
+  # General settings for the simulation environment
+  general:
+    debug_mode: false  # Enable debugging features
+    goal_radius: 0.4  # Radius within which goal is considered reached
+    max_num_moves_per_eps: 300  # Maximum steps per episode
+    n_envs: 4  # Number of parallel environments (should match agent settings)
+    no_gpu: false  # Force CPU even if GPU is available
+    safety_distance: 1.0  # Minimum safety distance from obstacles
+  
+  # Monitoring and logging settings
+  monitoring:
+    episode_logging:
+      last_n_episodes: 20  # Number of episodes for stats calculation
+      record_actions: true  # Record actions during episodes
+    eval_metrics: false  # Track detailed evaluation metrics
+    training_metrics: true  # Track training metrics
+    wandb:  # Weights & Biases configuration
+      project_name: Arena-RL  # W&B project name
+      group: Dreamer-V3  # Group name for runs
+      run_name: null  # Name for this specific run
+      tags: null  # Tags for the run
+  
+  # Task module configuration
+  task:
+    tm_modules: staged  # Task module selection (curriculum stages)
+    tm_obstacles: random  # Obstacle placement strategy
+    tm_robots: random  # Robot placement strategy
+  
+  profiling: null  # Performance profiling settings (null to disable)
