@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import os
 import re
@@ -58,6 +58,16 @@ class ConfigFileGenerator(Node):
 
         published_topics = [topic[0] for topic in self.get_topic_names_and_types()]
 
+        
+        # Create Robot-Groups based on robot names
+        self.declare_parameter('robot_names', [])
+        robot_names = self.get_parameter('robot_names').value
+        
+        for robot_name in robot_names:
+            robot_group = self._create_robot_group(robot_name)
+            displays.append(robot_group)
+
+        
         robot_names = self.get_parameter_or("robot_names.value", [])
 
         for robot_name in robot_names:
@@ -71,6 +81,7 @@ class ConfigFileGenerator(Node):
 
                 displays.append(config)
 
+        
         if self.get_parameter_or("pedsim.value", False):
             displays.append(Config.TRACKED_PERSONS)
             displays.append(Config.TRACKED_GROUPS)
@@ -89,6 +100,32 @@ class ConfigFileGenerator(Node):
         file_path = self.create_config()
         self._send_load_config(file_path)
         return response
+
+    def _create_robot_group(self, robot_name):
+        """Creates a Robot Group for the Visualisation"""
+        color = Utils.get_random_rviz_color()
+        
+        robot_group = {
+            'Class': 'rviz_common/Group',
+            'Name': f'Robot: {robot_name}',
+            'Enabled': True,
+            'Displays': []
+        }
+        
+        # Odometry - Visualisation
+        odom_topic = f'/task_generator_node/{robot_name}/odom'
+        odom_display = {
+            'Class': 'rviz_default_plugins/Odometry',
+            'Name': 'Odometry',
+            'Enabled': True,
+            'Topic': odom_topic,
+            'Shape': 'Arrow',
+            'Color': color,
+            'Keep': 100
+        }
+        
+        robot_group['Displays'].append(odom_display)
+        return robot_group
 
     def _create_display_for_topic(self, robot_name, topic, color):
         matchers = [
@@ -112,6 +149,13 @@ class ConfigFileGenerator(Node):
             self.get_logger().info('waiting for service /rviz/load_config to become available')
         self.cli_load.call(file_path)
         # print("Call to /rviz/load_config completed.")
+
+    def get_parameter_or(self, param_name, default_value):
+       
+        try:
+            return self.get_parameter(param_name).value
+        except:
+            return default_value
 
     @staticmethod
     def _read_default_file():
@@ -159,4 +203,4 @@ def main():
 
 
 if __name__ == "__main__":
-    ...
+    main()
