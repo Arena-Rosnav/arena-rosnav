@@ -3,7 +3,8 @@ class Config:
     Configuration templates for RViz displays.
     """
     
-    # PedSim visualization configurations maintained from original
+    # PedSim visualization configurations maintained from original but commented out
+    """
     TRACKED_PERSONS = {
         "Alpha": 1,
         "Class": "spencer_tracking_rviz_plugin/TrackedPersons",
@@ -117,6 +118,7 @@ class Config:
         "Queue Size": 100,
         "Value": False
     }
+    """
 
     @staticmethod
     def create_model_display(robot_name, topic, color):

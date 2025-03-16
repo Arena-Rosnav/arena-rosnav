@@ -5,7 +5,7 @@ import os
 import traceback
 import yaml
 from ament_index_python.packages import get_package_share_directory
-from std_srvs.srv import Empty, EmptyResponse
+from std_srvs.srv import Empty 
 from std_msgs.msg import ColorRGBA
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
@@ -66,7 +66,7 @@ class VisualizeRobotModel(Node):
                 )
             )
 
-        return EmptyResponse()
+        return Empty.Response()
 
     def publish_model(self, data, args):
         robot_model, name = args

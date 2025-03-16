@@ -188,12 +188,36 @@ def generate_launch_description():
                 'world_file': launch.substitutions.LaunchConfiguration('world'),
             }.items()
         ),
+
         launch_ros.actions.Node(
             package="rviz2",
             executable="rviz2",
             name="rviz2",
             arguments=['-d', '/path/to/default.rviz']
         ),
+
+        # Add robot model visualizer
+        launch_ros.actions.Node(
+            package='rviz_utils',
+            executable='visualize_robot_model',
+            name='visualize_robot_model',
+            parameters=[
+                {'robot_names': [launch.substitutions.LaunchConfiguration('robot')]},
+                {'complexity': launch.substitutions.LaunchConfiguration('complexity')}
+            ],
+            output='screen'
+        ),
+
+        # Add RViz config generator for creating robot groups with visualizations
+        launch_ros.actions.Node(
+            package='rviz_utils',
+            executable='rviz_config',
+            name='rviz_config_generator',
+            parameters=[
+                {'robot_names': [launch.substitutions.LaunchConfiguration('robot')]}
+            ],
+            output='screen'
+        )
     ])
     return ld
 
