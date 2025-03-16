@@ -1,4 +1,9 @@
 class Config:
+    """
+    Configuration templates for RViz displays.
+    """
+    
+    # PedSim visualization configurations maintained from original
     TRACKED_PERSONS = {
         "Alpha": 1,
         "Class": "spencer_tracking_rviz_plugin/TrackedPersons",
@@ -113,6 +118,7 @@ class Config:
         "Value": False
     }
 
+    @staticmethod
     def create_model_display(robot_name, topic, color):
         return {
             "Class": "rviz/MarkerArray",
@@ -126,6 +132,7 @@ class Config:
             "Value": True
         }
 
+    @staticmethod
     def create_pose_display(robot_name, topic, color):
         return {
             "Alpha": 1,
@@ -146,12 +153,15 @@ class Config:
             "Value": False
         }
 
+    @staticmethod
     def create_global_map_display(robot_name, topic, _):
         return Config._create_map_display(robot_name, topic, 0.7, "Global Costmap")
 
+    @staticmethod
     def create_local_map_display(robot_name, topic, _):
         return Config._create_map_display(robot_name, topic, 0.3, "Local Costmap")
 
+    @staticmethod
     def _create_map_display(robot_name, topic, alpha, name):
         return {
             "Alpha": alpha,
@@ -166,6 +176,7 @@ class Config:
             "Value": True
         }
 
+    @staticmethod
     def create_path_display(robot_name, topic, color):
         return {
             "Alpha": 1,
@@ -195,6 +206,7 @@ class Config:
             "Value": False,
         }
 
+    @staticmethod
     def create_laser_scan_display(robot_name, topic, color):
         return {
             "Alpha": 1,
@@ -225,5 +237,22 @@ class Config:
             "Unreliable": False,
             "Use Fixed Frame": True,
             "Use rainbow": True,
+            "Value": True
+        }
+        
+    @staticmethod
+    def create_odometry_display(robot_name, topic, color):
+        """Create an odometry display configuration."""
+        return {
+            "Angle Tolerance": 0.1,
+            "Class": "rviz/Odometry",
+            "Color": color,
+            "Enabled": True,
+            "Keep": 100,
+            "Length": 1.0,
+            "Name": f"{robot_name} Odometry",
+            "Position Tolerance": 0.1,
+            "Topic": topic,
+            "Shape": "Arrow",
             "Value": True
         }
