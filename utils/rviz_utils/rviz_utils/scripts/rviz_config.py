@@ -139,6 +139,23 @@ class ConfigFileGenerator(Node):
             self.get_logger().warn(f"Error checking pedsim parameter: {e}")
         """
 
+        # Set the default view to Orbit (instead of TopDownOrtho)
+        default_file["Visualization Manager"]["Views"]["Current"] = {
+            "Class": "rviz_default_plugins/Orbit",
+            "Distance": 10.0,
+            "Focal Point": {
+                "X": 0.0,
+                "Y": 0.0,
+                "Z": 0.0
+            },
+            "Name": "Current View",
+            "Near Clip Distance": 0.01,
+            "Pitch": 0.5,
+            "Target Frame": "<Fixed Frame>",
+            "Value": True,
+            "Yaw": 0.0
+        }
+
         default_file["Visualization Manager"]["Displays"] = displays
 
         file_path = self._tmp_config_file(default_file)
@@ -162,6 +179,23 @@ class ConfigFileGenerator(Node):
             'Enabled': True,
             'Displays': []
         }
+        
+        # Add robot model using RobotModel display
+        robot_model_display = {
+            'Class': 'rviz_default_plugins/RobotModel',
+            'Name': 'Robot Model',
+            'Enabled': True,
+            'Description Topic': {
+                'Value': f'/task_generator_node/{robot_name}/robot_description',
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Reliable',
+                'Durability Policy': 'Volatile',
+            },
+            'Visual Enabled': True,
+            'Collision Enabled': False
+        }
+        robot_group['Displays'].append(robot_model_display)
         
         # Add odometry visualization
         odom_topic = f'/task_generator_node/{robot_name}/odom'
@@ -302,22 +336,8 @@ class ConfigFileGenerator(Node):
         robot_group['Displays'].append(footprint_display)
         
         return robot_group
-        
-        # Odometry - Visualisation
-        odom_topic = f'/task_generator_node/{robot_name}/odom'
-        odom_display = {
-            'Class': 'rviz_default_plugins/Odometry',
-            'Name': 'Odometry',
-            'Enabled': True,
-            'Topic': odom_topic,
-            'Shape': 'Arrow',
-            'Color': color,
-            'Keep': 100
-        }
-        
-        robot_group['Displays'].append(odom_display)
-        return robot_group
 
+    """
     def _create_display_for_topic(self, robot_name, topic, color):
         matchers = [
             (Matcher.GLOBAL_PLAN, Config.create_path_display),
@@ -333,13 +353,16 @@ class ConfigFileGenerator(Node):
 
             if match:
                 return function(robot_name, topic, color)
+    """
 
+    """
     def _send_load_config(self, file_path):
         # print(f"Attempting to call /rviz/load_config with file: {file_path}")
         while not self.cli_load.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('waiting for service /rviz/load_config to become available')
         self.cli_load.call(file_path)
         # print("Call to /rviz/load_config completed.")
+    """
 
     @staticmethod
     def _read_default_file():
