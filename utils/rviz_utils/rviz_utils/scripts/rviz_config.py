@@ -51,35 +51,79 @@ class ConfigFileGenerator(Node):
     def create_config(self) -> str:
         default_file = ConfigFileGenerator._read_default_file()
 
-        displays = [
-            #     Config.MAP,
-            #     Config.TF
-        ]
+        displays = []
+
+        # Add the map display
+        displays.append({
+            'Class': 'rviz_default_plugins/Map',
+            'Enabled': True,
+            'Name': 'Map',
+            'Topic': {
+                'Value': '/map',
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Reliable',
+                'Durability Policy': 'Transient Local',
+            },
+            'Use Timestamp': False,
+            'Alpha': 0.7
+        })
+
+        # Add TF display
+        displays.append({
+            'Class': 'rviz_default_plugins/TF',
+            'Enabled': True,
+            'Name': 'TF',
+            'Frame Timeout': 15,
+            'Marker Scale': 1.0,
+            'Show Arrows': True,
+            'Show Axes': True,
+            'Show Names': False
+        })
 
         published_topics = [topic[0] for topic in self.get_topic_names_and_types()]
 
         # Create Robot-Groups based on robot names
         try:
+            # Get robot_names
             if not self.has_parameter('robot_names'):
-                self.declare_parameter('robot_names', [])
-            robot_names = self.get_parameter('robot_names').value
+                # Declare it as an array of strings
+                from rcl_interfaces.msg import ParameterType
+                self.declare_parameter('robot_names', value=[], 
+                                    descriptor={'type': ParameterType.PARAMETER_STRING_ARRAY})
+            
+            robot_names_param = self.get_parameter('robot_names').value
+            
+            # Handle empty case
+            if not robot_names_param:
+                # Try getting the robot parameter directly
+                if not self.has_parameter('robot'):
+                    self.declare_parameter('robot', '')
+                robot_param = self.get_parameter('robot').value
+                if robot_param:
+                    robot_names = [robot_param]
+                else:
+                    robot_names = ['jackal']  # Default fallback
+            # Handle string vs list
+            elif isinstance(robot_names_param, str):
+                robot_names = [robot_names_param]
+            else:
+                robot_names = robot_names_param
+            
+            self.get_logger().info(f"Processing robots: {robot_names}")
             
             for robot_name in robot_names:
                 robot_group = self._create_robot_group(robot_name)
                 displays.append(robot_group)
-
-            for robot_name in robot_names:
-                color = Utils.get_random_rviz_color()
-
-                for topic in published_topics:
-                    config = self._create_display_for_topic(robot_name, topic, color)
-
-                    if not config:
-                        continue
-
-                    displays.append(config)
         except Exception as e:
             self.get_logger().warn(f"Error processing robot names: {e}")
+            # Fallback to a default robot
+            try:
+                robot_group = self._create_robot_group('jackal')
+                displays.append(robot_group)
+                self.get_logger().info("Using fallback robot 'jackal'")
+            except Exception as inner_e:
+                self.get_logger().error(f"Even fallback failed: {inner_e}")
 
         # PedSim configuration - commented out but kept for future use
         """
@@ -109,7 +153,7 @@ class ConfigFileGenerator(Node):
         return response
 
     def _create_robot_group(self, robot_name):
-        """Creates a Robot Group for the Visualisation"""
+        """Creates a Robot Group with all visualizations for a robot"""
         color = Utils.get_random_rviz_color()
         
         robot_group = {
@@ -118,6 +162,146 @@ class ConfigFileGenerator(Node):
             'Enabled': True,
             'Displays': []
         }
+        
+        # Add odometry visualization
+        odom_topic = f'/task_generator_node/{robot_name}/odom'
+        odom_display = {
+            'Class': 'rviz_default_plugins/Odometry',
+            'Name': 'Odometry',
+            'Enabled': True,
+            'Topic': {
+                'Value': odom_topic,
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Reliable',
+                'Durability Policy': 'Volatile',
+            },
+            'Shape': 'Arrow',
+            'Color': color,
+            'Position Tolerance': 0.1,
+            'Angle Tolerance': 0.1,
+            'Keep': 100,
+            'Shaft Length': 0.5,
+            'Shaft Radius': 0.05,
+            'Head Length': 0.2,
+            'Head Radius': 0.1
+        }
+        robot_group['Displays'].append(odom_display)
+        
+        # Add laser scan visualization
+        laser_topic = f'/task_generator_node/{robot_name}/local_costmap/lidar'
+        laser_display = {
+            'Class': 'rviz_default_plugins/LaserScan',
+            'Name': 'LaserScan',
+            'Enabled': True,
+            'Topic': {
+                'Value': laser_topic,
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Best Effort',
+                'Durability Policy': 'Volatile',
+            },
+            'Color': color,
+            'Size (m)': 0.05,
+            'Style': 'Points',
+            'Alpha': 1.0,
+            'Decay Time': 0.0
+        }
+        robot_group['Displays'].append(laser_display)
+        
+        # Add local costmap
+        local_costmap_topic = f'/task_generator_node/{robot_name}/local_costmap/costmap'
+        local_costmap_display = {
+            'Class': 'rviz_default_plugins/Map',
+            'Name': 'Local Costmap',
+            'Enabled': True,
+            'Topic': {
+                'Value': local_costmap_topic,
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Reliable',
+                'Durability Policy': 'Volatile',
+            },
+            'Color Scheme': 'costmap',
+            'Draw Behind': False,
+            'Alpha': 0.7
+        }
+        robot_group['Displays'].append(local_costmap_display)
+        
+        # Add global costmap
+        global_costmap_topic = f'/task_generator_node/{robot_name}/global_costmap/costmap'
+        global_costmap_display = {
+            'Class': 'rviz_default_plugins/Map',
+            'Name': 'Global Costmap',
+            'Enabled': True,
+            'Topic': {
+                'Value': global_costmap_topic,
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Reliable',
+                'Durability Policy': 'Volatile',
+            },
+            'Color Scheme': 'costmap',
+            'Draw Behind': False,
+            'Alpha': 0.7
+        }
+        robot_group['Displays'].append(global_costmap_display)
+        
+        # Add path visualization
+        path_topic = f'/task_generator_node/{robot_name}/plan'
+        path_display = {
+            'Class': 'rviz_default_plugins/Path',
+            'Name': 'Global Plan',
+            'Enabled': True,
+            'Topic': {
+                'Value': path_topic,
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Reliable',
+                'Durability Policy': 'Volatile',
+            },
+            'Color': color,
+            'Line Width': 0.05
+        }
+        robot_group['Displays'].append(path_display)
+        
+        # Add local path visualization
+        local_path_topic = f'/task_generator_node/{robot_name}/local_plan'
+        local_path_display = {
+            'Class': 'rviz_default_plugins/Path',
+            'Name': 'Local Plan',
+            'Enabled': True,
+            'Topic': {
+                'Value': local_path_topic,
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Reliable',
+                'Durability Policy': 'Volatile',
+            },
+            'Color': '255; 0; 0',  # Red for local path
+            'Line Width': 0.05
+        }
+        robot_group['Displays'].append(local_path_display)
+        
+        # Add robot footprint
+        footprint_topic = f'/task_generator_node/{robot_name}/local_costmap/published_footprint'
+        footprint_display = {
+            'Class': 'rviz_default_plugins/Polygon',
+            'Name': 'Robot Footprint',
+            'Enabled': True,
+            'Topic': {
+                'Value': footprint_topic,
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Reliable',
+                'Durability Policy': 'Volatile',
+            },
+            'Color': color,
+            'Alpha': 1.0
+        }
+        robot_group['Displays'].append(footprint_display)
+        
+        return robot_group
         
         # Odometry - Visualisation
         odom_topic = f'/task_generator_node/{robot_name}/odom'
@@ -186,7 +370,7 @@ def main():
                     package="rviz2",
                     executable="rviz2",
                     name="rviz2",
-                    arguments=['-d', config_file, '--ros-args', '--clock'],
+                    arguments=['-d', config_file],
                     parameters=[{"use_sim_time": True}],
                     output="screen",
                 )

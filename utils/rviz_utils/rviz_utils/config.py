@@ -123,7 +123,7 @@ class Config:
     @staticmethod
     def create_model_display(robot_name, topic, color):
         return {
-            "Class": "rviz/MarkerArray",
+            "Class": "rviz_default_plugins/MarkerArray",
             "Enabled": True,
             "Marker Topic": topic,
             "Name":  f"{robot_name} MarkerArray",
@@ -140,7 +140,7 @@ class Config:
             "Alpha": 1,
             "Axes Length": 1,
             "Axes Radius": 0.1,
-            "Class": "rviz/Pose",
+            "Class": "rviz_default_plugins/Pose",
             "Color": color,
             "Enabled": True,
             "Head Length": 0.1,
@@ -167,7 +167,7 @@ class Config:
     def _create_map_display(robot_name, topic, alpha, name):
         return {
             "Alpha": alpha,
-            "Class": "rviz/Map",
+            "Class": "rviz_default_plugins/Map",
             "Color Scheme": "map",
             "Draw Behind": False,
             "Enabled": False,
@@ -183,7 +183,7 @@ class Config:
         return {
             "Alpha": 1,
             "Buffer Length": 1,
-            "Class": "rviz/Path",
+            "Class": "rviz_default_plugins/Path",
             "Color": color,
             "Enabled": True,
             "Head Diameter": 0.3,
@@ -220,7 +220,7 @@ class Config:
             },
             "Axis": "Z",
             "Channel Name": "intensity",
-            "Class": "rviz/LaserScan",
+            "Class": "rviz_default_plugins/LaserScan",
             "Color": color,
             "Color Transformer": "FlatColor",
             "Decay Time": 0,
@@ -247,7 +247,7 @@ class Config:
         """Create an odometry display configuration."""
         return {
             "Angle Tolerance": 0.1,
-            "Class": "rviz/Odometry",
+            "Class": "rviz_default_plugins/Odometry",
             "Color": color,
             "Enabled": True,
             "Keep": 100,
