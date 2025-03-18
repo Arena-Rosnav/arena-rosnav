@@ -18,7 +18,7 @@ sudo echo 'confirmed'
 mkdir -p "$ARENA_WS_DIR"
 cd "$ARENA_WS_DIR"
 
-export INSTALLED=src/arena/arena-rosnav/.installed
+export INSTALLED="${ARENA_WS_DIR}/src/arena/arena-rosnav/.installed"
 
 # == remove ros problems ==
 files=$( (grep -l "/ros" /etc/apt/sources.list.d/* | grep -v "ros2") || echo '')
