@@ -152,6 +152,11 @@ class GazeboSimulator(BaseSimulator):
 
             # Get model description
             model_description = entity.model.get([ModelType.SDF, ModelType.URDF]).description
+
+            if isinstance(entity, RobotProps):
+                model_description = model_description.replace("jackal_default_name", entity.name)
+                self._bridge_robot(entity, model_description)
+
             request.entity_factory.sdf = model_description
 
             # Set pose
@@ -173,10 +178,6 @@ class GazeboSimulator(BaseSimulator):
                 f"Spawn result for {entity.name}: {result.success}")
 
             self.entities[entity.name] = entity
-
-            # Bridge to connect Gazebo and ROS2
-            if isinstance(entity, RobotProps):
-                self._bridge_robot(entity, model_description)
 
             return result.success
 
