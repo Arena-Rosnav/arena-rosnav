@@ -274,7 +274,7 @@ class ROSParamServer(rclpy.node.Node):
             cls._node._callbacks.setdefault(param_name, set()).add(callback)
 
             if value is not None:
-                callback(value)
+                cls._node.executor.create_task(lambda: callback(value))
 
     def __init__(self):
         self.rosparam._node = self
