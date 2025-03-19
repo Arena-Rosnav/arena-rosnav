@@ -2,7 +2,6 @@
     This file exists to make world_manager more readable
 """
 
-import dataclasses
 import itertools
 import os
 from typing import Callable, Collection, Dict, List, Optional, Tuple
@@ -65,7 +64,7 @@ class Zone:
 WorldZones = Collection[Zone]
 
 
-@dataclasses.dataclass
+@attrs.define()
 class WorldObstacleConfiguration:
     """
     only use this for receiving ros messages
@@ -95,7 +94,7 @@ class WorldObstacleConfiguration:
 WorldObstacleConfigurations = Collection[WorldObstacleConfiguration]
 
 
-@dataclasses.dataclass
+@attrs.define()
 class WorldEntities:
     obstacles: WorldObstacles
     walls: WorldWalls
@@ -237,7 +236,7 @@ class WorldLayers:
         return WorldLayers.WorldLayersFork(self)
 
 
-@dataclasses.dataclass
+@attrs.define()
 class WorldMap:
     occupancy: WorldLayers
     origin: Position
@@ -301,7 +300,7 @@ class WorldMap:
         return (lo, hi)
 
 
-@dataclasses.dataclass
+@attrs.define()
 class World:
     entities: WorldEntities
     map: WorldMap

@@ -1,18 +1,19 @@
 import math
+import traceback
 import typing
 
-import rclpy
-
-from ros_gz_interfaces.srv import SpawnEntity, DeleteEntity, SetEntityPose, ControlWorld
-from ros_gz_interfaces.msg import EntityFactory, WorldControl, Entity
-from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
-import traceback
-from task_generator.simulators import BaseSimulator
-
-from task_generator.shared import EntityProps, Model, ModelType, ModelWrapper, PositionOrientation, RobotProps, Wall
-
+import attrs
 import launch
 import launch_ros
+import rclpy
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
+from ros_gz_interfaces.msg import Entity, EntityFactory, WorldControl
+from ros_gz_interfaces.srv import (ControlWorld, DeleteEntity, SetEntityPose,
+                                   SpawnEntity)
+
+from task_generator.shared import (EntityProps, Model, ModelType, ModelWrapper,
+                                   PositionOrientation, RobotProps, Wall)
+from task_generator.simulators import BaseSimulator
 
 
 class GazeboSimulator(BaseSimulator):
@@ -129,17 +130,19 @@ class GazeboSimulator(BaseSimulator):
             result = self._set_entity_pose.call(request)
 
             if result is None:
-                self.node.get_logger().error(
-                    f"Move service call failed for {name}")
+                self.node.get_logger().error(f"Move service call failed for {name}")
                 return False
 
-            self.node.get_logger().info(
-                f"Move result for {name}: {result.success}")
+            self.node.get_logger().info(f"Move result for {name}: {result.success}")
+
+            if result.success and isinstance((entity := self.entities.get(name, None)), RobotProps):
+                entity = attrs.evolve(entity, position=position)
+                self._robot_initialpose(entity)
+
             return result.success
 
         except Exception as e:
-            self.node.get_logger().error(
-                f"Error moving entity {name}: {str(e)}")
+            self.node.get_logger().error(f"Error moving entity {name}: {str(e)}")
             traceback.print_exc()
             return False
 
@@ -155,7 +158,8 @@ class GazeboSimulator(BaseSimulator):
 
             if isinstance(entity, RobotProps):
                 model_description = model_description.replace("jackal_default_name", entity.name)
-                self._bridge_robot(entity, model_description)
+                self._robot_initialpose(entity)
+                self._robot_bridge(entity, model_description)
 
             request.entity_factory.sdf = model_description
 
@@ -429,7 +433,7 @@ class GazeboSimulator(BaseSimulator):
             self.node.get_logger().error(f"Error generating SDF: {repr(e)}")
             return None
 
-    def _bridge_robot(self, robot: RobotProps, description: str):
+    def _robot_bridge(self, robot: RobotProps, description: str):
         launch_description = launch.LaunchDescription()
 
         gz_topic = '/model/' + robot.name
@@ -504,14 +508,16 @@ class GazeboSimulator(BaseSimulator):
                 parameters=[{'use_sim_time': True}],
             ),
         )
+        self.node.do_launch(launch_description)
+
+    def _robot_initialpose(self, robot: RobotProps):
         pose = PoseWithCovarianceStamped()
         pose.pose.pose = robot.position.to_pose()
         pose.header.frame_id = "map"
+
         self.node.create_publisher(
             PoseWithCovarianceStamped,
             self.node.service_namespace(robot.name, "initialpose"),
             qos_profile=1,
             callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         ).publish(pose)
-
-        self.node.do_launch(launch_description)

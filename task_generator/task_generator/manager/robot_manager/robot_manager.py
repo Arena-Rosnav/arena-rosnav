@@ -1,7 +1,7 @@
-import dataclasses
 import os
 import typing
 
+import attrs
 import numpy as np
 import scipy.spatial.transform
 
@@ -87,7 +87,7 @@ class RobotManager(NodeInterface):
         self._position = self._start_pos
 
     def set_up_robot(self):
-        self._robot = dataclasses.replace(
+        self._robot = attrs.evolve(
             self._robot,
             model=self._robot.model.override(
                 model_type=ModelType.YAML,

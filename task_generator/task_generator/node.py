@@ -26,7 +26,7 @@ from task_generator.manager.entity_manager import (EntityManager,
                                                    EntityManagerRegistry)
 from task_generator.manager.obstacle_manager import ObstacleManager
 from task_generator.manager.world_manager import WorldManager
-from task_generator.shared import ModelWrapper, Namespace, Robot, gen_init_pos
+from task_generator.shared import Namespace
 from task_generator.simulators import BaseSimulator, SimulatorRegistry
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory

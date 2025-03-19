@@ -1,7 +1,8 @@
-import dataclasses
 import json
 import os
 from typing import List
+
+import attrs
 
 from task_generator.constants import Constants
 from task_generator.shared import DynamicObstacle, Obstacle
@@ -9,8 +10,7 @@ from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.utils.ros_params import ROSParam
 
 
-
-@dataclasses.dataclass
+@attrs.define()
 class _ParsedConfig:
     static: List[Obstacle]
     dynamic: List[DynamicObstacle]

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import dataclasses
 import enum
 import os
 import typing
 from typing import (Callable, Collection, Dict, List, Optional, Tuple,
                     Type, TypeVar, overload)
 
-import attr
+import attrs
 import geometry_msgs.msg as geometry_msgs
 import rclpy
 import rclpy.node
@@ -104,7 +103,7 @@ class ModelType(enum.Enum):
     USD = "usd"
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class Model:
     type: ModelType
     name: str
@@ -120,27 +119,27 @@ class Model:
 
     def replace(self, **kwargs) -> Model:
         """
-        Wrapper for dataclasses.replace
+        Wrapper for attrs.evolve
         **kwargs: properties to replace
         """
-        return dataclasses.replace(self, **kwargs)
+        return attrs.evolve(self, **kwargs)
 
 
-@attr.frozen()
+@attrs.frozen()
 class Position:
     """
     2D position
     """
-    x: float = attr.field(converter=float)
-    y: float = attr.field(converter=float)
+    x: float = attrs.field(converter=float)
+    y: float = attrs.field(converter=float)
 
 
-@attr.frozen()
+@attrs.frozen()
 class PositionOrientation(Position):
     """
     2D position with 2D yaw
     """
-    orientation: float = attr.field(converter=float)
+    orientation: float = attrs.field(converter=float)
 
     @classmethod
     def from_pose(
@@ -189,12 +188,12 @@ class PositionOrientation(Position):
         return pose
 
 
-@attr.frozen()
+@attrs.frozen()
 class PositionRadius(Position):
     """
     2D position with 2D yaw
     """
-    radius: float = attr.field(converter=lambda x: max(0., float(x)))
+    radius: float = attrs.field(converter=lambda x: max(0., float(x)))
 
 
 class ModelWrapper:
@@ -337,11 +336,11 @@ class ModelWrapper:
         return wrapper
 
 
-@attr.frozen()
+@attrs.frozen()
 class Wall:
     Start: Position
     End: Position
-    height: float = attr.field(converter=float, default=2.)
+    height: float = attrs.field(converter=float, default=2.)
     texture_material: str = ''  # not implemented
 
     @classmethod
@@ -356,7 +355,7 @@ class Wall:
         )
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class EntityProps:
     position: PositionOrientation
     name: str
@@ -364,17 +363,17 @@ class EntityProps:
     extra: Dict
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class ObstacleProps(EntityProps):
     ...
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class DynamicObstacleProps(ObstacleProps):
     waypoints: List[PositionRadius]
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class RobotProps(EntityProps):
     inter_planner: str
     local_planner: str
@@ -428,12 +427,12 @@ class DynamicObstacle(DynamicObstacleProps):
                      for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
-            **dataclasses.asdict(base),
+            **attrs.asdict(base, recurse=False),
             waypoints=waypoints,
         )
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class WallObstacle:
     name: str
     start: Position
@@ -456,13 +455,13 @@ def _gen_init_pos(steps: int, x: int = 1, y: int = 0):
 gen_init_pos = _gen_init_pos(10)
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class Robot(RobotProps):
-    @staticmethod
-    def parse(obj: Dict, model: ModelWrapper) -> "Robot":
+    @classmethod
+    def parse(cls, obj: Dict, model: ModelWrapper) -> "Robot":
         name = str(obj.get("name", ""))
         position = PositionOrientation(
-            *obj.get("pos", attr.astuple(next(gen_init_pos))))
+            *obj.get("pos", attrs.astuple(next(gen_init_pos))))
         inter_planner = str(
             obj.get("inter_planner", rosparam_get(str, "inter_planner", ""))
         )

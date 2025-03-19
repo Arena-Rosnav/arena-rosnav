@@ -1,10 +1,11 @@
-import dataclasses
 import functools
 import math
 import os
 import time
 from threading import Lock
 from typing import Any, Callable, Collection, Dict, List
+
+import attrs
 
 import rclpy
 from ament_index_python.packages import get_package_share_directory
@@ -492,7 +493,7 @@ class HunavManager(EntityManager):
                 # print("SDF model created successfully")
 
                 # Create model with SDF
-                obstacle = dataclasses.replace(
+                obstacle = attrs.evolve(
                     obstacle,
                     model=Model(
                         description=sdf,

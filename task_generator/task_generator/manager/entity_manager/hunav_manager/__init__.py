@@ -1,19 +1,19 @@
 
-import dataclasses
 import enum
 import os
 import typing
 
+import attrs
 import yaml
 from task_generator.shared import DynamicObstacle, ModelWrapper, DynamicObstacleProps, PositionOrientation
 
 from ament_index_python.packages import get_package_share_directory
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class HunavObstacleProps(DynamicObstacleProps):
 
-    @dataclasses.dataclass(frozen=True)
+    @attrs.frozen()
     class Behavior:
         type: int
         state: int
@@ -115,7 +115,7 @@ class HunavDynamicObstacle(HunavObstacleProps):
         base = DynamicObstacle.parse(obj, model)
 
         return cls(
-            **dataclasses.asdict(base),
+            **attrs.asdict(base, recurse=False),
             id=obj.get("id", cls._default.id),
             behavior=cls.Behavior.parse(obj.get('behavior', {})),
             type=obj.get('type', cls._default.type),
