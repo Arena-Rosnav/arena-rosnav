@@ -1,4 +1,3 @@
-import dataclasses
 import os
 import traceback
 import typing
@@ -31,7 +30,6 @@ from task_generator.shared import ModelWrapper, Namespace, Robot, gen_init_pos
 from task_generator.simulators import BaseSimulator, SimulatorRegistry
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory
-from task_generator.utils import ModelLoader
 from task_generator.utils.ros_params import ROSParamServer
 
 
@@ -140,15 +138,20 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         # Publishers
         if not self._train_mode:
             self._pub_scenario_reset = self.create_publisher(
-                Int16, 'scenario_reset', 1)
+                Int16, 'scenario_reset', 1,
+                callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
+            )
             self._pub_scenario_finished = self.create_publisher(
-                Empty, 'scenario_finished', 10)
+                Empty, 'scenario_finished', 10,
+                callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
+            )
 
             # Services
             self.create_service(
                 EmptySrv,
                 self.service_namespace('reset_task'),
-                self._reset_task_srv_callback
+                self._reset_task_srv_callback,
+                callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
             )
 
         self._initialized = False
@@ -159,11 +162,6 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         )
 
     def _initialize(self):
-        # Vars
-        self._simulator = SimulatorRegistry.get(self.conf.Arena.SIMULATOR.value)(
-            namespace=self._namespace
-        )
-
         self._start_time = self.get_clock().now().seconds_nanoseconds()[0]
         self._task = self._get_predefined_task()
         self.rosparam[list[str]].set(
@@ -200,10 +198,9 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         """
         Gets the task based on the passed mode
         """
-        if self._simulator is None:
-            self._simulator = SimulatorRegistry.get(self.conf.Arena.SIMULATOR.value)(
-                self._namespace
-            )
+        self._simulator = SimulatorRegistry.get(self.conf.Arena.SIMULATOR.value)(
+            self._namespace
+        )
 
         self._world_manager = WorldManager()
 
@@ -221,7 +218,6 @@ class TaskGenerator(NodeInterface.Taskgen_T):
 
         def on_world_change():
             obstacle_manager.reset()
-            # print(self._world_manager.detected_walls)
             obstacle_manager.spawn_world_obstacles(self._world_manager.world)
         self._world_manager.on_world_change(on_world_change)
 
@@ -270,7 +266,10 @@ class TaskGenerator(NodeInterface.Taskgen_T):
             self.reset_task()
 
     def _reset_task_srv_callback(
-            self, request: std_srvs.Empty.Request, response: std_srvs.Empty.Response):
+        self,
+        request: std_srvs.Empty.Request,
+        response: std_srvs.Empty.Response
+    ):
         self.get_logger().debug("Task Generator received task-reset request!")
         self.reset_task()
         return response

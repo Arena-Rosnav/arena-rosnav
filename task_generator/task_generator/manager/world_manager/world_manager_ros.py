@@ -12,7 +12,7 @@ import rclpy.client
 
 from task_generator.constants import Constants
 from task_generator.utils.time import Time
-from task_generator.shared import Position, Wall
+from task_generator.shared import Wall
 
 from .utils import WorldMap, WorldWalls, WorldObstacleConfiguration, WorldObstacleConfigurations, WorldZones, Zone
 from .world_manager import WorldManager
@@ -124,10 +124,11 @@ class WorldManagerROS(WorldManager):
 
         return True
 
-    def _map_callback(self, costmap: nav_msgs.msg.OccupancyGrid):
+    async def _map_callback(self, costmap: nav_msgs.msg.OccupancyGrid):
         if self._first_world:
             return
         if True or self._world.map.time < costmap.info.map_load_time:
+
             obstacles = self._load_obstacles(
                 os.path.join(
                     self.node.conf.Arena.get_world_path(self._world_name),
@@ -155,11 +156,12 @@ class WorldManagerROS(WorldManager):
                 walls=walls,
                 zones=zones,
             )
+
             for callback in self._callbacks:
                 try:
                     callback()
-                except Exception:
-                    pass
+                except Exception as e:
+                    self.node.get_logger().warning(f'encountered exception in world callback: {repr(e)}')
 
     def _setup_world_callbacks(self):
 
@@ -188,7 +190,7 @@ class WorldManagerROS(WorldManager):
     def on_world_change(self, callback: typing.Callable[[], None]):
         self._callbacks.append(callback)
 
-    def __init__(self) -> None:
+    def __init__(self,) -> None:
         WorldManager.__init__(self)
         self._callbacks = []
         self.update_world(world_map=WorldMap.from_costmap(_DUMMY_MAP), obstacles=None, walls=[])

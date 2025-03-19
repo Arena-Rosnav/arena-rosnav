@@ -15,7 +15,7 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 
 import rclpy.parameter
-from task_generator.utils.geometry import euler_from_quaternion
+from task_generator.utils.geometry import euler_from_quaternion, quaternion_from_euler
 
 _node: rclpy.node.Node
 
@@ -57,13 +57,13 @@ class Namespace(str):
     def ParamNamespace(self) -> ParamNamespace:
         return ParamNamespace('')(*self.split('/'))
 
-    @ property
+    @property
     def simulation_ns(self) -> Namespace:
         if len(self.split("/")) < 3:
             return self
         return Namespace(os.path.dirname(self))
 
-    @ property
+    @property
     def robot_ns(self) -> Namespace:
         return Namespace(os.path.basename(os.path.normpath(self)))
 
@@ -148,6 +148,9 @@ class PositionOrientation(Position):
         cls,
         pose: geometry_msgs.Pose
     ) -> "PositionOrientation":
+        """
+        parse geometry_msgs.msg.Pose
+        """
         return cls(
             x=pose.position.x,
             y=pose.position.y,
@@ -158,6 +161,33 @@ class PositionOrientation(Position):
                 w=pose.orientation.w
             )[2]
         )
+
+    def to_pose(self) -> geometry_msgs.Pose:
+        """
+        return self as geometry_msgs.msg.Pose
+        """
+
+        quat = quaternion_from_euler(
+            0.0,
+            0.0,
+            self.orientation,
+            axes="xyzs"
+        )
+
+        pose = geometry_msgs.Pose(
+            position=geometry_msgs.Point(
+                x=self.x,
+                y=self.y,
+            ),
+            orientation=geometry_msgs.Quaternion(
+                x=quat[0],
+                y=quat[1],
+                z=quat[2],
+                w=quat[3],
+            )
+        )
+
+        return pose
 
 
 @attr.frozen()

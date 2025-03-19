@@ -12,7 +12,7 @@ import rclpy.client
 
 from task_generator import NodeInterface
 import task_generator.utils.arena as Utils
-from task_generator.utils.geometry import angle_diff, quaternion_from_euler
+from task_generator.utils.geometry import angle_diff
 from task_generator.constants import Constants
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
@@ -107,7 +107,8 @@ class RobotManager(NodeInterface):
         _gen_goal_topic = self.namespace("goal_pose")
 
         self._goal_pub = self.node.create_publisher(
-            geometry_msgs.PoseStamped, _gen_goal_topic, 10
+            geometry_msgs.PoseStamped, _gen_goal_topic, 10,
+            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
 
         self.node.create_subscription(
@@ -123,7 +124,10 @@ class RobotManager(NodeInterface):
         )
 
         self._clear_costmaps_srv = self.node.create_client(
-            std_srvs.Empty, self.namespace("move_base", "clear_costmaps"))
+            std_srvs.Empty,
+            self.namespace("move_base", "clear_costmaps"),
+            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
+        )
 
     @property
     def safe_distance(self) -> float:
@@ -207,13 +211,7 @@ class RobotManager(NodeInterface):
     def _publish_goal(self, goal: PositionOrientation):
         goal_msg = geometry_msgs.PoseStamped()
         goal_msg.header.frame_id = "map"
-        goal_msg.pose.position.x = goal.x
-        goal_msg.pose.position.y = goal.y
-        goal_msg.pose.position.z = 0.
-
-        goal_msg.pose.orientation = orientation = geometry_msgs.Quaternion()
-        orientation.x, orientation.y, orientation.z, orientation.w = quaternion_from_euler(
-            0.0, 0.0, goal.orientation, axes="sxyz")
+        goal_msg.pose = goal.to_pose()
 
         self._goal_pub.publish(goal_msg)
 

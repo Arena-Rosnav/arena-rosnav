@@ -21,7 +21,6 @@ from task_generator.manager.entity_manager.utils import (KnownObstacles,
 from task_generator.shared import (DynamicObstacle, Model, ModelType,
                                    Namespace, PositionOrientation, Robot)
 from task_generator.simulators import BaseSimulator
-from task_generator.utils.geometry import quaternion_from_euler
 
 
 class HunavManager(EntityManager):
@@ -225,11 +224,11 @@ class HunavManager(EntityManager):
     def setup_services(self):
         """Initialize all required services"""
         self.node.get_logger().info("Setting up Hunavservices...")
-        
+
         # Debug namespace information
         self.node.get_logger().info(f"Node namespace: {self.node.get_namespace()}")
         self.node.get_logger().info(f"Task generator namespace: {self._namespace}")
-        
+
         # Create service names with full namespace path (now using root namespace)
         service_names = {
             'compute_agent': f'/{self.SERVICE_COMPUTE_AGENT}',        # Added leading slash
@@ -237,7 +236,7 @@ class HunavManager(EntityManager):
             'move_agent': f'/{self.SERVICE_MOVE_AGENT}',             # Added leading slash
             'reset_agents': f'/{self.SERVICE_RESET_AGENTS}'          # Added leading slash
         }
-        
+
         # Log service names
         for service, full_name in service_names.items():
             self.node.get_logger().info(f"Creating service client for {service} at: {full_name}")
@@ -306,11 +305,11 @@ class HunavManager(EntityManager):
 
         # Height adjustment based on skin type (from HuNavPlugin)
         height_adjustments = {'elegant_man.dae': 0.96,
-            'casual_man.dae': 0.97,
-            'elegant_woman.dae': 0.93,
-            'regular_man.dae': 0.93,
-            'worker_man.dae': 0.97
-        }
+                              'casual_man.dae': 0.97,
+                              'elegant_woman.dae': 0.93,
+                              'regular_man.dae': 0.93,
+                              'worker_man.dae': 0.97
+                              }
         z_pos = height_adjustments.get(skin_type, 1.0)
 
         sdf = f"""<?xml version="1.0" ?>
@@ -734,11 +733,7 @@ class HunavManager(EntityManager):
             robot_agent.id = 0  # Robot typically uses ID 0
             robot_agent.name = name
             robot_agent.type = Agent.ROBOT
-            robot_agent.position.position.x = position.x
-            robot_agent.position.position.y = position.y
-            quat = quaternion_from_euler(0.0, 0.0, position.orientation)
-            robot_agent.position.orientation = Quaternion(
-                x=quat[0], y=quat[1], z=quat[2], w=quat[3])
+            robot_agent.position = position.to_pose()
             robot_agent.yaw = position.orientation
 
             # Create service request
