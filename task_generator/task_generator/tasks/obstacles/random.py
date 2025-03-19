@@ -7,7 +7,6 @@ from typing import Callable, Dict, Iterator, List
 import numpy as np
 
 import rclpy.parameter
-import rcl_interfaces.msg
 
 from task_generator.shared import (DynamicObstacle, Obstacle, PositionOrientation,
                                    PositionRadius)

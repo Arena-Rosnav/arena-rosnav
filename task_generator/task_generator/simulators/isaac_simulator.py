@@ -1,12 +1,9 @@
 from task_generator.simulators import BaseSimulator
 # Import dependencies.
-import rclpy
-import numpy as np
 from isaacsim_msgs.msg import Values
-from isaacsim_msgs.srv import ImportUsd, ImportUrdf, UrdfToUsd, DeletePrim, GetPrimAttributes, MovePrim, ImportYaml, SpawnWall, ImportObstacles
+from isaacsim_msgs.srv import ImportUsd, UrdfToUsd, DeletePrim, GetPrimAttributes, MovePrim, SpawnWall, ImportObstacles
 
-from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from task_generator.shared import ModelType
 import os
 # from omni.isaac.core.utils.rotations import euler_angles_to_quat
 class IsaacSimulator(BaseSimulator):

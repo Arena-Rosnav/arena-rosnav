@@ -8,7 +8,6 @@ from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.utils.ros_params import ROSParam
 
-from rcl_interfaces.msg import SetParametersResult
 
 
 @dataclasses.dataclass

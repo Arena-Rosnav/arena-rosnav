@@ -3,7 +3,6 @@ import functools
 import os
 import subprocess
 import tempfile
-from ament_index_python.packages import get_package_share_directory
 import xml.etree.ElementTree as ET
 import re
 from typing import Collection, Dict, Optional, Set, Tuple, Type

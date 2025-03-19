@@ -6,7 +6,7 @@ import numpy as np
 import scipy.signal
 from task_generator import NodeInterface
 
-from .utils import World, WorldEntities, WorldMap, WorldObstacleConfiguration, WorldObstacleConfigurations, WorldOccupancy, WorldWalls, WorldZones, configurations_to_obstacles, occupancy_to_walls
+from .utils import World, WorldEntities, WorldMap, WorldObstacleConfigurations, WorldOccupancy, WorldWalls, WorldZones, configurations_to_obstacles, occupancy_to_walls
 
 
 class WorldManager(NodeInterface):

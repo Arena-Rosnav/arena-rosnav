@@ -1,2 +1,2 @@
-from .robot_manager import RobotManager
-from .robots_manager_ros import RobotsManagerROS
+from .robot_manager import RobotManager  # noqa
+from .robots_manager_ros import RobotsManagerROS  # noqa

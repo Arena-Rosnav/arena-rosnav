@@ -12,7 +12,6 @@ import geometry_msgs.msg as geometry_msgs
 import rclpy
 import rclpy.node
 import yaml
-from ament_index_python.packages import get_package_share_directory
 
 import rclpy.parameter
 from task_generator.utils.geometry import euler_from_quaternion, quaternion_from_euler

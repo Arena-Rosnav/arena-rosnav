@@ -1,26 +1,19 @@
 import dataclasses
 import itertools
-import json
 import os
 import shapely
 import yaml
-from typing import List, Dict
+from typing import List
 import math
 import random
 
-from task_generator.constants import Constants
-from task_generator.shared import DynamicObstacle, Obstacle, ModelWrapper, PositionOrientation
+from task_generator.shared import DynamicObstacle, Obstacle, PositionOrientation
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.utils.ros_params import ROSParam
 
-from shapely.geometry import Point, Polygon, box
-from shapely.geometry import LineString, Polygon, MultiPolygon
-from shapely.ops import unary_union, polygonize
-from collections import deque
-from scipy.ndimage import label
+from shapely.geometry import Point
 import numpy as np
 
-from rcl_interfaces.msg import SetParametersResult
 from task_generator.utils.arena import get_simulation_setup_path
 from collections import defaultdict
 

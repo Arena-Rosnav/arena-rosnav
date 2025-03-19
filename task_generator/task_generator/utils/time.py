@@ -1,5 +1,4 @@
 import functools
-import typing
 import attr
 
 import builtin_interfaces.msg

@@ -4,7 +4,6 @@ import random
 import yaml
 from PIL import Image, ImageDraw
 import rclpy
-from rclpy.node import Node
 
 # --- Define a custom list type for inline (flow) YAML formatting ---
 class FlowList(list):
