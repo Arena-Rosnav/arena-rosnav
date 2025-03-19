@@ -6,6 +6,9 @@ if [ -z ${ARENA_SOURCED+x} ] ; then
     export ARENA_WS_DIR="$(pwd)"
     export ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-humble}
 
+    # Set Gazebo version if not provided
+    export GAZEBO_VERSION=${GAZEBO_VERSION:-harmonic}
+
     export FASTRTPS_DEFAULT_PROFILES_FILE=~/.ros/fastdds.xml
     export ROS_DOMAIN_ID=1
     export RMW_IMPLEMENTATION=rmw_fastrtps_cpp

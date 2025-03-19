@@ -1,8 +1,6 @@
 #!/bin/bash -i
 set -e
 
-# Set Gazebo version if not provided
-export GAZEBO_VERSION=${GAZEBO_VERSION:-harmonic}
 
 # Define Arena workspace directory
 cd "${ARENA_WS_DIR}"
