@@ -8,6 +8,7 @@ if [ -z ${ARENA_SOURCED+x} ] ; then
 
     # Set Gazebo version if not provided
     export GAZEBO_VERSION=${GAZEBO_VERSION:-harmonic}
+    export GZ_VERSION=${GAZEBO_VERSION}
 
     export FASTRTPS_DEFAULT_PROFILES_FILE=~/.ros/fastdds.xml
     export ROS_DOMAIN_ID=1
