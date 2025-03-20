@@ -33,32 +33,6 @@ from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils.ros_params import ROSParamServer
 
 
-def create_default_robot_list(
-    robot_model: ModelWrapper,
-    name: str,
-    inter_planner: str,
-    local_planner: str,
-    global_planner: str,
-    agent: str
-
-) -> List[Robot]:
-    return [
-        Robot(
-            model=robot_model,
-            inter_planner=inter_planner,
-            local_planner=local_planner,
-            global_planner=global_planner,
-            agent=agent,
-            position=next(gen_init_pos),
-            name=name,
-            # TODO record_data_dir must be added to TASKGEN_NODE
-            # record_data_dir=self.declare_parameter(
-            #     'record_data_dir', None).value,
-            extra=dict(),
-        )
-    ]
-
-
 def read_robot_setup_file(setup_file: str) -> List[Dict]:
     try:
         with open(
