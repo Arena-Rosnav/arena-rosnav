@@ -89,8 +89,7 @@ class ConfigFileGenerator(Node):
             if not self.has_parameter('robot_names'):
                 # Declare it as an array of strings
                 from rcl_interfaces.msg import ParameterType
-                self.declare_parameter('robot_names', value=[], 
-                                    descriptor={'type': ParameterType.PARAMETER_STRING_ARRAY})
+                self.declare_parameter('robot_names', value=[], )
             
             robot_names_param = self.get_parameter('robot_names').value
             
