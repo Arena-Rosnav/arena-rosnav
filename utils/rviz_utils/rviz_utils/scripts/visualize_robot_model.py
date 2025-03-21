@@ -88,6 +88,8 @@ class VisualizeRobotModel(Node):
             self.get_logger().error(traceback.format_exc())
             self.get_logger().error(f"Error - publishing markers {name}")
 
+            
+
     def read_robot_model_file(self, robot_model):
         try:
             # In ROS2, use ament_index_python instead of rospkg
