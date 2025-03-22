@@ -90,9 +90,9 @@ class ConfigFileGenerator(Node):
                 # Declare it as an array of strings
                 from rcl_interfaces.msg import ParameterType
                 self.declare_parameter('robot_names', value=[], )
-            
+
             robot_names_param = self.get_parameter('robot_names').value
-            
+
             # Handle empty case
             if not robot_names_param:
                 # Try getting the robot parameter directly
@@ -108,9 +108,9 @@ class ConfigFileGenerator(Node):
                 robot_names = [robot_names_param]
             else:
                 robot_names = robot_names_param
-            
+
             self.get_logger().info(f"Processing robots: {robot_names}")
-            
+
             for robot_name in robot_names:
                 robot_group = self._create_robot_group(robot_name)
                 displays.append(robot_group)
@@ -171,14 +171,14 @@ class ConfigFileGenerator(Node):
     def _create_robot_group(self, robot_name):
         """Creates a Robot Group with all visualizations for a robot"""
         color = Utils.get_random_rviz_color()
-        
+
         robot_group = {
             'Class': 'rviz_common/Group',
             'Name': f'Robot: {robot_name}',
             'Enabled': True,
             'Displays': []
         }
-        
+
         # Add robot model using RobotModel display
         robot_model_display = {
             'Class': 'rviz_default_plugins/RobotModel',
@@ -196,7 +196,7 @@ class ConfigFileGenerator(Node):
             'Collision Enabled': False
         }
         robot_group['Displays'].append(robot_model_display)
-        
+
         # Add odometry visualization
         odom_topic = f'/task_generator_node/{robot_name}/odom'
         odom_display = {
@@ -221,9 +221,9 @@ class ConfigFileGenerator(Node):
             'Head Radius': 0.1
         }
         robot_group['Displays'].append(odom_display)
-        
+
         # Add laser scan visualization
-        laser_topic = f'/task_generator_node/{robot_name}/local_costmap/lidar'
+        laser_topic = f'/task_generator_node/{robot_name}/lidar'
         laser_display = {
             'Class': 'rviz_default_plugins/LaserScan',
             'Name': 'LaserScan',
@@ -233,7 +233,7 @@ class ConfigFileGenerator(Node):
                 'Depth': 5,
                 'History Policy': 'Keep Last',
                 'Reliability Policy': 'Best Effort',
-                'Durability Policy': 'Transient Local',
+                'Durability Policy': 'Volatile',
             },
             'Color': color,
             'Size (m)': 0.05,
@@ -242,7 +242,7 @@ class ConfigFileGenerator(Node):
             'Decay Time': 0.0
         }
         robot_group['Displays'].append(laser_display)
-        
+
         # Add local costmap
         local_costmap_topic = f'/task_generator_node/{robot_name}/local_costmap/costmap'
         local_costmap_display = {
@@ -261,7 +261,7 @@ class ConfigFileGenerator(Node):
             'Alpha': 0.7
         }
         robot_group['Displays'].append(local_costmap_display)
-        
+
         # Add global costmap
         global_costmap_topic = f'/task_generator_node/{robot_name}/global_costmap/costmap'
         global_costmap_display = {
@@ -280,7 +280,7 @@ class ConfigFileGenerator(Node):
             'Alpha': 0.7
         }
         robot_group['Displays'].append(global_costmap_display)
-        
+
         # Add path visualization
         path_topic = f'/task_generator_node/{robot_name}/plan'
         path_display = {
@@ -298,7 +298,7 @@ class ConfigFileGenerator(Node):
             'Line Width': 0.05
         }
         robot_group['Displays'].append(path_display)
-        
+
         # Add local path visualization
         local_path_topic = f'/task_generator_node/{robot_name}/local_plan'
         local_path_display = {
@@ -316,7 +316,7 @@ class ConfigFileGenerator(Node):
             'Line Width': 0.05
         }
         robot_group['Displays'].append(local_path_display)
-        
+
         # Add robot footprint
         footprint_topic = f'/task_generator_node/{robot_name}/local_costmap/published_footprint'
         footprint_display = {
@@ -334,7 +334,7 @@ class ConfigFileGenerator(Node):
             'Alpha': 1.0
         }
         robot_group['Displays'].append(footprint_display)
-        
+
         return robot_group
 
     """
