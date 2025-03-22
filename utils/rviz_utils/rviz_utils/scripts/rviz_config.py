@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import typing
 
 import launch
 import launch.launch_service
@@ -23,6 +24,9 @@ from std_srvs.srv import Empty
 
 
 class ConfigFileGenerator(Node):
+
+    topics: typing.List[typing.Tuple[str, typing.List[str]]]
+
     def __init__(self):
         Node.__init__(self, 'create_rviz_config_file')
 
@@ -50,6 +54,9 @@ class ConfigFileGenerator(Node):
 
     def create_config(self) -> str:
         default_file = ConfigFileGenerator._read_default_file()
+
+        # cache
+        self.topics = self.get_topic_names_and_types()
 
         displays = []
 
@@ -222,27 +229,6 @@ class ConfigFileGenerator(Node):
         }
         robot_group['Displays'].append(odom_display)
 
-        # Add laser scan visualization
-        laser_topic = f'/task_generator_node/{robot_name}/lidar'
-        laser_display = {
-            'Class': 'rviz_default_plugins/LaserScan',
-            'Name': 'LaserScan',
-            'Enabled': True,
-            'Topic': {
-                'Value': laser_topic,
-                'Depth': 5,
-                'History Policy': 'Keep Last',
-                'Reliability Policy': 'Best Effort',
-                'Durability Policy': 'Volatile',
-            },
-            'Color': color,
-            'Size (m)': 0.05,
-            'Style': 'Points',
-            'Alpha': 1.0,
-            'Decay Time': 0.0
-        }
-        robot_group['Displays'].append(laser_display)
-
         # Add local costmap
         local_costmap_topic = f'/task_generator_node/{robot_name}/local_costmap/costmap'
         local_costmap_display = {
@@ -334,6 +320,41 @@ class ConfigFileGenerator(Node):
             'Alpha': 1.0
         }
         robot_group['Displays'].append(footprint_display)
+
+        # SENSORS
+
+        # TODO move this to the class
+        # Add laser scan visualization
+        def laser_display(laser_topic):
+            return {
+                'Class': 'rviz_default_plugins/LaserScan',
+                'Name': 'LaserScan',
+                'Enabled': True,
+                'Topic': {
+                    'Value': laser_topic,
+                    'Depth': 5,
+                    'History Policy': 'Keep Last',
+                    'Reliability Policy': 'Best Effort',
+                    'Durability Policy': 'Volatile',
+                },
+                'Color': color,
+                'Size (m)': 0.05,
+                'Style': 'Points',
+                'Alpha': 1.0,
+                'Decay Time': 0.0
+            }
+
+        sensor_displays = {
+            'sensor_msgs/msg/LaserScan': laser_display
+        }
+
+        robot_ns = os.path.join('/task_generator_node', robot_name)
+        robot_topics = (t for t in self.topics if t[0].startswith(robot_ns))
+
+        for topic_name, topic_types in robot_topics:
+            matched_display = next((sensor_displays[t] for t in topic_types if t in sensor_displays), None)
+            if matched_display is not None:
+                robot_group['Displays'].append(matched_display(topic_name))
 
         return robot_group
 
