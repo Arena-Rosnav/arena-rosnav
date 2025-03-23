@@ -473,32 +473,32 @@ class GazeboSimulator(BaseSimulator):
                 parameters=[{'use_sim_time': True}],
             )
         )
-        launch_description.add_action(
-            launch_ros.actions.Node(
-                package='robot_state_publisher',
-                executable='robot_state_publisher',
-                name='robot_state_publisher',
-                output='screen',
-                parameters=[
-                    {'use_sim_time': True},
-                    {'robot_description': description},
-                    {'frame_prefix': robot.frame}
-                ],
-            )
-        )
+        # launch_description.add_action(
+        #     launch_ros.actions.Node(
+        #         package='robot_state_publisher',
+        #         executable='robot_state_publisher',
+        #         name='robot_state_publisher',
+        #         output='screen',
+        #         parameters=[
+        #             {'use_sim_time': True},
+        #             {'robot_description': description},
+        #             {'frame_prefix': robot.frame}
+        #         ],
+        #     )
+        # )
 
-        launch_description.add_action(
-            launch_ros.actions.Node(
-                package='joint_state_publisher',
-                executable='joint_state_publisher',
-                output='screen',
-                parameters=[
-                    {'use_sim_time': True},
-                    {'robot_description': description},  # Ensure URDF is passed here too
-                ],
-                remappings=[('/joint_states', '/joint_states')]
-            )
-        )
+        # launch_description.add_action(
+        #     launch_ros.actions.Node(
+        #         package='joint_state_publisher',
+        #         executable='joint_state_publisher',
+        #         output='screen',
+        #         parameters=[
+        #             {'use_sim_time': True},
+        #             {'robot_description': description},  # Ensure URDF is passed here too
+        #         ],
+        #         remappings=[('/joint_states', '/joint_states')]
+        #     )
+        # )
         launch_description.add_action(
             launch_ros.actions.Node(
                 package="tf2_ros",

@@ -188,26 +188,14 @@ def generate_launch_description():
                 'world_file': launch.substitutions.LaunchConfiguration('world'),
             }.items()
         ),
-        
-        # Start the rviz config generator which launches also rviz2 with desired config file 
+
+        # Start the rviz config generator which launches also rviz2 with desired config file
         launch_ros.actions.Node(
             package="rviz_utils",
             executable="rviz_config",
             name="rviz_config_generator",
             parameters=[{"use_sim_time": True}],
             output="screen"
-        ),
-        
-        # Start the robot visualizer 3D model 
-        launch_ros.actions.Node(
-            package='rviz_utils',
-            executable='visualize_robot_model',
-            name='visualize_robot_model',
-            parameters=[
-                {'robot_names': [launch.substitutions.LaunchConfiguration('robot')]},
-                {'complexity': launch.substitutions.LaunchConfiguration('complexity')}
-            ],
-            output='screen'
         ),
     ])
     return ld
