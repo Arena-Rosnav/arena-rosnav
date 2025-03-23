@@ -218,6 +218,8 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
             self._robot_managers[robot_name] = manager
         self._diff.to_add.clear()
 
+        self.node.rosparam[list[str]].set('robot_names', [robot for robot in self._robot_managers])
+
     def __init__(self, entity_manager: EntityManager) -> None:
         NodeInterface.__init__(self)
         RobotsManager.__init__(self, entity_manager=entity_manager)

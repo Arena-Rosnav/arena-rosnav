@@ -1,8 +1,6 @@
 #! /usr/bin/env python3
 
 import os
-import re
-import subprocess
 import sys
 import tempfile
 import time
@@ -11,21 +9,44 @@ import typing
 import launch
 import launch.launch_service
 import launch_ros.actions
+import rcl_interfaces.msg
 import rcl_interfaces.srv
 import rclpy
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from rclpy.node import Node
-from rviz_utils.config import Config
-from rviz_utils.matchers import Matcher
 from rviz_utils.utils import Utils
-from std_msgs.msg import String
-from std_srvs.srv import Empty
 
 
 class ConfigFileGenerator(Node):
 
     topics: typing.List[typing.Tuple[str, typing.List[str]]]
+    robot_names: typing.List[str]
+
+    def _wait_for_param(
+        self,
+        client: rclpy.client.Client,
+        param_name: str,
+        test_fn: typing.Callable[[typing.Any], bool] | None = None,
+    ) -> rcl_interfaces.msg.ParameterValue:
+        """
+        Block execution until parameter passes test function.
+        @parameter client: rclpy GetParameters service client
+        @paramter parameter_name: name of parameter
+        @test_fn: test function for parameter
+        """
+        while True:
+            req = rcl_interfaces.srv.GetParameters.Request(names=[param_name])
+            future = client.call_async(req)
+            rclpy.spin_until_future_complete(self, future)
+            params = future.result()
+            if params.values:
+                value = params.values[0]
+                if (not test_fn) or test_fn(value):
+                    self.get_logger().info(f'param {param_name} is set')
+                    return value
+            self.get_logger().info(f'waiting for {param_name} to be set')
+            time.sleep(1)
 
     def __init__(self):
         Node.__init__(self, 'create_rviz_config_file')
@@ -39,16 +60,8 @@ class ConfigFileGenerator(Node):
             self.get_logger().info(f'waiting for service {TASKGEN_PARAM_SRV} to become available')
         self.get_logger().info(f'service {TASKGEN_PARAM_SRV} is available')
 
-        while True:
-            req = rcl_interfaces.srv.GetParameters.Request(names=[PARAM_INITIALIZED])
-            future = get_parameters_cli.call_async(req)
-            rclpy.spin_until_future_complete(self, future)
-            params = future.result()
-            if params.values and params.values[0].bool_value:
-                break
-            self.get_logger().info(f'waiting for {PARAM_INITIALIZED} to be set')
-            time.sleep(1)
-        self.get_logger().info(f'param {PARAM_INITIALIZED} is set')
+        self._wait_for_param(get_parameters_cli, PARAM_INITIALIZED, lambda x: x.bool_value)
+        self.robot_names = self._wait_for_param(get_parameters_cli, 'robot_names').string_array_value
 
         # self.cli_load = self.create_client('/rviz2/load_config', rcl_interfaces.srv.SetString)
 
@@ -90,60 +103,21 @@ class ConfigFileGenerator(Node):
 
         published_topics = [topic[0] for topic in self.get_topic_names_and_types()]
 
-        # Create Robot-Groups based on robot names
-        try:
-            # Get robot_names
-            if not self.has_parameter('robot_names'):
-                # Declare it as an array of strings
-                from rcl_interfaces.msg import ParameterType
-                self.declare_parameter('robot_names', value=[], )
-
-            robot_names_param = self.get_parameter('robot_names').value
-
-            # Handle empty case
-            if not robot_names_param:
-                # Try getting the robot parameter directly
-                if not self.has_parameter('robot'):
-                    self.declare_parameter('robot', '')
-                robot_param = self.get_parameter('robot').value
-                if robot_param:
-                    robot_names = [robot_param]
-                else:
-                    robot_names = ['jackal']  # Default fallback
-            # Handle string vs list
-            elif isinstance(robot_names_param, str):
-                robot_names = [robot_names_param]
-            else:
-                robot_names = robot_names_param
-
-            self.get_logger().info(f"Processing robots: {robot_names}")
-
-            for robot_name in robot_names:
-                robot_group = self._create_robot_group(robot_name)
-                displays.append(robot_group)
-        except Exception as e:
-            self.get_logger().warn(f"Error processing robot names: {e}")
-            # Fallback to a default robot
-            try:
-                robot_group = self._create_robot_group('jackal')
-                displays.append(robot_group)
-                self.get_logger().info("Using fallback robot 'jackal'")
-            except Exception as inner_e:
-                self.get_logger().error(f"Even fallback failed: {inner_e}")
+        for robot_name in self.robot_names:
+            robot_group = self._create_robot_group(robot_name)
+            displays.append(robot_group)
 
         # PedSim configuration - commented out but kept for future use
-        """
-        try:
-            if not self.has_parameter('pedsim'):
-                self.declare_parameter('pedsim', False)
-            if self.get_parameter('pedsim').value:
-                displays.append(Config.TRACKED_PERSONS)
-                displays.append(Config.TRACKED_GROUPS)
-                displays.append(Config.PEDSIM_WALLS)
-                displays.append(Config.PEDSIM_WAYPOINTS)
-        except Exception as e:
-            self.get_logger().warn(f"Error checking pedsim parameter: {e}")
-        """
+        # try:
+        #     if not self.has_parameter('pedsim'):
+        #         self.declare_parameter('pedsim', False)
+        #     if self.get_parameter('pedsim').value:
+        #         displays.append(Config.TRACKED_PERSONS)
+        #         displays.append(Config.TRACKED_GROUPS)
+        #         displays.append(Config.PEDSIM_WALLS)
+        #         displays.append(Config.PEDSIM_WAYPOINTS)
+        # except Exception as e:
+        #     self.get_logger().warn(f"Error checking pedsim parameter: {e}")
 
         # Set the default view to Orbit (instead of TopDownOrtho)
         default_file["Visualization Manager"]["Views"]["Current"] = {
@@ -358,32 +332,28 @@ class ConfigFileGenerator(Node):
 
         return robot_group
 
-    """
-    def _create_display_for_topic(self, robot_name, topic, color):
-        matchers = [
-            (Matcher.GLOBAL_PLAN, Config.create_path_display),
-            (Matcher.LASER_SCAN, Config.create_laser_scan_display),
-            (Matcher.GLOBAL_COSTMAP, Config.create_global_map_display),
-            (Matcher.LOCAL_COSTMAP, Config.create_local_map_display),
-            (Matcher.GOAL, Config.create_pose_display),
-            (Matcher.MODEL, Config.create_model_display)
-        ]
+    # def _create_display_for_topic(self, robot_name, topic, color):
+    #     matchers = [
+    #         (Matcher.GLOBAL_PLAN, Config.create_path_display),
+    #         (Matcher.LASER_SCAN, Config.create_laser_scan_display),
+    #         (Matcher.GLOBAL_COSTMAP, Config.create_global_map_display),
+    #         (Matcher.LOCAL_COSTMAP, Config.create_local_map_display),
+    #         (Matcher.GOAL, Config.create_pose_display),
+    #         (Matcher.MODEL, Config.create_model_display)
+    #     ]
 
-        for matcher, function in matchers:
-            match = re.search(matcher(robot_name), topic)
+    #     for matcher, function in matchers:
+    #         match = re.search(matcher(robot_name), topic)
 
-            if match:
-                return function(robot_name, topic, color)
-    """
+    #         if match:
+    #             return function(robot_name, topic, color)
 
-    """
-    def _send_load_config(self, file_path):
-        # print(f"Attempting to call /rviz/load_config with file: {file_path}")
-        while not self.cli_load.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('waiting for service /rviz/load_config to become available')
-        self.cli_load.call(file_path)
-        # print("Call to /rviz/load_config completed.")
-    """
+    # def _send_load_config(self, file_path):
+    #     # print(f"Attempting to call /rviz/load_config with file: {file_path}")
+    #     while not self.cli_load.wait_for_service(timeout_sec=1.0):
+    #         self.get_logger().info('waiting for service /rviz/load_config to become available')
+    #     self.cli_load.call(file_path)
+    #     # print("Call to /rviz/load_config completed.")
 
     @staticmethod
     def _read_default_file():

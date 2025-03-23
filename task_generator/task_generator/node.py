@@ -88,22 +88,6 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         self.do_launch = do_launch
         self._namespace = Namespace(namespace)
 
-        # # Declare all parameters
-        # self.declare_parameters(
-        #     namespace='',
-        #     parameters=[
-        #         ('auto_reset', True),
-        #         ('robot', 'jackal'),
-        #         ('train_mode', False),
-        #         ('robot_setup_file', ''),
-        #         ('inter_planner', ''),
-        #         ('local_planner', ''),
-        #         ('agent_name', ''),
-        #         ('robot_names', []),
-        #         ('task_generator_setup_finished', False),
-        #     ]
-        # )
-
         Task.declare_parameters(self)
 
         self._auto_reset = self.rosparam[bool].get('auto_reset', True)
@@ -138,8 +122,6 @@ class TaskGenerator(NodeInterface.Taskgen_T):
     def _initialize(self):
         self._start_time = self.get_clock().now().seconds_nanoseconds()[0]
         self._task = self._get_predefined_task()
-        self.rosparam[list[str]].set(
-            'robot_names', self._task.robot_names)
 
         self._number_of_resets = 0
 
