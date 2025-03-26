@@ -2,11 +2,11 @@ repositories:
   arena/evaluation:
     type: git
     url: https://github.com/voshch/arena-evaluation.git
-    version: humble@dd56a37
+    version: humble@94762429
   arena/simulation-setup:
     type: git
     url: https://github.com/voshch/arena-simulation-setup.git
-    version: humble@39c13310
+    version: humble@efad649d
   arena/isaac:
     type: git
     url: https://github.com/Arena-Rosnav/arena-isaac

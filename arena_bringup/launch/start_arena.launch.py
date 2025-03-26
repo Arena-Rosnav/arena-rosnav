@@ -75,7 +75,7 @@ def generate_launch_description():
         ),
         launch.actions.DeclareLaunchArgument(
             name='record_data_dir',
-            default_value='auto:'
+            default_value=''
         ),
         launch.actions.DeclareLaunchArgument(
             name='tm_robots',
@@ -156,6 +156,7 @@ def generate_launch_description():
                 'global_planner': launch.substitutions.LaunchConfiguration('global_planner'),
                 'world': launch.substitutions.LaunchConfiguration('world'),
                 'parameter_file': os.path.join(get_package_share_directory('arena_bringup'), 'configs', 'task_generator.yaml'),
+                'record_data_dir': launch.substitutions.LaunchConfiguration('record_data_dir')
             }.items(),
         ),
 

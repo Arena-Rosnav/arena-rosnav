@@ -45,6 +45,10 @@ def generate_launch_description():
     global_planner = LaunchArgument(
         name='global_planner',
     )
+    record_data_dir = LaunchArgument(
+        name='record_data_dir',
+        default_value='',
+    )
 
     parameter_file = LaunchArgument(
         name='parameter_file'
@@ -57,16 +61,17 @@ def generate_launch_description():
         output='screen',
         parameters=[
             {
-                **simulator.dict,
-                **entity_manager.dict,
-                **robot.dict,
-                **tm_robots.dict,
-                **tm_obstacles.dict,
-                **tm_modules.dict,
-                **world.dict,
-                **inter_planner.dict,
-                **local_planner.dict,
-                **global_planner.dict,
+                **simulator.str_param,
+                **entity_manager.str_param,
+                **robot.str_param,
+                **tm_robots.str_param,
+                **tm_obstacles.str_param,
+                **tm_modules.str_param,
+                **world.str_param,
+                **inter_planner.str_param,
+                **local_planner.str_param,
+                **global_planner.str_param,
+                **record_data_dir.str_param,
             },
             os.path.join(
                 get_package_share_directory('arena_bringup'),
@@ -84,6 +89,7 @@ def generate_launch_description():
         tm_modules,
         world,
         task_generator_node,
+        record_data_dir,
         # launch_ros.actions.Node(
         #     package='task_generator',
         #     executable='server',

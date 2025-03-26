@@ -11,6 +11,7 @@ import launch.actions
 import launch.substitutions
 import launch.conditions
 import launch.utilities
+import launch_ros
 
 
 class NoAliasDumper(yaml.Dumper):
@@ -35,6 +36,10 @@ class LaunchArgument(launch.actions.DeclareLaunchArgument):
     @property
     def dict(self):
         return {self.name: self.substitution}
+
+    @property
+    def str_param(self):
+        return {self.name: launch_ros.parameter_descriptions.ParameterValue(self.substitution, value_type=str)}
 
 
 class SelectAction(launch.Action):
