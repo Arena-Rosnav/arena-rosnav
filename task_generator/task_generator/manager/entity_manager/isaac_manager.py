@@ -1,5 +1,5 @@
 import typing
-from task_generator.manager.entity_manager import EntityManager
+from task_generator.manager.entity_manager.dummy_manager import DummyEntityManager
 from task_generator.manager.entity_manager.utils import KnownObstacles, ObstacleLayer
 from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot, Wall
 from task_generator.simulators import BaseSimulator
@@ -7,7 +7,7 @@ import rclpy
 from isaacsim_msgs.msg import Person
 from isaacsim_msgs.srv import ImportObstacles, Pedestrian
 
-class IsaacEntityManager(EntityManager):
+class IsaacEntityManager(DummyEntityManager):
 
     _known_obstacles: KnownObstacles
 

@@ -118,5 +118,5 @@ def lazy_hunavsim():
 @EntityManagerRegistry.register(Constants.EntityManager.ISAAC)
 def isaacsim():
 
-    from .hunav_manager.isaac_manager import IsaacEntityManager
+    from .isaac_manager import IsaacEntityManager
     return IsaacEntityManager
