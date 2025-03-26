@@ -169,9 +169,9 @@ class RobotManager(NodeInterface):
             self._start_pos = start_pos
             self.move_robot_to_pos(start_pos)
 
-            if self._robot.record_data_dir is not None:
+            if self._robot.record_data_dir:
                 self.node.rosparam[list[float]].set(
-                    self.namespace("start"),
+                    self.namespace.robot_ns.ParamNamespace()("start"),
                     [self.start_pos.x, self.start_pos.y, self.start_pos.orientation]
                 )
 
@@ -179,9 +179,9 @@ class RobotManager(NodeInterface):
             self._goal_pos = goal_pos
             self._publish_goal(self._goal_pos)
 
-            if self._robot.record_data_dir is not None:
+            if self._robot.record_data_dir:
                 self.node.rosparam[list[float]].set(
-                    self.namespace("goal"),
+                    self.namespace.robot_ns.ParamNamespace()("goal"),
                     [self.goal_pos.x, self.goal_pos.y,
                         self.goal_pos.orientation]
                 )
@@ -240,7 +240,6 @@ class RobotManager(NodeInterface):
 
             if self._robot.record_data_dir:
                 launch_arguments.update({
-                    'record_data': 'True',
                     'record_data_dir': self._robot.record_data_dir,
                 })
 
