@@ -114,7 +114,7 @@ class IsaacSimulator(BaseSimulator):
                 ImportObstacles.Request(
                     name=entity.name,
                     usd_path=usd_path,
-                    position = [entity.position.x,entity.position.y,0.1],
+                    position = [entity.position.x,entity.position.y,0.12],
                     orientation = [0.0,0.0,entity.position.orientation],
                     )
                 )
@@ -136,7 +136,7 @@ class IsaacSimulator(BaseSimulator):
             name=name,
             prim_path=f"/{name}",
             values=[
-                Values(values=[position.x,position.y,0.1]),
+                Values(values=[position.x,position.y,0.12]),
                 Values(values=[0.0,0.0,math.degrees(orientation)])]                    
             )
         )

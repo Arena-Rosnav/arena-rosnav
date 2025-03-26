@@ -16,22 +16,12 @@ class IsaacEntityManager(DummyEntityManager):
         self._known_obstacles = KnownObstacles()
         self.__logger = self.node.get_logger().get_child('dummy_EM')
 
-    def spawn_obstacles(self, obstacles: typing.Collection[Obstacle]):
-        self.__logger.debug(f'spawning {len(obstacles)} static obstacles')
-        for obstacle in obstacles:
-            known = self._known_obstacles.get(obstacle.name)
-            if known is None:
-                known = self._known_obstacles.create_or_get(
-                    name=obstacle.name,
-                    obstacle=obstacle
-                )
-            known.layer = ObstacleLayer.INUSE
-            self._simulator.spawn_entity(obstacle)
-
     def spawn_dynamic_obstacles(
             self, obstacles: typing.Collection[DynamicObstacle]):
         self.__logger.debug(f'spawning {len(obstacles)} dynamic obstacles')
         for obstacle in obstacles:
+            self.__logger.info(f"Attempting to spawn model: {obstacle.name}")
+            self.__logger.info(f"waypoints:{obstacle.waypoints}")
             known = self._known_obstacles.get(obstacle.name)
             if known is None:
                 known = self._known_obstacles.create_or_get(
@@ -44,7 +34,7 @@ class IsaacEntityManager(DummyEntityManager):
                         stage_prefix = obstacle.name,
                         character_name=obstacle.model._name,
                         initial_pose = [obstacle.position.x,obstacle.position.y,.1],
-                        goal_pose = [obstacle.waypoints.x,obstacle.waypoints.y,0.0],
+                        goal_pose = [obstacle.waypoints[-1][0],obstacle.waypoints[-1][1],0.0],
                         orientation = obstacle.position.orientation,
                         controller_stats=False,
                         velocity=0.407306046952996
@@ -55,35 +45,3 @@ class IsaacEntityManager(DummyEntityManager):
             else:
                 self._simulator.move_entity(obstacle.name, obstacle.position)
             known.layer = ObstacleLayer.INUSE
-
-    def spawn_walls(self, walls: typing.Collection[Wall]):
-        self.__logger.debug(f'spawning {len(walls)} walls')
-        self._simulator.spawn_walls(list(walls))
-
-    def unuse_obstacles(self):
-        self.__logger.debug(f'unusing obstacles')
-        for obstacle_id, obstacle in self._known_obstacles.items():
-            if obstacle.layer == ObstacleLayer.INUSE:
-                obstacle.layer = ObstacleLayer.UNUSED
-
-    def remove_obstacles(
-            self, purge: ObstacleLayer = ObstacleLayer.UNUSED):
-        self.__logger.debug(f'removing obstacles (level {purge})')
-
-        for obstacle_id, obstacle in list(self._known_obstacles.items()):
-            if purge >= obstacle.layer:
-                self._known_obstacles.forget(name=obstacle_id)
-                self._simulator.delete_entity(name=obstacle_id)
-
-    def spawn_robot(self, robot: Robot):
-        self.__logger.debug(f'spawning robot {robot.name}')
-        self._simulator.spawn_entity(robot)
-
-    def remove_robot(self, name: str):
-        self.__logger.debug(f'removing robot {name}')
-        self._simulator.delete_entity(name)
-
-    def move_robot(self, name: str, position: PositionOrientation):
-        self.__logger.debug(
-            f'moving robot {name} to {repr(position)}')
-        self._simulator.move_entity(name, position)

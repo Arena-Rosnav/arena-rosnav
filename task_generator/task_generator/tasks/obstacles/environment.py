@@ -489,7 +489,7 @@ class TM_Environment(TM_Obstacles):
                                     name=obs_name,
                                     position=PositionOrientation(x=obstacle_x, y=obstacle_y, orientation=rot_theta),
                                     model=self._PROPS.model_loader.bind(entity["model"]),
-                                    waypoints=entity['waypoints'][-1],
+                                    waypoints=entity['waypoints'],
                                     extra={},
                                 )
                                 dynamic_obstacles.append(new_obstacle)
