@@ -3,11 +3,14 @@ from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import KnownObstacles, ObstacleLayer
 from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot, Wall
 from task_generator.simulators import BaseSimulator
+import rclpy
+from isaacsim_msgs.msg import Person
+from isaacsim_msgs.srv import ImportObstacles, Pedestrian
 
-
-class DummyEntityManager(EntityManager):
+class IsaacEntityManager(EntityManager):
 
     _known_obstacles: KnownObstacles
+
     def __init__(self, namespace: Namespace, simulator: BaseSimulator):
         super().__init__(namespace, simulator)
         self._known_obstacles = KnownObstacles()
@@ -35,14 +38,27 @@ class DummyEntityManager(EntityManager):
                     name=obstacle.name,
                     obstacle=obstacle
                 )
-                self._simulator.spawn_entity(obstacle)
+                self._simulator.client['spawn_pedestrian_client'].call_async(
+                Pedestrian.Request(
+                    people=[Person(
+                        stage_prefix = obstacle.name,
+                        character_name=obstacle.model._name,
+                        initial_pose = [obstacle.position.x,obstacle.position.y,.1],
+                        goal_pose = [obstacle.waypoints.x,obstacle.waypoints.y,0.0],
+                        orientation = obstacle.position.orientation,
+                        controller_stats=False,
+                        velocity=0.407306046952996
+                    )
+                    ]
+                    )
+                )
             else:
                 self._simulator.move_entity(obstacle.name, obstacle.position)
             known.layer = ObstacleLayer.INUSE
 
-    def spawn_walls(self, walls: list[Wall]):
+    def spawn_walls(self, walls: typing.Collection[Wall]):
         self.__logger.debug(f'spawning {len(walls)} walls')
-        self._simulator.spawn_walls(walls)
+        self._simulator.spawn_walls(list(walls))
 
     def unuse_obstacles(self):
         self.__logger.debug(f'unusing obstacles')
@@ -70,4 +86,4 @@ class DummyEntityManager(EntityManager):
     def move_robot(self, name: str, position: PositionOrientation):
         self.__logger.debug(
             f'moving robot {name} to {repr(position)}')
-        self._simulator.move_entity(name,position,position.orientation)                                                                                                                                                                                                   
+        self._simulator.move_entity(name, position)

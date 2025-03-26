@@ -2,13 +2,12 @@
 
 sudo apt install libfuse2
 
-while [ ! -d ~/.local/share/ov/pkg/isaac-sim-4.2.0/ ] ; do
-  echo "No Isaac Sim installation detected!"
-  echo "1. Open Omniverse launcher and insall Omniverse Cache and Isaac Sim"
-  echo "2. Open Omniverse Isaac Sim launcher and change the bridge to ros2"
-  read -rp "Confirm installation by pressing [Enter]" 
-done
-echo "Successfully detected Isaac Sim installation"
+if [ ! -d ~/isaacsim-4.2.0 ]; then
+    wget --content-disposition "https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone%404.5.0-rc.36%2Brelease.19112.f59b3005.gl.linux-x86_64.release.zip" -O isaac-sim.zip
+    mkdir -p ~/isaacsim-4.2.0
+    unzip isaac-sim.zip -d ~/isaacsim-4.2.0
+    rm isaac-sim.zip
+fi
 
 cd "${ARENA_WS_DIR}"
 
@@ -25,7 +24,7 @@ echo "Successfully detected NVIDIA driver installation"
 echo "nvidia-driver was installed"
 
 #Optional choice: install a CUDA-enabled PyTorch 2.4.0 build based on the CUDA version available on your system
-python -m pip install torch==2.4.0 --index-url https://download.pytorch.org/whl/cu121
+python -m pip install torch==2.4.0 
 
 #Ensure upgrade the latest pip version
 python -m pip install --upgrade pip
@@ -75,15 +74,15 @@ license agreement from NVIDIA CORPORATION is strictly prohibited.</license>
 if [ "$(systemd-detect-virt)" = wsl ] ; then
     python -m pip install git+https://github.com/cpbotha/xdg-open-wsl.git
 fi
-curl "https://install.launcher.omniverse.nvidia.com/installers/omniverse-launcher-linux.AppImage" > omniverse-launcher-linux.AppImage
-chmod +x omniverse-launcher-linux.AppImage
-./omniverse-launcher-linux.AppImage --no-sandbox &
+# curl "https://install.launcher.omniverse.nvidia.com/installers/omniverse-launcher-linux.AppImage" > omniverse-launcher-linux.AppImage
+# chmod +x omniverse-launcher-linux.AppImage
+# ./omniverse-launcher-linux.AppImage --no-sandbox &
 
-SETUP_FILE=~/.local/share/ov/pkg/isaac-sim-4.2.0/setup.bash
+SETUP_FILE=~/isaacsim-4.2.0/setup.bash
 # Write the content to the file
 cat << 'EOF' > "$SETUP_FILE"
 #!/bin/bash
-MY_DIR=$HOME/.local/share/ov/pkg/isaac-sim-4.2.0
+MY_DIR=$HOME/isaacsim-4.2.0
 export CARB_APP_PATH=$SCRIPT_DIR/kit
 export EXP_PATH=$MY_DIR/apps
 if [ -f "${MY_DIR}/setup_python_env.sh" ] ; then 

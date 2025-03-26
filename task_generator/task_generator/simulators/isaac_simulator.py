@@ -2,12 +2,13 @@ from task_generator.simulators import BaseSimulator
 # Import dependencies.
 import rclpy
 import numpy as np
-from isaacsim_msgs.msg import Values
-from isaacsim_msgs.srv import ImportUsd, ImportUrdf, UrdfToUsd, DeletePrim, GetPrimAttributes, MovePrim, ImportYaml, SpawnWall, ImportObstacles
+from isaacsim_msgs.msg import Values, Person
+from isaacsim_msgs.srv import ImportUsd, ImportUrdf, UrdfToUsd, DeletePrim, GetPrimAttributes, MovePrim, ImportYaml, SpawnWall, ImportObstacles, Pedestrian
 
 from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 import os
+import math
 # from omni.isaac.core.utils.rotations import euler_angles_to_quat
 class IsaacSimulator(BaseSimulator):
 
@@ -54,6 +55,11 @@ class IsaacSimulator(BaseSimulator):
                 'service_name': 'isaac/import_obstacle',
                 'client_attr': 'spawn_obstacle_client'
             },
+            'import_pedestrians': {
+                'service_type': Pedestrian,
+                'service_name': 'isaac/spawn_pedestrian',
+                'client_attr': 'spawn_pedestrian_client'
+            },
         }
 
         # Initialize and wait for each service client
@@ -77,10 +83,11 @@ class IsaacSimulator(BaseSimulator):
         self.node.get_logger().info("All service clients initialized and available.")
         
     def spawn_entity(self, entity):
-        if entity.name not in ["1","2","3"]:
-            self.node.get_logger().info(
-                f"Attempting to spawn model: {entity.name}"
+        self.node.get_logger().info(
+            f"Attempting to spawn model: {entity.name}"
             )
+        if entity.name not in ["1","2","3"]:
+
             # self.node.get_logger().info(entity.position)
             model = entity.model.get([ModelType.URDF, ModelType.USD])
             if model.type == ModelType.URDF:
@@ -90,6 +97,15 @@ class IsaacSimulator(BaseSimulator):
                         urdf_path=os.path.abspath(model.path)
                     )
                 )
+                # response = self.client['move_entity_client'].call_async(
+                # MovePrim.Request(
+                #     name=entity.name,
+                #     prim_path=f"/{entity.name}",
+                #     values=[
+                #         Values(values=[entity.position.x,entity.position.y,0.1]),
+                #         Values(values=[0.0,0.0,0.0])]                    
+                #     )
+                # )
                 return True
             else:
                 usd_path = os.path.abspath(model.path)
@@ -98,7 +114,7 @@ class IsaacSimulator(BaseSimulator):
                 ImportObstacles.Request(
                     name=entity.name,
                     usd_path=usd_path,
-                    position = [entity.position.x,entity.position.y,0.0],
+                    position = [entity.position.x,entity.position.y,0.1],
                     orientation = [0.0,0.0,entity.position.orientation],
                     )
                 )
@@ -110,24 +126,23 @@ class IsaacSimulator(BaseSimulator):
         self.node.get_logger().info(
             f"Attempting to move entitiy: {name}"
         )
-        prim_path = f"/World/{name}"
 
+        self.node.get_logger().info(f"position: {position.x,position.y}")
+        self.node.get_logger().info(f"orientation: {orientation}")
+        prim_path = f"/{name}"
+        
         response = self.client['move_entity_client'].call_async(
-            MovePrim.Request(
-                name=name.name,
-                prim_path=prim_path,
-                values=[
-                    Values(values=position),
-                    Values(values=orientation)]
+        MovePrim.Request(
+            name=name,
+            prim_path=f"/{name}",
+            values=[
+                Values(values=[position.x,position.y,0.1]),
+                Values(values=[0.0,0.0,math.degrees(orientation)])]                    
             )
         )
         if response is None:
             raise RuntimeError(
                 f'failed to move entity: service timed out')
-
-        if response.result > 0:
-            raise RuntimeError(
-                f'failed to move entity: status code {response.result}')
 
         return True
 
@@ -147,10 +162,6 @@ class IsaacSimulator(BaseSimulator):
         if response is None:
             raise RuntimeError(
                 f'failed to delete entity: service timed out')
-
-        if response.result > 0:
-            raise RuntimeError(
-                f'failed to delete entity: status code {response.result}')
 
         return True
 

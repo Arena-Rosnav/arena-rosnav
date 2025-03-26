@@ -178,11 +178,39 @@ class _ModelLoader_URDF(_ModelLoader):
             with open(model_path, 'w') as f:
                 f.write(model_desc)
 
+            base_dir = os.path.dirname(model_path)
+            tree = ET.parse(model_path)
+            root = tree.getroot()
+            
+            prefix = "package://jackal_description"
+    
+            # Iterate over every element in the XML tree and update 'filename' attributes
+            for elem in root.iter():
+                if 'filename' in elem.attrib:
+                    original_path = elem.attrib['filename']
+                    # Remove the specific package prefix if present
+                    if original_path.startswith(prefix):
+                        # Remove the prefix and any leading '/'
+                        new_relative = original_path[len(prefix):].lstrip('/')
+                        original_path = new_relative
+                        print(f"Removed prefix: {prefix} -> New relative path: {original_path}")
+                    # Convert to absolute path if it's not already
+                    if not os.path.isabs(original_path):
+                        abs_path = os.path.abspath(os.path.join(base_dir, original_path))
+                        elem.attrib['filename'] = abs_path
+                        print(f"Updated relative path to absolute: {original_path} -> {abs_path}")
+
+            # Write the updated XML tree to a temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".urdf", mode="wb") as tmp:
+                tree.write(tmp, encoding="utf-8", xml_declaration=True)
+                temp_filepath = tmp.name
+                print(f"Converted URDF saved to temporary file: {temp_filepath}")
+            
             return Model(
                 type=ModelType.URDF,
                 name=model,
                 description=model_desc,
-                path=model_path
+                path=temp_filepath
             )
 
         except subprocess.CalledProcessError as e:
