@@ -149,113 +149,6 @@ class ConfigFileGenerator(Node):
         self._send_load_config(file_path)
         return response
 
-    # Sensor display generators moved to class methods
-    def get_sensor_color(self, sensor_type, index=0):
-        """Generate appropriate colors for different sensor types"""
-        if sensor_type == 'sensor_msgs/msg/Imu':
-            return "204; 51; 204"  # Consistent purple for IMU
-        elif 'FootContact' in sensor_type:
-            return "255; 140; 0"    # Consistent orange for FootContact
-        else:
-            # Generate unique colors for LaserScan and PointCloud
-            r = (index * 67) % 200 + 55
-            g = (index * 101) % 200 + 55
-            b = (index * 173) % 200 + 55
-            return f"{r}; {g}; {b}"
-
-    def create_laser_scan_display(self, topic_name, sensor_color):
-        """Create LaserScan display configuration"""
-        return {
-            'Class': 'rviz_default_plugins/LaserScan',
-            'Name': f'LaserScan: {os.path.basename(topic_name)}',
-            'Enabled': True,
-            'Topic': {
-                'Value': topic_name,
-                'Depth': 5,
-                'History Policy': 'Keep Last',
-                'Reliability Policy': 'Best Effort',
-                'Durability Policy': 'Volatile',
-            },
-            'Color': sensor_color,
-            'Size (m)': 0.05,
-            'Style': 'Points',
-            'Alpha': 1.0,
-            'Decay Time': 0.0
-        }
-
-    def create_pointcloud_display(self, topic_name, sensor_color):
-        """Create PointCloud2 display configuration"""
-        return {
-            'Class': 'rviz_default_plugins/PointCloud2',
-            'Name': f'PointCloud: {os.path.basename(topic_name)}',
-            'Enabled': True,
-            'Topic': {
-                'Value': topic_name,
-                'Depth': 5,
-                'History Policy': 'Keep Last',
-                'Reliability Policy': 'Best Effort',
-                'Durability Policy': 'Volatile',
-            },
-            'Color': sensor_color,
-            'Size (m)': 0.03,
-            'Style': 'Flat Squares',
-            'Alpha': 1.0,
-            'Decay Time': 0.0
-        }
-
-    def create_pointcloud_legacy_display(self, topic_name, sensor_color):
-        """Create PointCloud (legacy) display configuration"""
-        return {
-            'Class': 'rviz_default_plugins/PointCloud',
-            'Name': f'PointCloud: {os.path.basename(topic_name)}',
-            'Enabled': True,
-            'Topic': {
-                'Value': topic_name,
-                'Depth': 5,
-                'History Policy': 'Keep Last',
-                'Reliability Policy': 'Best Effort',
-                'Durability Policy': 'Volatile',
-            },
-            'Color': sensor_color,
-            'Size (m)': 0.03,
-            'Alpha': 1.0,
-            'Decay Time': 0.0
-        }
-    
-    def create_imu_display(self, topic_name, sensor_color):
-        """Create IMU display configuration"""
-        return {
-            'Class': 'rviz_default_plugins/Imu',
-            'Name': f'IMU: {os.path.basename(topic_name)}',
-            'Enabled': True,
-            'Topic': {
-                'Value': topic_name,
-                'Depth': 5,
-                'History Policy': 'Keep Last',
-                'Reliability Policy': 'Best Effort',
-                'Durability Policy': 'Volatile',
-            },
-            'Axes Length': 0.3,
-            'Axes Radius': 0.03,
-            'Color': sensor_color
-        }
-        
-    def create_footcontact_display(self, topic_name, sensor_color):
-        """Create FootContact display configuration"""
-        return {
-            'Class': 'rviz_default_plugins/Marker',
-            'Name': f'FootContact: {os.path.basename(topic_name)}',
-            'Enabled': True,
-            'Topic': {
-                'Value': topic_name,
-                'Depth': 5,
-                'History Policy': 'Keep Last',
-                'Reliability Policy': 'Best Effort',
-                'Durability Policy': 'Volatile',
-            },
-            'Color': sensor_color
-        }
-
     def _create_robot_group(self, robot_name):
         """Creates a Robot Group with all visualizations for a robot"""
         color = Utils.get_random_rviz_color()
@@ -268,148 +161,40 @@ class ConfigFileGenerator(Node):
         }
 
         # Add robot model using RobotModel display
-        robot_model_display = {
-            'Class': 'rviz_default_plugins/RobotModel',
-            'Name': 'Robot Model',
-            'Enabled': True,
-            'TF Prefix': robot_name,
-            'Description Topic': {
-                'Value': f'/task_generator_node/{robot_name}/robot_description',
-                'Depth': 5,
-                'History Policy': 'Keep Last',
-                'Reliability Policy': 'Reliable',
-                'Durability Policy': 'Volatile',
-            },
-            'Visual Enabled': True,
-            'Collision Enabled': False
-        }
-        robot_group['Displays'].append(robot_model_display)
+        robot_group['Displays'].append(Utils.Displays.robot_model(robot_name))
 
         # Add odometry visualization
         odom_topic = f'/task_generator_node/{robot_name}/odom'
-        odom_display = {
-            'Class': 'rviz_default_plugins/Odometry',
-            'Name': 'Odometry',
-            'Enabled': True,
-            'Topic': {
-                'Value': odom_topic,
-                'Depth': 5,
-                'History Policy': 'Keep Last',
-                'Reliability Policy': 'Reliable',
-                'Durability Policy': 'Volatile',
-            },
-            'Shape': 'Arrow',
-            'Color': color,
-            'Position Tolerance': 0.1,
-            'Angle Tolerance': 0.1,
-            'Keep': 1,
-            'Shaft Length': 0.5,
-            'Shaft Radius': 0.05,
-            'Head Length': 0.2,
-            'Head Radius': 0.1
-        }
-        robot_group['Displays'].append(odom_display)
+        robot_group['Displays'].append(Utils.Displays.odom(odom_topic, color))
 
         # Add local costmap
         local_costmap_topic = f'/task_generator_node/{robot_name}/local_costmap/costmap'
-        local_costmap_display = {
-            'Class': 'rviz_default_plugins/Map',
-            'Name': 'Local Costmap',
-            'Enabled': True,
-            'Topic': {
-                'Value': local_costmap_topic,
-                'Depth': 5,
-                'History Policy': 'Keep Last',
-                'Reliability Policy': 'Reliable',
-                'Durability Policy': 'Transient Local',
-            },
-            'Color Scheme': 'costmap',
-            'Draw Behind': False,
-            'Alpha': 0.7
-        }
-        robot_group['Displays'].append(local_costmap_display)
+        robot_group['Displays'].append(Utils.Displays.local_costmap(local_costmap_topic))
 
         # Add global costmap
         global_costmap_topic = f'/task_generator_node/{robot_name}/global_costmap/costmap'
-        global_costmap_display = {
-            'Class': 'rviz_default_plugins/Map',
-            'Name': 'Global Costmap',
-            'Enabled': True,
-            'Topic': {
-                'Value': global_costmap_topic,
-                'Depth': 5,
-                'History Policy': 'Keep Last',
-                'Reliability Policy': 'Reliable',
-                'Durability Policy': 'Transient Local',
-            },
-            'Color Scheme': 'costmap',
-            'Draw Behind': False,
-            'Alpha': 0.7
-        }
-        robot_group['Displays'].append(global_costmap_display)
+        robot_group['Displays'].append(Utils.Displays.global_costmap(global_costmap_topic))
 
         # Add path visualization
         path_topic = f'/task_generator_node/{robot_name}/plan'
-        path_display = {
-            'Class': 'rviz_default_plugins/Path',
-            'Name': 'Global Plan',
-            'Enabled': True,
-            'Topic': {
-                'Value': path_topic,
-                'Depth': 5,
-                'History Policy': 'Keep Last',
-                'Reliability Policy': 'Reliable',
-                'Durability Policy': 'Volatile',
-            },
-            'Color': color,
-            'Line Width': 0.05
-        }
-        robot_group['Displays'].append(path_display)
+        robot_group['Displays'].append(Utils.Displays.global_path(path_topic, color))
 
         # Add local path visualization
         local_path_topic = f'/task_generator_node/{robot_name}/local_plan'
-        local_path_display = {
-            'Class': 'rviz_default_plugins/Path',
-            'Name': 'Local Plan',
-            'Enabled': True,
-            'Topic': {
-                'Value': local_path_topic,
-                'Depth': 5,
-                'History Policy': 'Keep Last',
-                'Reliability Policy': 'Reliable',
-                'Durability Policy': 'Volatile',
-            },
-            'Color': '255; 0; 0',  # Red for local path
-            'Line Width': 0.05
-        }
-        robot_group['Displays'].append(local_path_display)
+        robot_group['Displays'].append(Utils.Displays.local_path(local_path_topic))
 
         # Add robot footprint
         footprint_topic = f'/task_generator_node/{robot_name}/local_costmap/published_footprint'
-        footprint_display = {
-            'Class': 'rviz_default_plugins/Polygon',
-            'Name': 'Robot Footprint',
-            'Enabled': True,
-            'Topic': {
-                'Value': footprint_topic,
-                'Depth': 5,
-                'History Policy': 'Keep Last',
-                'Reliability Policy': 'Reliable',
-                'Durability Policy': 'Volatile',
-            },
-            'Color': color,
-            'Alpha': 1.0
-        }
-        robot_group['Displays'].append(footprint_display)
+        robot_group['Displays'].append(Utils.Displays.robot_footprint(footprint_topic, color))
 
         # SENSORS
         # Map of message types to display creator methods - include all sensor types
         sensor_displays = {
-            'sensor_msgs/msg/LaserScan': self.create_laser_scan_display,
-            'sensor_msgs/msg/PointCloud2': self.create_pointcloud_display,
-            'sensor_msgs/msg/PointCloud': self.create_pointcloud_legacy_display,
-            #'sensor_msgs/msg/Imu': self.create_imu_display,                          # will be optimised soon
-            #'foot_contact_msgs/msg/FootContact': self.create_footcontact_display
+            'sensor_msgs/msg/LaserScan': Utils.Displays.laser_scan,
+            'sensor_msgs/msg/PointCloud2': Utils.Displays.pointcloud,
+            'sensor_msgs/msg/PointCloud': Utils.Displays.pointcloud_legacy,
+            # 'sensor_msgs/msg/Imu': Utils.imu,                          # will be optimised soon
+            # 'foot_contact_msgs/msg/FootContact': Utils.footcontact
             # Add more sensor types as needed
         }
 
@@ -418,22 +203,22 @@ class ConfigFileGenerator(Node):
 
         # Improved topic discovery for robot sensors
         robot_topics = []
-        
+
         # Try to discover topics using node-based approach first
         try:
             # Get all nodes in the system
             node_names_and_namespaces = self.get_node_names_and_namespaces()
-            
+
             # Filter for nodes related to this robot
             robot_nodes = []
             robot_namespace = f'/task_generator_node/{robot_name}'
-            
+
             for node_name, node_namespace in node_names_and_namespaces:
                 if node_namespace == robot_namespace:
                     robot_nodes.append((node_name, node_namespace))
-            
+
             self.get_logger().info(f"Found {len(robot_nodes)} nodes for robot {robot_name}")
-            
+
             # Get topics from each robot node
             for node_name, node_namespace in robot_nodes:
                 try:
@@ -459,39 +244,16 @@ class ConfigFileGenerator(Node):
                         sensor_counts[topic_type] = 0
                     else:
                         sensor_counts[topic_type] += 1
-                    
+
                     # Get display with appropriate color
                     display_creator = sensor_displays[topic_type]
-                    sensor_color = self.get_sensor_color(topic_type, sensor_counts[topic_type])
+                    sensor_color = Utils.get_sensor_color(topic_type, sensor_counts[topic_type])
                     display = display_creator(topic_name, sensor_color)
-                    
+
                     robot_group['Displays'].append(display)
                     break  # Use first matching type
 
         return robot_group
-
-    # def _create_display_for_topic(self, robot_name, topic, color):
-    #     matchers = [
-    #         (Matcher.GLOBAL_PLAN, Config.create_path_display),
-    #         (Matcher.LASER_SCAN, Config.create_laser_scan_display),
-    #         (Matcher.GLOBAL_COSTMAP, Config.create_global_map_display),
-    #         (Matcher.LOCAL_COSTMAP, Config.create_local_map_display),
-    #         (Matcher.GOAL, Config.create_pose_display),
-    #         (Matcher.MODEL, Config.create_model_display)
-    #     ]
-
-    #     for matcher, function in matchers:
-    #         match = re.search(matcher(robot_name), topic)
-
-    #         if match:
-    #             return function(robot_name, topic, color)
-
-    # def _send_load_config(self, file_path):
-    #     # print(f"Attempting to call /rviz/load_config with file: {file_path}")
-    #     while not self.cli_load.wait_for_service(timeout_sec=1.0):
-    #         self.get_logger().info('waiting for service /rviz/load_config to become available')
-    #     self.cli_load.call(file_path)
-    #     # print("Call to /rviz/load_config completed.")
 
     @staticmethod
     def _read_default_file():
