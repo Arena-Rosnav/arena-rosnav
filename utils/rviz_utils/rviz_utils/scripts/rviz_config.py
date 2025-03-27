@@ -49,7 +49,7 @@ class ConfigFileGenerator(Node):
             time.sleep(1)
 
     def __init__(self):
-        Node.__init__(self, 'create_rviz_config_file')
+        Node.__init__(self, 'rviz_config_generator')
 
         TASKGEN_NODE = '/task_generator_node'
         TASKGEN_PARAM_SRV = os.path.join(TASKGEN_NODE, 'get_parameters')
@@ -148,6 +148,113 @@ class ConfigFileGenerator(Node):
         file_path = self.create_config()
         self._send_load_config(file_path)
         return response
+
+    # Sensor display generators moved to class methods
+    def get_sensor_color(self, sensor_type, index=0):
+        """Generate appropriate colors for different sensor types"""
+        if sensor_type == 'sensor_msgs/msg/Imu':
+            return "204; 51; 204"  # Consistent purple for IMU
+        elif 'FootContact' in sensor_type:
+            return "255; 140; 0"    # Consistent orange for FootContact
+        else:
+            # Generate unique colors for LaserScan and PointCloud
+            r = (index * 67) % 200 + 55
+            g = (index * 101) % 200 + 55
+            b = (index * 173) % 200 + 55
+            return f"{r}; {g}; {b}"
+
+    def create_laser_scan_display(self, topic_name, sensor_color):
+        """Create LaserScan display configuration"""
+        return {
+            'Class': 'rviz_default_plugins/LaserScan',
+            'Name': f'LaserScan: {os.path.basename(topic_name)}',
+            'Enabled': True,
+            'Topic': {
+                'Value': topic_name,
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Best Effort',
+                'Durability Policy': 'Volatile',
+            },
+            'Color': sensor_color,
+            'Size (m)': 0.05,
+            'Style': 'Points',
+            'Alpha': 1.0,
+            'Decay Time': 0.0
+        }
+
+    def create_pointcloud_display(self, topic_name, sensor_color):
+        """Create PointCloud2 display configuration"""
+        return {
+            'Class': 'rviz_default_plugins/PointCloud2',
+            'Name': f'PointCloud: {os.path.basename(topic_name)}',
+            'Enabled': True,
+            'Topic': {
+                'Value': topic_name,
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Best Effort',
+                'Durability Policy': 'Volatile',
+            },
+            'Color': sensor_color,
+            'Size (m)': 0.03,
+            'Style': 'Flat Squares',
+            'Alpha': 1.0,
+            'Decay Time': 0.0
+        }
+
+    def create_pointcloud_legacy_display(self, topic_name, sensor_color):
+        """Create PointCloud (legacy) display configuration"""
+        return {
+            'Class': 'rviz_default_plugins/PointCloud',
+            'Name': f'PointCloud: {os.path.basename(topic_name)}',
+            'Enabled': True,
+            'Topic': {
+                'Value': topic_name,
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Best Effort',
+                'Durability Policy': 'Volatile',
+            },
+            'Color': sensor_color,
+            'Size (m)': 0.03,
+            'Alpha': 1.0,
+            'Decay Time': 0.0
+        }
+    
+    def create_imu_display(self, topic_name, sensor_color):
+        """Create IMU display configuration"""
+        return {
+            'Class': 'rviz_default_plugins/Imu',
+            'Name': f'IMU: {os.path.basename(topic_name)}',
+            'Enabled': True,
+            'Topic': {
+                'Value': topic_name,
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Best Effort',
+                'Durability Policy': 'Volatile',
+            },
+            'Axes Length': 0.3,
+            'Axes Radius': 0.03,
+            'Color': sensor_color
+        }
+        
+    def create_footcontact_display(self, topic_name, sensor_color):
+        """Create FootContact display configuration"""
+        return {
+            'Class': 'rviz_default_plugins/Marker',
+            'Name': f'FootContact: {os.path.basename(topic_name)}',
+            'Enabled': True,
+            'Topic': {
+                'Value': topic_name,
+                'Depth': 5,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Best Effort',
+                'Durability Policy': 'Volatile',
+            },
+            'Color': sensor_color
+        }
 
     def _create_robot_group(self, robot_name):
         """Creates a Robot Group with all visualizations for a robot"""
@@ -296,39 +403,70 @@ class ConfigFileGenerator(Node):
         robot_group['Displays'].append(footprint_display)
 
         # SENSORS
-
-        # TODO move this to the class
-        # Add laser scan visualization
-        def laser_display(laser_topic):
-            return {
-                'Class': 'rviz_default_plugins/LaserScan',
-                'Name': 'LaserScan',
-                'Enabled': True,
-                'Topic': {
-                    'Value': laser_topic,
-                    'Depth': 5,
-                    'History Policy': 'Keep Last',
-                    'Reliability Policy': 'Best Effort',
-                    'Durability Policy': 'Volatile',
-                },
-                'Color': color,
-                'Size (m)': 0.05,
-                'Style': 'Points',
-                'Alpha': 1.0,
-                'Decay Time': 0.0
-            }
-
+        # Map of message types to display creator methods - include all sensor types
         sensor_displays = {
-            'sensor_msgs/msg/LaserScan': laser_display
+            'sensor_msgs/msg/LaserScan': self.create_laser_scan_display,
+            'sensor_msgs/msg/PointCloud2': self.create_pointcloud_display,
+            'sensor_msgs/msg/PointCloud': self.create_pointcloud_legacy_display,
+            #'sensor_msgs/msg/Imu': self.create_imu_display,                          # will be optimised soon
+            #'foot_contact_msgs/msg/FootContact': self.create_footcontact_display
+            # Add more sensor types as needed
         }
 
-        robot_ns = os.path.join('/task_generator_node', robot_name)
-        robot_topics = (t for t in self.topics if t[0].startswith(robot_ns))
+        # Track sensor counts for color assignment
+        sensor_counts = {}
 
+        # Improved topic discovery for robot sensors
+        robot_topics = []
+        
+        # Try to discover topics using node-based approach first
+        try:
+            # Get all nodes in the system
+            node_names_and_namespaces = self.get_node_names_and_namespaces()
+            
+            # Filter for nodes related to this robot
+            robot_nodes = []
+            robot_namespace = f'/task_generator_node/{robot_name}'
+            
+            for node_name, node_namespace in node_names_and_namespaces:
+                if node_namespace == robot_namespace:
+                    robot_nodes.append((node_name, node_namespace))
+            
+            self.get_logger().info(f"Found {len(robot_nodes)} nodes for robot {robot_name}")
+            
+            # Get topics from each robot node
+            for node_name, node_namespace in robot_nodes:
+                try:
+                    node_topics = self.get_publisher_names_and_types_by_node(node_name, node_namespace)
+                    robot_topics.extend(node_topics)
+                except Exception as e:
+                    self.get_logger().debug(f"Failed to get topics from {node_namespace}/{node_name}: {e}")
+        except Exception as e:
+            self.get_logger().warning(f"Failed to get topics by node: {e}")
+
+        # Fall back to namespace filtering if node-based discovery failed
+        if not robot_topics:
+            robot_ns = f'/task_generator_node/{robot_name}'
+            robot_topics = [(t, types) for t, types in self.topics if t.startswith(robot_ns)]
+            self.get_logger().info(f"Found {len(robot_topics)} topics using namespace filtering")
+
+        # Add displays for all discovered sensors
         for topic_name, topic_types in robot_topics:
-            matched_display = next((sensor_displays[t] for t in topic_types if t in sensor_displays), None)
-            if matched_display is not None:
-                robot_group['Displays'].append(matched_display(topic_name))
+            for topic_type in topic_types:
+                if topic_type in sensor_displays:
+                    # Track count for this sensor type (for color assignment)
+                    if topic_type not in sensor_counts:
+                        sensor_counts[topic_type] = 0
+                    else:
+                        sensor_counts[topic_type] += 1
+                    
+                    # Get display with appropriate color
+                    display_creator = sensor_displays[topic_type]
+                    sensor_color = self.get_sensor_color(topic_type, sensor_counts[topic_type])
+                    display = display_creator(topic_name, sensor_color)
+                    
+                    robot_group['Displays'].append(display)
+                    break  # Use first matching type
 
         return robot_group
 
