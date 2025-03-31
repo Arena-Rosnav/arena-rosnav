@@ -3,7 +3,7 @@
 sudo apt install libfuse2
 
 if [ ! -d ~/isaacsim-4.2.0 ]; then
-    wget --content-disposition "https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone%404.5.0-rc.36%2Brelease.19112.f59b3005.gl.linux-x86_64.release.zip" -O isaac-sim.zip
+    wget --content-disposition "https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone%404.2.0-rc.18%2Brelease.16044.3b2ed111.gl.linux-x86_64.release.zip" -O isaac-sim.zip
     mkdir -p ~/isaacsim-4.2.0
     unzip isaac-sim.zip -d ~/isaacsim-4.2.0
     rm isaac-sim.zip
