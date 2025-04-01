@@ -254,7 +254,7 @@ class RobotManager(NodeInterface):
         
         self._goal_start_time = self.node.get_clock().now().nanoseconds / 1e9
         self._goal_timer = self.node.create_timer(
-            1.0,
+            3.0,
             self._publish_goal_callback,
             callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
         )
