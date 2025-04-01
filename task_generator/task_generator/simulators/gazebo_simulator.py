@@ -505,6 +505,15 @@ class GazeboSimulator(BaseSimulator):
         #         remappings=[('/joint_states', '/joint_states')]
         #     )
         # )
+        # launch_description.add_action(
+        #     launch_ros.actions.Node(
+        #         package="tf2_ros",
+        #         executable="static_transform_publisher",
+        #         name="map_to_odomframe_publisher",
+        #         arguments=[str(robot.position.x), str(robot.position.y), "0", "0", "0", str(robot.position.orientation), "map", robot.frame + "odom"],
+        #         parameters=[{'use_sim_time': True}],
+        #     ),
+        # )
         self.node.do_launch(launch_description)
 
     def _robot_initialpose(self, robot: RobotProps):
