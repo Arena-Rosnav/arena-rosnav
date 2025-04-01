@@ -85,6 +85,7 @@ class RobotManager(NodeInterface):
 
         self._robot = robot
         self._position = self._start_pos
+        self._goal_timer = None
 
     def set_up_robot(self):
         self._robot = attrs.evolve(
@@ -208,12 +209,55 @@ class RobotManager(NodeInterface):
             and angle_to_goal < self._goal_tolerance_angle
         )
 
-    def _publish_goal(self, goal: PositionOrientation):
-        goal_msg = geometry_msgs.PoseStamped()
-        goal_msg.header.frame_id = "map"
-        goal_msg.pose = goal.to_pose()
+    def _publish_goal_callback(self):
+        from geometry_msgs.msg import PoseStamped
+        current_time = self.node.get_clock().now().nanoseconds / 1e9
+        if (current_time - self._goal_start_time) >= 15.0:
+            self.node.get_logger().info("Goal publishing duration reached, stopping")
+            if self._goal_timer is not None:
+                self._goal_timer.cancel()
+                self._goal_timer.destroy()
+                self._goal_timer = None
+            return
 
+        if self._is_goal_reached:
+            self.node.get_logger().info("Goal reached, stopping goal publication")
+            if self._goal_timer is not None:
+                self._goal_timer.cancel()
+                self._goal_timer.destroy()
+                self._goal_timer = None
+            return
+
+        goal_msg = PoseStamped()
+        goal_msg.header.frame_id = "map"
+        goal_msg.header.stamp = self.node.get_clock().now().to_msg()
+        goal_msg.pose = self._goal_pos.to_pose()
         self._goal_pub.publish(goal_msg)
+
+    def _publish_goal(self, goal: PositionOrientation):
+        #only way to circumvent amcl absolutely trolling us is to create this loop 
+        from geometry_msgs.msg import PoseStamped
+        self.node.get_logger().info(
+            f"Publishing goal: x={goal.x}, y={goal.y}, orientation={goal.orientation}")
+        
+        self._goal_pos = goal
+        
+        if self._goal_timer is not None:
+            self._goal_timer.cancel()
+            self._goal_timer.destroy()
+
+        goal_msg = PoseStamped()
+        goal_msg.header.frame_id = "map"
+        goal_msg.header.stamp = self.node.get_clock().now().to_msg()
+        goal_msg.pose = goal.to_pose()
+        self._goal_pub.publish(goal_msg)
+        
+        self._goal_start_time = self.node.get_clock().now().nanoseconds / 1e9
+        self._goal_timer = self.node.create_timer(
+            1.0,
+            self._publish_goal_callback,
+            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
+        )
 
     def _launch_robot(self):
         self.node.get_logger().warn(f"START WITH MODEL {self.name}")
@@ -301,5 +345,8 @@ class RobotManager(NodeInterface):
         """
         Destroy robot and remove from simulation and navigation stack.
         """
+        if self._goal_timer is not None:
+            self._goal_timer.cancel()
+            self._goal_timer.destroy()
         self._entity_manager.remove_robot(self.name)
         # TODO kill node in navigation stack
