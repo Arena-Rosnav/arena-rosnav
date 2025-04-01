@@ -29,7 +29,7 @@ class Utils:
 
     class Displays:
         @classmethod
-        def laser_scan(cls, topic_name, sensor_color):
+        def laser_scan(cls, topic_name, sensor_color, queue_size=20):
             """Create LaserScan display configuration"""
             return {
                 'Class': 'rviz_default_plugins/LaserScan',
@@ -37,7 +37,7 @@ class Utils:
                 'Enabled': True,
                 'Topic': {
                     'Value': topic_name,
-                    'Depth': 5,
+                    'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Best Effort',
                     'Durability Policy': 'Volatile',
@@ -50,7 +50,7 @@ class Utils:
             }
 
         @classmethod
-        def pointcloud(cls, topic_name, sensor_color):
+        def pointcloud(cls, topic_name, sensor_color, queue_size=20):
             """Create PointCloud2 display configuration"""
             return {
                 'Class': 'rviz_default_plugins/PointCloud2',
@@ -58,7 +58,7 @@ class Utils:
                 'Enabled': True,
                 'Topic': {
                     'Value': topic_name,
-                    'Depth': 5,
+                    'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Best Effort',
                     'Durability Policy': 'Volatile',
@@ -71,7 +71,7 @@ class Utils:
             }
 
         @classmethod
-        def pointcloud_legacy(cls, topic_name, sensor_color):
+        def pointcloud_legacy(cls, topic_name, sensor_color, queue_size=20):
             """Create PointCloud (legacy) display configuration"""
             return {
                 'Class': 'rviz_default_plugins/PointCloud',
@@ -79,7 +79,7 @@ class Utils:
                 'Enabled': True,
                 'Topic': {
                     'Value': topic_name,
-                    'Depth': 5,
+                    'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Best Effort',
                     'Durability Policy': 'Volatile',
@@ -91,7 +91,7 @@ class Utils:
             }
 
         @classmethod
-        def imu(cls, topic_name, sensor_color):
+        def imu(cls, topic_name, sensor_color, queue_size=20):
             """Create IMU display configuration"""
             return {
                 'Class': 'rviz_default_plugins/Imu',
@@ -99,7 +99,7 @@ class Utils:
                 'Enabled': True,
                 'Topic': {
                     'Value': topic_name,
-                    'Depth': 5,
+                    'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Best Effort',
                     'Durability Policy': 'Volatile',
@@ -110,7 +110,7 @@ class Utils:
             }
 
         @classmethod
-        def footcontact(cls, topic_name, sensor_color):
+        def footcontact(cls, topic_name, sensor_color, queue_size=20):
             """Create FootContact display configuration"""
             return {
                 'Class': 'rviz_default_plugins/Marker',
@@ -118,7 +118,7 @@ class Utils:
                 'Enabled': True,
                 'Topic': {
                     'Value': topic_name,
-                    'Depth': 5,
+                    'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Best Effort',
                     'Durability Policy': 'Volatile',
@@ -127,14 +127,14 @@ class Utils:
             }
 
         @classmethod
-        def robot_footprint(cls, topic, color):
+        def robot_footprint(cls, topic, color, queue_size=20):
             return {
                 'Class': 'rviz_default_plugins/Polygon',
                 'Name': 'Robot Footprint',
                 'Enabled': True,
                 'Topic': {
                     'Value': topic,
-                    'Depth': 5,
+                    'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Reliable',
                     'Durability Policy': 'Volatile',
@@ -144,14 +144,14 @@ class Utils:
             }
 
         @classmethod
-        def local_path(cls, topic):
+        def local_path(cls, topic, queue_size=20):
             return {
                 'Class': 'rviz_default_plugins/Path',
                 'Name': 'Local Plan',
                 'Enabled': True,
                 'Topic': {
                     'Value': topic,
-                    'Depth': 5,
+                    'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Reliable',
                     'Durability Policy': 'Volatile',
@@ -161,14 +161,14 @@ class Utils:
             }
 
         @classmethod
-        def global_path(cls, topic, color):
+        def global_path(cls, topic, color, queue_size=20):
             return {
                 'Class': 'rviz_default_plugins/Path',
                 'Name': 'Global Plan',
                 'Enabled': True,
                 'Topic': {
                     'Value': topic,
-                    'Depth': 5,
+                    'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Reliable',
                     'Durability Policy': 'Volatile',
@@ -178,14 +178,14 @@ class Utils:
             }
 
         @classmethod
-        def global_costmap(cls, topic):
+        def global_costmap(cls, topic, queue_size=20):
             return {
                 'Class': 'rviz_default_plugins/Map',
                 'Name': 'Global Costmap',
                 'Enabled': True,
                 'Topic': {
                     'Value': topic,
-                    'Depth': 5,
+                    'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Reliable',
                     'Durability Policy': 'Transient Local',
@@ -196,14 +196,14 @@ class Utils:
             }
 
         @classmethod
-        def local_costmap(cls, topic):
+        def local_costmap(cls, topic, queue_size=20):
             return {
                 'Class': 'rviz_default_plugins/Map',
                 'Name': 'Local Costmap',
                 'Enabled': True,
                 'Topic': {
                     'Value': topic,
-                    'Depth': 5,
+                    'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Reliable',
                     'Durability Policy': 'Transient Local',
@@ -214,14 +214,14 @@ class Utils:
             }
 
         @classmethod
-        def odom(cls, topic, color):
+        def odom(cls, topic, color, queue_size=20):
             return {
                 'Class': 'rviz_default_plugins/Odometry',
                 'Name': 'Odometry',
                 'Enabled': True,
                 'Topic': {
                     'Value': topic,
-                    'Depth': 5,
+                    'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Reliable',
                     'Durability Policy': 'Volatile',
@@ -238,7 +238,7 @@ class Utils:
             }
 
         @classmethod
-        def robot_model(cls, robot_name):
+        def robot_model(cls, robot_name, queue_size=20):
             return {
                 'Class': 'rviz_default_plugins/RobotModel',
                 'Name': 'Robot Model',
@@ -246,7 +246,7 @@ class Utils:
                 'TF Prefix': robot_name,
                 'Description Topic': {
                     'Value': f'/task_generator_node/{robot_name}/robot_description',
-                    'Depth': 5,
+                    'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Reliable',
                     'Durability Policy': 'Volatile',

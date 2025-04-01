@@ -80,7 +80,7 @@ class ConfigFileGenerator(Node):
             'Name': 'Map',
             'Topic': {
                 'Value': '/map',
-                'Depth': 5,
+                'Depth': 20,
                 'History Policy': 'Keep Last',
                 'Reliability Policy': 'Reliable',
                 'Durability Policy': 'Transient Local',
