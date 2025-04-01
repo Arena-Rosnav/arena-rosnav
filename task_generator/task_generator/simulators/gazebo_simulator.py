@@ -6,11 +6,10 @@ import attrs
 import launch
 import launch_ros
 import rclpy
-from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, TransformStamped
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from ros_gz_interfaces.msg import Entity, EntityFactory, WorldControl
 from ros_gz_interfaces.srv import (ControlWorld, DeleteEntity, SetEntityPose,
                                    SpawnEntity)
-from tf2_ros import StaticTransformBroadcaster
 
 from task_generator.shared import (EntityProps, Model, ModelType, ModelWrapper,
                                    PositionOrientation, RobotProps, Wall)
@@ -88,8 +87,6 @@ class GazeboSimulator(BaseSimulator):
         super().__init__(namespace=namespace)
 
         self._set_up_services()
-        
-        self._tf_broadcaster = StaticTransformBroadcaster(self.node)
 
         self.node.get_logger().info(
             f"Initializing GazeboSimulator with namespace: {namespace}")
@@ -140,9 +137,7 @@ class GazeboSimulator(BaseSimulator):
 
             if result.success and isinstance((entity := self.entities.get(name, None)), RobotProps):
                 entity = attrs.evolve(entity, position=position)
-                self.entities[name] = entity
                 self._robot_initialpose(entity)
-                self._publish_transform(entity)
 
             return result.success
 
@@ -165,7 +160,6 @@ class GazeboSimulator(BaseSimulator):
                 model_description = model_description.replace("jackal_default_name", entity.name)
                 self._robot_initialpose(entity)
                 self._robot_bridge(entity, model_description)
-                self._publish_transform(entity)
 
             request.entity_factory.sdf = model_description
 
@@ -527,21 +521,3 @@ class GazeboSimulator(BaseSimulator):
             qos_profile=1,
             callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         ).publish(pose)
-
-    def _publish_transform(self, robot: RobotProps):
-        """Publish the map to robot_frame + odom transform dynamically."""
-        transform = TransformStamped()
-        transform.header.stamp = self.node.get_clock().now().to_msg()
-        transform.header.frame_id = "map"
-        transform.child_frame_id = robot.frame + "odom"
-        transform.transform.translation.x = float(robot.position.x)
-        transform.transform.translation.y = float(robot.position.y)
-        transform.transform.translation.z = 0.0
-        transform.transform.rotation.z = math.sin(robot.position.orientation / 2.0)
-        transform.transform.rotation.w = math.cos(robot.position.orientation / 2.0)
-        transform.transform.rotation.x = 0.0
-        transform.transform.rotation.y = 0.0
-
-        self._tf_broadcaster.sendTransform(transform)
-        self.node.get_logger().info(
-            f"Published updated transform for {robot.name}: x={robot.position.x}, y={robot.position.y}, orientation={robot.position.orientation}")
