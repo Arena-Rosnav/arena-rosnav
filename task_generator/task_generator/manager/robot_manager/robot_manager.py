@@ -212,7 +212,7 @@ class RobotManager(NodeInterface):
     def _publish_goal_callback(self):
         from geometry_msgs.msg import PoseStamped
         current_time = self.node.get_clock().now().nanoseconds / 1e9
-        if (current_time - self._goal_start_time) >= 15.0:
+        if (current_time - self._goal_start_time) >= 60.0:
             self.node.get_logger().info("Goal publishing duration reached, stopping")
             if self._goal_timer is not None:
                 self._goal_timer.cancel()

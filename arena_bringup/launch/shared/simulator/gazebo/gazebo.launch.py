@@ -94,8 +94,14 @@ def generate_launch_description():
     ]
     # GZ_CONFIG_PATH = ":".join(GZ_CONFIG_PATHS)
     GZ_CONFIG_PATH = "/usr/share/gz"
+    
+    for root, dirs, files in os.walk(os.path.join(ss_root, "gazebo_models")):
+        for dir_name in dirs:
+            if 'hospital' in dir_name.lower():
+                GZ_SIM_RESOURCE_PATHS.append(os.path.join(root, dir_name))
 
     GZ_SIM_RESOURCE_PATHS_COMBINED = ":".join(GZ_SIM_RESOURCE_PATHS)
+    
 
     # Update environment variables
     model_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
