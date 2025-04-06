@@ -1,6 +1,7 @@
 import math
 import traceback
 import typing
+import time
 
 import attrs
 import launch
@@ -137,7 +138,44 @@ class GazeboSimulator(BaseSimulator):
 
             if result.success and isinstance((entity := self.entities.get(name, None)), RobotProps):
                 entity = attrs.evolve(entity, position=position)
-                self._robot_initialpose(entity)
+                self.entities[name] = entity
+                
+                max_attempts = 3
+                attempt = 1
+                initial_pose_triggered = False
+                
+                while attempt <= max_attempts and not initial_pose_triggered:
+                    self.node.get_logger().info(
+                        f"Attempt {attempt}/{max_attempts}: Triggering initial pose update for robot {name}"
+                    )
+                    try:
+                        self._robot_initialpose(entity)
+                        initial_pose_triggered = True
+                        self.node.get_logger().info(
+                            f"Initial pose update for {name} succeeded on attempt {attempt}"
+                        )
+                    except Exception as e:
+                        self.node.get_logger().error(
+                            f"Attempt {attempt}/{max_attempts} failed for {name}: {str(e)}"
+                        )
+                        traceback.print_exc()
+                        if attempt < max_attempts:
+                            self.node.get_logger().info("Waiting 1 second before retrying...")
+                            time.sleep(1)
+                        attempt += 1
+                
+                if not initial_pose_triggered:
+                    self.node.get_logger().error(
+                        f"Failed to set initial pose for {name} after {max_attempts} attempts"
+                    )
+                
+                self.node.get_logger().info(f"Final attempt: Setting initial pose for {name}")
+                try:
+                    self._robot_initialpose(entity)
+                    self.node.get_logger().info(f"Final initial pose update for {name} succeeded")
+                except Exception as e:
+                    self.node.get_logger().error(f"Final initial pose update for {name} failed: {str(e)}")
+                    traceback.print_exc()
 
             return result.success
 
