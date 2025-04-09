@@ -9,7 +9,7 @@ def generate_launch_description():
     # Current path to the workspace
     entity_manager = LaunchArgument(
         name='entity_manager',
-        choices=['dummy', 'hunav'],
+        choices=['dummy', 'hunav','isaac'],
     )
 
     launch_entity_manager = SelectAction(entity_manager.substitution)

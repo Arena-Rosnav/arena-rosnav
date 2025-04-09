@@ -22,6 +22,7 @@ class Constants:
     class EntityManager(Enum):
         DUMMY = "dummy"
         HUNAV = "hunav"  # Added Hunavsim
+        ISAAC = 'isaac'
 
     class TaskMode:
         @enum.unique

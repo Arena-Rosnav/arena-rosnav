@@ -43,7 +43,7 @@ fi
 
 if [ -f "$INSTALLED" ] && grep -q "isaac.sh" "$INSTALLED"; then
     if [ -z ${ISAAC_PATH+x} ] ; then
-        . src/arena/arena-rosnav/isaac_setup.bash
+        source ~/isaacsim-4.2.0/setup.bash
     fi
 fi
 

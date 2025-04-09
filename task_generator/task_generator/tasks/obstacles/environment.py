@@ -378,7 +378,7 @@ class TM_Environment(TM_Obstacles):
         with open(environment_path) as f:
             environment = yaml.safe_load(f)
             self.node.get_logger().info("Environment:")
-            print(environment)
+            # print(environment)
 
         static_obstacles: List[Obstacle] = []
         dynamic_obstacles: List[DynamicObstacle] = []
@@ -458,7 +458,7 @@ class TM_Environment(TM_Obstacles):
                                 obstacle_x = x + rot_x
                                 obstacle_y = y + rot_y
 
-                                obs_name = f"G_{group_name}_{n_groups}_{entity['model']}_{j}"
+                                obs_name = f"G_{group_name}_{idx}_{n_groups}_{entity['model']}_{j}"
                                 new_obstacle = Obstacle(
                                     name=obs_name,
                                     position=PositionOrientation(x=obstacle_x, y=obstacle_y, orientation=rot_theta),
@@ -466,6 +466,27 @@ class TM_Environment(TM_Obstacles):
                                     extra={},
                                 )
                                 static_obstacles.append(new_obstacle)
+                            for g, entity in enumerate(group_dynamic_entites):
+                                ex_off, ey_off, e_theta = entity["position"]
+
+                                radians = math.radians(rotation_deg)
+                                rot_x = ex_off * math.cos(radians) - ey_off * math.sin(radians)
+                                rot_y = ex_off * math.sin(radians) + ey_off * math.cos(radians)
+                                rot_theta = math.fmod(e_theta + rotation_deg, 360) / 180 * math.pi
+
+                                obstacle_x = x + rot_x
+                                obstacle_y = y + rot_y
+
+                                obs_name = f"G_{group_name}_{idx}_{n_groups}_{entity['model']}_{j}"
+                                new_obstacle = DynamicObstacle(
+                                    name=obs_name,
+                                    position=PositionOrientation(x=obstacle_x, y=obstacle_y, orientation=rot_theta),
+                                    model=self._PROPS.model_loader.bind(entity["model"]),
+                                    waypoints=entity['waypoints'],
+                                    extra={},
+                                )
+                                dynamic_obstacles.append(new_obstacle)
+
                             self._mark_region_occupied(
                                 occupancy_grid,
                                 x, y,
@@ -478,19 +499,10 @@ class TM_Environment(TM_Obstacles):
                             n_groups += 1
                     x += step_x
                 y += step_y
-        print(static_obstacles)
+        print(dynamic_obstacles)
         return _ParsedConfig(
             static=static_obstacles,
-            dynamic=[
-                # DynamicObstacle.parse(
-                #     obs,
-                #     model=self._PROPS.dynamic_model_loader.bind(
-                #         obs.get("model", Constants.DEFAULT_PEDESTRIAN_MODEL))
-                # )
-                # for obs
-                # in
-                # environment.get("obstacles", {}).get("dynamic", [])
-            ]
+            dynamic=dynamic_obstacles
         )
 
     def reset(self, **kwargs) -> Obstacles:
