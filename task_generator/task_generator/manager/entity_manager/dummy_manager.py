@@ -70,4 +70,4 @@ class DummyEntityManager(EntityManager):
     def move_robot(self, name: str, position: PositionOrientation):
         self.__logger.debug(
             f'moving robot {name} to {repr(position)}')
-        self._simulator.move_entity(name,position,position.orientation)                                                                                                                                                                                                   
+        self._simulator.move_entity(name,position)                                                                                                                                                                                                   
