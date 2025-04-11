@@ -4,7 +4,6 @@ from builtin_interfaces.msg import Time
 from task_generator.shared import PositionOrientation
 from task_generator.tasks import Task
 from task_generator.tasks.modules import TM_Module
-from task_generator.utils.geometry import euler_from_quaternion
 
 import geometry_msgs.msg as geometry_msgs
 

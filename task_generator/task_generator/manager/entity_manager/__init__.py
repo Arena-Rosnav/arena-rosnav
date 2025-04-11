@@ -1,4 +1,3 @@
-import typing
 import rclpy
 import rclpy.publisher
 import rclpy.node
@@ -113,3 +112,10 @@ def lazy_hunavsim():
 
     from .hunav_manager.hunav_manager import HunavManager
     return HunavManager
+
+
+@EntityManagerRegistry.register(Constants.EntityManager.ISAAC)
+def isaacsim():
+
+    from .isaac_manager import IsaacEntityManager
+    return IsaacEntityManager

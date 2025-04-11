@@ -3,6 +3,8 @@ import functools
 import os
 import subprocess
 import tempfile
+import xml.etree.ElementTree as ET
+import re
 from typing import Collection, Dict, Optional, Set, Tuple, Type
 
 from task_generator.shared import Model, ModelType, ModelWrapper
@@ -175,11 +177,39 @@ class _ModelLoader_URDF(_ModelLoader):
             with open(model_path, 'w') as f:
                 f.write(model_desc)
 
+            base_dir = os.path.dirname(model_path)
+            tree = ET.parse(model_path)
+            root = tree.getroot()
+            
+            prefix = "package://jackal_description"
+    
+            # Iterate over every element in the XML tree and update 'filename' attributes
+            for elem in root.iter():
+                if 'filename' in elem.attrib:
+                    original_path = elem.attrib['filename']
+                    # Remove the specific package prefix if present
+                    if original_path.startswith(prefix):
+                        # Remove the prefix and any leading '/'
+                        new_relative = original_path[len(prefix):].lstrip('/')
+                        original_path = new_relative
+                        print(f"Removed prefix: {prefix} -> New relative path: {original_path}")
+                    # Convert to absolute path if it's not already
+                    if not os.path.isabs(original_path):
+                        abs_path = os.path.abspath(os.path.join(base_dir, original_path))
+                        elem.attrib['filename'] = abs_path
+                        print(f"Updated relative path to absolute: {original_path} -> {abs_path}")
+
+            # Write the updated XML tree to a temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".urdf", mode="wb") as tmp:
+                tree.write(tmp, encoding="utf-8", xml_declaration=True)
+                temp_filepath = tmp.name
+                print(f"Converted URDF saved to temporary file: {temp_filepath}")
+            
             return Model(
                 type=ModelType.URDF,
                 name=model,
                 description=model_desc,
-                path=model_path
+                path=temp_filepath
             )
 
         except subprocess.CalledProcessError as e:
@@ -214,19 +244,63 @@ class _ModelLoader_USD(_ModelLoader):
     def convert(cls, model_dir: str, model: Model, **kwargs) -> Model | None:
         if model.type == ModelType.SDF:
             try:
+                # print(model_dir)
+                sdf_model_path = os.path.join(model_dir, model.name, "sdf", f"{model.name}.sdf")
+                materials_path = os.path.join(model_dir,model.name,'sdf','materials')
+                tree = ET.parse(sdf_model_path)
+                root = tree.getroot()
+                # First pass: resolve package:// URIs
+                model_uri_pattern = re.compile(r'^model://([^/]+)(.*)$')
+                package_uri_pattern = re.compile(r'^package://([^/]+)(.*)$')
+                for uri_elem in root.iter():
+                    if uri_elem.text:
+                        text = uri_elem.text.strip()
+                        match = model_uri_pattern.match(text)
+                        if match:
+                            package_name = match.group(1)
+                            remaining_path = match.group(2)
+                            # Get the absolute path for the package share directory.
+                            # Replace the package URI with the resolved directory plus remaining path.
+                            new_uri = model_dir + '/' + model.name  + remaining_path
+                            print(new_uri)
+                            # uri_elem.text = new_uri
+                            if (new_uri.endswith('.dae') or new_uri.endswith('.DAE')) and os.path.exists(new_uri):
+                                new_dae_path = Utils.process_dae(new_uri, materials_path)
+                                uri_elem.text = new_dae_path
+                            elif new_uri.endswith('.obj') and os.path.exists(new_uri):
+                                new_obj_path = Utils.process_obj(new_uri, materials_path)
+                                uri_elem.text = new_obj_path
+                        else:
+                            match = package_uri_pattern.match(text)
+                            if match:
+                                package_name = match.group(1)
+                                remaining_path = match.group(2)
+                                # Get the absolute path for the package share directory.
+                                # Replace the package URI with the resolved directory plus remaining path.
+                                new_uri = model_dir + '/' +model.name + remaining_path
+                                print(new_uri)
+                                if (new_uri.endswith('.dae') or new_uri.endswith('.DAE')) and os.path.exists(new_uri):
+                                    new_dae_path = Utils.process_dae(new_uri, materials_path)
+                                    uri_elem.text = new_dae_path
+                                elif new_uri.endswith('.obj') and os.path.exists(new_uri):
+                                    new_obj_path = Utils.process_obj(new_uri, materials_path)
+                                    uri_elem.text = new_obj_path
                 model_path = os.path.join(model_dir, model.name, "usd", f"{model.name}.usd")
                 os.makedirs(os.path.dirname(model_path), exist_ok=True)
-                if os.path.islink(model_path) and not os.path.exists(model_path): # broken symlink
+                if os.path.islink(model_path) and not os.path.exists(model_path):  # broken symlink
                     os.unlink(model_path)
 
                 ARENA_WS_DIR = Utils.get_arena_ws()
 
                 env = os.environ.copy()
                 env['ARENA_WS_DIR'] = ARENA_WS_DIR
-                with tempfile.NamedTemporaryFile('w') as f:
-                    f.write(model.description)
+                with tempfile.NamedTemporaryFile(delete=False,mode='w') as f:
+                    tree.write(f,encoding='unicode')
                     f.flush()
+                    temp_file_path = f.name
+                    print("Temporary SDF file for converter:", temp_file_path)
                     subprocess.check_output(
+
                         [
                             f'{ARENA_WS_DIR}/src/arena/arena-rosnav/tools/sdf2usd',
                             f.name,
@@ -236,6 +310,17 @@ class _ModelLoader_USD(_ModelLoader):
                         # shell=True,
                     )
 
+                from pxr import Usd
+                stage = Usd.Stage.Open(model_path)
+                for prim in stage.Traverse():
+                    if prim.GetTypeName() == "Xform":
+                        first_xform_prim = prim
+                        break
+                prim_path = first_xform_prim.GetPath()
+                # print(prim_path)
+                stage.SetDefaultPrim(first_xform_prim)
+                root_layer = stage.GetRootLayer()
+                root_layer.Save()
                 return cls.load(model_dir, model.name, **kwargs)
 
             except Exception:

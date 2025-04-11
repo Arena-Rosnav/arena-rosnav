@@ -1,18 +1,17 @@
 import functools
-import typing
-import attr
+import attrs
 
 import builtin_interfaces.msg
 
 
 @functools.total_ordering
-@attr.define
+@attrs.define
 class Time:
     """
     Wrapper for builtin_interfaces.msg.Time
     """
-    sec: int = attr.field(converter=int, default=0)
-    nanosec: int = attr.field(converter=int, default=0)
+    sec: int = attrs.field(converter=int, default=0)
+    nanosec: int = attrs.field(converter=int, default=0)
 
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, (type(self), builtin_interfaces.msg.Time)):

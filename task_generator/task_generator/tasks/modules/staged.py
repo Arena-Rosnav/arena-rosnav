@@ -1,4 +1,3 @@
-import dataclasses
 import os
 from typing import Any, Dict, NamedTuple, Optional
 
@@ -9,6 +8,8 @@ from filelock import FileLock
 from map_generator.constants import MAP_GENERATOR_NS
 from task_generator.shared import Namespace, rosparam_get
 from task_generator.tasks.modules import TM_Module
+
+import attrs
 
 
 class Stage(NamedTuple):
@@ -34,7 +35,7 @@ StageIndex = int
 Stages = Dict[StageIndex, Stage]
 
 
-@dataclasses.dataclass
+@attrs.define()
 class Config:
     stages: Stages
     starting_index: StageIndex

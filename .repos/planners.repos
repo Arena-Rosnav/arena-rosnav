@@ -1,0 +1,31 @@
+repositories:
+  # dependencies
+  planners/deps/nav2py:
+    type: git
+    url: https://github.com/voshch/nav2py
+    version: humble
+  planners/deps/ament_cmake_venv:
+    type: git
+    url: https://github.com/voshch/ament_cmake_venv
+    version: humble
+  planners/deps/ament_cmake_venv_uv:
+    type: git
+    url: https://github.com/voshch/ament_cmake_venv_uv
+    version: humble
+  planners/CrowdNav_Prediction_AttnGraph:
+    type: git
+    url: https://github.com/hungwlor/crowdnav_arena
+    version: nav2py
+  planners/PaS_CrowdNav:
+    type: git
+    url: https://github.com/zenghjian/Nav2_PaS_CrowdNav
+    version: humble
+  planners/Drl_vo:
+    type: git
+    url: https://github.com/Tonmanhkien/Nav2_pyif_drl_vo_new_template
+    version: master
+#   #planners
+#   planners/my_planner:
+#     type: git
+#     url: https://github.com/me/my_planner
+#     version: humble

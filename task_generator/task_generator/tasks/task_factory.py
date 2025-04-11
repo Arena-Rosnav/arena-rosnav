@@ -6,7 +6,6 @@ import rclpy
 from task_generator import NodeInterface
 from task_generator.constants import Constants
 from task_generator.manager.obstacle_manager import ObstacleManager
-from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.robot_manager.robots_manager_ros import RobotsManager
 from task_generator.manager.world_manager import WorldManager
 from task_generator.shared import DefaultParameter, Namespace, PositionOrientation, rosparam_set

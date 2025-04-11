@@ -7,7 +7,7 @@ from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.world_manager.utils import World
 from task_generator.manager.world_manager import WorldManager
-from task_generator.shared import DynamicObstacle, Obstacle, Position, Wall
+from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.simulators import BaseSimulator
 
 
@@ -20,8 +20,12 @@ class ObstacleManager:
 
     id_generator: Iterator[int]
 
-    def __init__(self, namespace, world_manager,
-            simulator: BaseSimulator, entity_manager: EntityManager):
+    def __init__(
+        self,
+        namespace,
+        world_manager,
+        simulator: BaseSimulator, entity_manager: EntityManager
+    ):
         self._world_manager = world_manager
         self._namespace = namespace
         self._simulator = simulator
@@ -33,10 +37,11 @@ class ObstacleManager:
     def spawn_world_obstacles(self, world: World):
         """
         Loads given obstacles into the simulator,
-        the map file is retrieved from launch parameter "map_file"
+        the map file is retrieved from launch parameter "world"
         """
 
         walls = world.entities.walls
+
         if walls:
             self._entity_manager.spawn_walls(walls)
         self._entity_manager.spawn_obstacles(world.entities.obstacles)

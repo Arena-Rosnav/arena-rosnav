@@ -72,7 +72,7 @@ class ROSParamServer(rclpy.node.Node):
             self,
             /,
             name: str,
-            value: typing.Any,
+            value: typing.Optional[typing.Any] = None,
             *,
             type_: typing.Optional[rclpy.parameter.Parameter.Type] = None,
             parse: typing.Optional[typing.Callable[[
@@ -127,9 +127,9 @@ class ROSParamServer(rclpy.node.Node):
         typing.Set[typing.Callable[[typing.Any], bool]]
     ]
 
-    def register_param(self, param: _ROSParam, value: typing.Any, **kwargs):
+    def register_param(self, param: _ROSParam[T], value: typing.Any, **kwargs):
 
-        current_value = self.rosparam.get(
+        current_value = self.rosparam[T].get(
             param.name,
             value
         )
@@ -192,8 +192,7 @@ class ROSParamServer(rclpy.node.Node):
 
         _node: "ROSParamServer"
 
-        class _unspecified(object):
-            ...
+        _UNSET = typing.NewType('_UNSET', None)
 
         @classmethod
         def declare_safe(cls, param_name: str,
@@ -204,14 +203,19 @@ class ROSParamServer(rclpy.node.Node):
                 pass
 
         @classmethod
-        def get_unsafe(cls, param_name: str,
-                       default: typing.Optional[T] = None) -> T:
+        def get_unsafe(
+            cls,
+            param_name: str,
+            default: T | typing.Type[_UNSET] = _UNSET
+        ) -> T:
             """
             Get value of parameter.
             """
 
+            _default = default
+
             default_value = None
-            if default is not None:
+            if default is not cls._UNSET:
                 default_value = DefaultParameter(default)
 
             result = cls._node.get_parameter_or(
@@ -219,6 +223,8 @@ class ROSParamServer(rclpy.node.Node):
                 default_value,
             )
             if result.type_ is rclpy.parameter.Parameter.Type.NOT_SET:
+                if _default is not cls._UNSET:
+                    return _default
                 raise ValueError(
                     f'parameter {param_name} is unset and no default passed'
                 )
@@ -230,7 +236,7 @@ class ROSParamServer(rclpy.node.Node):
             Get value of parameter. Declare if undeclared.
             """
             cls.declare_safe(param_name, default)
-            return cls.get_unsafe(param_name)
+            return cls.get_unsafe(param_name, default)
 
         @classmethod
         def set_unsafe(cls, param_name: str, value: T) -> bool:
@@ -268,7 +274,7 @@ class ROSParamServer(rclpy.node.Node):
             cls._node._callbacks.setdefault(param_name, set()).add(callback)
 
             if value is not None:
-                callback(value)
+                cls._node.executor.create_task(lambda: callback(value))
 
     def __init__(self):
         self.rosparam._node = self

@@ -8,7 +8,6 @@ from task_generator.simulators import BaseSimulator
 class DummyEntityManager(EntityManager):
 
     _known_obstacles: KnownObstacles
-
     def __init__(self, namespace: Namespace, simulator: BaseSimulator):
         super().__init__(namespace, simulator)
         self._known_obstacles = KnownObstacles()
@@ -41,9 +40,9 @@ class DummyEntityManager(EntityManager):
                 self._simulator.move_entity(obstacle.name, obstacle.position)
             known.layer = ObstacleLayer.INUSE
 
-    def spawn_walls(self, walls: list[Wall]):
+    def spawn_walls(self, walls: typing.Collection[Wall]):
         self.__logger.debug(f'spawning {len(walls)} walls')
-        self._simulator.spawn_walls(walls)
+        self._simulator.spawn_walls(list(walls))
 
     def unuse_obstacles(self):
         self.__logger.debug(f'unusing obstacles')
@@ -71,3 +70,4 @@ class DummyEntityManager(EntityManager):
     def move_robot(self, name: str, position: PositionOrientation):
         self.__logger.debug(
             f'moving robot {name} to {repr(position)}')
+        self._simulator.move_entity(name,position)                                                                                                                                                                                                   

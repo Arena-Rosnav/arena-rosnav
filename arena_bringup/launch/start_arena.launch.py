@@ -23,13 +23,18 @@ def generate_launch_description():
         ),
         launch.actions.DeclareLaunchArgument(
             name='inter_planner',
-            default_value='bypass',
-            description='inter planner type [bypass, shortsighted, polite, aggressive, sideways]'
+            default_value='navigate_w_replanning_time',
+            description='inter planner type (Behavior Tree)'
         ),
         launch.actions.DeclareLaunchArgument(
             name='local_planner',
-            default_value='teb',
+            default_value='dwb',
             description='local planner type [teb, dwa, mpc, rlca, arena, rosnav, cohan]'
+        ),
+        launch.actions.DeclareLaunchArgument(
+            name='global_planner',
+            default_value='navfn',
+            description='global planner type [navfn]'
         ),
         launch.actions.DeclareLaunchArgument(
             name='simulator',
@@ -70,7 +75,7 @@ def generate_launch_description():
         ),
         launch.actions.DeclareLaunchArgument(
             name='record_data_dir',
-            default_value='auto:'
+            default_value=''
         ),
         launch.actions.DeclareLaunchArgument(
             name='tm_robots',
@@ -146,8 +151,12 @@ def generate_launch_description():
                 'tm_robots': launch.substitutions.LaunchConfiguration('tm_robots'),
                 'tm_modules': launch.substitutions.LaunchConfiguration('tm_modules'),
                 'robot': launch.substitutions.LaunchConfiguration('robot'),
+                'inter_planner': launch.substitutions.LaunchConfiguration('inter_planner'),
+                'local_planner': launch.substitutions.LaunchConfiguration('local_planner'),
+                'global_planner': launch.substitutions.LaunchConfiguration('global_planner'),
                 'world': launch.substitutions.LaunchConfiguration('world'),
                 'parameter_file': os.path.join(get_package_share_directory('arena_bringup'), 'configs', 'task_generator.yaml'),
+                'record_data_dir': launch.substitutions.LaunchConfiguration('record_data_dir')
             }.items(),
         ),
 
@@ -180,11 +189,14 @@ def generate_launch_description():
                 'world_file': launch.substitutions.LaunchConfiguration('world'),
             }.items()
         ),
+
+        # Start the rviz config generator which launches also rviz2 with desired config file
         launch_ros.actions.Node(
-            package="rviz2",
-            executable="rviz2",
-            name="rviz2",
-            arguments=['-d', '/path/to/default.rviz']
+            package="rviz_utils",
+            executable="rviz_config",
+            name="rviz_config_generator",
+            parameters=[{"use_sim_time": True}],
+            output="screen"
         ),
     ])
     return ld
@@ -349,44 +361,4 @@ if __name__ == '__main__':
     #             'tm_modules': launch.substitutions.LaunchConfiguration('tm_modules')
     #         },
     #         {
-    #             '/benchmark_resume': launch.substitutions.LaunchConfiguration('benchmark_resume')
-    #         },
-    #         {
-    #             'map_path': launch.substitutions.LaunchConfiguration('map_path')
-    #         },
-    #         {
-    #             'train_mode': 'false'
-    #         },
-    #         {
-    #             'show_viz': launch.substitutions.LaunchConfiguration('show_rviz')
-    #         },
-    #         {
-    #             'entity_manager': launch.substitutions.LaunchConfiguration('entity_manager')
-    #         },
-    #         {
-    #             'world_path': launch.substitutions.LaunchConfiguration('map_file')
-    #         },
-    #         {
-    #             'map_layer_path': launch.substitutions.LaunchConfiguration('map_file')
-    #         },
-    #         {
-    #             'map_file': launch.substitutions.LaunchConfiguration('map_file')
-    #         },
-    #         {
-    #             'robot_name': launch.substitutions.LaunchConfiguration('model')
-    #         }
-    #     ]
-    # ),
-    # launch.actions.IncludeLaunchDescription(
-    #     launch.launch_description_sources.PythonLaunchDescriptionSource(
-    #         os.path.join(get_package_share_directory(
-    #             'arena_bringup'), 'launch/testing/simulators/flatland.launch.py')
-    #     ),
-    #     launch_arguments={
-    #         'visualization': launch.substitutions.LaunchConfiguration('visualization'),
-    #         'rviz_file': launch.substitutions.LaunchConfiguration('rviz_file'),
-    #         'model': launch.substitutions.LaunchConfiguration('model'),
-    #         'show_rviz': launch.substitutions.LaunchConfiguration('show_rviz'),
-    #         'headless': launch.substitutions.LaunchConfiguration('headless')
-    #     }.items()
-    # ),
+    #             '/benchmark_resume': launch.substit

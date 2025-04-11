@@ -57,5 +57,5 @@ class TM_Robots(TaskMode):
                 > self.node.conf.Robot.TIMEOUT.value:
             return True
 
-        return all(
+        return len(self._PROPS.robot_managers) and all(
             robot_manager.is_done for robot_manager in self._PROPS.robot_managers.values())

@@ -1,14 +1,10 @@
-from .models import ModelLoader
-import functools
-import subprocess
-from typing import Callable, Collection, Dict, Iterator, List, Optional, Set, Tuple, Type
-
-import os
-
 import heapq
 import itertools
+from typing import Callable, Iterator, List, Tuple
 
-from task_generator.shared import ModelWrapper, Model, ModelType
+from task_generator.shared import Model, ModelType, ModelWrapper  # noqa
+
+from .models import ModelLoader  # noqa
 
 
 class NamespaceIndexer:

@@ -1,21 +1,19 @@
 from __future__ import annotations
 
-import dataclasses
 import enum
 import os
 import typing
 from typing import (Callable, Collection, Dict, List, Optional, Tuple,
                     Type, TypeVar, overload)
 
-import attr
+import attrs
 import geometry_msgs.msg as geometry_msgs
 import rclpy
 import rclpy.node
 import yaml
-from ament_index_python.packages import get_package_share_directory
 
 import rclpy.parameter
-from task_generator.utils.geometry import euler_from_quaternion
+from task_generator.utils.geometry import euler_from_quaternion, quaternion_from_euler
 
 _node: rclpy.node.Node
 
@@ -29,7 +27,7 @@ T = TypeVar("T")
 
 
 def rosparam_get(
-    cast: Type[T], param_name: str, default: typing.Optional[T]
+    cast: Type[T], param_name: str, default: T
 ) -> T:
     """
     # TODO deprecate in favor of ROSParamServer.rosparam[T].get
@@ -38,19 +36,7 @@ def rosparam_get(
     @param_name: Name of parameter on parameter server
     @default: Default value. Raise ValueError is default is unset and parameter can't be found.
     """
-    # if "task_generator_node" not in  get_nodes():
-    return _node.get_parameter_or(param_name, DefaultParameter(default)).value
-
-    if val == _notfound:
-        if isinstance(default, _UNSPECIFIED):
-            raise ValueError(f"required parameter {param_name} is not set")
-        return default
-
-    try:
-        return cast(val)
-    except ValueError as e:
-        raise ValueError(
-            f"could not cast {val} to {cast} of param {param_name}") from e
+    return _node.rosparam[cast].get(param_name, default)
 
 
 def rosparam_set(
@@ -59,9 +45,7 @@ def rosparam_set(
     """
     # TODO deprecate in favor of ROSParamServer.rosparam[T].set
     """
-    global _node
-    return _node.set_parameters(
-        [rclpy.parameter.Parameter(param_name, value=value)])[0].successful
+    return _node.rosparam.set(param_name, value)
 
 
 class Namespace(str):
@@ -119,7 +103,7 @@ class ModelType(enum.Enum):
     USD = "usd"
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class Model:
     type: ModelType
     name: str
@@ -135,33 +119,36 @@ class Model:
 
     def replace(self, **kwargs) -> Model:
         """
-        Wrapper for dataclasses.replace
+        Wrapper for attrs.evolve
         **kwargs: properties to replace
         """
-        return dataclasses.replace(self, **kwargs)
+        return attrs.evolve(self, **kwargs)
 
 
-@attr.frozen()
+@attrs.frozen()
 class Position:
     """
     2D position
     """
-    x: float = attr.field(converter=float)
-    y: float = attr.field(converter=float)
+    x: float = attrs.field(converter=float)
+    y: float = attrs.field(converter=float)
 
 
-@attr.frozen()
+@attrs.frozen()
 class PositionOrientation(Position):
     """
     2D position with 2D yaw
     """
-    orientation: float = attr.field(converter=float)
+    orientation: float = attrs.field(converter=float)
 
     @classmethod
     def from_pose(
         cls,
         pose: geometry_msgs.Pose
     ) -> "PositionOrientation":
+        """
+        parse geometry_msgs.msg.Pose
+        """
         return cls(
             x=pose.position.x,
             y=pose.position.y,
@@ -173,13 +160,40 @@ class PositionOrientation(Position):
             )[2]
         )
 
+    def to_pose(self) -> geometry_msgs.Pose:
+        """
+        return self as geometry_msgs.msg.Pose
+        """
 
-@attr.frozen()
+        quat = quaternion_from_euler(
+            0.0,
+            0.0,
+            self.orientation,
+            axes="xyzs"
+        )
+
+        pose = geometry_msgs.Pose(
+            position=geometry_msgs.Point(
+                x=self.x,
+                y=self.y,
+            ),
+            orientation=geometry_msgs.Quaternion(
+                x=quat[0],
+                y=quat[1],
+                z=quat[2],
+                w=quat[3],
+            )
+        )
+
+        return pose
+
+
+@attrs.frozen()
 class PositionRadius(Position):
     """
     2D position with 2D yaw
     """
-    radius: float = attr.field(converter=lambda x: max(0., float(x)))
+    radius: float = attrs.field(converter=lambda x: max(0., float(x)))
 
 
 class ModelWrapper:
@@ -322,11 +336,11 @@ class ModelWrapper:
         return wrapper
 
 
-@attr.frozen()
+@attrs.frozen()
 class Wall:
     Start: Position
     End: Position
-    height: float = attr.field(converter=float, default=2.)
+    height: float = attrs.field(converter=float, default=2.)
     texture_material: str = ''  # not implemented
 
     @classmethod
@@ -341,7 +355,7 @@ class Wall:
         )
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class EntityProps:
     position: PositionOrientation
     name: str
@@ -349,26 +363,28 @@ class EntityProps:
     extra: Dict
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class ObstacleProps(EntityProps):
     ...
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class DynamicObstacleProps(ObstacleProps):
     waypoints: List[PositionRadius]
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class RobotProps(EntityProps):
     inter_planner: str
     local_planner: str
+    global_planner: str
     agent: str
     record_data_dir: Optional[str] = None
 
     def compatible(self, value: RobotProps) -> bool:
         return self.model.name == value.model.name \
             and self.local_planner == value.local_planner \
+            and self.global_planner == value.global_planner \
             and self.agent == value.agent \
 
 
@@ -379,6 +395,12 @@ class RobotProps(EntityProps):
         return self.compatible(value) \
             and self.name == value.name \
             and self.record_data_dir == value.record_data_dir
+
+    @property
+    def frame(self) -> str:
+        if not self.name:
+            return ''
+        return self.name + '/'
 
 
 class Obstacle(ObstacleProps):
@@ -405,12 +427,12 @@ class DynamicObstacle(DynamicObstacleProps):
                      for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
-            **dataclasses.asdict(base),
+            **attrs.asdict(base, recurse=False),
             waypoints=waypoints,
         )
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class WallObstacle:
     name: str
     start: Position
@@ -433,18 +455,21 @@ def _gen_init_pos(steps: int, x: int = 1, y: int = 0):
 gen_init_pos = _gen_init_pos(10)
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class Robot(RobotProps):
-    @staticmethod
-    def parse(obj: Dict, model: ModelWrapper) -> "Robot":
+    @classmethod
+    def parse(cls, obj: Dict, model: ModelWrapper) -> "Robot":
         name = str(obj.get("name", ""))
         position = PositionOrientation(
-            *obj.get("pos", attr.astuple(next(gen_init_pos))))
+            *obj.get("pos", attrs.astuple(next(gen_init_pos))))
         inter_planner = str(
             obj.get("inter_planner", rosparam_get(str, "inter_planner", ""))
         )
         local_planner = str(
             obj.get("local_planner", rosparam_get(str, "local_planner", ""))
+        )
+        global_planner = str(
+            obj.get("global_planner", rosparam_get(str, "global_planner", ""))
         )
         agent = str(obj.get("agent", rosparam_get(str, "agent_name", "")))
         record_data = obj.get(
@@ -456,6 +481,7 @@ class Robot(RobotProps):
             position=position,
             inter_planner=inter_planner,
             local_planner=local_planner,
+            global_planner=global_planner,
             model=model,
             agent=agent,
             record_data_dir=record_data,
@@ -463,7 +489,11 @@ class Robot(RobotProps):
         )
 
 
-def DefaultParameter(value: typing.Any) -> rclpy.parameter.Parameter:
+def DefaultParameter(value: typing.Any) -> rclpy.parameter.Parameter | None:
+    if value is None:
+        return None
+    # if isinstance(value, rclpy.parameter.Parameter.Type):
+    #     return None
     return rclpy.parameter.Parameter(
         '',
         value=value,

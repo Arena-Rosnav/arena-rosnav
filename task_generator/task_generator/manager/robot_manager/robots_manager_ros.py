@@ -1,10 +1,9 @@
 import abc
-import dataclasses
 import os
 import re
 import typing
 
-import attr
+import attrs
 
 import rclpy
 import rclpy.parameter
@@ -21,11 +20,11 @@ from task_generator.utils.ros_params import ROSParam
 from .robot_manager import RobotManager
 
 
-@attr.frozen
+@attrs.frozen
 class _RobotDiff:
-    to_remove: list[str] = attr.field(factory=list)
-    to_add: dict[str, Robot] = attr.field(factory=dict)
-    to_update: dict[str, Robot] = attr.field(factory=dict)
+    to_remove: list[str] = attrs.field(factory=list)
+    to_add: dict[str, Robot] = attrs.field(factory=dict)
+    to_update: dict[str, Robot] = attrs.field(factory=dict)
 
 
 _T_NamedRobots = dict[str, Robot]
@@ -213,11 +212,13 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
                         self.node.get_name(),
                 ),
                 entity_manager=self._entity_manager,
-                robot=dataclasses.replace(config, name=robot_name),
+                robot=attrs.evolve(config, name=robot_name),
             )
             manager.set_up_robot()
             self._robot_managers[robot_name] = manager
         self._diff.to_add.clear()
+
+        self.node.rosparam[list[str]].set('robot_names', [robot for robot in self._robot_managers])
 
     def __init__(self, entity_manager: EntityManager) -> None:
         NodeInterface.__init__(self)
@@ -225,6 +226,6 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
 
         self._robot_configurations = self.node.ROSParam[_RobotDiff](
             'robot',
-            rclpy.parameter.Parameter.Type.STRING,
+            type_=rclpy.parameter.Parameter.Type.STRING,
             parse=self._parse_robot_configurations,
         )

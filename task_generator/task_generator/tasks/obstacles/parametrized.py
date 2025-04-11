@@ -1,8 +1,8 @@
-import dataclasses
 import os
 import xml.etree.ElementTree as ET
 from typing import List, Optional
 
+import attrs
 from ament_index_python.packages import get_package_share_directory
 
 from task_generator.shared import (DynamicObstacle, ModelWrapper, Namespace,
@@ -12,9 +12,9 @@ from task_generator.tasks.obstacles.utils import ITF_Obstacle
 from task_generator.utils.ros_params import ROSParam
 
 
-@dataclasses.dataclass
+@attrs.define()
 class _ParsedConfig:
-    @dataclasses.dataclass
+    @attrs.define()
     class ObstacleConfig:
         min: int
         max: int

@@ -17,14 +17,17 @@
       filename="gz-sim-contact-system"
       name="gz::sim::systems::Contact">
     </plugin>
-    <!-- <plugin filename="gz-sim-imu-system"
+    <plugin filename="gz-sim-imu-system"
       name="gz::sim::systems::Imu">
+    </plugin>
+    <!-- <plugin filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
     </plugin> -->
-    <plugin
+    <!-- <plugin
       filename="gz-sim-sensors-system"
       name="gz::sim::systems::Sensors">
       <render_engine>ogre2</render_engine>
-    </plugin>
+    </plugin> -->
     <physics name="fast" type="ignored">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>0</real_time_factor>
@@ -51,7 +54,7 @@
           <geometry>
             <plane>
               <normal>0 0 1</normal>
-              <size>255 255</size>
+              <size>1250 1250</size>
             </plane>
           </geometry>
         </collision>
@@ -59,7 +62,7 @@
           <geometry>
             <plane>
               <normal>0 0 1</normal>
-              <size>250 250</size>
+              <size>1255 1255</size>
             </plane>
           </geometry>
           <material>

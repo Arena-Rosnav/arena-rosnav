@@ -1,9 +1,9 @@
-import dataclasses
 import enum
 from io import StringIO
 import os
 from typing import Any, Dict, List, Optional, Union
 import xml.etree.ElementTree as ET
+import attrs
 import cv2
 import numpy as np
 
@@ -75,7 +75,7 @@ class ObstacleLayer(enum.IntEnum):
     WORLD = 2  # intrinsic part of world
 
 
-@dataclasses.dataclass
+@attrs.define()
 class KnownObstacle:
     obstacle: ObstacleProps
     hunav_spawned: bool = False

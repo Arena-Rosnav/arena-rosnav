@@ -1,23 +1,21 @@
-import dataclasses
 import functools
 import itertools
 import typing
 from typing import Callable, Dict, Iterator, List
 
+import attrs
 import numpy as np
-
 import rclpy.parameter
-import rcl_interfaces.msg
 
-from task_generator.shared import (DynamicObstacle, Obstacle, PositionOrientation,
-                                   PositionRadius)
+from task_generator.shared import (DynamicObstacle, Obstacle,
+                                   PositionOrientation, PositionRadius)
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 from task_generator.utils import ModelLoader
 from task_generator.utils.ros_params import ROSParam
 
 
-@dataclasses.dataclass
+@attrs.define()
 class _Config:
     N_STATIC_OBSTACLES: ROSParam[typing.Tuple[int, int]]
     N_INTERACTIVE_OBSTACLES: ROSParam[typing.Tuple[int, int]]

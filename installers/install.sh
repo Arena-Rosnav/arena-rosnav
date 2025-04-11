@@ -9,28 +9,29 @@ export ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-humble}
 echo 'Configuring arena-rosnav...'
 
 ARENA_WS_DIR=${ARENA_WS_DIR:-~/arena4_ws}
-read -p "arena-rosnav workspace directory [${ARENA_WS_DIR}] " INPUT
-export ARENA_WS_DIR=$(realpath "$(eval echo ${INPUT:-${ARENA_WS_DIR}})")
+read -rp "arena-rosnav workspace directory [${ARENA_WS_DIR}] " INPUT
+ARENA_WS_DIR=$(realpath "$(eval echo "${INPUT:-${ARENA_WS_DIR}}")")
+export ARENA_WS_DIR
 
 echo "installing ${ARENA_ROSNAV_REPO}:${ARENA_BRANCH} on ROS2 ${ARENA_ROS_DISTRO} to ${ARENA_WS_DIR}"
 sudo echo 'confirmed'
 mkdir -p "$ARENA_WS_DIR"
 cd "$ARENA_WS_DIR"
 
-export INSTALLED=src/arena/arena-rosnav/.installed
+export INSTALLED="${ARENA_WS_DIR}/src/arena/arena-rosnav/.installed"
 
 # == remove ros problems ==
-files=$((grep -l "/ros" /etc/apt/sources.list.d/* | grep -v "ros2") || echo '')
+files=$( (grep -l "/ros" /etc/apt/sources.list.d/* | grep -v "ros2") || echo '')
 
 if [ -n "$files" ]; then
     echo "The following files can cause some problems to installer:"
     echo "$files"
-    read -p "Do you want to delete these files? (Y/n) [Y]: " choice
+    read -rp "Do you want to delete these files? (Y/n) [Y]: " choice
     choice=${choice:-Y}
 
     if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
         sudo rm -f $files
-        echo "Deleted $(echo $files)"
+        echo "Deleted $files"
     fi
     unset choice
 fi
@@ -41,9 +42,10 @@ fi
 if [ ! -d "$HOME/.pyenv" ] ; then
   rm -rf "$HOME/.pyenv"
   curl https://pyenv.run | bash
-  echo 'export PYENV_ROOT="$HOME/.pyenv"'                                 >> ~/.bashrc
-  echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"'  >> ~/.bashrc
-  echo 'eval "$(pyenv init -)"'                                           >> ~/.bashrc
+  {     echo 'export PYENV_ROOT="$HOME/.pyenv"';
+        echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"';
+        echo 'eval "$(pyenv init -)"';
+  } >> ~/.bashrc
   
   . ~/.bashrc
 
@@ -63,7 +65,7 @@ if ! which poetry ; then
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
     source ~/.bashrc
   fi
-  $HOME/.local/bin/poetry config virtualenvs.in-project true
+  "$HOME/.local/bin/poetry" config virtualenvs.in-project true
 fi
 
 # == compile ros ==
@@ -82,18 +84,19 @@ sudo dpkg-reconfigure --frontend noninteractive tzdata
 echo "Setting up ROS2 ${ARENA_ROS_DISTRO}..."
 
 sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo "$UBUNTU_CODENAME") main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
 
 # for building python
 echo "Installing Python deps..." 
-sudo apt-get install -y build-essential python3-pip zlib1g-dev libffi-dev libssl-dev libbz2-dev libreadline-dev libsqlite3-dev liblzma-dev libncurses-dev tk-dev python3-dev
+sudo apt-get install -y build-essential python3-pip zlib1g-dev libffi-dev libssl-dev libbz2-dev libreadline-dev libsqlite3-dev liblzma-dev libncurses-dev tk-dev python3-dev g++-9 gcc-9
 
 if [ ! -d src/arena/arena-rosnav/tools ] ; then
   mkdir -p src/arena/arena-rosnav/tools
   pushd src/arena/arena-rosnav/tools
     curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/poetry_install" > poetry_install
     curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/colcon_build" > colcon_build
+    curl "https://raw.githubusercontent.com/${ARENA_ROSNAV_REPO}/${ARENA_BRANCH}/tools/source.bash" > source.bash
   popd
 fi
 
@@ -125,6 +128,7 @@ sudo apt-get install -y \
     libboost-python-dev \
     python3-rosdep \
     libgps-dev \
+    graphicsmagick \
     libgraphicsmagick1-dev \
     nlohmann-json3-dev \
     libxtensor-dev \
@@ -175,7 +179,7 @@ if [ ! -f src/ros2/compiled ] ; then
     git -c user.name='Arena' -c user.email='anonymous@arena-rosnav.org' cherry-pick 654d6f5658b59009147b9fad9b724919633f38fe || echo 'already cherry picked'
   popd
 
-  . src/arena/arena-rosnav/tools/colcon_build --paths src/ros2/*
+  . src/arena/arena-rosnav/tools/colcon_build --paths src/ros2/* --packages-skip-build-finished
   touch src/ros2/compiled
   
   # don't even ask
@@ -194,6 +198,7 @@ if [ ! -f "$INSTALLED" ] ; then
   rm -rf src/arena/.arena-rosnav
 
 
+  ln -fs src/arena/arena-rosnav/tools/source.bash ./arena.bash
   ln -fs src/arena/arena-rosnav/tools/poetry_install .
   ln -fs src/arena/arena-rosnav/tools/colcon_build .
 
@@ -211,7 +216,7 @@ touch "$INSTALLED"
 
 if [ ! -d /usr/local/include/lightsfm ] ; then
   git clone https://github.com/robotics-upo/lightsfm.git lightsfm
-  (cd lightsfm && make && sudo make install || rm -rf lightsfm)
+  ( (cd lightsfm && make && sudo make install) || rm -rf lightsfm)
   rm -rf lightsfm || echo 'failed to install lightsfm'
 fi
 
@@ -220,26 +225,26 @@ fi
 
 compile(){
   cd "${ARENA_WS_DIR}"
-  . colcon_build #TODO get rid of this
+  . colcon_build --packages-skip-build-finished #TODO get rid of this
   ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO} ros2 run arena_bringup pull
-  . colcon_build
+  . colcon_build --packages-skip-build-finished
 }
 
 compile
 
 # robot dependencies
 
-sudo apt install -y ros-${ROS_DISTRO}-irobot-create-description
-sudo apt install -y ros-${ROS_DISTRO}-irobot-create-msgs
+sudo apt install -y "ros-${ROS_DISTRO}-irobot-create-description"
+sudo apt install -y "ros-${ROS_DISTRO}-irobot-create-msgs"
 
-for installer in $(ls src/arena/arena-rosnav/installers | grep -E '^[0-9]+_.*.sh') ; do 
-
-  name=$(echo $installer | cut -d '_' -f 2)
+for installer in $(ls src/arena/arena-rosnav/installers | grep -E '^[0-9]+_.*.sh') ;
+do 
+  name=$(echo "$installer" | cut -d '_' -f 2)
 
   if grep -q "$name" "$INSTALLED" ; then
     echo "$name already installed"
   else
-    read -p "Do you want to install ${name}? [N] " choice
+    read -rp "Do you want to install ${name}? [N] " choice
     choice="${choice:-N}"
     if [[ "$choice" =~ ^[Yy]$ ]]; then
         . "src/arena/arena-rosnav/installers/$installer"

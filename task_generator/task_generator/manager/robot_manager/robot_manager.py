@@ -1,7 +1,7 @@
-import dataclasses
 import os
 import typing
 
+import attrs
 import numpy as np
 import scipy.spatial.transform
 
@@ -12,7 +12,7 @@ import rclpy.client
 
 from task_generator import NodeInterface
 import task_generator.utils.arena as Utils
-from task_generator.utils.geometry import angle_diff, quaternion_from_euler
+from task_generator.utils.geometry import angle_diff
 from task_generator.constants import Constants
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
@@ -42,9 +42,11 @@ class RobotManager(NodeInterface):
     _goal_tolerance_angle: float
     _robot: Robot
     _move_base_pub: rclpy.publisher.Publisher
-    _move_base_goal_pub: rclpy.publisher.Publisher
+    _goal_pub: rclpy.publisher.Publisher
     _pub_goal_timer: rclpy.timer.Timer
     _clear_costmaps_srv: rclpy.client.Client
+
+    _rate_setup: rclpy.timer.Rate
 
     @property
     def robot(self) -> Robot:
@@ -62,6 +64,7 @@ class RobotManager(NodeInterface):
         self, namespace: Namespace, entity_manager: EntityManager, robot: Robot
     ):
         NodeInterface.__init__(self)
+        self._rate_setup = self.node.create_rate(.1)
 
         self._namespace = namespace
         self._entity_manager = entity_manager
@@ -82,9 +85,10 @@ class RobotManager(NodeInterface):
 
         self._robot = robot
         self._position = self._start_pos
+        self._goal_timer = None
 
     def set_up_robot(self):
-        self._robot = dataclasses.replace(
+        self._robot = attrs.evolve(
             self._robot,
             model=self._robot.model.override(
                 model_type=ModelType.YAML,
@@ -101,15 +105,13 @@ class RobotManager(NodeInterface):
 
         self._entity_manager.spawn_robot(self._robot)
 
-        _gen_goal_topic = self.namespace("move_base_simple", "goal")
+        _gen_goal_topic = self.namespace("goal_pose")
 
-        self._move_base_goal_pub = self.node.create_publisher(
-            geometry_msgs.PoseStamped, _gen_goal_topic, 10
+        self._goal_pub = self.node.create_publisher(
+            geometry_msgs.PoseStamped, _gen_goal_topic, 10,
+            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
 
-        self._pub_goal_timer = self.node.create_timer(
-            0.25, self._publish_goal_periodically
-        )
         self.node.create_subscription(
             nav_msgs.Odometry, self.namespace(
                 "odom"), self._robot_pos_callback, 10
@@ -123,7 +125,10 @@ class RobotManager(NodeInterface):
         )
 
         self._clear_costmaps_srv = self.node.create_client(
-            std_srvs.Empty, self.namespace("move_base", "clear_costmaps"))
+            std_srvs.Empty,
+            self.namespace("move_base", "clear_costmaps"),
+            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
+        )
 
     @property
     def safe_distance(self) -> float:
@@ -136,6 +141,9 @@ class RobotManager(NodeInterface):
     @property
     def name(self) -> str:
         return self._robot.name
+
+    def frame(self) -> str:
+        return self._robot.frame
 
     @property
     def namespace(self) -> Namespace:
@@ -162,9 +170,9 @@ class RobotManager(NodeInterface):
             self._start_pos = start_pos
             self.move_robot_to_pos(start_pos)
 
-            if self._robot.record_data_dir is not None:
+            if self._robot.record_data_dir:
                 self.node.rosparam[list[float]].set(
-                    self.namespace("start"),
+                    self.namespace.robot_ns.ParamNamespace()("start"),
                     [self.start_pos.x, self.start_pos.y, self.start_pos.orientation]
                 )
 
@@ -172,9 +180,9 @@ class RobotManager(NodeInterface):
             self._goal_pos = goal_pos
             self._publish_goal(self._goal_pos)
 
-            if self._robot.record_data_dir is not None:
+            if self._robot.record_data_dir:
                 self.node.rosparam[list[float]].set(
-                    self.namespace("goal"),
+                    self.namespace.robot_ns.ParamNamespace()("goal"),
                     [self.goal_pos.x, self.goal_pos.y,
                         self.goal_pos.orientation]
                 )
@@ -201,22 +209,55 @@ class RobotManager(NodeInterface):
             and angle_to_goal < self._goal_tolerance_angle
         )
 
-    def _publish_goal_periodically(self, *args, **kwargs):
-        if self._goal_pos is not None:
-            self._publish_goal(self._goal_pos)
+    def _publish_goal_callback(self):
+        from geometry_msgs.msg import PoseStamped
+        current_time = self.node.get_clock().now().nanoseconds / 1e9
+        if (current_time - self._goal_start_time) >= 60.0:
+            self.node.get_logger().info("Goal publishing duration reached, stopping")
+            if self._goal_timer is not None:
+                self._goal_timer.cancel()
+                self._goal_timer.destroy()
+                self._goal_timer = None
+            return
+
+        if self._is_goal_reached:
+            self.node.get_logger().info("Goal reached, stopping goal publication")
+            if self._goal_timer is not None:
+                self._goal_timer.cancel()
+                self._goal_timer.destroy()
+                self._goal_timer = None
+            return
+
+        goal_msg = PoseStamped()
+        goal_msg.header.frame_id = "map"
+        goal_msg.header.stamp = self.node.get_clock().now().to_msg()
+        goal_msg.pose = self._goal_pos.to_pose()
+        self._goal_pub.publish(goal_msg)
 
     def _publish_goal(self, goal: PositionOrientation):
-        goal_msg = geometry_msgs.PoseStamped()
+        #only way to circumvent amcl absolutely trolling us is to create this loop 
+        from geometry_msgs.msg import PoseStamped
+        self.node.get_logger().info(
+            f"Publishing goal: x={goal.x}, y={goal.y}, orientation={goal.orientation}")
+        
+        self._goal_pos = goal
+        
+        if self._goal_timer is not None:
+            self._goal_timer.cancel()
+            self._goal_timer.destroy()
+
+        goal_msg = PoseStamped()
         goal_msg.header.frame_id = "map"
-        goal_msg.pose.position.x = goal.x
-        goal_msg.pose.position.y = goal.y
-        goal_msg.pose.position.z = 0.
-
-        goal_msg.pose.orientation = orientation = geometry_msgs.Quaternion()
-        orientation.x, orientation.y, orientation.z, orientation.w = quaternion_from_euler(
-            0.0, 0.0, goal.orientation, axes="sxyz")
-
-        self._move_base_goal_pub.publish(goal_msg)
+        goal_msg.header.stamp = self.node.get_clock().now().to_msg()
+        goal_msg.pose = goal.to_pose()
+        self._goal_pub.publish(goal_msg)
+        
+        self._goal_start_time = self.node.get_clock().now().nanoseconds / 1e9
+        self._goal_timer = self.node.create_timer(
+            3.0,
+            self._publish_goal_callback,
+            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
+        )
 
     def _launch_robot(self):
         self.node.get_logger().warn(f"START WITH MODEL {self.name}")
@@ -231,9 +272,9 @@ class RobotManager(NodeInterface):
                 # 'name': self.name,
                 'namespace': self.namespace,
                 # 'use_namespace': 'True',
-                'frame': f"{self.name}/" if self.name else '',
-                # 'inter_planner': self._robot.inter_planner,
-                'global_planner': 'dummy',
+                'frame': self._robot.frame,
+                'inter_planner': self._robot.inter_planner,
+                'global_planner': self._robot.global_planner,
                 'local_planner': self._robot.local_planner,
                 # 'complexity': self.node.declare_parameter('complexity', 1).value,
                 # 'train_mode': self.node.declare_parameter('train_mode', False).value,
@@ -243,7 +284,6 @@ class RobotManager(NodeInterface):
 
             if self._robot.record_data_dir:
                 launch_arguments.update({
-                    'record_data': 'True',
                     'record_data_dir': self._robot.record_data_dir,
                 })
 
@@ -259,6 +299,10 @@ class RobotManager(NodeInterface):
                 )
             )
             self.node.do_launch(launch_description)
+
+            while 'bt_navigator' not in self.node.get_node_names():
+                # TODO redo this globally in the robots manager, every get_node_names call is expensive
+                self._rate_setup.sleep()  # we love race conditions
 
         # TODO
         # base_frame: str = self.node.get_parameter_or(self.namespace("robot_base_frame"), DefaultParameter('')).value
@@ -301,5 +345,8 @@ class RobotManager(NodeInterface):
         """
         Destroy robot and remove from simulation and navigation stack.
         """
+        if self._goal_timer is not None:
+            self._goal_timer.cancel()
+            self._goal_timer.destroy()
         self._entity_manager.remove_robot(self.name)
         # TODO kill node in navigation stack

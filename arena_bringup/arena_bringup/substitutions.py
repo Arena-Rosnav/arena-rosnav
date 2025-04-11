@@ -11,6 +11,7 @@ import launch.actions
 import launch.substitutions
 import launch.conditions
 import launch.utilities
+import launch_ros
 
 
 class NoAliasDumper(yaml.Dumper):
@@ -33,8 +34,12 @@ class LaunchArgument(launch.actions.DeclareLaunchArgument):
         return launch.substitutions.LaunchConfiguration(self.name)
 
     @property
-    def parameter(self):
+    def dict(self):
         return {self.name: self.substitution}
+
+    @property
+    def str_param(self):
+        return {self.name: launch_ros.parameter_descriptions.ParameterValue(self.substitution, value_type=str)}
 
 
 class SelectAction(launch.Action):
@@ -356,7 +361,7 @@ class _YAMLReplacer:
     def _replace_str(self, obj: str) -> typing.Any:
         replacement = self._sub_match(obj)
         if (inter_v := self._replace_inter_string(obj)) is not None:
-            return inter_v.value
+            return self.replace(inter_v.value)
         if isinstance(replacement, self.DictSpreadReplacement):
             raise ValueError('dict spread argument placed outside dict')
         elif isinstance(replacement, self.ListSpreadReplacement):
