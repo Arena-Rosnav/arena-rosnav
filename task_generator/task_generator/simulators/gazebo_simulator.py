@@ -469,9 +469,6 @@ class GazeboSimulator(BaseSimulator):
 
         except Exception as e:
             self.node.get_logger().error(f"Error generating SDF: {repr(e)}")
-<<<<<<< HEAD
-            return None
-=======
             return None
 
     def _robot_bridge(self, robot: RobotProps, description: str):
@@ -562,4 +559,3 @@ class GazeboSimulator(BaseSimulator):
             qos_profile=1,
             callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         ).publish(pose)
->>>>>>> 5e7594ef1c51b16ee9855ff06b67abd3b9a49dea
