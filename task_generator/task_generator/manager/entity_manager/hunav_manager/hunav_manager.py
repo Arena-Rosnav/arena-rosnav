@@ -27,6 +27,7 @@ from task_generator.manager.world_manager.utils import WorldMap, WorldWalls
 from task_generator.manager.world_manager import WorldManager
 from .import SKIN_TYPES 
 import traceback
+import attr
 
 
 class HunavManager(EntityManager):
@@ -140,7 +141,7 @@ class HunavManager(EntityManager):
     def _update_agents(self):
         """Updates agent positions"""
         try:
-            self.node.get_logger().warn(f"PEDESTRIANS UPDATE: {self._pedestrians}")
+            #self.node.get_logger().warn(f"PEDESTRIANS UPDATE: {self._pedestrians}")
             if not self._pedestrians:
                 return
                 
@@ -439,7 +440,7 @@ class HunavManager(EntityManager):
                 hunav_obstacle = HunavDynamicObstacle.parse(obstacle.extra, obstacle.model)
  
                 # Set name based on ID
-                hunav_obstacle = dataclasses.replace(hunav_obstacle, name=f"agent{hunav_obstacle.id}")
+                hunav_obstacle = attr.evolve(hunav_obstacle, name=f"agent{hunav_obstacle.id}")
                 self.node.get_logger().warn(f"\nProcessing Agent with name: {hunav_obstacle.name}")
 
                 velocity_twist = geometry_msgs.msg.Twist() #set velocity hardcoded like in old hunavgazebowrapper
@@ -450,7 +451,7 @@ class HunavManager(EntityManager):
                 velocity_twist.angular.y = 0.0
                 velocity_twist.angular.z = 0.1
                 
-                hunav_obstacle = dataclasses.replace(hunav_obstacle, velocity=velocity_twist)
+                hunav_obstacle = attr.evolve(hunav_obstacle, velocity=velocity_twist)
 
                 # Check if obstacle is known to not register an agent multiple times unnecessarily
                 known = self._known_obstacles.get(hunav_obstacle.name)
