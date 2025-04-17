@@ -33,6 +33,8 @@
 #include <gz/sim/Model.hh>
 #include <gz/sim/Util.hh>
 #include <gz/sim/System.hh>
+#include <gz/math/Helpers.hh>
+
 
 
 #define DEF_WALKING_ANIMATION "walking"
@@ -1387,7 +1389,7 @@ void HuNavActorPluginIGN::updateGazeboHuman(gz::sim::EntityComponentManager& _ec
   double yaw = normalizeAngle(_agent.yaw + M_PI_2);
   double currAngle = actorPose.Rot().Yaw();
   double diff = normalizeAngle(yaw - currAngle);
-  if (std::fabs(diff) > IGN_DTOR(10))
+  if (std::fabs(diff) > GZ_DTOR(10))
   {
     yaw = normalizeAngle(currAngle + (diff * 0.1));  // 0.01, 0.005
   }
@@ -1544,7 +1546,7 @@ void HuNavActorPluginIGN::PreUpdate(const gz::sim::UpdateInfo& _info, gz::sim::E
   // msg.data = st;
   // this->ros_test_pub_->publish(msg);
 
-  GZ_PROFILE("HuNavActorPluginIGN::PreUpdate");
+  //GZ_PROFILE("HuNavActorPluginIGN::PreUpdate");
 
   if (_info.paused)
     return;
