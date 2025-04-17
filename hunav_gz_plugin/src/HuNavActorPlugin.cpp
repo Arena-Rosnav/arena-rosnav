@@ -1681,6 +1681,10 @@ void HuNavActorPluginIGN::PreUpdate(const gz::sim::UpdateInfo& _info, gz::sim::E
 
 
 
-IGNITION_ADD_PLUGIN(HuNavActorPluginIGN, gz::sim::System, HuNavActorPluginIGN::ISystemConfigure, HuNavActorPluginIGN::ISystemPreUpdate/*, HuNavPluginIGN::ISystemPostUpdate, HuNavPluginIGN::ISystemReset*/)
+GZ_ADD_PLUGIN(HuNavActorPluginIGN,
+  gz::sim::System,
+  gz::sim::ISystemConfigure,
+  gz::sim::ISystemPreUpdate)
 
-IGNITION_ADD_PLUGIN_ALIAS(HuNavActorPluginIGN, "HuNavActorPluginIGN")
+GZ_ADD_PLUGIN_ALIAS(HuNavActorPluginIGN, "HuNavActorPluginIGN")
+
