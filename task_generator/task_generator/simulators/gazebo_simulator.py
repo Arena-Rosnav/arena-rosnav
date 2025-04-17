@@ -15,6 +15,7 @@ from ros_gz_interfaces.srv import (ControlWorld, DeleteEntity, SetEntityPose,
 from task_generator.shared import (EntityProps, Model, ModelType, ModelWrapper,
                                    PositionOrientation, RobotProps, Wall)
 from task_generator.simulators import BaseSimulator
+from .robot_bridge import RobotBridge
 
 
 class GazeboSimulator(BaseSimulator):
@@ -139,6 +140,7 @@ class GazeboSimulator(BaseSimulator):
             if result.success and isinstance((entity := self.entities.get(name, None)), RobotProps):
                 entity = attrs.evolve(entity, position=position)
                 self.entities[name] = entity
+                self._robot_initialpose(entity)
                 
                 max_attempts = 3
                 attempt = 1
@@ -168,14 +170,21 @@ class GazeboSimulator(BaseSimulator):
                     self.node.get_logger().error(
                         f"Failed to set initial pose for {name} after {max_attempts} attempts"
                     )
-                
-                self.node.get_logger().info(f"Final attempt: Setting initial pose for {name}")
-                try:
-                    self._robot_initialpose(entity)
-                    self.node.get_logger().info(f"Final initial pose update for {name} succeeded")
-                except Exception as e:
-                    self.node.get_logger().error(f"Final initial pose update for {name} failed: {str(e)}")
-                    traceback.print_exc()
+                if 'turtlebot' in entity.name:
+                    from task_generator.utils.geometry import quaternion_from_euler
+                    quat = quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="xyzs")
+                    qx, qy, qz, qw = quat
+                    transform_pub_node =launch_ros.actions.Node(
+                        package="tf2_ros",
+                        executable="static_transform_publisher",
+                        name="map_to_odomframe_publisher",
+                        arguments=[str(entity.position.x), str(entity.position.y), "0", str(qx), str(qy), str(qz), str(qw), "map", entity.frame + "odom"],
+                        parameters=[{'use_sim_time': True}],
+                    )
+                    self.node.do_launch(transform_pub_node)
+                    time.sleep(1)
+                    self.node.get_logger().info("Destroying the static_transform_publisher node after 3 seconds.")
+                    self.node.destroy_node(transform_pub_node)
 
             return result.success
 
@@ -473,41 +482,41 @@ class GazeboSimulator(BaseSimulator):
 
     def _robot_bridge(self, robot: RobotProps, description: str):
         launch_description = launch.LaunchDescription()
-
-        gz_topic = '/model/' + robot.name
+        
         launch_description.add_action(
             launch_ros.actions.PushRosNamespace(
                 namespace=self.node.service_namespace(robot.name)
             )
         )
+        import re
+        robot_type = re.sub(r'[0-9]', '', robot.name)
+        
+        if robot_type not in RobotBridge.ROBOT_CONFIGS:
+            raise ValueError(f"No configuration found for robot type: {robot_type}")
+        else:
+            self.node.get_logger().info(f"Spawning robot of type: {robot_type}")
+            
+        
+        config = RobotBridge.ROBOT_CONFIGS[robot_type]
+        bridge_arguments = []
+        remappings = []
+        
+         # Build bridge arguments and remappings dynamically
+        for topic_config in config["topics"]:
+            gz_topic = topic_config["gz_topic"].format(robot_name=robot.name)
+            ros_topic = topic_config["ros_topic"]
+            bridge_str = f"{gz_topic}@{topic_config['ros_type']}{topic_config['direction']}{topic_config['gz_type']}"
+            bridge_arguments.append(bridge_str)
+            remappings.append((gz_topic, ros_topic))
+            
+        # Add parameter_bridge node
         launch_description.add_action(
             launch_ros.actions.Node(
                 package='ros_gz_bridge',
                 executable='parameter_bridge',
                 output='screen',
-                arguments=[
-                    # Odometry (Gazebo -> ROS2)
-                    gz_topic + '/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
-                    # IMU (Gazebo -> ROS2)
-                    '/world/default/model/' + robot.name + '/link/base_link/sensor/imu_sensor/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
-                    # Velocity command (ROS2 -> Gazebo)
-                    gz_topic + '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
-                    # LiDAR Scan (Gazebo -> ROS2)
-                    '/world/default/model/' + robot.name + '/link/base_link/sensor/gpu_lidar/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
-                    # LiDAR Point Cloud (Gazebo -> ROS2)
-                    '/world/default/model/' + robot.name + '/link/base_link/sensor/gpu_lidar/scan/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
-                    # TF Data (Gazebo -> ROS2)
-                    gz_topic + '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-                    gz_topic + '/tf_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
-                ],
-                remappings=[
-                    (gz_topic + '/tf', '/tf'),
-                    (gz_topic + '/odometry', 'odom'),
-                    ('/world/default/model/' + robot.name + '/link/base_link/sensor/imu_sensor/imu', 'imu/data'),
-                    (gz_topic + '/cmd_vel', 'cmd_vel'),
-                    ('/world/default/model/' + robot.name + '/link/base_link/sensor/gpu_lidar/scan', 'lidar'),
-                    ('/world/default/model/' + robot.name + '/link/base_link/sensor/gpu_lidar/scan/points', 'lidar/points'),
-                ],
+                arguments=bridge_arguments,
+                remappings=remappings,
                 parameters=[{'use_sim_time': True}],
             )
         )
@@ -536,15 +545,6 @@ class GazeboSimulator(BaseSimulator):
         #         ],
         #         remappings=[('/joint_states', '/joint_states')]
         #     )
-        # )
-        # launch_description.add_action(
-        #     launch_ros.actions.Node(
-        #         package="tf2_ros",
-        #         executable="static_transform_publisher",
-        #         name="map_to_odomframe_publisher",
-        #         arguments=[str(robot.position.x), str(robot.position.y), "0", "0", "0", str(robot.position.orientation), "map", robot.frame + "odom"],
-        #         parameters=[{'use_sim_time': True}],
-        #     ),
         # )
         self.node.do_launch(launch_description)
 
