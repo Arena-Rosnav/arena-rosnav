@@ -352,25 +352,23 @@ class HunavManager(EntityManager):
                     <interpolate_x>true</interpolate_x>
                 </animation>
 
-                <script>
-                    <loop>true</loop>
-                    <auto_start>true</auto_start>
-                    <delay_start>0.000000</delay_start>
-                    <trajectory id="0" type="walking">
-                        <waypoint>
-                            <time>0</time>
-                            <pose>{agent_config.position.x} {agent_config.position.y} {self._get_agent_height(agent_config.skin)} 0 0 {agent_config.yaw}</pose>
-                        </waypoint>
-                        <waypoint>
-                            <time>0.5</time>
-                            <pose>{agent_config.position.x} {agent_config.position.y} {self._get_agent_height(agent_config.skin)} 0 0 {agent_config.yaw}</pose>
-                        </waypoint>
-                    </trajectory>
-                </script>
+                <plugin name="HuNavActorPluginIGN" filename="libHuNavActorPluginIGN.so">
+                    <update_rate>10.0</update_rate>
+                    <robot_name>robot</robot_name>
+                    <use_navgoal_to_start>false</use_navgoal_to_start>
+                    <global_frame_to_publish>map</global_frame_to_publish>
+                    <ignore_models>
+                        <model>visual</model>
+                        <model>link</model>
+                        <model>column</model>
+                        <model>surface</model>
+                    </ignore_models>
+                </plugin>
+
             </actor>
         </sdf>"""
-        
-        return sdf
+
+        return sdf 
 
     def _get_agent_height(self, skin_type: int) -> float:
         """Get correct height based on skin type"""
