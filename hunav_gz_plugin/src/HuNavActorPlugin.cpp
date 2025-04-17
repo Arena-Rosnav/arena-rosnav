@@ -448,15 +448,15 @@ void HuNavActorPluginIGN::initializeAgents(gz::sim::EntityComponentManager& _ecm
     auto animTimeComp = _ecm.Component<gz::sim::components::AnimationTime>(entity);
     if (nullptr == animTimeComp)
     {
-      _ecm.CreateComponent(entity, components::AnimationTime());
+      _ecm.CreateComponent(entity, gz::sim::components::AnimationTime());
     }
 
-    math::Pose3d initialPose;
-    auto poseComp = _ecm.Component<components::Pose>(entity);
+    gz::math::Pose3d initialPose;
+    auto poseComp = _ecm.Component<gz::sim::components::Pose>(entity);
     if (nullptr == poseComp)
     {
-      _ecm.CreateComponent(_entity, components::Pose(
-          math::Pose3d::Zero));
+      _ecm.CreateComponent(entity, gz::sim::components::Pose(
+          gz::math::Pose3d::Zero));
     }
     else
     {
@@ -464,12 +464,12 @@ void HuNavActorPluginIGN::initializeAgents(gz::sim::EntityComponentManager& _ecm
     }
     // Having a trajectory pose prevents the actor from moving with the
     // SDF script
-    auto trajPoseComp = _ecm.Component<components::TrajectoryPose>(entity);
+    auto trajPoseComp = _ecm.Component<gz::sim::components::TrajectoryPose>(entity);
     if (nullptr == trajPoseComp)
     {
       // Leave Z to the pose component, control only 2D with Trajectory
       initialPose.Pos().Z(0.03);
-      _ecm.CreateComponent(_entity, components::TrajectoryPose(initialPose));
+      _ecm.CreateComponent(entity, gz::sim::components::TrajectoryPose(initialPose));
     }
   }
 
@@ -921,7 +921,7 @@ bool HuNavActorPluginIGN::getPedestrianStates(const gz::sim::EntityComponentMana
     gz::math::Pose3d pose = worldPose(pedEntity, _ecm);
 
     double yaw = normalizeAngle(pose.Rot().Yaw() - M_PI_2);
-    ignition::math::Vector3d pos = pose.Pos();
+    gz::math::Vector3d pos = pose.Pos();
 
     // Actors in Gazebo (specifically those that move using animations) do not have real physical dynamics 
     // like normal models. This means they do not automatically generate linear and angular velocity values 
@@ -1395,7 +1395,7 @@ void HuNavActorPluginIGN::updateGazeboHuman(gz::sim::EntityComponentManager& _ec
   // set the pose of the actor
   actorPose.Pos().X(_agent.position.position.x);
   actorPose.Pos().Y(_agent.position.position.y);
-  actorPose.Rot() = ignition::math::Quaterniond(1.5707, 0, yaw);
+  actorPose.Rot() = gz::math::Quaterniond(1.5707, 0, yaw);
 
   //auto model = gz::sim::Model(entity);
   //model.SetWorldPoseCmd(_ecm, actorPose);
@@ -1679,12 +1679,6 @@ void HuNavActorPluginIGN::PreUpdate(const gz::sim::UpdateInfo& _info, gz::sim::E
 
 
 
-GZ_ADD_PLUGIN(
-    HuNavActorPluginIGN,
-    gz::sim::System,
-    gz::sim::ISystemConfigure,
-    gz::sim::ISystemPreUpdate
-  )
-  
-GZ_ADD_PLUGIN_ALIAS(HuNavActorPluginIGN, HuNavActorPluginIGN)
-  
+IGNITION_ADD_PLUGIN(HuNavActorPluginIGN, gz::sim::System, HuNavActorPluginIGN::ISystemConfigure, HuNavActorPluginIGN::ISystemPreUpdate/*, HuNavPluginIGN::ISystemPostUpdate, HuNavPluginIGN::ISystemReset*/)
+
+IGNITION_ADD_PLUGIN_ALIAS(HuNavActorPluginIGN, "HuNavActorPluginIGN")

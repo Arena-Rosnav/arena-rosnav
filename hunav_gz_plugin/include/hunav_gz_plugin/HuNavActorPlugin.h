@@ -186,7 +186,7 @@ private:
   }
 
   // Function to calculate the distance between two axis-aligned bounding boxes
-  inline double CalculateDistance(const ignition::math::AxisAlignedBox& box1, const ignition::math::AxisAlignedBox& box2)
+  inline double CalculateDistance(const gz::math::AxisAlignedBox& box1, const gz::math::AxisAlignedBox& box2)
   {
     gz::math::Vector3d min1 = box1.Min();
     gz::math::Vector3d max1 = box1.Max();
@@ -213,4 +213,3 @@ private:
 
 
 };
-

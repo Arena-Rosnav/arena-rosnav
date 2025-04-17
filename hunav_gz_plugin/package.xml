@@ -12,6 +12,7 @@
 
   <!-- Runtime and build dependencies -->
   <depend>rclcpp</depend>
+  <depend>ros_gz</depend>
   <depend>hunav_msgs</depend>
   <depend>tf2</depend>
   <depend>tf2_geometry_msgs</depend>

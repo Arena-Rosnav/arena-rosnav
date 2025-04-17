@@ -18,6 +18,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(gz-sim8 REQUIRED)
 find_package(gz-plugin2 REQUIRED)
+find_package(ros_gz REQUIRED)
 
 # Include directories
 include_directories(
@@ -31,6 +32,7 @@ target_include_directories(HuNavActorPluginIGN PUBLIC
   $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(HuNavActorPluginIGN 
   rclcpp
+  ros_gz
   tf2
   tf2_geometry_msgs
   hunav_msgs
