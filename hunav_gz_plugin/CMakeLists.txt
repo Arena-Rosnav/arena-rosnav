@@ -17,7 +17,6 @@ find_package(hunav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(gz-sim8 REQUIRED)
-find_package(gz-plugin2 REQUIRED)
 find_package(ros_gz REQUIRED)
 
 # Include directories
@@ -36,11 +35,9 @@ ament_target_dependencies(HuNavActorPluginIGN
   tf2
   tf2_geometry_msgs
   hunav_msgs
-  gz-plugin2
   gz-sim8
 )
 target_link_libraries(HuNavActorPluginIGN
-  gz-plugin2::gz-plugin2
   gz-sim8::gz-sim8
 )
 

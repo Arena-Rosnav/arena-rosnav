@@ -81,14 +81,6 @@ class HunavManager(EntityManager):
         self.node.get_logger().warn("Service wait complete")
 
 
-        # Create timer after services are ready
-        self._update_timer = self.node.create_timer(
-        0.1, #update rate 
-        self._update_agents,
-        callback_group=rclpy.callback_groups.ReentrantCallbackGroup()
-    )
-        self.node.get_logger().warn("Update timer created")
-
         # Initialize JAIL_POS generator
         self.node.get_logger().warn("Initializing JAIL_POS generator...")
         
@@ -136,85 +128,6 @@ class HunavManager(EntityManager):
             point.z = 0.0
             points.append(point)
         return points
-
-
-    def _update_agents(self):
-        """Updates agent positions"""
-        try:
-            #self.node.get_logger().warn(f"PEDESTRIANS UPDATE: {self._pedestrians}")
-            if not self._pedestrians:
-                return
-                
-            self.node.get_logger().warn(f"Starting update for {len(self._pedestrians)} pedestrians")
-            
-            with self._lock:
-                # Erstelle Request mit aktuellen Agenten
-                request = ComputeAgents.Request()
-                request.robot = self._create_robot_message()
-                request.current_agents = self._get_current_agents()
-                
-                # Sende an HuNav
-                self.node.get_logger().warn("Sending request to HuNav")
-                response = self._compute_agents_client.call(request)
-                
-                if response and response.updated_agents.agents:
-                    self.node.get_logger().warn("Received updated positions from HuNav")
-                    
-                    # Für jeden aktualisierten Agenten
-                    for agent in response.updated_agents.agents:
-                        self.node.get_logger().warn(
-                            f"Processing updates for {agent.name}:"
-                            f"\n Old pos: ({self._pedestrians[agent.id]['agent'].position.position.x:.2f}, "
-                            f"{self._pedestrians[agent.id]['agent'].position.position.y:.2f})"
-                            f"\n New pos: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
-                        )
-                        
-                        # Update Position in Gazebo
-                        entity_name = f"agent{agent.id}"
-                        if entity_name in self._simulator.entities:
-                            new_position = PositionOrientation(
-                                x=agent.position.position.x,
-                                y=agent.position.position.y,
-                                orientation=agent.yaw
-                            )
-                            
-                            # Bewege in Simulator
-                            success = self._simulator.move_entity(entity_name, new_position)
-                            
-                            if success:
-                                # Update gespeicherten Zustand
-                                self._pedestrians[agent.id]['agent'] = agent
-                                self._pedestrians[agent.id]['last_update'] = self.node.get_clock().now()
-                                self.node.get_logger().warn(f"Successfully updated {agent.name}")
-                    
-        except Exception as e:
-            self.__logger.error(f"Error in agent update: {str(e)}")
-            self.__logger.error(traceback.format_exc())
-
-
-
-    def _get_current_agents(self) -> Agents:
-        """Creates current agents message for service call"""
-        self.node.get_logger().warn("Creating current agents message")
-        current_agents = Agents()
-        current_agents.header.stamp = self.node.get_clock().now().to_msg()
-        current_agents.header.frame_id = "map"
-        
-        # Log was wir in _pedestrians haben
-        self.node.get_logger().warn(f"Current pedestrians: {list(self._pedestrians.keys())}")
-        
-        for agent_id, agent_data in self._pedestrians.items():
-            self.node.get_logger().warn(f"iteration_agent_id: {agent_id}")
-            self.node.get_logger().warn(f"iteration_agent_data: {agent_data}")
-            if 'agent' in agent_data:
-                current_agent = agent_data['agent']
-                self.node.get_logger().warn(
-                    f"Adding agent {current_agent.name} at position "
-                    f"({current_agent.position.position.x}, {current_agent.position.position.y})"
-                )
-                current_agents.agents.append(current_agent)
-        
-        return current_agents
 
 
     def setup_services(self):
@@ -498,7 +411,7 @@ class HunavManager(EntityManager):
             agent_msg.group_id = hunav_obstacle.group_id
             agent_msg.velocity = hunav_obstacle.velocity
             agent_msg.desired_velocity = hunav_obstacle.desired_velocity
-            agent_msg.linear_vel=hunav_obstacle.linear_vel
+            agent_msg.linear_vel=hunav_obstacle.linear_vel                      #could be error reason. 
             agent_msg.angular_vel=hunav_obstacle.angular_vel
             agent_msg.radius = hunav_obstacle.radius
 
@@ -706,30 +619,6 @@ class HunavManager(EntityManager):
 
 
 
-    def _get_animation_factor(self, behavior: AgentBehavior) -> float:
-        """Get animation factor with debug logging"""
-        self.node.get_logger().warn(f"Getting animation factor for behavior type {behavior.type}")
-        
-        if behavior.state == AgentBehavior.BEH_NO_ACTIVE:
-            self.node.get_logger().warn("Behavior inactive, returning default factor 1.0")
-            return 1.0
-
-        factor = 1.0
-        if behavior.type == AgentBehavior.BEH_REGULAR:
-            factor = 1.5
-        elif behavior.type == AgentBehavior.BEH_IMPASSIVE:
-            factor = 1.5
-        elif behavior.type == AgentBehavior.BEH_SURPRISED:
-            factor = 1.0
-        elif behavior.type == AgentBehavior.BEH_THREATENING:
-            factor = 1.0
-        elif behavior.type == AgentBehavior.BEH_SCARED:
-            factor = 1.5
-        elif behavior.type == AgentBehavior.BEH_CURIOUS:
-            factor = 1.0
-
-        self.node.get_logger().warn(f"Returning animation factor: {factor}")
-        return factor
 
 
   
