@@ -1,5 +1,8 @@
 #! /usr/bin/bash
 
+# update vcstool
+python -m pip install git+https://github.com/voshch/vcstool.git
+
 export ROSDEP_EXCLUDES='libignition-gazebo6-dev'
 
 WARN='\033[0;93m'
