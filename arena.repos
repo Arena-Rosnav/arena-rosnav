@@ -6,7 +6,7 @@ repositories:
   arena/simulation-setup:
     type: git
     url: https://github.com/voshch/arena-simulation-setup.git
-    version: humble@d9e3eb0
+    version: humble@79d7623d
   arena/isaac:
     type: git
     url: https://github.com/Arena-Rosnav/arena-isaac
