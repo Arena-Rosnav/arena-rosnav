@@ -1,9 +1,9 @@
 #! /usr/bin/bash
 
 # update vcstool
-python -m pip install git+https://github.com/voshch/vcstool.git
+python -m pip install git+https://github.com/voshch/vcstool.git || echo 'failed vcstool upgrade, ignoring'
 
-export ROSDEP_EXCLUDES='libignition-gazebo6-dev'
+export ROSDEP_EXCLUDES='libignition-gazebo6-dev gazebo_dev gazebo_ros gazebo_plugins gazebo_ros2_control'
 
 WARN='\033[0;93m'
 WHITE='\033[0;37m'
@@ -23,19 +23,19 @@ run(){
 }
 
 run '(cd src/arena/arena-rosnav && git pull --autostash || true);'
-run '(vcs import src < src/arena/arena-rosnav/arena.repos);' '$? > 1'
+run '(vcs import --input src/arena/arena-rosnav/arena.repos --recursive --ff src);' '$? > 1'
 
 
 if [ -f src/arena/arena-rosnav/.installed ] ; then
     while read -r installed; do 
         name="$(echo $installed | cut -d. -f1)"
         if [ -f "src/arena/arena-rosnav/.repos/${name}.repos" ] ; then
-            run "(vcs import --input src/arena/arena-rosnav/.repos/${name}.repos --recursive src);" '$? > 1'
+            run "(vcs import --input src/arena/arena-rosnav/.repos/${name}.repos --recursive --ff src);" '$? > 1'
         fi
     done < src/arena/arena-rosnav/.installed
 fi
-run '(rosdep update --rosdistro "${ARENA_ROS_DISTRO:-humble}" && rosdep install --from-paths src --ignore-src -r -y --skip-keys "${ROSDEP_EXCLUDES}" || echo rosdep failed to install all dependencies)' 
-run '(. src/arena/arena-rosnav/tools/poetry_install)'
+run '(rosdep update --rosdistro "${ARENA_ROS_DISTRO:-humble}" && rosdep install --from-paths src --ignore-src -r -y --skip-keys "${ROSDEP_EXCLUDES}" || echo "rosdep failed to install all dependencies");' 
+run '(. src/arena/arena-rosnav/tools/poetry_install);'
 
 
 if [ $FATAL -ne 0 ] ;
