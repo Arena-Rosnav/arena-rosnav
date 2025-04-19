@@ -28,25 +28,27 @@ class ConfigFileGenerator(Node):
         client: rclpy.client.Client,
         param_name: str,
         test_fn: typing.Callable[[typing.Any], bool] | None = None,
+        timeout: float = 1,
     ) -> rcl_interfaces.msg.ParameterValue:
         """
         Block execution until parameter passes test function.
         @parameter client: rclpy GetParameters service client
         @paramter parameter_name: name of parameter
         @test_fn: test function for parameter
+        @timeout: timeout in seconds
         """
         while True:
             req = rcl_interfaces.srv.GetParameters.Request(names=[param_name])
             future = client.call_async(req)
-            rclpy.spin_until_future_complete(self, future)
+            rclpy.spin_until_future_complete(self, future, timeout_sec=timeout)
             params = future.result()
-            if params.values:
+            if params and params.values:
                 value = params.values[0]
                 if (not test_fn) or test_fn(value):
                     self.get_logger().info(f'param {param_name} is set')
                     return value
             self.get_logger().info(f'waiting for {param_name} to be set')
-            time.sleep(1)
+            time.sleep(timeout)
 
     def __init__(self):
         Node.__init__(self, 'rviz_config_generator')
