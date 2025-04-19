@@ -6,6 +6,7 @@ import importlib
 
 from launch import Substitution, SomeSubstitutionsType, LaunchContext
 from launch.utilities import ensure_argument_type, normalize_to_list_of_substitutions, perform_substitutions
+from launch.utilities.type_utils import perform_typed_substitution
 
 
 class PythonExpression(Substitution):
@@ -94,3 +95,38 @@ class PythonExpression(Substitution):
 
             expression_locals[module.__name__] = module
         return str(eval(perform_substitutions(context, self.expression), {}, expression_locals))
+
+
+class IfElseSubstitution(Substitution):
+    def __init__(self, condition,
+                 if_value='',
+                 else_value=''):
+        super().__init__()
+        if if_value == else_value == '':
+            raise RuntimeError('One of if_value and else_value must be specified')
+        self._condition = normalize_to_list_of_substitutions(condition)
+        self._if_value = normalize_to_list_of_substitutions(if_value)
+        self._else_value = normalize_to_list_of_substitutions(else_value)
+
+    @property
+    def condition(self):
+        return self._condition
+
+    @property
+    def if_value(self):
+        return self._if_value
+
+    @property
+    def else_value(self):
+        return self._else_value
+
+    def perform(self, context):
+        try:
+            condition = perform_typed_substitution(context, self.condition, bool)
+        except (TypeError, ValueError) as e:
+            raise e
+
+        if condition:
+            return perform_substitutions(context, self.if_value)
+        else:
+            return perform_substitutions(context, self.else_value)

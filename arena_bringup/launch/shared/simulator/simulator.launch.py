@@ -39,7 +39,7 @@ def generate_launch_description():
             ),
             launch_arguments={
                 'use_sim_time': use_sim_time.substitution,
-                # 'headless': headless.substitution,
+                'headless': headless.substitution,
                 'world': world.substitution,
             }.items(),
         )
