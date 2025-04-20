@@ -12,8 +12,7 @@ from ros_gz_interfaces.msg import Entity, EntityFactory, WorldControl
 from ros_gz_interfaces.srv import (ControlWorld, DeleteEntity, SetEntityPose,
                                    SpawnEntity)
 
-from task_generator.shared import (EntityProps, Model, ModelType, ModelWrapper,
-                                   PositionOrientation, RobotProps, Wall)
+from task_generator.shared import (EntityProps, Model, ModelType, ModelWrapper, PositionOrientation, Robot, Wall)
 from task_generator.simulators import BaseSimulator
 from .robot_bridge import RobotBridge
 
@@ -137,15 +136,15 @@ class GazeboSimulator(BaseSimulator):
 
             self.node.get_logger().info(f"Move result for {name}: {result.success}")
 
-            if result.success and isinstance((entity := self.entities.get(name, None)), RobotProps):
+            if result.success and isinstance((entity := self.entities.get(name, None)), Robot):
                 entity = attrs.evolve(entity, position=position)
                 self.entities[name] = entity
                 self._robot_initialpose(entity)
-                
+
                 max_attempts = 3
                 attempt = 1
                 initial_pose_triggered = False
-                
+
                 while attempt <= max_attempts and not initial_pose_triggered:
                     self.node.get_logger().info(
                         f"Attempt {attempt}/{max_attempts}: Triggering initial pose update for robot {name}"
@@ -165,7 +164,7 @@ class GazeboSimulator(BaseSimulator):
                             self.node.get_logger().info("Waiting 1 second before retrying...")
                             time.sleep(1)
                         attempt += 1
-                
+
                 if not initial_pose_triggered:
                     self.node.get_logger().error(
                         f"Failed to set initial pose for {name} after {max_attempts} attempts"
@@ -174,7 +173,7 @@ class GazeboSimulator(BaseSimulator):
                     from task_generator.utils.geometry import quaternion_from_euler
                     quat = quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="xyzs")
                     qx, qy, qz, qw = quat
-                    transform_pub_node =launch_ros.actions.Node(
+                    transform_pub_node = launch_ros.actions.Node(
                         package="tf2_ros",
                         executable="static_transform_publisher",
                         name="map_to_odomframe_publisher",
@@ -184,7 +183,7 @@ class GazeboSimulator(BaseSimulator):
                     self.node.do_launch(transform_pub_node)
                     time.sleep(1)
                     self.node.get_logger().info("Destroying the static_transform_publisher node after 3 seconds.")
-                    self.node.destroy_node(transform_pub_node)
+                    transform_pub_node.destroy_node()
 
             return result.success
 
@@ -203,7 +202,7 @@ class GazeboSimulator(BaseSimulator):
             # Get model description
             model_description = entity.model.get([ModelType.SDF, ModelType.URDF]).description
 
-            if isinstance(entity, RobotProps):
+            if isinstance(entity, Robot):
                 model_description = model_description.replace("jackal_default_name", entity.name)
                 self._robot_initialpose(entity)
                 self._robot_bridge(entity, model_description)
@@ -355,7 +354,7 @@ class GazeboSimulator(BaseSimulator):
         self.node.get_logger().info("Goal published")
 
     def spawn_walls(self, walls) -> bool:
-        wall_name = f"custom_wall_{len(self._walls_entities)}"
+        wall_name = self.node._environment_manager.realize(f"custom_wall_{len(self._walls_entities)}")
         # wall_positions = [(0, 0), (5, 0), (5, 5), (0, 5), (0, 0)]  # A square wall
         wall_height = 3.0  # Wall height in meters
         wall_thickness = 0.2  # Wall thickness in meters
@@ -480,35 +479,33 @@ class GazeboSimulator(BaseSimulator):
             self.node.get_logger().error(f"Error generating SDF: {repr(e)}")
             return None
 
-    def _robot_bridge(self, robot: RobotProps, description: str):
+    def _robot_bridge(self, robot: Robot, description: str):
+        robot_type = robot.model.name
         launch_description = launch.LaunchDescription()
-        
+
         launch_description.add_action(
             launch_ros.actions.PushRosNamespace(
                 namespace=self.node.service_namespace(robot.name)
             )
         )
-        import re
-        robot_type = re.sub(r'[0-9]', '', robot.name)
-        
+
         if robot_type not in RobotBridge.ROBOT_CONFIGS:
             raise ValueError(f"No configuration found for robot type: {robot_type}")
         else:
             self.node.get_logger().info(f"Spawning robot of type: {robot_type}")
-            
-        
+
         config = RobotBridge.ROBOT_CONFIGS[robot_type]
         bridge_arguments = []
         remappings = []
-        
-         # Build bridge arguments and remappings dynamically
+
+        # Build bridge arguments and remappings dynamically
         for topic_config in config["topics"]:
             gz_topic = topic_config["gz_topic"].format(robot_name=robot.name)
             ros_topic = topic_config["ros_topic"]
             bridge_str = f"{gz_topic}@{topic_config['ros_type']}{topic_config['direction']}{topic_config['gz_type']}"
             bridge_arguments.append(bridge_str)
             remappings.append((gz_topic, ros_topic))
-            
+
         # Add parameter_bridge node
         launch_description.add_action(
             launch_ros.actions.Node(
@@ -548,7 +545,7 @@ class GazeboSimulator(BaseSimulator):
         # )
         self.node.do_launch(launch_description)
 
-    def _robot_initialpose(self, robot: RobotProps):
+    def _robot_initialpose(self, robot: Robot):
         pose = PoseWithCovarianceStamped()
         pose.pose.pose = robot.position.to_pose()
         pose.header.frame_id = "map"

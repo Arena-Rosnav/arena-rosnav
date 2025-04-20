@@ -18,7 +18,7 @@ task_generator_node:
           - shelf
         seed: -1
       scenario:
-        file: default.json
+        file: emptysn.json
       staged:
         curriculum: default.yaml
         index: 0

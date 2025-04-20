@@ -8,6 +8,7 @@ from task_generator.simulators import BaseSimulator
 class DummyEntityManager(EntityManager):
 
     _known_obstacles: KnownObstacles
+
     def __init__(self, namespace: Namespace, simulator: BaseSimulator):
         super().__init__(namespace, simulator)
         self._known_obstacles = KnownObstacles()
@@ -70,4 +71,4 @@ class DummyEntityManager(EntityManager):
     def move_robot(self, name: str, position: PositionOrientation):
         self.__logger.debug(
             f'moving robot {name} to {repr(position)}')
-        self._simulator.move_entity(name,position)                                                                                                                                                                                                   
+        self._simulator.move_entity(name, position)

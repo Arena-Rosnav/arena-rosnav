@@ -20,7 +20,7 @@ def generate_launch_description():
 
     headless = LaunchArgument(
         name='headless',
-        choices=['0', '1', '2'],
+        default_value='False',
     )
 
     # TODO temporary
@@ -38,9 +38,9 @@ def generate_launch_description():
                     'arena_bringup'), 'launch/shared/simulator/gazebo/gazebo.launch.py')
             ),
             launch_arguments={
-                'use_sim_time': use_sim_time.substitution,
-                'headless': headless.substitution,
-                'world': world.substitution,
+                **use_sim_time.dict,
+                **headless.dict,
+                **world.dict,
             }.items(),
         )
     )
