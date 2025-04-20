@@ -50,10 +50,9 @@ class ConfigFileGenerator(Node):
             self.get_logger().info(f'waiting for {param_name} to be set')
             time.sleep(timeout)
 
-    def __init__(self):
+    def __init__(self, TASKGEN_NODE: str = '/task_generator_node'):
         Node.__init__(self, 'rviz_config_generator')
 
-        TASKGEN_NODE = '/task_generator_node'
         TASKGEN_PARAM_SRV = os.path.join(TASKGEN_NODE, 'get_parameters')
         PARAM_INITIALIZED = 'initialized'
 
@@ -276,7 +275,8 @@ class ConfigFileGenerator(Node):
 def main():
     rclpy.init()
 
-    config_file_generator = ConfigFileGenerator()
+    cli_args = rclpy.utilities.remove_ros_args(sys.argv)
+    config_file_generator = ConfigFileGenerator(*cli_args[1:])
     try:
         config_file = config_file_generator.create_config()
         launch_service = launch.launch_service.LaunchService()
