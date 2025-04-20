@@ -25,11 +25,11 @@ include_directories(
 )
 
 # Actor Plugin
-add_library(HuNavActorPluginIGN SHARED src/HuNavActorPlugin.cpp)
-target_include_directories(HuNavActorPluginIGN PUBLIC
+add_library(HuNavSystemPluginIGN SHARED src/HuNavSystemPlugin.cpp)
+target_include_directories(HuNavSystemPluginIGN PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(HuNavActorPluginIGN 
+ament_target_dependencies(HuNavSystemPluginIGN 
   rclcpp
   ros_gz
   tf2
@@ -37,12 +37,12 @@ ament_target_dependencies(HuNavActorPluginIGN
   hunav_msgs
   gz-sim8
 )
-target_link_libraries(HuNavActorPluginIGN
+target_link_libraries(HuNavSystemPluginIGN
   gz-sim8::gz-sim8
 )
 
 # Install targets
-install(TARGETS HuNavActorPluginIGN
+install(TARGETS HuNavSystemPluginIGN
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin

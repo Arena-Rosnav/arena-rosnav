@@ -212,7 +212,7 @@ class HunavManager(EntityManager):
 
 
     def create_pedestrian_sdf(self, agent_config: HunavDynamicObstacle) -> str:
-        """Create SDF description for pedestrian using gz-sim actor format"""
+        """Create SDF description for pedestrian using gz-sim actor format with embedded agent data"""
         # Get skin type
         skin_type = self.SKIN_TYPES.get(agent_config.skin, 'casual_man.dae')
         
@@ -228,31 +228,49 @@ class HunavManager(EntityManager):
         
         animation_file = ANIMATION_MAP.get(agent_config.behavior.type, "07_01-walk.bvh")
 
-        # Get workspace root
-        def get_workspace_root():
-            current_dir = os.path.abspath(__file__)
-            workspace_root = current_dir
-            while not workspace_root.endswith("arena4_ws"):
-                workspace_root = os.path.dirname(workspace_root)
-            return workspace_root
-
-        # Construct paths    
+        # Construct mesh paths
         mesh_path = os.path.join(
-            get_workspace_root(),
+            self._get_workspace_root(),
             'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/models',
             skin_type
         )
         
         animation_path = os.path.join(
-            get_workspace_root(),
+            self._get_workspace_root(),
             'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/animations',
             animation_file
         )
 
+        # Erstelle Goals-String für SDF
+        goals_str = ""
+        if hasattr(agent_config, 'goals') and agent_config.goals:
+            for i, goal in enumerate(agent_config.goals):
+                goals_str += f"""
+                    <goal index="{i}">
+                        <x>{goal.position.x}</x>
+                        <y>{goal.position.y}</y>
+                    </goal>"""
+
+        # Behavior-String erstellen
+        behavior_str = f"""
+            <behavior>
+                <type>{agent_config.behavior.type}</type>
+                <state>{agent_config.behavior.state}</state>
+                <configuration>{agent_config.behavior.configuration}</configuration>
+                <duration>{agent_config.behavior.duration}</duration>
+                <once>{str(agent_config.behavior.once).lower()}</once>
+                <vel>{agent_config.behavior.vel}</vel>
+                <dist>{agent_config.behavior.dist}</dist>
+                <social_force_factor>{agent_config.behavior.social_force_factor}</social_force_factor>
+                <goal_force_factor>{agent_config.behavior.goal_force_factor}</goal_force_factor>
+                <obstacle_force_factor>{agent_config.behavior.obstacle_force_factor}</obstacle_force_factor>
+                <other_force_factor>{agent_config.behavior.other_force_factor}</other_force_factor>
+            </behavior>"""
+
         sdf = f"""<?xml version="1.0" ?>
         <sdf version="1.9">
             <actor name="{agent_config.name}">
-                <pose>{agent_config.position.x} {agent_config.position.y} {self._get_agent_height(agent_config.skin)} 0 0 {agent_config.yaw}</pose>
+                <pose>{agent_config.position.x} {agent_config.position.y} {self._get_agent_height(agent_config.skin)} 0 0 {agent_config.position.orientation}</pose>
                 
                 <skin>
                     <filename>{mesh_path}</filename>
@@ -265,11 +283,30 @@ class HunavManager(EntityManager):
                     <interpolate_x>true</interpolate_x>
                 </animation>
 
-                <plugin name="HuNavActorPluginIGN" filename="libHuNavActorPluginIGN.so">
+                <plugin name="HuNavSystemPluginIGN" filename="libHuNavSystemPluginIGN.so">
                     <update_rate>10.0</update_rate>
-                    <robot_name>robot</robot_name>
+                    <robot_name>jackal</robot_name>
                     <use_navgoal_to_start>false</use_navgoal_to_start>
                     <global_frame_to_publish>map</global_frame_to_publish>
+                    <use_get_agents_service>false</use_get_agents_service>
+                    
+                    <!-- Eingebettete Agent-Daten -->
+                    <agent_data>
+                        <id>{agent_config.id}</id>
+                        <type>{agent_config.type}</type>
+                        <skin>{agent_config.skin}</skin>
+                        <name>{agent_config.name}</name>
+                        <group_id>{agent_config.group_id}</group_id>
+                        <desired_velocity>{agent_config.desired_velocity}</desired_velocity>
+                        <radius>{agent_config.radius}</radius>
+                        {behavior_str}
+                        <goals>
+                            {goals_str}
+                        </goals>
+                        <cyclic_goals>{str(agent_config.cyclic_goals).lower()}</cyclic_goals>
+                        <goal_radius>{agent_config.goal_radius}</goal_radius>
+                    </agent_data>
+                    
                     <ignore_models>
                         <model>visual</model>
                         <model>link</model>
@@ -281,7 +318,7 @@ class HunavManager(EntityManager):
             </actor>
         </sdf>"""
 
-        return sdf 
+        return sdf
 
     def _get_agent_height(self, skin_type: int) -> float:
         """Get correct height based on skin type"""
@@ -354,15 +391,15 @@ class HunavManager(EntityManager):
                 hunav_obstacle = attr.evolve(hunav_obstacle, name=f"agent{hunav_obstacle.id}")
                 self.node.get_logger().warn(f"\nProcessing Agent with name: {hunav_obstacle.name}")
 
-                velocity_twist = geometry_msgs.msg.Twist() #set velocity hardcoded like in old hunavgazebowrapper
-                velocity_twist.linear.x = 0.6
-                velocity_twist.linear.y = 0.0 
-                velocity_twist.linear.z = 0.0
-                velocity_twist.angular.x = 0.0
-                velocity_twist.angular.y = 0.0
-                velocity_twist.angular.z = 0.1
+                # velocity_twist = geometry_msgs.msg.Twist() #set velocity hardcoded like in old hunavgazebowrapper
+                # velocity_twist.linear.x = 0.6
+                # velocity_twist.linear.y = 0.0 
+                # velocity_twist.linear.z = 0.0
+                # velocity_twist.angular.x = 0.0
+                # velocity_twist.angular.y = 0.0
+                # velocity_twist.angular.z = 0.1
                 
-                hunav_obstacle = attr.evolve(hunav_obstacle, velocity=velocity_twist)
+                # hunav_obstacle = attr.evolve(hunav_obstacle, velocity=velocity_twist)
 
                 # Check if obstacle is known to not register an agent multiple times unnecessarily
                 known = self._known_obstacles.get(hunav_obstacle.name)
@@ -409,10 +446,10 @@ class HunavManager(EntityManager):
             agent_msg.type = hunav_obstacle.type
             agent_msg.skin = hunav_obstacle.skin
             agent_msg.group_id = hunav_obstacle.group_id
-            agent_msg.velocity = hunav_obstacle.velocity
+            #agent_msg.velocity = hunav_obstacle.velocity
             agent_msg.desired_velocity = hunav_obstacle.desired_velocity
-            agent_msg.linear_vel=hunav_obstacle.linear_vel                      #could be error reason. 
-            agent_msg.angular_vel=hunav_obstacle.angular_vel
+            #agent_msg.linear_vel=hunav_obstacle.linear_vel                      #could be error reason. 
+            #agent_msg.angular_vel=hunav_obstacle.angular_vel
             agent_msg.radius = hunav_obstacle.radius
 
             # Set position
