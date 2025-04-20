@@ -333,15 +333,11 @@ void HuNavSystemPluginIGN::initializeAgents(gz::sim::EntityComponentManager& _ec
     {
       hunav_msgs::msg::Agent ag = agent;
       auto agentEntity = _ecm.EntityByComponents(gz::sim::components::Name(agent.name));
-      if(!agentEntity) {
-        //RCLCPP_ERROR(rosnode->get_logger(), "Pedestrian model '%s' not found!!!!", agent.name.c_str());
-        gzerr << "ERROR! Pedestrian model " << agent.name << " not found!" << std::endl;
-        // std::ostringstream oss;
-        // oss << "ERROR: Pedestrian model " << agent.name << " not found!" << std::endl;
-        // throw std::runtime_error(oss.str());
-        agentsInitialized_ = false;
-        break;
+      if (!agentEntity) {
+        gzmsg << "[HuNavPlugin] Agent '" << agent.name << "' not found in ECM yet, skipping for now." << std::endl;
+        continue;  // skip und beim nächsten Update wieder probieren
       }
+      
 
       //Actor
       auto actorComp = _ecm.Component<gz::sim::components::Actor>(agentEntity);
@@ -833,7 +829,7 @@ void HuNavSystemPluginIGN::getObstacles(const gz::sim::EntityComponentManager& _
  * @param _ecm EntityComponentManager
  * @return true if the agent status was successfully retrieved
  */
-bool HuNavSystemPluginIGN::getPedestrianStates(const gz::sim::EntityComponentManager& _ecm, double _dt)
+bool HuNavSystemPluginIGN::getPedestrianStates(gz::sim::EntityComponentManager& _ecm, double _dt)
 {
   //for (unsigned int i = 0; i < pedestrians_.size(); ++i)
   for (auto& [pedEntity, pedAgent] : pedestrians_)
@@ -845,6 +841,16 @@ bool HuNavSystemPluginIGN::getPedestrianStates(const gz::sim::EntityComponentMan
     {
       gzerr << "ERROR! TrajectoryPose component does not exist for actor " << pedAgent.name << std::endl;
       continue;
+    }
+    // Check for World Pose for the Pedestrian
+    auto wpose = _ecm.Component<gz::sim::components::WorldPose>(pedEntity);
+    if(!wpose)
+    {
+      gzerr << "ERROR! WorldPose component does not exist for actor " << pedAgent.name << std::endl;
+      // Erstelle die Komponente
+      _ecm.CreateComponent(pedEntity, gz::sim::components::WorldPose(traj->Data()));
+      _ecm.SetChanged(pedEntity, gz::sim::components::WorldPose::typeId, gz::sim::ComponentState::OneTimeChange);
+      gzmsg << "Created WorldPose component for actor " << pedAgent.name << std::endl;
     }
     gz::math::Pose3d pose = traj->Data();
     pose.Pos().Z(0.0); // we set the Z coordinate to 0.0
@@ -1034,18 +1040,27 @@ void HuNavSystemPluginIGN::updateGazeboPedestrians(gz::sim::EntityComponentManag
   // }
 
   // update the Gazebo actors
+  RCLCPP_INFO(rosnode_->get_logger(), "=== Updating %zu agents ===", _agents.agents.size());
+  for (const auto& a : _agents.agents)
+  {
+      RCLCPP_INFO(rosnode_->get_logger(), "Looking for agent: '%s'", a.name.c_str());
+      
+  }
   for (auto a : _agents.agents)
   {
     auto entity = _ecm.EntityByComponents(gz::sim::components::Name(a.name));
-    if(!entity)
+    if (!entity)
     {
-      RCLCPP_ERROR(rosnode_->get_logger(), "Pedestrian model '%s' not found!!!!", a.name.c_str());
-      gzerr << "ERROR: Pedestrian model " << a.name << " not found! Shutting down ROS node" << std::endl;
-      std::ostringstream oss;
-      oss << "ERROR: Pedestrian model " << a.name << " not found!" << std::endl;
-      throw std::runtime_error(oss.str());
-      return;
+        static std::unordered_map<std::string, int> warnCounter;
+        warnCounter[a.name]++;
+    
+        if (warnCounter[a.name] % 100 == 0) // nur alle 100 Versuche loggen
+        {
+            RCLCPP_WARN(rosnode_->get_logger(), "Agent %s not yet found in ECM, will retry...", a.name.c_str());
+        }
+        continue;  //  Skip und versuche es beim nächsten PreUpdate erneut
     }
+    
 
     gz::math::Pose3d actorPose; // = worldPose(entity, _ecm) is giving position zero!!!!
     auto apose = _ecm.Component<gz::sim::components::WorldPose>(entity);
@@ -1055,8 +1070,23 @@ void HuNavSystemPluginIGN::updateGazeboPedestrians(gz::sim::EntityComponentManag
       // double di = sqrt(pow(actorPose.Pos().X() - a.position.position.x, 2) + pow(actorPose.Pos().Y() - a.position.position.y, 2));
       // RCLCPP_INFO(rosnode_->get_logger(), "Actor %s curr_pose: [%.4f, %.4f], new_pose: [%.4f, %.4f], D: %.4f", a.name.c_str(), actorPose.Pos().X(), actorPose.Pos().Y(), a.position.position.x, a.position.position.y, di);
     } else {
-      RCLCPP_ERROR(rosnode_->get_logger(), "Actor %s does not have a WorldPose component", a.name.c_str());
-      continue;
+      RCLCPP_WARN(rosnode_->get_logger(), "Actor %s does not have a WorldPose component. Creating it...", a.name.c_str());
+      
+      // Erstelle eine initiale Pose basierend auf den Daten aus der Nachricht
+      gz::math::Pose3d initialPose;
+      initialPose.Pos().X(a.position.position.x);
+      initialPose.Pos().Y(a.position.position.y);
+      initialPose.Pos().Z(0.8);
+      initialPose.Rot() = gz::math::Quaterniond(0, 0.35, a.yaw);
+      
+      // Erstelle die WorldPose-Komponente
+      _ecm.CreateComponent(entity, gz::sim::components::WorldPose(initialPose));
+      _ecm.SetChanged(entity, gz::sim::components::WorldPose::typeId, gz::sim::ComponentState::OneTimeChange);
+      
+      // Weiterverwendung der erstellten Pose
+      actorPose = initialPose;
+      
+      RCLCPP_INFO(rosnode_->get_logger(), "Created WorldPose component for actor %s", a.name.c_str());
     }
     gz::math::Pose3d prevPose = actorPose;
     double yaw = a.yaw; //normalizeAngle(a.yaw);
@@ -1175,17 +1205,25 @@ void HuNavSystemPluginIGN::updateGazeboPedestrians(gz::sim::EntityComponentManag
     // }
 
 
-    // Update actor bone trajectories based on animation time
-    double animationFactor = 5.0; //0.005; //Noé
-    auto animTimeComp = _ecm.Component<gz::sim::components::AnimationTime>(entity);
-    //double animTimeInSeconds = std::chrono::duration_cast<std::chrono::duration<double>>(animTimeComp->Data()).count();
-    //ignmsg << "Animation time: " << animTimeInSeconds << std::endl;
-    auto animTime = animTimeComp->Data() + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
-      std::chrono::duration<double>(distanceTraveled * animationFactor));
-    //auto animTime =  std::chrono::duration_cast<std::chrono::steady_clock::duration>(
-    //  std::chrono::duration<double>(distanceTraveled * animationFactor));
-    //ignmsg << "Animation time: " << animTime.count() << std::endl;
-    *animTimeComp = gz::sim::components::AnimationTime(animTime);
+  // Update actor bone trajectories based on animation time
+  double animationFactor = 5.0; //0.005; //Noé
+  auto animTimeComp = _ecm.Component<gz::sim::components::AnimationTime>(entity);
+  if (!animTimeComp) {
+      gzwarn << "Actor " << a.name << " does not have an AnimationTime component. Creating one..." << std::endl;
+      std::chrono::steady_clock::duration initialTime = std::chrono::seconds(0);
+      _ecm.CreateComponent(entity, gz::sim::components::AnimationTime(initialTime));
+      _ecm.SetChanged(entity, gz::sim::components::AnimationTime::typeId, gz::sim::ComponentState::OneTimeChange);
+      animTimeComp = _ecm.Component<gz::sim::components::AnimationTime>(entity);
+      
+      if (!animTimeComp) {
+          gzerr << "Failed to create AnimationTime component for " << a.name << ". Skipping time update." << std::endl;
+          continue;
+      }
+  }
+
+  auto animTime = animTimeComp->Data() + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+    std::chrono::duration<double>(distanceTraveled * animationFactor));
+  *animTimeComp = gz::sim::components::AnimationTime(animTime);
     //_ecm.SetComponentData<gz::sim::components::AnimationTime>(entity, animTime);
     // Mark as a one-time-change so that the change is propagated to the GUI
     _ecm.SetChanged(entity, gz::sim::components::AnimationTime::typeId, gz::sim::ComponentState::OneTimeChange);
@@ -1247,6 +1285,10 @@ void HuNavSystemPluginIGN::PreUpdate(const gz::sim::UpdateInfo& _info, gz::sim::
   // this->ros_test_pub_->publish(msg);
 
   //GZ_PROFILE("HuNavSystemPluginIGN::PreUpdate");
+  _ecm.Each<gz::sim::components::Name>([&](const gz::sim::Entity &entity, const gz::sim::components::Name *name) {
+    gzmsg << "Entity: " << entity << " Name: " << name->Data() << std::endl;
+    return true;
+});
 
   counter_++;
 

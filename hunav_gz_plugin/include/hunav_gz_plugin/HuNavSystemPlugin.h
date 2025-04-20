@@ -115,7 +115,7 @@ private:
   void initializeAgents(gz::sim::EntityComponentManager& _ecm);
   void initializeRobot(gz::sim::EntityComponentManager& _ecm);
   void getObstacles(const gz::sim::EntityComponentManager& _ecm);
-  bool getPedestrianStates(const gz::sim::EntityComponentManager& _ecm, double _dt);
+  bool getPedestrianStates(gz::sim::EntityComponentManager& _ecm, double _dt);
   bool getRobotState(const gz::sim::EntityComponentManager& _ecm, double _dt);
   void updateGazeboPedestrians(gz::sim::EntityComponentManager& _ecm, const gz::sim::UpdateInfo& _info, const hunav_msgs::msg::Agents& _agents);
 

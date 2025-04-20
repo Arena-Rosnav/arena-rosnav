@@ -11,7 +11,7 @@ import geometry_msgs
 from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import Point, Pose, Quaternion, Twist
 from hunav_msgs.msg import Agent, AgentBehavior, Agents
-from hunav_msgs.srv import (ComputeAgent, ComputeAgents, MoveAgent, ResetAgents)
+from hunav_msgs.srv import (ComputeAgent, ComputeAgents, MoveAgent,GetAgents, ResetAgents)
 
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.hunav_manager import HunavDynamicObstacle
@@ -38,6 +38,7 @@ class HunavManager(EntityManager):
     SERVICE_COMPUTE_AGENTS = 'compute_agents'
     SERVICE_MOVE_AGENT = 'move_agent'
     SERVICE_RESET_AGENTS = 'reset_agents'
+    SERVICE_GET_AGENTS = 'get_agents'
 
     SKIN_TYPES = {
             0: 'elegant_man.dae',
@@ -65,6 +66,8 @@ class HunavManager(EntityManager):
         self.node.get_logger().warn("Initializing collections...")
         self._known_obstacles = KnownObstacles()
         self._pedestrians = {}
+        self._agents_container = Agents()  # Container to hold all registered agents
+        self._agents_container.header.frame_id = "map"
         self.node.get_logger().warn("Collections initialized")
 
         # Setup services
@@ -143,7 +146,8 @@ class HunavManager(EntityManager):
             'compute_agent': f'/{self.SERVICE_COMPUTE_AGENT}',
             'compute_agents': f'/{self.SERVICE_COMPUTE_AGENTS}',
             'move_agent': f'/{self.SERVICE_MOVE_AGENT}',
-            'reset_agents': f'/{self.SERVICE_RESET_AGENTS}'
+            'reset_agents': f'/{self.SERVICE_RESET_AGENTS}',
+            'get_agents': f'/{self.SERVICE_GET_AGENTS}'
         }
         
         # Log service creation attempts
@@ -174,6 +178,14 @@ class HunavManager(EntityManager):
             ResetAgents,
             service_names['reset_agents']
         )
+       # Create GetAgents service provider
+        self.node.get_logger().warn(f"Creating get_agents service provider at: {service_names['get_agents']}")
+        self._get_agents_server = self.node.create_service(
+            GetAgents,
+            service_names['get_agents'],
+            self._get_agents_callback
+        )
+        self.node.get_logger().warn("GetAgents service provider created")
         
 
         # Wait for Services
@@ -210,9 +222,23 @@ class HunavManager(EntityManager):
         self.node.get_logger().warn("=== SETUP_SERVICES COMPLETE ===")
         return True
 
+    def _get_agents_callback(self, request, response):
+        """Service callback for GetAgents service"""
+        self.node.get_logger().warn("=== GET_AGENTS SERVICE CALLED ===")
+        
+        # Update header timestamp
+        self._agents_container.header.stamp = self.node.get_clock().now().to_msg()
+        
+        # Create a copy of the agents container
+        response.agents = self._agents_container
+        
+        self.node.get_logger().warn(f"Returning {len(response.agents.agents)} agents")
+        
+        return response
+
 
     def create_pedestrian_sdf(self, agent_config: HunavDynamicObstacle) -> str:
-        """Create SDF description for pedestrian using gz-sim actor format with embedded agent data"""
+        """Create SDF description for pedestrian using gz-sim actor format"""
         # Get skin type
         skin_type = self.SKIN_TYPES.get(agent_config.skin, 'casual_man.dae')
         
@@ -228,49 +254,31 @@ class HunavManager(EntityManager):
         
         animation_file = ANIMATION_MAP.get(agent_config.behavior.type, "07_01-walk.bvh")
 
-        # Construct mesh paths
+        # Get workspace root
+        def get_workspace_root():
+            current_dir = os.path.abspath(__file__)
+            workspace_root = current_dir
+            while not workspace_root.endswith("arena4_ws"):
+                workspace_root = os.path.dirname(workspace_root)
+            return workspace_root
+
+        # Construct paths    
         mesh_path = os.path.join(
-            self._get_workspace_root(),
+            get_workspace_root(),
             'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/models',
             skin_type
         )
         
         animation_path = os.path.join(
-            self._get_workspace_root(),
+            get_workspace_root(),
             'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/animations',
             animation_file
         )
 
-        # Erstelle Goals-String für SDF
-        goals_str = ""
-        if hasattr(agent_config, 'goals') and agent_config.goals:
-            for i, goal in enumerate(agent_config.goals):
-                goals_str += f"""
-                    <goal index="{i}">
-                        <x>{goal.position.x}</x>
-                        <y>{goal.position.y}</y>
-                    </goal>"""
-
-        # Behavior-String erstellen
-        behavior_str = f"""
-            <behavior>
-                <type>{agent_config.behavior.type}</type>
-                <state>{agent_config.behavior.state}</state>
-                <configuration>{agent_config.behavior.configuration}</configuration>
-                <duration>{agent_config.behavior.duration}</duration>
-                <once>{str(agent_config.behavior.once).lower()}</once>
-                <vel>{agent_config.behavior.vel}</vel>
-                <dist>{agent_config.behavior.dist}</dist>
-                <social_force_factor>{agent_config.behavior.social_force_factor}</social_force_factor>
-                <goal_force_factor>{agent_config.behavior.goal_force_factor}</goal_force_factor>
-                <obstacle_force_factor>{agent_config.behavior.obstacle_force_factor}</obstacle_force_factor>
-                <other_force_factor>{agent_config.behavior.other_force_factor}</other_force_factor>
-            </behavior>"""
-
         sdf = f"""<?xml version="1.0" ?>
         <sdf version="1.9">
             <actor name="{agent_config.name}">
-                <pose>{agent_config.position.x} {agent_config.position.y} {self._get_agent_height(agent_config.skin)} 0 0 {agent_config.position.orientation}</pose>
+                <pose>{agent_config.position.x} {agent_config.position.y} {self._get_agent_height(agent_config.skin)} 0 0 {agent_config.yaw}</pose>
                 
                 <skin>
                     <filename>{mesh_path}</filename>
@@ -284,41 +292,13 @@ class HunavManager(EntityManager):
                 </animation>
 
                 <plugin name="HuNavSystemPluginIGN" filename="libHuNavSystemPluginIGN.so">
-                    <update_rate>10.0</update_rate>
-                    <robot_name>jackal</robot_name>
-                    <use_navgoal_to_start>false</use_navgoal_to_start>
-                    <global_frame_to_publish>map</global_frame_to_publish>
-                    <use_get_agents_service>false</use_get_agents_service>
-                    
-                    <!-- Eingebettete Agent-Daten -->
-                    <agent_data>
-                        <id>{agent_config.id}</id>
-                        <type>{agent_config.type}</type>
-                        <skin>{agent_config.skin}</skin>
-                        <name>{agent_config.name}</name>
-                        <group_id>{agent_config.group_id}</group_id>
-                        <desired_velocity>{agent_config.desired_velocity}</desired_velocity>
-                        <radius>{agent_config.radius}</radius>
-                        {behavior_str}
-                        <goals>
-                            {goals_str}
-                        </goals>
-                        <cyclic_goals>{str(agent_config.cyclic_goals).lower()}</cyclic_goals>
-                        <goal_radius>{agent_config.goal_radius}</goal_radius>
-                    </agent_data>
-                    
-                    <ignore_models>
-                        <model>visual</model>
-                        <model>link</model>
-                        <model>column</model>
-                        <model>surface</model>
-                    </ignore_models>
+
                 </plugin>
 
             </actor>
         </sdf>"""
 
-        return sdf
+        return sdf 
 
     def _get_agent_height(self, skin_type: int) -> float:
         """Get correct height based on skin type"""
