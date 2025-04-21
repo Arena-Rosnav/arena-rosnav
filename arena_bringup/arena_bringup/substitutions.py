@@ -29,6 +29,21 @@ def _yaml_iter(obj: list | dict):
 
 
 class LaunchArgument(launch.actions.DeclareLaunchArgument):
+
+    _auto_append: typing.ClassVar[typing.List | None] = None
+
+    @classmethod
+    def auto_append(cls, target: typing.List | None = None):
+        """
+        auto append self to list after creation
+        """
+        cls._auto_append = target
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self._auto_append is not None:
+            self._auto_append.append(self)
+
     @property
     def substitution(self):
         return launch.substitutions.LaunchConfiguration(self.name)
@@ -37,9 +52,15 @@ class LaunchArgument(launch.actions.DeclareLaunchArgument):
     def dict(self):
         return {self.name: self.substitution}
 
+    def param_value(self, type_: typing.Type):
+        return launch_ros.parameter_descriptions.ParameterValue(self.substitution, value_type=type_)
+
+    def param(self, type_: typing.Type):
+        return {self.name: self.param_value(type_)}
+
     @property
     def str_param(self):
-        return {self.name: launch_ros.parameter_descriptions.ParameterValue(self.substitution, value_type=str)}
+        return self.param(str)
 
 
 class SelectAction(launch.Action):
@@ -421,3 +442,9 @@ class YAMLReplaceSubstitution(launch.Substitution):
             result,
             substitute=True,
         ).perform(context)
+
+
+class CurrentNamespaceSubstitution(launch.Substitution):
+    def perform(self, context: launch.LaunchContext) -> typing.Text:
+        """Perform the substitution."""
+        return context.launch_configurations.get('ros_namespace', '/')

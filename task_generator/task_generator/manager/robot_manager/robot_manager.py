@@ -11,10 +11,10 @@ import rclpy.timer
 import rclpy.client
 
 from task_generator import NodeInterface
+from task_generator.manager.environment_manager import EnvironmentManager
 import task_generator.utils.arena as Utils
 from task_generator.utils.geometry import angle_diff
 from task_generator.constants import Constants
-from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
 
@@ -33,7 +33,7 @@ class RobotManager(NodeInterface):
     """
 
     _namespace: Namespace
-    _entity_manager: EntityManager
+    _environment_manager: EnvironmentManager
     _start_pos: PositionOrientation
     _goal_pos: PositionOrientation
     _position: PositionOrientation
@@ -61,13 +61,16 @@ class RobotManager(NodeInterface):
         return self._goal_pos
 
     def __init__(
-        self, namespace: Namespace, entity_manager: EntityManager, robot: Robot
+        self,
+        namespace: Namespace,
+        environment_manager: EnvironmentManager,
+        robot: Robot,
     ):
         NodeInterface.__init__(self)
         self._rate_setup = self.node.create_rate(.1)
 
         self._namespace = namespace
-        self._entity_manager = entity_manager
+        self._environment_manager = environment_manager
         self._start_pos = PositionOrientation(0, 0, 0)
         self._goal_pos = PositionOrientation(0, 0, 0)
 
@@ -88,22 +91,22 @@ class RobotManager(NodeInterface):
         self._goal_timer = None
 
     def set_up_robot(self):
-        self._robot = attrs.evolve(
-            self._robot,
-            model=self._robot.model.override(
-                model_type=ModelType.YAML,
-                override=lambda model: model.replace(
-                    description=YAMLUtil.serialize(
-                        YAMLUtil.update_plugins(
-                            namespace=self.namespace,
-                            description=YAMLUtil.parse_yaml(model.description),
+        self._robot = self._environment_manager.spawn_robot(
+            attrs.evolve(
+                self._robot,
+                model=self._robot.model.override(
+                    model_type=ModelType.YAML,
+                    override=lambda model: model.replace(
+                        description=YAMLUtil.serialize(
+                            YAMLUtil.update_plugins(
+                                namespace=self.namespace,
+                                description=YAMLUtil.parse_yaml(model.description),
+                            )
                         )
-                    )
+                    ),
                 ),
-            ),
+            )
         )
-
-        self._entity_manager.spawn_robot(self._robot)
 
         _gen_goal_topic = self.namespace("goal_pose")
 
@@ -159,7 +162,7 @@ class RobotManager(NodeInterface):
         return self._is_goal_reached
 
     def move_robot_to_pos(self, position: PositionOrientation):
-        self._entity_manager.move_robot(name=self.name, position=position)
+        self._environment_manager.move_robot(name=self.name, position=position)
 
     def reset(
         self,
@@ -167,7 +170,7 @@ class RobotManager(NodeInterface):
         goal_pos: typing.Optional[PositionOrientation],
     ):
         if start_pos is not None:
-            self._start_pos = start_pos
+            self._start_pos = self._environment_manager.realize(start_pos)
             self.move_robot_to_pos(start_pos)
 
             if self._robot.record_data_dir:
@@ -177,7 +180,7 @@ class RobotManager(NodeInterface):
                 )
 
         if goal_pos is not None:
-            self._goal_pos = goal_pos
+            self._goal_pos = self._environment_manager.realize(goal_pos)
             self._publish_goal(self._goal_pos)
 
             if self._robot.record_data_dir:
@@ -235,13 +238,13 @@ class RobotManager(NodeInterface):
         self._goal_pub.publish(goal_msg)
 
     def _publish_goal(self, goal: PositionOrientation):
-        #only way to circumvent amcl absolutely trolling us is to create this loop 
+        # only way to circumvent amcl absolutely trolling us is to create this loop
         from geometry_msgs.msg import PoseStamped
         self.node.get_logger().info(
             f"Publishing goal: x={goal.x}, y={goal.y}, orientation={goal.orientation}")
-        
+
         self._goal_pos = goal
-        
+
         if self._goal_timer is not None:
             self._goal_timer.cancel()
             self._goal_timer.destroy()
@@ -251,7 +254,7 @@ class RobotManager(NodeInterface):
         goal_msg.header.stamp = self.node.get_clock().now().to_msg()
         goal_msg.pose = goal.to_pose()
         self._goal_pub.publish(goal_msg)
-        
+
         self._goal_start_time = self.node.get_clock().now().nanoseconds / 1e9
         self._goal_timer = self.node.create_timer(
             3.0,
@@ -270,6 +273,7 @@ class RobotManager(NodeInterface):
                 # 'world_path': self.node.conf.Arena.get_world_path(),
                 # 'simulator': self.node.conf.Arena.SIMULATOR.value.value,
                 # 'name': self.name,
+                'task_generator_node': os.path.join(self.node.get_namespace(), self.node.get_name()),
                 'namespace': self.namespace,
                 # 'use_namespace': 'True',
                 'frame': self._robot.frame,
@@ -300,7 +304,8 @@ class RobotManager(NodeInterface):
             )
             self.node.do_launch(launch_description)
 
-            while 'bt_navigator' not in self.node.get_node_names():
+            while 'bt_navigator' not in (node_names := self.node.get_node_names()):
+                self.node.get_logger().debug(f'waiting for bt_navigator in {node_names}')
                 # TODO redo this globally in the robots manager, every get_node_names call is expensive
                 self._rate_setup.sleep()  # we love race conditions
 
@@ -348,5 +353,5 @@ class RobotManager(NodeInterface):
         if self._goal_timer is not None:
             self._goal_timer.cancel()
             self._goal_timer.destroy()
-        self._entity_manager.remove_robot(self.name)
+        self._environment_manager.remove_robot(self.name)
         # TODO kill node in navigation stack

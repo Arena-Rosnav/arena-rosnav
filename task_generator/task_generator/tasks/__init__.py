@@ -9,16 +9,16 @@ import rosgraph_msgs.msg as rosgraph_msgs
 
 from task_generator import NodeInterface
 from task_generator.constants import Constants
-from task_generator.manager.obstacle_manager import ObstacleManager
+from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.manager.robot_manager import RobotManager
-from task_generator.manager.world_manager import WorldManager
+from task_generator.manager.world_manager.world_manager_ros import WorldManager
 from task_generator.shared import Namespace, PositionOrientation
 from task_generator.utils import ModelLoader
 from task_generator.utils.ros_params import ROSParamServer
 
 
 class Props_Manager:
-    obstacle_manager: ObstacleManager
+    environment_manager: EnvironmentManager
     robot_managers: dict[str, RobotManager]
     world_manager: WorldManager
 
@@ -71,7 +71,7 @@ class Task(Props_, abc.ABC):
         __reset_mutex (bool): The mutex for resetting.
 
     Args:
-        obstacle_manager (ObstacleManager): The obstacle manager.
+        environment_manager (ObstacleManager): The obstacle manager.
         robot_managers (dict[str, RobotManager]): The dict of robot managers.
         world_manager (WorldManager): The world manager.
         namespace (str, optional): The namespace for the task. Defaults to "".
@@ -106,7 +106,7 @@ class Task(Props_, abc.ABC):
     def __init__(
         self,
         *args,
-        obstacle_manager: ObstacleManager,
+        environment_manager: EnvironmentManager,
         robot_managers: dict[str, RobotManager],
         world_manager: WorldManager,
         namespace: str = "",
@@ -185,12 +185,11 @@ def declare_obstacles():
     def _scenario():
         from .obstacles.scenario import TM_Scenario
         return TM_Scenario
-    
+
     @TaskFactory.register_obstacles(Constants.TaskMode.TM_Obstacles.ENVIRONMENT)
     def _environment():
         from .obstacles.environment import TM_Environment
         return TM_Environment
-
 
 
 def declare_robots():
@@ -213,7 +212,7 @@ def declare_robots():
     def _scenario():
         from .robots.scenario import TM_Scenario
         return TM_Scenario
-    
+
 
 declare_modules()
 declare_obstacles()

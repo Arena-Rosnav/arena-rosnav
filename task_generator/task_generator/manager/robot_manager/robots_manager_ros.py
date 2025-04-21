@@ -211,14 +211,14 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
                     self.node.get_namespace())(
                         self.node.get_name(),
                 ),
-                entity_manager=self._entity_manager,
+                environment_manager=self._entity_manager,
                 robot=attrs.evolve(config, name=robot_name),
             )
             manager.set_up_robot()
             self._robot_managers[robot_name] = manager
         self._diff.to_add.clear()
 
-        self.node.rosparam[list[str]].set('robot_names', [robot for robot in self._robot_managers])
+        self.node.rosparam[list[str]].set('robot_names', [robot.name for robot in self._robot_managers.values()])
 
     def __init__(self, entity_manager: EntityManager) -> None:
         NodeInterface.__init__(self)

@@ -26,7 +26,7 @@ def generate_launch_description():
     )
 
     headless = LaunchArgument(
-        'headless'
+        'headless',
     )
 
     # Set environment variables
@@ -112,7 +112,7 @@ def generate_launch_description():
                 " -r",
                 " --render-engine ogre",
                 IfElseSubstitution(
-                    PythonExpression([headless.substitution, '>0']),
+                    headless.substitution,
                     " -s",
                     "",
                 ),

@@ -2,6 +2,7 @@
 import asyncio
 import multiprocessing
 import queue
+import traceback
 import typing
 
 import launch
@@ -129,12 +130,9 @@ def main(args=None):
             executor.spin_once()
             launch_loop()
     except KeyboardInterrupt:
+        node.get_logger().info(traceback.format_exc())
         node.get_logger().info('Keyboard interrupt, shutting down.')
 
     launch_cleanup()
     node.destroy_node()
     rclpy.try_shutdown()
-
-
-if __name__ == "__main__":
-    main()

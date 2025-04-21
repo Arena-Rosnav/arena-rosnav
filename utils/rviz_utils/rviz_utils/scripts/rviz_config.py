@@ -20,6 +20,7 @@ from rviz_utils.utils import Utils
 
 class ConfigFileGenerator(Node):
 
+    _origin: typing.List[float]
     topics: typing.List[typing.Tuple[str, typing.List[str]]]
     robot_names: typing.List[str]
 
@@ -50,11 +51,16 @@ class ConfigFileGenerator(Node):
             self.get_logger().info(f'waiting for {param_name} to be set')
             time.sleep(timeout)
 
-    def __init__(self):
+    def __init__(self, TASKGEN_NODE: str = '/task_generator_node'):
         Node.__init__(self, 'rviz_config_generator')
 
-        TASKGEN_NODE = '/task_generator_node'
-        TASKGEN_PARAM_SRV = os.path.join(TASKGEN_NODE, 'get_parameters')
+        self._TASKGEN_NODE = TASKGEN_NODE
+
+        self.declare_parameter('origin', [0.0, 0.0, 0.0])
+        origin = self.get_parameter('origin').value
+        self._origin = list((*origin, 0.0, 0.0, 0.0)[:3])
+
+        TASKGEN_PARAM_SRV = os.path.join(self._TASKGEN_NODE, 'get_parameters')
         PARAM_INITIALIZED = 'initialized'
 
         get_parameters_cli = self.create_client(rcl_interfaces.srv.GetParameters, TASKGEN_PARAM_SRV)
@@ -81,7 +87,7 @@ class ConfigFileGenerator(Node):
             'Enabled': True,
             'Name': 'Map',
             'Topic': {
-                'Value': '/map',
+                'Value': os.path.join(self._TASKGEN_NODE, 'map'),
                 'Depth': 20,
                 'History Policy': 'Keep Last',
                 'Reliability Policy': 'Reliable',
@@ -122,20 +128,31 @@ class ConfigFileGenerator(Node):
         #     self.get_logger().warn(f"Error checking pedsim parameter: {e}")
 
         # Set the default view to Orbit (instead of TopDownOrtho)
+
+        python_yaw: float = 3.8
+        try:
+            python_yaw = sum(
+                2 * (i % 2 - 0.5) * float(d) / 10**i
+                for i, d
+                in enumerate(sys.version.split(' ', 1)[0].split('.'))
+            )  # i am going insane
+        except BaseException:
+            pass
+
         default_file["Visualization Manager"]["Views"]["Current"] = {
             "Class": "rviz_default_plugins/Orbit",
-            "Distance": 10.0,
+            "Distance": 20.0,
             "Focal Point": {
-                "X": 0.0,
-                "Y": 0.0,
-                "Z": 0.0
+                "X": 5.0 + self._origin[0],
+                "Y": -5.0 + self._origin[1],
+                "Z": 20.0 + self._origin[2],
             },
             "Name": "Current View",
             "Near Clip Distance": 0.01,
-            "Pitch": 0.5,
+            "Pitch": 0.9,
             "Target Frame": "<Fixed Frame>",
             "Value": True,
-            "Yaw": 0.0
+            "Yaw": python_yaw
         }
 
         default_file["Visualization Manager"]["Displays"] = displays
@@ -166,27 +183,27 @@ class ConfigFileGenerator(Node):
         robot_group['Displays'].append(Utils.Displays.robot_model(robot_name))
 
         # Add odometry visualization
-        odom_topic = f'/task_generator_node/{robot_name}/odom'
+        odom_topic = f'{self._TASKGEN_NODE}/{robot_name}/odom'
         robot_group['Displays'].append(Utils.Displays.odom(odom_topic, color))
 
         # Add local costmap
-        local_costmap_topic = f'/task_generator_node/{robot_name}/local_costmap/costmap'
+        local_costmap_topic = f'{self._TASKGEN_NODE}/{robot_name}/local_costmap/costmap'
         robot_group['Displays'].append(Utils.Displays.local_costmap(local_costmap_topic))
 
         # Add global costmap
-        global_costmap_topic = f'/task_generator_node/{robot_name}/global_costmap/costmap'
+        global_costmap_topic = f'{self._TASKGEN_NODE}/{robot_name}/global_costmap/costmap'
         robot_group['Displays'].append(Utils.Displays.global_costmap(global_costmap_topic))
 
         # Add path visualization
-        path_topic = f'/task_generator_node/{robot_name}/plan'
+        path_topic = f'{self._TASKGEN_NODE}/{robot_name}/plan'
         robot_group['Displays'].append(Utils.Displays.global_path(path_topic, color))
 
         # Add local path visualization
-        local_path_topic = f'/task_generator_node/{robot_name}/local_plan'
+        local_path_topic = f'{self._TASKGEN_NODE}/{robot_name}/local_plan'
         robot_group['Displays'].append(Utils.Displays.local_path(local_path_topic))
 
         # Add robot footprint
-        footprint_topic = f'/task_generator_node/{robot_name}/local_costmap/published_footprint'
+        footprint_topic = f'{self._TASKGEN_NODE}/{robot_name}/local_costmap/published_footprint'
         robot_group['Displays'].append(Utils.Displays.robot_footprint(footprint_topic, color))
 
         # SENSORS
@@ -213,7 +230,7 @@ class ConfigFileGenerator(Node):
 
             # Filter for nodes related to this robot
             robot_nodes = []
-            robot_namespace = f'/task_generator_node/{robot_name}'
+            robot_namespace = f'{self._TASKGEN_NODE}/{robot_name}'
 
             for node_name, node_namespace in node_names_and_namespaces:
                 if node_namespace == robot_namespace:
@@ -233,7 +250,7 @@ class ConfigFileGenerator(Node):
 
         # Fall back to namespace filtering if node-based discovery failed
         if not robot_topics:
-            robot_ns = f'/task_generator_node/{robot_name}'
+            robot_ns = f'{self._TASKGEN_NODE}/{robot_name}'
             robot_topics = [(t, types) for t, types in self.topics if t.startswith(robot_ns)]
             self.get_logger().info(f"Found {len(robot_topics)} topics using namespace filtering")
 
@@ -276,7 +293,8 @@ class ConfigFileGenerator(Node):
 def main():
     rclpy.init()
 
-    config_file_generator = ConfigFileGenerator()
+    cli_args = rclpy.utilities.remove_ros_args(sys.argv)
+    config_file_generator = ConfigFileGenerator(*cli_args[1:])
     try:
         config_file = config_file_generator.create_config()
         launch_service = launch.launch_service.LaunchService()

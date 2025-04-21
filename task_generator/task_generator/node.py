@@ -24,8 +24,8 @@ from task_generator.constants import Constants
 from task_generator.constants.runtime import Configuration
 from task_generator.manager.entity_manager import (EntityManager,
                                                    EntityManagerRegistry)
-from task_generator.manager.obstacle_manager import ObstacleManager
-from task_generator.manager.world_manager import WorldManager
+from task_generator.manager.environment_manager import EnvironmentManager
+from task_generator.manager.world_manager.world_manager_ros import WorldManagerROS as WorldManager
 from task_generator.shared import Namespace
 from task_generator.simulators import BaseSimulator, SimulatorRegistry
 from task_generator.tasks import Task
@@ -61,6 +61,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
 
     _world_manager: WorldManager
     _entity_manager: EntityManager
+    _environment_manager: EnvironmentManager
     _robots_manager: RobotsManager
     _simulator: BaseSimulator
 
@@ -158,26 +159,28 @@ class TaskGenerator(NodeInterface.Taskgen_T):
             self._namespace
         )
 
-        self._world_manager = WorldManager()
-
         self._entity_manager = EntityManagerRegistry.get(self.conf.Arena.ENTITY_MANAGER.value)(
             namespace=self._namespace,
             simulator=self._simulator,
         )
 
-        obstacle_manager = ObstacleManager(
+        self._environment_manager = EnvironmentManager(
             namespace=self._namespace,
-            world_manager=self._world_manager,
             simulator=self._simulator,
             entity_manager=self._entity_manager,
         )
 
-        def on_world_change():
-            obstacle_manager.reset()
-            obstacle_manager.spawn_world_obstacles(self._world_manager.world)
-        self._world_manager.on_world_change(on_world_change)
+        self._world_manager = WorldManager(
+            environment_manager=self._environment_manager
+        )
 
-        self._robots_manager = RobotsManagerROS(self._entity_manager)
+        def on_world_change():
+            self._environment_manager.reset()
+            self._environment_manager.spawn_world_obstacles(self._world_manager.world)
+        self._world_manager.on_world_change(on_world_change)
+        self._world_manager.start()
+
+        self._robots_manager = RobotsManagerROS(self._environment_manager)
 
         tm_modules = self.conf.TaskMode.TM_MODULES.value
         tm_modules.append(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
@@ -188,7 +191,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
 
         self.get_logger().debug("utils calls task factory")
         return TaskFactory.combine(tm_modules)(
-            obstacle_manager=obstacle_manager,
+            environment_manager=self._environment_manager,
             robots_manager=self._robots_manager,
             world_manager=self._world_manager,
             namespace=self._namespace,
