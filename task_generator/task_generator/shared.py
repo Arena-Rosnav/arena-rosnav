@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import abc
 import enum
+import itertools
+import json
 import os
 import typing
 from typing import (Callable, Collection, Dict, List, Optional, Tuple,
@@ -198,24 +200,30 @@ class PositionRadius(Position):
 
 
 class ModelWrapper:
-    _get: Callable[[Collection[ModelType]], Model]
+    _get: Callable[[Collection[ModelType], dict], Model]
     _name: str
     _override: Dict[ModelType, Tuple[bool, Callable[..., Model]]]
 
-    def __init__(self, name: str):
+    def __init__(
+        self,
+        name: str,
+        callback: Callable[[Collection[ModelType], dict], Model] | None = None
+    ):
         """
         Create new ModelWrapper
         @name: Name of the ModelWrapper (should match the underlying Models)
         """
+        if callback is None:
+            callback = EMPTY_LOADER
         self._name = name
+        self._get = callback
         self._override = dict()
 
     def clone(self) -> ModelWrapper:
         """
         Clone (shallow copy) this ModelWrapper instance
         """
-        clone = ModelWrapper(self.name)
-        clone._get = self._get
+        clone = ModelWrapper(self.name, self._get)
         clone._override = self._override
         return clone
 
@@ -242,33 +250,56 @@ class ModelWrapper:
         return clone
 
     @overload
-    def get(self, only: ModelType, **kwargs) -> Model: ...
+    def get(
+        self,
+        only: ModelType,
+        *,
+        loader_args: dict | None = None,
+        **kwargs) -> Model: ...
     """
         load specific model
         @only: single accepted ModelType
     """
 
     @overload
-    def get(self, only: Collection[ModelType], **kwargs) -> Model: ...
+    def get(
+        self,
+        only: Collection[ModelType],
+        *,
+        loader_args: dict | None = None,
+        **kwargs
+    ) -> Model: ...
     """
         load specific model from collection
         @only: collection of acceptable ModelTypes
     """
 
     @overload
-    def get(self, **kwargs) -> Model: ...
+    def get(
+        self,
+        *,
+        loader_args: dict | None = None,
+        **kwargs
+    ) -> Model: ...
     """
         load any available model
     """
 
     def get(
-        self, only: ModelType | Collection[ModelType] | None = None, **kwargs
+        self,
+        only: ModelType | Collection[ModelType] | None = None,
+        *,
+        loader_args: dict | None = None,
+        **kwargs,
     ) -> Model:
         if only is None:
             only = self._override.keys()
 
         if isinstance(only, ModelType):
             return self.get([only])
+
+        if loader_args is None:
+            loader_args = {}
 
         for model_type in only:
             if model_type in self._override:
@@ -277,9 +308,9 @@ class ModelWrapper:
                 if noload == True:
                     return mapper(EMPTY_LOADER())
 
-                return mapper(self._get([model_type], **kwargs), **kwargs)
+                return mapper(self._get([model_type], loader_args), **kwargs)
 
-        return self._get(only, **kwargs)
+        return self._get(only, loader_args)
 
     @property
     def name(self) -> str:
@@ -289,17 +320,6 @@ class ModelWrapper:
         return self._name
 
     @staticmethod
-    def bind(
-        name: str, callback: Callable[[Collection[ModelType]], Model]
-    ) -> ModelWrapper:
-        """
-        Create new ModelWrapper with bound callback method
-        """
-        wrap = ModelWrapper(name)
-        wrap._get = callback
-        return wrap
-
-    @staticmethod
     def Constant(name: str, models: Dict[ModelType, Model]) -> ModelWrapper:
         """
         Create new ModelWrapper from a dict of already existing models
@@ -307,7 +327,7 @@ class ModelWrapper:
         @models: dictionary of ModelType->Model mappings
         """
 
-        def get(only: Collection[ModelType]) -> Model:
+        def get(only: Collection[ModelType], loader_args: dict) -> Model:
             if not len(only):
                 only = list(models.keys())
 
@@ -319,7 +339,7 @@ class ModelWrapper:
                     f"no matching model found for {name} (available: {list(models.keys())}, requested: {list(only)})"
                 )
 
-        return ModelWrapper.bind(name, get)
+        return ModelWrapper(name, get)
 
     @staticmethod
     def from_model(model: Model) -> ModelWrapper:
@@ -328,12 +348,13 @@ class ModelWrapper:
         @model: Model to wrap
         """
         return ModelWrapper.Constant(
-            name=model.name, models={model.type: model})
+            name=model.name,
+            models={model.type: model}
+        )
 
     @staticmethod
     def EMPTY() -> ModelWrapper:
-        wrapper = ModelWrapper("__EMPTY")
-        wrapper._get = EMPTY_LOADER
+        wrapper = ModelWrapper("__EMPTY", EMPTY_LOADER)
         return wrapper
 
 
@@ -361,7 +382,15 @@ class EntityProps:
     position: PositionOrientation
     name: str
     model: ModelWrapper
-    extra: Dict
+    extra: Dict = attrs.field(factory=dict, kw_only=True)
+
+    def asdict(self, expand_extra: bool = True) -> dict:
+        if expand_extra:
+            return {
+                **attrs.asdict(self, filter=lambda a, v: a.name != 'extra'),
+                **self.extra,
+            }
+        return attrs.asdict(self)
 
 
 @attrs.frozen()
