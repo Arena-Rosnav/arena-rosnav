@@ -1,7 +1,7 @@
 import math
+import time
 import traceback
 import typing
-import time
 
 import attrs
 import launch
@@ -12,8 +12,11 @@ from ros_gz_interfaces.msg import Entity, EntityFactory, WorldControl
 from ros_gz_interfaces.srv import (ControlWorld, DeleteEntity, SetEntityPose,
                                    SpawnEntity)
 
-from task_generator.shared import (EntityProps, Model, ModelType, ModelWrapper, PositionOrientation, Robot, Wall)
+from task_generator.shared import (EntityProps, Model, ModelType, ModelWrapper,
+                                   PositionOrientation, Robot, Wall)
 from task_generator.simulators import BaseSimulator
+from task_generator.utils.geometry import quaternion_from_euler
+
 from .robot_bridge import RobotBridge
 
 
@@ -169,21 +172,20 @@ class GazeboSimulator(BaseSimulator):
                     self.node.get_logger().error(
                         f"Failed to set initial pose for {name} after {max_attempts} attempts"
                     )
-                if 'turtlebot' in entity.name:
-                    from task_generator.utils.geometry import quaternion_from_euler
-                    quat = quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="xyzs")
-                    qx, qy, qz, qw = quat
-                    transform_pub_node = launch_ros.actions.Node(
-                        package="tf2_ros",
-                        executable="static_transform_publisher",
-                        name="map_to_odomframe_publisher",
-                        arguments=[str(entity.position.x), str(entity.position.y), "0", str(qx), str(qy), str(qz), str(qw), "map", entity.frame + "odom"],
-                        parameters=[{'use_sim_time': True}],
-                    )
-                    self.node.do_launch(transform_pub_node)
-                    time.sleep(1)
-                    self.node.get_logger().info("Destroying the static_transform_publisher node after 3 seconds.")
-                    transform_pub_node.destroy_node()
+
+                quat = quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="xyzs")
+                qx, qy, qz, qw = quat
+                transform_pub_node = launch_ros.actions.Node(
+                    package="tf2_ros",
+                    executable="static_transform_publisher",
+                    name="map_to_odomframe_publisher",
+                    arguments=[str(entity.position.x), str(entity.position.y), "0", str(qx), str(qy), str(qz), str(qw), "map", entity.frame + "odom"],
+                    parameters=[{'use_sim_time': True}],
+                )
+                self.node.do_launch(transform_pub_node)
+                time.sleep(1)
+                self.node.get_logger().info("Destroying the static_transform_publisher node after 3 seconds.")
+                transform_pub_node.destroy_node()
 
             return result.success
 
