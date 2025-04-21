@@ -141,11 +141,11 @@ class ConfigFileGenerator(Node):
 
         default_file["Visualization Manager"]["Views"]["Current"] = {
             "Class": "rviz_default_plugins/Orbit",
-            "Distance": 20.0,
+            "Distance": 50.0,
             "Focal Point": {
-                "X": 5.0 + self._origin[0],
-                "Y": -5.0 + self._origin[1],
-                "Z": 20.0 + self._origin[2],
+                "X": 15.0 + self._origin[0],
+                "Y": 10.0 + self._origin[1],
+                "Z": 0.0 + self._origin[2],
             },
             "Name": "Current View",
             "Near Clip Distance": 0.01,
