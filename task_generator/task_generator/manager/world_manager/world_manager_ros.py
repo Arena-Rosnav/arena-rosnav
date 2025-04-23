@@ -11,7 +11,6 @@ import rclpy
 import rclpy.callback_groups
 import rclpy.client
 
-from task_generator.constants import Constants
 from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.utils.time import Time
 from task_generator.shared import Position, Wall

@@ -1,6 +1,5 @@
 
 import enum
-import typing
 
 import attrs
 import yaml
