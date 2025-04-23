@@ -1,3 +1,4 @@
+import attrs
 from task_generator.simulators import BaseSimulator
 # Import dependencies.
 import rclpy
@@ -10,6 +11,8 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 import os
 import math
 # from omni.isaac.core.utils.rotations import euler_angles_to_quat
+
+
 class IsaacSimulator(BaseSimulator):
 
     def init_service_clients(self):
@@ -72,7 +75,7 @@ class IsaacSimulator(BaseSimulator):
             self.client[client_attr] = self.node.create_client(service_type, service_name)
 
             self.node.get_logger().info(f'Waiting for service "{service_name}"...')
-            
+
             # Wait for the service to become available
             while not self.client[client_attr].wait_for_service(timeout_sec=10.0):
                 self.node.get_logger().error(f'Service "{service_name}" not available after waiting')
@@ -81,15 +84,18 @@ class IsaacSimulator(BaseSimulator):
             self.node.get_logger().info(f'Service "{service_name}" is now available.')
 
         self.node.get_logger().info("All service clients initialized and available.")
-        
+
     def spawn_entity(self, entity):
         self.node.get_logger().info(
             f"Attempting to spawn model: {entity.name}"
-            )
-        if entity.name not in ["1","2","3"]:
+        )
+        if entity.name not in ["1", "2", "3"]:
 
             # self.node.get_logger().info(entity.position)
-            model = entity.model.get([ModelType.URDF, ModelType.USD])
+            model = entity.model.get(
+                [ModelType.URDF, ModelType.USD],
+                loader_args=entity.asdict(),
+            )
             if model.type == ModelType.URDF:
                 reponse = self.client['urdf_to_usd_client'].call_async(
                     UrdfToUsd.Request(
@@ -103,7 +109,7 @@ class IsaacSimulator(BaseSimulator):
                 #     prim_path=f"/{entity.name}",
                 #     values=[
                 #         Values(values=[entity.position.x,entity.position.y,0.1]),
-                #         Values(values=[0.0,0.0,0.0])]                    
+                #         Values(values=[0.0,0.0,0.0])]
                 #     )
                 # )
                 return True
@@ -111,11 +117,11 @@ class IsaacSimulator(BaseSimulator):
                 usd_path = os.path.abspath(model.path)
                 # self.node.get_logger().info(usd_path)
                 response = self.client['spawn_obstacle_client'].call_async(
-                ImportObstacles.Request(
-                    name=entity.name,
-                    usd_path=usd_path,
-                    position = [entity.position.x,entity.position.y,0.12],
-                    orientation = [0.0,0.0,entity.position.orientation],
+                    ImportObstacles.Request(
+                        name=entity.name,
+                        usd_path=usd_path,
+                        position=[entity.position.x, entity.position.y, 0.12],
+                        orientation=[0.0, 0.0, entity.position.orientation],
                     )
                 )
             return True
@@ -130,14 +136,14 @@ class IsaacSimulator(BaseSimulator):
         self.node.get_logger().info(f"position: {position.x,position.y}")
         self.node.get_logger().info(f"orientation: {orientation}")
         prim_path = f"/{name}"
-        
+
         response = self.client['move_entity_client'].call_async(
-        MovePrim.Request(
-            name=name,
-            prim_path=f"/{name}",
-            values=[
-                Values(values=[position.x,position.y,0.12]),
-                Values(values=[0.0,0.0,math.degrees(orientation)])]                    
+            MovePrim.Request(
+                name=name,
+                prim_path=f"/{name}",
+                values=[
+                    Values(values=[position.x, position.y, 0.12]),
+                    Values(values=[0.0, 0.0, math.degrees(orientation)])]
             )
         )
         if response is None:
@@ -186,7 +192,7 @@ class IsaacSimulator(BaseSimulator):
                         height=wall.height
                     )
                 )
-                
+
                 self.node.get_logger().info(f"Successfully spawned wall {i+1}")
 
             except Exception as e:
@@ -195,15 +201,15 @@ class IsaacSimulator(BaseSimulator):
 
         self.node.get_logger().info("All walls spawned successfully.")
         return True
-    
-    #TODO: update
+
+    # TODO: update
     def before_reset_task(self):
         return True
-    
-    #TODO: update
+
+    # TODO: update
     def after_reset_task(self):
         return True
-    
+
     def __init__(self, namespace):
         """Initialize IsaacSimulator
 
@@ -215,6 +221,6 @@ class IsaacSimulator(BaseSimulator):
             f"Initializing IsaacSimulator with namespace: {namespace}")
 
         self.init_service_clients()
-        
+
         self.node.get_logger().info(
             f"Done initializing Isaac Sim")

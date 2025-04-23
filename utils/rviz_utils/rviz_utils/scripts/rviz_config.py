@@ -213,7 +213,8 @@ class ConfigFileGenerator(Node):
             'sensor_msgs/msg/PointCloud2': Utils.Displays.pointcloud,
             'sensor_msgs/msg/PointCloud': Utils.Displays.pointcloud_legacy,
             # 'sensor_msgs/msg/Imu': Utils.imu,                          # will be optimised soon
-            # 'foot_contact_msgs/msg/FootContact': Utils.footcontact
+            'foot_contact_msgs/msg/FootContact': Utils.Displays.footcontact,
+            'sensor_msgs/msg/Image': Utils.Displays.image,
             # Add more sensor types as needed
         }
 
@@ -315,7 +316,6 @@ def main():
         pass
     finally:
         config_file_generator.destroy_node()
-        rclpy.shutdown()
 
     sys.exit(0)
 

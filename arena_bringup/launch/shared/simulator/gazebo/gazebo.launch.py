@@ -108,7 +108,7 @@ def generate_launch_description():
         launch_arguments={
             "gz_args": [
                 world_path,
-                " -v 4",
+                # " -v 4",
                 " -r",
                 " --render-engine ogre",
                 IfElseSubstitution(

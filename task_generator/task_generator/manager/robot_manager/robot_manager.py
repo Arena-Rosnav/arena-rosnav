@@ -87,6 +87,7 @@ class RobotManager(NodeInterface):
             print(f"Warning: Using default values for robot parameters: {e}")
 
         self._robot = robot
+        self._robot.extra.setdefault('namespace', self.namespace)
         self._position = self._start_pos
         self._goal_timer = None
 
@@ -104,7 +105,7 @@ class RobotManager(NodeInterface):
                             )
                         )
                     ),
-                ),
+                )
             )
         )
 

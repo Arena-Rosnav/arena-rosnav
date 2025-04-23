@@ -1,4 +1,5 @@
 import math
+import os
 import time
 import traceback
 import typing
@@ -17,7 +18,8 @@ from task_generator.shared import (EntityProps, Model, ModelType, ModelWrapper,
 from task_generator.simulators import BaseSimulator
 from task_generator.utils.geometry import quaternion_from_euler
 
-from .robot_bridge import RobotBridge
+from .robot_bridge import BridgeConfiguration
+import arena_simulation_setup.entities.robot
 
 
 class GazeboSimulator(BaseSimulator):
@@ -185,7 +187,7 @@ class GazeboSimulator(BaseSimulator):
                 self.node.do_launch(transform_pub_node)
                 time.sleep(1)
                 self.node.get_logger().info("Destroying the static_transform_publisher node after 3 seconds.")
-                transform_pub_node.destroy_node()
+                # transform_pub_node.destroy_node() # won't work like this, a topic/service to trigger self-destruction
 
             return result.success
 
@@ -202,7 +204,10 @@ class GazeboSimulator(BaseSimulator):
             request.entity_factory.name = entity.name
 
             # Get model description
-            model_description = entity.model.get([ModelType.SDF, ModelType.URDF]).description
+            model_description = entity.model.get(
+                [ModelType.SDF, ModelType.URDF],
+                loader_args=entity.asdict(),
+            ).description
 
             if isinstance(entity, Robot):
                 model_description = model_description.replace("jackal_default_name", entity.name)
@@ -482,7 +487,6 @@ class GazeboSimulator(BaseSimulator):
             return None
 
     def _robot_bridge(self, robot: Robot, description: str):
-        robot_type = robot.model.name
         launch_description = launch.LaunchDescription()
 
         launch_description.add_action(
@@ -491,22 +495,18 @@ class GazeboSimulator(BaseSimulator):
             )
         )
 
-        if robot_type not in RobotBridge.ROBOT_CONFIGS:
-            raise ValueError(f"No configuration found for robot type: {robot_type}")
-        else:
-            self.node.get_logger().info(f"Spawning robot of type: {robot_type}")
+        mappings = BridgeConfiguration.from_file(
+            os.path.join(
+                arena_simulation_setup.entities.robot.get_model_directory(robot.model.name),
+                'mappings.yaml'
+            )
+        ).substitute({
+            'robot_name': robot.name,
+            'world': '/world/default',
+        })
 
-        config = RobotBridge.ROBOT_CONFIGS[robot_type]
-        bridge_arguments = []
-        remappings = []
-
-        # Build bridge arguments and remappings dynamically
-        for topic_config in config["topics"]:
-            gz_topic = topic_config["gz_topic"].format(robot_name=robot.name)
-            ros_topic = topic_config["ros_topic"]
-            bridge_str = f"{gz_topic}@{topic_config['ros_type']}{topic_config['direction']}{topic_config['gz_type']}"
-            bridge_arguments.append(bridge_str)
-            remappings.append((gz_topic, ros_topic))
+        bridge_arguments = mappings.as_args()
+        remappings = mappings.as_remappings()
 
         # Add parameter_bridge node
         launch_description.add_action(
