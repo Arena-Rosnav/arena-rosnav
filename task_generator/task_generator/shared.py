@@ -378,7 +378,7 @@ class Wall:
 
 
 @attrs.frozen()
-class EntityProps:
+class Entity:
     position: PositionOrientation
     name: str
     model: ModelWrapper
@@ -394,46 +394,7 @@ class EntityProps:
 
 
 @attrs.frozen()
-class ObstacleProps(EntityProps):
-    ...
-
-
-@attrs.frozen()
-class DynamicObstacleProps(ObstacleProps):
-    waypoints: List[PositionRadius]
-
-
-@attrs.frozen()
-class RobotProps(EntityProps):
-    inter_planner: str
-    local_planner: str
-    global_planner: str
-    agent: str
-    record_data_dir: Optional[str] = None
-
-    def compatible(self, value: RobotProps) -> bool:
-        return self.model.name == value.model.name \
-            and self.local_planner == value.local_planner \
-            and self.global_planner == value.global_planner \
-            and self.agent == value.agent \
-
-
-    def __eq__(self, value: object) -> bool:
-        if not isinstance(value, RobotProps):
-            return False
-
-        return self.compatible(value) \
-            and self.name == value.name \
-            and self.record_data_dir == value.record_data_dir
-
-    @property
-    def frame(self) -> str:
-        if not self.name:
-            return ''
-        return self.name + '/'
-
-
-class Obstacle(ObstacleProps):
+class Obstacle(Entity):
     @classmethod
     def parse(cls, obj: Dict, model: ModelWrapper) -> "Obstacle":
         name = str(obj.get("name", ""))
@@ -447,7 +408,9 @@ class Obstacle(ObstacleProps):
         )
 
 
-class DynamicObstacle(DynamicObstacleProps):
+@attrs.frozen()
+class DynamicObstacle(Obstacle):
+    waypoints: List[PositionRadius]
 
     @classmethod
     def parse(cls, obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
@@ -463,35 +426,38 @@ class DynamicObstacle(DynamicObstacleProps):
 
 
 @attrs.frozen()
-class WallObstacle:
-    name: str
-    start: Position
-    end: Position
+class Robot(Entity):
+    inter_planner: str
+    local_planner: str
+    global_planner: str
+    agent: str
+    record_data_dir: Optional[str] = None
+
+    def compatible(self, value: Robot) -> bool:
+        return self.model.name == value.model.name \
+            and self.local_planner == value.local_planner \
+            and self.global_planner == value.global_planner \
+            and self.agent == value.agent \
 
 
-def _gen_init_pos(steps: int, x: int = 1, y: int = 0):
-    steps = max(steps, 1)
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, Robot):
+            return False
 
-    while True:
-        yield PositionOrientation(1, 1, 0)
+        return self.compatible(value) \
+            and self.name == value.name \
+            and self.record_data_dir == value.record_data_dir
 
-    while True:
-        x += y == steps
-        y %= steps
-        yield PositionOrientation(-x, y, 0)
-        y += 1
+    @property
+    def frame(self) -> str:
+        if not self.name:
+            return ''
+        return self.name + '/'
 
-
-gen_init_pos = _gen_init_pos(10)
-
-
-@attrs.frozen()
-class Robot(RobotProps):
     @classmethod
     def parse(cls, obj: Dict, model: ModelWrapper) -> "Robot":
         name = str(obj.get("name", ""))
-        position = PositionOrientation(
-            *obj.get("pos", attrs.astuple(next(gen_init_pos))))
+        position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
         inter_planner = str(
             obj.get("inter_planner", rosparam_get(str, "inter_planner", ""))
         )

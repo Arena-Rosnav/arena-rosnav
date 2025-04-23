@@ -17,7 +17,7 @@ from task_generator.shared import (
     ModelWrapper,
     Namespace,
     Obstacle,
-    ObstacleProps,
+    Obstacle,
     PositionOrientation,
     rosparam_get,
 )
@@ -77,7 +77,7 @@ class ObstacleLayer(enum.IntEnum):
 
 @attrs.define()
 class KnownObstacle:
-    obstacle: ObstacleProps
+    obstacle: Obstacle
     hunav_spawned: bool = False
     layer: ObstacleLayer = ObstacleLayer.UNUSED
 

@@ -6,7 +6,7 @@ import numpy as np
 from isaacsim_msgs.msg import Values, Person
 from isaacsim_msgs.srv import ImportUsd, ImportUrdf, UrdfToUsd, DeletePrim, GetPrimAttributes, MovePrim, ImportYaml, SpawnWall, ImportObstacles, Pedestrian
 
-from task_generator.shared import ModelType, Namespace, PositionOrientation, RobotProps
+from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 import os
 import math

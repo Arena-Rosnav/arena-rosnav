@@ -8,11 +8,11 @@ import attrs
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.world_manager.utils import World
-from task_generator.shared import DynamicObstacle, EntityProps, Obstacle, Position, Robot, Wall
+from task_generator.shared import DynamicObstacle, Entity, Obstacle, Position, Robot, Wall
 from task_generator.simulators import BaseSimulator
 from task_generator import NodeInterface
 
-EntityPropsT = typing.TypeVar('EntityPropsT', bound=EntityProps)
+EntityPropsT = typing.TypeVar('EntityPropsT', bound=Entity)
 PositionT = typing.TypeVar('PositionT', bound=Position)
 
 
@@ -71,7 +71,7 @@ class _Realizer:
         if isinstance(target, Position):
             return self._realize_position(target)
 
-        if isinstance(target, EntityProps):
+        if isinstance(target, Entity):
             return self._realize_entity(target)
 
         if isinstance(target, Wall):

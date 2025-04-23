@@ -4,22 +4,23 @@ import time
 import traceback
 import typing
 
+import arena_simulation_setup.entities.robot
 import attrs
 import launch
 import launch_ros
 import rclpy
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
-from ros_gz_interfaces.msg import Entity, EntityFactory, WorldControl
+from ros_gz_interfaces.msg import Entity as EntityMsg
+from ros_gz_interfaces.msg import EntityFactory, WorldControl
 from ros_gz_interfaces.srv import (ControlWorld, DeleteEntity, SetEntityPose,
                                    SpawnEntity)
 
-from task_generator.shared import (EntityProps, Model, ModelType, ModelWrapper,
+from task_generator.shared import (Entity, Model, ModelType, ModelWrapper,
                                    PositionOrientation, Robot, Wall)
 from task_generator.simulators import BaseSimulator
 from task_generator.utils.geometry import quaternion_from_euler
 
 from .robot_bridge import BridgeConfiguration
-import arena_simulation_setup.entities.robot
 
 
 class GazeboSimulator(BaseSimulator):
@@ -125,9 +126,9 @@ class GazeboSimulator(BaseSimulator):
         self.node.get_logger().info(
             f"Moving entity {name} to position: {position}")
         request = SetEntityPose.Request()
-        request.entity = Entity(
+        request.entity = EntityMsg(
             name=name,
-            type=Entity.MODEL,
+            type=EntityMsg.MODEL,
         )
         request.pose = position.to_pose()
 
@@ -253,9 +254,9 @@ class GazeboSimulator(BaseSimulator):
 
         self.node.get_logger().info(f"Attempting to delete entity: {name}")
         request = DeleteEntity.Request()
-        request.entity = Entity(
+        request.entity = EntityMsg(
             name=name,
-            type=Entity.MODEL,
+            type=EntityMsg.MODEL,
         )
 
         try:
@@ -382,7 +383,7 @@ class GazeboSimulator(BaseSimulator):
             self.node.get_logger().error(f"Failed to generate SDF for walls: {wall_name}")
             return False
 
-        entity = EntityProps(
+        entity = Entity(
             position=PositionOrientation(x=0, y=0, orientation=0),
             model=ModelWrapper.from_model(
                 Model(
