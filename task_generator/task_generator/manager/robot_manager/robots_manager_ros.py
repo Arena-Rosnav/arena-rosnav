@@ -13,11 +13,17 @@ from ament_index_python import get_package_share_directory
 import task_generator.utils.arena as Utils
 from task_generator import NodeInterface
 from task_generator.manager.entity_manager import EntityManager
-from task_generator.shared import Namespace, Robot
+from task_generator.shared import Namespace, PositionOrientation, Robot
 from task_generator.utils import ModelLoader
 from task_generator.utils.ros_params import ROSParam
 
 from .robot_manager import RobotManager
+
+
+def _initialpose_generator(x: float, y: float, d: float):
+    while True:
+        yield PositionOrientation(x=x, y=y, orientation=0)
+        y += d
 
 
 @attrs.frozen
@@ -61,6 +67,7 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
     ROS interface for dynamically loading multiple robots.
     """
 
+    _initialpose: typing.Generator
     _robot_configurations: ROSParam[_RobotDiff]
     _diff: _RobotDiff
 
@@ -211,18 +218,23 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
                     self.node.get_namespace())(
                         self.node.get_name(),
                 ),
-                entity_manager=self._entity_manager,
-                robot=attrs.evolve(config, name=robot_name),
+                environment_manager=self._entity_manager,
+                robot=attrs.evolve(
+                    config,
+                    name=robot_name,
+                    position=next(self._initialpose)
+                ),
             )
             manager.set_up_robot()
             self._robot_managers[robot_name] = manager
         self._diff.to_add.clear()
 
-        self.node.rosparam[list[str]].set('robot_names', [robot for robot in self._robot_managers])
+        self.node.rosparam[list[str]].set('robot_names', [robot.name for robot in self._robot_managers.values()])
 
     def __init__(self, entity_manager: EntityManager) -> None:
         NodeInterface.__init__(self)
         RobotsManager.__init__(self, entity_manager=entity_manager)
+        self._initialpose = _initialpose_generator(-10, -10, -5)
 
         self._robot_configurations = self.node.ROSParam[_RobotDiff](
             'robot',

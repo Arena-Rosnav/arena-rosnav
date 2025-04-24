@@ -6,11 +6,7 @@ repositories:
   arena/simulation-setup:
     type: git
     url: https://github.com/voshch/arena-simulation-setup.git
-    version: humble@47cb391
-  arena/isaac:
-    type: git
-    url: https://github.com/Arena-Rosnav/arena-isaac
-    version: ducanh    
+    version: humble@96811b82   
   # deps/xacro:
   #   type: git
   #   url: https://github.com/ros/xacro.git
@@ -47,6 +43,11 @@ repositories:
     url: https://github.com/jackal/jackal.git
     version: foxy-devel
 
+  deps/robots/turtlebot4:
+    type: git
+    url: https://github.com/turtlebot/turtlebot4.git
+    version: humble
+
   deps/hunav/hunav_sim:
     type: git
     url: https://github.com/voshch/hunav_sim.git
@@ -55,6 +56,16 @@ repositories:
     type: git
     url: https://github.com/wg-perception/people.git
     version: ros2@0ae47f6
+  
+  deps/robots/irobot_create:
+    type: git
+    url: https://github.com/iRobotEducation/create3_sim.git
+    version: humble
+
+  gazebo/turtlebot4_simulator:
+    type: git
+    url: https://github.com/turtlebot/turtlebot4_simulator.git
+    version: humble
 
 #  arena/utils/3rd-party-robot-packages:
 #    type: git

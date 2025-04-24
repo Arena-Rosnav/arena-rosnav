@@ -1,14 +1,25 @@
 
+import typing
 import launch
 import launch_ros.actions
 
 import os
 from ament_index_python.packages import get_package_share_directory
 
-from arena_bringup.substitutions import LaunchArgument
+from arena_bringup.substitutions import LaunchArgument, CurrentNamespaceSubstitution
 
 
 def generate_launch_description():
+
+    bringup_dir = get_package_share_directory('arena_bringup')
+
+    ld_items = []
+    LaunchArgument.auto_append(ld_items)
+
+    namespace = LaunchArgument(
+        name='namespace',
+        default_value='task_generator_node'
+    )
 
     simulator = LaunchArgument(
         name='simulator',
@@ -54,10 +65,47 @@ def generate_launch_description():
         name='parameter_file'
     )
 
+    headless = LaunchArgument(
+        name='headless',
+        default_value='False',
+    )
+    reference = LaunchArgument(
+        name='reference',
+        default_value='[0, 0]',
+    )
+    prefix = LaunchArgument(
+        name='prefix',
+        default_value='',
+    )
+
+    map_server_node = launch.actions.IncludeLaunchDescription(
+        launch.launch_description_sources.PythonLaunchDescriptionSource(
+            os.path.join(bringup_dir, 'launch/utils/map_server.launch.py')
+        )
+    )
+
+    # Start the rviz config generator which launches also rviz2 with desired config file
+    rviz_node = launch_ros.actions.Node(
+        package="rviz_utils",
+        executable="rviz_config",
+        name="rviz_config_generator",
+        arguments=[
+                CurrentNamespaceSubstitution(),
+        ],
+        parameters=[
+            {
+                "use_sim_time": True,
+                "origin": reference.param_value(typing.List[float]),
+            }
+        ],
+        output="screen",
+        condition=launch.conditions.UnlessCondition(headless.substitution),
+    )
+
     task_generator_node = launch_ros.actions.Node(
         package='task_generator',
         executable='task_generator_node',
-        name='task_generator_node',
+        name=namespace.substitution,
         output='screen',
         parameters=[
             {
@@ -72,24 +120,25 @@ def generate_launch_description():
                 **local_planner.str_param,
                 **global_planner.str_param,
                 **record_data_dir.str_param,
+                **reference.param(typing.List[float]),
+                **prefix.str_param,
             },
             os.path.join(
-                get_package_share_directory('arena_bringup'),
+                bringup_dir,
                 'configs',
-                'task_generator.yaml'),
+                'task_generator.yaml'
+            ),
         ],
     )
 
     ld = launch.LaunchDescription([
-        simulator,
-        entity_manager,
-        robot,
-        tm_robots,
-        tm_obstacles,
-        tm_modules,
-        world,
+        *ld_items,
+        launch.actions.GroupAction([
+            launch_ros.actions.PushRosNamespace(namespace=namespace.substitution),
+            map_server_node,
+            rviz_node
+        ]),
         task_generator_node,
-        record_data_dir,
         # launch_ros.actions.Node(
         #     package='task_generator',
         #     executable='server',

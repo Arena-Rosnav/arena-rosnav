@@ -13,8 +13,11 @@ if [ -z ${ARENA_SOURCED+x} ] ; then
     export FASTRTPS_DEFAULT_PROFILES_FILE=~/.ros/fastdds.xml
     export ROS_DOMAIN_ID=1
     export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ros/humble/lib/
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/ros/${ARENA_ROS_DISTRO}/lib/"
     export INSTALLED=$ARENA_WS_DIR/src/arena/arena-rosnav/.installed
+    
+    # stop rviz from flashing
+    export QT_SCREEN_SCALE_FACTORS=1
 
     pushd src/arena/arena-rosnav
         export VIRTUAL_ENV_DISABLE_PROMPT=1

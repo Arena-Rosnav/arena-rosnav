@@ -1,11 +1,16 @@
 import abc
 import functools
+import json
 import os
 import subprocess
+import sys
 import tempfile
+import typing
 import xml.etree.ElementTree as ET
 import re
 from typing import Collection, Dict, Optional, Set, Tuple, Type
+
+import attrs
 
 from task_generator.shared import Model, ModelType, ModelWrapper
 import task_generator.utils.arena as Utils
@@ -13,7 +18,7 @@ import task_generator.utils.arena as Utils
 
 class _ModelLoader(abc.ABC):
     @classmethod
-    def load(cls, model_dir: str, model: str, **kwargs) -> Model | None:
+    def load(cls, model_dir: str, model: str, loader_args: dict) -> Model | None:
         return None
 
     @classmethod
@@ -24,7 +29,7 @@ class _ModelLoader(abc.ABC):
         return ()
 
     @classmethod
-    def convert(cls, model_dir: str, model: Model, **kwargs) -> Model | None:
+    def convert(cls, model_dir: str, model: Model, loader_args: dict) -> Model | None:
         return None
 
 
@@ -65,10 +70,12 @@ class ModelLoader:
         return self._models
 
     def bind(self, model: str) -> ModelWrapper:
-        return ModelWrapper.bind(
-            name=model, callback=functools.partial(self._load_safe, model))
+        return ModelWrapper(
+            name=model,
+            callback=functools.partial(self._load_safe, model)
+        )
 
-    def _load(self, model: str, only: Collection[ModelType], **kwargs) -> Model | None:
+    def _load(self, model: str, only: Collection[ModelType], loader_args: dict) -> Model | None:
         if not only:
             only = self._registry.keys()
 
@@ -79,7 +86,7 @@ class ModelLoader:
                 return self._cache[(model_type, model)]
 
         for model_type in only:  # disk pass
-            hit = self._registry[model_type].load(model_dir=self._model_dir, model=model, **kwargs)
+            hit = self._registry[model_type].load(self._model_dir, model, loader_args)
             if hit is not None:
                 self._cache[(model_type, model)] = hit
                 return self._cache[(model_type, model)]
@@ -88,9 +95,9 @@ class ModelLoader:
             targets = self._registry[model_type].convertable()
             if not targets:
                 continue
-            match = self._load(model, only=targets)
+            match = self._load(model, targets, loader_args)
             if match is not None:
-                converted = self._registry[model_type].convert(self._model_dir, match, **kwargs)
+                converted = self._registry[model_type].convert(self._model_dir, match, loader_args)
                 if converted is None:
                     continue
 
@@ -99,8 +106,8 @@ class ModelLoader:
 
         return None
 
-    def _load_safe(self, model: str, only: Collection[ModelType], **kwargs) -> Model:
-        loaded = self._load(model, only, **kwargs)
+    def _load_safe(self, model: str, only: Collection[ModelType], loader_args: dict) -> Model:
+        loaded = self._load(model, only, loader_args)
         if loaded is not None:
             return loaded
 
@@ -111,7 +118,7 @@ class ModelLoader:
 class _ModelLoader_YAML(_ModelLoader):
 
     @classmethod
-    def load(cls, model_dir, model, **kwargs):
+    def load(cls, model_dir, model, loader_args):
 
         model_path = os.path.join(model_dir, model, "yaml", f"{model}.yaml")
 
@@ -134,7 +141,7 @@ class _ModelLoader_YAML(_ModelLoader):
 class _ModelLoader_SDF(_ModelLoader):
 
     @classmethod
-    def load(cls, model_dir, model, **kwargs):
+    def load(cls, model_dir, model, loader_args):
         model_path = os.path.join(model_dir, model, "sdf", f"{model}.sdf")
         try:
             with open(model_path) as f:
@@ -153,9 +160,9 @@ class _ModelLoader_SDF(_ModelLoader):
 class _ModelLoader_URDF(_ModelLoader):
 
     @classmethod
-    def load(cls, model_dir, model, **kwargs):
+    def load(cls, model_dir, model, loader_args):
 
-        namespace: Optional[str] = kwargs.get("namespace", None)
+        namespace: Optional[str] = loader_args.get("namespace", None)
 
         base_path = os.path.join(model_dir, model, "urdf")
         xacro_path = os.path.join(base_path, f"{model}.urdf.xacro")
@@ -165,13 +172,24 @@ class _ModelLoader_URDF(_ModelLoader):
             return None
 
         try:
+            def to_string(v: typing.Any) -> str:
+                if attrs.has(type(v)):
+                    v = attrs.asdict(v)
+                if isinstance(v, dict):
+                    return json.dumps(v)
+                return str(v)
+
             model_desc = subprocess.check_output([
                 "ros2",
                 "run",
                 "xacro",
                 "xacro",
                 xacro_path,
-                *([f"""robot_namespace:={namespace}"""] if namespace is not None else [])
+                *(
+                    f"{k}:={to_string(v)}"
+                    for k, v
+                    in loader_args.items()
+                ),
             ]).decode("utf-8")
 
             with open(model_path, 'w') as f:
@@ -180,9 +198,9 @@ class _ModelLoader_URDF(_ModelLoader):
             base_dir = os.path.dirname(model_path)
             tree = ET.parse(model_path)
             root = tree.getroot()
-            
+
             prefix = "package://jackal_description"
-    
+
             # Iterate over every element in the XML tree and update 'filename' attributes
             for elem in root.iter():
                 if 'filename' in elem.attrib:
@@ -204,7 +222,7 @@ class _ModelLoader_URDF(_ModelLoader):
                 tree.write(tmp, encoding="utf-8", xml_declaration=True)
                 temp_filepath = tmp.name
                 print(f"Converted URDF saved to temporary file: {temp_filepath}")
-            
+
             return Model(
                 type=ModelType.URDF,
                 name=model,
@@ -213,16 +231,17 @@ class _ModelLoader_URDF(_ModelLoader):
             )
 
         except subprocess.CalledProcessError as e:
-            # rospy.logerr_once(
-            # f"error processing model {model} URDF file {model_path}. refusing
-            # to load.\n{e}\n{e.output.decode('utf-8')}")
+            print(
+                f"error processing model {model} URDF file {model_path}. refusing to load.\n{e}\n{e.output.decode('utf-8')}",
+                file=sys.stderr
+            )
             return None
 
 
 @ModelLoader.model(ModelType.USD)
 class _ModelLoader_USD(_ModelLoader):
     @classmethod
-    def load(cls, model_dir, model, **kwargs):
+    def load(cls, model_dir, model, loader_args):
         model_path = os.path.join(model_dir, model, "usd", f"{model}.usd")
         try:
             with open(model_path, 'rb') as f:
@@ -241,12 +260,12 @@ class _ModelLoader_USD(_ModelLoader):
         return (ModelType.SDF,)
 
     @classmethod
-    def convert(cls, model_dir: str, model: Model, **kwargs) -> Model | None:
+    def convert(cls, model_dir: str, model: Model, loader_args) -> Model | None:
         if model.type == ModelType.SDF:
             try:
                 # print(model_dir)
                 sdf_model_path = os.path.join(model_dir, model.name, "sdf", f"{model.name}.sdf")
-                materials_path = os.path.join(model_dir,model.name,'sdf','materials')
+                materials_path = os.path.join(model_dir, model.name, 'sdf', 'materials')
                 tree = ET.parse(sdf_model_path)
                 root = tree.getroot()
                 # First pass: resolve package:// URIs
@@ -261,7 +280,7 @@ class _ModelLoader_USD(_ModelLoader):
                             remaining_path = match.group(2)
                             # Get the absolute path for the package share directory.
                             # Replace the package URI with the resolved directory plus remaining path.
-                            new_uri = model_dir + '/' + model.name  + remaining_path
+                            new_uri = model_dir + '/' + model.name + remaining_path
                             print(new_uri)
                             # uri_elem.text = new_uri
                             if (new_uri.endswith('.dae') or new_uri.endswith('.DAE')) and os.path.exists(new_uri):
@@ -277,7 +296,7 @@ class _ModelLoader_USD(_ModelLoader):
                                 remaining_path = match.group(2)
                                 # Get the absolute path for the package share directory.
                                 # Replace the package URI with the resolved directory plus remaining path.
-                                new_uri = model_dir + '/' +model.name + remaining_path
+                                new_uri = model_dir + '/' + model.name + remaining_path
                                 print(new_uri)
                                 if (new_uri.endswith('.dae') or new_uri.endswith('.DAE')) and os.path.exists(new_uri):
                                     new_dae_path = Utils.process_dae(new_uri, materials_path)
@@ -294,8 +313,8 @@ class _ModelLoader_USD(_ModelLoader):
 
                 env = os.environ.copy()
                 env['ARENA_WS_DIR'] = ARENA_WS_DIR
-                with tempfile.NamedTemporaryFile(delete=False,mode='w') as f:
-                    tree.write(f,encoding='unicode')
+                with tempfile.NamedTemporaryFile(delete=False, mode='w') as f:
+                    tree.write(f, encoding='unicode')
                     f.flush()
                     temp_file_path = f.name
                     print("Temporary SDF file for converter:", temp_file_path)
@@ -321,7 +340,7 @@ class _ModelLoader_USD(_ModelLoader):
                 stage.SetDefaultPrim(first_xform_prim)
                 root_layer = stage.GetRootLayer()
                 root_layer.Save()
-                return cls.load(model_dir, model.name, **kwargs)
+                return cls.load(model_dir, model.name, loader_args)
 
             except Exception:
                 return None

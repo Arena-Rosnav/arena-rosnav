@@ -1,20 +1,26 @@
 import math
+import os
+import time
 import traceback
 import typing
-import time
 
+import arena_simulation_setup.entities.robot
 import attrs
 import launch
 import launch_ros
 import rclpy
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
-from ros_gz_interfaces.msg import Entity, EntityFactory, WorldControl
+from ros_gz_interfaces.msg import Entity as EntityMsg
+from ros_gz_interfaces.msg import EntityFactory, WorldControl
 from ros_gz_interfaces.srv import (ControlWorld, DeleteEntity, SetEntityPose,
                                    SpawnEntity)
 
-from task_generator.shared import (EntityProps, Model, ModelType, ModelWrapper,
-                                   PositionOrientation, RobotProps, Wall)
+from task_generator.shared import (Entity, Model, ModelType, ModelWrapper,
+                                   PositionOrientation, Robot, Wall)
 from task_generator.simulators import BaseSimulator
+from task_generator.utils.geometry import quaternion_from_euler
+
+from .robot_bridge import BridgeConfiguration
 
 
 class GazeboSimulator(BaseSimulator):
@@ -120,9 +126,9 @@ class GazeboSimulator(BaseSimulator):
         self.node.get_logger().info(
             f"Moving entity {name} to position: {position}")
         request = SetEntityPose.Request()
-        request.entity = Entity(
+        request.entity = EntityMsg(
             name=name,
-            type=Entity.MODEL,
+            type=EntityMsg.MODEL,
         )
         request.pose = position.to_pose()
 
@@ -136,14 +142,15 @@ class GazeboSimulator(BaseSimulator):
 
             self.node.get_logger().info(f"Move result for {name}: {result.success}")
 
-            if result.success and isinstance((entity := self.entities.get(name, None)), RobotProps):
+            if result.success and isinstance((entity := self.entities.get(name, None)), Robot):
                 entity = attrs.evolve(entity, position=position)
                 self.entities[name] = entity
-                
+                self._robot_initialpose(entity)
+
                 max_attempts = 3
                 attempt = 1
                 initial_pose_triggered = False
-                
+
                 while attempt <= max_attempts and not initial_pose_triggered:
                     self.node.get_logger().info(
                         f"Attempt {attempt}/{max_attempts}: Triggering initial pose update for robot {name}"
@@ -163,19 +170,25 @@ class GazeboSimulator(BaseSimulator):
                             self.node.get_logger().info("Waiting 1 second before retrying...")
                             time.sleep(1)
                         attempt += 1
-                
+
                 if not initial_pose_triggered:
                     self.node.get_logger().error(
                         f"Failed to set initial pose for {name} after {max_attempts} attempts"
                     )
-                
-                self.node.get_logger().info(f"Final attempt: Setting initial pose for {name}")
-                try:
-                    self._robot_initialpose(entity)
-                    self.node.get_logger().info(f"Final initial pose update for {name} succeeded")
-                except Exception as e:
-                    self.node.get_logger().error(f"Final initial pose update for {name} failed: {str(e)}")
-                    traceback.print_exc()
+
+                quat = quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="xyzs")
+                qx, qy, qz, qw = quat
+                transform_pub_node = launch_ros.actions.Node(
+                    package="tf2_ros",
+                    executable="static_transform_publisher",
+                    name="map_to_odomframe_publisher",
+                    arguments=[str(entity.position.x), str(entity.position.y), "0", str(qx), str(qy), str(qz), str(qw), "map", entity.frame + "odom"],
+                    parameters=[{'use_sim_time': True}],
+                )
+                self.node.do_launch(transform_pub_node)
+                time.sleep(1)
+                self.node.get_logger().info("Destroying the static_transform_publisher node after 3 seconds.")
+                # transform_pub_node.destroy_node() # won't work like this, a topic/service to trigger self-destruction
 
             return result.success
 
@@ -192,9 +205,12 @@ class GazeboSimulator(BaseSimulator):
             request.entity_factory.name = entity.name
 
             # Get model description
-            model_description = entity.model.get([ModelType.SDF, ModelType.URDF]).description
+            model_description = entity.model.get(
+                [ModelType.SDF, ModelType.URDF],
+                loader_args=entity.asdict(),
+            ).description
 
-            if isinstance(entity, RobotProps):
+            if isinstance(entity, Robot):
                 model_description = model_description.replace("jackal_default_name", entity.name)
                 self._robot_initialpose(entity)
                 self._robot_bridge(entity, model_description)
@@ -238,9 +254,9 @@ class GazeboSimulator(BaseSimulator):
 
         self.node.get_logger().info(f"Attempting to delete entity: {name}")
         request = DeleteEntity.Request()
-        request.entity = Entity(
+        request.entity = EntityMsg(
             name=name,
-            type=Entity.MODEL,
+            type=EntityMsg.MODEL,
         )
 
         try:
@@ -346,7 +362,7 @@ class GazeboSimulator(BaseSimulator):
         self.node.get_logger().info("Goal published")
 
     def spawn_walls(self, walls) -> bool:
-        wall_name = f"custom_wall_{len(self._walls_entities)}"
+        wall_name = self.node._environment_manager.realize(f"custom_wall_{len(self._walls_entities)}")
         # wall_positions = [(0, 0), (5, 0), (5, 5), (0, 5), (0, 0)]  # A square wall
         wall_height = 3.0  # Wall height in meters
         wall_thickness = 0.2  # Wall thickness in meters
@@ -367,7 +383,7 @@ class GazeboSimulator(BaseSimulator):
             self.node.get_logger().error(f"Failed to generate SDF for walls: {wall_name}")
             return False
 
-        entity = EntityProps(
+        entity = Entity(
             position=PositionOrientation(x=0, y=0, orientation=0),
             model=ModelWrapper.from_model(
                 Model(
@@ -471,43 +487,36 @@ class GazeboSimulator(BaseSimulator):
             self.node.get_logger().error(f"Error generating SDF: {repr(e)}")
             return None
 
-    def _robot_bridge(self, robot: RobotProps, description: str):
+    def _robot_bridge(self, robot: Robot, description: str):
         launch_description = launch.LaunchDescription()
 
-        gz_topic = '/model/' + robot.name
         launch_description.add_action(
             launch_ros.actions.PushRosNamespace(
                 namespace=self.node.service_namespace(robot.name)
             )
         )
+
+        mappings = BridgeConfiguration.from_file(
+            os.path.join(
+                arena_simulation_setup.entities.robot.get_model_directory(robot.model.name),
+                'mappings.yaml'
+            )
+        ).substitute({
+            'robot_name': robot.name,
+            'world': '/world/default',
+        })
+
+        bridge_arguments = mappings.as_args()
+        remappings = mappings.as_remappings()
+
+        # Add parameter_bridge node
         launch_description.add_action(
             launch_ros.actions.Node(
                 package='ros_gz_bridge',
                 executable='parameter_bridge',
                 output='screen',
-                arguments=[
-                    # Odometry (Gazebo -> ROS2)
-                    gz_topic + '/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
-                    # IMU (Gazebo -> ROS2)
-                    '/world/default/model/' + robot.name + '/link/base_link/sensor/imu_sensor/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
-                    # Velocity command (ROS2 -> Gazebo)
-                    gz_topic + '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
-                    # LiDAR Scan (Gazebo -> ROS2)
-                    '/world/default/model/' + robot.name + '/link/base_link/sensor/gpu_lidar/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
-                    # LiDAR Point Cloud (Gazebo -> ROS2)
-                    '/world/default/model/' + robot.name + '/link/base_link/sensor/gpu_lidar/scan/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
-                    # TF Data (Gazebo -> ROS2)
-                    gz_topic + '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-                    gz_topic + '/tf_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
-                ],
-                remappings=[
-                    (gz_topic + '/tf', '/tf'),
-                    (gz_topic + '/odometry', 'odom'),
-                    ('/world/default/model/' + robot.name + '/link/base_link/sensor/imu_sensor/imu', 'imu/data'),
-                    (gz_topic + '/cmd_vel', 'cmd_vel'),
-                    ('/world/default/model/' + robot.name + '/link/base_link/sensor/gpu_lidar/scan', 'lidar'),
-                    ('/world/default/model/' + robot.name + '/link/base_link/sensor/gpu_lidar/scan/points', 'lidar/points'),
-                ],
+                arguments=bridge_arguments,
+                remappings=remappings,
                 parameters=[{'use_sim_time': True}],
             )
         )
@@ -537,18 +546,9 @@ class GazeboSimulator(BaseSimulator):
         #         remappings=[('/joint_states', '/joint_states')]
         #     )
         # )
-        # launch_description.add_action(
-        #     launch_ros.actions.Node(
-        #         package="tf2_ros",
-        #         executable="static_transform_publisher",
-        #         name="map_to_odomframe_publisher",
-        #         arguments=[str(robot.position.x), str(robot.position.y), "0", "0", "0", str(robot.position.orientation), "map", robot.frame + "odom"],
-        #         parameters=[{'use_sim_time': True}],
-        #     ),
-        # )
         self.node.do_launch(launch_description)
 
-    def _robot_initialpose(self, robot: RobotProps):
+    def _robot_initialpose(self, robot: Robot):
         pose = PoseWithCovarianceStamped()
         pose.pose.pose = robot.position.to_pose()
         pose.header.frame_id = "map"

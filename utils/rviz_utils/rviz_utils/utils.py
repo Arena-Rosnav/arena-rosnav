@@ -249,8 +249,28 @@ class Utils:
                     'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Reliable',
-                    'Durability Policy': 'Volatile',
+                    'Durability Policy': 'Transient Local',
                 },
                 'Visual Enabled': True,
                 'Collision Enabled': False
+            }
+
+        @classmethod
+        def image(cls, topic, queue_size=20):
+            return {
+                'Class': 'rviz_default_plugins/Image',
+                'Enabled': True,
+                'Max Value': 1,
+                'Median window': 5,
+                'Min Value': 0,
+                'Name': 'Image',
+                'Normalize Range': True,
+                'Topic': {
+                    'Value': topic,
+                    'Depth': queue_size,
+                    'History Policy': 'Keep Last',
+                    'Reliability Policy': 'Reliable',
+                    'Durability Policy': 'Volatile',
+                },
+                'Value': True,
             }

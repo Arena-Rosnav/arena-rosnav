@@ -5,13 +5,13 @@ import typing
 
 import attrs
 import yaml
-from task_generator.shared import DynamicObstacle, ModelWrapper, DynamicObstacleProps, PositionOrientation
+from task_generator.shared import DynamicObstacle, ModelWrapper, DynamicObstacle, PositionOrientation
 
 from ament_index_python.packages import get_package_share_directory
 
 
 @attrs.frozen()
-class HunavObstacleProps(DynamicObstacleProps):
+class HunavObstacleProps(DynamicObstacle):
 
     @attrs.frozen()
     class Behavior:

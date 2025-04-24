@@ -195,8 +195,11 @@ class ROSParamServer(rclpy.node.Node):
         _UNSET = typing.NewType('_UNSET', None)
 
         @classmethod
-        def declare_safe(cls, param_name: str,
-                         value: typing.Any = None, **kwargs) -> None:
+        def declare_safe(
+            cls, param_name: str,
+            value: typing.Any = None,
+            **kwargs
+        ) -> None:
             try:
                 cls._node.declare_parameter(param_name, value, **kwargs)
             except rclpy.exceptions.ParameterAlreadyDeclaredException:

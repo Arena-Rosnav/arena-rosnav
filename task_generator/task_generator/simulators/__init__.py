@@ -3,7 +3,7 @@ import typing
 
 from task_generator import NodeInterface
 from task_generator.constants import Constants
-from task_generator.shared import ModelType, EntityProps, Namespace, PositionOrientation, Wall
+from task_generator.shared import ModelType, Entity, Namespace, PositionOrientation, Wall
 from task_generator.utils.registry import Registry
 
 
@@ -51,7 +51,7 @@ class BaseSimulator(NodeInterface):
         """
         raise NotImplementedError()
 
-    def spawn_entity(self, entity: EntityProps) -> bool:
+    def spawn_entity(self, entity: Entity) -> bool:
         raise NotImplementedError()
 
     def move_entity(self, name: str, position: PositionOrientation) -> bool:

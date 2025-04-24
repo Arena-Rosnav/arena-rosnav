@@ -27,9 +27,10 @@ def generate_launch_description():
                 'node_names': ['map_server'],
                 'autostart': True,
                 'use_sim_time': True,
+                'bond_timeout': 0.0,
             }]
         ),
-        
+
         launch_ros.actions.Node(
             package='nav2_map_server',
             executable='map_server',
@@ -42,7 +43,7 @@ def generate_launch_description():
             }],
         )
     ])
-    
+
     return ld
 
 
