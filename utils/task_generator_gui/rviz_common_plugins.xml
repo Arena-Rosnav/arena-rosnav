@@ -1,0 +1,5 @@
+<library path="task_generator_panel">
+    <class type="task_generator_gui::TaskGeneratorPanel" base_class_type="rviz_common::Panel">
+      <description>A very basic panel for a tutorial</description>
+    </class>
+  </library>
