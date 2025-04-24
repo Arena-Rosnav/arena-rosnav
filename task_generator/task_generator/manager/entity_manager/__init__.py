@@ -1,24 +1,29 @@
+import abc
+import typing
 import rclpy
 import rclpy.publisher
-import rclpy.node
 from geometry_msgs.msg import PoseStamped
 
 from task_generator import NodeInterface
-from task_generator.manager.entity_manager.utils import ObstacleLayer
-from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot, Wall
+from task_generator.manager.entity_manager.utils import KnownObstacles, ObstacleLayer
+from task_generator.shared import DynamicObstacle, ModelType, Namespace, Obstacle, PositionOrientation, Robot, Wall
 from task_generator.simulators import BaseSimulator
-from typing import Collection
 
 from task_generator.constants import Constants
 from task_generator.utils.registry import Registry
 
 
-class EntityManager(NodeInterface):
+class EntityManager(NodeInterface, abc.ABC):
 
     _goal_pub: rclpy.publisher.Publisher
+    _known_obstacles: KnownObstacles
+    _logger_name: typing.ClassVar[str]
 
-    def __init__(self, namespace: Namespace,
-                 simulator: BaseSimulator, node: rclpy.node.Node = None):
+    def __init__(
+        self,
+        namespace: Namespace,
+        simulator: BaseSimulator,
+    ):
         """
         Initialize dynamic obstacle manager.
 
@@ -32,69 +37,197 @@ class EntityManager(NodeInterface):
 
         NodeInterface.__init__(self)
 
+        self._known_obstacles = KnownObstacles()
+        self._logger = self.node.get_logger().get_child(self._logger_name)
+
         self._goal_pub = self.node.create_publisher(
             PoseStamped,
             self._namespace("/goal"),
             1
         )
-        # self._robot_name = self.node.get_parameter('robot_model').value
 
-    def spawn_obstacles(self, obstacles: Collection[Obstacle]):
+    def spawn_obstacles(
+        self,
+        obstacles: typing.Collection[Obstacle]
+    ):
         """
         Loads given obstacles into the simulator.
-        If the object has an interaction radius of > 0,
-        then load it as an interactive obstacle instead of static
         """
-        raise NotImplementedError()
+        self._logger.debug(f'spawning {len(obstacles)} static obstacles')
+        for obstacle in obstacles:
+            if (known := self._known_obstacles.get(obstacle.name)) is not None:
+                known.obstacle = obstacle
+                self._simulator.move_entity(known.obstacle.name, known.obstacle.position)
+                known.layer = ObstacleLayer.INUSE
+            else:
+                known = self._known_obstacles.create_or_get(
+                    name=obstacle.name,
+                    obstacle=obstacle
+                )
 
-    def spawn_dynamic_obstacles(self, obstacles: Collection[DynamicObstacle]):
+            if not known.spawned:
+                if (obs := self._spawn_obstacle_impl(obstacle)):
+                    known.obstacle = obs
+                    known.spawned = True
+
+            if known.layer == ObstacleLayer.UNUSED:
+                if self._simulator.spawn_entity(known.obstacle):
+                    known.layer = ObstacleLayer.INUSE
+
+    def spawn_dynamic_obstacles(
+        self,
+        obstacles: typing.Collection[DynamicObstacle]
+    ):
         """
         Loads given obstacles into the simulator.
-        Currently by loading a existing sdf file,
-        then reaplacing the static values by dynamic ones
         """
-        raise NotImplementedError()
+        self._logger.debug(f'spawning {len(obstacles)} dynamic obstacles')
+        for obstacle in obstacles:
+            if (known := self._known_obstacles.get(obstacle.name)) is not None:
+                known.obstacle = obstacle
+                self._simulator.move_entity(known.obstacle.name, known.obstacle.position)
+                known.layer = ObstacleLayer.INUSE
+            else:
+                known = self._known_obstacles.create_or_get(
+                    name=obstacle.name,
+                    obstacle=obstacle
+                )
 
-    def spawn_walls(self, walls: Collection[Wall]):
+            if not known.spawned:
+                if (obs := self._spawn_dynamic_obstacle_impl(obstacle)):
+                    known.obstacle = obs
+                    known.spawned = True
+
+            if known.layer == ObstacleLayer.UNUSED:
+                if self._simulator.spawn_entity(known.obstacle):
+                    known.layer = ObstacleLayer.INUSE
+
+    def spawn_walls(
+        self,
+        walls: typing.Collection[Wall]
+    ):
         """
         Adds walls to the simulator.
         """
-        raise NotImplementedError()
+        self._logger.debug(f'spawning {len(walls)} walls')
+        self._simulator.spawn_walls(list(walls))
+        self._spawn_walls_impl(walls)
 
     def unuse_obstacles(self):
         """
         Prepares obstacles for reuse or removal.
         """
-        raise NotImplementedError()
+        self._logger.debug('unusing obstacles')
+        self._remove_obstacles_impl()
+        for obstacle in self._known_obstacles.values():
+            obstacle.spawned = False
+            if obstacle.layer == ObstacleLayer.INUSE:
+                obstacle.layer = ObstacleLayer.UNUSED
 
-    def remove_obstacles(self, purge: ObstacleLayer = ObstacleLayer.UNUSED):
+    def remove_obstacles(
+        self,
+        purge: ObstacleLayer = ObstacleLayer.UNUSED
+    ):
         """
         Removes obstacles from simulator.
-        @purge: if False, only remove unused obstacles
+        @purge: remove obstacles down to this layer
         """
-        raise NotImplementedError()
+        self._logger.debug(f'removing obstacles (level {purge})')
 
-    def spawn_robot(self, robot: Robot):
+        for obstacle_id, obstacle in list(self._known_obstacles.items()):
+            if purge >= obstacle.layer:
+                self._simulator.delete_entity(name=obstacle_id)
+                self._known_obstacles.forget(name=obstacle_id)
+
+    def spawn_robot(
+        self,
+        robot: Robot,
+    ):
         """
         Spawns a robot.
         @robot: Robot description.
         """
-        raise NotImplementedError()
+        self._logger.debug(f'spawning robot {robot.name}')
+        self._simulator.spawn_entity(robot)
+        self._spawn_robot_impl(robot)
 
-    def move_robot(self, name: str, position: PositionOrientation):
+    def remove_robot(
+        self,
+        name: str,
+    ):
+        """
+        Removes a robot from the simulation.
+        @name: Robot name
+        """
+        self._logger.debug(f'removing robot {name}')
+        self._simulator.delete_entity(name)
+        self._remove_robot_impl(name)
+
+    def move_robot(
+        self,
+        name: str,
+        position: PositionOrientation
+    ):
         """
         Moves a robot.
         @name: Robot name
         @position: Target position
         """
-        raise NotImplementedError()
+        self._logger.debug(
+            f'moving robot {name} to {repr(position)}')
+        self._simulator.move_entity(name, position)
+        self._move_robot_impl(name, position)
 
-    def remove_robot(self, name: str):
-        """
-        Removes a robot from the simulation.
-        @name: Robot name
-        """
-        raise NotImplementedError()
+    # impl
+
+    @abc.abstractmethod
+    def _spawn_obstacle_impl(
+        self,
+        obstacle: Obstacle,
+    ) -> Obstacle | None:
+        ...
+
+    @abc.abstractmethod
+    def _spawn_dynamic_obstacle_impl(
+        self,
+        obstacle: DynamicObstacle,
+    ) -> DynamicObstacle | None:
+        ...
+
+    @abc.abstractmethod
+    def _remove_obstacles_impl(
+        self,
+    ) -> bool:
+        ...
+
+    @abc.abstractmethod
+    def _spawn_walls_impl(
+        self,
+        walls: typing.Collection[Wall],
+    ) -> bool:
+        ...
+
+    @abc.abstractmethod
+    def _spawn_robot_impl(
+        self,
+        robot: Robot,
+    ) -> bool:
+        ...
+
+    @abc.abstractmethod
+    def _remove_robot_impl(
+        self,
+        name: str,
+    ) -> bool:
+        ...
+
+    @abc.abstractmethod
+    def _move_robot_impl(
+        self,
+        name: str,
+        position: PositionOrientation
+    ) -> bool:
+        ...
 
 
 EntityManagerRegistry = Registry[Constants.EntityManager, EntityManager]()
@@ -102,20 +235,17 @@ EntityManagerRegistry = Registry[Constants.EntityManager, EntityManager]()
 
 @EntityManagerRegistry.register(Constants.EntityManager.DUMMY)
 def dummy():
-
     from .dummy_manager import DummyEntityManager
     return DummyEntityManager
 
 
 @EntityManagerRegistry.register(Constants.EntityManager.HUNAV)
 def lazy_hunavsim():
-
     from .hunav_manager.hunav_manager import HunavManager
     return HunavManager
 
 
 @EntityManagerRegistry.register(Constants.EntityManager.ISAAC)
 def isaacsim():
-
     from .isaac_manager import IsaacEntityManager
     return IsaacEntityManager
