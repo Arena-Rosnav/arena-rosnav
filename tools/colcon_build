@@ -2,7 +2,7 @@
 
 . "${ARENA_WS_DIR:-.}/src/arena/arena-rosnav/tools/source.bash" || return $?
 
-SKIP_OLD=1
+SKIP_OLD="${SKIP_OLD:-1}"
 
 BUILD_BASE='build'
 INSTALL_BASE='install'
@@ -13,7 +13,7 @@ BASE_PATHS=(
 OLD_PACKAGES=()
 
 
-if [ -n "${SKIP_OLD}" ]; then
+if [ "1" = "${SKIP_OLD}" ]; then
 
     function recursive_mtime(){
         find "$1" \! -type l -printf "%T@\n"  | sort | tail -1 | cut -d. -f1

@@ -1,0 +1,4 @@
+
+string world  # optional, current world by default 
+---
+string[] scenarios

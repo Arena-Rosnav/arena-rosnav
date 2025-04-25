@@ -1,26 +1,25 @@
-import os
 import typing
 
+import arena_simulation_setup
 import rclpy
+import rosgraph_msgs.msg as rosgraph_msgs
+import std_msgs.msg as std_msgs
 
 from task_generator import NodeInterface
 from task_generator.constants import Constants
 from task_generator.manager.environment_manager import EnvironmentManager
-from task_generator.manager.robot_manager.robots_manager_ros import RobotsManager
+from task_generator.manager.robot_manager.robots_manager_ros import \
+    RobotsManager
 from task_generator.manager.world_manager.world_manager_ros import WorldManager
-from task_generator.shared import DefaultParameter, Namespace, PositionOrientation, rosparam_set
+from task_generator.shared import (DefaultParameter, Namespace,
+                                   PositionOrientation, rosparam_set)
 from task_generator.tasks import Namespaced, Task
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.robots import TM_Robots
-
-import std_msgs.msg as std_msgs
-import rosgraph_msgs.msg as rosgraph_msgs
-# import training.srv as training_srvs
-
 from task_generator.utils import ModelLoader
 
-import task_generator.utils.arena as Utils
+# import training.srv as training_srvs
 
 
 class TaskFactory(Namespaced):
@@ -162,20 +161,8 @@ class TaskFactory(Namespaced):
 
                 robots_manager.set_up()
 
-                self.model_loader = ModelLoader(
-                    os.path.join(
-                        Utils.get_simulation_setup_path(),
-                        'entities',
-                        'obstacles',
-                        'static')
-                )
-                self.dynamic_model_loader = ModelLoader(
-                    os.path.join(
-                        Utils.get_simulation_setup_path(),
-                        'entities',
-                        'obstacles',
-                        'dynamic')
-                )
+                self.model_loader = ModelLoader(arena_simulation_setup.Obstacle.base_dir())
+                self.dynamic_model_loader = ModelLoader(arena_simulation_setup.DynamicObstacle.base_dir())
 
                 self.__param_tm_obstacles = None
                 self.__param_tm_robots = None
