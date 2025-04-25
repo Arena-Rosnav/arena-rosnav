@@ -1,33 +1,66 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import os
-import re
-import subprocess
 import sys
 import tempfile
 import time
+import typing
 
 import launch
 import launch.launch_service
 import launch_ros.actions
+import rcl_interfaces.msg
 import rcl_interfaces.srv
 import rclpy
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from rclpy.node import Node
-from rviz_utils.config import Config
-from rviz_utils.matchers import Matcher
 from rviz_utils.utils import Utils
-from std_msgs.msg import String
-from std_srvs.srv import Empty
 
 
 class ConfigFileGenerator(Node):
-    def __init__(self):
-        Node.__init__(self, 'create_rviz_config_file')
 
-        TASKGEN_NODE = '/task_generator_node'
-        TASKGEN_PARAM_SRV = os.path.join(TASKGEN_NODE, 'get_parameters')
+    _origin: typing.List[float]
+    topics: typing.List[typing.Tuple[str, typing.List[str]]]
+    robot_names: typing.List[str]
+
+    def _wait_for_param(
+        self,
+        client: rclpy.client.Client,
+        param_name: str,
+        test_fn: typing.Callable[[typing.Any], bool] | None = None,
+        timeout: float = 1,
+    ) -> rcl_interfaces.msg.ParameterValue:
+        """
+        Block execution until parameter passes test function.
+        @parameter client: rclpy GetParameters service client
+        @paramter parameter_name: name of parameter
+        @test_fn: test function for parameter
+        @timeout: timeout in seconds
+        """
+        while True:
+            req = rcl_interfaces.srv.GetParameters.Request(names=[param_name])
+            future = client.call_async(req)
+            rclpy.spin_until_future_complete(self, future, timeout_sec=timeout)
+            params = future.result()
+            if params and params.values:
+                value = params.values[0]
+                if (not test_fn) or test_fn(value):
+                    self.get_logger().info(f'param {param_name} is set')
+                    return value
+            self.get_logger().info(f'waiting for {param_name} to be set')
+            time.sleep(timeout)
+
+    def __init__(self, TASKGEN_NODE: str = '/task_generator_node'):
+        Node.__init__(self, 'rviz_config_generator')
+
+        self._TASKGEN_NODE = TASKGEN_NODE
+
+        self.declare_parameter('origin', [0.0, 0.0, 0.0])
+        origin = self.get_parameter('origin').value
+        self._origin = list((*origin, 0.0, 0.0, 0.0)[:3])
+
+        TASKGEN_PARAM_SRV = os.path.join(self._TASKGEN_NODE, 'get_parameters')
         PARAM_INITIALIZED = 'initialized'
 
         get_parameters_cli = self.create_client(rcl_interfaces.srv.GetParameters, TASKGEN_PARAM_SRV)
@@ -35,47 +68,92 @@ class ConfigFileGenerator(Node):
             self.get_logger().info(f'waiting for service {TASKGEN_PARAM_SRV} to become available')
         self.get_logger().info(f'service {TASKGEN_PARAM_SRV} is available')
 
-        while True:
-            req = rcl_interfaces.srv.GetParameters.Request(names=[PARAM_INITIALIZED])
-            future = get_parameters_cli.call_async(req)
-            rclpy.spin_until_future_complete(self, future)
-            params = future.result()
-            if params.values and params.values[0].bool_value:
-                break
-            self.get_logger().info(f'waiting for {PARAM_INITIALIZED} to be set')
-            time.sleep(1)
-        self.get_logger().info(f'param {PARAM_INITIALIZED} is set')
+        self._wait_for_param(get_parameters_cli, PARAM_INITIALIZED, lambda x: x.bool_value)
+        self.robot_names = self._wait_for_param(get_parameters_cli, 'robot_names').string_array_value
 
         # self.cli_load = self.create_client('/rviz2/load_config', rcl_interfaces.srv.SetString)
 
     def create_config(self) -> str:
         default_file = ConfigFileGenerator._read_default_file()
 
-        displays = [
-            #     Config.MAP,
-            #     Config.TF
-        ]
+        # cache
+        self.topics = self.get_topic_names_and_types()
+
+        displays = []
+
+        # Add the map display
+        displays.append({
+            'Class': 'rviz_default_plugins/Map',
+            'Enabled': True,
+            'Name': 'Map',
+            'Topic': {
+                'Value': os.path.join(self._TASKGEN_NODE, 'map'),
+                'Depth': 20,
+                'History Policy': 'Keep Last',
+                'Reliability Policy': 'Reliable',
+                'Durability Policy': 'Transient Local',
+            },
+            'Use Timestamp': False,
+            'Alpha': 0.7
+        })
+
+        # Add TF display
+        displays.append({
+            'Class': 'rviz_default_plugins/TF',
+            'Enabled': True,
+            'Name': 'TF',
+            'Frame Timeout': 15,
+            'Marker Scale': 1.0,
+            'Show Arrows': True,
+            'Show Axes': True,
+            'Show Names': False
+        })
 
         published_topics = [topic[0] for topic in self.get_topic_names_and_types()]
 
-        robot_names = self.get_parameter_or("robot_names.value", [])
+        for robot_name in self.robot_names:
+            robot_group = self._create_robot_group(robot_name)
+            displays.append(robot_group)
 
-        for robot_name in robot_names:
-            color = Utils.get_random_rviz_color()
+        # PedSim configuration - commented out but kept for future use
+        # try:
+        #     if not self.has_parameter('pedsim'):
+        #         self.declare_parameter('pedsim', False)
+        #     if self.get_parameter('pedsim').value:
+        #         displays.append(Config.TRACKED_PERSONS)
+        #         displays.append(Config.TRACKED_GROUPS)
+        #         displays.append(Config.PEDSIM_WALLS)
+        #         displays.append(Config.PEDSIM_WAYPOINTS)
+        # except Exception as e:
+        #     self.get_logger().warn(f"Error checking pedsim parameter: {e}")
 
-            for topic in published_topics:
-                config = self._create_display_for_topic(robot_name, topic, color)
+        # Set the default view to Orbit (instead of TopDownOrtho)
 
-                if not config:
-                    continue
+        python_yaw: float = 3.8
+        try:
+            python_yaw = sum(
+                2 * (i % 2 - 0.5) * float(d) / 10**i
+                for i, d
+                in enumerate(sys.version.split(' ', 1)[0].split('.'))
+            )  # i am going insane
+        except BaseException:
+            pass
 
-                displays.append(config)
-
-        if self.get_parameter_or("pedsim.value", False):
-            displays.append(Config.TRACKED_PERSONS)
-            displays.append(Config.TRACKED_GROUPS)
-            displays.append(Config.PEDSIM_WALLS)
-            displays.append(Config.PEDSIM_WAYPOINTS)
+        default_file["Visualization Manager"]["Views"]["Current"] = {
+            "Class": "rviz_default_plugins/Orbit",
+            "Distance": 50.0,
+            "Focal Point": {
+                "X": 15.0 + self._origin[0],
+                "Y": 10.0 + self._origin[1],
+                "Z": 0.0 + self._origin[2],
+            },
+            "Name": "Current View",
+            "Near Clip Distance": 0.01,
+            "Pitch": 0.9,
+            "Target Frame": "<Fixed Frame>",
+            "Value": True,
+            "Yaw": python_yaw
+        }
 
         default_file["Visualization Manager"]["Displays"] = displays
 
@@ -90,28 +168,112 @@ class ConfigFileGenerator(Node):
         self._send_load_config(file_path)
         return response
 
-    def _create_display_for_topic(self, robot_name, topic, color):
-        matchers = [
-            (Matcher.GLOBAL_PLAN, Config.create_path_display),
-            (Matcher.LASER_SCAN, Config.create_laser_scan_display),
-            (Matcher.GLOBAL_COSTMAP, Config.create_global_map_display),
-            (Matcher.LOCAL_COSTMAP, Config.create_local_map_display),
-            (Matcher.GOAL, Config.create_pose_display),
-            (Matcher.MODEL, Config.create_model_display)
-        ]
+    def _create_robot_group(self, robot_name):
+        """Creates a Robot Group with all visualizations for a robot"""
+        color = Utils.get_random_rviz_color()
 
-        for matcher, function in matchers:
-            match = re.search(matcher(robot_name), topic)
+        robot_group = {
+            'Class': 'rviz_common/Group',
+            'Name': f'Robot: {robot_name}',
+            'Enabled': True,
+            'Displays': []
+        }
 
-            if match:
-                return function(robot_name, topic, color)
+        # Add robot model using RobotModel display
+        robot_group['Displays'].append(Utils.Displays.robot_model(robot_name))
 
-    def _send_load_config(self, file_path):
-        # print(f"Attempting to call /rviz/load_config with file: {file_path}")
-        while not self.cli_load.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('waiting for service /rviz/load_config to become available')
-        self.cli_load.call(file_path)
-        # print("Call to /rviz/load_config completed.")
+        # Add odometry visualization
+        odom_topic = f'{self._TASKGEN_NODE}/{robot_name}/odom'
+        robot_group['Displays'].append(Utils.Displays.odom(odom_topic, color))
+
+        # Add local costmap
+        local_costmap_topic = f'{self._TASKGEN_NODE}/{robot_name}/local_costmap/costmap'
+        robot_group['Displays'].append(Utils.Displays.local_costmap(local_costmap_topic))
+
+        # Add global costmap
+        global_costmap_topic = f'{self._TASKGEN_NODE}/{robot_name}/global_costmap/costmap'
+        robot_group['Displays'].append(Utils.Displays.global_costmap(global_costmap_topic))
+
+        # Add path visualization
+        path_topic = f'{self._TASKGEN_NODE}/{robot_name}/plan'
+        robot_group['Displays'].append(Utils.Displays.global_path(path_topic, color))
+
+        # Add local path visualization
+        local_path_topic = f'{self._TASKGEN_NODE}/{robot_name}/local_plan'
+        robot_group['Displays'].append(Utils.Displays.local_path(local_path_topic))
+
+        # Add robot footprint
+        footprint_topic = f'{self._TASKGEN_NODE}/{robot_name}/local_costmap/published_footprint'
+        robot_group['Displays'].append(Utils.Displays.robot_footprint(footprint_topic, color))
+
+        # SENSORS
+        # Map of message types to display creator methods - include all sensor types
+        sensor_displays = {
+            'sensor_msgs/msg/LaserScan': Utils.Displays.laser_scan,
+            'sensor_msgs/msg/PointCloud2': Utils.Displays.pointcloud,
+            'sensor_msgs/msg/PointCloud': Utils.Displays.pointcloud_legacy,
+            # 'sensor_msgs/msg/Imu': Utils.imu,                          # will be optimised soon
+            'foot_contact_msgs/msg/FootContact': Utils.Displays.footcontact,
+            'sensor_msgs/msg/Image': Utils.Displays.image,
+            # Add more sensor types as needed
+        }
+
+        # Track sensor counts for color assignment
+        sensor_counts = {}
+
+        # Improved topic discovery for robot sensors
+        robot_topics = []
+
+        # Try to discover topics using node-based approach first
+        try:
+            # Get all nodes in the system
+            node_names_and_namespaces = self.get_node_names_and_namespaces()
+
+            # Filter for nodes related to this robot
+            robot_nodes = []
+            robot_namespace = f'{self._TASKGEN_NODE}/{robot_name}'
+
+            for node_name, node_namespace in node_names_and_namespaces:
+                if node_namespace == robot_namespace:
+                    robot_nodes.append((node_name, node_namespace))
+
+            self.get_logger().info(f"Found {len(robot_nodes)} nodes for robot {robot_name}")
+
+            # Get topics from each robot node
+            for node_name, node_namespace in robot_nodes:
+                try:
+                    node_topics = self.get_publisher_names_and_types_by_node(node_name, node_namespace)
+                    robot_topics.extend(node_topics)
+                except Exception as e:
+                    self.get_logger().debug(f"Failed to get topics from {node_namespace}/{node_name}: {e}")
+        except Exception as e:
+            self.get_logger().warning(f"Failed to get topics by node: {e}")
+
+        # Fall back to namespace filtering if node-based discovery failed
+        if not robot_topics:
+            robot_ns = f'{self._TASKGEN_NODE}/{robot_name}'
+            robot_topics = [(t, types) for t, types in self.topics if t.startswith(robot_ns)]
+            self.get_logger().info(f"Found {len(robot_topics)} topics using namespace filtering")
+
+        # Add displays for all discovered sensors
+        for topic_name, topic_types in robot_topics:
+            for topic_type in topic_types:
+                if topic_type in sensor_displays:
+                    # Track count for this sensor type (for color assignment)
+                    if topic_type not in sensor_counts:
+                        sensor_counts[topic_type] = 0
+                    else:
+                        sensor_counts[topic_type] += 1
+
+                    # Get display with appropriate color
+                    display_creator = sensor_displays[topic_type]
+                    sensor_color = Utils.get_sensor_color(topic_type, sensor_counts[topic_type])
+                    display = display_creator(topic_name, sensor_color)
+
+                    robot_group['Displays'].append(display)
+                    break  # Use first matching type
+
+        return robot_group
 
     @staticmethod
     def _read_default_file():
@@ -132,7 +294,8 @@ class ConfigFileGenerator(Node):
 def main():
     rclpy.init()
 
-    config_file_generator = ConfigFileGenerator()
+    cli_args = rclpy.utilities.remove_ros_args(sys.argv)
+    config_file_generator = ConfigFileGenerator(*cli_args[1:])
     try:
         config_file = config_file_generator.create_config()
         launch_service = launch.launch_service.LaunchService()
@@ -142,7 +305,7 @@ def main():
                     package="rviz2",
                     executable="rviz2",
                     name="rviz2",
-                    arguments=['-d', config_file, '--ros-args', '--clock'],
+                    arguments=['-d', config_file],
                     parameters=[{"use_sim_time": True}],
                     output="screen",
                 )
@@ -153,10 +316,9 @@ def main():
         pass
     finally:
         config_file_generator.destroy_node()
-        rclpy.shutdown()
 
     sys.exit(0)
 
 
 if __name__ == "__main__":
-    ...
+    main()

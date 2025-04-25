@@ -1,4 +1,3 @@
-import typing
 import rclpy
 import rclpy.publisher
 import rclpy.node

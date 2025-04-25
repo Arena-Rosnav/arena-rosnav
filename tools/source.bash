@@ -6,11 +6,18 @@ if [ -z ${ARENA_SOURCED+x} ] ; then
     export ARENA_WS_DIR="$(pwd)"
     export ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-humble}
 
+    # Set Gazebo version if not provided
+    export GAZEBO_VERSION=${GAZEBO_VERSION:-harmonic}
+    export GZ_VERSION=${GAZEBO_VERSION}
+
     export FASTRTPS_DEFAULT_PROFILES_FILE=~/.ros/fastdds.xml
     export ROS_DOMAIN_ID=1
     export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ros/humble/lib/
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/ros/${ARENA_ROS_DISTRO}/lib/"
     export INSTALLED=$ARENA_WS_DIR/src/arena/arena-rosnav/.installed
+    
+    # stop rviz from flashing
+    export QT_SCREEN_SCALE_FACTORS=1
 
     pushd src/arena/arena-rosnav
         export VIRTUAL_ENV_DISABLE_PROMPT=1
@@ -37,7 +44,7 @@ if [ -f install/local_setup.bash ] ; then
     . install/local_setup.bash
 fi 
 
-if grep -q "isaac.sh" "$INSTALLED"; then
+if [ -f "$INSTALLED" ] && grep -q "isaac.sh" "$INSTALLED"; then
     if [ -z ${ISAAC_PATH+x} ] ; then
         source ~/isaacsim-4.2.0/setup.bash
     fi

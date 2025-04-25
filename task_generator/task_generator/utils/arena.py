@@ -11,7 +11,6 @@ import ament_index_python.packages
 
 import re
 import tempfile
-import xml.etree.ElementTree as ET
 
 
 _ARENA_WS_DIR = os.path.realpath(os.path.join(ament_index_python.packages.get_package_share_directory('task_generator'), '..', '..', '..', '..'))

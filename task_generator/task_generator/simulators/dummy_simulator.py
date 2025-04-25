@@ -1,5 +1,5 @@
 from task_generator.simulators import BaseSimulator
-from task_generator.shared import EntityProps, Namespace, PositionOrientation
+from task_generator.shared import Entity, Namespace, PositionOrientation
 from task_generator.shared import Wall
 
 
@@ -18,7 +18,7 @@ class DummySimulator(BaseSimulator):
     def after_reset_task(self):
         self._logger.debug("unpausing")
 
-    def spawn_entity(self, entity: EntityProps) -> bool:
+    def spawn_entity(self, entity: Entity) -> bool:
         self._logger.debug(f"spawning {entity.name} {repr(entity)}")
         return True
 

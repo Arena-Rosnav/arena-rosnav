@@ -5,10 +5,9 @@ import rclpy
 
 from task_generator import NodeInterface
 from task_generator.constants import Constants
-from task_generator.manager.obstacle_manager import ObstacleManager
-from task_generator.manager.robot_manager import RobotManager
+from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.manager.robot_manager.robots_manager_ros import RobotsManager
-from task_generator.manager.world_manager import WorldManager
+from task_generator.manager.world_manager.world_manager_ros import WorldManager
 from task_generator.shared import DefaultParameter, Namespace, PositionOrientation, rosparam_set
 from task_generator.tasks import Namespaced, Task
 from task_generator.tasks.modules import TM_Module
@@ -115,7 +114,7 @@ class TaskFactory(Namespaced):
             def __init__(
                 self,
                 *args,
-                obstacle_manager: ObstacleManager,
+                environment_manager: EnvironmentManager,
                 robots_manager: RobotsManager,
                 world_manager: WorldManager,
                 namespace: str = "",
@@ -125,7 +124,7 @@ class TaskFactory(Namespaced):
                 Initializes a CombinedTask object.
 
                 Args:
-                    obstacle_manager (ObstacleManager): The obstacle manager for the task.
+                    environment_manager (ObstacleManager): The obstacle manager for the task.
                     robot_managers (dict[, strRobotManager]): The dict of robot managers for the task.
                     world_manager (WorldManager): The world manager for the task.
                     namespace (str, optional): The namespace for the task. Defaults to "".
@@ -139,7 +138,7 @@ class TaskFactory(Namespaced):
 
                 self._robots_manager = robots_manager
 
-                self.obstacle_manager = obstacle_manager
+                self.environment_manager = environment_manager
                 self.robot_managers = self._robots_manager.robot_managers
                 self.world_manager = world_manager
 
@@ -252,11 +251,10 @@ class TaskFactory(Namespaced):
                         **kwargs)
 
                     def respawn():
-                        self.obstacle_manager.spawn_obstacles(obstacles)
-                        self.obstacle_manager.spawn_dynamic_obstacles(
-                            dynamic_obstacles)
+                        self.environment_manager.spawn_obstacles(obstacles)
+                        self.environment_manager.spawn_dynamic_obstacles(dynamic_obstacles)
 
-                    self.obstacle_manager.respawn(respawn)
+                    self.environment_manager.respawn(respawn)
 
                     for module in self.__modules:
                         module.after_reset()

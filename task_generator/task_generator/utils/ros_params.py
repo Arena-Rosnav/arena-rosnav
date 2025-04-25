@@ -195,8 +195,11 @@ class ROSParamServer(rclpy.node.Node):
         _UNSET = typing.NewType('_UNSET', None)
 
         @classmethod
-        def declare_safe(cls, param_name: str,
-                         value: typing.Any = None, **kwargs) -> None:
+        def declare_safe(
+            cls, param_name: str,
+            value: typing.Any = None,
+            **kwargs
+        ) -> None:
             try:
                 cls._node.declare_parameter(param_name, value, **kwargs)
             except rclpy.exceptions.ParameterAlreadyDeclaredException:
@@ -274,7 +277,7 @@ class ROSParamServer(rclpy.node.Node):
             cls._node._callbacks.setdefault(param_name, set()).add(callback)
 
             if value is not None:
-                callback(value)
+                cls._node.executor.create_task(lambda: callback(value))
 
     def __init__(self):
         self.rosparam._node = self

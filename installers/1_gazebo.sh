@@ -1,8 +1,6 @@
 #!/bin/bash -i
 set -e
 
-# Set Gazebo version if not provided
-export GAZEBO_VERSION=${GAZEBO_VERSION:-harmonic}
 
 # Define Arena workspace directory
 cd "${ARENA_WS_DIR}"
@@ -36,18 +34,7 @@ sudo apt-get install -y \
   libsdformat14-dev
 
 
-export GZ_VERSION=${GAZEBO_VERSION}
 mkdir -p "${ARENA_WS_DIR}/src/gazebo"
-
-pushd "${ARENA_WS_DIR}/src/gazebo"
-  if [ ! -d ros_gz ] ; then
-    git clone https://github.com/voshch/ros_gz.git -b "${ARENA_ROS_DISTRO}"
-  fi
-
-  if [ ! -d sdformat_urdf ]; then
-    git clone https://github.com/ros/sdformat_urdf.git -b "${ARENA_ROS_DISTRO}"
-  fi
-popd
 
 rosdep install -r --from-paths src -i -y --rosdistro "${ARENA_ROS_DISTRO}" 
 

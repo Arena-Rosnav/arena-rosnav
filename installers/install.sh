@@ -18,7 +18,7 @@ sudo echo 'confirmed'
 mkdir -p "$ARENA_WS_DIR"
 cd "$ARENA_WS_DIR"
 
-export INSTALLED=src/arena/arena-rosnav/.installed
+export INSTALLED="${ARENA_WS_DIR}/src/arena/arena-rosnav/.installed"
 
 # == remove ros problems ==
 files=$( (grep -l "/ros" /etc/apt/sources.list.d/* | grep -v "ros2") || echo '')
@@ -89,7 +89,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-a
 
 # for building python
 echo "Installing Python deps..." 
-sudo apt-get install -y build-essential python3-pip zlib1g-dev libffi-dev libssl-dev libbz2-dev libreadline-dev libsqlite3-dev liblzma-dev libncurses-dev tk-dev python3-dev
+sudo apt-get install -y build-essential python3-pip zlib1g-dev libffi-dev libssl-dev libbz2-dev libreadline-dev libsqlite3-dev liblzma-dev libncurses-dev tk-dev python3-dev g++-9 gcc-9
 
 if [ ! -d src/arena/arena-rosnav/tools ] ; then
   mkdir -p src/arena/arena-rosnav/tools

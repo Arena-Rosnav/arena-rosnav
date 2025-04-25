@@ -1,21 +1,19 @@
 from __future__ import annotations
 
-import dataclasses
 import enum
 import os
 import typing
 from typing import (Callable, Collection, Dict, List, Optional, Tuple,
                     Type, TypeVar, overload)
 
-import attr
+import attrs
 import geometry_msgs.msg as geometry_msgs
 import rclpy
 import rclpy.node
 import yaml
-from ament_index_python.packages import get_package_share_directory
 
 import rclpy.parameter
-from task_generator.utils.geometry import euler_from_quaternion
+from task_generator.utils.geometry import euler_from_quaternion, quaternion_from_euler
 
 _node: rclpy.node.Node
 
@@ -57,13 +55,13 @@ class Namespace(str):
     def ParamNamespace(self) -> ParamNamespace:
         return ParamNamespace('')(*self.split('/'))
 
-    @ property
+    @property
     def simulation_ns(self) -> Namespace:
         if len(self.split("/")) < 3:
             return self
         return Namespace(os.path.dirname(self))
 
-    @ property
+    @property
     def robot_ns(self) -> Namespace:
         return Namespace(os.path.basename(os.path.normpath(self)))
 
@@ -105,7 +103,7 @@ class ModelType(enum.Enum):
     USD = "usd"
 
 
-@dataclasses.dataclass(frozen=True)
+@attrs.frozen()
 class Model:
     type: ModelType
     name: str
@@ -121,33 +119,36 @@ class Model:
 
     def replace(self, **kwargs) -> Model:
         """
-        Wrapper for dataclasses.replace
+        Wrapper for attrs.evolve
         **kwargs: properties to replace
         """
-        return dataclasses.replace(self, **kwargs)
+        return attrs.evolve(self, **kwargs)
 
 
-@attr.frozen()
+@attrs.frozen()
 class Position:
     """
     2D position
     """
-    x: float = attr.field(converter=float)
-    y: float = attr.field(converter=float)
+    x: float = attrs.field(converter=float)
+    y: float = attrs.field(converter=float)
 
 
-@attr.frozen()
+@attrs.frozen()
 class PositionOrientation(Position):
     """
     2D position with 2D yaw
     """
-    orientation: float = attr.field(converter=float)
+    orientation: float = attrs.field(converter=float)
 
     @classmethod
     def from_pose(
         cls,
         pose: geometry_msgs.Pose
     ) -> "PositionOrientation":
+        """
+        parse geometry_msgs.msg.Pose
+        """
         return cls(
             x=pose.position.x,
             y=pose.position.y,
@@ -159,34 +160,67 @@ class PositionOrientation(Position):
             )[2]
         )
 
+    def to_pose(self) -> geometry_msgs.Pose:
+        """
+        return self as geometry_msgs.msg.Pose
+        """
 
-@attr.frozen()
+        quat = quaternion_from_euler(
+            0.0,
+            0.0,
+            self.orientation,
+            axes="xyzs"
+        )
+
+        pose = geometry_msgs.Pose(
+            position=geometry_msgs.Point(
+                x=self.x,
+                y=self.y,
+            ),
+            orientation=geometry_msgs.Quaternion(
+                x=quat[0],
+                y=quat[1],
+                z=quat[2],
+                w=quat[3],
+            )
+        )
+
+        return pose
+
+
+@attrs.frozen()
 class PositionRadius(Position):
     """
     2D position with 2D yaw
     """
-    radius: float = attr.field(converter=lambda x: max(0., float(x)))
+    radius: float = attrs.field(converter=lambda x: max(0., float(x)))
 
 
 class ModelWrapper:
-    _get: Callable[[Collection[ModelType]], Model]
+    _get: Callable[[Collection[ModelType], dict], Model]
     _name: str
     _override: Dict[ModelType, Tuple[bool, Callable[..., Model]]]
 
-    def __init__(self, name: str):
+    def __init__(
+        self,
+        name: str,
+        callback: Callable[[Collection[ModelType], dict], Model] | None = None
+    ):
         """
         Create new ModelWrapper
         @name: Name of the ModelWrapper (should match the underlying Models)
         """
+        if callback is None:
+            callback = EMPTY_LOADER
         self._name = name
+        self._get = callback
         self._override = dict()
 
     def clone(self) -> ModelWrapper:
         """
         Clone (shallow copy) this ModelWrapper instance
         """
-        clone = ModelWrapper(self.name)
-        clone._get = self._get
+        clone = ModelWrapper(self.name, self._get)
         clone._override = self._override
         return clone
 
@@ -213,33 +247,56 @@ class ModelWrapper:
         return clone
 
     @overload
-    def get(self, only: ModelType, **kwargs) -> Model: ...
+    def get(
+        self,
+        only: ModelType,
+        *,
+        loader_args: dict | None = None,
+        **kwargs) -> Model: ...
     """
         load specific model
         @only: single accepted ModelType
     """
 
     @overload
-    def get(self, only: Collection[ModelType], **kwargs) -> Model: ...
+    def get(
+        self,
+        only: Collection[ModelType],
+        *,
+        loader_args: dict | None = None,
+        **kwargs
+    ) -> Model: ...
     """
         load specific model from collection
         @only: collection of acceptable ModelTypes
     """
 
     @overload
-    def get(self, **kwargs) -> Model: ...
+    def get(
+        self,
+        *,
+        loader_args: dict | None = None,
+        **kwargs
+    ) -> Model: ...
     """
         load any available model
     """
 
     def get(
-        self, only: ModelType | Collection[ModelType] | None = None, **kwargs
+        self,
+        only: ModelType | Collection[ModelType] | None = None,
+        *,
+        loader_args: dict | None = None,
+        **kwargs,
     ) -> Model:
         if only is None:
             only = self._override.keys()
 
         if isinstance(only, ModelType):
             return self.get([only])
+
+        if loader_args is None:
+            loader_args = {}
 
         for model_type in only:
             if model_type in self._override:
@@ -248,9 +305,9 @@ class ModelWrapper:
                 if noload == True:
                     return mapper(EMPTY_LOADER())
 
-                return mapper(self._get([model_type], **kwargs), **kwargs)
+                return mapper(self._get([model_type], loader_args), **kwargs)
 
-        return self._get(only, **kwargs)
+        return self._get(only, loader_args)
 
     @property
     def name(self) -> str:
@@ -260,17 +317,6 @@ class ModelWrapper:
         return self._name
 
     @staticmethod
-    def bind(
-        name: str, callback: Callable[[Collection[ModelType]], Model]
-    ) -> ModelWrapper:
-        """
-        Create new ModelWrapper with bound callback method
-        """
-        wrap = ModelWrapper(name)
-        wrap._get = callback
-        return wrap
-
-    @staticmethod
     def Constant(name: str, models: Dict[ModelType, Model]) -> ModelWrapper:
         """
         Create new ModelWrapper from a dict of already existing models
@@ -278,7 +324,7 @@ class ModelWrapper:
         @models: dictionary of ModelType->Model mappings
         """
 
-        def get(only: Collection[ModelType]) -> Model:
+        def get(only: Collection[ModelType], loader_args: dict) -> Model:
             if not len(only):
                 only = list(models.keys())
 
@@ -290,7 +336,7 @@ class ModelWrapper:
                     f"no matching model found for {name} (available: {list(models.keys())}, requested: {list(only)})"
                 )
 
-        return ModelWrapper.bind(name, get)
+        return ModelWrapper(name, get)
 
     @staticmethod
     def from_model(model: Model) -> ModelWrapper:
@@ -299,20 +345,21 @@ class ModelWrapper:
         @model: Model to wrap
         """
         return ModelWrapper.Constant(
-            name=model.name, models={model.type: model})
+            name=model.name,
+            models={model.type: model}
+        )
 
     @staticmethod
     def EMPTY() -> ModelWrapper:
-        wrapper = ModelWrapper("__EMPTY")
-        wrapper._get = EMPTY_LOADER
+        wrapper = ModelWrapper("__EMPTY", EMPTY_LOADER)
         return wrapper
 
 
-@attr.frozen()
+@attrs.frozen()
 class Wall:
     Start: Position
     End: Position
-    height: float = attr.field(converter=float, default=2.)
+    height: float = attrs.field(converter=float, default=2.)
     texture_material: str = ''  # not implemented
 
     @classmethod
@@ -327,55 +374,24 @@ class Wall:
         )
 
 
-@dataclasses.dataclass(frozen=True)
-class EntityProps:
+@attrs.frozen()
+class Entity:
     position: PositionOrientation
     name: str
     model: ModelWrapper
-    extra: Dict
+    extra: Dict = attrs.field(factory=dict, kw_only=True)
+
+    def asdict(self, expand_extra: bool = True) -> dict:
+        if expand_extra:
+            return {
+                **attrs.asdict(self, filter=lambda a, v: a.name != 'extra'),
+                **self.extra,
+            }
+        return attrs.asdict(self)
 
 
-@dataclasses.dataclass(frozen=True)
-class ObstacleProps(EntityProps):
-    ...
-
-
-@dataclasses.dataclass(frozen=True)
-class DynamicObstacleProps(ObstacleProps):
-    waypoints: List[PositionRadius]
-
-
-@dataclasses.dataclass(frozen=True)
-class RobotProps(EntityProps):
-    inter_planner: str
-    local_planner: str
-    global_planner: str
-    agent: str
-    record_data_dir: Optional[str] = None
-
-    def compatible(self, value: RobotProps) -> bool:
-        return self.model.name == value.model.name \
-            and self.local_planner == value.local_planner \
-            and self.global_planner == value.global_planner \
-            and self.agent == value.agent \
-
-
-    def __eq__(self, value: object) -> bool:
-        if not isinstance(value, RobotProps):
-            return False
-
-        return self.compatible(value) \
-            and self.name == value.name \
-            and self.record_data_dir == value.record_data_dir
-
-    @property
-    def frame(self) -> str:
-        if not self.name:
-            return ''
-        return self.name + '/'
-
-
-class Obstacle(ObstacleProps):
+@attrs.frozen()
+class Obstacle(Entity):
     @classmethod
     def parse(cls, obj: Dict, model: ModelWrapper) -> "Obstacle":
         name = str(obj.get("name", ""))
@@ -389,7 +405,9 @@ class Obstacle(ObstacleProps):
         )
 
 
-class DynamicObstacle(DynamicObstacleProps):
+@attrs.frozen()
+class DynamicObstacle(Obstacle):
+    waypoints: List[PositionRadius]
 
     @classmethod
     def parse(cls, obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
@@ -399,41 +417,44 @@ class DynamicObstacle(DynamicObstacleProps):
                      for waypoint in obj.get("waypoints", [])]
 
         return DynamicObstacle(
-            **dataclasses.asdict(base),
+            **attrs.asdict(base, recurse=False),
             waypoints=waypoints,
         )
 
 
-@dataclasses.dataclass(frozen=True)
-class WallObstacle:
-    name: str
-    start: Position
-    end: Position
+@attrs.frozen()
+class Robot(Entity):
+    inter_planner: str
+    local_planner: str
+    global_planner: str
+    agent: str
+    record_data_dir: Optional[str] = None
+
+    def compatible(self, value: Robot) -> bool:
+        return self.model.name == value.model.name \
+            and self.local_planner == value.local_planner \
+            and self.global_planner == value.global_planner \
+            and self.agent == value.agent \
 
 
-def _gen_init_pos(steps: int, x: int = 1, y: int = 0):
-    steps = max(steps, 1)
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, Robot):
+            return False
 
-    while True:
-        yield PositionOrientation(1, 1, 0)
+        return self.compatible(value) \
+            and self.name == value.name \
+            and self.record_data_dir == value.record_data_dir
 
-    while True:
-        x += y == steps
-        y %= steps
-        yield PositionOrientation(-x, y, 0)
-        y += 1
+    @property
+    def frame(self) -> str:
+        if not self.name:
+            return ''
+        return self.name + '/'
 
-
-gen_init_pos = _gen_init_pos(10)
-
-
-@dataclasses.dataclass(frozen=True)
-class Robot(RobotProps):
-    @staticmethod
-    def parse(obj: Dict, model: ModelWrapper) -> "Robot":
+    @classmethod
+    def parse(cls, obj: Dict, model: ModelWrapper) -> "Robot":
         name = str(obj.get("name", ""))
-        position = PositionOrientation(
-            *obj.get("pos", attr.astuple(next(gen_init_pos))))
+        position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
         inter_planner = str(
             obj.get("inter_planner", rosparam_get(str, "inter_planner", ""))
         )

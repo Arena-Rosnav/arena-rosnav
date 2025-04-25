@@ -1,9 +1,10 @@
 # ObstacleInterface
 
 
-import dataclasses
 import math
 from typing import Dict, List, Optional
+
+import attrs
 from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, PositionOrientation, PositionRadius
 from task_generator import NodeInterface
 from task_generator.tasks import Props_
@@ -52,7 +53,7 @@ class ITF_Obstacle:
 
         return DynamicObstacle(
             **{
-                **dataclasses.asdict(setup),
+                **attrs.asdict(setup, recurse=False),
                 **dict(
                     waypoints=waypoints,
                     model=setup.model,

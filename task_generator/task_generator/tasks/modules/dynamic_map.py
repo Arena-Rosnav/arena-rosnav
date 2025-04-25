@@ -8,7 +8,7 @@ from rcl_interfaces.msg import SetParametersResult
 from task_generator import NodeInterface
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.world_manager.utils import WorldMap
-from task_generator.task_generator.shared import rosparam_set
+from task_generator.shared import rosparam_set
 from task_generator.tasks.modules import TM_Module
 
 # Assuming map_distance_server messages are available in ROS 2
@@ -96,8 +96,8 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
             self._TASK.world_manager.update_world(
                 world_map=WorldMap.from_costmap(occupancy_grid=dist_map)
             )
-            self._TASK.obstacle_manager.reset(purge=ObstacleLayer.WORLD)
-            self._TASK.obstacle_manager.spawn_world_obstacles(
+            self._TASK.environment_manager.reset(purge=ObstacleLayer.WORLD)
+            self._TASK.environment_manager.spawn_world_obstacles(
                 self._TASK.world_manager.world
             )
         except Exception as e:

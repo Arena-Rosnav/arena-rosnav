@@ -1,4 +1,10 @@
 class Config:
+    """
+    Configuration templates for RViz displays.
+    """
+    
+    # PedSim visualization configurations maintained from original but commented out
+    """
     TRACKED_PERSONS = {
         "Alpha": 1,
         "Class": "spencer_tracking_rviz_plugin/TrackedPersons",
@@ -112,10 +118,12 @@ class Config:
         "Queue Size": 100,
         "Value": False
     }
+    """
 
+    @staticmethod
     def create_model_display(robot_name, topic, color):
         return {
-            "Class": "rviz/MarkerArray",
+            "Class": "rviz_default_plugins/MarkerArray",
             "Enabled": True,
             "Marker Topic": topic,
             "Name":  f"{robot_name} MarkerArray",
@@ -126,12 +134,13 @@ class Config:
             "Value": True
         }
 
+    @staticmethod
     def create_pose_display(robot_name, topic, color):
         return {
             "Alpha": 1,
             "Axes Length": 1,
             "Axes Radius": 0.1,
-            "Class": "rviz/Pose",
+            "Class": "rviz_default_plugins/Pose",
             "Color": color,
             "Enabled": True,
             "Head Length": 0.1,
@@ -146,16 +155,19 @@ class Config:
             "Value": False
         }
 
+    @staticmethod
     def create_global_map_display(robot_name, topic, _):
         return Config._create_map_display(robot_name, topic, 0.7, "Global Costmap")
 
+    @staticmethod
     def create_local_map_display(robot_name, topic, _):
         return Config._create_map_display(robot_name, topic, 0.3, "Local Costmap")
 
+    @staticmethod
     def _create_map_display(robot_name, topic, alpha, name):
         return {
             "Alpha": alpha,
-            "Class": "rviz/Map",
+            "Class": "rviz_default_plugins/Map",
             "Color Scheme": "map",
             "Draw Behind": False,
             "Enabled": False,
@@ -166,11 +178,12 @@ class Config:
             "Value": True
         }
 
+    @staticmethod
     def create_path_display(robot_name, topic, color):
         return {
             "Alpha": 1,
             "Buffer Length": 1,
-            "Class": "rviz/Path",
+            "Class": "rviz_default_plugins/Path",
             "Color": color,
             "Enabled": True,
             "Head Diameter": 0.3,
@@ -195,6 +208,7 @@ class Config:
             "Value": False,
         }
 
+    @staticmethod
     def create_laser_scan_display(robot_name, topic, color):
         return {
             "Alpha": 1,
@@ -206,7 +220,7 @@ class Config:
             },
             "Axis": "Z",
             "Channel Name": "intensity",
-            "Class": "rviz/LaserScan",
+            "Class": "rviz_default_plugins/LaserScan",
             "Color": color,
             "Color Transformer": "FlatColor",
             "Decay Time": 0,
@@ -225,5 +239,22 @@ class Config:
             "Unreliable": False,
             "Use Fixed Frame": True,
             "Use rainbow": True,
+            "Value": True
+        }
+        
+    @staticmethod
+    def create_odometry_display(robot_name, topic, color):
+        """Create an odometry display configuration."""
+        return {
+            "Angle Tolerance": 0.1,
+            "Class": "rviz_default_plugins/Odometry",
+            "Color": color,
+            "Enabled": True,
+            "Keep": 100,
+            "Length": 1.0,
+            "Name": f"{robot_name} Odometry",
+            "Position Tolerance": 0.1,
+            "Topic": topic,
+            "Shape": "Arrow",
             "Value": True
         }
