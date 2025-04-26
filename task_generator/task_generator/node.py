@@ -183,14 +183,14 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         self._robots_manager = RobotsManagerROS(self._environment_manager)
 
         tm_modules = self.conf.TaskMode.TM_MODULES.value
-        tm_modules.append(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
-        tm_modules.append(Constants.TaskMode.TM_Module.RVIZ_UI)
+        tm_modules.add(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
+        tm_modules.add(Constants.TaskMode.TM_Module.RVIZ_UI)
 
         if self.conf.Arena.WORLD.value == "dynamic_map":
-            tm_modules.append(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
+            tm_modules.add(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
 
         self.get_logger().debug("utils calls task factory")
-        return TaskFactory.combine(tm_modules)(
+        return TaskFactory.combine(list(tm_modules))(
             environment_manager=self._environment_manager,
             robots_manager=self._robots_manager,
             world_manager=self._world_manager,

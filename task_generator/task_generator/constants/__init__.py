@@ -68,8 +68,8 @@ class Constants:
                 return Namespace("tm_module")(*args)
 
             @classmethod
-            def default(cls) -> typing.List["Constants.TaskMode.TM_Module"]:
-                return []
+            def default(cls) -> set["Constants.TaskMode.TM_Module"]:
+                return set()
 
     class MapGenerator:
         NODE_NAME = "map_generator"

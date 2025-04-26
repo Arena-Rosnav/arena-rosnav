@@ -142,10 +142,6 @@ class TaskFactory(Namespaced):
                 self.robot_managers = self._robots_manager.robot_managers
                 self.world_manager = world_manager
 
-                self.__modules = [
-                    cls.registry_module[module]()(task=self) for module in modules
-                ]
-
                 self._train_mode = self.node.get_parameter_or(
                     "/train_mode", DefaultParameter(False)).value
 
