@@ -21,6 +21,7 @@ from task_generator.shared import ModelType, Namespace, PositionOrientation, Rob
 import nav_msgs.msg as nav_msgs
 import geometry_msgs.msg as geometry_msgs
 import std_srvs.srv as std_srvs
+import action_msgs.msg
 
 import launch
 import ament_index_python
@@ -45,7 +46,7 @@ class RobotManager(NodeInterface):
     _goal_pub: rclpy.publisher.Publisher
     _pub_goal_timer: rclpy.timer.Timer
     _clear_costmaps_srv: rclpy.client.Client
-
+    _is_goal_reached: bool
     _rate_setup: rclpy.timer.Rate
 
     @property
@@ -73,6 +74,7 @@ class RobotManager(NodeInterface):
         self._environment_manager = environment_manager
         self._start_pos = PositionOrientation(0, 0, 0)
         self._goal_pos = PositionOrientation(0, 0, 0)
+        self._is_goal_reached = False
 
         # Parameter handling
         try:
@@ -117,8 +119,17 @@ class RobotManager(NodeInterface):
         )
 
         self.node.create_subscription(
-            nav_msgs.Odometry, self.namespace(
-                "odom"), self._robot_pos_callback, 10
+            nav_msgs.Odometry,
+            self.namespace("odom"),
+            self._robot_pos_callback,
+            10
+        )
+
+        self.node.create_subscription(
+            action_msgs.msg.GoalStatusArray,
+            self.namespace('navigate_to_pose', '_action', 'status'),
+            self._goal_status_callback,
+            1
         )
 
         self._launch_robot()
@@ -196,22 +207,6 @@ class RobotManager(NodeInterface):
         #     self._clear_costmaps_srv.call_async(std_srvs.Empty.Request())
 
         return self._position, self._goal_pos
-
-    @property
-    def _is_goal_reached(self) -> bool:
-        start = self._position
-        goal = self._goal_pos
-
-        distance_to_goal: float = float(np.linalg.norm(
-            np.array([goal.x, goal.y]) - np.array([start.x, start.y])
-        ).flat[0])
-
-        angle_to_goal: float = angle_diff(goal.orientation, start.orientation)
-
-        return (
-            distance_to_goal < self._goal_tolerance_distance
-            and angle_to_goal < self._goal_tolerance_angle
-        )
 
     def _publish_goal_callback(self):
         from geometry_msgs.msg import PoseStamped
@@ -340,6 +335,10 @@ class RobotManager(NodeInterface):
             current_position.position.y,
             rot.as_euler("xyz")[2],
         )
+
+    def _goal_status_callback(self, data: action_msgs.msg.GoalStatusArray):
+        last_goal = next(reversed(data.status_list), None)
+        self._is_goal_reached = last_goal and last_goal.status == action_msgs.msg.GoalStatus.STATUS_SUCCEEDED
 
     def update(self):
         """
