@@ -22,6 +22,7 @@ import nav_msgs.msg as nav_msgs
 import geometry_msgs.msg as geometry_msgs
 import std_srvs.srv as std_srvs
 import action_msgs.msg
+from nav2_msgs.srv import ClearCostmapAroundRobot
 
 import launch
 import ament_index_python
@@ -139,12 +140,6 @@ class RobotManager(NodeInterface):
             0.25
         )
 
-        self._clear_costmaps_srv = self.node.create_client(
-            std_srvs.Empty,
-            self.namespace("move_base", "clear_costmaps"),
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
-        )
-
     @property
     def safe_distance(self) -> float:
         return self._robot_radius + self._safety_distance
@@ -175,7 +170,32 @@ class RobotManager(NodeInterface):
 
     def move_robot_to_pos(self, position: PositionOrientation):
         self._environment_manager.move_robot(name=self.name, position=position)
+        self.clearCostmapAroundRobot(5.0)
+        
+            
+    def clearCostmapAroundRobot(self, reset_distance: float) -> None:
+        """Clear the costmap around the robot."""
 
+        service_name = os.path.join(self.namespace, 'local_costmap/clear_around_local_costmap')
+        self.node.get_logger().info(f"Service name: {service_name}")
+        self._clear_costmaps_srv = self.node.create_client(
+            ClearCostmapAroundRobot,
+            service_name,
+            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
+        )
+        # while not self._clear_costmaps_srv.wait_for_service(timeout_sec=1.0):
+        #     self.node.get_logger().warn(f'{service_name} service not available, waiting...')
+        req = ClearCostmapAroundRobot.Request()
+        req.reset_distance = reset_distance
+        result = self._clear_costmaps_srv.call(req)
+        if result is None:
+            self.node.get_logger().error(
+                f"service call failed for {service_name}")
+            return
+        self.node.get_logger().info(
+            f"successfull service call for {service_name}"
+        )
+            
     def reset(
         self,
         start_pos: typing.Optional[PositionOrientation],
@@ -201,11 +221,6 @@ class RobotManager(NodeInterface):
                     [self.goal_pos.x, self.goal_pos.y,
                         self.goal_pos.orientation]
                 )
-
-        # TODO
-        # if self._clear_costmaps_srv.wait_for_service(timeout_sec=1.0):
-        #     self._clear_costmaps_srv.call_async(std_srvs.Empty.Request())
-
         return self._position, self._goal_pos
 
     def _publish_goal_callback(self):
