@@ -15,7 +15,7 @@ from task_generator import NodeInterface
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.shared import Namespace, PositionOrientation, Robot
 from task_generator.utils import ModelLoader
-from task_generator.utils.ros_params import ROSParam
+from task_generator.utils.ros_params import ROSParamT
 
 from .robot_manager import RobotManager
 
@@ -68,7 +68,7 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
     """
 
     _initialpose: typing.Generator
-    _robot_configurations: ROSParam[_RobotDiff]
+    _robot_configurations: ROSParamT[_RobotDiff]
     _diff: _RobotDiff
 
     @classmethod

@@ -12,18 +12,18 @@ from task_generator.shared import (DynamicObstacle, Obstacle,
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 from task_generator.utils import ModelLoader
-from task_generator.utils.ros_params import ROSParam
+from task_generator.utils.ros_params import ROSParamT
 
 
 @attrs.define()
 class _Config:
-    N_STATIC_OBSTACLES: ROSParam[typing.Tuple[int, int]]
-    N_INTERACTIVE_OBSTACLES: ROSParam[typing.Tuple[int, int]]
-    N_DYNAMIC_OBSTACLES: ROSParam[typing.Tuple[int, int]]
+    N_STATIC_OBSTACLES: ROSParamT[typing.Tuple[int, int]]
+    N_INTERACTIVE_OBSTACLES: ROSParamT[typing.Tuple[int, int]]
+    N_DYNAMIC_OBSTACLES: ROSParamT[typing.Tuple[int, int]]
 
-    MODELS_STATIC_OBSTACLES: ROSParam[List[str]]
-    MODELS_INTERACTIVE_OBSTACLES: ROSParam[List[str]]
-    MODELS_DYNAMIC_OBSTACLES: ROSParam[List[str]]
+    MODELS_STATIC_OBSTACLES: ROSParamT[List[str]]
+    MODELS_INTERACTIVE_OBSTACLES: ROSParamT[List[str]]
+    MODELS_DYNAMIC_OBSTACLES: ROSParamT[List[str]]
 
 
 class TM_Random(TM_Obstacles):

@@ -33,7 +33,7 @@ def Configuration(server: ROSParamServer):
 
             WORLD = server.ROSParam[str](
                 'world',
-                type_=rclpy.parameter.Parameter.Type.STRING,
+                type_=rclpy.Parameter.Type.STRING,
             )
 
             @classmethod

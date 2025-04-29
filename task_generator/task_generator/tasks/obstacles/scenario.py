@@ -7,7 +7,7 @@ import attrs
 from task_generator.constants import Constants
 from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
-from task_generator.utils.ros_params import ROSParam
+from task_generator.utils.ros_params import ROSParamT
 
 
 @attrs.define()
@@ -18,7 +18,7 @@ class _ParsedConfig:
 
 class TM_Scenario(TM_Obstacles):
 
-    _config: ROSParam[_ParsedConfig]
+    _config: ROSParamT[_ParsedConfig]
 
     def _parse_scenario(self, scenario_file: str) -> _ParsedConfig:
 

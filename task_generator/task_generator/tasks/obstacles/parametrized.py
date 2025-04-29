@@ -9,7 +9,7 @@ from task_generator.shared import (DynamicObstacle, ModelWrapper, Namespace,
                                    Obstacle)
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
-from task_generator.utils.ros_params import ROSParam
+from task_generator.utils.ros_params import ROSParamT
 
 
 @attrs.define()
@@ -44,7 +44,7 @@ def _get_attrib(element: ET.Element, attribute: str,
 
 class TM_Parametrized(TM_Obstacles):
 
-    _config: ROSParam[_ParsedConfig]
+    _config: ROSParamT[_ParsedConfig]
 
     PATH_XML: Namespace = Namespace(
         os.path.join(

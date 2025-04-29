@@ -4,7 +4,7 @@ from typing import List, NamedTuple
 
 from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
-from task_generator.utils.ros_params import ROSParam
+from task_generator.utils.ros_params import ROSParamT
 
 
 class _RobotGoal(NamedTuple):
@@ -41,7 +41,7 @@ class TM_Scenario(TM_Robots):
         _config (Config): The configuration object for the scenario.
     """
 
-    _config: ROSParam[List[_RobotGoal]]
+    _config: ROSParamT[List[_RobotGoal]]
 
     def _parse_scenario(self, scenario_file: str) -> List[_RobotGoal]:
 
