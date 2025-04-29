@@ -1,7 +1,7 @@
 import math
-from typing import Dict
 
 from builtin_interfaces.msg import Time
+
 from task_generator.shared import PositionOrientation
 from task_generator.tasks.robots.random import TM_Random
 
@@ -12,7 +12,7 @@ class TM_Explore(TM_Random):
     It inherits from the TM_Random class.
     """
 
-    _timeouts: Dict[str, Time]
+    _timeouts: dict[str, Time]
 
     def reset(self, **kwargs):
         super().reset(**kwargs)

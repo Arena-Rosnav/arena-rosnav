@@ -1,4 +1,5 @@
 import os
+
 import launch
 import launch.actions
 import launch.substitutions
@@ -8,11 +9,6 @@ from arena_bringup.substitutions import LaunchArgument, SelectAction
 
 
 def generate_launch_description():
-
-    simulator = LaunchArgument(
-        name='simulator',
-        choices=['dummy', 'gazebo', 'isaac'],
-    )
 
     use_sim_time = LaunchArgument(
         name='use_sim_time',
@@ -28,7 +24,12 @@ def generate_launch_description():
         name='world'
     )
 
-    launch_simulator = SelectAction(simulator.substitution)
+    launch_simulator = SelectAction(launch.substitutions.LaunchConfiguration('simulator'))
+
+    launch_simulator.add(
+        'dummy',
+        launch.actions.GroupAction([])
+    )
 
     launch_simulator.add(
         'gazebo',
@@ -57,6 +58,11 @@ def generate_launch_description():
                 # 'headless': headless.substitution
             }.items(),
         )
+    )
+
+    simulator = LaunchArgument(
+        name='simulator',
+        choices=launch_simulator.keys,
     )
 
     ld = launch.LaunchDescription([

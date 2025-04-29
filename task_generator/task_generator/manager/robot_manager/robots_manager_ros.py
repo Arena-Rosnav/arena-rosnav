@@ -4,9 +4,7 @@ import re
 import typing
 
 import attrs
-
 import rclpy
-import rclpy.parameter
 import yaml
 from ament_index_python import get_package_share_directory
 
@@ -15,7 +13,7 @@ from task_generator import NodeInterface
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.shared import Namespace, PositionOrientation, Robot
 from task_generator.utils import ModelLoader
-from task_generator.utils.ros_params import ROSParam
+from task_generator.utils.ros_params import ROSParamT
 
 from .robot_manager import RobotManager
 
@@ -68,7 +66,7 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
     """
 
     _initialpose: typing.Generator
-    _robot_configurations: ROSParam[_RobotDiff]
+    _robot_configurations: ROSParamT[_RobotDiff]
     _diff: _RobotDiff
 
     @classmethod
@@ -238,6 +236,6 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
 
         self._robot_configurations = self.node.ROSParam[_RobotDiff](
             'robot',
-            type_=rclpy.parameter.Parameter.Type.STRING,
+            type_=rclpy.Parameter.Type.STRING,
             parse=self._parse_robot_configurations,
         )

@@ -2,7 +2,6 @@ import math
 import os
 import time
 import traceback
-import typing
 
 import arena_simulation_setup.entities.robot
 import attrs
@@ -25,7 +24,7 @@ from .robot_bridge import BridgeConfiguration
 
 class GazeboSimulator(BaseSimulator):
 
-    _walls_entities: typing.List[str]
+    _walls_entities: list[str]
 
     def _set_up_services(self):
 
@@ -70,7 +69,7 @@ class GazeboSimulator(BaseSimulator):
             callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
 
-        self.node.get_logger().info("Waiting for gazebo services...")
+        self._logger.info("Waiting for gazebo services...")
         services = (
             (self._spawn_entity, "spawn entity"),
             (self._delete_entity, "delete entity"),
@@ -82,7 +81,7 @@ class GazeboSimulator(BaseSimulator):
         #     if not service.wait_for_service(10):
         #         raise RuntimeError(f'service {name} ({service.srv_name}) not available')
 
-        self.node.get_logger().info("All Gazebo services are available now.")
+        self._logger.info("All Gazebo services are available now.")
 
     def __init__(self, namespace):
         """Initialize GazeboSimulator
@@ -95,7 +94,7 @@ class GazeboSimulator(BaseSimulator):
 
         self._set_up_services()
 
-        self.node.get_logger().info(
+        self._logger.info(
             f"Initializing GazeboSimulator with namespace: {namespace}")
         self._goal_pub = self.node.create_publisher(
             PoseStamped,
@@ -107,23 +106,23 @@ class GazeboSimulator(BaseSimulator):
         self._walls_entities = []
 
     def before_reset_task(self):
-        self.node.get_logger().info("Pausing simulation before reset")
+        self._logger.info("Pausing simulation before reset")
         self.pause_simulation()
 
     def after_reset_task(self):
-        self.node.get_logger().info("Unpausing simulation after reset")
+        self._logger.info("Unpausing simulation after reset")
         try:
             self.unpause_simulation()
         except Exception as e:
-            self.node.get_logger().error(
+            self._logger.error(
                 f"Error unpausing simulation: {str(e)}")
             traceback.print_exc()
             raise
 
     def move_entity(self, name, position):
-        self.node.get_logger().info(
+        self._logger.info(
             f"Attempting to move entity: {name}")
-        self.node.get_logger().info(
+        self._logger.info(
             f"Moving entity {name} to position: {position}")
         request = SetEntityPose.Request()
         request.entity = EntityMsg(
@@ -137,10 +136,10 @@ class GazeboSimulator(BaseSimulator):
             result = self._set_entity_pose.call(request)
 
             if result is None:
-                self.node.get_logger().error(f"Move service call failed for {name}")
+                self._logger.error(f"Move service call failed for {name}")
                 return False
 
-            self.node.get_logger().info(f"Move result for {name}: {result.success}")
+            self._logger.info(f"Move result for {name}: {result.success}")
 
             if result.success and isinstance((entity := self.entities.get(name, None)), Robot):
                 entity = attrs.evolve(entity, position=position)
@@ -152,27 +151,27 @@ class GazeboSimulator(BaseSimulator):
                 initial_pose_triggered = False
 
                 while attempt <= max_attempts and not initial_pose_triggered:
-                    self.node.get_logger().info(
+                    self._logger.info(
                         f"Attempt {attempt}/{max_attempts}: Triggering initial pose update for robot {name}"
                     )
                     try:
                         self._robot_initialpose(entity)
                         initial_pose_triggered = True
-                        self.node.get_logger().info(
+                        self._logger.info(
                             f"Initial pose update for {name} succeeded on attempt {attempt}"
                         )
                     except Exception as e:
-                        self.node.get_logger().error(
+                        self._logger.error(
                             f"Attempt {attempt}/{max_attempts} failed for {name}: {str(e)}"
                         )
                         traceback.print_exc()
                         if attempt < max_attempts:
-                            self.node.get_logger().info("Waiting 1 second before retrying...")
+                            self._logger.info("Waiting 1 second before retrying...")
                             time.sleep(1)
                         attempt += 1
 
                 if not initial_pose_triggered:
-                    self.node.get_logger().error(
+                    self._logger.error(
                         f"Failed to set initial pose for {name} after {max_attempts} attempts"
                     )
                 # quat = quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="xyzs")
@@ -192,7 +191,7 @@ class GazeboSimulator(BaseSimulator):
             return result.success
 
         except Exception as e:
-            self.node.get_logger().error(f"Error moving entity {name}: {str(e)}")
+            self._logger.error(f"Error moving entity {name}: {str(e)}")
             traceback.print_exc()
             return False
 
@@ -219,19 +218,19 @@ class GazeboSimulator(BaseSimulator):
             # Set pose
             request.entity_factory.pose = entity.position.to_pose()
 
-            self.node.get_logger().info(
+            self._logger.info(
                 f"Spawn position for {entity.name}: x={entity.position.x}, y={entity.position.y}")
 
             self._spawn_entity.wait_for_service()
-            self.node.get_logger().info(f"Sending spawn request for {entity.name}")
+            self._logger.info(f"Sending spawn request for {entity.name}")
             result = self._spawn_entity.call(request)
 
             if result is None:
-                self.node.get_logger().error(
+                self._logger.error(
                     f"Spawn service call failed for {entity.name}")
                 return False
 
-            self.node.get_logger().info(
+            self._logger.info(
                 f"Spawn result for {entity.name}: {result.success}")
 
             self.entities[entity.name] = entity
@@ -239,19 +238,19 @@ class GazeboSimulator(BaseSimulator):
             return result.success
 
         except Exception as e:
-            self.node.get_logger().error(
+            self._logger.error(
                 f"Error spawning entity {entity.name}: {str(e)}")
             traceback.print_exc()
             return False
 
     def delete_entity(self, name: str):
-        self.node.get_logger().info(
+        self._logger.info(
             f"Attempting to delete entity: {name}")
 
         if not name in self.entities:
             return False
 
-        self.node.get_logger().info(f"Attempting to delete entity: {name}")
+        self._logger.info(f"Attempting to delete entity: {name}")
         request = DeleteEntity.Request()
         request.entity = EntityMsg(
             name=name,
@@ -263,11 +262,11 @@ class GazeboSimulator(BaseSimulator):
             result = self._delete_entity.call(request)
 
             if result is None:
-                self.node.get_logger().error(
+                self._logger.error(
                     f"Delete service call failed for {name}")
                 return False
 
-            self.node.get_logger().info(
+            self._logger.info(
                 f"Delete result for {name}: {result.success}")
 
             if result.success:
@@ -276,14 +275,14 @@ class GazeboSimulator(BaseSimulator):
             return result.success
 
         except Exception as e:
-            self.node.get_logger().error(
+            self._logger.error(
                 f"Error deleting entity {name}: {str(e)}")
             traceback.print_exc()
             return False
 
     def pause_simulation(self):
         return True  # TODO
-        self.node.get_logger().info("Attempting to pause simulation")
+        self._logger.info("Attempting to pause simulation")
         request = ControlWorld.Request()
         request.world_control = WorldControl()
         request.world_control.pause = True
@@ -293,19 +292,19 @@ class GazeboSimulator(BaseSimulator):
             result = self._control_world.call(request)
 
             if result is None:
-                self.node.get_logger().error("Pause service call failed")
+                self._logger.error("Pause service call failed")
                 return False
 
-            self.node.get_logger().info(f"Pause result: {result.success}")
+            self._logger.info(f"Pause result: {result.success}")
             return result.success
 
         except Exception as e:
-            self.node.get_logger().error(f"Error pausing simulation: {str(e)}")
+            self._logger.error(f"Error pausing simulation: {str(e)}")
             traceback.print_exc()
             return False
 
     def unpause_simulation(self):
-        self.node.get_logger().info("Attempting to unpause simulation")
+        self._logger.info("Attempting to unpause simulation")
         request = ControlWorld.Request()
         request.world_control = WorldControl()
         request.world_control.pause = False
@@ -315,20 +314,20 @@ class GazeboSimulator(BaseSimulator):
             result = self._control_world.call(request)
 
             if result is None:
-                self.node.get_logger().error("Unpause service call failed")
+                self._logger.error("Unpause service call failed")
                 return False
 
-            self.node.get_logger().info(f"Unpause result: {result.success}")
+            self._logger.info(f"Unpause result: {result.success}")
             return result.success
 
         except Exception as e:
-            self.node.get_logger().error(
+            self._logger.error(
                 f"Error unpausing simulation: {str(e)}")
             traceback.print_exc()
             return False
 
     def step_simulation(self, steps):
-        self.node.get_logger().info(f"Stepping simulation by {steps} steps")
+        self._logger.info(f"Stepping simulation by {steps} steps")
         request = ControlWorld.Request()
         request.world_control = WorldControl()
         request.world_control.multi_step = steps
@@ -338,27 +337,27 @@ class GazeboSimulator(BaseSimulator):
             result = self._control_world.call(request)
 
             if result is None:
-                self.node.get_logger().error("Step service call failed")
+                self._logger.error("Step service call failed")
                 return False
 
-            self.node.get_logger().info(f"Step result: {result.success}")
+            self._logger.info(f"Step result: {result.success}")
             return result.success
 
         except Exception as e:
-            self.node.get_logger().error(
+            self._logger.error(
                 f"Error stepping simulation: {str(e)}")
             traceback.print_exc()
             return False
 
     def _publish_goal(self, goal: PositionOrientation):
-        self.node.get_logger().info(
+        self._logger.info(
             f"Publishing goal: x={goal.x}, y={goal.y}, orientation={goal.orientation}")
         goal_msg = PoseStamped()
         goal_msg.header.stamp = self.node.get_clock().now().to_msg()
         goal_msg.header.frame_id = "map"
         goal_msg.pose = goal.to_pose()
         self._goal_pub.publish(goal_msg)
-        self.node.get_logger().info("Goal published")
+        self._logger.info("Goal published")
 
     def spawn_walls(self, walls) -> bool:
         wall_name = self.node._environment_manager.realize(f"custom_wall_{len(self._walls_entities)}")
@@ -367,7 +366,7 @@ class GazeboSimulator(BaseSimulator):
         wall_thickness = 0.2  # Wall thickness in meters
         base_position = (0, 0, 0)  # Offset the wall to (10, 10, 0)
 
-        self.node.get_logger().info(f"Attempting to spawn walls: {wall_name}")
+        self._logger.info(f"Attempting to spawn walls: {wall_name}")
 
         # Generate the SDF string for walls
         wall_sdf = self._generate_wall_sdf(
@@ -379,7 +378,7 @@ class GazeboSimulator(BaseSimulator):
         )
 
         if not wall_sdf:
-            self.node.get_logger().error(f"Failed to generate SDF for walls: {wall_name}")
+            self._logger.error(f"Failed to generate SDF for walls: {wall_name}")
             return False
 
         entity = Entity(
@@ -410,10 +409,10 @@ class GazeboSimulator(BaseSimulator):
     def _generate_wall_sdf(
         self,
         name: str,
-        walls: typing.List[Wall],
+        walls: list[Wall],
         height: float,
         thickness: float,
-        base_position: typing.Tuple[float, float, float] = (0, 0, 0),
+        base_position: tuple[float, float, float] = (0, 0, 0),
     ) -> str:
         """
         Generate an SDF string for a wall structure based on given parameters and base position.
@@ -483,7 +482,7 @@ class GazeboSimulator(BaseSimulator):
             )
 
         except Exception as e:
-            self.node.get_logger().error(f"Error generating SDF: {repr(e)}")
+            self._logger.error(f"Error generating SDF: {repr(e)}")
             return None
 
     def _robot_bridge(self, robot: Robot, description: str):

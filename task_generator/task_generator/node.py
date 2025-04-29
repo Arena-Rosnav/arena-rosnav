@@ -1,7 +1,6 @@
 import os
 import traceback
 import typing
-from typing import Dict, List
 
 
 import rclpy
@@ -33,7 +32,7 @@ from task_generator.tasks.task_factory import TaskFactory
 from task_generator.utils.ros_params import ROSParamServer
 
 
-def read_robot_setup_file(setup_file: str) -> List[Dict]:
+def read_robot_setup_file(setup_file: str) -> list[dict]:
     try:
         with open(
             os.path.join(
@@ -44,7 +43,7 @@ def read_robot_setup_file(setup_file: str) -> List[Dict]:
             ),
             "r",
         ) as f:
-            robots: List[Dict] = yaml.safe_load(f)["robots"]
+            robots: list[dict] = yaml.safe_load(f)["robots"]
 
         return robots
 

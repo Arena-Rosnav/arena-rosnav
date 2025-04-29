@@ -3,7 +3,8 @@ import typing
 
 from task_generator import NodeInterface
 from task_generator.constants import Constants
-from task_generator.shared import ModelType, Entity, Namespace, PositionOrientation, Wall
+from task_generator.shared import (Entity, ModelType, Namespace,
+                                   PositionOrientation, Wall)
 from task_generator.utils.registry import Registry
 
 
@@ -11,7 +12,7 @@ class BaseSimulator(NodeInterface):
 
     _namespace: Namespace
 
-    _spawn_model: typing.Dict[ModelType, typing.Callable]
+    _spawn_model: dict[ModelType, typing.Callable]
 
     __counter: itertools.count
 

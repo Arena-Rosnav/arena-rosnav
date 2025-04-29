@@ -1,11 +1,9 @@
-from typing import Dict
+import geometry_msgs.msg as geometry_msgs
 from builtin_interfaces.msg import Time
 
 from task_generator.shared import PositionOrientation
 from task_generator.tasks import Task
 from task_generator.tasks.modules import TM_Module
-
-import geometry_msgs.msg as geometry_msgs
 
 
 class Mod_OverrideRobot(TM_Module):
@@ -14,7 +12,7 @@ class Mod_OverrideRobot(TM_Module):
     TOPIC_NEW_SCENARIO = "/clicked_point"
     PARAM_WAYPOINTS = "guided_waypoints"
 
-    _timeouts: Dict[int, Time]
+    _timeouts: dict[int, Time]
 
     def __init__(self, task: Task, **kwargs):
         TM_Module.__init__(self, task, **kwargs)

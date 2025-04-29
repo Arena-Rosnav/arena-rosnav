@@ -1,10 +1,10 @@
 import json
 import os
-from typing import List, NamedTuple
+from typing import NamedTuple
 
 from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
-from task_generator.utils.ros_params import ROSParam
+from task_generator.utils.ros_params import ROSParamT
 
 
 class _RobotGoal(NamedTuple):
@@ -41,9 +41,9 @@ class TM_Scenario(TM_Robots):
         _config (Config): The configuration object for the scenario.
     """
 
-    _config: ROSParam[List[_RobotGoal]]
+    _config: ROSParamT[list[_RobotGoal]]
 
-    def _parse_scenario(self, scenario_file: str) -> List[_RobotGoal]:
+    def _parse_scenario(self, scenario_file: str) -> list[_RobotGoal]:
 
         scenario_path = os.path.join(
             self.node.conf.Arena.get_world_path(),
@@ -83,12 +83,12 @@ class TM_Scenario(TM_Robots):
 
         if setup_robot_length > scenario_robots_length:
             managed_robots = managed_robots[:scenario_robots_length]
-            self.node.get_logger().warn(
+            self._logger.warn(
                 "Robot setup contains more robots than the scenario file.", once=True)
 
         if scenario_robots_length > setup_robot_length:
             SCENARIO_ROBOTS = SCENARIO_ROBOTS[:setup_robot_length]
-            self.node.get_logger().warn(
+            self._logger.warn(
                 "Scenario file contains more robots than setup.", once=True)
 
         for robot, config in zip(managed_robots, SCENARIO_ROBOTS):
@@ -107,7 +107,7 @@ class TM_Scenario(TM_Robots):
     def __init__(self, **kwargs):
         TM_Robots.__init__(self, **kwargs)
 
-        self._config = self.node.ROSParam[List[_RobotGoal]](
+        self._config = self.node.ROSParam[list[_RobotGoal]](
             self.namespace('file'),
             'default.json',
             parse=self._parse_scenario,

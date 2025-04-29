@@ -1,15 +1,15 @@
 import os
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, NamedTuple, Optional
 
+import attrs
 import rospkg
 import std_msgs.msg as std_msgs
 import yaml
 from filelock import FileLock
 from map_generator.constants import MAP_GENERATOR_NS
+
 from task_generator.shared import Namespace, rosparam_get
 from task_generator.tasks.modules import TM_Module
-
-import attrs
 
 
 class Stage(NamedTuple):
@@ -19,20 +19,20 @@ class Stage(NamedTuple):
     goal_radius: Optional[float]
     dynamic_map: Optional["DynamicMapStage"]
 
-    def serialize(self) -> Dict:
+    def serialize(self) -> dict:
         return self._asdict()
 
 
 class DynamicMapStage(NamedTuple):
     algorithm: str
-    algorithm_config: Dict[str, Any]
+    algorithm_config: dict[str, Any]
 
-    def serialize(self) -> Dict:
+    def serialize(self) -> dict:
         return self._asdict()
 
 
 StageIndex = int
-Stages = Dict[StageIndex, Stage]
+Stages = dict[StageIndex, Stage]
 
 
 @attrs.define()

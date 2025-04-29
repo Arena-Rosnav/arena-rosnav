@@ -1,17 +1,14 @@
 
 
 import os
-import numpy as np
-
-from task_generator.constants import Constants
-
-import nav_msgs.msg as nav_msgs
-
-import ament_index_python.packages
-
 import re
 import tempfile
 
+import ament_index_python.packages
+import nav_msgs.msg as nav_msgs
+import numpy as np
+
+from task_generator.constants import Constants
 
 _ARENA_WS_DIR = os.path.realpath(os.path.join(ament_index_python.packages.get_package_share_directory('task_generator'), '..', '..', '..', '..'))
 
@@ -103,6 +100,7 @@ def update_freespace_indices_maze(map_: nav_msgs.OccupancyGrid):
     free_space_indices_new = np.where(map_2d == 0)
     return free_space_indices_new
 
+
 def process_dae(dae_file, package_dir):
     """
     Load a .dae file, update its <init_from> elements by replacing any leading
@@ -132,9 +130,8 @@ def process_dae(dae_file, package_dir):
     print(temp_filename)
     return temp_filename
 
-
     # Write the updated .dae file to a temporary file
-    
+
 
 def process_obj(obj_file, package_dir):
     """
@@ -153,6 +150,7 @@ def process_obj(obj_file, package_dir):
     # Regex to match .png filenames (non-space characters ending in .png)
     png_pattern = re.compile(r'(?P<path>\S+\.png)')
     mtl_patter = re.compile(r'(?P<path>\S+\.mtl)')
+
     def replace_png(match):
         path = match.group("path")
         # If already absolute, do nothing.

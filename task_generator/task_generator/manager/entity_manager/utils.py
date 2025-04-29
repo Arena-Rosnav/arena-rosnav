@@ -1,27 +1,19 @@
 import enum
-from io import StringIO
 import os
-from typing import Any, Dict, List, Optional, Union
 import xml.etree.ElementTree as ET
+from io import StringIO
+from typing import Any, Optional, Union
+
 import attrs
 import cv2
 import numpy as np
-
 import yaml
+
+import task_generator.utils.arena as Utils
 from task_generator.constants import Constants
 from task_generator.manager.world_manager.utils import WorldMap, WorldOccupancy
-
-from task_generator.shared import (
-    Model,
-    ModelType,
-    ModelWrapper,
-    Namespace,
-    Obstacle,
-    Obstacle,
-    PositionOrientation,
-    rosparam_get,
-)
-import task_generator.utils.arena as Utils
+from task_generator.shared import (Model, ModelType, ModelWrapper, Namespace,
+                                   Obstacle, PositionOrientation, rosparam_get)
 
 
 class SDFUtil:
@@ -88,7 +80,7 @@ class KnownObstacles:
     """
 
     # store obstacle descs and whether they have been spawned
-    _known_obstacles: Dict[str, KnownObstacle]
+    _known_obstacles: dict[str, KnownObstacle]
 
     def __init__(self):
         self._known_obstacles = dict()
@@ -173,7 +165,7 @@ class YAMLUtil:
     def serialize(obj: Any):
         return yaml.dump(obj)
 
-    PLUGIN_PROPS_TO_EXTEND: Dict[str, List[str]] = {
+    PLUGIN_PROPS_TO_EXTEND: dict[str, list[str]] = {
         "DiffDrive": ["odom_pub", "twist_sub", "ground_truth_pub"],
         "Laser": ["topic"],
     }
@@ -188,7 +180,7 @@ class YAMLUtil:
 
     @staticmethod
     def update_plugins(namespace: Namespace, description: Any) -> Any:
-        plugins: List[Dict] = description.get("plugins", [])
+        plugins: list[dict] = description.get("plugins", [])
 
         if Utils.get_arena_type() == Constants.ArenaType.TRAINING:
             if rosparam_get(bool, "laser/full_range_laser", False):

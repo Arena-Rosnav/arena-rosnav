@@ -1,5 +1,4 @@
 import math
-from typing import List, Tuple
 
 from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
@@ -25,8 +24,8 @@ class TM_Random(TM_Robots):
 
         super().reset(**kwargs)
 
-        ROBOT_POSITIONS: List[
-            Tuple[PositionOrientation, PositionOrientation]
+        ROBOT_POSITIONS: list[
+            tuple[PositionOrientation, PositionOrientation]
         ] = kwargs.get("ROBOT_POSITIONS", [])
         biggest_robot = max(
             (robot.safe_distance for robot in self._PROPS.robot_managers.values()),

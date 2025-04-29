@@ -1,12 +1,17 @@
-from task_generator.shared import Position, PositionRadius
 import itertools
 from math import floor
-from typing import Collection, List, Optional, Tuple
+from typing import Collection, Optional
+
 import numpy as np
 import scipy.signal
-from task_generator import NodeInterface
 
-from .utils import World, WorldEntities, WorldMap, WorldObstacleConfigurations, WorldOccupancy, WorldWalls, WorldZones, configurations_to_obstacles, occupancy_to_walls
+from task_generator import NodeInterface
+from task_generator.shared import Position, PositionRadius
+
+from .utils import (World, WorldEntities, WorldMap,
+                    WorldObstacleConfigurations, WorldOccupancy, WorldWalls,
+                    WorldZones, configurations_to_obstacles,
+                    occupancy_to_walls)
 
 
 class WorldManager(NodeInterface):
@@ -17,7 +22,7 @@ class WorldManager(NodeInterface):
     """
 
     _world: World
-    _classic_forbidden_zones: List[PositionRadius]
+    _classic_forbidden_zones: list[PositionRadius]
 
     def __init__(
         self
@@ -31,7 +36,7 @@ class WorldManager(NodeInterface):
         return self._world
 
     @property
-    def _shape(self) -> Tuple[int, int]:
+    def _shape(self) -> tuple[int, int]:
         return self._world.map.shape[0], self._world.map.shape[1]
 
     @property
@@ -105,7 +110,7 @@ class WorldManager(NodeInterface):
                 )
             )
 
-    def forbid(self, forbidden_zones: List[PositionRadius]):
+    def forbid(self, forbidden_zones: list[PositionRadius]):
         for zone in forbidden_zones:
             self.world.map.occupancy.forbidden_occupy(
                 *self.world.map.tf_posr2rect(zone))
@@ -114,7 +119,7 @@ class WorldManager(NodeInterface):
         self._world.map.occupancy.forbidden_clear()
 
     def _classic_get_random_pos_on_map(self, safe_dist: float, forbid: bool = True,
-                                       forbidden_zones: Optional[List[PositionRadius]] = None) -> Position:
+                                       forbidden_zones: Optional[list[PositionRadius]] = None) -> Position:
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both
@@ -143,7 +148,7 @@ class WorldManager(NodeInterface):
         import math
 
         def is_pos_valid(x: float, y: float, safe_dist: float,
-                         forbidden_zones: List[PositionRadius]):
+                         forbidden_zones: list[PositionRadius]):
             """
             @safe_dist: minimal distance to the next obstacles for calculated positions
             """
@@ -160,7 +165,7 @@ class WorldManager(NodeInterface):
         safe_dist_in_cells = math.ceil(
             safe_dist / self.world.map.resolution) + 1
 
-        forbidden_zones_in_cells: List[PositionRadius] = [
+        forbidden_zones_in_cells: list[PositionRadius] = [
             PositionRadius(
                 x=math.ceil(point.x / self.world.map.resolution),
                 y=math.ceil(point.y / self.world.map.resolution),
@@ -170,7 +175,7 @@ class WorldManager(NodeInterface):
         ]
 
         # Now get index of all cells were dist is > safe_dist_in_cells
-        possible_cells: List[Tuple[np.intp, np.intp]] = np.array(
+        possible_cells: list[tuple[np.intp, np.intp]] = np.array(
             np.where(self.world.map.occupancy.grid > safe_dist_in_cells)).transpose().tolist()
 
         # return (random.randint(1,6), random.randint(1, 9), 0)
@@ -211,9 +216,9 @@ class WorldManager(NodeInterface):
     def get_positions_on_map(
         self,
         n: int, safe_dist: float,
-        forbidden_zones: Optional[List[PositionRadius]] = None,
+        forbidden_zones: Optional[list[PositionRadius]] = None,
         forbid: bool = True
-    ) -> List[Position]:
+    ) -> list[Position]:
         """
         This function is used by the robot manager and
         obstacles manager to get new positions for both
@@ -242,7 +247,7 @@ class WorldManager(NodeInterface):
 
         fork = self._world.map.occupancy.fork()
 
-        points: List[Position] = []
+        points: list[Position] = []
 
         if n < 0:  # TODO profile when this is faster
             for _ in range(n):
@@ -278,7 +283,7 @@ class WorldManager(NodeInterface):
                 all_banned: np.ndarray = np.zeros((target, 2))
                 banned_index: int = 0
 
-                result: List[Position] = list()
+                result: list[Position] = list()
                 depth: int = 0
 
                 to_produce = target
@@ -329,7 +334,7 @@ class WorldManager(NodeInterface):
                                 int((i % 5) * self._shape[0] / 5)
                             )
                         ) for i in range(to_produce)]
-                    self.node.get_logger().warn(
+                    self._logger.warn(
                         f"Couldn't find enough empty cells for {to_produce} requests")
 
                 return result
@@ -342,7 +347,7 @@ class WorldManager(NodeInterface):
         return points
 
     def get_position_on_map(
-            self, safe_dist: float, forbidden_zones: Optional[List[PositionRadius]] = None, forbid: bool = True) -> Position:
+            self, safe_dist: float, forbidden_zones: Optional[list[PositionRadius]] = None, forbid: bool = True) -> Position:
         return self.get_positions_on_map(
             n=1, safe_dist=safe_dist, forbidden_zones=forbidden_zones, forbid=forbid
         )[0]
