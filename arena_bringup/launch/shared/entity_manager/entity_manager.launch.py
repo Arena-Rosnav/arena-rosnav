@@ -16,6 +16,11 @@ def generate_launch_description():
     )
 
     launch_entity_manager.add(
+        'isaac',
+        launch.actions.GroupAction([])
+    )
+
+    launch_entity_manager.add(
         'hunav',
         launch.actions.IncludeLaunchDescription(
             os.path.join(
