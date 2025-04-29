@@ -80,7 +80,7 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
         for key, value in config_generator.items():
             log += f"\t{key}={value}"
             rosparam_set(f"{self.PARAM_GENERATOR_CONFIGS}.{generator}.{key}", value)
-        self.node.get_logger().info(log)
+        self._logger.info(log)
 
     def _cb_task_reset(self, msg):
         self._update_map()
@@ -101,7 +101,7 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
                 self._TASK.world_manager.world
             )
         except Exception as e:
-            self.node.get_logger().warn(f"Service call failed {e}")
+            self._logger.warn(f"Service call failed {e}")
 
     def request_new_map(self):
         self._episodes = 0
@@ -123,12 +123,12 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
                 callback_group=self.callback_group
             )
         except Exception as e:
-            self.node.get_logger().warn(
+            self._logger.warn(
                 f"[Map Generator] Timeout while waiting for new map. Continue with current map. {e}")
         else:
-            self.node.get_logger().info("===================")
-            self.node.get_logger().info("+++ Got new map +++")
-            self.node.get_logger().info("===================")
+            self._logger.info("===================")
+            self._logger.info("+++ Got new map +++")
+            self._logger.info("===================")
 
         self.__task_reset_pub.publish(String())
 

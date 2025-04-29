@@ -139,7 +139,7 @@ class WorldManagerROS(WorldManager):
         #     raise RuntimeError(
         #         f'Simulator {simulator.value} does not support world reloading.')
 
-        self.node.get_logger().warn(f'LOADING WORLD {world_name}')
+        self._logger.warn(f'LOADING WORLD {world_name}')
         self._world_name = world_name
         self._first_world = False
 
@@ -208,7 +208,7 @@ class WorldManagerROS(WorldManager):
                 try:
                     callback()
                 except Exception as e:
-                    self.node.get_logger().warning(f'encountered exception in world callback: {repr(e)}')
+                    self._logger.warning(f'encountered exception in world callback: {repr(e)}')
 
     def _setup_world_callbacks(self):
 

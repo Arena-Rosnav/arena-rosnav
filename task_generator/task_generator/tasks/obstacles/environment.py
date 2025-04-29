@@ -377,7 +377,7 @@ class TM_Environment(TM_Obstacles):
 
         with open(environment_path) as f:
             environment = yaml.safe_load(f)
-            self.node.get_logger().info("Environment:")
+            self._logger.info("Environment:")
             # print(environment)
 
         static_obstacles: List[Obstacle] = []

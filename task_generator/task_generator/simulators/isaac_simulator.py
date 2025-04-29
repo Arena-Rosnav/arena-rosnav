@@ -15,7 +15,7 @@ class IsaacSimulator(BaseSimulator):
         """
         Initialize all ROS 2 service clients and wait for their availability.
         """
-        self.node.get_logger().info("Initializing service clients...")
+        self._logger.info("Initializing service clients...")
         self.client = {}
         # Define services with their corresponding client attributes
         services = {
@@ -70,24 +70,24 @@ class IsaacSimulator(BaseSimulator):
             # Create the service client
             self.client[client_attr] = self.node.create_client(service_type, service_name)
 
-            self.node.get_logger().info(f'Waiting for service "{service_name}"...')
+            self._logger.info(f'Waiting for service "{service_name}"...')
 
             # Wait for the service to become available
             while not self.client[client_attr].wait_for_service(timeout_sec=10.0):
-                self.node.get_logger().error(f'Service "{service_name}" not available after waiting')
+                self._logger.error(f'Service "{service_name}" not available after waiting')
                 # raise TimeoutError(f'Service "{service_name}" not available')
 
-            self.node.get_logger().info(f'Service "{service_name}" is now available.')
+            self._logger.info(f'Service "{service_name}" is now available.')
 
-        self.node.get_logger().info("All service clients initialized and available.")
+        self._logger.info("All service clients initialized and available.")
 
     def spawn_entity(self, entity):
-        self.node.get_logger().info(
+        self._logger.info(
             f"Attempting to spawn model: {entity.name}"
         )
         if entity.name not in ["1", "2", "3"]:
 
-            # self.node.get_logger().info(entity.position)
+            # self._logger.info(entity.position)
             model = entity.model.get(
                 [ModelType.URDF, ModelType.USD],
                 loader_args=entity.asdict(),
@@ -111,7 +111,7 @@ class IsaacSimulator(BaseSimulator):
                 return True
             else:
                 usd_path = os.path.abspath(model.path)
-                # self.node.get_logger().info(usd_path)
+                # self._logger.info(usd_path)
                 response = self.client['spawn_obstacle_client'].call_async(
                     ImportObstacles.Request(
                         name=entity.name,
@@ -125,12 +125,12 @@ class IsaacSimulator(BaseSimulator):
             return True
 
     def move_entity(self, name, position, orientation):
-        self.node.get_logger().info(
+        self._logger.info(
             f"Attempting to move entitiy: {name}"
         )
 
-        self.node.get_logger().info(f"position: {position.x,position.y}")
-        self.node.get_logger().info(f"orientation: {orientation}")
+        self._logger.info(f"position: {position.x,position.y}")
+        self._logger.info(f"orientation: {orientation}")
         prim_path = f"/{name}"
 
         response = self.client['move_entity_client'].call_async(
@@ -149,7 +149,7 @@ class IsaacSimulator(BaseSimulator):
         return True
 
     def delete_entity(self, name):
-        self.node.get_logger().info(
+        self._logger.info(
             f"Attempting to delete prim named {name}"
         )
 
@@ -169,7 +169,7 @@ class IsaacSimulator(BaseSimulator):
 
     def spawn_walls(self, walls):
         # return True
-        self.node.get_logger().info(
+        self._logger.info(
             f"Attempting to spawn walls"
         )
         # print(walls)
@@ -189,13 +189,13 @@ class IsaacSimulator(BaseSimulator):
                     )
                 )
 
-                self.node.get_logger().info(f"Successfully spawned wall {i+1}")
+                self._logger.info(f"Successfully spawned wall {i+1}")
 
             except Exception as e:
-                self.node.get_logger().error(str(e))
+                self._logger.error(str(e))
                 raise  # Re-raise exception after logging
 
-        self.node.get_logger().info("All walls spawned successfully.")
+        self._logger.info("All walls spawned successfully.")
         return True
 
     # TODO: update
@@ -213,10 +213,10 @@ class IsaacSimulator(BaseSimulator):
             namespace: Namespace for the simulator
         """
 
-        self.node.get_logger().info(
+        self._logger.info(
             f"Initializing IsaacSimulator with namespace: {namespace}")
 
         self.init_service_clients()
 
-        self.node.get_logger().info(
+        self._logger.info(
             f"Done initializing Isaac Sim")

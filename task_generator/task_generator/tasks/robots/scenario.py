@@ -83,12 +83,12 @@ class TM_Scenario(TM_Robots):
 
         if setup_robot_length > scenario_robots_length:
             managed_robots = managed_robots[:scenario_robots_length]
-            self.node.get_logger().warn(
+            self._logger.warn(
                 "Robot setup contains more robots than the scenario file.", once=True)
 
         if scenario_robots_length > setup_robot_length:
             SCENARIO_ROBOTS = SCENARIO_ROBOTS[:setup_robot_length]
-            self.node.get_logger().warn(
+            self._logger.warn(
                 "Scenario file contains more robots than setup.", once=True)
 
         for robot, config in zip(managed_robots, SCENARIO_ROBOTS):

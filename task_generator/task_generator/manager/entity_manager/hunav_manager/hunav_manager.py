@@ -57,9 +57,9 @@ class HunavManager(EntityManager):
         time.sleep(2.0)
 
         # Service Test for Hunavsim
-        # self.node.get_logger().info("Starting initial service tests...")
+        # self._logger.info("Starting initial service tests...")
         # self.test_hunav_services()
-        # self.node.get_logger().info("Initial service tests completed.")
+        # self._logger.info("Initial service tests completed.")
 
         # Setup timer for pedestrian updates
         self._update_timer = self.node.create_timer(
@@ -85,7 +85,7 @@ class HunavManager(EntityManager):
 
     def test_hunav_services(self):
         """Test all HuNav services with proper agent initialization"""
-        self.node.get_logger().info("\n========= STARTING HUNAV SERVICES TEST =========")
+        self._logger.info("\n========= STARTING HUNAV SERVICES TEST =========")
 
         # Create test agents
         test_agents = Agents()
@@ -134,16 +134,16 @@ class HunavManager(EntityManager):
         test_robot.yaw = 0.0
         test_robot.radius = 0.3
 
-        self.node.get_logger().info("Created test agents and robot for service testing")
+        self._logger.info("Created test agents and robot for service testing")
 
         # 1. Test compute_agents service
         try:
-            self.node.get_logger().info("\n--- Testing /compute_agents service ---")
+            self._logger.info("\n--- Testing /compute_agents service ---")
             request = ComputeAgents.Request()
             request.robot = test_robot
             request.current_agents = test_agents
 
-            self.node.get_logger().info(
+            self._logger.info(
                 f"Sending compute_agents request with {len(request.current_agents.agents)} agents")
 
             future = self._compute_agents_client.call(request)
@@ -151,10 +151,10 @@ class HunavManager(EntityManager):
 
             if future.result():
                 response = future.result()
-                self.node.get_logger().info(
+                self._logger.info(
                     f"Received response with {len(response.updated_agents.agents)} agents")
                 for agent in response.updated_agents.agents:
-                    self.node.get_logger().info(
+                    self._logger.info(
                         f"\nAgent {agent.name} (ID: {agent.id}):"
                         f"\n  Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
                         f"\n  Behavior Type: {agent.behavior.type}"
@@ -163,16 +163,16 @@ class HunavManager(EntityManager):
                         f"\n  Angular Velocity: {agent.angular_vel:.2f}"
                     )
         except Exception as e:
-            self.node.get_logger().error(
+            self._logger.error(
                 f"compute_agents service test failed: {str(e)}")
 
         # 2. Test compute_agent service
         try:
-            self.node.get_logger().info("\n--- Testing /compute_agent service ---")
+            self._logger.info("\n--- Testing /compute_agent service ---")
             request = ComputeAgent.Request()
             request.id = test_agent.id
 
-            self.node.get_logger().info(
+            self._logger.info(
                 f"Requesting compute_agent for ID: {request.id}")
 
             future = self._compute_agent_client.call_async(request)
@@ -181,25 +181,25 @@ class HunavManager(EntityManager):
             if future.result():
                 response = future.result()
                 agent = response.updated_agent
-                self.node.get_logger().info(
+                self._logger.info(
                     f"\nCompute_agent response:"
                     f"\n  Agent: {agent.name} (ID: {agent.id})"
                     f"\n  Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
                     f"\n  Behavior: Type={agent.behavior.type}, State={agent.behavior.state}"
                 )
         except Exception as e:
-            self.node.get_logger().error(
+            self._logger.error(
                 f"compute_agent service test failed: {str(e)}")
 
         # 3. Test move_agent service
         try:
-            self.node.get_logger().info("\n--- Testing /move_agent service ---")
+            self._logger.info("\n--- Testing /move_agent service ---")
             request = MoveAgent.Request()
             request.agent_id = test_agent.id
             request.robot = test_robot
             request.current_agents = test_agents
 
-            self.node.get_logger().info(
+            self._logger.info(
                 f"Requesting move_agent for ID: {request.agent_id}")
 
             future = self._move_agent_client.call_async(request)
@@ -208,7 +208,7 @@ class HunavManager(EntityManager):
             if future.result():
                 response = future.result()
                 agent = response.updated_agent
-                self.node.get_logger().info(
+                self._logger.info(
                     f"\nMove_agent response:"
                     f"\n  Agent: {agent.name} (ID: {agent.id})"
                     f"\n  New Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
@@ -216,18 +216,18 @@ class HunavManager(EntityManager):
                     f"\n  Behavior State: {agent.behavior.state}"
                 )
         except Exception as e:
-            self.node.get_logger().error(
+            self._logger.error(
                 f"move_agent service test failed: {str(e)}")
 
-        self.node.get_logger().info("\n========= HUNAV SERVICES TEST COMPLETE =========")
+        self._logger.info("\n========= HUNAV SERVICES TEST COMPLETE =========")
 
     def setup_services(self):
         """Initialize all required services"""
-        self.node.get_logger().info("Setting up Hunavservices...")
+        self._logger.info("Setting up Hunavservices...")
 
         # Debug namespace information
-        self.node.get_logger().info(f"Node namespace: {self.node.get_namespace()}")
-        self.node.get_logger().info(f"Task generator namespace: {self._namespace}")
+        self._logger.info(f"Node namespace: {self.node.get_namespace()}")
+        self._logger.info(f"Task generator namespace: {self._namespace}")
 
         # Create service names with full namespace path (now using root namespace)
         service_names = {
@@ -239,7 +239,7 @@ class HunavManager(EntityManager):
 
         # Log service names
         for service, full_name in service_names.items():
-            self.node.get_logger().info(f"Creating service client for {service} at: {full_name}")
+            self._logger.info(f"Creating service client for {service} at: {full_name}")
 
         # Create service clients
         self._compute_agent_client = self.node.create_client(
@@ -272,22 +272,22 @@ class HunavManager(EntityManager):
             attempts = 0
             while attempts < max_attempts:
                 if client.wait_for_service(timeout_sec=2.0):
-                    self.node.get_logger().info(f'Service {name} is available')
+                    self._logger.info(f'Service {name} is available')
                     break
                 attempts += 1
-                self.node.get_logger().warn(
+                self._logger.warn(
                     f'Waiting for service {name} (attempt {attempts}/{max_attempts})\n'
                     f'Looking for service at: {service_names[name]}'
                 )
 
             if attempts >= max_attempts:
-                self.node.get_logger().error(
+                self._logger.error(
                     f'Service {name} not available after {max_attempts} attempts\n'
                     f'Was looking for service at: {service_names[name]}'
                 )
                 return False
 
-        self.node.get_logger().info("All services are ready")
+        self._logger.info("All services are ready")
         return True
 
     def create_pedestrian_sdf(self, agent_config: Dict) -> str:
@@ -343,7 +343,7 @@ class HunavManager(EntityManager):
         # # Initial debug prints
         # print("\n==================== STARTING SPAWN PROCESS ====================")
         # print(f"Attempting to spawn {len(list(obstacles))} obstacles")
-        self.node.get_logger().error(
+        self._logger.error(
             f"Attempting to spawn {len(list(obstacles))} obstacles")
 
         for _obstacle in obstacles:
@@ -353,7 +353,7 @@ class HunavManager(EntityManager):
 
             # print("\n=============== NEW OBSTACLE PROCESSING ===============")
             # print(f"Processing obstacle: {obstacle.name}")
-            self.node.get_logger().error(
+            self._logger.error(
                 f"Processing obstacle: {obstacle.name}")
 
             # Create Hunav Agent
@@ -368,7 +368,7 @@ class HunavManager(EntityManager):
                 # print(f"Skin: {obstacle.skin}")
                 # print(f"Name: {obstacle.name}")
                 # print(f"Group ID: {obstacle.group_id}")
-                self.node.get_logger().error(
+                self._logger.error(
                     f"Basic Properties - ID: {obstacle.id}, Type: {obstacle.type}, Skin: {obstacle.skin}")
 
                 # Set basic properties
@@ -379,7 +379,7 @@ class HunavManager(EntityManager):
                 agent.group_id = obstacle.group_id
             except Exception as e:
                 print(f"ERROR in basic properties: {e}")
-                self.node.get_logger().error(f"ERROR in basic properties: {e}")
+                self._logger.error(f"ERROR in basic properties: {e}")
 
             try:
                 # # Position Debug
@@ -387,7 +387,7 @@ class HunavManager(EntityManager):
                 # print(f"Position object: {obstacle.position}")
                 # print(f"Position type: {type(obstacle.position)}")
                 # print(f"Yaw value: {obstacle.yaw}")
-                self.node.get_logger().error(
+                self._logger.error(
                     f"Position Data: {obstacle.position}, Yaw: {obstacle.yaw}")
 
                 # Set position
@@ -395,7 +395,7 @@ class HunavManager(EntityManager):
                 agent.yaw = obstacle.yaw
             except Exception as e:
                 print(f"ERROR in position setting: {e}")
-                self.node.get_logger().error(f"ERROR in position setting: {e}")
+                self._logger.error(f"ERROR in position setting: {e}")
 
             try:
                 # # Velocity Debug
@@ -405,7 +405,7 @@ class HunavManager(EntityManager):
                 # print(f"Linear vel: {obstacle.linear_vel}")
                 # print(f"Angular vel: {obstacle.angular_vel}")
                 # print(f"Radius: {obstacle.radius}")
-                self.node.get_logger().error(
+                self._logger.error(
                     f"Velocity Data - Desired: {obstacle.desired_velocity}, Linear: {obstacle.linear_vel}")
 
                 # Set velocity
@@ -416,7 +416,7 @@ class HunavManager(EntityManager):
                 agent.angular_vel = obstacle.angular_vel
             except Exception as e:
                 print(f"ERROR in velocity setting: {e}")
-                self.node.get_logger().error(f"ERROR in velocity setting: {e}")
+                self._logger.error(f"ERROR in velocity setting: {e}")
 
             try:
                 # # Behavior Debug
@@ -429,7 +429,7 @@ class HunavManager(EntityManager):
                 # print(f"- Obstacle: {obstacle.behavior.obstacle_force_factor}")
                 # print(f"- Social: {obstacle.behavior.social_force_factor}")
                 # print(f"- Other: {obstacle.behavior.other_force_factor}")
-                # self.node.get_logger().error(
+                # self._logger.error(
                 # f"Behavior Data - Type: {obstacle.behavior.type}, Config:
                 # {obstacle.behavior.configuration}")
 
@@ -447,7 +447,7 @@ class HunavManager(EntityManager):
                 agent.behavior.other_force_factor = obstacle.behavior.other_force_factor
             except Exception as e:
                 print(f"ERROR in behavior setting: {e}")
-                self.node.get_logger().error(f"ERROR in behavior setting: {e}")
+                self._logger.error(f"ERROR in behavior setting: {e}")
 
             try:
                 # # Goals Debug
@@ -457,7 +457,7 @@ class HunavManager(EntityManager):
                 #     print(f"Goal {i}: {goal}")
                 # print(f"Cyclic goals: {obstacle.cyclic_goals}")
                 # print(f"Goal radius: {obstacle.goal_radius}")
-                # self.node.get_logger().error(
+                # self._logger.error(
                 # f"Goals Data - Count: {len(obstacle.goals)}, Cyclic:
                 # {obstacle.cyclic_goals}")
 
@@ -467,27 +467,27 @@ class HunavManager(EntityManager):
                 agent.goal_radius = obstacle.goal_radius
             except Exception as e:
                 print(f"ERROR in goals setting: {e}")
-                self.node.get_logger().error(f"ERROR in goals setting: {e}")
+                self._logger.error(f"ERROR in goals setting: {e}")
 
             try:
                 # # Closest obstacles Debug
                 # print("\n--- Closest Obstacles Debug ---")
                 # print(
                 #     f"Number of closest obstacles: {len(obstacle.closest_obs)}")
-                # self.node.get_logger().error(
+                # self._logger.error(
                 #     f"Closest obstacles count: {len(obstacle.closest_obs)}")
 
                 agent.closest_obs = obstacle.closest_obs
             except Exception as e:
                 print(f"ERROR in closest obstacles setting: {e}")
-                self.node.get_logger().error(
+                self._logger.error(
                     f"ERROR in closest obstacles setting: {e}")
 
             try:
                 # # SDF Model Creation Debug
                 # print("\n--- SDF Model Creation ---")
                 # print("Creating SDF model...")
-                self.node.get_logger().error("Starting SDF model creation")
+                self._logger.error("Starting SDF model creation")
 
                 sdf = self.create_pedestrian_sdf(obstacle)
                 # print("SDF model created successfully")
@@ -504,7 +504,7 @@ class HunavManager(EntityManager):
                 )
             except Exception as e:
                 print(f"ERROR in SDF model creation: {e}")
-                self.node.get_logger().error(
+                self._logger.error(
                     f"ERROR in SDF model creation: {e}")
 
             try:
@@ -513,11 +513,11 @@ class HunavManager(EntityManager):
                 # print(f"Attempting to spawn entity: {obstacle.name}")
                 spawn_success = self._simulator.spawn_entity(obstacle)
                 # print(f"Spawn {'successful' if spawn_success else 'failed'}")
-                self.node.get_logger().error(
+                self._logger.error(
                     f"Spawn result for {obstacle.name}: {'success' if spawn_success else 'failed'}")
             except Exception as e:
                 print(f"ERROR in entity spawning: {e}")
-                self.node.get_logger().error(f"ERROR in entity spawning: {e}")
+                self._logger.error(f"ERROR in entity spawning: {e}")
 
             try:
                 # # HuNav Registration Debug
@@ -528,13 +528,13 @@ class HunavManager(EntityManager):
 
                 if future.result():
                     # print("Successfully registered with HuNav")
-                    self.node.get_logger().error("Successfully registered with HuNav")
+                    self._logger.error("Successfully registered with HuNav")
                 else:
                     print("Failed to register with HuNav")
-                    self.node.get_logger().error("Failed to register with HuNav")
+                    self._logger.error("Failed to register with HuNav")
             except Exception as e:
                 print(f"ERROR in HuNav registration: {e}")
-                self.node.get_logger().error(
+                self._logger.error(
                     f"ERROR in HuNav registration: {e}")
 
             # Final steps
@@ -546,10 +546,10 @@ class HunavManager(EntityManager):
             )
 
         #     print("\n=============== OBSTACLE PROCESSING COMPLETE ===============")
-        #     self.node.get_logger().error("OBSTACLE PROCESSING COMPLETE")
+        #     self._logger.error("OBSTACLE PROCESSING COMPLETE")
 
         # print("\n==================== SPAWN PROCESS COMPLETE ====================")
-        # self.node.get_logger().error("SPAWN PROCESS COMPLETE")
+        # self._logger.error("SPAWN PROCESS COMPLETE")
 
     def _update_pedestrians(self):
         """Update pedestrians (from HuNavPlugin's OnUpdate)"""
@@ -643,7 +643,7 @@ class HunavManager(EntityManager):
             Dict[str, Any]: Configuration dictionary
         """
         if agent_id not in self.agent_config:
-            self.node.get_logger().warn(
+            self._logger.warn(
                 f"No configuration found for agent {agent_id}")
             return {}
         return self.agent_config[agent_id]
@@ -725,7 +725,7 @@ class HunavManager(EntityManager):
         """Move robot to new position using HuNavSim's move_agent service"""
         try:
             if not self._move_agent_client.service_is_ready():
-                self.node.get_logger().warn("Move agent service not ready yet")
+                self._logger.warn("Move agent service not ready yet")
                 return
 
             # Create Robot Agent
@@ -752,16 +752,16 @@ class HunavManager(EntityManager):
                 rclpy.spin_once(self.node, timeout_sec=0.1)
 
             if not future.done():
-                self.node.get_logger().error("Move robot service call timed out")
+                self._logger.error("Move robot service call timed out")
                 return
 
             if future.result() is not None:
-                self.node.get_logger().info(f"Successfully moved robot {name}")
+                self._logger.info(f"Successfully moved robot {name}")
             else:
-                self.node.get_logger().error("Move robot service call failed")
+                self._logger.error("Move robot service call failed")
 
         except Exception as e:
-            self.node.get_logger().error(f"Error moving robot: {str(e)}")
+            self._logger.error(f"Error moving robot: {str(e)}")
 
     def spawn_robot(self, robot: Robot):
         """Spawn robot in simulation"""
@@ -782,6 +782,6 @@ class HunavManager(EntityManager):
             self.remove_obstacles(ObstacleLayer.WORLD)
             return True
         except Exception as e:
-            self.node.get_logger().error(f"Error in unuse_obstacles: {e}")
+            self._logger.error(f"Error in unuse_obstacles: {e}")
             print(traceback.format_exc())
             return False

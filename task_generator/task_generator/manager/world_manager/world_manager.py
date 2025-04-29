@@ -329,7 +329,7 @@ class WorldManager(NodeInterface):
                                 int((i % 5) * self._shape[0] / 5)
                             )
                         ) for i in range(to_produce)]
-                    self.node.get_logger().warn(
+                    self._logger.warn(
                         f"Couldn't find enough empty cells for {to_produce} requests")
 
                 return result
