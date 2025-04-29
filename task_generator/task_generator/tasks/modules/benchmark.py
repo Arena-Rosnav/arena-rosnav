@@ -1,20 +1,19 @@
 import datetime
 import hashlib
 import json
-import pathlib
-from task_generator.constants import Constants
-from task_generator.shared import Namespace, rosparam_get
-from task_generator.tasks.modules import TM_Module
-
-import typing
+import logging
 import os
-import yaml
+import pathlib
 import subprocess
+import typing
 
 import ament_index_python
 import arena_evaluation_msgs.srv
+import yaml
 
-import logging
+from task_generator.constants import Constants
+from task_generator.shared import Namespace, rosparam_get
+from task_generator.tasks.modules import TM_Module
 
 
 def _get_rosmaster_pid() -> int:
@@ -28,7 +27,7 @@ def _get_rosmaster_pid() -> int:
 class _Config(typing.NamedTuple):
 
     @classmethod
-    def parse(cls, obj: typing.Dict):
+    def parse(cls, obj: dict):
         print(obj)
         return cls(
             suite=cls.Suite(**obj["suite"]),
@@ -54,7 +53,7 @@ class _Config(typing.NamedTuple):
 class Suite(typing.NamedTuple):
 
     @classmethod
-    def parse(cls, name: str, obj: typing.Dict, default_timeout: float):
+    def parse(cls, name: str, obj: dict, default_timeout: float):
         return cls(
             name=name,
             stages=[
@@ -74,13 +73,13 @@ class Suite(typing.NamedTuple):
         map: str
         tm_robots: Constants.TaskMode.TM_Robots
         tm_obstacles: Constants.TaskMode.TM_Obstacles
-        config: typing.Dict
+        config: dict
 
         seed: int
         timeout: float
 
         @classmethod
-        def hash(cls, obj: typing.Dict) -> int:
+        def hash(cls, obj: dict) -> int:
             """
             hash json-serializable object to non-negative int32
             """
@@ -92,7 +91,7 @@ class Suite(typing.NamedTuple):
         @classmethod
         def parse(
             cls,
-            obj: typing.Dict,
+            obj: dict,
             default_timeout: float
         ) -> "Suite.Stage":
             obj.setdefault("timeout", default_timeout)
@@ -100,7 +99,7 @@ class Suite(typing.NamedTuple):
             return cls(**obj)
 
     name: str
-    stages: typing.List[Stage]
+    stages: list[Stage]
 
     @property
     def min_index(self):
@@ -117,7 +116,7 @@ class Suite(typing.NamedTuple):
 class Contest(typing.NamedTuple):
 
     @classmethod
-    def parse(cls, name: str, obj: typing.Dict):
+    def parse(cls, name: str, obj: dict):
         return cls(
             name=name,
             contestants=[
@@ -136,12 +135,12 @@ class Contest(typing.NamedTuple):
         inter_planner: str
 
         @classmethod
-        def parse(cls, obj: typing.Dict) -> "Contest.Contestant":
+        def parse(cls, obj: dict) -> "Contest.Contestant":
             obj.setdefault("inter_planner", "bypass")
             return cls(**obj)
 
     name: str
-    contestants: typing.List[Contestant]
+    contestants: list[Contestant]
 
     @property
     def min_index(self):
@@ -207,7 +206,7 @@ class Mod_Benchmark(TM_Module):
             )
 
     @classmethod
-    def _resume(cls) -> typing.Tuple[str, Contest.Index, Suite.Index, int]:
+    def _resume(cls) -> tuple[str, Contest.Index, Suite.Index, int]:
         with open(cls.DIR(cls.LOCK_FILE)) as f:
             runid, contest, suite, headless = f.read().split(" ")
         return runid, Contest.Index(contest), Suite.Index(suite), int(headless)
@@ -221,9 +220,9 @@ class Mod_Benchmark(TM_Module):
                 fw.write(fr.read())
 
     @classmethod
-    def _taskgen_write(cls, *configs: typing.Dict):
+    def _taskgen_write(cls, *configs: dict):
 
-        def overwrite(source: typing.Dict, target: typing.Dict):
+        def overwrite(source: dict, target: dict):
             for k, v in source.items():
                 if isinstance(v, dict):
                     target.setdefault(k, dict())

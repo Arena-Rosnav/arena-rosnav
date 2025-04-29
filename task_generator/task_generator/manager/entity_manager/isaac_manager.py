@@ -1,16 +1,17 @@
 import typing
-from task_generator.manager.entity_manager.dummy_manager import DummyEntityManager
-from task_generator.shared import DynamicObstacle, Namespace
-from task_generator.simulators import BaseSimulator
+
 from isaacsim_msgs.msg import Person
 from isaacsim_msgs.srv import Pedestrian
-from task_generator.simulators.isaac_simulator import IsaacSimulator
+
+from task_generator.manager.entity_manager.dummy_manager import \
+    DummyEntityManager
 from task_generator.manager.entity_manager.utils import ObstacleLayer
+from task_generator.shared import DynamicObstacle, Namespace
+from task_generator.simulators import BaseSimulator
+from task_generator.simulators.isaac_simulator import IsaacSimulator
 
 
 class IsaacEntityManager(DummyEntityManager):
-
-    _logger_name = 'isaac_EM'
 
     def __init__(self, namespace: Namespace, simulator: BaseSimulator):
         super().__init__(namespace, simulator)

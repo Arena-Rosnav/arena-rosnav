@@ -1,10 +1,7 @@
 import abc
-from typing import List
 import typing
 
-import rclpy.node
 import rclpy.publisher
-
 import rosgraph_msgs.msg as rosgraph_msgs
 
 from task_generator import NodeInterface
@@ -82,7 +79,7 @@ class Task(Props_, abc.ABC):
     Methods:
         reset(**kwargs): Reset the task.
         is_done() -> bool: Check if the task is done.
-        robot_names() -> List[str]: Get the names of the robots in the task.
+        robot_names() -> list[str]: Get the names of the robots in the task.
         _clock_callback(clock: rosgraph_msgs.Clock): Callback function for the clock message.
         set_robot_position(position: PositionOrientation): Set the position of the robot.
         set_robot_goal(position: PositionOrientation): Set the goal position of the robot.
@@ -123,7 +120,7 @@ class Task(Props_, abc.ABC):
         return False
 
     @property
-    def robot_names(self) -> List[str]:
+    def robot_names(self) -> list[str]:
         return list(self.robot_managers.keys())
 
     def _clock_callback(self, clock: rosgraph_msgs.Clock):

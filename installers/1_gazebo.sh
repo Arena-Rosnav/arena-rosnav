@@ -36,8 +36,11 @@ sudo apt-get install -y \
 
 mkdir -p "${ARENA_WS_DIR}/src/gazebo"
 
-rosdep install -r --from-paths src -i -y --rosdistro "${ARENA_ROS_DISTRO}" 
-
+rosdep install -y \
+  --from-paths src \
+  --ignore-src \
+  --rosdistro "$ARENA_ROS_DISTRO" \
+  || echo 'rosdep failed to install all dependencies'
 
 echo "Gazebo ${GAZEBO_VERSION}, ros_gz, sdformat_urdf installed successfully!"
 

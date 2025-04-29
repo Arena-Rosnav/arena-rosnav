@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional
 
 import rospkg
 import yaml
@@ -19,6 +19,7 @@ def observe(file: str, callback: watchdog.events.FileSystemEventHandler):
     observer.start()
     return observer
 
+
 def safe_callback(fn: Callable):
     def wrapper(*args, **kwargs):
         try:
@@ -30,13 +31,15 @@ def safe_callback(fn: Callable):
 
     return wrapper
 
-def recursive_get(obj: Any, property: List[str], fallback: Any = None) -> Any:
+
+def recursive_get(obj: Any, property: list[str], fallback: Any = None) -> Any:
     if not len(property):
         return fallback if obj is None else obj
     try:
         return recursive_get(dict(obj).get(property[0]), property[1:])
-    except:
+    except BaseException:
         return fallback
+
 
 def encode(var: Any):
     if isinstance(var, list):
@@ -45,8 +48,10 @@ def encode(var: Any):
         return json.dumps(var)
     return var
 
+
 def get_or_ignore(obj: dict, key: str) -> dict:
     return {key: obj.get(key)} if key in obj else {}
+
 
 def set_ros_params(params: dict, prefix: str = ""):
     for key, value in params.items():
@@ -54,6 +59,7 @@ def set_ros_params(params: dict, prefix: str = ""):
             set_ros_params(value, f"{prefix}{key}/")
         else:
             rospy.set_param(f"{prefix}{key}", value)
+
 
 def run(namespace: Optional[str] = None):
 
@@ -108,7 +114,8 @@ def run(namespace: Optional[str] = None):
         raise e
     finally:
         cleanup()
-        
+
+
 if __name__ == "__main__":
     rospy.init_node("task_generator_filewatcher")
     run()

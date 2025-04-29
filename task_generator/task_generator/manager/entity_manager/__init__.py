@@ -1,15 +1,17 @@
 import abc
 import typing
+
 import rclpy
 import rclpy.publisher
 from geometry_msgs.msg import PoseStamped
 
 from task_generator import NodeInterface
-from task_generator.manager.entity_manager.utils import KnownObstacles, ObstacleLayer
-from task_generator.shared import DynamicObstacle, ModelType, Namespace, Obstacle, PositionOrientation, Robot, Wall
-from task_generator.simulators import BaseSimulator
-
 from task_generator.constants import Constants
+from task_generator.manager.entity_manager.utils import (KnownObstacles,
+                                                         ObstacleLayer)
+from task_generator.shared import (DynamicObstacle, Namespace, Obstacle,
+                                   PositionOrientation, Robot, Wall)
+from task_generator.simulators import BaseSimulator
 from task_generator.utils.registry import Registry
 
 
@@ -17,7 +19,6 @@ class EntityManager(NodeInterface, abc.ABC):
 
     _goal_pub: rclpy.publisher.Publisher
     _known_obstacles: KnownObstacles
-    _logger_name: typing.ClassVar[str]
 
     def __init__(
         self,
@@ -38,7 +39,6 @@ class EntityManager(NodeInterface, abc.ABC):
         NodeInterface.__init__(self)
 
         self._known_obstacles = KnownObstacles()
-        self._logger = self.node.get_logger().get_child(self._logger_name)
 
         self._goal_pub = self.node.create_publisher(
             PoseStamped,

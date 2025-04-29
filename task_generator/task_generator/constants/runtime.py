@@ -33,7 +33,7 @@ def Configuration(server: ROSParamServer):
 
             WORLD = server.ROSParam[str](
                 'world',
-                type_=rclpy.parameter.Parameter.Type.STRING,
+                type_=rclpy.Parameter.Type.STRING,
             )
 
             @classmethod
@@ -113,12 +113,13 @@ def Configuration(server: ROSParamServer):
                 parse=Constants.TaskMode.TM_Obstacles
             )
 
-            TM_MODULES = server.ROSParam[typing.List[Constants.TaskMode.TM_Module]](
+            TM_MODULES = server.ROSParam[set[Constants.TaskMode.TM_Module]](
                 'tm_modules',
                 ','.join(
                     [m.value for m in Constants.TaskMode.TM_Module.default()]),
-                parse=lambda x: [
-                    Constants.TaskMode.TM_Module(m) for m in x.split(',') if m != '']
+                parse=lambda x: {
+                    Constants.TaskMode.TM_Module(m) for m in x.split(',') if m != ''
+                }
             )
 
     return Config

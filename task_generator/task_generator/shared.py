@@ -3,8 +3,7 @@ from __future__ import annotations
 import enum
 import os
 import typing
-from typing import (Callable, Collection, Dict, List, Optional, Tuple,
-                    Type, TypeVar, overload)
+from typing import (Callable, Collection, Optional, Type, TypeVar, overload)
 
 import attrs
 import geometry_msgs.msg as geometry_msgs
@@ -12,8 +11,8 @@ import rclpy
 import rclpy.node
 import yaml
 
-import rclpy.parameter
-from task_generator.utils.geometry import euler_from_quaternion, quaternion_from_euler
+from task_generator.utils.geometry import (euler_from_quaternion,
+                                           quaternion_from_euler)
 
 _node: rclpy.node.Node
 
@@ -205,7 +204,7 @@ class PositionRadius(Position):
 class ModelWrapper:
     _get: Callable[[Collection[ModelType], dict], Model]
     _name: str
-    _override: Dict[ModelType, Tuple[bool, Callable[..., Model]]]
+    _override: dict[ModelType, tuple[bool, Callable[..., Model]]]
 
     def __init__(
         self,
@@ -323,7 +322,7 @@ class ModelWrapper:
         return self._name
 
     @staticmethod
-    def Constant(name: str, models: Dict[ModelType, Model]) -> ModelWrapper:
+    def Constant(name: str, models: dict[ModelType, Model]) -> ModelWrapper:
         """
         Create new ModelWrapper from a dict of already existing models
         @name: name of model
@@ -385,7 +384,7 @@ class Entity:
     position: PositionOrientation
     name: str
     model: ModelWrapper
-    extra: Dict = attrs.field(factory=dict, kw_only=True)
+    extra: dict = attrs.field(factory=dict, kw_only=True)
 
     def asdict(self, expand_extra: bool = True) -> dict:
         if expand_extra:
@@ -399,7 +398,7 @@ class Entity:
 @attrs.frozen()
 class Obstacle(Entity):
     @classmethod
-    def parse(cls, obj: Dict, model: ModelWrapper) -> "Obstacle":
+    def parse(cls, obj: dict, model: ModelWrapper) -> "Obstacle":
         name = str(obj.get("name", ""))
         position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
 
@@ -413,10 +412,10 @@ class Obstacle(Entity):
 
 @attrs.frozen()
 class DynamicObstacle(Obstacle):
-    waypoints: List[PositionRadius]
+    waypoints: list[PositionRadius]
 
     @classmethod
-    def parse(cls, obj: Dict, model: ModelWrapper) -> "DynamicObstacle":
+    def parse(cls, obj: dict, model: ModelWrapper) -> "DynamicObstacle":
 
         base = Obstacle.parse(obj, model)
         waypoints = [PositionRadius.parse(waypoint) for waypoint in obj.get("waypoints", [])]
@@ -457,7 +456,7 @@ class Robot(Entity):
         return self.name + '/'
 
     @classmethod
-    def parse(cls, obj: Dict, model: ModelWrapper) -> "Robot":
+    def parse(cls, obj: dict, model: ModelWrapper) -> "Robot":
         name = str(obj.get("name", ""))
         position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
         inter_planner = str(
@@ -487,12 +486,12 @@ class Robot(Entity):
         )
 
 
-def DefaultParameter(value: typing.Any) -> rclpy.parameter.Parameter | None:
+def DefaultParameter(value: typing.Any) -> rclpy.Parameter | None:
     if value is None:
         return None
-    # if isinstance(value, rclpy.parameter.Parameter.Type):
+    # if isinstance(value, rclpy.Parameter.Type):
     #     return None
-    return rclpy.parameter.Parameter(
+    return rclpy.Parameter(
         '',
         value=value,
     )

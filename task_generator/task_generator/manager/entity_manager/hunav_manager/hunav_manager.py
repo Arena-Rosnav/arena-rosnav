@@ -13,7 +13,7 @@ from task_generator.manager.entity_manager.dummy_manager import \
     DummyEntityManager
 from task_generator.manager.entity_manager.hunav_manager import \
     HunavDynamicObstacle
-from task_generator.shared import (DynamicObstacle, ModelType, Namespace)
+from task_generator.shared import DynamicObstacle, ModelType, Namespace
 from task_generator.simulators import BaseSimulator
 
 
@@ -120,8 +120,6 @@ class _PedestrianHelper:
 
 class HunavManager(DummyEntityManager):
     """HunavManager with debug logging for tracking execution flow"""
-
-    _logger_name = 'hunav_EM'
 
     _pedestrians: dict[int, dict]
     _agents_container: Agents

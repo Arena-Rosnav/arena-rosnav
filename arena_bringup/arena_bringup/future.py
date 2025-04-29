@@ -1,14 +1,16 @@
-# https://github.com/ros2/launch/blob/09403fcebedb68dd259e9ab6b35bd8712b6596ec/launch/launch/substitutions/python_expression.py
 
 import collections.abc
-from typing import Sequence, List, Text
 import importlib
+from typing import List, Sequence, Text
 
-from launch import Substitution, SomeSubstitutionsType, LaunchContext
-from launch.utilities import ensure_argument_type, normalize_to_list_of_substitutions, perform_substitutions
+from launch import LaunchContext, SomeSubstitutionsType, Substitution
+from launch.utilities import (ensure_argument_type,
+                              normalize_to_list_of_substitutions,
+                              perform_substitutions)
 from launch.utilities.type_utils import perform_typed_substitution
 
 
+# https://github.com/ros2/launch/blob/09403fcebedb68dd259e9ab6b35bd8712b6596ec/launch/launch/substitutions/python_expression.py
 class PythonExpression(Substitution):
     """
     Substitution that can access contextual local variables.

@@ -1,16 +1,13 @@
 import time
-from rosros import rospify as rospy
-import flatland_msgs.srv as flatland_srvs
-import std_srvs.srv as std_srvs
 
 import flatland_msgs.msg as flatland_msgs
+import flatland_msgs.srv as flatland_srvs
 import geometry_msgs.msg as geometry_msgs
-
-from task_generator.shared import ModelType, Namespace
-
-from task_generator.shared import rosparam_get
+import std_srvs.srv as std_srvs
+from rosros import rospify as rospy
 
 from task_generator.constants.runtime import Configuration
+from task_generator.shared import ModelType, Namespace, rosparam_get
 from task_generator.simulators import BaseSimulator
 
 

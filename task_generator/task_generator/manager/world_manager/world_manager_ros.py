@@ -1,21 +1,25 @@
 
 import os
 import tempfile
+import time
 import typing
 
-import yaml
-import nav_msgs.msg
+import lifecycle_msgs.msg
+import lifecycle_msgs.srv
 import nav2_msgs.srv
+import nav_msgs.msg
 import numpy as np
 import rclpy
 import rclpy.callback_groups
 import rclpy.client
+import yaml
 
 from task_generator.manager.environment_manager import EnvironmentManager
-from task_generator.utils.time import Time
 from task_generator.shared import Position, Wall
+from task_generator.utils.time import Time
 
-from .utils import WorldMap, WorldWalls, WorldObstacleConfiguration, WorldObstacleConfigurations, WorldZones, Zone
+from .utils import (WorldMap, WorldObstacleConfiguration,
+                    WorldObstacleConfigurations, WorldWalls, WorldZones, Zone)
 from .world_manager import WorldManager
 
 _DUMMY_MAP_SHAPE = (200, 200)
@@ -47,7 +51,7 @@ class WorldManagerROS(WorldManager):
     _cli: rclpy.client.Client
     _first_world: bool
     _world_name: str
-    _callbacks: typing.List[typing.Callable[[], None]]
+    _callbacks: list[typing.Callable[[], None]]
 
     @classmethod
     def _load_walls(cls, yaml_path: str) -> WorldWalls | None:
@@ -135,7 +139,7 @@ class WorldManagerROS(WorldManager):
         #     raise RuntimeError(
         #         f'Simulator {simulator.value} does not support world reloading.')
 
-        self.node.get_logger().warn(f'LOADING WORLD {world_name}')
+        self._logger.warn(f'LOADING WORLD {world_name}')
         self._world_name = world_name
         self._first_world = False
 
@@ -204,7 +208,7 @@ class WorldManagerROS(WorldManager):
                 try:
                     callback()
                 except Exception as e:
-                    self.node.get_logger().warning(f'encountered exception in world callback: {repr(e)}')
+                    self._logger.warning(f'encountered exception in world callback: {repr(e)}')
 
     def _setup_world_callbacks(self):
 
@@ -216,14 +220,28 @@ class WorldManagerROS(WorldManager):
             1,
         )
 
+        map_server_state_cli = self.node.create_client(
+            lifecycle_msgs.srv.GetState,
+            self.node.service_namespace('map_server', 'get_state'),
+            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
+        )
+
+        # wait for map_server to be active
+        while not map_server_state_cli.wait_for_service(timeout_sec=1.0):
+            self._logger.info('GetState service not available, waiting again...')
+        while map_server_state_cli.call(lifecycle_msgs.srv.GetState.Request()).current_state.id != \
+                lifecycle_msgs.msg.State.PRIMARY_STATE_ACTIVE:
+            self._logger.info('map_server is not active, waiting again...')
+            time.sleep(1.0)
+
         # publishing map to map_server
         self._cli = self.node.create_client(
             nav2_msgs.srv.LoadMap,
-            self.node.service_namespace('map_server/load_map'),
+            self.node.service_namespace('map_server', 'load_map'),
             callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
         while not self._cli.wait_for_service(timeout_sec=1.0):
-            self.node.get_logger().info('LoadMap service not available, waiting again...')
+            self._logger.info('LoadMap service not available, waiting again...')
 
         self.node.rosparam.callback(
             'world',
