@@ -3,6 +3,7 @@ import typing
 import launch
 import rclpy
 import rclpy.node
+import rclpy.impl.rcutils_logger
 
 from .utils.ros_params import ROSParamServer
 
@@ -15,6 +16,10 @@ class NodeInterface:
 
     def __init__(self) -> None:
         ...
+
+    @property
+    def _logger(self) -> rclpy.impl.rcutils_logger.RcutilsLogger:
+        return self.node.get_logger().get_child(type(self).__name__)
 
 
 def init_task_gen_node(
