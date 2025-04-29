@@ -81,7 +81,7 @@ def generate_launch_description():
     )
     tm_robots = LaunchArgument(
         name='tm_robots',
-        default_value='random'
+        default_value='explore'
     )
     tm_obstacles = LaunchArgument(
         name='tm_obstacles',
