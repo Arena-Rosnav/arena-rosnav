@@ -1,5 +1,6 @@
-from enum import Enum
 import enum
+from enum import Enum
+
 from task_generator.shared import Namespace
 
 
