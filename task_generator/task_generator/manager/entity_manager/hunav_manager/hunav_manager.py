@@ -3,18 +3,18 @@ import math
 import os
 import time
 from threading import Lock
-from typing import Any, Callable, Collection, Dict, List
+from typing import Any, Callable, Collection
 
 import attrs
-
 import rclpy
 from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import Pose
 from hunav_msgs.msg import Agent, AgentBehavior, Agents
-from hunav_msgs.srv import (ComputeAgent, ComputeAgents, MoveAgent, ResetAgents)
+from hunav_msgs.srv import ComputeAgent, ComputeAgents, MoveAgent, ResetAgents
 
 from task_generator.manager.entity_manager import EntityManager
-from task_generator.manager.entity_manager.hunav_manager import HunavDynamicObstacle
+from task_generator.manager.entity_manager.hunav_manager import \
+    HunavDynamicObstacle
 from task_generator.manager.entity_manager.utils import (KnownObstacles,
                                                          ObstacleLayer,
                                                          walls_to_obstacle)
@@ -290,7 +290,7 @@ class HunavManager(EntityManager):
         self._logger.info("All services are ready")
         return True
 
-    def create_pedestrian_sdf(self, agent_config: Dict) -> str:
+    def create_pedestrian_sdf(self, agent_config: dict) -> str:
         """Create SDF description for pedestrian (from WorldGenerator)"""
         skin_type = self.SKIN_TYPES.get(
             agent_config.get(
@@ -633,14 +633,14 @@ class HunavManager(EntityManager):
         if agent_id in self._pedestrians:
             self._pedestrians[agent_id]['current_animation'] = animation
 
-    def _load_agent_config(self, agent_id: str) -> Dict[str, Any]:
+    def _load_agent_config(self, agent_id: str) -> dict[str, Any]:
         """Load configuration for a specific agent
 
         Args:
             agent_id (str): ID of the agent
 
         Returns:
-            Dict[str, Any]: Configuration dictionary
+            dict[str, Any]: Configuration dictionary
         """
         if agent_id not in self.agent_config:
             self._logger.warn(
@@ -693,11 +693,11 @@ class HunavManager(EntityManager):
         while self._semaphore_reset:
             time.sleep(0.1)
 
-        actions: List[Callable] = []
+        actions: list[Callable] = []
         self._semaphore_reset = True
 
         try:
-            to_forget: List[str] = list()
+            to_forget: list[str] = list()
 
             for obstacle_id, obstacle in self._known_obstacles.items():
                 if purge >= obstacle.layer:

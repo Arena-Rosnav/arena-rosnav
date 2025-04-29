@@ -1,8 +1,9 @@
 #! /usr/bin/env python3
 
-import time
-import sys
 import subprocess
+import sys
+import time
+
 
 def main(pid: int, *args):
     while subprocess.Popen(["ps", "-p", f"{pid}"], stdout=subprocess.DEVNULL).wait() == 0:
@@ -17,6 +18,7 @@ def main(pid: int, *args):
         start_new_session=True
     )
     sys.exit()
+
 
 if __name__ == "__main__":
     main(int(sys.argv[1]), *sys.argv[2:])

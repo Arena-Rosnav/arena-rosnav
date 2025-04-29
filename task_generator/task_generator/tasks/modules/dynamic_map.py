@@ -1,9 +1,10 @@
-from typing import Dict
 
-from rclpy.callback_groups import ReentrantCallbackGroup
-from std_msgs.msg import String
+# Assuming map_distance_server messages are available in ROS 2
+from map_distance_server.srv import GetDistanceMap
 from nav_msgs.msg import OccupancyGrid
 from rcl_interfaces.msg import SetParametersResult
+from rclpy.callback_groups import ReentrantCallbackGroup
+from std_msgs.msg import String
 
 from task_generator import NodeInterface
 from task_generator.manager.entity_manager.utils import ObstacleLayer
@@ -11,12 +12,9 @@ from task_generator.manager.world_manager.utils import WorldMap
 from task_generator.shared import rosparam_set
 from task_generator.tasks.modules import TM_Module
 
-# Assuming map_distance_server messages are available in ROS 2
-from map_distance_server.srv import GetDistanceMap
-
 # DYNAMIC MAP INTERFACE
 
-DynamicMapConfiguration = Dict[str, Dict]
+DynamicMapConfiguration = dict[str, dict]
 
 # Define MAP_GENERATOR_NS as a function if it's not available
 

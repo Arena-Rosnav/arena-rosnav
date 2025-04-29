@@ -2,7 +2,6 @@ import math
 import os
 import time
 import traceback
-import typing
 
 import arena_simulation_setup.entities.robot
 import attrs
@@ -25,7 +24,7 @@ from .robot_bridge import BridgeConfiguration
 
 class GazeboSimulator(BaseSimulator):
 
-    _walls_entities: typing.List[str]
+    _walls_entities: list[str]
 
     def _set_up_services(self):
 
@@ -411,10 +410,10 @@ class GazeboSimulator(BaseSimulator):
     def _generate_wall_sdf(
         self,
         name: str,
-        walls: typing.List[Wall],
+        walls: list[Wall],
         height: float,
         thickness: float,
-        base_position: typing.Tuple[float, float, float] = (0, 0, 0),
+        base_position: tuple[float, float, float] = (0, 0, 0),
     ) -> str:
         """
         Generate an SDF string for a wall structure based on given parameters and base position.

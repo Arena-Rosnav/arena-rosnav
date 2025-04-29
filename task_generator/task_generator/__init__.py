@@ -2,8 +2,8 @@ import typing
 
 import launch
 import rclpy
-import rclpy.node
 import rclpy.impl.rcutils_logger
+import rclpy.node
 
 from .utils.ros_params import ROSParamServer
 

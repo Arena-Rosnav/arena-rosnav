@@ -2,11 +2,13 @@
 
 
 import math
-from typing import Dict, List, Optional
+from typing import Optional
 
 import attrs
-from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle, PositionOrientation, PositionRadius
+
 from task_generator import NodeInterface
+from task_generator.shared import (DynamicObstacle, ModelWrapper, Obstacle,
+                                   PositionOrientation, PositionRadius)
 from task_generator.tasks import Props_
 
 
@@ -20,7 +22,7 @@ class ITF_Obstacle:
         cls,
         node: NodeInterface.Taskgen_T,
         props: Props_,
-        waypoints: Optional[List[PositionRadius]] = None,
+        waypoints: Optional[list[PositionRadius]] = None,
         n_waypoints: int = 2,
         **kwargs
     ) -> DynamicObstacle:
@@ -69,7 +71,7 @@ class ITF_Obstacle:
         name: str,
         model: ModelWrapper,
         position: Optional[PositionOrientation] = None,
-        extra: Optional[Dict] = None,
+        extra: Optional[dict] = None,
         **kwargs,
     ) -> Obstacle:
         """

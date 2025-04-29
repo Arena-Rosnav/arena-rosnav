@@ -1,11 +1,11 @@
+import abc
 import traceback
 import typing
-import abc
 
+import rcl_interfaces.msg
 import rclpy
 import rclpy.exceptions
 import rclpy.node
-import rcl_interfaces.msg
 
 from task_generator.shared import DefaultParameter
 
@@ -164,7 +164,7 @@ class _rosparam(typing.Generic[T]):
     def get_unsafe(
         cls,
         param_name: str,
-        default: T | typing.Type[_UNSET] = _UNSET
+        default: T | type[_UNSET] = _UNSET
     ) -> T:
         """
         Get value of parameter.
@@ -243,10 +243,10 @@ class _rosparam(typing.Generic[T]):
 class ROSParamServer(rclpy.node.Node):
 
     # this confuses my type checker
-    # ROSParam: typing.Type[_ROSParam[typing.Any]]
-    # rosparam: typing.Type[_rosparam[typing.Any]]
+    # ROSParam: type[_ROSParam[typing.Any]]
+    # rosparam: type[_rosparam[typing.Any]]
 
-    _callbacks: typing.Dict[
+    _callbacks: dict[
         str,
         typing.Set[typing.Callable[[typing.Any], bool]]
     ]

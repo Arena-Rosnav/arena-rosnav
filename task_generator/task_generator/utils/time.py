@@ -1,6 +1,6 @@
 import functools
-import attrs
 
+import attrs
 import builtin_interfaces.msg
 
 

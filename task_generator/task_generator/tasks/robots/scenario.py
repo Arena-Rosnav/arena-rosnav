@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, NamedTuple
+from typing import NamedTuple
 
 from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
@@ -41,9 +41,9 @@ class TM_Scenario(TM_Robots):
         _config (Config): The configuration object for the scenario.
     """
 
-    _config: ROSParamT[List[_RobotGoal]]
+    _config: ROSParamT[list[_RobotGoal]]
 
-    def _parse_scenario(self, scenario_file: str) -> List[_RobotGoal]:
+    def _parse_scenario(self, scenario_file: str) -> list[_RobotGoal]:
 
         scenario_path = os.path.join(
             self.node.conf.Arena.get_world_path(),
@@ -107,7 +107,7 @@ class TM_Scenario(TM_Robots):
     def __init__(self, **kwargs):
         TM_Robots.__init__(self, **kwargs)
 
-        self._config = self.node.ROSParam[List[_RobotGoal]](
+        self._config = self.node.ROSParam[list[_RobotGoal]](
             self.namespace('file'),
             'default.json',
             parse=self._parse_scenario,

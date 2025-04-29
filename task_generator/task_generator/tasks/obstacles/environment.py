@@ -3,7 +3,6 @@ import math
 import os
 import random
 from collections import defaultdict
-from typing import List
 
 import attrs
 import numpy as np
@@ -20,8 +19,8 @@ from task_generator.utils.ros_params import ROSParamT
 
 @attrs.define()
 class _ParsedConfig:
-    static: List[Obstacle]
-    dynamic: List[DynamicObstacle]
+    static: list[Obstacle]
+    dynamic: list[DynamicObstacle]
 
 
 class TM_Environment(TM_Obstacles):
@@ -380,8 +379,8 @@ class TM_Environment(TM_Obstacles):
             self._logger.info("Environment:")
             # print(environment)
 
-        static_obstacles: List[Obstacle] = []
-        dynamic_obstacles: List[DynamicObstacle] = []
+        static_obstacles: list[Obstacle] = []
+        dynamic_obstacles: list[DynamicObstacle] = []
 
         if (zones := self.node._world_manager.zones):
             rooms = [zone.polygon for zone in zones]

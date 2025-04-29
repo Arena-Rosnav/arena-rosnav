@@ -1,15 +1,16 @@
+from typing import Collection
+
 import rclpy
-import rclpy.publisher
 import rclpy.node
+import rclpy.publisher
 from geometry_msgs.msg import PoseStamped
 
 from task_generator import NodeInterface
-from task_generator.manager.entity_manager.utils import ObstacleLayer
-from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot, Wall
-from task_generator.simulators import BaseSimulator
-from typing import Collection
-
 from task_generator.constants import Constants
+from task_generator.manager.entity_manager.utils import ObstacleLayer
+from task_generator.shared import (DynamicObstacle, Namespace, Obstacle,
+                                   PositionOrientation, Robot, Wall)
+from task_generator.simulators import BaseSimulator
 from task_generator.utils.registry import Registry
 
 

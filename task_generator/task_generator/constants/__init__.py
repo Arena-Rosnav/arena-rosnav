@@ -1,6 +1,5 @@
 from enum import Enum
 import enum
-import typing
 from task_generator.shared import Namespace
 
 

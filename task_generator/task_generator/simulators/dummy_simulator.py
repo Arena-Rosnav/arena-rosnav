@@ -1,6 +1,5 @@
+from task_generator.shared import Entity, Namespace, PositionOrientation, Wall
 from task_generator.simulators import BaseSimulator
-from task_generator.shared import Entity, Namespace, PositionOrientation
-from task_generator.shared import Wall
 
 
 class DummySimulator(BaseSimulator):

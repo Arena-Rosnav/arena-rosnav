@@ -1,31 +1,26 @@
 import os
 import typing
 
+import action_msgs.msg
+import ament_index_python
 import attrs
-import numpy as np
-import scipy.spatial.transform
-
+import geometry_msgs.msg as geometry_msgs
+import launch
+import nav_msgs.msg as nav_msgs
 import rclpy
+import rclpy.client
 import rclpy.publisher
 import rclpy.timer
-import rclpy.client
-
-from task_generator import NodeInterface
-from task_generator.manager.environment_manager import EnvironmentManager
-import task_generator.utils.arena as Utils
-from task_generator.utils.geometry import angle_diff
-from task_generator.constants import Constants
-from task_generator.manager.entity_manager.utils import YAMLUtil
-from task_generator.shared import ModelType, Namespace, PositionOrientation, Robot
-
-import nav_msgs.msg as nav_msgs
-import geometry_msgs.msg as geometry_msgs
-import std_srvs.srv as std_srvs
-import action_msgs.msg
+import scipy.spatial.transform
 from nav2_msgs.srv import ClearCostmapAroundRobot
 
-import launch
-import ament_index_python
+import task_generator.utils.arena as Utils
+from task_generator import NodeInterface
+from task_generator.constants import Constants
+from task_generator.manager.entity_manager.utils import YAMLUtil
+from task_generator.manager.environment_manager import EnvironmentManager
+from task_generator.shared import (ModelType, Namespace, PositionOrientation,
+                                   Robot)
 
 
 class RobotManager(NodeInterface):

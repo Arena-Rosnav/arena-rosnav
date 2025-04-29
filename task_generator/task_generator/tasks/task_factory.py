@@ -2,41 +2,41 @@ import os
 import typing
 
 import rclpy
+import rosgraph_msgs.msg as rosgraph_msgs
+import std_msgs.msg as std_msgs
 
+import task_generator.utils.arena as Utils
 from task_generator import NodeInterface
 from task_generator.constants import Constants
 from task_generator.manager.environment_manager import EnvironmentManager
-from task_generator.manager.robot_manager.robots_manager_ros import RobotsManager
+from task_generator.manager.robot_manager.robots_manager_ros import \
+    RobotsManager
 from task_generator.manager.world_manager.world_manager_ros import WorldManager
-from task_generator.shared import DefaultParameter, Namespace, PositionOrientation, rosparam_set
+from task_generator.shared import (DefaultParameter, Namespace,
+                                   PositionOrientation, rosparam_set)
 from task_generator.tasks import Namespaced, Task
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.robots import TM_Robots
-
-import std_msgs.msg as std_msgs
-import rosgraph_msgs.msg as rosgraph_msgs
-# import training.srv as training_srvs
-
 from task_generator.utils import ModelLoader
 
-import task_generator.utils.arena as Utils
+# import training.srv as training_srvs
 
 
 class TaskFactory(Namespaced):
-    registry_obstacles: typing.Dict[Constants.TaskMode.TM_Obstacles,
-                                    typing.Callable[[], typing.Type[TM_Obstacles]]] = {}
-    registry_robots: typing.Dict[Constants.TaskMode.TM_Robots,
-                                 typing.Callable[[], typing.Type[TM_Robots]]] = {}
-    registry_module: typing.Dict[Constants.TaskMode.TM_Module,
-                                 typing.Callable[[], typing.Type[TM_Module]]] = {}
+    registry_obstacles: dict[Constants.TaskMode.TM_Obstacles,
+                             typing.Callable[[], type[TM_Obstacles]]] = {}
+    registry_robots: dict[Constants.TaskMode.TM_Robots,
+                          typing.Callable[[], type[TM_Robots]]] = {}
+    registry_module: dict[Constants.TaskMode.TM_Module,
+                          typing.Callable[[], type[TM_Module]]] = {}
 
     _namespace: typing.ClassVar[Namespace] = Namespaced.namespace('task')
 
     @classmethod
     def register_obstacles(cls, name: Constants.TaskMode.TM_Obstacles):
         def inner_wrapper(
-                loader: typing.Callable[[], typing.Type[TM_Obstacles]]):
+                loader: typing.Callable[[], type[TM_Obstacles]]):
             assert (
                 name not in cls.registry_obstacles
             ), f"TaskMode '{name}' for obstacles already exists!"
@@ -53,7 +53,7 @@ class TaskFactory(Namespaced):
 
     @classmethod
     def register_robots(cls, name: Constants.TaskMode.TM_Robots):
-        def inner_wrapper(loader: typing.Callable[[], typing.Type[TM_Robots]]):
+        def inner_wrapper(loader: typing.Callable[[], type[TM_Robots]]):
             assert (
                 name not in cls.registry_obstacles
             ), f"TaskMode '{name}' for robots already exists!"
@@ -70,7 +70,7 @@ class TaskFactory(Namespaced):
 
     @classmethod
     def register_module(cls, name: Constants.TaskMode.TM_Module):
-        def inner_wrapper(loader: typing.Callable[[], typing.Type[TM_Module]]):
+        def inner_wrapper(loader: typing.Callable[[], type[TM_Module]]):
             assert (
                 name not in cls.registry_obstacles
             ), f"TaskMode '{name}' for module already exists!"
@@ -86,8 +86,8 @@ class TaskFactory(Namespaced):
         return inner_wrapper
 
     @classmethod
-    def combine(cls, modules: typing.List[Constants.TaskMode.TM_Module] = [
-    ]) -> typing.Type[Task]:
+    def combine(cls, modules: list[Constants.TaskMode.TM_Module] = [
+    ]) -> type[Task]:
         for module in modules:
             assert (
                 module in cls.registry_module
@@ -128,7 +128,7 @@ class TaskFactory(Namespaced):
                     robot_managers (dict[, strRobotManager]): The dict of robot managers for the task.
                     world_manager (WorldManager): The world manager for the task.
                     namespace (str, optional): The namespace for the task. Defaults to "".
-                    *args: Variable length argument typing.List.
+                    *args: Variable length argument list.
                     **kwargs: Arbitrary keyword arguments.
                 """
                 NodeInterface.__init__(self)

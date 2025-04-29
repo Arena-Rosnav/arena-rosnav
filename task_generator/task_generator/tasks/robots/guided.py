@@ -1,4 +1,3 @@
-from typing import Dict, List
 from task_generator.shared import PositionOrientation
 from task_generator.tasks.robots.random import TM_Random
 
@@ -11,8 +10,8 @@ class TM_Guided(TM_Random):
 
     Attributes:
         PARAM_WAYPOINTS (str): The parameter name for storing the guided waypoints.
-        _waypoints (List[PositionOrientation]): The list of waypoints for the guided task.
-        _waypoint_states (Dict[str, int]): The dictionary storing the current waypoint state for each robot.
+        _waypoints (list[PositionOrientation]): The list of waypoints for the guided task.
+        _waypoint_states (dict[str, int]): The dictionary storing the current waypoint state for each robot.
 
     Methods:
         __init__(self, **kwargs): Initializes the TM_Guided object.
@@ -25,8 +24,8 @@ class TM_Guided(TM_Random):
 
     PARAM_WAYPOINTS = "guided_waypoints"
 
-    _waypoints: List[PositionOrientation]
-    _waypoint_states: Dict[str, int]
+    _waypoints: list[PositionOrientation]
+    _waypoint_states: dict[str, int]
 
     def reset(self, **kwargs):
         """
@@ -84,7 +83,7 @@ class TM_Guided(TM_Random):
             None
         """
         self._waypoints.append(position)
-        self.node.rosparam[List[List[float]]].set(
+        self.node.rosparam[list[list[float]]].set(
             self.PARAM_WAYPOINTS, [
                 [wp.x, wp.y, wp.orientation]
                 for wp in
@@ -122,7 +121,7 @@ class TM_Guided(TM_Random):
             robot.reset(robot.start_pos, robot.start_pos)
 
         self._waypoints = []
-        self.node.rosparam[List[List[float]]].set(self.PARAM_WAYPOINTS, [])
+        self.node.rosparam[list[list[float]]].set(self.PARAM_WAYPOINTS, [])
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

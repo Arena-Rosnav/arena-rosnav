@@ -1,7 +1,10 @@
 import typing
+
 from task_generator.manager.entity_manager import EntityManager
-from task_generator.manager.entity_manager.utils import KnownObstacles, ObstacleLayer
-from task_generator.shared import DynamicObstacle, Namespace, Obstacle, PositionOrientation, Robot, Wall
+from task_generator.manager.entity_manager.utils import (KnownObstacles,
+                                                         ObstacleLayer)
+from task_generator.shared import (DynamicObstacle, Namespace, Obstacle,
+                                   PositionOrientation, Robot, Wall)
 from task_generator.simulators import BaseSimulator
 
 

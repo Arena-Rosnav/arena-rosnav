@@ -51,7 +51,7 @@ class WorldManagerROS(WorldManager):
     _cli: rclpy.client.Client
     _first_world: bool
     _world_name: str
-    _callbacks: typing.List[typing.Callable[[], None]]
+    _callbacks: list[typing.Callable[[], None]]
 
     @classmethod
     def _load_walls(cls, yaml_path: str) -> WorldWalls | None:

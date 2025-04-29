@@ -4,15 +4,14 @@
 
 import itertools
 import os
-from typing import Callable, Collection, Dict, List, Optional, Tuple
 import typing
+from typing import Callable, Collection, Optional
 
 import attrs
-import shapely
-
 import nav_msgs.msg
 import numpy as np
 import scipy.interpolate
+import shapely
 
 import task_generator.utils.arena as Utils
 from task_generator.shared import (Obstacle, Position, PositionOrientation,
@@ -25,13 +24,13 @@ from task_generator.utils.time import Time
 T = typing.TypeVar('T')
 
 
-def list_from_any(v: T | List[T]) -> List[T]:
+def list_from_any(v: T | list[T]) -> list[T]:
     if not isinstance(v, list):
         return list((v,))
     return v
 
 
-def check_list(t: typing.Type[T], l: List[T]) -> List[T]:
+def check_list(t: type[T], l: list[T]) -> list[T]:
     """
     runtime check list for type
     """
@@ -49,11 +48,11 @@ WorldObstacles = Collection[Obstacle]
 @attrs.frozen
 class Zone:
     label: str
-    category: List[str]
+    category: list[str]
     polygon: shapely.Polygon
 
     @classmethod
-    def parse(cls, obj: Dict) -> "Zone":
+    def parse(cls, obj: dict) -> "Zone":
         return cls(
             label=obj.get('label', ''),
             category=[str(v) for v in list_from_any(obj.get('category', []))],
@@ -71,7 +70,7 @@ class WorldObstacleConfiguration:
     """
     position: PositionOrientation
     model_name: str
-    extra: Dict
+    extra: dict
 
     @classmethod
     def parse(cls, obj: dict) -> "WorldObstacleConfiguration":
@@ -151,7 +150,7 @@ class WorldOccupancy:
     def clear(self):
         self.grid.fill(WorldOccupancy.EMPTY)
 
-    def occupy(self, lo: Tuple[int, int], hi: Tuple[int, int]):
+    def occupy(self, lo: tuple[int, int], hi: tuple[int, int]):
         ly, hy = np.clip(np.array([lo[1], hi[1]]), 0, self._grid.shape[0] - 1)
         lx, hx = np.clip(np.array([lo[0], hi[0]]), 0, self._grid.shape[1] - 1)
         self._grid[
@@ -195,7 +194,7 @@ class WorldLayers:
         return self._combined.grid
 
     # obstacle interface
-    def obstacle_occupy(self, lo: Tuple[int, int], hi: Tuple[int, int]):
+    def obstacle_occupy(self, lo: tuple[int, int], hi: tuple[int, int]):
         self._obstacle.occupy(lo, hi)
         self._combined.occupy(lo, hi)
 
@@ -204,7 +203,7 @@ class WorldLayers:
         self._invalidate_combined_cache()
 
     # forbidden interface
-    def forbidden_occupy(self, lo: Tuple[int, int], hi: Tuple[int, int]):
+    def forbidden_occupy(self, lo: tuple[int, int], hi: tuple[int, int]):
         self._forbidden.occupy(lo, hi)
         self._combined.occupy(lo, hi)
 
@@ -225,7 +224,7 @@ class WorldLayers:
             self._base._forbidden = self._grid
             self._base._invalidate_combined_cache()
 
-        def occupy(self, lo: Tuple[int, int], hi: Tuple[int, int]):
+        def occupy(self, lo: tuple[int, int], hi: tuple[int, int]):
             self._grid.occupy(lo, hi)
 
         @property
@@ -270,21 +269,21 @@ class WorldMap:
         )
 
     @property
-    def shape(self) -> Tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         return self.occupancy._walls.grid.shape
 
-    def tf_pos2grid(self, position: Position) -> Tuple[int, int]:
+    def tf_pos2grid(self, position: Position) -> tuple[int, int]:
         return np.round((position.y - self.origin.y) / self.resolution), np.round(
             self.shape[1] - (position.x - self.origin.x) / self.resolution)
 
-    def tf_grid2pos(self, grid_pos: Tuple[float, float]) -> Position:
+    def tf_grid2pos(self, grid_pos: tuple[float, float]) -> Position:
         return Position(
             x=grid_pos[1] * self.resolution + self.origin.y,
             y=(grid_pos[0]) * self.resolution + self.origin.x
         )
 
     def tf_posr2rect(
-            self, posr: PositionRadius) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+            self, posr: PositionRadius) -> tuple[tuple[int, int], tuple[int, int]]:
         lo = self.tf_pos2grid(
             Position(
                 x=posr.x - posr.radius,
@@ -309,15 +308,15 @@ class World:
 # END TYPES
 
 
-def RLE_1D(grid: np.ndarray) -> List[List[int]]:
+def RLE_1D(grid: np.ndarray) -> list[list[int]]:
     """
     run-length encode walls in 1D (occupancy grid -> run_length[segments][rows])
     """
-    res: List[List[int]] = list()
+    res: list[list[int]] = list()
     for major in grid:
         run: int = 1
         last: int = major[0]
-        subres: List[int] = [0]
+        subres: list[int] = [0]
         for minor in major[1:]:
             if minor == last:
                 run += 1
@@ -330,7 +329,7 @@ def RLE_1D(grid: np.ndarray) -> List[List[int]]:
     return res
 
 
-class _WallLines(Dict[float, List[Tuple[float, float]]]):
+class _WallLines(dict[float, list[tuple[float, float]]]):
     """
     Helper class for efficiently merging collinear line segments
     """
@@ -409,7 +408,7 @@ def RLE_2D(grid: np.ndarray) -> WorldWalls:
 
 def occupancy_to_walls(
     occupancy_grid: np.ndarray,
-    transform: Optional[Callable[[Tuple[float, float]], Position]] = None
+    transform: Optional[Callable[[tuple[float, float]], Position]] = None
 ) -> WorldWalls:
 
     walls = RLE_2D(grid=WorldOccupancy.not_full(occupancy_grid))

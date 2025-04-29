@@ -1,6 +1,5 @@
 import json
 import os
-from typing import List
 
 import attrs
 
@@ -12,8 +11,8 @@ from task_generator.utils.ros_params import ROSParamT
 
 @attrs.define()
 class _ParsedConfig:
-    static: List[Obstacle]
-    dynamic: List[DynamicObstacle]
+    static: list[Obstacle]
+    dynamic: list[DynamicObstacle]
 
 
 class TM_Scenario(TM_Obstacles):

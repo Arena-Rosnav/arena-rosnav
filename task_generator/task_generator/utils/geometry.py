@@ -1,10 +1,10 @@
 import collections
-import typing
+
 import numpy as np
 
 
 def quaternion_from_euler(roll: float, pitch: float, yaw: float,
-                          **kwargs) -> typing.Tuple[float, float, float, float]:
+                          **kwargs) -> tuple[float, float, float, float]:
     """
     https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Source_code
     """
@@ -36,7 +36,7 @@ def euler_from_quaternion(
     z: float,
     w: float,
     **kwargs
-) -> typing.Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """
         https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Source_code_2
     """

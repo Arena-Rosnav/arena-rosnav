@@ -4,9 +4,7 @@ import re
 import typing
 
 import attrs
-
 import rclpy
-import rclpy.parameter
 import yaml
 from ament_index_python import get_package_share_directory
 
@@ -238,6 +236,6 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
 
         self._robot_configurations = self.node.ROSParam[_RobotDiff](
             'robot',
-            type_=rclpy.parameter.Parameter.Type.STRING,
+            type_=rclpy.Parameter.Type.STRING,
             parse=self._parse_robot_configurations,
         )
