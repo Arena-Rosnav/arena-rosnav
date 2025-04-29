@@ -174,19 +174,18 @@ class GazeboSimulator(BaseSimulator):
                     self._logger.error(
                         f"Failed to set initial pose for {name} after {max_attempts} attempts"
                     )
-
-                quat = quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="xyzs")
-                qx, qy, qz, qw = quat
-                transform_pub_node = launch_ros.actions.Node(
-                    package="tf2_ros",
-                    executable="static_transform_publisher",
-                    name="map_to_odomframe_publisher",
-                    arguments=[str(entity.position.x), str(entity.position.y), "0", str(qx), str(qy), str(qz), str(qw), "map", entity.frame + "odom"],
-                    parameters=[{'use_sim_time': True}],
-                )
-                self.node.do_launch(transform_pub_node)
-                time.sleep(1)
-                self._logger.info("Destroying the static_transform_publisher node after 3 seconds.")
+                # quat = quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="xyzs")
+                # qx, qy, qz, qw = quat
+                # transform_pub_node = launch_ros.actions.Node(
+                #     package="tf2_ros",
+                #     executable="static_transform_publisher",
+                #     name="map_to_odomframe_publisher",
+                #     arguments=[str(entity.position.x), str(entity.position.y), "0", str(qx), str(qy), str(qz), str(qw), "map", entity.frame + "odom"],
+                #     parameters=[{'use_sim_time': True}],
+                # )
+                # self.node.do_launch(transform_pub_node)
+                # time.sleep(1)
+                # self.node.get_logger().info("Destroying the static_transform_publisher node after 3 seconds.")
                 # transform_pub_node.destroy_node() # won't work like this, a topic/service to trigger self-destruction
 
             return result.success
@@ -519,19 +518,23 @@ class GazeboSimulator(BaseSimulator):
                 parameters=[{'use_sim_time': True}],
             )
         )
-        # launch_description.add_action(
-        #     launch_ros.actions.Node(
-        #         package='robot_state_publisher',
-        #         executable='robot_state_publisher',
-        #         name='robot_state_publisher',
-        #         output='screen',
-        #         parameters=[
-        #             {'use_sim_time': True},
-        #             {'robot_description': description},
-        #             {'frame_prefix': robot.frame}
-        #         ],
-        #     )
-        # )
+        launch_description.add_action(
+            launch_ros.actions.Node(
+                package='robot_state_publisher',
+                executable='robot_state_publisher',
+                name='robot_state_publisher',
+                output='screen',
+                parameters=[
+                    {'use_sim_time': True},
+                    {'robot_description': description},
+                    {'frame_prefix': robot.frame}
+                ],
+                remappings=[
+                    ('/tf', 'tf'),
+                    ('/tf_static', 'tf_static')
+                ]
+            )
+        )
 
         # launch_description.add_action(
         #     launch_ros.actions.Node(

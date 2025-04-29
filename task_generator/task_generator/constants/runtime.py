@@ -2,12 +2,12 @@ import os
 import typing
 
 import numpy as np
+import rclpy
+
 from task_generator.utils.ros_params import ROSParamServer
 
-from . import Constants
 from ..utils.arena import get_simulation_setup_path
-
-import rclpy
+from . import Constants
 
 
 def Configuration(server: ROSParamServer):

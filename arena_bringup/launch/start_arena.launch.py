@@ -2,7 +2,6 @@ import os
 import typing
 
 import launch
-import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
 
 from arena_bringup.actions import IsolatedGroupAction

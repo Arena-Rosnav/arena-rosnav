@@ -1,7 +1,7 @@
 
 import collections.abc
 import importlib
-from typing import List, Sequence, Text
+from typing import Sequence, Text
 
 from launch import LaunchContext, SomeSubstitutionsType, Substitution
 from launch.utilities import (ensure_argument_type,
@@ -68,12 +68,12 @@ class PythonExpression(Substitution):
         return cls, kwargs
 
     @property
-    def expression(self) -> List[Substitution]:
+    def expression(self) -> list[Substitution]:
         """Getter for expression."""
         return self.__expression
 
     @property
-    def python_modules(self) -> List[Substitution]:
+    def python_modules(self) -> list[Substitution]:
         """Getter for python modules."""
         return self.__python_modules
 

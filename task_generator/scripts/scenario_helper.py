@@ -1,10 +1,9 @@
 #! /usr/bin/env python3
 
-from rosros import rospify as rospy
 import nav_msgs.srv as nav_msgs_srv
 import numpy as np
-
 from matplotlib import pyplot as plt
+from rosros import rospify as rospy
 
 
 def on_click(event, map):

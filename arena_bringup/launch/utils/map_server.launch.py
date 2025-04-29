@@ -1,20 +1,5 @@
-import os
 import launch
-import launch.actions
-import launch.launch_description_sources
 import launch_ros.actions
-from ament_index_python.packages import get_package_share_directory
-import os
-from launch import LaunchDescription
-from launch.actions import (GroupAction, IncludeLaunchDescription)
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import PathJoinSubstitution
-
-from launch_ros.actions import PushRosNamespace, SetRemap, Node
-from launch_ros.substitutions import FindPackageShare
-
-
-from arena_bringup.substitutions import LaunchArgument, YAMLFileSubstitution, YAMLReplaceSubstitution, YAMLMergeSubstitution, YAMLRetrieveSubstitution
 
 
 def generate_launch_description():
