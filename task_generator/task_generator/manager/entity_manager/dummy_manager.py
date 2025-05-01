@@ -7,13 +7,13 @@ class DummyEntityManager(EntityManager):
     def _spawn_obstacle_impl(
         self,
         obstacle,
-    ) -> Obstacle:
+    ) -> Obstacle | None:
         return obstacle
 
     def _spawn_dynamic_obstacle_impl(
         self,
         obstacle,
-    ) -> DynamicObstacle:
+    ) -> DynamicObstacle | None:
         return obstacle
 
     def _remove_obstacles_impl(
