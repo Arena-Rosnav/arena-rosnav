@@ -95,7 +95,7 @@ class _PedestrianHelper:
         sdf = f"""<?xml version="1.0" ?>
         <sdf version="1.9">
             <actor name="{agent_config.name}_FFRTOIESO">
-                <pose>{agent_config.position.x} {agent_config.position.y} {cls._HEIGHTS.get(agent_config.skin, 1.0)} 0 0 {agent_config.yaw}</pose>
+                <pose>{agent_config.init_pose.x} {agent_config.init_pose.y} {cls._HEIGHTS.get(agent_config.skin, 1.0)} 0 0 {agent_config.yaw}</pose>
 
                 <skin>
                     <filename>{mesh_path}</filename>
@@ -273,7 +273,7 @@ class HunavManager(DummyEntityManager):
             # Fallback: Use fixed ID number based on number of hunav obstacles
             unique_id = len(self._agents_container.agents) + 1
 
-        hunav_obstacle = HunavDynamicObstacle.parse(attrs.asdict(obstacle, recurse=False), obstacle.model)
+        hunav_obstacle = HunavDynamicObstacle.from_dynamic_obstacle(obstacle)
         # override the ID from the config_file with a dynamic and unique ID defined in runtime
         hunav_obstacle = attrs.evolve(hunav_obstacle, id=unique_id)
         self._logger.info(f"HUNAVOBSTACLEREGISTER {hunav_obstacle}")
@@ -296,10 +296,10 @@ class HunavManager(DummyEntityManager):
 
             # Set position
             agent_msg.position = geometry_msgs.msg.Pose()
-            agent_msg.position.position.x = hunav_obstacle.position.x
-            agent_msg.position.position.y = hunav_obstacle.position.y
+            agent_msg.position.position.x = hunav_obstacle.init_pose.x
+            agent_msg.position.position.y = hunav_obstacle.init_pose.y
             agent_msg.position.position.z = 1.250000
-            agent_msg.yaw = hunav_obstacle.position.orientation
+            agent_msg.yaw = hunav_obstacle.yaw
 
             # Set behavior
             agent_msg.behavior = AgentBehavior()
@@ -331,7 +331,7 @@ class HunavManager(DummyEntityManager):
                     goal.position.y = y
                     agent_msg.goals.append(goal)
             else:
-                agent_msg.goals = hunav_obstacle.goals
+                agent_msg.goals = hunav_obstacle.goals.as_poses()
 
             # Add wall obstacles
             agent_msg.closest_obs.extend(self._wall_points)
@@ -393,7 +393,7 @@ class HunavManager(DummyEntityManager):
 
             if response:
 
-                # Add agents to the container for the get_agents service callback 
+                # Add agents to the container for the get_agents service callback
                 self._agents_container.agents.append(agent_msg)
                 self._logger.warn(f"Added agent {agent_msg.name} to container. Total agents: {len(self._agents_container.agents)}")
                 # Store in pedestrians dictionary
