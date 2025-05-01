@@ -266,7 +266,16 @@ class HunavManager(DummyEntityManager):
 
     def _spawn_dynamic_obstacle_impl(self, obstacle: DynamicObstacle) -> DynamicObstacle | None:
         """Register and spawn a HuNav agent"""
+        try:
+            agent_number = int(obstacle.name.split('_')[-1])
+            unique_id = agent_number  # use number as ID
+        except (ValueError, IndexError):
+            # Fallback: Use fixed ID number based on number of hunav obstacles
+            unique_id = len(self._agents_container.agents) + 1
+
         hunav_obstacle = HunavDynamicObstacle.parse(attrs.asdict(obstacle, recurse=False), obstacle.model)
+        # override the ID from the config_file with a dynamic and unique ID defined in runtime
+        hunav_obstacle = attrs.evolve(hunav_obstacle, id=unique_id)
         self._logger.info(f"HUNAVOBSTACLEREGISTER {hunav_obstacle}")
         try:
             entity_name = hunav_obstacle.name
@@ -274,7 +283,7 @@ class HunavManager(DummyEntityManager):
 
             # Create agent message from HunavDynamicObstacle
             agent_msg = Agent()
-            agent_msg.id = hunav_obstacle.id
+            agent_msg.id = unique_id
             agent_msg.name = hunav_obstacle.name
             agent_msg.type = hunav_obstacle.type
             agent_msg.skin = hunav_obstacle.skin
