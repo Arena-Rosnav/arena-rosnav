@@ -94,7 +94,7 @@ class HunavDynamicObstacle:
             )
 
     id: int
-    type: int
+    type: int = attrs.field(converter=lambda v: v if isinstance(v, int) else 1)
     skin: int
     name: str
     group_id: int
