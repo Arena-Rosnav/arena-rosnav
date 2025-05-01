@@ -380,9 +380,13 @@ class HunavManager(DummyEntityManager):
             request.current_agents = peds
 
             response = self._compute_agents_client.call(request)
-            # self._logger.warn(f"############################  response (registering): { response}")
+            self._logger.warn(f"############################  response (registering): { response}")
 
             if response:
+
+                # Add agents to the container for the get_agents service callback 
+                self._agents_container.agents.append(agent_msg)
+                self._logger.warn(f"Added agent {agent_msg.name} to container. Total agents: {len(self._agents_container.agents)}")
                 # Store in pedestrians dictionary
                 self._pedestrians[agent_msg.id] = {
                     'last_update': time.time(),
@@ -392,16 +396,16 @@ class HunavManager(DummyEntityManager):
                 }
                 self._logger.info(f"self._pedestrians{self._pedestrians}")
 
-                # Create and spawn visual model
-                sdf = _PedestrianHelper.create_sdf(hunav_obstacle)
-                new_obstacle = attrs.evolve(
-                    obstacle,
-                    model=obstacle.model.override(
-                        ModelType.SDF,
-                        lambda model: model.replace(description=sdf), noload=True)
-                )
+            #     # Create and spawn visual model
+            #     sdf = _PedestrianHelper.create_sdf(hunav_obstacle)
+            #     new_obstacle = attrs.evolve(
+            #         obstacle,
+            #         model=obstacle.model.override(
+            #             ModelType.SDF,
+            #             lambda model: model.replace(description=sdf), noload=True)
+            #     )
 
-                return new_obstacle
+            #     return new_obstacle
 
             return None
 
