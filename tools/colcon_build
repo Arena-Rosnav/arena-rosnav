@@ -2,7 +2,7 @@
 
 . "${ARENA_WS_DIR:-.}/src/arena/arena-rosnav/tools/source.bash" || return $?
 
-SKIP_OLD=${SKIP_OLD:-1}
+_SKIP_OLD=${SKIP_OLD:-$([[ "${*}" == *"--packages-"* ]] || echo 1 )}
 
 BUILD_BASE='build'
 INSTALL_BASE='install'
@@ -12,9 +12,7 @@ BASE_PATHS=(
 
 OLD_PACKAGES=()
 
-
-if [ "${SKIP_OLD}" = 1 ]; then
-
+if [ "${_SKIP_OLD}" = 1 ]; then
     function recursive_mtime(){
         find "$1" \! -type l -printf "%T@\n"  | sort | tail -1 | cut -d. -f1
     }
@@ -34,6 +32,7 @@ if [ "${SKIP_OLD}" = 1 ]; then
 
     done < <(colcon list --base-paths "${BASE_PATHS[*]}");
 fi
+unset _SKIP_OLD
 
 ARGS=(
     "--build-base ${BUILD_BASE}"
@@ -41,7 +40,7 @@ ARGS=(
     "--base-paths ${BASE_PATHS[*]}"
     "--symlink-install"
     "--continue-on-error"
-    "--packages-skip ${OLD_PACKAGES[*]} qt_gui_core rqt qt_gui_cpp rqt_gui_cpp"
+    "--packages-skip ${OLD_PACKAGES[*]}"
     "--cmake-args '-DPython3_ROOT_DIR=$(cd "${ARENA_WS_DIR}/src/arena/arena-rosnav" && poetry env info -p) -DBUILD_TESTING=OFF'"
 )
 
