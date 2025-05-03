@@ -1,10 +1,11 @@
 import os
 import random
 import xml.etree.ElementTree as ET
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, LogInfo
-from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
 
 
 def generate_random_position():

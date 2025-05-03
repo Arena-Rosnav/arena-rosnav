@@ -1,8 +1,7 @@
-from typing import List, Tuple
 from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.tasks import TaskMode
 
-Obstacles = Tuple[List[Obstacle], List[DynamicObstacle]]
+Obstacles = tuple[list[Obstacle], list[DynamicObstacle]]
 
 
 class TM_Obstacles(TaskMode):

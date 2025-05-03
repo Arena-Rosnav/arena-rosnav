@@ -5,13 +5,12 @@ import re
 import tempfile
 import typing
 
-import yaml
 import launch
 import launch.actions
 import launch.substitutions
-import launch.conditions
 import launch.utilities
 import launch_ros
+import yaml
 
 
 class NoAliasDumper(yaml.Dumper):
@@ -79,6 +78,10 @@ class SelectAction(launch.Action):
         self._actions.setdefault(value, []).append(
             action
         )
+
+    @property
+    def keys(self) -> list[str]:
+        return list(self._actions.keys())
 
     def execute(self, context: launch.LaunchContext):
         key = launch.utilities.perform_substitutions(context, self._selector)

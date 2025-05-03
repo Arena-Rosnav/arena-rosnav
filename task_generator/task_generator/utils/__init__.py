@@ -1,6 +1,6 @@
 import heapq
 import itertools
-from typing import Callable, Iterator, List, Tuple
+from typing import Callable, Iterator
 
 from task_generator.shared import Model, ModelType, ModelWrapper  # noqa
 
@@ -9,7 +9,7 @@ from .models import ModelLoader  # noqa
 
 class NamespaceIndexer:
 
-    _freed: List[int]
+    _freed: list[int]
     _gen: Iterator[int]
     _namespace: str
     _sep: str
@@ -32,6 +32,6 @@ class NamespaceIndexer:
     def format(self, index: int) -> str:
         return f"{self._namespace}{self._sep}{index}"
 
-    def __next__(self) -> Tuple[str, Callable[[], None]]:
+    def __next__(self) -> tuple[str, Callable[[], None]]:
         index = self.get()
         return self.format(index), lambda: self.free(index)

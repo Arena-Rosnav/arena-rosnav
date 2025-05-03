@@ -3,7 +3,6 @@ import math
 import os
 import random
 from collections import defaultdict
-from typing import List
 
 import attrs
 import numpy as np
@@ -15,18 +14,18 @@ from task_generator.shared import (DynamicObstacle, Obstacle,
                                    PositionOrientation)
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.utils.arena import get_simulation_setup_path
-from task_generator.utils.ros_params import ROSParam
+from task_generator.utils.ros_params import ROSParamT
 
 
 @attrs.define()
 class _ParsedConfig:
-    static: List[Obstacle]
-    dynamic: List[DynamicObstacle]
+    static: list[Obstacle]
+    dynamic: list[DynamicObstacle]
 
 
 class TM_Environment(TM_Obstacles):
 
-    _config: ROSParam[_ParsedConfig]
+    _config: ROSParamT[_ParsedConfig]
 
     def calculate_world_bounds(self):
         all_walls = list(self._PROPS.world_manager.walls) + list(self._PROPS.world_manager.detected_walls)
@@ -377,11 +376,11 @@ class TM_Environment(TM_Obstacles):
 
         with open(environment_path) as f:
             environment = yaml.safe_load(f)
-            self.node.get_logger().info("Environment:")
+            self._logger.info("Environment:")
             # print(environment)
 
-        static_obstacles: List[Obstacle] = []
-        dynamic_obstacles: List[DynamicObstacle] = []
+        static_obstacles: list[Obstacle] = []
+        dynamic_obstacles: list[DynamicObstacle] = []
 
         if (zones := self.node._world_manager.zones):
             rooms = [zone.polygon for zone in zones]

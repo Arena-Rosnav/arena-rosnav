@@ -1,16 +1,16 @@
-from typing import Any, Callable, Collection, Iterator
-
 import itertools
 import typing
+from typing import Any, Callable, Collection, Iterator
 
 import attrs
 
+from task_generator import NodeInterface
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.world_manager.utils import World
-from task_generator.shared import DynamicObstacle, Entity, Obstacle, Position, Robot, Wall
+from task_generator.shared import (DynamicObstacle, Entity, Obstacle, Position,
+                                   Robot, Wall)
 from task_generator.simulators import BaseSimulator
-from task_generator import NodeInterface
 
 EntityPropsT = typing.TypeVar('EntityPropsT', bound=Entity)
 PositionT = typing.TypeVar('PositionT', bound=Position)
@@ -100,7 +100,7 @@ class EnvironmentManager(NodeInterface, _Realizer):
         self._simulator = simulator
         self._entity_manager = entity_manager
 
-        ref_x, ref_y = self.node.rosparam[typing.Tuple[float, float]].get('reference', [0.0, 0.0])
+        ref_x, ref_y = self.node.rosparam[tuple[float, float]].get('reference', [0.0, 0.0])
         prefix = self.node.rosparam[str].get('prefix', '')
         self._config = self._Configuration(
             x=ref_x,

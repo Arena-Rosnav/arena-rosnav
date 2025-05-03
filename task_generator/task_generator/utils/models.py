@@ -2,18 +2,18 @@ import abc
 import functools
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
 import typing
 import xml.etree.ElementTree as ET
-import re
-from typing import Collection, Dict, Optional, Set, Tuple, Type
+from typing import Collection, Optional, Set, Type
 
 import attrs
 
-from task_generator.shared import Model, ModelType, ModelWrapper
 import task_generator.utils.arena as Utils
+from task_generator.shared import Model, ModelType, ModelWrapper
 
 
 class _ModelLoader(abc.ABC):
@@ -35,7 +35,7 @@ class _ModelLoader(abc.ABC):
 
 class ModelLoader:
 
-    _registry: Dict[ModelType, Type[_ModelLoader]] = {}
+    _registry: dict[ModelType, Type[_ModelLoader]] = {}
     _models: Set[str]
 
     @classmethod
@@ -45,7 +45,7 @@ class ModelLoader:
         return inner
 
     _model_dir: str
-    _cache: Dict[Tuple[ModelType, str], Model]
+    _cache: dict[tuple[ModelType, str], Model]
 
     def __init__(self, model_dir: str):
         self._model_dir = model_dir

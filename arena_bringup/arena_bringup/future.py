@@ -1,14 +1,16 @@
-# https://github.com/ros2/launch/blob/09403fcebedb68dd259e9ab6b35bd8712b6596ec/launch/launch/substitutions/python_expression.py
 
 import collections.abc
-from typing import Sequence, List, Text
 import importlib
+from typing import Sequence, Text
 
-from launch import Substitution, SomeSubstitutionsType, LaunchContext
-from launch.utilities import ensure_argument_type, normalize_to_list_of_substitutions, perform_substitutions
+from launch import LaunchContext, SomeSubstitutionsType, Substitution
+from launch.utilities import (ensure_argument_type,
+                              normalize_to_list_of_substitutions,
+                              perform_substitutions)
 from launch.utilities.type_utils import perform_typed_substitution
 
 
+# https://github.com/ros2/launch/blob/09403fcebedb68dd259e9ab6b35bd8712b6596ec/launch/launch/substitutions/python_expression.py
 class PythonExpression(Substitution):
     """
     Substitution that can access contextual local variables.
@@ -66,12 +68,12 @@ class PythonExpression(Substitution):
         return cls, kwargs
 
     @property
-    def expression(self) -> List[Substitution]:
+    def expression(self) -> list[Substitution]:
         """Getter for expression."""
         return self.__expression
 
     @property
-    def python_modules(self) -> List[Substitution]:
+    def python_modules(self) -> list[Substitution]:
         """Getter for python modules."""
         return self.__python_modules
 

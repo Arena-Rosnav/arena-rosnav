@@ -1,6 +1,5 @@
+from task_generator.shared import Entity, Namespace, PositionOrientation, Wall
 from task_generator.simulators import BaseSimulator
-from task_generator.shared import Entity, Namespace, PositionOrientation
-from task_generator.shared import Wall
 
 
 class DummySimulator(BaseSimulator):
@@ -10,7 +9,6 @@ class DummySimulator(BaseSimulator):
 
     def __init__(self, namespace: Namespace):
         super().__init__(namespace)
-        self._logger = self.node.get_logger().get_child('dummysim')
 
     def before_reset_task(self):
         self._logger.debug("pausing")

@@ -1,18 +1,24 @@
-import launch
 import os
+
+import launch
 from ament_index_python.packages import get_package_share_directory
 
 from arena_bringup.substitutions import LaunchArgument, SelectAction
 
 
 def generate_launch_description():
-    # Current path to the workspace
-    entity_manager = LaunchArgument(
-        name='entity_manager',
-        choices=['dummy', 'hunav','isaac'],
+
+    launch_entity_manager = SelectAction(launch.substitutions.LaunchConfiguration('entity_manager'))
+
+    launch_entity_manager.add(
+        'dummy',
+        launch.actions.GroupAction([])
     )
 
-    launch_entity_manager = SelectAction(entity_manager.substitution)
+    launch_entity_manager.add(
+        'isaac',
+        launch.actions.GroupAction([])
+    )
 
     launch_entity_manager.add(
         'hunav',
@@ -26,6 +32,11 @@ def generate_launch_description():
                 'world_file': ''
             }.items(),
         )
+    )
+
+    entity_manager = LaunchArgument(
+        name='entity_manager',
+        choices=launch_entity_manager.keys,
     )
 
     ld = launch.LaunchDescription([

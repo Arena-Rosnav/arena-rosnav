@@ -1,7 +1,6 @@
 import os
 import traceback
 import typing
-from typing import Dict, List
 
 import arena_simulation_setup
 import launch
@@ -34,7 +33,7 @@ from task_generator.utils.ros_params import ROSParamServer
 from . import NodeInterface
 
 
-def read_robot_setup_file(setup_file: str) -> List[Dict]:
+def read_robot_setup_file(setup_file: str) -> list[dict]:
     try:
         with open(
             os.path.join(
@@ -45,7 +44,7 @@ def read_robot_setup_file(setup_file: str) -> List[Dict]:
             ),
             "r",
         ) as f:
-            robots: List[Dict] = yaml.safe_load(f)["robots"]
+            robots: list[dict] = yaml.safe_load(f)["robots"]
 
         return robots
 
@@ -151,14 +150,14 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         self._robots_manager = RobotsManagerROS(self._environment_manager)
 
         tm_modules = self.conf.TaskMode.TM_MODULES.value
-        tm_modules.append(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
-        tm_modules.append(Constants.TaskMode.TM_Module.RVIZ_UI)
+        tm_modules.add(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
+        tm_modules.add(Constants.TaskMode.TM_Module.RVIZ_UI)
 
         if self.conf.Arena.WORLD.value == "dynamic_map":
-            tm_modules.append(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
+            tm_modules.add(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
 
         self.get_logger().debug("utils calls task factory")
-        return TaskFactory.combine(tm_modules)(
+        return TaskFactory.combine(list(tm_modules))(
             environment_manager=self._environment_manager,
             robots_manager=self._robots_manager,
             world_manager=self._world_manager,

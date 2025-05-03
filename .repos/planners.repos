@@ -22,7 +22,7 @@ repositories:
     version: humble
   planners/Drl_vo:
     type: git
-    url: https://github.com/Tonmanhkien/Nav2_pyif_drl_vo_new_template
+    url: https://github.com/Arena-Rosnav/nav2py_drlvo
     version: master
 #   #planners
 #   planners/my_planner:

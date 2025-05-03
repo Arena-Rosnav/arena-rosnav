@@ -1,20 +1,21 @@
 import rospy
-
-from task_generator.shared import Namespace, rosparam_get
-from task_generator.manager.world_manager.utils import WorldWalls
-from tf.transformations import quaternion_from_euler
-from task_generator.constants import UnityConstants
-from task_generator.constants.runtime import Configuration
-from task_generator.simulators import BaseSimulator
-
-from task_generator.shared import ModelType, Robot, Obstacle
-
 # Message Types
 from gazebo_msgs.msg import ModelState
-from gazebo_msgs.srv import SetModelState, SetModelStateRequest, DeleteModel, SpawnModel, SpawnModelRequest, DeleteModelRequest, DeleteModelResponse
-from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
-from unity_msgs.srv import SpawnWalls, SpawnWallsRequest
+from gazebo_msgs.srv import (DeleteModel, DeleteModelRequest,
+                             DeleteModelResponse, SetModelState,
+                             SetModelStateRequest, SpawnModel,
+                             SpawnModelRequest)
+from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
+from tf.transformations import quaternion_from_euler
 from unity_msgs.msg import Wall
+from unity_msgs.srv import SpawnWalls, SpawnWallsRequest
+
+from task_generator.constants import UnityConstants
+from task_generator.constants.runtime import Configuration
+from task_generator.manager.world_manager.utils import WorldWalls
+from task_generator.shared import (ModelType, Namespace, Obstacle, Robot,
+                                   rosparam_get)
+from task_generator.simulators import BaseSimulator
 
 T = Configuration.General.WAIT_FOR_SERVICE_TIMEOUT
 

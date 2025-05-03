@@ -1,6 +1,6 @@
 import os
 import xml.etree.ElementTree as ET
-from typing import List, Optional
+from typing import Optional
 
 import attrs
 from ament_index_python.packages import get_package_share_directory
@@ -9,7 +9,7 @@ from task_generator.shared import (DynamicObstacle, ModelWrapper, Namespace,
                                    Obstacle)
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
-from task_generator.utils.ros_params import ROSParam
+from task_generator.utils.ros_params import ROSParamT
 
 
 @attrs.define()
@@ -21,9 +21,9 @@ class _ParsedConfig:
         type: str
         model: ModelWrapper
 
-    STATIC: List[ObstacleConfig]
-    INTERACTIVE: List[ObstacleConfig]
-    DYNAMIC: List[ObstacleConfig]
+    STATIC: list[ObstacleConfig]
+    INTERACTIVE: list[ObstacleConfig]
+    DYNAMIC: list[ObstacleConfig]
 
 
 def _get_attrib(element: ET.Element, attribute: str,
@@ -44,7 +44,7 @@ def _get_attrib(element: ET.Element, attribute: str,
 
 class TM_Parametrized(TM_Obstacles):
 
-    _config: ROSParam[_ParsedConfig]
+    _config: ROSParamT[_ParsedConfig]
 
     PATH_XML: Namespace = Namespace(
         os.path.join(
@@ -85,8 +85,8 @@ class TM_Parametrized(TM_Obstacles):
         )
 
     def reset(self, **kwargs):
-        dynamic_obstacles: List[DynamicObstacle] = list()
-        obstacles: List[Obstacle] = list()
+        dynamic_obstacles: list[DynamicObstacle] = list()
+        obstacles: list[Obstacle] = list()
 
         # Create static obstacles
         for config in self._config.value.STATIC:

@@ -13,7 +13,7 @@ BASE_PATHS=(
 OLD_PACKAGES=()
 
 
-if [ "1" = "${SKIP_OLD}" ]; then
+if [ "${SKIP_OLD}" = 1 ]; then
 
     function recursive_mtime(){
         find "$1" \! -type l -printf "%T@\n"  | sort | tail -1 | cut -d. -f1

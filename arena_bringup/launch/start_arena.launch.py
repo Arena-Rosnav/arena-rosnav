@@ -4,11 +4,9 @@ import typing
 import launch
 from ament_index_python.packages import get_package_share_directory
 
-import launch_ros.actions
-
-from arena_bringup.substitutions import LaunchArgument
-from arena_bringup.future import PythonExpression
 from arena_bringup.actions import IsolatedGroupAction
+from arena_bringup.future import PythonExpression
+from arena_bringup.substitutions import LaunchArgument
 
 
 def generate_launch_description():
@@ -29,7 +27,7 @@ def generate_launch_description():
     robot = LaunchArgument(
         name='robot',
         default_value='jackal',
-        description='robot model type [burger, jackal, ridgeback, agvota, rto, ...]'
+        description='robot model type'
     )
     inter_planner = LaunchArgument(
         name='inter_planner',
@@ -81,7 +79,7 @@ def generate_launch_description():
     )
     tm_robots = LaunchArgument(
         name='tm_robots',
-        default_value='random'
+        default_value='explore'
     )
     tm_obstacles = LaunchArgument(
         name='tm_obstacles',
