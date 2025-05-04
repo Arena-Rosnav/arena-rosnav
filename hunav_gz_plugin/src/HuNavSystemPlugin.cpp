@@ -324,7 +324,7 @@ void HuNavSystemPluginIGN::initializeAgents(gz::sim::EntityComponentManager& _ec
     // Initialize the actors
     auto res = *result.get();
     const hunav_msgs::msg::Agents agents = res.agents;
-    RCLCPP_INFO(this->rosnode_->get_logger(), "Received %i agents from service /get_agents", (int)agents.agents.size());
+    RCLCPP_INFO(this->rosnode_->get_logger(), "Received %i agents from service /get_agents", (int)agents.agents.size());                  // 15 AGENTS RECEIVED SO HERE EVERYTHING IS FINE !!!
     pedestrians_.clear();
     pedLastTime_ = std::chrono::steady_clock::now();
     rosPedLastTime_ = this->rosnode_->get_clock()->now();
@@ -1285,6 +1285,7 @@ void HuNavSystemPluginIGN::PreUpdate(const gz::sim::UpdateInfo& _info, gz::sim::
   // this->ros_test_pub_->publish(msg);
 
   //GZ_PROFILE("HuNavSystemPluginIGN::PreUpdate");
+
   _ecm.Each<gz::sim::components::Name>([&](const gz::sim::Entity &entity, const gz::sim::components::Name *name) {
     gzmsg << "Entity: " << entity << " Name: " << name->Data() << std::endl;
     return true;
