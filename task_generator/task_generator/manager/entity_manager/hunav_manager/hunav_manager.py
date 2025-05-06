@@ -93,6 +93,7 @@ class _PedestrianHelper:
             animation_file
         )
 
+
         sdf = f"""<?xml version="1.0" ?>
         <sdf version="1.9">
             <actor name="{agent_config.name}">
@@ -103,7 +104,7 @@ class _PedestrianHelper:
                     <scale>1.0</scale>
                 </skin>
 
-                <animation name="walking">
+                <animation name="07_01-walk">
                     <filename>{animation_path}</filename>
                     <scale>1.0</scale>
                     <interpolate_x>true</interpolate_x>
@@ -371,6 +372,48 @@ class HunavManager(DummyEntityManager):
             # Add wall obstacles
             agent_msg.closest_obs.extend(self._wall_points)
             
+            # After creating the agent message:
+            self._logger.warn(f"""            ##Complete Debug for the set attributes
+            Full HunavObstacle Details:
+            ID: {agent_msg.id}
+            Name: {agent_msg.name}
+            Type: {agent_msg.type}
+            Skin: {agent_msg.skin}
+            Group ID: {agent_msg.group_id}
+
+            Position:
+            - X: {agent_msg.position.position.x}
+            - Y: {agent_msg.position.position.y}
+            - Z: {agent_msg.position.position.z}
+            - Yaw: {agent_msg.yaw}
+
+            Velocities:
+            - Desired: {agent_msg.desired_velocity}
+            - Linear: {agent_msg.linear_vel}
+            - Angular: {agent_msg.angular_vel}
+
+            Physical:
+            - Radius: {agent_msg.radius}
+
+            Behavior:
+            - Type: {agent_msg.behavior.type}
+            - Configuration: {agent_msg.behavior.configuration}
+            - Duration: {agent_msg.behavior.duration}
+            - Once: {agent_msg.behavior.once}
+            - Velocity: {agent_msg.behavior.vel}
+            - Distance: {agent_msg.behavior.dist}
+            - Goal Force: {agent_msg.behavior.goal_force_factor}
+            - Obstacle Force: {agent_msg.behavior.obstacle_force_factor}
+            - Social Force: {agent_msg.behavior.social_force_factor}
+            - Other Force: {agent_msg.behavior.other_force_factor}
+
+            Goals:
+            - Count: {len(agent_msg.goals)}
+            - Cyclic: {agent_msg.cyclic_goals}
+            - Radius: {agent_msg.goal_radius}
+            - Goals List: {[f'({g.position.x}, {g.position.y})' for g in agent_msg.goals]}
+            """)
+
             # Add to container - NO ComputeAgents call here!
             self._agents_container.agents.append(agent_msg)
             
