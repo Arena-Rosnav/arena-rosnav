@@ -39,17 +39,18 @@ class ConfigFileGenerator(Node):
         @timeout: timeout in seconds
         """
         while True:
-            req = rcl_interfaces.srv.GetParameters.Request(names=[param_name])
-            future = client.call_async(req)
-            rclpy.spin_until_future_complete(self, future, timeout_sec=timeout)
-            params = future.result()
-            if params and params.values:
-                value = params.values[0]
-                if (not test_fn) or test_fn(value):
-                    self.get_logger().info(f'param {param_name} is set')
-                    return value
             self.get_logger().info(f'waiting for {param_name} to be set')
-            time.sleep(timeout)
+            for _ in range(5):
+                req = rcl_interfaces.srv.GetParameters.Request(names=[param_name])
+                future = client.call_async(req)
+                rclpy.spin_until_future_complete(self, future, timeout_sec=timeout)
+                params = future.result()
+                if params and params.values:
+                    value = params.values[0]
+                    if (not test_fn) or test_fn(value):
+                        self.get_logger().info(f'param {param_name} is set')
+                        return value
+                time.sleep(timeout)
 
     def __init__(self, TASKGEN_NODE: str = '/task_generator_node'):
         Node.__init__(self, 'rviz_config_generator')
