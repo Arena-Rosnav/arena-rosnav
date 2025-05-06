@@ -8,6 +8,7 @@ from typing import Any, Callable, Collection
 import attrs
 import rclpy
 from ament_index_python.packages import get_package_share_directory
+from arena_rclpy_mixins.shared import Namespace
 from geometry_msgs.msg import Pose
 from hunav_msgs.msg import Agent, AgentBehavior, Agents
 from hunav_msgs.srv import ComputeAgent, ComputeAgents, MoveAgent, ResetAgents
@@ -19,7 +20,7 @@ from task_generator.manager.entity_manager.utils import (KnownObstacles,
                                                          ObstacleLayer,
                                                          walls_to_obstacle)
 from task_generator.shared import (DynamicObstacle, Model, ModelType,
-                                   Namespace, PositionOrientation, Robot)
+                                   PositionOrientation, Robot)
 from task_generator.simulators import BaseSimulator
 
 

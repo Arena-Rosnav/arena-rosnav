@@ -4,12 +4,12 @@ from typing import Optional
 
 import attrs
 from ament_index_python.packages import get_package_share_directory
+from arena_rclpy_mixins.ROSParamServer import ROSParamT
+from arena_rclpy_mixins.shared import Namespace
 
-from task_generator.shared import (DynamicObstacle, ModelWrapper, Namespace,
-                                   Obstacle)
+from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
-from task_generator.utils.ros_params import ROSParamT
 
 
 @attrs.define()

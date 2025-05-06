@@ -4,9 +4,8 @@ import tempfile
 import time
 import typing
 
-import lifecycle_msgs.msg
-import lifecycle_msgs.srv
 import arena_simulation_setup
+import lifecycle_msgs.msg
 import nav2_msgs.srv
 import nav_msgs.msg
 import numpy as np
@@ -205,17 +204,10 @@ class WorldManagerROS(WorldManager):
             1,
         )
 
-        map_server_state_cli = self.node.create_client(
-            lifecycle_msgs.srv.GetState,
-            self.node.service_namespace('map_server', 'get_state'),
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
-        )
-
-        # wait for map_server to be active
-        while not map_server_state_cli.wait_for_service(timeout_sec=1.0):
-            self._logger.info('GetState service not available, waiting again...')
-        while map_server_state_cli.call(lifecycle_msgs.srv.GetState.Request()).current_state.id != \
-                lifecycle_msgs.msg.State.PRIMARY_STATE_ACTIVE:
+        while self.node.get_lifecycle_state(
+            self.node.service_namespace('map_server'),
+            callback_group=rclpy.callback_groups.ReentrantCallbackGroup(),
+        ).id != lifecycle_msgs.msg.State.PRIMARY_STATE_ACTIVE:
             self._logger.info('map_server is not active, waiting again...')
             time.sleep(1.0)
 

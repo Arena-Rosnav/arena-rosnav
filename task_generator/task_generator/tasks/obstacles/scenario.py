@@ -2,11 +2,11 @@ import json
 import os
 
 import attrs
+from arena_rclpy_mixins.ROSParamServer import ROSParamT
 
 from task_generator.constants import Constants
 from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
-from task_generator.utils.ros_params import ROSParamT
 
 
 @attrs.define()

@@ -66,8 +66,7 @@ class TM_Random(TM_Robots):
                 zip(generated_positions[::2], generated_positions[1::2])
             )
 
-        for robot, pos in zip(
-                self._PROPS.robot_managers.values(), ROBOT_POSITIONS):
+        for robot, pos in zip(self._PROPS.robot_managers.values(), ROBOT_POSITIONS):
             robot.reset(start_pos=pos[0], goal_pos=pos[1])
 
     def __init__(self, **kwargs):

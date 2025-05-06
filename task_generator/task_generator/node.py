@@ -6,11 +6,11 @@ import arena_simulation_setup
 import launch
 import rclpy
 import rclpy.callback_groups
-import rclpy.node
 import std_srvs.srv as std_srvs
 import task_generator_msgs.srv
 import yaml
 from ament_index_python.packages import get_package_share_directory
+from arena_rclpy_mixins.shared import Namespace
 from std_msgs.msg import Empty, Int16
 from std_srvs.srv import Empty as EmptySrv
 
@@ -24,11 +24,9 @@ from task_generator.manager.robot_manager.robots_manager_ros import \
     RobotsManager
 from task_generator.manager.world_manager.world_manager_ros import \
     WorldManagerROS as WorldManager
-from task_generator.shared import Namespace
 from task_generator.simulators import BaseSimulator, SimulatorRegistry
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory
-from task_generator.utils.ros_params import ROSParamServer
 
 from . import NodeInterface
 
@@ -69,12 +67,6 @@ class TaskGenerator(NodeInterface.Taskgen_T):
 
     do_launch: typing.Callable[[launch.LaunchDescription], None]
 
-    def service_namespace(self, *args: str) -> Namespace:
-        """
-        `rclpy.node.Node.create_service` doesn't utilize the node namespace (contrary to the doc). Use this to prefix service names until fixed.
-        """
-        return Namespace(self.get_namespace())(self.get_name(), *args)
-
     def __init__(
         self,
         namespace: str = "task_generator_node",
@@ -82,8 +74,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         do_launch: typing.Callable[[launch.LaunchDescription], None]
 
     ):
-        rclpy.node.Node.__init__(self, 'task_generator')
-        ROSParamServer.__init__(self)
+        super().__init__('task_generator')
         self.conf = Configuration(self)
 
         self.do_launch = do_launch
