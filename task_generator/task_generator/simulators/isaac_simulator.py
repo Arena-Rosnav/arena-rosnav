@@ -128,13 +128,13 @@ class IsaacSimulator(BaseSimulator):
         else:
             return True
 
-    def move_entity(self, name, position, orientation):
+    def move_entity(self, name, position):
         self._logger.info(
             f"Attempting to move entitiy: {name}"
         )
 
         self._logger.info(f"position: {position.x,position.y}")
-        self._logger.info(f"orientation: {orientation}")
+        self._logger.info(f"orientation: {position.orientation}")
         prim_path = f"/{name}"
 
         response = self.client['move_entity_client'].call_async(
@@ -143,7 +143,7 @@ class IsaacSimulator(BaseSimulator):
                 prim_path=f"/{name}",
                 values=[
                     Values(values=[position.x, position.y, 0.12]),
-                    Values(values=[0.0, 0.0, math.degrees(orientation)])]
+                    Values(values=[0.0, 0.0, math.degrees(position.orientation)])]
             )
         )
         if response is None:
@@ -161,7 +161,7 @@ class IsaacSimulator(BaseSimulator):
 
         response = self.client['delete_entity_client'].call_async(
             MovePrim.Request(
-                name=name.name,
+                name=name,
                 prim_path=prim_path
             )
         )
