@@ -23,14 +23,14 @@ run(){
 }
 
 run '(cd src/arena/arena-rosnav && git pull --autostash || true);'
-run '(vcs import --input src/arena/arena-rosnav/arena.repos --recursive --ff src);' '$? > 1'
+run '(vcs import --input src/arena/arena-rosnav/arena.repos --recursive --ff --add-existing src);' '$? > 1'
 
 
 if [ -f src/arena/arena-rosnav/.installed ] ; then
     while read -r installed; do 
         name="$(echo $installed | cut -d. -f1)"
         if [ -f "src/arena/arena-rosnav/.repos/${name}.repos" ] ; then
-            run "(vcs import --input src/arena/arena-rosnav/.repos/${name}.repos --recursive --ff src);" '$? > 1'
+            run "(vcs import --input src/arena/arena-rosnav/.repos/${name}.repos --recursive --ff --add-existing src);" '$? > 1'
         fi
     done < src/arena/arena-rosnav/.installed
 fi
