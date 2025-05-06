@@ -3,17 +3,15 @@
 """
 
 import itertools
-import os
-import typing
-from typing import Callable, Collection, Optional
+from typing import Callable, Collection, Optional, TypeVar
 
+import arena_simulation_setup
 import attrs
 import nav_msgs.msg
 import numpy as np
 import scipy.interpolate
 import shapely
 
-import task_generator.utils.arena as Utils
 from task_generator.shared import (Obstacle, Position, PositionOrientation,
                                    PositionRadius, Wall)
 from task_generator.utils import ModelLoader
@@ -21,7 +19,7 @@ from task_generator.utils.time import Time
 
 # CONVERTERS
 
-T = typing.TypeVar('T')
+T = TypeVar('T')
 
 
 def list_from_any(v: T | list[T]) -> list[T]:
@@ -427,13 +425,7 @@ def occupancy_to_walls(
     ]
 
 
-_obstacles_loader = ModelLoader(
-    os.path.join(
-        Utils.get_simulation_setup_path(),
-        'entities',
-        'obstacles',
-        'static')
-)
+_obstacles_loader = ModelLoader(arena_simulation_setup.Obstacle.base_dir())
 
 
 def configurations_to_obstacles(

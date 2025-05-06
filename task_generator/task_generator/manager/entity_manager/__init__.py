@@ -1,3 +1,4 @@
+import typing
 from typing import Collection
 
 import rclpy
@@ -56,7 +57,7 @@ class EntityManager(NodeInterface):
         """
         raise NotImplementedError()
 
-    def spawn_walls(self, walls: Collection[Wall]):
+    def spawn_walls(self, walls: typing.Collection[Wall]):
         """
         Adds walls to the simulator.
         """

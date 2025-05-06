@@ -6,6 +6,7 @@ import typing
 
 import lifecycle_msgs.msg
 import lifecycle_msgs.srv
+import arena_simulation_setup
 import nav2_msgs.srv
 import nav_msgs.msg
 import numpy as np
@@ -176,27 +177,11 @@ class WorldManagerROS(WorldManager):
             return
         if True or self._world.map.time < costmap.info.map_load_time:
 
-            obstacles = self._load_obstacles(
-                os.path.join(
-                    self.node.conf.Arena.get_world_path(self._world_name),
-                    'map',
-                    'obstacles.yaml',
-                )
-            )
-            walls = self._load_walls(
-                os.path.join(
-                    self.node.conf.Arena.get_world_path(self._world_name),
-                    'map',
-                    'walls.yaml',
-                )
-            )
-            zones = self._load_zones(
-                os.path.join(
-                    self.node.conf.Arena.get_world_path(self._world_name),
-                    'map',
-                    'zones.yaml',
-                )
-            )
+            world_config = arena_simulation_setup.World(self.world_name)
+
+            obstacles = self._load_obstacles(world_config.obstacles)
+            walls = self._load_walls(world_config.walls)
+            zones = self._load_zones(world_config.zones)
             self.update_world(
                 WorldMap.from_costmap(costmap),
                 obstacles=obstacles,
@@ -262,3 +247,7 @@ class WorldManagerROS(WorldManager):
 
     def start(self):
         self._setup_world_callbacks()
+
+    @property
+    def world_name(self) -> str:
+        return self._world_name

@@ -3,12 +3,10 @@
   <name>task_generator</name>
   <version>0.0.0</version>
   <description>The task_generator package</description>
-  <maintainer email="reyk@todo.todo">reyk</maintainer>
+  <maintainer email="dev@voshch.dev">voshch</maintainer>
   <license>TODO</license>
 
-  <exec_depend>actionlib_msgs</exec_depend>
-  <exec_depend>builtin_interfaces</exec_depend>
-  <exec_depend>rosidl_default_runtime</exec_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>ros_gz_sim</depend>
   <depend>geometry_msgs</depend>
@@ -19,10 +17,10 @@
 
   <exec_depend>arena_bringup</exec_depend>
   <exec_depend>robot_localization</exec_depend>
+  <exec_depend>${PROJECT_NAME}_msgs</exec_depend>
 
   <member_of_group>rosidl_interface_packages</member_of_group>
   <export>
-    <!-- Other tools can request additional information be placed here -->
     <build_type>ament_python</build_type>
   </export>
 </package>

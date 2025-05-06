@@ -1,6 +1,6 @@
-import os
 import typing
 
+import arena_simulation_setup
 import rclpy
 import rosgraph_msgs.msg as rosgraph_msgs
 import std_msgs.msg as std_msgs
@@ -158,20 +158,8 @@ class TaskFactory(Namespaced):
 
                 robots_manager.set_up()
 
-                self.model_loader = ModelLoader(
-                    os.path.join(
-                        Utils.get_simulation_setup_path(),
-                        'entities',
-                        'obstacles',
-                        'static')
-                )
-                self.dynamic_model_loader = ModelLoader(
-                    os.path.join(
-                        Utils.get_simulation_setup_path(),
-                        'entities',
-                        'obstacles',
-                        'dynamic')
-                )
+                self.model_loader = ModelLoader(arena_simulation_setup.Obstacle.base_dir())
+                self.dynamic_model_loader = ModelLoader(arena_simulation_setup.DynamicObstacle.base_dir())
 
                 self.__param_tm_obstacles = None
                 self.__param_tm_robots = None
