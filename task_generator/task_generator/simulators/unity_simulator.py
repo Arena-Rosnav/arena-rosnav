@@ -1,3 +1,4 @@
+from arena_rclpy_mixins.shared import Namespace
 import rospy
 # Message Types
 from gazebo_msgs.msg import ModelState
@@ -13,8 +14,7 @@ from unity_msgs.srv import SpawnWalls, SpawnWallsRequest
 from task_generator.constants import UnityConstants
 from task_generator.constants.runtime import Configuration
 from task_generator.manager.world_manager.utils import WorldWalls
-from task_generator.shared import (ModelType, Namespace, Obstacle, Robot,
-                                   rosparam_get)
+from task_generator.shared import ModelType, Obstacle, Robot, rosparam_get
 from task_generator.simulators import BaseSimulator
 
 T = Configuration.General.WAIT_FOR_SERVICE_TIMEOUT

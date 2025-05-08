@@ -1,6 +1,18 @@
 #!/bin/bash -i
 set -e
 
+_RCFILE="${RCFILE:-$HOME/.$(ps -p $$ -o comm=)rc}"
+if [ -z "${RCFILE+x}" ]; then
+  echo "${_RCFILE}"
+  if [ ! -f "${_RCFILE}" ] ; then
+    echo RCFILE is not set, failed to autodetect
+    echo pass manually using 'RCFILE=/my/rcfile sh install.sh'
+    exit 1
+  else
+    echo "detected rcfile as ${_RCFILE}"
+  fi
+fi
+
 export ARENA_ROSNAV_REPO=${ARENA_ROSNAV_REPO:-voshch/arena-rosnav}
 export ARENA_BRANCH=${ARENA_BRANCH:-humble}
 export ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO:-humble}
@@ -41,13 +53,13 @@ fi
 # pyenv
 if [ ! -d "$HOME/.pyenv" ] ; then
   rm -rf "$HOME/.pyenv"
-  curl https://pyenv.run | bash
+  curl https://pyenv.run | "$(ps -p $$ -o comm=)"
   {     echo 'export PYENV_ROOT="$HOME/.pyenv"';
         echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"';
         echo 'eval "$(pyenv init -)"';
-  } >> ~/.bashrc
+  } >> "${_RCFILE}"
   
-  . ~/.bashrc
+  . "${_RCFILE}"
 
   # resourcing does not work in the same shell
   export PYENV_ROOT="$HOME/.pyenv"
@@ -61,9 +73,9 @@ fi
 if ! which poetry ; then
   echo "Installing Poetry...:"
   curl -sSL https://install.python-poetry.org | python3 -
-  if ! grep -q 'export PATH="$HOME/.local/bin"' ~/.bashrc; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-    source ~/.bashrc
+  if ! grep -q 'export PATH="$HOME/.local/bin"' "${_RCFILE}"; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "${_RCFILE}"
+    . "${_RCFILE}"
   fi
   "$HOME/.local/bin/poetry" config virtualenvs.in-project true
 fi

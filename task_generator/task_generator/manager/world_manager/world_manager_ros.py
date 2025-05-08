@@ -4,8 +4,8 @@ import tempfile
 import time
 import typing
 
+import arena_simulation_setup
 import lifecycle_msgs.msg
-import lifecycle_msgs.srv
 import nav2_msgs.srv
 import nav_msgs.msg
 import numpy as np
@@ -176,27 +176,11 @@ class WorldManagerROS(WorldManager):
             return
         if True or self._world.map.time < costmap.info.map_load_time:
 
-            obstacles = self._load_obstacles(
-                os.path.join(
-                    self.node.conf.Arena.get_world_path(self._world_name),
-                    'map',
-                    'obstacles.yaml',
-                )
-            )
-            walls = self._load_walls(
-                os.path.join(
-                    self.node.conf.Arena.get_world_path(self._world_name),
-                    'map',
-                    'walls.yaml',
-                )
-            )
-            zones = self._load_zones(
-                os.path.join(
-                    self.node.conf.Arena.get_world_path(self._world_name),
-                    'map',
-                    'zones.yaml',
-                )
-            )
+            world_config = arena_simulation_setup.World(self.world_name)
+
+            obstacles = self._load_obstacles(world_config.obstacles)
+            walls = self._load_walls(world_config.walls)
+            zones = self._load_zones(world_config.zones)
             self.update_world(
                 WorldMap.from_costmap(costmap),
                 obstacles=obstacles,
@@ -220,17 +204,10 @@ class WorldManagerROS(WorldManager):
             1,
         )
 
-        map_server_state_cli = self.node.create_client(
-            lifecycle_msgs.srv.GetState,
-            self.node.service_namespace('map_server', 'get_state'),
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
-        )
-
-        # wait for map_server to be active
-        while not map_server_state_cli.wait_for_service(timeout_sec=1.0):
-            self._logger.info('GetState service not available, waiting again...')
-        while map_server_state_cli.call(lifecycle_msgs.srv.GetState.Request()).current_state.id != \
-                lifecycle_msgs.msg.State.PRIMARY_STATE_ACTIVE:
+        while self.node.get_lifecycle_state(
+            self.node.service_namespace('map_server'),
+            callback_group=rclpy.callback_groups.ReentrantCallbackGroup(),
+        ).id != lifecycle_msgs.msg.State.PRIMARY_STATE_ACTIVE:
             self._logger.info('map_server is not active, waiting again...')
             time.sleep(1.0)
 
@@ -262,3 +239,7 @@ class WorldManagerROS(WorldManager):
 
     def start(self):
         self._setup_world_callbacks()
+
+    @property
+    def world_name(self) -> str:
+        return self._world_name

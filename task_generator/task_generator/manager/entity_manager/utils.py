@@ -9,12 +9,13 @@ import attrs
 import cv2
 import numpy as np
 import yaml
+from arena_rclpy_mixins.shared import Namespace
 
 import task_generator.utils.arena as Utils
 from task_generator.constants import Constants
 from task_generator.manager.world_manager.utils import WorldMap, WorldOccupancy
-from task_generator.shared import (Model, ModelType, ModelWrapper, Namespace,
-                                   Obstacle, PositionOrientation, rosparam_get)
+from task_generator.shared import (Model, ModelType, ModelWrapper, Obstacle,
+                                   PositionOrientation, rosparam_get)
 
 
 class SDFUtil:

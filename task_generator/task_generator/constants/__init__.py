@@ -1,7 +1,7 @@
 import enum
 from enum import Enum
 
-from task_generator.shared import Namespace
+from arena_rclpy_mixins.shared import Namespace
 
 
 class Constants:

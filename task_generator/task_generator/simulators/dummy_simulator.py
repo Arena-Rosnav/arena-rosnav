@@ -1,4 +1,6 @@
-from task_generator.shared import Entity, Namespace, PositionOrientation, Wall
+from arena_rclpy_mixins.shared import Namespace
+
+from task_generator.shared import Entity, PositionOrientation, Wall
 from task_generator.simulators import BaseSimulator
 
 

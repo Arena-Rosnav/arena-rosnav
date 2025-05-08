@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
-from task_generator.shared import Namespace
+from arena_rclpy_mixins.shared import Namespace
 
 
 class CollectorUnit(ABC):

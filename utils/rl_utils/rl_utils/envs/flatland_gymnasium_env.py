@@ -6,25 +6,25 @@ from typing import Tuple
 import gymnasium
 import numpy as np
 import rospy
+from arena_rclpy_mixins.shared import Namespace
 from flatland_msgs.msg import StepWorld
 from geometry_msgs.msg import Twist
 from rl_utils.utils.observation_collector.constants import DONE_REASONS
-from rl_utils.utils.observation_collector.observation_manager import ObservationManager
-from rl_utils.utils.observation_collector.observation_units.base_collector_unit import (
-    BaseCollectorUnit,
-)
-from rl_utils.utils.observation_collector.observation_units.globalplan_collector_unit import (
-    GlobalplanCollectorUnit,
-)
-from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import (
-    SemanticAggregateUnit,
-)
+from rl_utils.utils.observation_collector.observation_manager import \
+    ObservationManager
+from rl_utils.utils.observation_collector.observation_units.base_collector_unit import \
+    BaseCollectorUnit
+from rl_utils.utils.observation_collector.observation_units.globalplan_collector_unit import \
+    GlobalplanCollectorUnit
+from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import \
+    SemanticAggregateUnit
 from rl_utils.utils.rewards.reward_function import RewardFunction
 from rosnav.model.base_agent import BaseAgent
 from rosnav.rosnav_space_manager.rosnav_space_manager import RosnavSpaceManager
 from std_srvs.srv import Empty
-from task_generator.shared import Namespace, rosparam_get
+
 from task_generator.task_generator_node import TaskGenerator
+
 
 def get_ns_idx(ns: str):
     try:

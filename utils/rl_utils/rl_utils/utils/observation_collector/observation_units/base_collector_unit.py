@@ -2,13 +2,12 @@ from typing import Any, Dict
 
 import numpy as np
 import rospy
+from arena_rclpy_mixins.shared import Namespace
 from geometry_msgs.msg import Pose, Pose2D, PoseStamped
 from nav_msgs.msg import Odometry
-from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import (
-    SemanticAggregateUnit,
-)
+from rl_utils.utils.observation_collector.observation_units.semantic_ped_unit import \
+    SemanticAggregateUnit
 from sensor_msgs.msg import LaserScan
-from task_generator.shared import Namespace
 
 from ..constants import OBS_DICT_KEYS, TOPICS
 from ..utils import pose3d_to_pose2d

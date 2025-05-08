@@ -1,10 +1,11 @@
 from typing import Any, Dict, List, Type
 
-from task_generator.shared import Namespace
+from arena_rclpy_mixins.shared import Namespace
 
 from .observation_units.base_collector_unit import BaseCollectorUnit
 from .observation_units.collector_unit import CollectorUnit
-from .observation_units.globalplan_collector_unit import GlobalplanCollectorUnit
+from .observation_units.globalplan_collector_unit import \
+    GlobalplanCollectorUnit
 from .observation_units.semantic_ped_unit import SemanticAggregateUnit
 
 

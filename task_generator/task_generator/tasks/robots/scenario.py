@@ -2,9 +2,10 @@ import json
 import os
 from typing import NamedTuple
 
+from arena_rclpy_mixins.ROSParamServer import ROSParamT
+
 from task_generator.shared import PositionOrientation, PositionRadius
 from task_generator.tasks.robots import TM_Robots
-from task_generator.utils.ros_params import ROSParamT
 
 
 class _RobotGoal(NamedTuple):

@@ -3,13 +3,14 @@ import typing
 
 import rclpy
 import rclpy.publisher
+from arena_rclpy_mixins.shared import Namespace
 from geometry_msgs.msg import PoseStamped
 
 from task_generator import NodeInterface
 from task_generator.constants import Constants
 from task_generator.manager.entity_manager.utils import (KnownObstacles,
                                                          ObstacleLayer)
-from task_generator.shared import (DynamicObstacle, Namespace, Obstacle,
+from task_generator.shared import (DynamicObstacle, Obstacle,
                                    PositionOrientation, Robot, Wall)
 from task_generator.simulators import BaseSimulator
 from task_generator.utils.registry import Registry

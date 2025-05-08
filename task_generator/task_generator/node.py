@@ -2,34 +2,33 @@ import os
 import traceback
 import typing
 
-
+import arena_simulation_setup
+import launch
 import rclpy
-import rclpy.executors
-import rclpy.node
 import rclpy.callback_groups
-import rclpy.parameter
-
 import std_srvs.srv as std_srvs
+import task_generator_msgs.srv
 import yaml
 from ament_index_python.packages import get_package_share_directory
+from arena_rclpy_mixins.shared import Namespace
 from std_msgs.msg import Empty, Int16
 from std_srvs.srv import Empty as EmptySrv
 
-import launch
-from task_generator.manager.robot_manager import RobotsManagerROS
-from task_generator.manager.robot_manager.robots_manager_ros import RobotsManager
-from task_generator import NodeInterface
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Configuration
 from task_generator.manager.entity_manager import (EntityManager,
                                                    EntityManagerRegistry)
 from task_generator.manager.environment_manager import EnvironmentManager
-from task_generator.manager.world_manager.world_manager_ros import WorldManagerROS as WorldManager
-from task_generator.shared import Namespace
+from task_generator.manager.robot_manager import RobotsManagerROS
+from task_generator.manager.robot_manager.robots_manager_ros import \
+    RobotsManager
+from task_generator.manager.world_manager.world_manager_ros import \
+    WorldManagerROS as WorldManager
 from task_generator.simulators import BaseSimulator, SimulatorRegistry
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory
-from task_generator.utils.ros_params import ROSParamServer
+
+from . import NodeInterface
 
 
 def read_robot_setup_file(setup_file: str) -> list[dict]:
@@ -68,12 +67,6 @@ class TaskGenerator(NodeInterface.Taskgen_T):
 
     do_launch: typing.Callable[[launch.LaunchDescription], None]
 
-    def service_namespace(self, *args: str) -> Namespace:
-        """
-        `rclpy.node.Node.create_service` doesn't utilize the node namespace (contrary to the doc). Use this to prefix service names until fixed.
-        """
-        return Namespace(self.get_namespace())(self.get_name(), *args)
-
     def __init__(
         self,
         namespace: str = "task_generator_node",
@@ -81,8 +74,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         do_launch: typing.Callable[[launch.LaunchDescription], None]
 
     ):
-        rclpy.node.Node.__init__(self, 'task_generator')
-        ROSParamServer.__init__(self)
+        super().__init__('task_generator')
         self.conf = Configuration(self)
 
         self.do_launch = do_launch
@@ -94,23 +86,10 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         self._train_mode = self.rosparam[bool].get('train_mode', False)
 
         # Publishers
-        if not self._train_mode:
-            self._pub_scenario_reset = self.create_publisher(
-                Int16, 'scenario_reset', 1,
-                callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
-            )
-            self._pub_scenario_finished = self.create_publisher(
-                Empty, 'scenario_finished', 10,
-                callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
-            )
+        self._pub_scenario_reset = self.create_publisher(Int16, 'scenario_reset', 1)
+        self._pub_scenario_finished = self.create_publisher(Empty, 'scenario_finished', 10)
 
-            # Services
-            self.create_service(
-                EmptySrv,
-                self.service_namespace('reset_task'),
-                self._reset_task_srv_callback,
-                callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
-            )
+        self._set_up_services()
 
         self._initialized = False
         self.create_timer(
@@ -125,27 +104,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
 
         self._number_of_resets = 0
 
-        # self.srv_start_model_visualization = self.create_client(
-        #     EmptySrv, 'start_model_visualization')
-        # while not self.srv_start_model_visualization.wait_for_service(
-        #         timeout_sec=1.0):
-        #     self.get_logger().info('start_model_visualization service not available, waiting again...')
-        # self.srv_start_model_visualization.call_async(EmptySrv.Request())
-
         self.reset_task(first_map=True)
-
-        # try:
-        #     self.set_parameters(
-        #         [rclpy.Parameter('task_generator_setup_finished', value=True)])
-        #     self.srv_setup_finished = self.create_client(
-        #         EmptySrv, 'task_generator_setup_finished')
-        #     while not self.srv_setup_finished.wait_for_service(
-        #             timeout_sec=1.0):
-        #         self.get_logger().info(
-        #             'task_generator_setup_finished service not available, waiting again...')
-        #     self.srv_setup_finished.call_async(EmptySrv.Request())
-        # except BaseException:
-        #     pass
 
         self._initialized = True
         self.rosparam[bool].set('initialized', True)
@@ -223,7 +182,16 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         if self._task.is_done:
             self.reset_task()
 
-    def _reset_task_srv_callback(
+    def _send_end_message_on_end(self):
+        if self.conf.General.DESIRED_EPISODES.value < 0 or self._number_of_resets < self.conf.General.DESIRED_EPISODES.value:
+            return
+
+        self.get_logger().info(
+            f"Shutting down. All {int(self.conf.General.DESIRED_EPISODES.value)} tasks completed")
+        rclpy.shutdown()
+
+    # SERVICES
+    def _cb_reset_task(
         self,
         request: std_srvs.Empty.Request,
         response: std_srvs.Empty.Response
@@ -232,10 +200,26 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         self.reset_task()
         return response
 
-    def _send_end_message_on_end(self):
-        if self.conf.General.DESIRED_EPISODES.value < 0 or self._number_of_resets < self.conf.General.DESIRED_EPISODES.value:
-            return
+    def _cb_get_scenarios(
+        self,
+        request: task_generator_msgs.srv.GetScenarios.Request,
+        response: task_generator_msgs.srv.GetScenarios.Response,
+    ):
+        response.scenarios = arena_simulation_setup.World(
+            request.world or self._world_manager.world_name
+        ).scenarios
+        return response
 
-        self.get_logger().info(
-            f"Shutting down. All {int(self.conf.General.DESIRED_EPISODES.value)} tasks completed")
-        rclpy.shutdown()
+    def _set_up_services(self):
+        # Services
+        self.create_service(
+            EmptySrv,
+            self.service_namespace('reset_task'),
+            self._cb_reset_task
+        )
+
+        self.create_service(
+            task_generator_msgs.srv.GetScenarios,
+            self.service_namespace('get_scenarios'),
+            self._cb_get_scenarios
+        )

@@ -8,13 +8,13 @@ import attrs
 import numpy as np
 import shapely
 import yaml
+from arena_rclpy_mixins.ROSParamServer import ROSParamT
 from shapely.geometry import Point
 
 from task_generator.shared import (DynamicObstacle, Obstacle,
                                    PositionOrientation)
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.utils.arena import get_simulation_setup_path
-from task_generator.utils.ros_params import ROSParamT
 
 
 @attrs.define()

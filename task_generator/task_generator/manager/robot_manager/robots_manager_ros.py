@@ -3,17 +3,18 @@ import os
 import re
 import typing
 
+import arena_simulation_setup
 import attrs
 import rclpy
 import yaml
 from ament_index_python import get_package_share_directory
+from arena_rclpy_mixins.ROSParamServer import ROSParamT
+from arena_rclpy_mixins.shared import Namespace
 
-import task_generator.utils.arena as Utils
 from task_generator import NodeInterface
 from task_generator.manager.entity_manager import EntityManager
-from task_generator.shared import Namespace, PositionOrientation, Robot
+from task_generator.shared import PositionOrientation, Robot
 from task_generator.utils import ModelLoader
-from task_generator.utils.ros_params import ROSParamT
 
 from .robot_manager import RobotManager
 
@@ -31,15 +32,7 @@ class _RobotDiff:
     to_update: dict[str, Robot] = attrs.field(factory=dict)
 
 
-_T_NamedRobots = dict[str, Robot]
-
-_robot_loader = ModelLoader(
-    os.path.join(
-        Utils.get_simulation_setup_path(),
-        'entities',
-        'robots',
-    ),
-)
+_robot_loader = ModelLoader(arena_simulation_setup.Robot.base_dir())
 
 
 class RobotsManager(abc.ABC):

@@ -3,7 +3,7 @@ import os
 import time
 import traceback
 
-import arena_simulation_setup.entities.robot
+import arena_simulation_setup
 import attrs
 import launch
 import launch_ros
@@ -495,10 +495,7 @@ class GazeboSimulator(BaseSimulator):
         )
 
         mappings = BridgeConfiguration.from_file(
-            os.path.join(
-                arena_simulation_setup.entities.robot.get_model_directory(robot.model.name),
-                'mappings.yaml'
-            )
+            arena_simulation_setup.Robot(robot.model.name).mappings
         ).substitute({
             'robot_name': robot.name,
             'world': '/world/default',

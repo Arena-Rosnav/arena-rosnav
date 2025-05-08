@@ -5,10 +5,11 @@ import attrs
 import rospkg
 import std_msgs.msg as std_msgs
 import yaml
+from arena_rclpy_mixins.shared import Namespace
 from filelock import FileLock
 from map_generator.constants import MAP_GENERATOR_NS
 
-from task_generator.shared import Namespace, rosparam_get
+from task_generator.shared import rosparam_get
 from task_generator.tasks.modules import TM_Module
 
 

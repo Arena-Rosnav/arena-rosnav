@@ -6,13 +6,13 @@ from typing import Callable, Iterator
 import attrs
 import numpy as np
 import rclpy
+from arena_rclpy_mixins.ROSParamServer import ROSParamT
 
 from task_generator.shared import (DynamicObstacle, Obstacle,
                                    PositionOrientation, PositionRadius)
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 from task_generator.utils import ModelLoader
-from task_generator.utils.ros_params import ROSParamT
 
 
 @attrs.define()

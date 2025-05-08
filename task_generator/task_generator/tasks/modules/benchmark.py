@@ -10,9 +10,10 @@ import typing
 import ament_index_python
 import arena_evaluation_msgs.srv
 import yaml
+from arena_rclpy_mixins.shared import Namespace
 
 from task_generator.constants import Constants
-from task_generator.shared import Namespace, rosparam_get
+from task_generator.shared import rosparam_get
 from task_generator.tasks.modules import TM_Module
 
 
