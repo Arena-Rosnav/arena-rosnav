@@ -1,5 +1,6 @@
 import math
 import os
+import re
 import time
 import traceback
 import typing
@@ -75,9 +76,12 @@ class _PedestrianHelper:
 
         # Get workspace root
         def get_workspace_root():
-            current_dir = os.path.abspath(__file__)
-            workspace_root = current_dir
-            while not workspace_root.endswith("arena4_ws"):
+            workspace_root = os.environ.get('ARENA_WS_DIR', None)
+            if workspace_root is not None:
+                return workspace_root
+
+            workspace_root = os.path.abspath(__file__)
+            while not re.match('arena.*_ws', os.path.basename(workspace_root)):
                 workspace_root = os.path.dirname(workspace_root)
             return workspace_root
 
@@ -429,12 +433,17 @@ class HunavManager(DummyEntityManager):
 
             # Create visual model
             sdf = _PedestrianHelper.create_sdf(hunav_obstacle)
+
+            self._logger.info(f"created sdf for agent {agent_msg.name}")
+
             new_obstacle = attrs.evolve(
                 obstacle,
                 model=obstacle.model.override(
                     ModelType.SDF,
                     lambda model: model.replace(description=sdf), noload=True)
             )
+
+            self._logger.info(f"created sdf for agent {agent_msg.name}")
 
             return new_obstacle
 
