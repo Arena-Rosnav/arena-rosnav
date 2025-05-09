@@ -6,6 +6,7 @@ import typing
 
 import attrs
 import geometry_msgs.msg
+from arena_rclpy_mixins.shared import Namespace
 from hunav_msgs.msg import Agent, AgentBehavior, Agents
 from hunav_msgs.srv import (ComputeAgent, ComputeAgents, GetAgents, MoveAgent,
                             ResetAgents)
