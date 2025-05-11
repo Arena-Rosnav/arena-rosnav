@@ -3,6 +3,7 @@ import traceback
 import typing
 
 import arena_simulation_setup
+import arena_simulation_setup.configs
 import launch
 import rclpy
 import rclpy.callback_groups
@@ -219,6 +220,30 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         ).scenarios
         return response
 
+    def _cb_get_worlds(
+        self,
+        request: task_generator_msgs.srv.GetConfigs.Request,
+        response: task_generator_msgs.srv.GetConfigs.Response,
+    ):
+        response.configs = arena_simulation_setup.World.list()
+        return response
+
+    def _cb_get_configs_environment(
+        self,
+        request: task_generator_msgs.srv.GetConfigs.Request,
+        response: task_generator_msgs.srv.GetConfigs.Response,
+    ):
+        response.configs = arena_simulation_setup.configs.Environment.list()
+        return response
+
+    def _cb_get_configs_parametrized(
+        self,
+        request: task_generator_msgs.srv.GetConfigs.Request,
+        response: task_generator_msgs.srv.GetConfigs.Response,
+    ):
+        response.configs = arena_simulation_setup.configs.Parametrized.list()
+        return response
+
     def _set_up_services(self):
         # Services
         self.create_service(
@@ -231,4 +256,22 @@ class TaskGenerator(NodeInterface.Taskgen_T):
             task_generator_msgs.srv.GetScenarios,
             self.service_namespace('get_scenarios'),
             self._cb_get_scenarios
+        )
+
+        self.create_service(
+            task_generator_msgs.srv.GetConfigs,
+            self.service_namespace('get_worlds'),
+            self._cb_get_worlds
+        )
+
+        self.create_service(
+            task_generator_msgs.srv.GetConfigs,
+            self.service_namespace('get_configs_environment'),
+            self._cb_get_configs_environment
+        )
+
+        self.create_service(
+            task_generator_msgs.srv.GetConfigs,
+            self.service_namespace('get_configs_parametrized'),
+            self._cb_get_configs_parametrized
         )
