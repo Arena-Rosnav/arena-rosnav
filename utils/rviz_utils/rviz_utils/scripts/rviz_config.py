@@ -6,6 +6,7 @@ import tempfile
 import time
 import typing
 
+import arena_bringup.extensions.NodeLogLevelExtension as NodeLogLevelExtension
 import launch
 import launch.launch_service
 import launch_ros.actions
@@ -75,7 +76,7 @@ class ConfigFileGenerator(Node):
         # self.cli_load = self.create_client('/rviz2/load_config', rcl_interfaces.srv.SetString)
 
     def create_config(self) -> str:
-        default_file = ConfigFileGenerator._read_default_file()
+        default_file = self._read_default_file()
 
         # cache
         self.topics = self.get_topic_names_and_types()
@@ -302,6 +303,9 @@ def main():
         launch_service = launch.launch_service.LaunchService()
         launch_service.include_launch_description(
             launch.LaunchDescription([
+                NodeLogLevelExtension.SetGlobalLogLevelAction(
+                    rclpy.logging.get_logger_effective_level(config_file_generator.get_logger().name).name.lower()
+                ),
                 launch_ros.actions.Node(
                     package="rviz2",
                     executable="rviz2",

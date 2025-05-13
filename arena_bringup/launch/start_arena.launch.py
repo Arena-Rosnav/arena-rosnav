@@ -3,8 +3,9 @@ import typing
 
 import launch
 from ament_index_python.packages import get_package_share_directory
-
 from arena_bringup.actions import IsolatedGroupAction
+from arena_bringup.extensions.NodeLogLevelExtension import \
+    SetGlobalLogLevelAction
 from arena_bringup.future import PythonExpression
 from arena_bringup.substitutions import LaunchArgument
 
@@ -15,6 +16,13 @@ def generate_launch_description():
 
     ld_items = []
     LaunchArgument.auto_append(ld_items)
+
+    log_level = LaunchArgument(
+        name='log_level',
+        default_value='warn',
+        choices=['debug', 'info', 'warn', 'error', 'fatal'],
+        description='Set the log level for all nodes'
+    )
 
     # desised_resets = LaunchArgument(
     #     name='desired_resets',
@@ -72,7 +80,7 @@ def generate_launch_description():
         name='agent_name',
         default_value=robot.substitution,
         description='DRL agent name to be deployed'
-    ),
+    )
     record_data_dir = LaunchArgument(
         name='record_data_dir',
         default_value=''
@@ -88,11 +96,6 @@ def generate_launch_description():
     tm_modules = LaunchArgument(
         name='tm_modules',
         default_value='rviz_ui'  # TODO breaks launch if empty
-    )
-    show_rviz = LaunchArgument(
-        name='show_rviz',
-        default_value='true',
-        description='Enables rviz in gazebo'
     )
     world = LaunchArgument(
         name='world',
@@ -231,6 +234,7 @@ def generate_launch_description():
 
     ld = launch.LaunchDescription([
         *ld_items,
+        SetGlobalLogLevelAction(log_level.substitution),
         launch_task_generators,
         IsolatedGroupAction([launch_simulator]),
         IsolatedGroupAction([launch_entity_manager]),

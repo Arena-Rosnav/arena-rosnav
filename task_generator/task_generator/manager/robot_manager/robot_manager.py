@@ -3,6 +3,7 @@ import typing
 
 import action_msgs.msg
 import ament_index_python
+import arena_bringup.extensions.NodeLogLevelExtension as NodeLogLevelExtension
 import attrs
 import geometry_msgs.msg as geometry_msgs
 import launch
@@ -282,7 +283,10 @@ class RobotManager(NodeInterface):
         self._logger.warn(f"START WITH MODEL {self.name}")
 
         if Utils.get_arena_type() != Constants.ArenaType.TRAINING:
+
             launch_description = launch.LaunchDescription()
+            current_log_level = rclpy.logging.get_logger_effective_level(self.node.get_logger().name).name.lower()
+            launch_description.add_action(NodeLogLevelExtension.SetGlobalLogLevelAction(current_log_level))
 
             launch_arguments = {
                 'robot': self.model_name,
