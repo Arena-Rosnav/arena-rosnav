@@ -1,0 +1,7 @@
+---
+int64[] n_static_obstacles
+int64[] n_interactive_obstacles
+int64[] n_dynamic_obstacles
+string[] models_static_obstacles
+string[] models_interactive_obstacles
+string[] models_dynamic_obstacles

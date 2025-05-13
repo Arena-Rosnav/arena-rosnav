@@ -1,10 +1,22 @@
 #ifndef TASK_GENERATOR_GUI_TASK_GENERATOR_PANEL_HPP
 #define TASK_GENERATOR_GUI_TASK_GENERATOR_PANEL_HPP
 
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/parameter_client.hpp"
+#include "rclcpp/node.hpp"
+
 #include <rviz_common/panel.hpp>
 #include <rviz_common/ros_integration/ros_node_abstraction_iface.hpp>
+#include <rviz_common/properties/property_tree_model.hpp>
+#include "task_generator_msgs/srv/get_environments.hpp"
+#include "task_generator_msgs/srv/get_parametrizeds.hpp"
+#include "task_generator_msgs/srv/get_randoms.hpp"
+#include "task_generator_msgs/srv/get_scenarios.hpp"
+#include "task_generator_msgs/srv/get_worlds.hpp"
+#include "task_generator_msgs/srv/get_robots.hpp"
 
 #include <std_msgs/msg/string.hpp>
+#include <std_srvs/srv/empty.hpp>
 
 #include <QLabel>
 #include <QPushButton>
@@ -12,9 +24,21 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QComboBox>
+#include <QTreeView>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
+#include <QTreeView>
+#include <QStandardItemModel>
+#include <QDir>
+#include <QHeaderView>
+#include <QSpinBox>
+#include <QCheckBox>
+#include <QGroupBox>
 
 namespace task_generator_gui
 {
+    using rviz_common::properties::PropertyTreeModel;
+
     class TaskGeneratorPanel
         : public rviz_common::Panel
     {
@@ -23,50 +47,96 @@ namespace task_generator_gui
     public:
         explicit TaskGeneratorPanel(QWidget *parent = 0);
         ~TaskGeneratorPanel() override;
-
         void onInitialize() override;
 
+        void getRobots();
+        void getWorlds();
+
+        void getCurrentTaskGeneratorNodeParams();
+
+        void getTMObstaclesParams();
+        void getScenarios(const std::string &world_name);
+        void getTMRobotsParams();
+
+        void setTMObstaclesParams();
+        void setTMRobotsParams();
+
+        void setupUi();
+        QComboBox *setupComboBoxWithLabel(QLayout *parent, const QStringList &combobox_values, const QString &label);
+        QTabWidget *setupTabs(QLayout *Parent);
+        QTreeWidget *setupTree(QLayout *parent);
+        void setupObstaclesTreeItem();
+        void setupRobotsTreeItem();
+        void setupGroupCheckBox(QLayout *parent, const QStringList &checkbox_values);
+
     protected:
-        std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr_;
-        // rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
-        // rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
+        std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr;
+        rclcpp::Node::SharedPtr node;
+        std::shared_ptr<rclcpp::Node> service_node;
+        rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher;
+        rclcpp::Client<task_generator_msgs::srv::GetEnvironments>::SharedPtr get_environments_client;
+        rclcpp::Client<task_generator_msgs::srv::GetParametrizeds>::SharedPtr get_parametrizeds_client;
+        rclcpp::Client<task_generator_msgs::srv::GetRandoms>::SharedPtr get_randoms_client;
+        rclcpp::Client<task_generator_msgs::srv::GetScenarios>::SharedPtr get_scenarios_client;
+        rclcpp::Client<task_generator_msgs::srv::GetWorlds>::SharedPtr get_worlds_client;
+        rclcpp::Client<task_generator_msgs::srv::GetRobots>::SharedPtr get_robots_client;
 
-        void topicCallback(const std_msgs::msg::String &msg);
+        rclcpp::Client<rcl_interfaces::srv::GetParameters>::SharedPtr get_param_client;
+        rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr set_param_client;
 
-        // Worlds selector
-        QWidget *world_selector;
-        QHBoxLayout *world_selector_layout;
-        QLabel *world_selector_label;
-        QComboBox *world_selector_combobox;
+        std::shared_ptr<rclcpp::SyncParametersClient> parameters_client;
 
-        // Robot spawner
-        QWidget *robot_spawner;
-        QHBoxLayout *robot_spawner_layout;
-        QLabel *robot_spawner_label;
-        QComboBox *robot_spawner_combobox;
-        QPushButton *robot_spawner_button;
+        rclcpp::Client<std_srvs::srv::Empty>::SharedPtr reset_task_client;
 
-        // Obstacles tab
-        QWidget *obstacles_widget;
-        QVBoxLayout *obstacles_tab_layout;
-        QHBoxLayout *obstacles_task_mode_layout;
-        QWidget *obstacles_task_mode_widget;
-        QLabel *obstacles_task_mode_label;
-        QComboBox *obstacle_task_mode_combobox;
+        // Selected Robot model and World
+        std::string selected_robot_model;
+        std::string selected_world;
 
-        // Robots tab
-        QWidget *robots_widget;
-        QVBoxLayout *robots_tab_layout;
-        QHBoxLayout *robots_task_mode_layout;
-        QWidget *robots_task_mode_widget;
-        QLabel *robots_task_mode_label;
+        // All available robot models and worlds
+        std::vector<std::string> robot_models;
+        std::vector<std::string> worlds;
+
+        // Parameters for Obstacles Task Mode = "Random"
+        std::vector<std::int64_t, std::allocator<std::int64_t>> n_static_obstacles_range, n_interactive_obstacles_range, n_dynamic_obstacles_range;
+        std::vector<std::string> static_obstacles_all_models, interactive_obstacles_all_models, dynamic_obstacles_all_models;
+        // Contains selected obstacles models
+        std::vector<std::string> static_obstacles_models, interactive_obstacles_models, dynamic_obstacles_models;
+        // Hash map for seletected obstacles models
+        std::vector<int> static_obstacles_models_selected, interactive_obstacles_models_selected, dynamic_obstacles_models_selected;
+
+        // Parameters for Obstacles Task Mode = "Environment" or "Parametrized" or "Scenario"
+        std::vector<std::string> environment_config_files;
+        QStringList environment_config_files_qstringlist;
+        std::vector<std::string> parametrized_config_files;
+        QStringList parametrized_config_files_qstringlist;
+        std::vector<std::string> scenario_config_files;
+        QStringList scenario_config_files_qstringlist;
+
+        std::string selected_environment_config_file;
+        std::string selected_parametrized_config_file;
+        std::string selected_scenario_config_file;
+
+        // UI Components
+        QVBoxLayout *root_layout;
+        QString obstacles_task_mode = QString("Environment");
+        QString robots_task_mode = QString("Explore");
+        QTabWidget *tabs;
+        QTreeWidget *obstacles_tree;
+        QTreeWidget *robots_tree;
+        QComboBox *obstacles_task_mode_combobox;
         QComboBox *robot_task_mode_combobox;
-
+        QComboBox *robot_combobox;
+        QComboBox *world_combobox;
         QPushButton *reset_scenario_button;
-        QTabWidget *obstacles_robots_tab_widget;
 
     private Q_SLOTS:
-        void buttonActivated();
+        void resetScenarioButtonActivated();
+
+        void onRobotChanged(const QString &text);
+        void onWorldChanged(const QString &text);
+
+        void onObstaclesTaskModeChanged(const QString &text);
+        void onRobotsTaskModeChanged(const QString &text);
     };
 } // namespace arena_rosnav
 #endif // ARENA_ROSNAV_TASK_GENERATOR_PANEL_HPP
