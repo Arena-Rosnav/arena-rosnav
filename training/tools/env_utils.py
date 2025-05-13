@@ -3,18 +3,16 @@ from typing import Union
 
 import gym
 import rospy
+from arena_rclpy_mixins.shared import Namespace
 from rl_utils.envs.flatland_gymnasium_env import FlatlandEnv
-from rl_utils.utils.vec_wrapper.delayed_subproc_vec_env import DelayedSubprocVecEnv
+from rl_utils.utils.vec_wrapper.delayed_subproc_vec_env import \
+    DelayedSubprocVecEnv
 from rl_utils.utils.vec_wrapper.vec_stats_recorder import VecStatsRecorder
 from rosnav.model.base_agent import BaseAgent
 from stable_baselines3.common.utils import set_random_seed
-from stable_baselines3.common.vec_env import (
-    DummyVecEnv,
-    VecFrameStack,
-    VecNormalize,
-)
+from stable_baselines3.common.vec_env import (DummyVecEnv, VecFrameStack,
+                                              VecNormalize)
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
-from task_generator.shared import Namespace
 
 
 def load_vec_normalize(config: dict, paths: dict, env: VecEnv, eval_env: VecEnv):

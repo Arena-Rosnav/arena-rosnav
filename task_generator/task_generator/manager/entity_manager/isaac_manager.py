@@ -1,5 +1,6 @@
 import typing
 
+from arena_rclpy_mixins.shared import Namespace
 from isaacsim_msgs.msg import Person
 from isaacsim_msgs.srv import Pedestrian
 
@@ -7,7 +8,7 @@ from task_generator.manager.entity_manager.dummy_manager import \
     DummyEntityManager
 from task_generator.manager.entity_manager.utils import (KnownObstacles,
                                                          ObstacleLayer)
-from task_generator.shared import DynamicObstacle, Namespace
+from task_generator.shared import DynamicObstacle
 from task_generator.simulators import BaseSimulator
 
 

@@ -2,14 +2,13 @@ from typing import Any, Dict
 
 import numpy as np
 import rospy
+from arena_rclpy_mixins.shared import Namespace
+from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
-from task_generator.shared import Namespace
 
 from ..constants import OBS_DICT_KEYS, TOPICS
 from ..utils import pose3d_to_pose2d
 from .collector_unit import CollectorUnit
-
-from geometry_msgs.msg import PoseStamped
 
 
 class GlobalplanCollectorUnit(CollectorUnit):

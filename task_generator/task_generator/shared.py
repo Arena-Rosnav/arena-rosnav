@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import os
 import typing
-from typing import (Callable, Collection, Optional, Type, TypeVar, overload)
+from typing import Callable, Collection, Optional, Type, TypeVar, overload
 
 import attrs
 import geometry_msgs.msg as geometry_msgs
@@ -45,47 +45,6 @@ def rosparam_set(
     # TODO deprecate in favor of ROSParamServer.rosparam[T].set
     """
     return _node.rosparam.set(param_name, value)
-
-
-class Namespace(str):
-    def __call__(self, *args: str) -> Namespace:
-        return Namespace(os.path.join(self, *args)).remove_double_slash()
-
-    def ParamNamespace(self) -> ParamNamespace:
-        return ParamNamespace('')(*self.split('/'))
-
-    @property
-    def simulation_ns(self) -> Namespace:
-        if len(self.split("/")) < 3:
-            return self
-        return Namespace(os.path.dirname(self))
-
-    @property
-    def robot_ns(self) -> Namespace:
-        return Namespace(os.path.basename(os.path.normpath(self)))
-
-    def remove_double_slash(self) -> Namespace:
-        return Namespace(self.replace("//", "/"))
-
-
-class ParamNamespace(Namespace):
-    def __call__(self, *args: str) -> ParamNamespace:
-        return ParamNamespace(
-            '.'.join((
-                *((self,) if self else []),
-                *args)
-            )
-        )
-
-    def SlashNamespace(self) -> Namespace:
-        return Namespace('')(*self.split('.'))
-
-
-yaml.add_representer(
-    Namespace,
-    lambda dumper,
-    data: dumper.represent_str(
-        str(data)))
 
 
 # TODO deprecate this in favor of Model.EMPTY
@@ -479,14 +438,3 @@ class Robot(Entity):
             record_data_dir=record_data,
             extra=obj,
         )
-
-
-def DefaultParameter(value: typing.Any) -> rclpy.Parameter | None:
-    if value is None:
-        return None
-    # if isinstance(value, rclpy.Parameter.Type):
-    #     return None
-    return rclpy.Parameter(
-        '',
-        value=value,
-    )

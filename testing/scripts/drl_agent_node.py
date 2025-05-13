@@ -3,9 +3,9 @@ import argparse
 import sys
 
 import rospy
+from arena_rclpy_mixins.shared import Namespace
 from geometry_msgs.msg import Twist
 from rosnav.srv import GetAction, GetActionRequest
-from task_generator.shared import Namespace
 
 sys.modules["rl_agent"] = sys.modules["rosnav"]
 

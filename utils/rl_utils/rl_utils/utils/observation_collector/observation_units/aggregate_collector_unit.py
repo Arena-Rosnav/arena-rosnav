@@ -1,17 +1,14 @@
 import functools
 from typing import Any, Dict, Generic, List, TypeVar
 
-import rospy
-from task_generator.shared import Namespace
-
-import sensor_msgs.msg as sensor_msgs
 import crowdsim_msgs.msg as crowdsim_msgs
-from crowdsim_agents.utils import SemanticAttribute
-
-from rl_utils.utils.observation_collector.observation_units.collector_unit import (
-    CollectorUnit,
-)
 import rl_utils.utils.observation_collector.constants as Constants
+import rospy
+import sensor_msgs.msg as sensor_msgs
+from arena_rclpy_mixins.shared import Namespace
+from crowdsim_agents.utils import SemanticAttribute
+from rl_utils.utils.observation_collector.observation_units.collector_unit import \
+    CollectorUnit
 
 CloudPointDType = [("x", "<f4"), ("y", "<f4"), ("z", "<f4"), ("index", "<f4")]
 

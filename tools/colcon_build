@@ -2,7 +2,7 @@
 
 . "${ARENA_WS_DIR:-.}/src/arena/arena-rosnav/tools/source.bash" || return $?
 
-SKIP_OLD="${SKIP_OLD:-1}"
+_SKIP_OLD=${SKIP_OLD:-$([[ "${*}" == *"--packages-"* ]] || echo 1 )}
 
 BUILD_BASE='build'
 INSTALL_BASE='install'
@@ -12,29 +12,27 @@ BASE_PATHS=(
 
 OLD_PACKAGES=()
 
-
-if [ "${SKIP_OLD}" = 1 ]; then
-
+if [ "${_SKIP_OLD}" = 1 ]; then
     function recursive_mtime(){
         find "$1" \! -type l -printf "%T@\n"  | sort | tail -1 | cut -d. -f1
     }
 
-    function package_name(){
-        grep -oPm1 "(?<=<name>)[^<]+" < "$1"
-    }
+    while read -r target
+    do
+        
+        package=$(echo "$target" | cut -f1)
+        src_path=$(echo "$target" | cut -f2)
 
-    for base in "${BASE_PATHS[@]}"; do
-        while IFS= read -r -d '' package_xml
-        do
-            package_path=$(dirname "$package_xml")
-            package=$(package_name "$package_xml")
-            
-            if [ -d "$INSTALL_BASE/$package" ] && [ "$(recursive_mtime "$INSTALL_BASE/$package")" -ge "$(recursive_mtime "$package_path")" ]; then
-                OLD_PACKAGES+=("$package")
-            fi
-        done < <(find "$base" -type f -name 'package.xml' -print0);
-    done
+        if  [ -n "${package}" ] &&
+            [ -d "${INSTALL_BASE}/${package}" ] &&
+            [ "$(recursive_mtime "${INSTALL_BASE}/${package}")" -ge "$(recursive_mtime "${src_path}")" ];
+        then
+            OLD_PACKAGES+=("$package")
+        fi
+
+    done < <(colcon list --base-paths "${BASE_PATHS[*]}");
 fi
+unset _SKIP_OLD
 
 ARGS=(
     "--build-base ${BUILD_BASE}"

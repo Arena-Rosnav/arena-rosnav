@@ -3,11 +3,10 @@ import traceback
 import typing
 
 import rcl_interfaces.msg
-import rclpy
 import rclpy.exceptions
 import rclpy.node
 
-from task_generator.shared import DefaultParameter
+from .shared import DefaultParameter
 
 T = typing.TypeVar('T')
 U = typing.TypeVar('U')
@@ -76,6 +75,7 @@ class _ROSParam(ROSParamT[T], typing.Generic[T]):
         """
         lambda x: x
         """
+        del args
         return x
 
     @property
@@ -187,7 +187,7 @@ class _rosparam(typing.Generic[T]):
                 f'parameter {param_name} is unset and no default passed'
             )
 
-        return result.value
+        return typing.cast(T, result.value)
 
     @classmethod
     def get(cls, param_name: str, default: T) -> T:
@@ -241,6 +241,9 @@ class _rosparam(typing.Generic[T]):
 
 
 class ROSParamServer(rclpy.node.Node):
+    """
+    Interface for interacting with this node's ros2 parameters.
+    """
 
     # this confuses my type checker
     # ROSParam: type[_ROSParam[typing.Any]]
@@ -298,7 +301,8 @@ class ROSParamServer(rclpy.node.Node):
             reason="\n".join(reason)
         )
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._callbacks = {}
         self.add_on_set_parameters_callback(self._callback)
         self._setup_rosparam()

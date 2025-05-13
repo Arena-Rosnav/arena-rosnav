@@ -3,15 +3,19 @@ import typing
 
 import action_msgs.msg
 import ament_index_python
+import arena_bringup.extensions.NodeLogLevelExtension as NodeLogLevelExtension
 import attrs
 import geometry_msgs.msg as geometry_msgs
 import launch
+import lifecycle_msgs.msg
 import nav_msgs.msg as nav_msgs
 import rclpy
+import rclpy.callback_groups
 import rclpy.client
 import rclpy.publisher
 import rclpy.timer
 import scipy.spatial.transform
+from arena_rclpy_mixins.shared import Namespace
 from nav2_msgs.srv import ClearCostmapAroundRobot
 
 import task_generator.utils.arena as Utils
@@ -19,8 +23,7 @@ from task_generator import NodeInterface
 from task_generator.constants import Constants
 from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.manager.environment_manager import EnvironmentManager
-from task_generator.shared import (ModelType, Namespace, PositionOrientation,
-                                   Robot)
+from task_generator.shared import ModelType, PositionOrientation, Robot
 
 
 class RobotManager(NodeInterface):
@@ -167,28 +170,38 @@ class RobotManager(NodeInterface):
         self._environment_manager.move_robot(name=self.name, position=position)
         self.clearCostmapAroundRobot(5.0)
 
-    def clearCostmapAroundRobot(self, reset_distance: float) -> None:
+    def clearCostmapAroundRobot(self, reset_distance: float) -> bool:
         """Clear the costmap around the robot."""
 
-        service_name = os.path.join(self.namespace, 'local_costmap/clear_around_local_costmap')
-        self._logger.info(f"Service name: {service_name}")
+        state = self.node.get_lifecycle_state(
+            node_name := self.node.service_namespace(self.name, 'local_costmap/local_costmap'),
+            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
+        )
+        if state.id != lifecycle_msgs.msg.State.PRIMARY_STATE_ACTIVE:
+            return False
+
+        service_name = os.path.abspath(node_name('../clear_around_local_costmap'))
+
+        self._logger.warn(f"Service name: {service_name}")
         self._clear_costmaps_srv = self.node.create_client(
             ClearCostmapAroundRobot,
             service_name,
             callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
-        # while not self._clear_costmaps_srv.wait_for_service(timeout_sec=1.0):
-        #     self._logger.warn(f'{service_name} service not available, waiting...')
+        while not self._clear_costmaps_srv.wait_for_service(timeout_sec=1.0):
+            self._logger.warn(f'{service_name} service not available, waiting...')
         req = ClearCostmapAroundRobot.Request()
         req.reset_distance = reset_distance
+
         result = self._clear_costmaps_srv.call(req)
         if result is None:
             self._logger.error(
                 f"service call failed for {service_name}")
-            return
+            return False
         self._logger.info(
             f"successfull service call for {service_name}"
         )
+        return True
 
     def reset(
         self,
@@ -204,7 +217,6 @@ class RobotManager(NodeInterface):
                     self.namespace.robot_ns.ParamNamespace()("start"),
                     [self.start_pos.x, self.start_pos.y, self.start_pos.orientation]
                 )
-
         if goal_pos is not None:
             self._goal_pos = self._environment_manager.realize(goal_pos)
             self._publish_goal(self._goal_pos)
@@ -271,7 +283,10 @@ class RobotManager(NodeInterface):
         self._logger.warn(f"START WITH MODEL {self.name}")
 
         if Utils.get_arena_type() != Constants.ArenaType.TRAINING:
+
             launch_description = launch.LaunchDescription()
+            current_log_level = rclpy.logging.get_logger_effective_level(self.node.get_logger().name).name.lower()
+            launch_description.add_action(NodeLogLevelExtension.SetGlobalLogLevelAction(current_log_level))
 
             launch_arguments = {
                 'robot': self.model_name,
@@ -313,23 +328,6 @@ class RobotManager(NodeInterface):
                 self._logger.debug(f'waiting for bt_navigator in {node_names}')
                 # TODO redo this globally in the robots manager, every get_node_names call is expensive
                 self._rate_setup.sleep()  # we love race conditions
-
-        # TODO
-        # base_frame: str = self.node.get_parameter_or(self.namespace("robot_base_frame"), DefaultParameter('')).value
-        # sensor_frame: str =
-        # self.node.get_parameter_or(self.namespace("robot_sensor_frame"),
-        # DefaultParameter('')).value
-
-        # self.node.set_parameters([
-        #     Parameter(self.namespace("move_base", "global_costmap", "robot_base_frame"),
-        #               Parameter.Type.STRING, os.path.join(self.name, base_frame)),
-        #     Parameter(self.namespace("move_base", "local_costmap", "robot_base_frame"),
-        #               Parameter.Type.STRING, os.path.join(self.name, base_frame)),
-        #     Parameter(self.namespace("move_base", "local_costmap", "scan", "sensor_frame"),
-        #               Parameter.Type.STRING, os.path.join(self.name, sensor_frame)),
-        #     Parameter(self.namespace("move_base", "global_costmap", "scan", "sensor_frame"),
-        #               Parameter.Type.STRING, os.path.join(self.name, sensor_frame))
-        # ])
 
     def _robot_pos_callback(self, data: nav_msgs.Odometry):
         current_position = data.pose.pose

@@ -4,16 +4,15 @@ import arena_simulation_setup
 import rclpy
 import rosgraph_msgs.msg as rosgraph_msgs
 import std_msgs.msg as std_msgs
+from arena_rclpy_mixins.shared import DefaultParameter, Namespace
 
-import task_generator.utils.arena as Utils
 from task_generator import NodeInterface
 from task_generator.constants import Constants
 from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.manager.robot_manager.robots_manager_ros import \
     RobotsManager
 from task_generator.manager.world_manager.world_manager_ros import WorldManager
-from task_generator.shared import (DefaultParameter, Namespace,
-                                   PositionOrientation, rosparam_set)
+from task_generator.shared import PositionOrientation, rosparam_set
 from task_generator.tasks import Namespaced, Task
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.obstacles import TM_Obstacles
@@ -231,8 +230,7 @@ class TaskFactory(Namespaced):
                         module.before_reset()
 
                     self.__tm_robots.reset(**kwargs)
-                    obstacles, dynamic_obstacles = self.__tm_obstacles.reset(
-                        **kwargs)
+                    obstacles, dynamic_obstacles = self.__tm_obstacles.reset(**kwargs)
 
                     def respawn():
                         self.environment_manager.spawn_obstacles(obstacles)
@@ -292,10 +290,7 @@ class TaskFactory(Namespaced):
                     **kwargs: Arbitrary keyword arguments.
                 """
                 self._force_reset = False
-                if self._train_mode:
-                    self._reset_task(**kwargs)
-                else:
-                    self._mutex_reset_task(**kwargs)
+                self._reset_task(**kwargs)
 
             @property
             def is_done(self) -> bool:

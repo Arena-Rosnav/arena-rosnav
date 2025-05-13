@@ -3,15 +3,16 @@ import typing
 
 import rclpy.publisher
 import rosgraph_msgs.msg as rosgraph_msgs
+from arena_rclpy_mixins.ROSParamServer import ROSParamServer
+from arena_rclpy_mixins.shared import Namespace
 
 from task_generator import NodeInterface
 from task_generator.constants import Constants
 from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.world_manager.world_manager_ros import WorldManager
-from task_generator.shared import Namespace, PositionOrientation
+from task_generator.shared import PositionOrientation
 from task_generator.utils import ModelLoader
-from task_generator.utils.ros_params import ROSParamServer
 
 
 class Props_Manager:

@@ -4,10 +4,11 @@ import flatland_msgs.msg as flatland_msgs
 import flatland_msgs.srv as flatland_srvs
 import geometry_msgs.msg as geometry_msgs
 import std_srvs.srv as std_srvs
+from arena_rclpy_mixins.shared import Namespace
 from rosros import rospify as rospy
 
 from task_generator.constants.runtime import Configuration
-from task_generator.shared import ModelType, Namespace, rosparam_get
+from task_generator.shared import ModelType, rosparam_get
 from task_generator.simulators import BaseSimulator
 
 

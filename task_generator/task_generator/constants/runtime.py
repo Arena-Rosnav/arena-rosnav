@@ -3,8 +3,7 @@ import typing
 
 import numpy as np
 import rclpy
-
-from task_generator.utils.ros_params import ROSParamServer
+from arena_rclpy_mixins.ROSParamServer import ROSParamServer
 
 from ..utils.arena import get_simulation_setup_path
 from . import Constants

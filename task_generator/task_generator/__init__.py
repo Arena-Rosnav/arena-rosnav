@@ -3,13 +3,12 @@ import typing
 import launch
 import rclpy
 import rclpy.impl.rcutils_logger
-import rclpy.node
-
-from .utils.ros_params import ROSParamServer
+from arena_rclpy_mixins import ArenaMixinNode
+from arena_rclpy_mixins.ROSParamServer import ROSParamServer
 
 
 class NodeInterface:
-    class Taskgen_T(ROSParamServer, rclpy.node.Node):
+    class Taskgen_T(ArenaMixinNode):
         ...
 
     node: Taskgen_T

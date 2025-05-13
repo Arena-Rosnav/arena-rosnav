@@ -13,7 +13,6 @@ from ament_index_python.packages import get_package_share_directory
 from arena_rclpy_mixins.shared import Namespace
 from std_msgs.msg import Empty, Int16
 from std_srvs.srv import Empty as EmptySrv
-
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Configuration
 from task_generator.manager.entity_manager import (EntityManager,
@@ -172,9 +171,9 @@ class TaskGenerator(NodeInterface.Taskgen_T):
 
         self._simulator.after_reset_task()
 
-        self.get_logger().info("=============")
-        self.get_logger().info("Task Reset!")
-        self.get_logger().info("=============")
+        self.get_logger().warn("=============")
+        self.get_logger().warn("Task Reset!")
+        self.get_logger().warn("=============")
 
     def _check_task_status(self, *args, **kwargs):
         if not self._initialized:

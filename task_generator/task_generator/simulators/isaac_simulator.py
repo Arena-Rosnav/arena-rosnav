@@ -1,6 +1,8 @@
 import math
 import os
 
+import arena_simulation_setup
+import rclpy
 # Import dependencies.
 from isaacsim_msgs.msg import Values
 from isaacsim_msgs.srv import (DeletePrim, GetPrimAttributes, ImportObstacles,
@@ -89,52 +91,56 @@ class IsaacSimulator(BaseSimulator):
         self._logger.info(
             f"Attempting to spawn model: {entity.name}"
         )
-        if entity.name not in ["1", "2", "3"]:
 
-            # self._logger.info(entity.position)
-            model = entity.model.get(
-                [ModelType.URDF, ModelType.USD],
-                loader_args=entity.asdict(),
+        # self._logger.info(entity.position)
+        model = entity.model.get(
+            [ModelType.URDF, ModelType.USD],
+            loader_args=entity.asdict(),
+        )
+        if model.type == ModelType.URDF:
+            robot_params = arena_simulation_setup.Robot(entity.model.name)
+            response = self.client['urdf_to_usd_client'].call(
+                UrdfToUsd.Request(
+                    name=entity.name,
+                    urdf_path=os.path.abspath(model.path),
+                    no_localization=False,
+                    base_frame=robot_params.base_frame,
+                    odom_frame=robot_params.odom_frame,
+                )
             )
-            if model.type == ModelType.URDF:
-                reponse = self.client['urdf_to_usd_client'].call_async(
-                    UrdfToUsd.Request(
-                        name=entity.name,
-                        urdf_path=os.path.abspath(model.path)
-                    )
-                )
-                # response = self.client['move_entity_client'].call_async(
-                # MovePrim.Request(
-                #     name=entity.name,
-                #     prim_path=f"/{entity.name}",
-                #     values=[
-                #         Values(values=[entity.position.x,entity.position.y,0.1]),
-                #         Values(values=[0.0,0.0,0.0])]
-                #     )
-                # )
-                return True
-            else:
-                usd_path = os.path.abspath(model.path)
-                # self._logger.info(usd_path)
-                response = self.client['spawn_obstacle_client'].call_async(
-                    ImportObstacles.Request(
-                        name=entity.name,
-                        usd_path=usd_path,
-                        position=[entity.position.x, entity.position.y, 0.12],
-                        orientation=[0.0, 0.0, entity.position.orientation],
-                    )
-                )
-            return True
+            # response = self.client['move_entity_client'].call_async(
+            # MovePrim.Request(
+            #     name=entity.name,
+            #     prim_path=f"/{entity.name}",
+            #     values=[
+            #         Values(values=[entity.position.x,entity.position.y,0.1]),
+            #         Values(values=[0.0,0.0,0.0])]
+            #     )
+            # )
+            return bool(response.usd_path)
         else:
+            usd_path = os.path.abspath(model.path)
+            # self._logger.info(usd_path)
+            response = self.client['spawn_obstacle_client'].call_async(
+                ImportObstacles.Request(
+                    name=entity.name,
+                    usd_path=usd_path,
+                    position=[entity.position.x, entity.position.y, 0.12],
+                    orientation=[0.0, 0.0, entity.position.orientation],
+                )
+            )
             return True
+            # TODO
+            rclpy.spin_until_future_complete(self.node, response)
+            return response.result().ret
 
-    def move_entity(self, name, position, orientation):
+    def move_entity(self, name, position):
         self._logger.info(
             f"Attempting to move entitiy: {name}"
         )
 
         self._logger.info(f"position: {position.x,position.y}")
-        self._logger.info(f"orientation: {orientation}")
+        self._logger.info(f"orientation: {position.orientation}")
         prim_path = f"/{name}"
 
         response = self.client['move_entity_client'].call_async(
@@ -143,12 +149,11 @@ class IsaacSimulator(BaseSimulator):
                 prim_path=f"/{name}",
                 values=[
                     Values(values=[position.x, position.y, 0.12]),
-                    Values(values=[0.0, 0.0, math.degrees(orientation)])]
+                    Values(values=[0.0, 0.0, math.degrees(position.orientation)])]
             )
         )
         if response is None:
-            raise RuntimeError(
-                f'failed to move entity: service timed out')
+            raise RuntimeError(f'failed to move entity: service timed out')
 
         return True
 
@@ -160,16 +165,18 @@ class IsaacSimulator(BaseSimulator):
         prim_path = f"/World/{name}"
 
         response = self.client['delete_entity_client'].call_async(
-            MovePrim.Request(
-                name=name.name,
+            DeletePrim.Request(
+                name=name,
                 prim_path=prim_path
             )
         )
+
+        return True
+
+        # TODO
         if response is None:
             raise RuntimeError(
                 f'failed to delete entity: service timed out')
-
-        return True
 
     def spawn_walls(self, walls):
         # return True
