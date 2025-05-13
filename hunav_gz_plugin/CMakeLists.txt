@@ -15,6 +15,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(hunav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(gz-sim8 REQUIRED)
 find_package(ros_gz REQUIRED)
@@ -34,6 +35,7 @@ ament_target_dependencies(HuNavSystemPluginIGN
   ros_gz
   tf2
   tf2_geometry_msgs
+  tf2_ros  
   hunav_msgs
   gz-sim8
 )

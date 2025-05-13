@@ -81,7 +81,7 @@ void HuNavSystemPluginIGN::Configure(const gz::sim::Entity& _entity, const std::
   std::string nodename = "hunav_plugin_node_" + std::to_string(_entity);
   this->rosnode_ = std::make_shared<rclcpp::Node>(nodename.c_str());
   //this->ros_test_pub_ = this->rosnode_->create_publisher<std_msgs::msg::String>("/gz/ros/paused", 10);
-
+  this->tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this->rosnode_);
   worldEntity_ = _entity; 
 
   // Print the number of entities in the world
@@ -1132,6 +1132,24 @@ void HuNavSystemPluginIGN::updateGazeboPedestrians(gz::sim::EntityComponentManag
       _ecm.CreateComponent(entity, gz::sim::components::WorldPose(actorPose));
     }
 
+    // TF Broadcasting for the Childframe Ids especially
+    geometry_msgs::msg::TransformStamped tf_msg;
+    tf_msg.header.stamp = rosnode_->get_clock()->now();
+    tf_msg.header.frame_id = globalFrame_;  // 
+    tf_msg.child_frame_id = "agent_" + a.name;
+    
+    tf_msg.transform.translation.x = actorPose.Pos().X();
+    tf_msg.transform.translation.y = actorPose.Pos().Y();
+    tf_msg.transform.translation.z = actorPose.Pos().Z();
+    
+    
+    tf_msg.transform.rotation.x = actorPose.Rot().X();
+    tf_msg.transform.rotation.y = actorPose.Rot().Y();
+    tf_msg.transform.rotation.z = actorPose.Rot().Z();
+    tf_msg.transform.rotation.w = actorPose.Rot().W();
+    
+    // Publish the transform
+    tf_broadcaster_->sendTransform(tf_msg);
 
     // update the pedestrians' goals and behavior
     pedestrians_[entity].goals.clear();
@@ -1211,7 +1229,7 @@ void HuNavSystemPluginIGN::updateGazeboPedestrians(gz::sim::EntityComponentManag
 
 
   // Update actor bone trajectories based on animation time
-  double animationFactor = 2.0; //0.005; //Noé
+  double animationFactor = 5.0; //0.005; //Noé
   auto animTimeComp = _ecm.Component<gz::sim::components::AnimationTime>(entity);
   if (!animTimeComp) {
       gzwarn << "Actor " << a.name << " does not have an AnimationTime component. Creating one..." << std::endl;
