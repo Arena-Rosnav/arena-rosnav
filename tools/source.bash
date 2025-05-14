@@ -32,6 +32,9 @@ if [ -z ${ARENA_SOURCED+x} ] ; then
             unset dirs
         unset venv_path
     popd
+
+    r2st(){ ros2 service call "$1" "$(ros2 service type "$1")";}
+
     export ARENA_SOURCED=1
     export PS1="(arena) $PS1"
     echo 'sourced arena environment'

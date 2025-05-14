@@ -4,7 +4,7 @@
   <name>task_generator_gui</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="drx@todo.todo">drx</maintainer>
+  <maintainer email="ductaingn.015203@gmail.com">ductaingn</maintainer>
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -14,6 +14,7 @@
 
   <depend>pluginlib</depend>
   <depend>rviz_common</depend>
+  <depend>task_generator_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
