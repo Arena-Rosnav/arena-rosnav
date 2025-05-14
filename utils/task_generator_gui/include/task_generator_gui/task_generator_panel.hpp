@@ -34,6 +34,7 @@
 #include <QSpinBox>
 #include <QCheckBox>
 #include <QGroupBox>
+#include <QFontMetrics>
 
 namespace task_generator_gui
 {
@@ -49,7 +50,9 @@ namespace task_generator_gui
         ~TaskGeneratorPanel() override;
         void onInitialize() override;
 
+        // Get available robot models
         void getRobots();
+        // Get available worlds
         void getWorlds();
 
         void getCurrentTaskGeneratorNodeParams();
@@ -58,8 +61,9 @@ namespace task_generator_gui
         void getScenarios(const std::string &world_name);
         void getTMRobotsParams();
 
-        void setTMObstaclesParams();
-        void setTMRobotsParams();
+        void setTMObstaclesParamsRequest(rcl_interfaces::srv::SetParameters::Request::SharedPtr request);
+        void setTMRobotsParamsRequest(rcl_interfaces::srv::SetParameters::Request::SharedPtr request);
+        void setParams();
 
         void setupUi();
         QComboBox *setupComboBoxWithLabel(QLayout *parent, const QStringList &combobox_values, const QString &label);
@@ -67,39 +71,49 @@ namespace task_generator_gui
         QTreeWidget *setupTree(QLayout *parent);
         void setupObstaclesTreeItem();
         void setupRobotsTreeItem();
-        void setupGroupCheckBox(QLayout *parent, const QStringList &checkbox_values);
+        QWidget *setupMinMaxSpinBox(std::vector<std::int64_t, std::allocator<std::int64_t>> *connected_values);
+        QGroupBox *setupGroupCheckBox(std::vector<std::string> check_box_texts, std::vector<int> *connected_hash_map);
 
     protected:
         std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr;
         rclcpp::Node::SharedPtr node;
+
+        // Node to get configs
         std::shared_ptr<rclcpp::Node> service_node;
-        rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher;
+        // Client to get list of all available environments
         rclcpp::Client<task_generator_msgs::srv::GetEnvironments>::SharedPtr get_environments_client;
+        // Client to get list of all available parametrizeds
         rclcpp::Client<task_generator_msgs::srv::GetParametrizeds>::SharedPtr get_parametrizeds_client;
+        // Client to get all parameters for Random Obstacles Task Mode
         rclcpp::Client<task_generator_msgs::srv::GetRandoms>::SharedPtr get_randoms_client;
+        // Client to get list of all available scenarios for given world
         rclcpp::Client<task_generator_msgs::srv::GetScenarios>::SharedPtr get_scenarios_client;
+        // Client to get list of all available worlds
         rclcpp::Client<task_generator_msgs::srv::GetWorlds>::SharedPtr get_worlds_client;
+        // Client to get list of all available robots models
         rclcpp::Client<task_generator_msgs::srv::GetRobots>::SharedPtr get_robots_client;
-
-        rclcpp::Client<rcl_interfaces::srv::GetParameters>::SharedPtr get_param_client;
-        rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr set_param_client;
-
+        // Client to get ROS parameters from Node "/task_generator_node"
         std::shared_ptr<rclcpp::SyncParametersClient> parameters_client;
-
+        // Client to set ROS parameters for Node "/task_generator_node"
+        rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr set_param_client;
+        // Client to reset task
         rclcpp::Client<std_srvs::srv::Empty>::SharedPtr reset_task_client;
 
-        // Selected Robot model and World
+        // Selected robot model
         std::string selected_robot_model;
+        // Selected world
         std::string selected_world;
 
-        // All available robot models and worlds
+        // All available robot models
         std::vector<std::string> robot_models;
+        // All available robot worlds
         std::vector<std::string> worlds;
 
         // Parameters for Obstacles Task Mode = "Random"
         std::vector<std::int64_t, std::allocator<std::int64_t>> n_static_obstacles_range, n_interactive_obstacles_range, n_dynamic_obstacles_range;
+        // Parameters for Obstacles Task Mode = "Random"
         std::vector<std::string> static_obstacles_all_models, interactive_obstacles_all_models, dynamic_obstacles_all_models;
-        // Contains selected obstacles models
+        // Selected obstacles models
         std::vector<std::string> static_obstacles_models, interactive_obstacles_models, dynamic_obstacles_models;
         // Hash map for seletected obstacles models
         std::vector<int> static_obstacles_models_selected, interactive_obstacles_models_selected, dynamic_obstacles_models_selected;
@@ -118,8 +132,8 @@ namespace task_generator_gui
 
         // UI Components
         QVBoxLayout *root_layout;
-        QString obstacles_task_mode = QString("Environment");
-        QString robots_task_mode = QString("Explore");
+        QString obstacles_task_mode;
+        QString robots_task_mode;
         QTabWidget *tabs;
         QTreeWidget *obstacles_tree;
         QTreeWidget *robots_tree;

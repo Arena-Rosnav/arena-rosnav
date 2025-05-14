@@ -20,7 +20,10 @@ qt5_wrap_cpp(MOC_FILES
   include/task_generator_gui/task_generator_panel.hpp
 )
 
-add_library(task_generator_panel src/task_generator_panel.cpp ${MOC_FILES})
+add_library(task_generator_panel 
+  src/task_generator_panel.cpp 
+  src/task_generator_panel_getset_params.cpp
+  ${MOC_FILES})
 target_include_directories(task_generator_panel PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
