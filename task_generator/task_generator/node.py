@@ -13,6 +13,7 @@ from ament_index_python.packages import get_package_share_directory
 from arena_rclpy_mixins.shared import Namespace
 from std_msgs.msg import Empty, Int16
 from std_srvs.srv import Empty as EmptySrv
+
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Configuration
 from task_generator.manager.entity_manager import (EntityManager,
@@ -85,8 +86,19 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         self._train_mode = self.rosparam[bool].get('train_mode', False)
 
         # Publishers
-        self._pub_scenario_reset = self.create_publisher(Int16, 'scenario_reset', 1)
-        self._pub_scenario_finished = self.create_publisher(Empty, 'scenario_finished', 10)
+        self._pub_task_reset = self.create_publisher(
+            Int16,
+            self.service_namespace('task_reset'),
+            1,
+            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
+        )
+
+        self._pub_finished = self.create_publisher(
+            Empty,
+            self.service_namespace('finished'),
+            10,
+            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
+        )
 
         self._set_up_services()
 
@@ -165,7 +177,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
 
         self._task.reset(callback=lambda: False, **kwargs)
 
-        self._pub_scenario_reset.publish(Int16(data=self._number_of_resets))
+        self._pub_task_reset.publish(Int16(data=self._number_of_resets))
         self._number_of_resets += 1
         self._send_end_message_on_end()
 
@@ -216,7 +228,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         response.parametrizeds = arena_simulation_setup.Parametrized.list()
         response.parametrizeds.sort()
         return response
-    
+
     def _cb_get_randoms(
         self,
         request: task_generator_msgs.srv.GetRandoms.Request,
@@ -234,7 +246,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         response.models_dynamic_obstacles.sort()
 
         return response
-    
+
     def _cb_get_scenarios(
         self,
         request: task_generator_msgs.srv.GetScenarios.Request,
@@ -245,7 +257,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         ).scenarios
         response.scenarios.sort()
         return response
-    
+
     def _cb_get_worlds(
         self,
         request: task_generator_msgs.srv.GetWorlds.Request,
@@ -254,7 +266,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         response.worlds = arena_simulation_setup.World.list()
         response.worlds.sort()
         return response
-    
+
     def _cb_get_robots(
         self,
         request: task_generator_msgs.srv.GetRobots.Request,
