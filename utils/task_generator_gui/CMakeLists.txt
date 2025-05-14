@@ -12,7 +12,8 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rviz_common REQUIRED)
-
+find_package(task_generator_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 qt5_wrap_cpp(MOC_FILES
@@ -27,6 +28,8 @@ target_include_directories(task_generator_panel PUBLIC
 ament_target_dependencies(task_generator_panel
   pluginlib
   rviz_common
+  task_generator_msgs
+  std_srvs
 )
 
 install(TARGETS task_generator_panel
