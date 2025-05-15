@@ -6,14 +6,25 @@ from setuptools import setup
 package_name = 'arena_bringup'
 
 
-def recursive_walk(base_dir):
-    return [
-        (
-            os.path.join('share', package_name, base),
-            [os.path.join(base, file)]
+def recursive_walk(base_dir, *, destination=None, relative_to=None):
+    if destination is None:
+        destination = os.path.join('share', package_name)
+    if relative_to is None:
+        relative_to = ''
+
+    def process(base, files):
+        adjusted_base = os.path.relpath(base, relative_to)
+        return (
+            os.path.normpath(os.path.join(destination, adjusted_base)),
+            [
+                os.path.join(base, file)
+                for file in files
+            ]
         )
+
+    return [
+        process(base, files)
         for base, _, files in os.walk(base_dir)
-        for file in files
     ]
 
 
@@ -24,6 +35,7 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        *recursive_walk('scripts', destination=os.path.join('lib', package_name), relative_to='scripts'),
         *recursive_walk('launch'),
         *recursive_walk('configs'),
     ],
