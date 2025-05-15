@@ -10,7 +10,6 @@ import geometry_msgs.msg as geometry_msgs
 import rclpy
 import rclpy.node
 import yaml
-
 from task_generator.utils.geometry import (euler_from_quaternion,
                                            quaternion_from_euler)
 
@@ -355,7 +354,7 @@ class Obstacle(Entity):
         name = str(obj.get("name", ""))
         position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
 
-        return Obstacle(
+        return cls(
             name=name,
             position=position,
             model=model,
@@ -374,7 +373,7 @@ class DynamicObstacle(Obstacle):
         waypoints = [PositionRadius(*waypoint)
                      for waypoint in obj.get("waypoints", [])]
 
-        return DynamicObstacle(
+        return cls(
             **attrs.asdict(base, recurse=False),
             waypoints=waypoints,
         )
@@ -427,7 +426,7 @@ class Robot(Entity):
             "record_data_dir", rosparam_get(str, "record_data_dir", None)
         )
 
-        return Robot(
+        return cls(
             name=name,
             position=position,
             inter_planner=inter_planner,
