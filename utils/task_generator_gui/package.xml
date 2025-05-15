@@ -5,12 +5,13 @@
   <version>0.0.0</version>
   <description>TODO: Package description</description>
   <maintainer email="ductaingn.015203@gmail.com">ductaingn</maintainer>
-  <license>TODO: License declaration</license>
+  <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
 
   <depend>pluginlib</depend>
   <depend>rviz_common</depend>
