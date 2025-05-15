@@ -115,6 +115,8 @@ public:
 
 private:
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  std::vector<geometry_msgs::msg::Point> wall_points_;
+  bool walls_initialized_ =false; 
   /// Helper functions
   void initializeAgents(gz::sim::EntityComponentManager& _ecm);
   void initializeRobot(gz::sim::EntityComponentManager& _ecm);

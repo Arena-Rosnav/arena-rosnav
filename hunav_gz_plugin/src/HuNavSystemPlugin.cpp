@@ -338,7 +338,14 @@ void HuNavSystemPluginIGN::initializeAgents(gz::sim::EntityComponentManager& _ec
         continue;  // skip und beim nächsten Update wieder probieren
       }
       
-
+      // Store the Wall Data which is coming from the Hunavmanager (store the already initialised closest_obstacles of the Peds from the manager into the variable, to have them still after every reset)
+      if (!agent.closest_obs.empty() && !walls_initialized_) {
+          
+          wall_points_ = agent.closest_obs;
+          walls_initialized_ = true;
+          RCLCPP_INFO(rosnode_->get_logger(), "Stored %zu wall points from agent %s", 
+                    wall_points_.size(), agent.name.c_str());
+      }
       //Actor
       auto actorComp = _ecm.Component<gz::sim::components::Actor>(agentEntity);
       if (!actorComp)
@@ -611,7 +618,9 @@ void HuNavSystemPluginIGN::getObstacles(const gz::sim::EntityComponentManager& _
     double minDist = 5.0; //10000.0;
     //ignition::math::Vector3d closest_obstacle;
     // ignition::math::Vector3d closest_obs2;
-    pedestrians_[p.first].closest_obs.clear();
+    //pedestrians_[p.first].closest_obs.clear();
+  
+    pedestrians_[p.first].closest_obs = wall_points_;  // No Clearing instead start with the walls as the base set of obstacles
 
     //gz::math::Pose3d actor_pose = worldPose(p.first, _ecm);
     //gz::math::Pose3d actor_pose = _ecm.Component<gz::sim::components::Pose>(p.first)->Data();
