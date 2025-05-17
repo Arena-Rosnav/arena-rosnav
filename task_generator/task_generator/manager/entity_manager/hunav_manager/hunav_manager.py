@@ -374,7 +374,9 @@ class HunavManager(DummyEntityManager):
                     agent_msg.goals.append(goal)
 
             # Add wall obstacles
+            self._logger.warn(f"Hunav Manager Wallpoints: {self._wall_points}")
             agent_msg.closest_obs.extend(self._wall_points)
+            self._logger.warn(f"Hunav Manager Closest Obstacles: {agent_msg.closest_obs}")
 
             # After creating the agent message:
             self._logger.warn(f"""            ##Complete Debug for the set attributes
@@ -452,10 +454,11 @@ class HunavManager(DummyEntityManager):
             self._logger.error(traceback.format_exc())
             return None
 
-    def _spawn_wall_impl(self, walls) -> bool:
-        spacing = 0.5
+    def _spawn_walls_impl(self, walls) -> bool:
+        spacing = 0.1
 
         for wall in walls:
+            self._logger.warn(f"_spawn_wall: {wall}")
             dx = wall.End.x - wall.Start.x
             dy = wall.End.y - wall.Start.y
             length = math.sqrt(dx * dx + dy * dy)
@@ -468,9 +471,11 @@ class HunavManager(DummyEntityManager):
                 point.y = wall.Start.y + t * dy
                 point.z = 0.0
                 self._wall_points.append(point)
+            self._logger.warn(f"_spawn_walls_impl Wallpoints: {self._wall_points}")
+            
         return True
 
     def _remove_obstacles_impl(self):
-        self._wall_points = []
+        #self._wall_points = []
         # TODO remove obstacles
         return True

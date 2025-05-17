@@ -333,19 +333,22 @@ void HuNavSystemPluginIGN::initializeAgents(gz::sim::EntityComponentManager& _ec
     {
       hunav_msgs::msg::Agent ag = agent;
       auto agentEntity = _ecm.EntityByComponents(gz::sim::components::Name(agent.name));
-      if (!agentEntity) {
-        gzmsg << "[HuNavPlugin] Agent '" << agent.name << "' not found in ECM yet, skipping for now." << std::endl;
-        continue;  // skip und beim nächsten Update wieder probieren
-      }
+      // if (!agentEntity) {
+      //   gzmsg << "[HuNavPlugin] Agent '" << agent.name << "' not found in ECM yet, skipping for now." << std::endl;
+      //   continue;  // skip und beim nächsten Update wieder probieren
+      // }
       
       // Store the Wall Data which is coming from the Hunavmanager (store the already initialised closest_obstacles of the Peds from the manager into the variable, to have them still after every reset)
       if (!agent.closest_obs.empty() && !walls_initialized_) {
           
           wall_points_ = agent.closest_obs;
           walls_initialized_ = true;
-          RCLCPP_INFO(rosnode_->get_logger(), "Stored %zu wall points from agent %s", 
+          RCLCPP_INFO(rosnode_->get_logger(), "Stored %zu wallpoints from agent %s", 
                     wall_points_.size(), agent.name.c_str());
       }
+      // if(agent.closest_obs.empty()){
+      //             RCLCPP_INFO(rosnode_->get_logger(), "CLOSEST OBSTACLES EMPTY !!!");
+      // }
       //Actor
       auto actorComp = _ecm.Component<gz::sim::components::Actor>(agentEntity);
       if (!actorComp)
@@ -621,6 +624,7 @@ void HuNavSystemPluginIGN::getObstacles(const gz::sim::EntityComponentManager& _
     //pedestrians_[p.first].closest_obs.clear();
   
     pedestrians_[p.first].closest_obs = wall_points_;  // No Clearing instead start with the walls as the base set of obstacles
+    //RCLCPP_INFO(rosnode_->get_logger(), "Stored %zu wallpoints from agent", wall_points_.size());
 
     //gz::math::Pose3d actor_pose = worldPose(p.first, _ecm);
     //gz::math::Pose3d actor_pose = _ecm.Component<gz::sim::components::Pose>(p.first)->Data();
@@ -1054,15 +1058,20 @@ void HuNavSystemPluginIGN::updateGazeboPedestrians(gz::sim::EntityComponentManag
   // }
 
   // update the Gazebo actors
-  RCLCPP_INFO(rosnode_->get_logger(), "=== Updating %zu agents ===", (_agents.agents.size()-1));
+  //RCLCPP_INFO(rosnode_->get_logger(), "=== Updating %zu agents ===", (_agents.agents.size()-1));
   for (const auto& a : _agents.agents)
   {
-      RCLCPP_INFO(rosnode_->get_logger(), "Looking for agent: '%s'", a.name.c_str());
+      //RCLCPP_INFO(rosnode_->get_logger(), "Looking for agent: '%s'", a.name.c_str());
       
   }
   for (auto a : _agents.agents)
   {
+    if (a.type != hunav_msgs::msg::Agent::PERSON) {
+        //RCLCPP_WARN_THROTTLE(rosnode_->get_logger(), *rosnode_->get_clock(), 5000, "Skipping empty agent: %s (Type: %d)", a.name.c_str(), a.type);
+        continue;
+    }
     auto entity = _ecm.EntityByComponents(gz::sim::components::Name(a.name));
+
     if (!entity)
     {
         static std::unordered_map<std::string, int> warnCounter;
