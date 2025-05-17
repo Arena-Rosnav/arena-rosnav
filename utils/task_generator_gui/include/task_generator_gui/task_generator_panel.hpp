@@ -35,6 +35,7 @@
 #include <QCheckBox>
 #include <QGroupBox>
 #include <QFontMetrics>
+#include "Qt-MultiSelectComboBox/MultiSelectComboBox.h"
 
 namespace task_generator_gui
 {
@@ -72,7 +73,7 @@ namespace task_generator_gui
         void setupObstaclesTreeItem();
         void setupRobotsTreeItem();
         QWidget *setupMinMaxSpinBox(std::vector<std::int64_t, std::allocator<std::int64_t>> *connected_values);
-        QGroupBox *setupGroupCheckBox(std::vector<std::string> check_box_texts, std::vector<int> *connected_hash_map);
+        MultiSelectComboBox *setupGroupCheckBox(std::vector<std::string> check_box_texts, std::vector<int> *connected_hash_map);
 
     protected:
         std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr;
@@ -142,6 +143,9 @@ namespace task_generator_gui
         QComboBox *robot_combobox;
         QComboBox *world_combobox;
         QPushButton *reset_scenario_button;
+        MultiSelectComboBox *static_obstacles_models_groupbox;
+        MultiSelectComboBox *interactive_obstacles_models_groupbox;
+        MultiSelectComboBox *dynamic_obstacles_models_groupbox;
 
     private Q_SLOTS:
         void resetScenarioButtonActivated();

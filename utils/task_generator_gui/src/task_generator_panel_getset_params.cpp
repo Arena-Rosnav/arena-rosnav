@@ -410,42 +410,21 @@ namespace task_generator_gui
             parameter = rcl_interfaces::msg::Parameter();
             parameter.name = "task.random.static.models";
             parameter.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY;
-            std::vector<std::string> selected_static_obstacles_models;
-            for (int i = 0; i < int(static_obstacles_all_models.size()); i++)
-            {
-                if (static_obstacles_models_selected[i] == 1)
-                {
-                    selected_static_obstacles_models.push_back(static_obstacles_all_models[i]);
-                }
-            }
+            std::vector<std::string> selected_static_obstacles_models = convert(static_obstacles_models_groupbox->currentText());
             parameter.value.string_array_value = selected_static_obstacles_models;
             request->parameters.push_back(parameter);
 
             parameter = rcl_interfaces::msg::Parameter();
             parameter.name = "task.random.interactive.models";
             parameter.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY;
-            std::vector<std::string> selected_interactive_obstacles_models;
-            for (int i = 0; i < int(interactive_obstacles_all_models.size()); i++)
-            {
-                if (interactive_obstacles_models_selected[i] == 1)
-                {
-                    selected_interactive_obstacles_models.push_back(interactive_obstacles_all_models[i]);
-                }
-            }
+            std::vector<std::string> selected_interactive_obstacles_models = convert(interactive_obstacles_models_groupbox->currentText());
             parameter.value.string_array_value = selected_interactive_obstacles_models;
             request->parameters.push_back(parameter);
 
             parameter = rcl_interfaces::msg::Parameter();
             parameter.name = "task.random.dynamic.models";
             parameter.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY;
-            std::vector<std::string> selected_dynamic_obstacles_models;
-            for (int i = 0; i < int(dynamic_obstacles_all_models.size()); i++)
-            {
-                if (dynamic_obstacles_models_selected[i] == 1)
-                {
-                    selected_dynamic_obstacles_models.push_back(dynamic_obstacles_all_models[i]);
-                }
-            }
+            std::vector<std::string> selected_dynamic_obstacles_models = convert(dynamic_obstacles_models_groupbox->currentText());
             parameter.value.string_array_value = selected_dynamic_obstacles_models;
             request->parameters.push_back(parameter);
 
@@ -570,4 +549,15 @@ namespace task_generator_gui
         }
     }
 
+    // Convert QStringList to std::vector<std::string>
+    std::vector<std::string> convert(const QStringList &qList)
+    {
+        std::vector<std::string> result;
+        result.reserve(qList.size()); // optional, for efficiency
+        for (const QString &item : qList)
+        {
+            result.push_back(item.toStdString());
+        }
+        return result;
+    }
 } // namespace task_generator_gui

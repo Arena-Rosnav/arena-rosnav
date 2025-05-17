@@ -233,21 +233,21 @@ namespace task_generator_gui
             auto static_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
             static_obstacles_widgetitem->setText(0, "Static Obstacles Models");
 
-            auto static_obstacles_models_groupbox = setupGroupCheckBox(static_obstacles_all_models, &static_obstacles_models_selected);
+            static_obstacles_models_groupbox = setupGroupCheckBox(static_obstacles_all_models, &static_obstacles_models_selected);
             obstacles_tree->setItemWidget(static_obstacles_widgetitem, 1, static_obstacles_models_groupbox);
 
             // Set up check boxes to choose interactive obstacles models
             auto interactive_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
             interactive_obstacles_widgetitem->setText(0, "Interactive Obstacles Models");
 
-            auto interactive_obstacles_models_groupbox = setupGroupCheckBox(interactive_obstacles_all_models, &interactive_obstacles_models_selected);
+            interactive_obstacles_models_groupbox = setupGroupCheckBox(interactive_obstacles_all_models, &interactive_obstacles_models_selected);
             obstacles_tree->setItemWidget(interactive_obstacles_widgetitem, 1, interactive_obstacles_models_groupbox);
 
             // Set up check boxes to choose dynamic obstacles models
             auto dynamic_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
             dynamic_obstacles_widgetitem->setText(0, "Dynamic Obstacles Models");
 
-            auto dynamic_obstacles_models_groupbox = setupGroupCheckBox(dynamic_obstacles_all_models, &dynamic_obstacles_models_selected);
+            dynamic_obstacles_models_groupbox = setupGroupCheckBox(dynamic_obstacles_all_models, &dynamic_obstacles_models_selected);
             obstacles_tree->setItemWidget(dynamic_obstacles_widgetitem, 1, dynamic_obstacles_models_groupbox);
         }
 
@@ -298,23 +298,16 @@ namespace task_generator_gui
         return placeholder_widget;
     }
 
-    QGroupBox *TaskGeneratorPanel::setupGroupCheckBox(std::vector<std::string> check_box_texts, std::vector<int> *connected_hash_map)
+    MultiSelectComboBox *TaskGeneratorPanel::setupGroupCheckBox(std::vector<std::string> check_box_texts, std::vector<int> *connected_hash_map)
     {
-        auto groupbox = new QGroupBox();
-        auto layout = new QVBoxLayout();
+        auto group_check_box = new MultiSelectComboBox();
 
         for (int i = 0; i < int(check_box_texts.size()); i++)
         {
-            auto checkbox = new QCheckBox(QString::fromStdString(check_box_texts[i]));
-            checkbox->setChecked(connected_hash_map->at(i));
-            connect(checkbox, &QCheckBox::stateChanged, this, [this, connected_hash_map, i](int state)
-                    { connected_hash_map->at(i) = (state == Qt::Checked); });
-            layout->addWidget(checkbox);
+            group_check_box->addItem(QString::fromStdString(check_box_texts[i]));
         }
 
-        groupbox->setLayout(layout);
-
-        return groupbox;
+        return group_check_box;
     }
 
     void TaskGeneratorPanel::onObstaclesTaskModeChanged(const QString &text)

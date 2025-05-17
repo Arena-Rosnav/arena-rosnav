@@ -18,6 +18,8 @@ find_package(std_srvs REQUIRED)
 set(CMAKE_AUTOMOC ON)
 qt5_wrap_cpp(MOC_FILES
   include/task_generator_gui/task_generator_panel.hpp
+  include/Qt-MultiSelectComboBox/MultiSelectComboBox.h
+  include/Qt-MultiSelectComboBox/MultiSelectComboBox.cpp
 )
 
 add_library(task_generator_panel 
