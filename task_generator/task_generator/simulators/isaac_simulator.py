@@ -223,6 +223,7 @@ class IsaacSimulator(BaseSimulator):
                 UrdfToUsd.Request(
                     name=robot.name,
                     urdf_path=os.path.abspath(model.path),
+                    robot_model=robot.model.name,
                     no_localization=False,
                     base_frame=robot_params.base_frame,
                     odom_frame=robot_params.odom_frame,
