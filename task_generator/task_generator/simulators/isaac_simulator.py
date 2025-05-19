@@ -6,7 +6,6 @@ import arena_simulation_setup
 import attrs
 import rclpy
 # Import dependencies.
-from isaacsim_msgs.msg import Person, Values
 from isaacsim_msgs.srv import (DeletePrim, GetPrimAttributes, ImportObstacles,
                                ImportUsd, MovePrim, Pedestrian, SpawnWall,
                                UrdfToUsd)
@@ -132,11 +131,8 @@ class IsaacSimulator(BaseSimulator):
 
         response = self.services.move_prim.client.call_async(
             MovePrim.Request(
-                name=name,
                 prim_path=f"/{name}",
-                values=[
-                    Values(values=[position.x, position.y, 0.12]),
-                    Values(values=[0.0, 0.0, math.degrees(position.orientation)])]
+                pose=position.to_pose(),
             )
         )
         if response is None:
@@ -153,7 +149,6 @@ class IsaacSimulator(BaseSimulator):
 
         response = self.services.delete_prim.client.call_async(
             DeletePrim.Request(
-                name=name,
                 prim_path=prim_path
             )
         )
@@ -219,6 +214,7 @@ class IsaacSimulator(BaseSimulator):
         )
         if model.type == ModelType.URDF:
             robot_params = arena_simulation_setup.Robot(robot.model.name)
+
             response = self.services.urdf_to_usd.client.call(
                 UrdfToUsd.Request(
                     name=robot.name,
@@ -226,6 +222,7 @@ class IsaacSimulator(BaseSimulator):
                     no_localization=False,
                     base_frame=robot_params.base_frame,
                     odom_frame=robot_params.odom_frame,
+                    pose=robot.position.to_pose(),
                 )
             )
             return True
@@ -240,8 +237,7 @@ class IsaacSimulator(BaseSimulator):
             ImportObstacles.Request(
                 name=obstacle.name,
                 usd_path=usd_path,
-                position=[obstacle.position.x, obstacle.position.y, 0.12],
-                orientation=[0.0, 0.0, obstacle.position.orientation],
+                pose=obstacle.position.to_pose(),
             )
         )
         return True
