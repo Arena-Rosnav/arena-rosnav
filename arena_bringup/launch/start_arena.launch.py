@@ -6,7 +6,7 @@ from ament_index_python.packages import get_package_share_directory
 from arena_bringup.actions import IsolatedGroupAction
 from arena_bringup.extensions.NodeLogLevelExtension import \
     SetGlobalLogLevelAction
-from arena_bringup.future import PythonExpression
+from arena_bringup.future import IfElseSubstitution, PythonExpression
 from arena_bringup.substitutions import LaunchArgument
 
 
@@ -64,7 +64,11 @@ def generate_launch_description():
     )
     entity_manager = LaunchArgument(
         name='entity_manager',
-        default_value='dummy',
+        default_value=IfElseSubstitution(
+            condition=PythonExpression(['"', simulator.substitution, '"', '=="isaac"']),
+            if_value='isaac',
+            else_value='dummy'
+        ),
     )
     # sfm = LaunchArgument(
     #     name='sfm',

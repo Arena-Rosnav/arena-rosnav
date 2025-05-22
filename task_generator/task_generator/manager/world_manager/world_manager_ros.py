@@ -13,7 +13,6 @@ import rclpy
 import rclpy.callback_groups
 import rclpy.client
 import yaml
-
 from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.shared import Position, Wall
 from task_generator.utils.time import Time
@@ -208,7 +207,7 @@ class WorldManagerROS(WorldManager):
             self.node.service_namespace('map_server'),
             callback_group=rclpy.callback_groups.ReentrantCallbackGroup(),
         ).id != lifecycle_msgs.msg.State.PRIMARY_STATE_ACTIVE:
-            self._logger.info('map_server is not active, waiting again...')
+            self._logger.warn('map_server is not active, waiting again...')
             time.sleep(1.0)
 
         # publishing map to map_server
@@ -218,7 +217,7 @@ class WorldManagerROS(WorldManager):
             callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
         while not self._cli.wait_for_service(timeout_sec=1.0):
-            self._logger.info('LoadMap service not available, waiting again...')
+            self._logger.warn('LoadMap service not available, waiting again...')
 
         self.node.rosparam.callback(
             'world',

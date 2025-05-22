@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import enum
-import os
 import typing
 from typing import Callable, Collection, Optional, Type, TypeVar, overload
 
@@ -9,7 +8,6 @@ import attrs
 import geometry_msgs.msg as geometry_msgs
 import rclpy
 import rclpy.node
-import yaml
 from task_generator.utils.geometry import (euler_from_quaternion,
                                            quaternion_from_euler)
 
@@ -133,6 +131,7 @@ class PositionOrientation(Position):
             position=geometry_msgs.Point(
                 x=self.x,
                 y=self.y,
+                z=0.0,
             ),
             orientation=geometry_msgs.Quaternion(
                 x=quat[0],

@@ -18,7 +18,6 @@ class IsaacEntityManager(DummyEntityManager):
             raise ValueError("IsaacEntityManager only works with IsaacSimulator")
         super().__init__(namespace, simulator)
         self._simulator = typing.cast(IsaacSimulator, self._simulator)
-        self._known_obstacles = KnownObstacles()
 
     def spawn_dynamic_obstacles(
         self,
@@ -34,11 +33,13 @@ class IsaacEntityManager(DummyEntityManager):
                     name=obstacle.name,
                     obstacle=obstacle
                 )
+                model_name = ''  # obstacle.model.name
+
                 self._simulator.services.import_pedestrians.client.call(
                     Pedestrian.Request(
                         people=[Person(
                             stage_prefix=obstacle.name,
-                            character_name=obstacle.model.name,
+                            character_name=model_name,
                             initial_pose=[obstacle.position.x, obstacle.position.y, .1],
                             goal_pose=[obstacle.waypoints[-1].x, obstacle.waypoints[-1].y, 0.0],
                             orientation=obstacle.position.orientation,
