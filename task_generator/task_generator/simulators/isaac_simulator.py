@@ -133,7 +133,6 @@ class IsaacSimulator(BaseSimulator):
         response = self.services.move_prim.client.call_async(
             MovePrim.Request(
                 name=name,
-                prim_path=f"/{name}",
                 values=[
                     Values(values=[position.x, position.y, 0.12]),
                     Values(values=[0.0, 0.0, math.degrees(position.orientation)])]
@@ -180,7 +179,6 @@ class IsaacSimulator(BaseSimulator):
                 future = self.services.spawn_wall.client.call_async(
                     SpawnWall.Request(
                         name=f"wall_{i+1}",
-                        world_path=world_path,
                         start=start,
                         end=end,
                         height=wall.height
