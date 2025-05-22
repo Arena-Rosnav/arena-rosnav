@@ -12,7 +12,7 @@ hunav_loader:
       max_vel: 5.0
       radius: 0.4
       behavior: 
-        type: 4  # REGULAR=1, IMPASSIVE=2, SURPRISED=3, SCARED=4, CURIOUS=5, THREATENING=6
+        type: 1  # REGULAR=1, IMPASSIVE=2, SURPRISED=3, SCARED=4, CURIOUS=5, THREATENING=6
         configuration: 0  # def: 0, custom:1, random_normal:2, random_uniform:3
         duration: 40.0  # seg
         once: true

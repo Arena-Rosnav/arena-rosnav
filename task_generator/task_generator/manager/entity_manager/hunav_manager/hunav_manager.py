@@ -35,7 +35,7 @@ def _create_robot_message():
 
 class _PedestrianHelper:
     _ANIMATION_MAP = {
-        AgentBehavior.BEH_REGULAR: "07_01-walk.bvh",
+        AgentBehavior.BEH_REGULAR: "walk.dae",#"07_01-walk.bvh",
         AgentBehavior.BEH_IMPASSIVE: "69_02_walk_forward.bvh",
         AgentBehavior.BEH_SURPRISED: "137_28-normal_wait.bvh",
         AgentBehavior.BEH_SCARED: "142_17-walk_scared.bvh",
@@ -72,7 +72,7 @@ class _PedestrianHelper:
 
         # Animation mapping based on behavior
 
-        animation_file = cls._ANIMATION_MAP.get(agent_config.behavior.type, "07_01-walk.bvh")
+        animation_file = "walk.dae" #cls._ANIMATION_MAP.get(agent_config.behavior.type, "07_01-walk.bvh")
 
         # Get workspace root
         def get_workspace_root():
@@ -94,34 +94,64 @@ class _PedestrianHelper:
 
         animation_path = os.path.join(
             get_workspace_root(),
-            'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/animations',
-            animation_file
+            'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/models/walk.dae'
         )
 
+        # Temporärer Logger für Debug
+        import rclpy
+        if not rclpy.ok():
+            rclpy.init()
+        temp_node = rclpy.create_node('temp_debug_node')
+        logger = temp_node.get_logger()
+
+                # DEBUG
+        logger.warn(f"DEBUG: Looking for animation at: {animation_path}")
+        logger.warn(f"DEBUG: Animation exists: {os.path.exists(animation_path)}")
+        
+        
+        # Cleanup
+        temp_node.destroy_node()
+
+        # Create the SDF with a COMPLETE plugin block containing all required parameters
         sdf = f"""<?xml version="1.0" ?>
         <sdf version="1.9">
             <actor name="{agent_config.name}">
                 <pose>{agent_config.init_pose.x} {agent_config.init_pose.y} {cls._HEIGHTS.get(agent_config.skin, 1.0)} 0 0 {agent_config.yaw}</pose>
-
+                
                 <skin>
                     <filename>{mesh_path}</filename>
                     <scale>1.0</scale>
                 </skin>
 
-                <animation name="07_01-walk">
+                <animation name="walking">
                     <filename>{animation_path}</filename>
                     <scale>1.0</scale>
                     <interpolate_x>true</interpolate_x>
                 </animation>
 
                 <plugin name="HuNavSystemPluginIGN" filename="libHuNavSystemPluginIGN.so">
-
+                    <update_rate>1000.0</update_rate>
+                    <robot_name>jackal</robot_name>
+                    <use_gazebo_obs>false</use_gazebo_obs>
+                    <global_frame_to_publish>map</global_frame_to_publish>
+                    <use_navgoal_to_start>false</use_navgoal_to_start>
+                    <navgoal_topic>goal_pose</navgoal_topic>
+                    <ignore_models>
+                        <model>ground_plane</model>
+                        <model>sun</model>
+                        <model>visual</model>
+                        <model>link</model>
+                        <model>collision</model>
+                        <model>main_floor</model>
+                        <model>surface</model>
+                        <model>column</model>
+                        <model>point_light</model>
+                    </ignore_models>
                 </plugin>
-
             </actor>
         </sdf>"""
 
-        return sdf
+        return sdf 
 
 
 class HunavManager(DummyEntityManager):
@@ -374,9 +404,9 @@ class HunavManager(DummyEntityManager):
                     agent_msg.goals.append(goal)
 
             # Add wall obstacles
-            self._logger.warn(f"Hunav Manager Wallpoints: {self._wall_points}")
+            #self._logger.warn(f"Hunav Manager Wallpoints: {self._wall_points}")
             agent_msg.closest_obs.extend(self._wall_points)
-            self._logger.warn(f"Hunav Manager Closest Obstacles: {agent_msg.closest_obs}")
+            #self._logger.warn(f"Hunav Manager Closest Obstacles: {agent_msg.closest_obs}")
 
             # After creating the agent message:
             self._logger.warn(f"""            ##Complete Debug for the set attributes
@@ -471,7 +501,7 @@ class HunavManager(DummyEntityManager):
                 point.y = wall.Start.y + t * dy
                 point.z = 0.0
                 self._wall_points.append(point)
-            self._logger.warn(f"_spawn_walls_impl Wallpoints: {self._wall_points}")
+            #self._logger.warn(f"_spawn_walls_impl Wallpoints: {self._wall_points}")
             
         return True
 
