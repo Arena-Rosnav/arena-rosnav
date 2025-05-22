@@ -7,9 +7,9 @@ hunav_loader:
       - agent2
     agent1:
       id: 1
-      skin: 2
+      skin: 3
       group_id: -1
-      max_vel: 1.5
+      max_vel: 5.0
       radius: 0.4
       behavior: 
         type: 4  # REGULAR=1, IMPASSIVE=2, SURPRISED=3, SCARED=4, CURIOUS=5, THREATENING=6
@@ -17,9 +17,9 @@ hunav_loader:
         duration: 40.0  # seg
         once: true
         vel: 0.6
-        dist: 0.0
+        dist: 3.0
         goal_force_factor: 2.0
-        obstacle_force_factor: 10.0
+        obstacle_force_factor: 30.0
         social_force_factor: 5.0
         other_force_factor: 20.0
       init_pose:
@@ -59,7 +59,7 @@ hunav_loader:
         vel: 0.6
         dist: 0.0
         goal_force_factor: 2.0
-        obstacle_force_factor: 10.0
+        obstacle_force_factor: 30.0
         social_force_factor: 5.0
         other_force_factor: 20.0
       init_pose:

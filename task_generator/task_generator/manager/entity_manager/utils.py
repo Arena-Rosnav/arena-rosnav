@@ -1,5 +1,6 @@
 import enum
 import os
+import typing
 import xml.etree.ElementTree as ET
 from io import StringIO
 from typing import Any, Optional, Union
@@ -68,20 +69,23 @@ class ObstacleLayer(enum.IntEnum):
     WORLD = 2  # intrinsic part of world
 
 
+ObstacleT = typing.TypeVar('ObstacleT', bound=Obstacle)
+
+
 @attrs.define()
-class KnownObstacle:
-    obstacle: Obstacle
-    hunav_spawned: bool = False
+class KnownObstacle(typing.Generic[ObstacleT]):
+    obstacle: ObstacleT
+    spawned: bool = False
     layer: ObstacleLayer = ObstacleLayer.UNUSED
 
 
-class KnownObstacles:
+class KnownObstacles(typing.Generic[ObstacleT]):
     """
     Helper interface to store known obstacles
     """
 
     # store obstacle descs and whether they have been spawned
-    _known_obstacles: dict[str, KnownObstacle]
+    _known_obstacles: dict[str, KnownObstacle[ObstacleT]]
 
     def __init__(self):
         self._known_obstacles = dict()
@@ -94,18 +98,18 @@ class KnownObstacles:
         if name in self._known_obstacles:
             del self._known_obstacles[name]
 
-    def create_or_get(self, name: str, **kwargs) -> KnownObstacle:
+    def create_or_get(self, name: str, obstacle: ObstacleT, **kwargs) -> KnownObstacle[ObstacleT]:
         """
         Get an existing obstacle or create it if it doesn't exist. To overwrite an existing obstacle, first remove it using forget().
         @name: name of obstacle
         @kwargs: arguments passed to KnownObstacle constructor
         """
         if name not in self._known_obstacles:
-            self._known_obstacles[name] = KnownObstacle(**kwargs)
+            self._known_obstacles[name] = KnownObstacle[ObstacleT](obstacle=obstacle, **kwargs)
 
         return self._known_obstacles[name]
 
-    def get(self, name: str) -> Optional[KnownObstacle]:
+    def get(self, name: str) -> Optional[KnownObstacle[ObstacleT]]:
         """
         Get an existing obstacle or return None if it doesn't exist.
         @name: name of obstacle

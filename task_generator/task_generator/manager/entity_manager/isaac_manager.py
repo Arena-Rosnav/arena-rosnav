@@ -5,16 +5,13 @@ from isaacsim_msgs.msg import Person
 from isaacsim_msgs.srv import Pedestrian
 from task_generator.manager.entity_manager.dummy_manager import \
     DummyEntityManager
-from task_generator.manager.entity_manager.utils import (KnownObstacles,
-                                                         ObstacleLayer)
+from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.shared import DynamicObstacle
 from task_generator.simulators import BaseSimulator
 from task_generator.simulators.isaac_simulator import IsaacSimulator
 
 
 class IsaacEntityManager(DummyEntityManager):
-
-    _known_obstacles: KnownObstacles
 
     def __init__(self, namespace: Namespace, simulator: BaseSimulator):
         if not isinstance(simulator, IsaacSimulator):
@@ -24,7 +21,9 @@ class IsaacEntityManager(DummyEntityManager):
         self._known_obstacles = KnownObstacles()
 
     def spawn_dynamic_obstacles(
-            self, obstacles: typing.Collection[DynamicObstacle]):
+        self,
+        obstacles: typing.Collection[DynamicObstacle],
+    ):
         self._logger.debug(f'spawning {len(obstacles)} dynamic obstacles')
         for obstacle in obstacles:
             self._logger.info(f"Attempting to spawn model: {obstacle.name}")

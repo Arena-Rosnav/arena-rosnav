@@ -152,6 +152,12 @@ class PositionRadius(Position):
     """
     radius: float = attrs.field(converter=lambda x: max(0., float(x)))
 
+    @classmethod
+    def parse(cls, v: typing.Iterable[float] | PositionRadius) -> "PositionRadius":
+        if isinstance(v, PositionRadius):
+            return v
+        return cls(*v)
+
 
 class ModelWrapper:
     _get: Callable[[Collection[ModelType], dict], Model]
@@ -370,8 +376,7 @@ class DynamicObstacle(Obstacle):
     def parse(cls, obj: dict, model: ModelWrapper) -> "DynamicObstacle":
 
         base = Obstacle.parse(obj, model)
-        waypoints = [PositionRadius(*waypoint)
-                     for waypoint in obj.get("waypoints", [])]
+        waypoints = [PositionRadius.parse(waypoint) for waypoint in obj.get("waypoints", [])]
 
         return cls(
             **attrs.asdict(base, recurse=False),
