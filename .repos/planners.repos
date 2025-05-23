@@ -24,6 +24,10 @@ repositories:
     type: git
     url: https://github.com/Arena-Rosnav/nav2py_drlvo
     version: master
+  planners/Sicnav:
+    type: git
+    url: https://github.com/SugerSenpai/nav2py_sicnav
+    version: fixed
 #   #planners
 #   planners/my_planner:
 #     type: git
