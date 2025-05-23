@@ -1,3 +1,4 @@
+import random
 import typing
 
 from arena_rclpy_mixins.shared import Namespace
@@ -19,6 +20,8 @@ class IsaacEntityManager(DummyEntityManager):
         super().__init__(namespace, simulator)
         self._simulator = typing.cast(IsaacSimulator, self._simulator)
 
+        self._walls: list[str] = []
+
     def spawn_dynamic_obstacles(
         self,
         obstacles: typing.Collection[DynamicObstacle],
@@ -33,7 +36,8 @@ class IsaacEntityManager(DummyEntityManager):
                     name=obstacle.name,
                     obstacle=obstacle
                 )
-                model_name = ''  # obstacle.model.name
+                model_name = random.choice(['F_Business_02', 'F_Medical_01', 'M_Medical_01', 'biped_demo', 'female_adult_police_01_new', 'female_adult_police_02', 'female_adult_police_03_new', 'male_adult_construction_01_new', 'male_adult_construction_03', 'male_adult_construction_05_new', 'male_adult_police_04', 'original_female_adult_business_02', 'original_female_adult_medical_01', 'original_female_adult_police_01', 'original_female_adult_police_02', 'original_female_adult_police_03', 'original_male_adult_construction_01', 'original_male_adult_construction_02', 'original_male_adult_construction_03', 'original_male_adult_construction_05', 'original_male_adult_medical_01', 'original_male_adult_police_04'])
+                # obstacle.model.name
 
                 self._simulator.services.import_pedestrians.client.call(
                     Pedestrian.Request(

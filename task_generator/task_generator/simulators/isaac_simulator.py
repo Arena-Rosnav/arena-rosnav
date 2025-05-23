@@ -1,5 +1,6 @@
 import math
 import os
+import time
 import typing
 
 import arena_simulation_setup
@@ -162,8 +163,10 @@ class IsaacSimulator(BaseSimulator):
         self._logger.info(
             f"Attempting to spawn walls"
         )
-        # print(walls)
-        world_path = "/World"
+
+        self.delete_walls()
+        time.sleep(0.01)
+
         for i, wall in enumerate(walls):
             try:
                 # print(f"wall {i+1}: {wall}")
@@ -220,6 +223,7 @@ class IsaacSimulator(BaseSimulator):
                     base_frame=robot_params.base_frame,
                     odom_frame=robot_params.odom_frame,
                     pose=robot.position.to_pose(),
+                    cmd_vel_topic=self.node.service_namespace(robot.name, 'cmd_vel')
                 )
             )
             return True
@@ -253,3 +257,6 @@ class IsaacSimulator(BaseSimulator):
 
         self._logger.info(
             f"Done initializing Isaac Sim")
+
+    def delete_walls(self):
+        self.delete_entity('walls')
