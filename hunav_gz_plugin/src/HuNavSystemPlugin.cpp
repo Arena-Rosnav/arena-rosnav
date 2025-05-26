@@ -620,9 +620,9 @@ void HuNavSystemPluginIGN::getObstacles(const gz::sim::EntityComponentManager& _
     double minDist = 5.0; //10000.0;
     //ignition::math::Vector3d closest_obstacle;
     // ignition::math::Vector3d closest_obs2;
-    //pedestrians_[p.first].closest_obs.clear();
+    pedestrians_[p.first].closest_obs.clear();
   
-    pedestrians_[p.first].closest_obs = wall_points_;  // No Clearing instead start with the walls as the base set of obstacles
+    //pedestrians_[p.first].closest_obs = wall_points_;  // No Clearing instead start with the walls as the base set of obstacles
     //RCLCPP_INFO(rosnode_->get_logger(), "Stored %zu wallpoints from agent", wall_points_.size());
 
     //gz::math::Pose3d actor_pose = worldPose(p.first, _ecm);

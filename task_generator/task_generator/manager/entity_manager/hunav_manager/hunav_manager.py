@@ -132,16 +132,13 @@ class _PedestrianHelper:
                 <plugin name="HuNavSystemPluginIGN" filename="libHuNavSystemPluginIGN.so">
                     <update_rate>1000.0</update_rate>
                     <robot_name>jackal</robot_name>
-                    <use_gazebo_obs>false</use_gazebo_obs>
+                    <use_gazebo_obs>true</use_gazebo_obs>
                     <global_frame_to_publish>map</global_frame_to_publish>
                     <use_navgoal_to_start>false</use_navgoal_to_start>
                     <navgoal_topic>goal_pose</navgoal_topic>
                     <ignore_models>
                         <model>ground_plane</model>
                         <model>sun</model>
-                        <model>visual</model>
-                        <model>link</model>
-                        <model>collision</model>
                         <model>main_floor</model>
                         <model>surface</model>
                         <model>column</model>
@@ -405,7 +402,7 @@ class HunavManager(DummyEntityManager):
 
             # Add wall obstacles
             #self._logger.warn(f"Hunav Manager Wallpoints: {self._wall_points}")
-            agent_msg.closest_obs.extend(self._wall_points)
+            #agent_msg.closest_obs.extend(self._wall_points)
             #self._logger.warn(f"Hunav Manager Closest Obstacles: {agent_msg.closest_obs}")
 
             # After creating the agent message:
