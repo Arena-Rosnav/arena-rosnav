@@ -61,6 +61,7 @@ using namespace std::chrono_literals;
 /////////////////////////////////////////////////
 HuNavSystemPluginIGN::HuNavSystemPluginIGN()
 {
+   walls_loaded_ = false;  
 }
 
 HuNavSystemPluginIGN::~HuNavSystemPluginIGN()
@@ -177,6 +178,7 @@ void HuNavSystemPluginIGN::Configure(const gz::sim::Entity& _entity, const std::
 
   agentsInitialized_ = false;
 
+
   // How to get models and actors
   // auto model = gz::sim::Model(_entity);
   // model.SetWorldPoseCmd(EntityComponentManager &_ecm, const math::Pose3d &_pose)
@@ -190,6 +192,21 @@ void HuNavSystemPluginIGN::Configure(const gz::sim::Entity& _entity, const std::
   //rosSrvClient_ = this->rosnode_->create_client<hunav_msgs::srv::MoveAgent>("move_agent");
 
   rosSrvResetClient_ = this->rosnode_->create_client<hunav_msgs::srv::ResetAgents>("reset_agents");
+  //Service to get the Wall Segments for the obstacle avoidance of the Pedestrians
+  wall_client_ = this->rosnode_->create_client<hunav_msgs::srv::GetWalls>("get_walls");
+
+  //Initialize Wall Segments
+  try
+    {
+      loadWallData();
+    } 
+    catch (const std::exception& e)
+    {
+      RCLCPP_ERROR(this->rosnode_->get_logger(), "Failed to load wall data: %s", e.what());
+      rclcpp::shutdown();
+      return;
+    }
+
 
   // Initiate the agents and the robot
   try
@@ -597,7 +614,49 @@ void HuNavSystemPluginIGN::initializeAgents(gz::sim::EntityComponentManager& _ec
 
 
 
+void HuNavSystemPluginIGN::loadWallData()
+{
+    if (!wall_client_->wait_for_service(std::chrono::seconds(5))) {
+        RCLCPP_WARN(rosnode_->get_logger(), "GetWalls service not available - walls will not be avoided");
+        walls_loaded_ = false;
+        return;
+    }
 
+    RCLCPP_INFO(rosnode_->get_logger(), "GetWalls service available. Loading wall data...");
+
+    auto request = std::make_shared<hunav_msgs::srv::GetWalls::Request>();
+    auto future = wall_client_->async_send_request(request);
+    
+    if (rclcpp::spin_until_future_complete(rosnode_, future, std::chrono::seconds(5)) == 
+        rclcpp::FutureReturnCode::SUCCESS) {
+        
+        auto response = future.get();
+        cached_wall_segments_.clear();
+        
+        for (const auto& wall_msg : response->walls) {
+            cached_wall_segments_.emplace_back(
+                wall_msg.id,
+                gz::math::Vector3d(wall_msg.start.x, wall_msg.start.y, wall_msg.start.z),
+                gz::math::Vector3d(wall_msg.end.x, wall_msg.end.y, wall_msg.end.z),
+                wall_msg.length,
+                wall_msg.height
+            );
+        }
+        
+        walls_loaded_ = true;
+        RCLCPP_INFO(rosnode_->get_logger(), "Loaded %zu wall segments for obstacle avoidance", 
+                    cached_wall_segments_.size());
+
+        for (const auto& segment : cached_wall_segments_) {
+        RCLCPP_INFO(rosnode_->get_logger(), 
+                    "Wall %d: [%.1f,%.1f]->[%.1f,%.1f] L=%.1fm H=%.1fm",
+                    segment.id, segment.start.X(), segment.start.Y(),
+                    segment.end.X(), segment.end.Y(), segment.length, segment.height);
+    }
+    } else {
+        RCLCPP_ERROR(rosnode_->get_logger(), "Failed to load wall data from service");
+    }
+}
 
 
 /////////////////////////////////////////////////

@@ -165,6 +165,7 @@ class HunavManager(DummyEntityManager):
     SERVICE_MOVE_AGENT = 'move_agent'
     SERVICE_RESET_AGENTS = 'reset_agents'
     SERVICE_GET_AGENTS = 'get_agents'
+    SERVICE_GET_WALLS = 'get_walls' 
 
     def __init__(self, namespace: Namespace, simulator: BaseSimulator):
         """Initialize HunavManager with debug logging"""
@@ -210,7 +211,8 @@ class HunavManager(DummyEntityManager):
             'compute_agents': f'/{self.SERVICE_COMPUTE_AGENTS}',
             'move_agent': f'/{self.SERVICE_MOVE_AGENT}',
             'reset_agents': f'/{self.SERVICE_RESET_AGENTS}',
-            'get_agents': f'/{self.SERVICE_GET_AGENTS}'
+            'get_agents': f'/{self.SERVICE_GET_AGENTS}',
+            'get_walls': f'/{self.SERVICE_GET_WALLS}' 
         }
 
         # Log service creation attempts
@@ -249,6 +251,15 @@ class HunavManager(DummyEntityManager):
             self._get_agents_callback
         )
         self._logger.warn("GetAgents service provider created")
+
+        # Create GetWalls service provider
+        self._logger.warn(f"Creating get_walls service provider at: {service_names['get_walls']}")
+        self._get_walls_service = self.node.create_service(
+            GetWalls,
+            service_names['get_walls'],
+            self._get_walls_callback
+        )
+        self._logger.warn("GetWalls service provider created")
 
         # Wait for Services
         required_services = [

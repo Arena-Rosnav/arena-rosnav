@@ -70,6 +70,7 @@
 #include "hunav_msgs/srv/compute_agents.hpp"
 #include "hunav_msgs/srv/get_agents.hpp"
 #include "hunav_msgs/srv/reset_agents.hpp"
+#include "hunav_msgs/srv/get_walls.hpp"
 //#include "hunav_msgs/srv/move_agent.hpp"
 
 #include <tf2/LinearMath/Matrix3x3.h>
@@ -128,6 +129,26 @@ private:
 
 
   void fixActorHeight(const hunav_msgs::msg::Agent& ag, gz::math::Pose3d& p);
+
+  //Wall struct and helper functions/variables
+  void loadWallData();
+  struct WallSegment {
+      int id;
+      gz::math::Vector3d start;
+      gz::math::Vector3d end;
+      double length;
+      double height;
+      gz::math::Vector3d center;
+      
+      WallSegment(int _id, const gz::math::Vector3d& _start, const gz::math::Vector3d& _end, 
+                  double _length, double _height)
+          : id(_id), start(_start), end(_end), length(_length), height(_height)
+          , center((_start + _end) / 2.0) {}
+  };
+
+  std::vector<WallSegment> cached_wall_segments_;
+  rclcpp::Client<hunav_msgs::srv::GetWalls>::SharedPtr wall_client_;
+  bool walls_loaded_;
 
   rclcpp::Node::SharedPtr rosnode_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr ros_test_pub_;
