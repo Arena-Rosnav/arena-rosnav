@@ -338,13 +338,7 @@ void HuNavSystemPluginIGN::initializeAgents(gz::sim::EntityComponentManager& _ec
       //   continue;  // skip und beim nächsten Update wieder probieren
       // }
       
-      // Store the Wall Data which is coming from the Hunavmanager (store the already initialised closest_obstacles of the Peds from the manager into the variable, to have them still after every reset)
-      if (!agent.closest_obs.empty() && !walls_initialized_) {
-          
-          wall_points_ = agent.closest_obs;
-          walls_initialized_ = true;
-          //RCLCPP_INFO(rosnode_->get_logger(), "Stored %zu wallpoints from agent %s", wall_points_.size(), agent.name.c_str());
-      }
+ 
       // if(agent.closest_obs.empty()){
       //             RCLCPP_INFO(rosnode_->get_logger(), "CLOSEST OBSTACLES EMPTY !!!");
       // }
@@ -636,7 +630,7 @@ void HuNavSystemPluginIGN::getObstacles(const gz::sim::EntityComponentManager& _
     auto actor_pose = traj->Data();
 
     // we create a default bounding box for the actor
-    auto actor_size = gz::math::Vector3d(0.35, 0.35, 1.65); 
+    auto actor_size = gz::math::Vector3d(0.15, 0.15, 1.65); 
     gz::math::AxisAlignedBox actor_bb = gz::math::AxisAlignedBox(
       actor_pose.Pos() - actor_size / 2,
       actor_pose.Pos() + actor_size / 2
@@ -739,7 +733,7 @@ void HuNavSystemPluginIGN::getObstacles(const gz::sim::EntityComponentManager& _
         // if the entity has no geometry component, we can just use the center position
         // and we build a default small bounding box around it.  
         //ignmsg << "Entity " << obs_name->Data() << " has no Geometry component" << std::endl;
-        auto default_size = gz::math::Vector3d(0.35, 0.35, 1.0);
+        auto default_size = gz::math::Vector3d(0.30, 0.30, 1.0);
         gz::math::AxisAlignedBox obs_bb = gz::math::AxisAlignedBox(
           obs_pose.Pos() - default_size / 2,
           obs_pose.Pos() + default_size / 2

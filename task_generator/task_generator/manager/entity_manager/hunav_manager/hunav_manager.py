@@ -4,13 +4,14 @@ import re
 import time
 import traceback
 import typing
+from geometry_msgs.msg import Point
 
 import attrs
 import geometry_msgs.msg
 from arena_rclpy_mixins.shared import Namespace
-from hunav_msgs.msg import Agent, AgentBehavior, Agents
+from hunav_msgs.msg import Agent, AgentBehavior, Agents, WallSegment
 from hunav_msgs.srv import (ComputeAgent, ComputeAgents, GetAgents, MoveAgent,
-                            ResetAgents)
+                            ResetAgents, GetWalls)
 
 from task_generator.manager.entity_manager.dummy_manager import \
     DummyEntityManager
@@ -297,6 +298,13 @@ class HunavManager(DummyEntityManager):
 
         return response
 
+
+    def _get_walls_callback(self, request, response):
+        """Service callback für Wall-Segments"""
+        response.walls = self._wall_segments
+        self._logger.info(f"Sent {len(self._wall_segments)} wall segments")
+        return response
+
     def spawn_dynamic_obstacles(self, obstacles: typing.Collection[DynamicObstacle]):
         """Override to handle batch registration after all spawns"""
         self._logger.warn(f"=== SPAWNING {len(obstacles)} DYNAMIC OBSTACLES ===")
@@ -481,25 +489,28 @@ class HunavManager(DummyEntityManager):
             self._logger.error(traceback.format_exc())
             return None
 
-    def _spawn_walls_impl(self, walls) -> bool:
-        spacing = 0.1
 
-        for wall in walls:
-            self._logger.warn(f"_spawn_wall: {wall}")
+
+    def _spawn_walls_impl(self, walls) -> bool:
+        
+        self._wall_segments = []
+        
+        for i, wall in enumerate(walls):
             dx = wall.End.x - wall.Start.x
             dy = wall.End.y - wall.Start.y
             length = math.sqrt(dx * dx + dy * dy)
-            steps = max(1, int(length / spacing))
-
-            for i in range(steps + 1):
-                t = i / steps
-                point = geometry_msgs.msg.Point()
-                point.x = wall.Start.x + t * dx
-                point.y = wall.Start.y + t * dy
-                point.z = 0.0
-                self._wall_points.append(point)
-            #self._logger.warn(f"_spawn_walls_impl Wallpoints: {self._wall_points}")
             
+            segment = WallSegment()
+            segment.id = i
+            segment.start = Point(x=wall.Start.x, y=wall.Start.y, z=0.0)
+            segment.end = Point(x=wall.End.x, y=wall.End.y, z=0.0)  
+            segment.length = length
+            segment.height = wall.height  
+            
+            self._wall_segments.append(segment)
+        
+        self._logger.info(f"Cached {len(self._wall_segments)} wall segments")
+        self._logger.info(f"Wallsegments{self._wall_segments} ")
         return True
 
     def _remove_obstacles_impl(self):
