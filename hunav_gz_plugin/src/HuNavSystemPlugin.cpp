@@ -694,6 +694,50 @@ void HuNavSystemPluginIGN::getObstacles(const gz::sim::EntityComponentManager& _
       actor_pose.Pos() - actor_size / 2,
       actor_pose.Pos() + actor_size / 2
     );
+
+    // ADD WALL SEGMENTS AS VIRTUAL OBSTACLES 
+    if (walls_loaded_ && !cached_wall_segments_.empty())
+    {
+        RCLCPP_INFO(this->rosnode_->get_logger(), "Processing %zu wall segments as obstacles", 
+                    cached_wall_segments_.size());
+      if(firstObstaclePrint_)
+        RCLCPP_INFO(this->rosnode_->get_logger(), "Processing %zu wall segments as obstacles", 
+                    cached_wall_segments_.size());
+      
+      for (const auto& wall_segment : cached_wall_segments_)
+      {
+        // Create AABB for this wall segment
+        double wall_thickness = 0.2;
+        gz::math::Vector3d wall_size(wall_segment.length, wall_thickness, wall_segment.height);
+        gz::math::AxisAlignedBox wall_bb = gz::math::AxisAlignedBox(
+          wall_segment.center - wall_size / 2,
+          wall_segment.center + wall_size / 2
+        );
+        
+        // Same calculation as for other obstacles
+        auto closest_point = ClosestPointOnBox(actor_pose.Pos(), wall_bb);
+        double distance = (closest_point - actor_pose.Pos()).Length();
+        
+        if(firstObstaclePrint_)
+          RCLCPP_INFO(this->rosnode_->get_logger(), 
+                    "Wall segment %d: distance %.2f m, length %.2f m", 
+                    wall_segment.id, distance, wall_segment.length);
+        
+        if(distance < minDist)
+        {
+          geometry_msgs::msg::Point point;
+          point.x = closest_point.X();
+          point.y = closest_point.Y();
+          point.z = 0.0;
+          pedestrians_[p.first].closest_obs.push_back(point);
+          
+          if(firstObstaclePrint_)
+            RCLCPP_INFO(this->rosnode_->get_logger(), 
+                      "Added wall obstacle point [%.2f, %.2f] from segment %d", 
+                      point.x, point.y, wall_segment.id);
+        }
+      }
+    }
     //ignmsg << std::endl << "Checking obstacles entities for Actor " << p.first << ", name: " << actor_name->Data() << std::endl;
     //ignmsg << "Actor pose: " << actor_pose << std::endl;
 
@@ -713,6 +757,8 @@ void HuNavSystemPluginIGN::getObstacles(const gz::sim::EntityComponentManager& _
       }
       return true;
     });  
+
+
 
     // Iterate over the obstacles and compute the distance to the actor
     for (const auto& [obs_enty, obs_pose] : obs_entities)
