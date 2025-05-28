@@ -689,55 +689,94 @@ void HuNavSystemPluginIGN::getObstacles(const gz::sim::EntityComponentManager& _
     auto actor_pose = traj->Data();
 
     // we create a default bounding box for the actor
-    auto actor_size = gz::math::Vector3d(0.15, 0.15, 1.65); 
+    auto actor_size = gz::math::Vector3d(0.35, 0.35, 1.65); 
     gz::math::AxisAlignedBox actor_bb = gz::math::AxisAlignedBox(
       actor_pose.Pos() - actor_size / 2,
       actor_pose.Pos() + actor_size / 2
     );
 
-    // ADD WALL SEGMENTS AS VIRTUAL OBSTACLES 
-    if (walls_loaded_ && !cached_wall_segments_.empty())
-    {
-        RCLCPP_INFO(this->rosnode_->get_logger(), "Processing %zu wall segments as obstacles", 
-                    cached_wall_segments_.size());
-      if(firstObstaclePrint_)
-        RCLCPP_INFO(this->rosnode_->get_logger(), "Processing %zu wall segments as obstacles", 
-                    cached_wall_segments_.size());
-      
-      for (const auto& wall_segment : cached_wall_segments_)
-      {
-        // Create AABB for this wall segment
-        double wall_thickness = 0.2;
-        gz::math::Vector3d wall_size(wall_segment.length, wall_thickness, wall_segment.height);
-        gz::math::AxisAlignedBox wall_bb = gz::math::AxisAlignedBox(
-          wall_segment.center - wall_size / 2,
-          wall_segment.center + wall_size / 2
-        );
-        
-        // Same calculation as for other obstacles
-        auto closest_point = ClosestPointOnBox(actor_pose.Pos(), wall_bb);
-        double distance = (closest_point - actor_pose.Pos()).Length();
-        
-        if(firstObstaclePrint_)
-          RCLCPP_INFO(this->rosnode_->get_logger(), 
-                    "Wall segment %d: distance %.2f m, length %.2f m", 
-                    wall_segment.id, distance, wall_segment.length);
-        
-        if(distance < minDist)
-        {
-          geometry_msgs::msg::Point point;
-          point.x = closest_point.X();
-          point.y = closest_point.Y();
-          point.z = 0.0;
-          pedestrians_[p.first].closest_obs.push_back(point);
-          
-          if(firstObstaclePrint_)
-            RCLCPP_INFO(this->rosnode_->get_logger(), 
-                      "Added wall obstacle point [%.2f, %.2f] from segment %d", 
-                      point.x, point.y, wall_segment.id);
-        }
-      }
+// ADD WALL SEGMENTS AS VIRTUAL OBSTACLES 
+if (walls_loaded_ && !cached_wall_segments_.empty())
+{
+  if(firstObstaclePrint_)
+    RCLCPP_INFO(this->rosnode_->get_logger(), "Processing %zu wall segments as obstacles", 
+                cached_wall_segments_.size());
+
+  double wall_thickness = 0.3;
+  for (const auto& wall_segment : cached_wall_segments_)
+  {
+    // Create gz::math::Pose3d for the wall (same as normal obstacles)
+    gz::math::Pose3d wall_pose;
+    wall_pose.Pos() = wall_segment.center;
+    wall_pose.Rot() = gz::math::Quaterniond::Identity;
+    
+    // Calculate wall direction and orientation
+    gz::math::Vector3d wall_direction = wall_segment.end - wall_segment.start;
+    wall_direction.Normalize();
+    
+    // Determine wall orientation and create appropriate AABB size
+    gz::math::Vector3d wall_size;
+    std::string orientation_type;
+    
+    if (std::abs(wall_direction.X()) > std::abs(wall_direction.Y())) {
+      // Horizontal wall (East-West direction)
+      wall_size = gz::math::Vector3d(wall_segment.length, wall_thickness, wall_segment.height);
+      orientation_type = "horizontal";
+    } else {
+      // Vertical wall (North-South direction)
+      wall_size = gz::math::Vector3d(wall_thickness, wall_segment.length, wall_segment.height);
+      orientation_type = "vertical";
     }
+    
+    if(firstObstaclePrint_)
+    {
+      RCLCPP_INFO_STREAM(this->rosnode_->get_logger(), 
+                        "Wall " << wall_segment.id << " (" << orientation_type << ") Obstacle name: wall_" << wall_segment.id 
+                        << ", position [" << wall_pose.Pos().X() << "," << wall_pose.Pos().Y() << "]" 
+                        << ", direction [" << wall_direction.X() << "," << wall_direction.Y() << "]"
+                        << ", size [" << wall_size.X() << "," << wall_size.Y() << "," << wall_size.Z() << "]" << std::endl);
+    }
+    
+    // Create AABB for this wall segment with correct orientation
+
+    gz::math::AxisAlignedBox wall_bb = gz::math::AxisAlignedBox(
+      wall_pose.Pos() - wall_size / 2,
+      wall_pose.Pos() + wall_size / 2
+    );
+    
+    // Exact same calculation as for other obstacles
+    auto closest_point = ClosestPointOnBox(actor_pose.Pos(), wall_bb);
+    double distance = (closest_point - actor_pose.Pos()).Length();
+    
+    if(firstObstaclePrint_)
+    {
+      RCLCPP_INFO(this->rosnode_->get_logger(), 
+                  "Wall segment %d (%s): distance %.2f m, length %.2f m, AABB: [%.2f,%.2f] to [%.2f,%.2f]", 
+                  wall_segment.id, orientation_type.c_str(), distance, wall_segment.length,
+                  wall_bb.Min().X(), wall_bb.Min().Y(), wall_bb.Max().X(), wall_bb.Max().Y());
+    }
+    
+    if(distance < minDist)
+    {
+      geometry_msgs::msg::Point point;
+      point.x = closest_point.X();
+      point.y = closest_point.Y();
+      point.z = closest_point.Z();  // Keep Z coordinate like normal obstacles
+      pedestrians_[p.first].closest_obs.push_back(point);
+    
+      RCLCPP_WARN(this->rosnode_->get_logger(), 
+          "*** ADDED WALL OBSTACLE (%s): Actor[%.1f,%.1f,%.1f] -> Wall Point[%.1f,%.1f,%.1f], Distance=%.2f ***",
+          orientation_type.c_str(),
+          actor_pose.Pos().X(), actor_pose.Pos().Y(), actor_pose.Pos().Z(),
+          point.x, point.y, point.z, distance);
+        
+      if(firstObstaclePrint_)
+        RCLCPP_INFO(this->rosnode_->get_logger(), 
+                  "Added wall obstacle point [%.2f, %.2f, %.2f] from segment %d (%s)", 
+                  point.x, point.y, point.z, wall_segment.id, orientation_type.c_str());
+    }
+  }
+}
     //ignmsg << std::endl << "Checking obstacles entities for Actor " << p.first << ", name: " << actor_name->Data() << std::endl;
     //ignmsg << "Actor pose: " << actor_pose << std::endl;
 
