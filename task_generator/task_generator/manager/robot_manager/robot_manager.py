@@ -304,6 +304,7 @@ class RobotManager(NodeInterface):
                 # 'train_mode': self.node.declare_parameter('train_mode', False).value,
                 'agent_name': self._robot.agent,
                 'use_sim_time': 'True',
+                'amcl': 'true' if self.node.conf.Arena.SIMULATOR.value == Constants.Simulator.GAZEBO else 'false',
             }
 
             if self._robot.record_data_dir:
