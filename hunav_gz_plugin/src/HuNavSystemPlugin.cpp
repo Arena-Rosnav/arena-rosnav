@@ -764,11 +764,11 @@ if (walls_loaded_ && !cached_wall_segments_.empty())
       point.z = closest_point.Z();  // Keep Z coordinate like normal obstacles
       pedestrians_[p.first].closest_obs.push_back(point);
     
-      RCLCPP_WARN(this->rosnode_->get_logger(), 
-          "*** ADDED WALL OBSTACLE (%s): Actor[%.1f,%.1f,%.1f] -> Wall Point[%.1f,%.1f,%.1f], Distance=%.2f ***",
-          orientation_type.c_str(),
-          actor_pose.Pos().X(), actor_pose.Pos().Y(), actor_pose.Pos().Z(),
-          point.x, point.y, point.z, distance);
+      // RCLCPP_WARN(this->rosnode_->get_logger(), 
+      //     "*** ADDED WALL OBSTACLE (%s): Actor[%.1f,%.1f,%.1f] -> Wall Point[%.1f,%.1f,%.1f], Distance=%.2f ***",
+      //     orientation_type.c_str(),
+      //     actor_pose.Pos().X(), actor_pose.Pos().Y(), actor_pose.Pos().Z(),
+      //     point.x, point.y, point.z, distance);
         
       if(firstObstaclePrint_)
         RCLCPP_INFO(this->rosnode_->get_logger(), 
