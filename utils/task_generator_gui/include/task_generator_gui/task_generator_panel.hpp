@@ -75,6 +75,9 @@ namespace task_generator_gui
         QWidget *setupMinMaxSpinBox(std::vector<std::int64_t, std::allocator<std::int64_t>> *connected_values);
         MultiSelectComboBox *setupGroupCheckBox(std::vector<std::string> check_box_texts, std::vector<int> *connected_hash_map);
 
+        // Convert QStringList to std::vector<std::string>
+        std::vector<std::string> convert(const QStringList &qList);
+
     protected:
         std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr;
         rclcpp::Node::SharedPtr node;
@@ -143,12 +146,14 @@ namespace task_generator_gui
         QComboBox *robot_combobox;
         QComboBox *world_combobox;
         QPushButton *reset_scenario_button;
+        QPushButton *spawn_robot_button;
         MultiSelectComboBox *static_obstacles_models_groupbox;
         MultiSelectComboBox *interactive_obstacles_models_groupbox;
         MultiSelectComboBox *dynamic_obstacles_models_groupbox;
 
     private Q_SLOTS:
         void resetScenarioButtonActivated();
+        void spawnRobotButtonActivated();
 
         void onRobotChanged(const QString &text);
         void onWorldChanged(const QString &text);

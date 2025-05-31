@@ -549,8 +549,7 @@ namespace task_generator_gui
         }
     }
 
-    // Convert QStringList to std::vector<std::string>
-    std::vector<std::string> convert(const QStringList &qList)
+    std::vector<std::string> TaskGeneratorPanel::convert(const QStringList &qList)
     {
         std::vector<std::string> result;
         result.reserve(qList.size()); // optional, for efficiency

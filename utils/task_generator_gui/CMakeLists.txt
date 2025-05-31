@@ -14,17 +14,18 @@ find_package(pluginlib REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(task_generator_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(Qt5 REQUIRED COMPONENTS Widgets)
 
 set(CMAKE_AUTOMOC ON)
 qt5_wrap_cpp(MOC_FILES
   include/task_generator_gui/task_generator_panel.hpp
   include/Qt-MultiSelectComboBox/MultiSelectComboBox.h
-  include/Qt-MultiSelectComboBox/MultiSelectComboBox.cpp
-)
-
-add_library(task_generator_panel 
+  )
+  
+  add_library(task_generator_panel 
   src/task_generator_panel.cpp 
   src/task_generator_panel_getset_params.cpp
+  src/Qt-MultiSelectComboBox/MultiSelectComboBox.cpp
   ${MOC_FILES})
 target_include_directories(task_generator_panel PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -36,6 +37,7 @@ ament_target_dependencies(task_generator_panel
   task_generator_msgs
   std_srvs
 )
+target_link_libraries(task_generator_panel Qt5::Widgets)
 
 install(TARGETS task_generator_panel
         EXPORT export_task_generator_gui
