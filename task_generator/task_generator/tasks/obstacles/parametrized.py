@@ -1,92 +1,24 @@
 import os
-import xml.etree.ElementTree as ET
-from typing import Optional
 
-import attrs
-from ament_index_python.packages import get_package_share_directory
 from arena_rclpy_mixins.ROSParamServer import ROSParamT
-from arena_rclpy_mixins.shared import Namespace
 
-from task_generator.shared import DynamicObstacle, ModelWrapper, Obstacle
+from task_generator.shared import DynamicObstacle, Obstacle
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
 
-
-@attrs.define()
-class _ParsedConfig:
-    @attrs.define()
-    class ObstacleConfig:
-        min: int
-        max: int
-        type: str
-        model: ModelWrapper
-
-    STATIC: list[ObstacleConfig]
-    INTERACTIVE: list[ObstacleConfig]
-    DYNAMIC: list[ObstacleConfig]
-
-
-def _get_attrib(element: ET.Element, attribute: str,
-                default: Optional[str] = None) -> str:
-    val = element.get(attribute)
-    if val is not None:
-        return str(val)
-
-    sub_elem = element.find(attribute)
-    if sub_elem is not None:
-        return str(sub_elem.text)
-
-    if default is not None:
-        return default
-
-    raise ValueError(f"attribute {attribute} not found in {element}")
+from arena_simulation_setup.configs.parametrized import ParametrizedConfig, Parametrized
 
 
 class TM_Parametrized(TM_Obstacles):
 
-    _config: ROSParamT[_ParsedConfig]
+    _config: ROSParamT[ParametrizedConfig]
 
-    PATH_XML: Namespace = Namespace(
-        os.path.join(
-            get_package_share_directory("arena_bringup"),
-            "configs",
-            "parametrized"
-        )
-    )
-
-    def _parse_xml(self, path: str) -> _ParsedConfig:
-        if path == '':
-            return _ParsedConfig([], [], [])
-
-        xml_path = self.PATH_XML(path)
-
-        tree = ET.parse(xml_path)
-        root = tree.getroot()
-
-        assert isinstance(
-            root, ET.Element) and root.tag == "random", "not a random.xml desc"
-
-        def xml_to_config(config) -> _ParsedConfig.ObstacleConfig:
-            return _ParsedConfig.ObstacleConfig(
-                min=int(_get_attrib(config, "min")),
-                max=int(_get_attrib(config, "max")),
-                type=_get_attrib(config, "type", ""),
-                model=self._PROPS.model_loader.bind(
-                    _get_attrib(config, "model"))
-            )
-
-        return _ParsedConfig(
-            STATIC=list(map(xml_to_config,
-                        root.findall("./static/obstacle") or [])),
-            INTERACTIVE=list(map(xml_to_config,
-                                 root.findall("./static/interactive") or [])),
-            DYNAMIC=list(map(xml_to_config,
-                             root.findall("./static/dynamic") or [])),
-        )
+    def _parse(self, config_name: str) -> ParametrizedConfig:
+        return Parametrized(config_name).load()
 
     def reset(self, **kwargs):
-        dynamic_obstacles: list[DynamicObstacle] = list()
-        obstacles: list[Obstacle] = list()
+        dynamic_obstacles: list[DynamicObstacle] = []
+        obstacles: list[Obstacle] = []
 
         # Create static obstacles
         for config in self._config.value.STATIC:
@@ -100,13 +32,13 @@ class TM_Parametrized(TM_Obstacles):
                 obstacle = ITF_Obstacle.create_obstacle(
                     self.node,
                     self._PROPS,
-                    name=f'S_{config.model.name}_{i + 1}',
+                    name=f'S_{config.model}_{i + 1}',
                     model=config.model
                 )
                 obstacle.extra["type"] = config.type
                 obstacles.append(obstacle)
 
-                # Create interactive obstacles
+        # Create interactive obstacles
         for config in self._config.value.INTERACTIVE:
             for i in range(
                 self.node.conf.General.RNG.value.integers(
@@ -118,13 +50,13 @@ class TM_Parametrized(TM_Obstacles):
                 obstacle = ITF_Obstacle.create_obstacle(
                     self.node,
                     self._PROPS,
-                    name=f'S_{config.model.name}_{i + 1}',
+                    name=f'S_{config.model}_{i + 1}',
                     model=config.model
                 )
                 obstacle.extra["type"] = config.type
                 obstacles.append(obstacle)
 
-                # Create dynamic obstacles
+        # Create dynamic obstacles
         for config in self._config.value.DYNAMIC:
             for i in range(
                 self.node.conf.General.RNG.value.integers(
@@ -136,7 +68,7 @@ class TM_Parametrized(TM_Obstacles):
                 obstacle = ITF_Obstacle.create_dynamic_obstacle(
                     self.node,
                     self._PROPS,
-                    name=f'S_{config.model.name}_{i + 1}',
+                    name=f'S_{config.model}_{i + 1}',
                     model=config.model
                 )
                 obstacle.extra["type"] = config.type
@@ -147,8 +79,8 @@ class TM_Parametrized(TM_Obstacles):
     def __init__(self, **kwargs):
         TM_Obstacles.__init__(self, **kwargs)
 
-        self._config = self.node.ROSParam[_ParsedConfig](
+        self._config = self.node.ROSParam[ParametrizedConfig](
             self.namespace('file'),
             '',
-            parse=self._parse_xml
+            parse=self._parse
         )

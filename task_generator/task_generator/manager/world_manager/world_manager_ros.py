@@ -4,7 +4,7 @@ import tempfile
 import time
 import typing
 
-import arena_simulation_setup
+import arena_simulation_setup.world
 import lifecycle_msgs.msg
 import nav2_msgs.srv
 import nav_msgs.msg
@@ -142,11 +142,10 @@ class WorldManagerROS(WorldManager):
         self._world_name = world_name
         self._first_world = False
 
+        import arena_simulation_setup.world
+
         tmp_map = self._shift_map(
-            os.path.join(
-                self.node.conf.Arena.get_world_path(world_name),
-                'map',
-            )
+            arena_simulation_setup.world.World(world_name).map.path
         )
         map_yaml = os.path.join(
             tmp_map.name,
@@ -175,11 +174,11 @@ class WorldManagerROS(WorldManager):
             return
         if True or self._world.map.time < costmap.info.map_load_time:
 
-            world_config = arena_simulation_setup.World(self.world_name)
+            world_config = arena_simulation_setup.world.World(self.world_name)
 
-            obstacles = self._load_obstacles(world_config.obstacles)
-            walls = self._load_walls(world_config.walls)
-            zones = self._load_zones(world_config.zones)
+            obstacles = self._load_obstacles(world_config.map.obstacles)
+            walls = self._load_walls(world_config.map.walls)
+            zones = self._load_zones(world_config.map.zones)
             self.update_world(
                 WorldMap.from_costmap(costmap),
                 obstacles=obstacles,

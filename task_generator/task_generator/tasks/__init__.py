@@ -12,7 +12,6 @@ from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.world_manager.world_manager_ros import WorldManager
 from task_generator.shared import PositionOrientation
-from task_generator.utils import ModelLoader
 
 
 class Props_Manager:
@@ -21,17 +20,12 @@ class Props_Manager:
     world_manager: WorldManager
 
 
-class Props_Modelloader:
-    model_loader: ModelLoader
-    dynamic_model_loader: ModelLoader
-
-
 class Props_Namespace:
     namespace: str
     namespace_prefix: str
 
 
-class Props_(Props_Manager, Props_Modelloader, Props_Namespace):
+class Props_(Props_Manager, Props_Namespace):
     clock: rosgraph_msgs.Clock
 
 

@@ -12,7 +12,10 @@ from task_generator.shared import (DynamicObstacle, Obstacle,
                                    PositionOrientation, PositionRadius)
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
-from task_generator.utils import ModelLoader
+
+from arena_simulation_setup.utils.models.model_loader import ModelLoader
+from arena_simulation_setup.entities.obstacles.static import loader as OBSTACLE_LOADER
+from arena_simulation_setup.entities.obstacles.dynamic import loader as DYNAMIC_OBSTACLE_LOADER
 
 
 @attrs.define()
@@ -178,7 +181,7 @@ class TM_Random(TM_Obstacles):
                     self.node,
                     self._PROPS,
                     name=f"S_{model}_{index(model)}",
-                    model=self._PROPS.model_loader.bind(model),
+                    model=model,
                     position=next(positions),
                 )
                 for model in self.node.conf.General.RNG.value.choice(
@@ -197,7 +200,7 @@ class TM_Random(TM_Obstacles):
                     self.node,
                     self._PROPS,
                     name=f"I_{model}_{index(model)}",
-                    model=self._PROPS.model_loader.bind(model),
+                    model=model,
                     position=next(positions),
                 )
                 for model in self.node.conf.General.RNG.value.choice(
@@ -219,7 +222,7 @@ class TM_Random(TM_Obstacles):
                     self.node,
                     self._PROPS,
                     name=f"D_{model}_{index(model)}",
-                    model=self._PROPS.dynamic_model_loader.bind(model),
+                    model=model,
                     waypoints=list(
                         itertools.islice(
                             waypoints,
@@ -244,8 +247,7 @@ class TM_Random(TM_Obstacles):
             lo, hi = min(lo, hi), max(lo, hi)
             return lo, hi
 
-        def param_to_modellist(loader: ModelLoader,
-                               v: typing.Any) -> list[str]:
+        def param_to_modellist(loader: ModelLoader, v: typing.Any) -> list[str]:
             if len(v):
                 return v
             return list(loader.models)
@@ -275,27 +277,18 @@ class TM_Random(TM_Obstacles):
                 self.namespace(STATIC, 'models'),
                 [],
                 type_=rclpy.Parameter.Type.STRING_ARRAY,
-                parse=functools.partial(
-                    param_to_modellist,
-                    self._PROPS.model_loader
-                )
+                parse=functools.partial(param_to_modellist, OBSTACLE_LOADER)
             ),
             MODELS_INTERACTIVE_OBSTACLES=self.node.ROSParam[list[str]](
                 self.namespace(INTERACTIVE, 'models'),
                 [],
                 type_=rclpy.Parameter.Type.STRING_ARRAY,
-                parse=functools.partial(
-                    param_to_modellist,
-                    self._PROPS.model_loader
-                )
+                parse=functools.partial(param_to_modellist, OBSTACLE_LOADER)
             ),
             MODELS_DYNAMIC_OBSTACLES=self.node.ROSParam[list[str]](
                 self.namespace(DYNAMIC, 'models'),
                 [],
                 type_=rclpy.Parameter.Type.STRING_ARRAY,
-                parse=functools.partial(
-                    param_to_modellist,
-                    self._PROPS.dynamic_model_loader
-                )
+                parse=functools.partial(param_to_modellist, DYNAMIC_OBSTACLE_LOADER)
             ),
         )

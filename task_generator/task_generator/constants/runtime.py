@@ -5,7 +5,6 @@ import numpy as np
 import rclpy
 from arena_rclpy_mixins.ROSParamServer import ROSParamServer
 
-from ..utils.arena import get_simulation_setup_path
 from . import Constants
 
 
@@ -34,19 +33,6 @@ def Configuration(server: ROSParamServer):
                 'world',
                 type_=rclpy.Parameter.Type.STRING,
             )
-
-            @classmethod
-            def get_world_path(cls, world: str | None = None) -> str:
-                """
-                Get absolute path of current world directory.
-                """
-                if world is None:
-                    world = str(cls.WORLD.value)
-                return os.path.join(
-                    get_simulation_setup_path(),
-                    'worlds',
-                    world,
-                )
 
             ENTITY_MANAGER = server.ROSParam[Constants.EntityManager](
                 'entity_manager',

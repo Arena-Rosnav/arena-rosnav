@@ -14,7 +14,6 @@ import shapely
 
 from task_generator.shared import (Obstacle, Position, PositionOrientation,
                                    PositionRadius, Wall)
-from task_generator.utils import ModelLoader
 from task_generator.utils.time import Time
 
 # CONVERTERS
@@ -425,9 +424,6 @@ def occupancy_to_walls(
     ]
 
 
-_obstacles_loader = ModelLoader(arena_simulation_setup.Obstacle.base_dir())
-
-
 def configurations_to_obstacles(
     configurations: Collection[WorldObstacleConfiguration]
 ) -> WorldObstacles:
@@ -437,6 +433,6 @@ def configurations_to_obstacles(
     return [Obstacle(
         position=configuration.position,
         name=f"world_obstacle_{next(name_gen)}",
-        model=_obstacles_loader.bind(configuration.model_name),
+        model=configuration.model_name,
         extra=configuration.extra
     ) for configuration in configurations]

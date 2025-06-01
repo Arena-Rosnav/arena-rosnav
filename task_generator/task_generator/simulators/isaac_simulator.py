@@ -2,7 +2,7 @@ import os
 import time
 import typing
 
-import arena_simulation_setup
+import arena_simulation_setup.entities.robot
 import attrs
 import rclpy
 # Import dependencies.
@@ -211,7 +211,7 @@ class IsaacSimulator(BaseSimulator):
             loader_args=robot.asdict(),
         )
         if model.type == ModelType.URDF:
-            robot_params = arena_simulation_setup.Robot(robot.model.name)
+            robot_params = arena_simulation_setup.entities.robot.Robot(robot.model.name)
 
             response = self.services.urdf_to_usd.client.call(
                 UrdfToUsd.Request(

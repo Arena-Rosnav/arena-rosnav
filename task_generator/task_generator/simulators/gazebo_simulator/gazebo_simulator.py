@@ -3,7 +3,7 @@ import os
 import time
 import traceback
 
-import arena_simulation_setup
+import arena_simulation_setup.entities.robot
 import attrs
 import launch
 import launch_ros
@@ -17,7 +17,7 @@ from ros_gz_interfaces.srv import (ControlWorld, DeleteEntity, SetEntityPose,
 from task_generator.shared import (Entity, Model, ModelType, ModelWrapper,
                                    PositionOrientation, Robot, Wall)
 from task_generator.simulators import BaseSimulator
-from task_generator.utils.geometry import quaternion_from_euler
+from arena_simulation_setup.utils.geometry import quaternion_from_euler
 
 from .robot_bridge import BridgeConfiguration
 
@@ -498,7 +498,7 @@ class GazeboSimulator(BaseSimulator):
         )
 
         mappings = BridgeConfiguration.from_file(
-            arena_simulation_setup.Robot(robot.model.name).mappings
+            arena_simulation_setup.entities.robot.Robot(robot.model.name).mappings
         ).substitute({
             'robot_name': robot.name,
             'world': '/world/default',

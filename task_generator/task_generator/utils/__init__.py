@@ -2,10 +2,6 @@ import heapq
 import itertools
 from typing import Callable, Iterator
 
-from task_generator.shared import Model, ModelType, ModelWrapper  # noqa
-
-from .models import ModelLoader  # noqa
-
 
 class NamespaceIndexer:
 

@@ -1,36 +1,7 @@
-import json
-import os
-from typing import NamedTuple
-
 from arena_rclpy_mixins.ROSParamServer import ROSParamT
-
-from task_generator.shared import PositionOrientation, PositionRadius
+from arena_simulation_setup.world import World, RobotGoal
+from task_generator.shared import PositionRadius
 from task_generator.tasks.robots import TM_Robots
-
-
-class _RobotGoal(NamedTuple):
-    """
-    Represents the start and goal positions for a robot.
-    """
-
-    start: PositionOrientation
-    goal: PositionOrientation
-
-    @staticmethod
-    def parse(obj: dict) -> "_RobotGoal":
-        """
-        Parses a dictionary object and returns a RobotGoal instance.
-
-        Args:
-            obj (dict): The dictionary object containing the start and goal positions.
-
-        Returns:
-            RobotGoal: The parsed RobotGoal instance.
-        """
-        return _RobotGoal(
-            start=PositionOrientation(*obj.get("start", [])),
-            goal=PositionOrientation(*obj.get("goal", [])),
-        )
 
 
 class TM_Scenario(TM_Robots):
@@ -42,24 +13,10 @@ class TM_Scenario(TM_Robots):
         _config (Config): The configuration object for the scenario.
     """
 
-    _config: ROSParamT[list[_RobotGoal]]
+    _config: ROSParamT[list[RobotGoal]]
 
-    def _parse_scenario(self, scenario_file: str) -> list[_RobotGoal]:
-
-        scenario_path = os.path.join(
-            self.node.conf.Arena.get_world_path(),
-            "scenarios",
-            scenario_file
-        )
-
-        with open(scenario_path) as f:
-            scenario = json.load(f)
-
-        return [
-            _RobotGoal.parse(robot)
-            for robot
-            in scenario.get("robots", [])
-        ]
+    def _parse_scenario(self, scenario: str) -> list[RobotGoal]:
+        return World(self.node._world_manager.world_name).scenario(scenario).load().robots
 
     def reset(self, **kwargs):
         """
@@ -108,7 +65,7 @@ class TM_Scenario(TM_Robots):
     def __init__(self, **kwargs):
         TM_Robots.__init__(self, **kwargs)
 
-        self._config = self.node.ROSParam[list[_RobotGoal]](
+        self._config = self.node.ROSParam[list[RobotGoal]](
             self.namespace('file'),
             'default.json',
             parse=self._parse_scenario,

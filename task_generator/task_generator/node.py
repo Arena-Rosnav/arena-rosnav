@@ -2,7 +2,12 @@ import os
 import traceback
 import typing
 
-import arena_simulation_setup
+import arena_simulation_setup.configs.environment
+import arena_simulation_setup.configs.parametrized
+import arena_simulation_setup.entities.obstacles.dynamic
+import arena_simulation_setup.entities.obstacles.static
+import arena_simulation_setup.entities.robot
+import arena_simulation_setup.world
 import launch
 import rclpy
 import rclpy.callback_groups
@@ -13,7 +18,6 @@ from ament_index_python.packages import get_package_share_directory
 from arena_rclpy_mixins.shared import Namespace
 from std_msgs.msg import Empty, Int16
 from std_srvs.srv import Empty as EmptySrv
-
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Configuration
 from task_generator.manager.entity_manager import (EntityManager,
@@ -149,7 +153,10 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         self._world_manager.on_world_change(on_world_change)
         self._world_manager.start()
 
-        self._robots_manager = RobotsManagerROS(self._environment_manager)
+        self._robots_manager = RobotsManagerROS(
+            entity_manager=self._entity_manager,
+            environment_manager=self._environment_manager
+        )
 
         tm_modules = self.conf.TaskMode.TM_MODULES.value
         tm_modules.add(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
@@ -216,8 +223,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         request: task_generator_msgs.srv.GetEnvironments.Request,
         response: task_generator_msgs.srv.GetEnvironments.Response,
     ):
-        response.environments = arena_simulation_setup.Environment.list()
-        response.environments.sort()
+        response.environments = arena_simulation_setup.configs.environment.Environment.list()
         return response
 
     def _cb_get_configs_parametrized(
@@ -225,8 +231,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         request: task_generator_msgs.srv.GetParametrizeds.Request,
         response: task_generator_msgs.srv.GetParametrizeds.Response,
     ):
-        response.parametrizeds = arena_simulation_setup.Parametrized.list()
-        response.parametrizeds.sort()
+        response.parametrizeds = arena_simulation_setup.configs.parametrized.Parametrized.list()
         return response
 
     def _cb_get_randoms(
@@ -238,12 +243,9 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         response.n_interactive_obstacles = [0, 0]
         response.n_dynamic_obstacles = [1, 5]
 
-        response.models_static_obstacles = arena_simulation_setup.Obstacle(self._world_manager.world_name).list()
-        response.models_static_obstacles.sort()
+        response.models_static_obstacles = arena_simulation_setup.entities.obstacles.static.Obstacle(self._world_manager.world_name).list()
         response.models_interactive_obstacles = []
-        response.models_interactive_obstacles.sort()
-        response.models_dynamic_obstacles = arena_simulation_setup.DynamicObstacle(self._world_manager.world_name).list()
-        response.models_dynamic_obstacles.sort()
+        response.models_dynamic_obstacles = arena_simulation_setup.entities.obstacles.dynamic.DynamicObstacle(self._world_manager.world_name).list()
 
         return response
 
@@ -252,10 +254,9 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         request: task_generator_msgs.srv.GetScenarios.Request,
         response: task_generator_msgs.srv.GetScenarios.Response,
     ):
-        response.scenarios = arena_simulation_setup.World(
+        response.scenarios = arena_simulation_setup.world.World(
             request.world or self._world_manager.world_name
-        ).scenarios
-        response.scenarios.sort()
+        ).scenario.list()
         return response
 
     def _cb_get_worlds(
@@ -263,8 +264,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         request: task_generator_msgs.srv.GetWorlds.Request,
         response: task_generator_msgs.srv.GetWorlds.Response,
     ):
-        response.worlds = arena_simulation_setup.World.list()
-        response.worlds.sort()
+        response.worlds = arena_simulation_setup.world.World.list()
         return response
 
     def _cb_get_robots(
@@ -272,8 +272,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         request: task_generator_msgs.srv.GetRobots.Request,
         response: task_generator_msgs.srv.GetRobots.Response,
     ):
-        response.robots = arena_simulation_setup.Robot.list()
-        response.robots.sort()
+        response.robots = arena_simulation_setup.entities.robot.Robot.list()
         return response
 
     def _set_up_services(self):

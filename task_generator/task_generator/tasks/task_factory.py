@@ -17,8 +17,6 @@ from task_generator.tasks import Namespaced, Task
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.obstacles import TM_Obstacles
 from task_generator.tasks.robots import TM_Robots
-from task_generator.utils import ModelLoader
-
 # import training.srv as training_srvs
 
 
@@ -156,9 +154,6 @@ class TaskFactory(Namespaced):
                 self.clock = rosgraph_msgs.Clock()
 
                 robots_manager.set_up()
-
-                self.model_loader = ModelLoader(arena_simulation_setup.Obstacle.base_dir())
-                self.dynamic_model_loader = ModelLoader(arena_simulation_setup.DynamicObstacle.base_dir())
 
                 self.__param_tm_obstacles = None
                 self.__param_tm_robots = None

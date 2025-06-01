@@ -3,13 +3,12 @@ import typing
 from typing import Any, Callable, Collection, Iterator
 
 import attrs
-
 from task_generator import NodeInterface
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.world_manager.utils import World
 from task_generator.shared import (DynamicObstacle, Entity, Obstacle, Position,
-                                   Robot, Wall)
+                                   PositionOrientation, Robot, Wall)
 from task_generator.simulators import BaseSimulator
 
 EntityPropsT = typing.TypeVar('EntityPropsT', bound=Entity)
@@ -144,7 +143,7 @@ class EnvironmentManager(NodeInterface, _Realizer):
         self._entity_manager.spawn_robot(robot)
         return robot
 
-    def move_robot(self, name: str, position: Position):
+    def move_robot(self, name: str, position: PositionOrientation):
         """
         Moves given robot
         """

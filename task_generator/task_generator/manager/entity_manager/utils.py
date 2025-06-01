@@ -1,3 +1,4 @@
+import arena_simulation_setup
 import enum
 import os
 import typing
@@ -222,7 +223,7 @@ class YAMLUtil:
 
 
 tmp_dir = os.path.join(
-    Utils.get_simulation_setup_path(), "tmp", "heightmap"
+    arena_simulation_setup.ass_dir, "tmp", "heightmap"
 )
 os.makedirs(tmp_dir, exist_ok=True)
 

@@ -69,7 +69,7 @@ class ITF_Obstacle:
         node: NodeInterface.Taskgen_T,
         props: Props_,
         name: str,
-        model: ModelWrapper,
+        model: str,
         position: Optional[PositionOrientation] = None,
         extra: Optional[dict] = None,
         **kwargs,

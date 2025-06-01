@@ -15,12 +15,12 @@ import rclpy.client
 import rclpy.publisher
 import rclpy.timer
 import scipy.spatial.transform
+import task_generator.utils.arena as Utils
 from arena_rclpy_mixins.shared import Namespace
 from nav2_msgs.srv import ClearCostmapAroundRobot
-
-import task_generator.utils.arena as Utils
 from task_generator import NodeInterface
 from task_generator.constants import Constants
+from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.shared import ModelType, PositionOrientation, Robot
@@ -33,6 +33,7 @@ class RobotManager(NodeInterface):
     """
 
     _namespace: Namespace
+    _entity_manager: EntityManager
     _environment_manager: EnvironmentManager
     _start_pos: PositionOrientation
     _goal_pos: PositionOrientation
@@ -63,6 +64,7 @@ class RobotManager(NodeInterface):
     def __init__(
         self,
         namespace: Namespace,
+        entity_manager: EntityManager,
         environment_manager: EnvironmentManager,
         robot: Robot,
     ):
@@ -70,7 +72,9 @@ class RobotManager(NodeInterface):
         self._rate_setup = self.node.create_rate(.1)
 
         self._namespace = namespace
+        self._entity_manager = entity_manager
         self._environment_manager = environment_manager
+
         self._start_pos = PositionOrientation(0, 0, 0)
         self._goal_pos = PositionOrientation(0, 0, 0)
         self._is_goal_reached = False
@@ -167,7 +171,7 @@ class RobotManager(NodeInterface):
         return self._is_goal_reached
 
     def move_robot_to_pos(self, position: PositionOrientation):
-        self._environment_manager.move_robot(name=self.name, position=position)
+        self._entity_manager.move_robot(name=self.name, position=position)
         self.clearCostmapAroundRobot(5.0)
 
     def clearCostmapAroundRobot(self, reset_distance: float) -> bool:
@@ -290,7 +294,6 @@ class RobotManager(NodeInterface):
 
             launch_arguments = {
                 'robot': self.model_name,
-                # 'world_path': self.node.conf.Arena.get_world_path(),
                 # 'simulator': self.node.conf.Arena.SIMULATOR.value.value,
                 # 'name': self.name,
                 'task_generator_node': os.path.join(self.node.get_namespace(), self.node.get_name()),
@@ -361,5 +364,5 @@ class RobotManager(NodeInterface):
         if self._goal_timer is not None:
             self._goal_timer.cancel()
             self._goal_timer.destroy()
-        self._environment_manager.remove_robot(self.name)
+        self._entity_manager.remove_robot(self.name)
         # TODO kill node in navigation stack
