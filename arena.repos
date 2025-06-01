@@ -6,7 +6,7 @@ repositories:
   arena/simulation-setup:
     type: git
     url: https://github.com/voshch/arena-simulation-setup.git
-    version: humble@34ad6a67
+    version: humble@c8be884c
   # deps/xacro:
   #   type: git
   #   url: https://github.com/ros/xacro.git
