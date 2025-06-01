@@ -191,7 +191,7 @@ if [ ! -f src/ros2/compiled ] ; then
     git -c user.name='Arena' -c user.email='anonymous@arena-rosnav.org' cherry-pick 654d6f5658b59009147b9fad9b724919633f38fe || echo 'already cherry picked'
   popd
 
-  . src/arena/arena-rosnav/tools/colcon_build --paths src/ros2/* --packages-skip-build-finished
+  . src/arena/arena-rosnav/tools/colcon_build --paths src/ros2/*
   touch src/ros2/compiled
   
   # don't even ask
@@ -237,9 +237,9 @@ fi
 
 compile(){
   cd "${ARENA_WS_DIR}"
-  . colcon_build --packages-skip-build-finished #TODO get rid of this
+  . colcon_build #TODO get rid of this
   ARENA_ROS_DISTRO=${ARENA_ROS_DISTRO} ros2 run arena_bringup pull
-  . colcon_build --packages-skip-build-finished
+  . colcon_build
 }
 
 compile
