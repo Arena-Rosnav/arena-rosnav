@@ -65,6 +65,8 @@ namespace task_generator_gui
         void setTMObstaclesParamsRequest(rcl_interfaces::srv::SetParameters::Request::SharedPtr request);
         void setTMRobotsParamsRequest(rcl_interfaces::srv::SetParameters::Request::SharedPtr request);
         void setParams();
+        void setRobot();
+        void checkRobotModel();
 
         void setupUi();
         QComboBox *setupComboBoxWithLabel(QLayout *parent, const QStringList &combobox_values, const QString &label);

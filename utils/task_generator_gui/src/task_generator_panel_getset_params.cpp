@@ -521,6 +521,7 @@ namespace task_generator_gui
         rcl_interfaces::msg::Parameter robot_model_param;
         robot_model_param.name = "robot";
         robot_model_param.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING;
+        checkRobotModel();
         robot_model_param.value.string_value = selected_robot_model;
         request->parameters.push_back(robot_model_param);
 
@@ -549,6 +550,39 @@ namespace task_generator_gui
         }
     }
 
+    void TaskGeneratorPanel::setRobot()
+    {
+        while (!set_param_client->wait_for_service(std::chrono::seconds(1)))
+        {
+            if (!rclcpp::ok())
+            {
+                RCLCPP_ERROR(service_node->get_logger(), "Interrupted while waiting for service. Exiting.");
+                return;
+            }
+            RCLCPP_INFO(service_node->get_logger(), "Waiting for set_parameters service...");
+        }
+
+        auto request = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
+
+        rcl_interfaces::msg::Parameter robot_param;
+        robot_param.name = "robot";
+        robot_param.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING;
+        checkRobotModel();
+        robot_param.value.string_value = selected_robot_model;
+        request->parameters.push_back(robot_param);
+
+        auto future = set_param_client->async_send_request(request);
+
+        if (rclcpp::spin_until_future_complete(service_node, future) == rclcpp::FutureReturnCode::SUCCESS)
+        {
+            RCLCPP_INFO(service_node->get_logger(), "Successfully set robot models");
+        }
+        else
+        {
+            RCLCPP_ERROR(service_node->get_logger(), "Failed to set robot models");
+        }
+    }
+
     std::vector<std::string> TaskGeneratorPanel::convert(const QStringList &qList)
     {
         std::vector<std::string> result;
@@ -558,5 +592,23 @@ namespace task_generator_gui
             result.push_back(item.toStdString());
         }
         return result;
+    }
+
+    void TaskGeneratorPanel::checkRobotModel()
+    // Check if the choosen robot in the combobox is already set in the /task_generator_node param
+    // Set up a string value for the /task_generator_node/robot parameter
+    {
+        std::stringstream ss(selected_robot_model);
+        std::string temp;
+        char del = ',';
+        auto choosen_robot = robot_combobox->currentText().toStdString();
+
+        RCLCPP_INFO(service_node->get_logger(), "Selected robot model: %s", choosen_robot.c_str());
+        while (getline(ss, temp, del))
+        {
+            if (temp == choosen_robot)
+                return;
+        }
+        selected_robot_model.append(",").append(choosen_robot);
     }
 } // namespace task_generator_gui

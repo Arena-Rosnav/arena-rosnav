@@ -169,7 +169,6 @@ namespace task_generator_gui
 
     void TaskGeneratorPanel::onRobotChanged(const QString &text)
     {
-        selected_robot_model = text.toStdString();
     }
 
     void TaskGeneratorPanel::onWorldChanged(const QString &text)
@@ -360,7 +359,7 @@ namespace task_generator_gui
     }
     void TaskGeneratorPanel::spawnRobotButtonActivated()
     {
-        setParams();
+        setRobot();
     }
 
 } // namespace task_generator_gui
