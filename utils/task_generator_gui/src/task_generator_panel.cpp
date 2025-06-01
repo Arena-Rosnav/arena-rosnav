@@ -51,6 +51,7 @@ namespace task_generator_gui
         getCurrentTaskGeneratorNodeParams();
 
         setupUi();
+        onWorldChanged(QString::fromStdString(selected_world));
     }
 
     void TaskGeneratorPanel::setupUi()
@@ -64,6 +65,9 @@ namespace task_generator_gui
         robot_combobox = setupComboBoxWithLabel(this->root_layout, robots_combobox_values, QString("Robot"));
         robot_combobox->setCurrentText(QString::fromStdString(selected_robot_model));
         connect(robot_combobox, &QComboBox::currentTextChanged, this, &TaskGeneratorPanel::onRobotChanged);
+        spawn_robot_button = new QPushButton("Spawn Robot");
+        connect(spawn_robot_button, &QPushButton::clicked, this, &TaskGeneratorPanel::spawnRobotButtonActivated);
+        robot_combobox->parentWidget()->layout()->addWidget(spawn_robot_button);
 
         // Setup Combobox for choosing World
         auto worlds_combobox_values = QStringList();
@@ -166,7 +170,6 @@ namespace task_generator_gui
 
     void TaskGeneratorPanel::onRobotChanged(const QString &text)
     {
-        selected_robot_model = text.toStdString();
     }
 
     void TaskGeneratorPanel::onWorldChanged(const QString &text)
@@ -175,6 +178,7 @@ namespace task_generator_gui
 
         getScenarios(selected_world);
         setupObstaclesTreeItem();
+        setupRobotsTreeItem();
     }
 
     void TaskGeneratorPanel::setupObstaclesTreeItem()
@@ -233,21 +237,21 @@ namespace task_generator_gui
             auto static_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
             static_obstacles_widgetitem->setText(0, "Static Obstacles Models");
 
-            auto static_obstacles_models_groupbox = setupGroupCheckBox(static_obstacles_all_models, &static_obstacles_models_selected);
+            static_obstacles_models_groupbox = setupGroupCheckBox(static_obstacles_all_models, &static_obstacles_models_selected);
             obstacles_tree->setItemWidget(static_obstacles_widgetitem, 1, static_obstacles_models_groupbox);
 
             // Set up check boxes to choose interactive obstacles models
             auto interactive_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
             interactive_obstacles_widgetitem->setText(0, "Interactive Obstacles Models");
 
-            auto interactive_obstacles_models_groupbox = setupGroupCheckBox(interactive_obstacles_all_models, &interactive_obstacles_models_selected);
+            interactive_obstacles_models_groupbox = setupGroupCheckBox(interactive_obstacles_all_models, &interactive_obstacles_models_selected);
             obstacles_tree->setItemWidget(interactive_obstacles_widgetitem, 1, interactive_obstacles_models_groupbox);
 
             // Set up check boxes to choose dynamic obstacles models
             auto dynamic_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
             dynamic_obstacles_widgetitem->setText(0, "Dynamic Obstacles Models");
 
-            auto dynamic_obstacles_models_groupbox = setupGroupCheckBox(dynamic_obstacles_all_models, &dynamic_obstacles_models_selected);
+            dynamic_obstacles_models_groupbox = setupGroupCheckBox(dynamic_obstacles_all_models, &dynamic_obstacles_models_selected);
             obstacles_tree->setItemWidget(dynamic_obstacles_widgetitem, 1, dynamic_obstacles_models_groupbox);
         }
 
@@ -265,6 +269,29 @@ namespace task_generator_gui
 
     void TaskGeneratorPanel::setupRobotsTreeItem()
     {
+        robots_tree->clear();
+        if (robots_task_mode == "Explore")
+        {
+        }
+
+        else if (robots_task_mode == "Guided")
+        {
+        }
+
+        else if (robots_task_mode == "Random")
+        {
+        }
+
+        else if (robots_task_mode == "Scenario")
+        {
+            auto param_config_file_combobox = new QComboBox();
+            param_config_file_combobox->addItems(scenario_config_files_qstringlist);
+            auto item = new QTreeWidgetItem(robots_tree);
+            item->setText(0, "Configuration File");
+            robots_tree->setItemWidget(item, 1, param_config_file_combobox);
+            connect(param_config_file_combobox, &QComboBox::currentTextChanged, this, [this](const QString &text)
+                    { selected_scenario_config_file = text.toStdString(); });
+        }
     }
 
     QWidget *TaskGeneratorPanel::setupMinMaxSpinBox(std::vector<std::int64_t, std::allocator<std::int64_t>> *connected_values)
@@ -298,40 +325,42 @@ namespace task_generator_gui
         return placeholder_widget;
     }
 
-    QGroupBox *TaskGeneratorPanel::setupGroupCheckBox(std::vector<std::string> check_box_texts, std::vector<int> *connected_hash_map)
+    MultiSelectComboBox *TaskGeneratorPanel::setupGroupCheckBox(std::vector<std::string> check_box_texts, std::vector<int> *connected_hash_map)
     {
-        auto groupbox = new QGroupBox();
-        auto layout = new QVBoxLayout();
+        auto group_check_box = new MultiSelectComboBox();
 
         for (int i = 0; i < int(check_box_texts.size()); i++)
         {
-            auto checkbox = new QCheckBox(QString::fromStdString(check_box_texts[i]));
-            checkbox->setChecked(connected_hash_map->at(i));
-            connect(checkbox, &QCheckBox::stateChanged, this, [this, connected_hash_map, i](int state)
-                    { connected_hash_map->at(i) = (state == Qt::Checked); });
-            layout->addWidget(checkbox);
+            RCLCPP_INFO(service_node->get_logger(), "Connected hashmap value at %d: %d", i, connected_hash_map->at(i));
+            group_check_box->addItem(QString::fromStdString(check_box_texts[i]), connected_hash_map->at(i));
         }
 
-        groupbox->setLayout(layout);
+        group_check_box->stateChanged(1);
 
-        return groupbox;
+        return group_check_box;
     }
 
     void TaskGeneratorPanel::onObstaclesTaskModeChanged(const QString &text)
     {
+        getCurrentTaskGeneratorNodeParams();
         obstacles_task_mode = text;
-
         setupObstaclesTreeItem();
     }
 
     void TaskGeneratorPanel::onRobotsTaskModeChanged(const QString &text)
     {
+        getCurrentTaskGeneratorNodeParams();
         robots_task_mode = text;
+        setupRobotsTreeItem();
     }
 
     void TaskGeneratorPanel::resetScenarioButtonActivated()
     {
         setParams();
+    }
+    void TaskGeneratorPanel::spawnRobotButtonActivated()
+    {
+        setRobot();
     }
 
 } // namespace task_generator_gui

@@ -131,7 +131,6 @@ class PositionOrientation(Position):
             position=geometry_msgs.Point(
                 x=self.x,
                 y=self.y,
-                z=0.0,
             ),
             orientation=geometry_msgs.Quaternion(
                 x=quat[0],
@@ -150,12 +149,6 @@ class PositionRadius(Position):
     2D position with 2D yaw
     """
     radius: float = attrs.field(converter=lambda x: max(0., float(x)))
-
-    @classmethod
-    def parse(cls, v: typing.Iterable[float] | PositionRadius) -> "PositionRadius":
-        if isinstance(v, PositionRadius):
-            return v
-        return cls(*v)
 
 
 class ModelWrapper:
@@ -375,7 +368,8 @@ class DynamicObstacle(Obstacle):
     def parse(cls, obj: dict, model: ModelWrapper) -> "DynamicObstacle":
 
         base = Obstacle.parse(obj, model)
-        waypoints = [PositionRadius.parse(waypoint) for waypoint in obj.get("waypoints", [])]
+        waypoints = [PositionRadius(*waypoint)
+                     for waypoint in obj.get("waypoints", [])]
 
         return cls(
             **attrs.asdict(base, recurse=False),

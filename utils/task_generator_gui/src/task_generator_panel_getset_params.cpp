@@ -410,42 +410,21 @@ namespace task_generator_gui
             parameter = rcl_interfaces::msg::Parameter();
             parameter.name = "task.random.static.models";
             parameter.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY;
-            std::vector<std::string> selected_static_obstacles_models;
-            for (int i = 0; i < int(static_obstacles_all_models.size()); i++)
-            {
-                if (static_obstacles_models_selected[i] == 1)
-                {
-                    selected_static_obstacles_models.push_back(static_obstacles_all_models[i]);
-                }
-            }
+            std::vector<std::string> selected_static_obstacles_models = convert(static_obstacles_models_groupbox->currentText());
             parameter.value.string_array_value = selected_static_obstacles_models;
             request->parameters.push_back(parameter);
 
             parameter = rcl_interfaces::msg::Parameter();
             parameter.name = "task.random.interactive.models";
             parameter.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY;
-            std::vector<std::string> selected_interactive_obstacles_models;
-            for (int i = 0; i < int(interactive_obstacles_all_models.size()); i++)
-            {
-                if (interactive_obstacles_models_selected[i] == 1)
-                {
-                    selected_interactive_obstacles_models.push_back(interactive_obstacles_all_models[i]);
-                }
-            }
+            std::vector<std::string> selected_interactive_obstacles_models = convert(interactive_obstacles_models_groupbox->currentText());
             parameter.value.string_array_value = selected_interactive_obstacles_models;
             request->parameters.push_back(parameter);
 
             parameter = rcl_interfaces::msg::Parameter();
             parameter.name = "task.random.dynamic.models";
             parameter.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY;
-            std::vector<std::string> selected_dynamic_obstacles_models;
-            for (int i = 0; i < int(dynamic_obstacles_all_models.size()); i++)
-            {
-                if (dynamic_obstacles_models_selected[i] == 1)
-                {
-                    selected_dynamic_obstacles_models.push_back(dynamic_obstacles_all_models[i]);
-                }
-            }
+            std::vector<std::string> selected_dynamic_obstacles_models = convert(dynamic_obstacles_models_groupbox->currentText());
             parameter.value.string_array_value = selected_dynamic_obstacles_models;
             request->parameters.push_back(parameter);
 
@@ -570,4 +549,66 @@ namespace task_generator_gui
         }
     }
 
+    void TaskGeneratorPanel::setRobot()
+    {
+        while (!set_param_client->wait_for_service(std::chrono::seconds(1)))
+        {
+            if (!rclcpp::ok())
+            {
+                RCLCPP_ERROR(service_node->get_logger(), "Interrupted while waiting for service. Exiting.");
+                return;
+            }
+            RCLCPP_INFO(service_node->get_logger(), "Waiting for set_parameters service...");
+        }
+
+        auto request = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
+
+        rcl_interfaces::msg::Parameter robot_param;
+        robot_param.name = "robot";
+        robot_param.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING;
+        checkRobotModel();
+        robot_param.value.string_value = selected_robot_model;
+        request->parameters.push_back(robot_param);
+
+        auto future = set_param_client->async_send_request(request);
+
+        if (rclcpp::spin_until_future_complete(service_node, future) == rclcpp::FutureReturnCode::SUCCESS)
+        {
+            RCLCPP_INFO(service_node->get_logger(), "Successfully set robot models");
+        }
+        else
+        {
+            RCLCPP_ERROR(service_node->get_logger(), "Failed to set robot models");
+        }
+    }
+
+    std::vector<std::string> TaskGeneratorPanel::convert(const QStringList &qList)
+    {
+        std::vector<std::string> result;
+        result.reserve(qList.size()); // optional, for efficiency
+        for (const QString &item : qList)
+        {
+            result.push_back(item.toStdString());
+        }
+        return result;
+    }
+
+    void TaskGeneratorPanel::checkRobotModel()
+    // Check if the choosen robot in the combobox is already set in the /task_generator_node param
+    // Set up a string value for the /task_generator_node/robot parameter
+    {
+        std::stringstream ss(selected_robot_model);
+        std::string temp;
+        char del = ',';
+        auto choosen_robot = robot_combobox->currentText().toStdString();
+
+        RCLCPP_INFO(service_node->get_logger(), "Selected robot model: %s", choosen_robot.c_str());
+        // // forbid duplicate robots
+        // while (getline(ss, temp, del))
+        // {
+        //     if (temp == choosen_robot)
+        //         return;
+        // }
+        selected_robot_model.append(",").append(choosen_robot);
+    }
 } // namespace task_generator_gui

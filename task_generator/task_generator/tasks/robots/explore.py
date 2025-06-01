@@ -1,6 +1,6 @@
 import math
 
-from builtin_interfaces.msg import Time
+from task_generator.utils.time import Time
 
 from task_generator.shared import PositionOrientation
 from task_generator.tasks.robots.random import TM_Random
@@ -39,7 +39,7 @@ class TM_Explore(TM_Random):
                         waypoint.x, waypoint.y, self.node.conf.General.RNG.value.random() * 2 * math.pi)
                 )
 
-            elif (self._PROPS.clock.clock.sec - self._timeouts[robot].sec) > self.node.conf.Robot.TIMEOUT.value:
+            elif (self._PROPS.clock.clock.sec - self._timeouts.get(robot, Time()).sec) >= self.node.conf.Robot.TIMEOUT.value:
                 waypoint = self._PROPS.world_manager.get_position_on_map(
                     safe_dist=manager.safe_distance, forbid=False
                 )
