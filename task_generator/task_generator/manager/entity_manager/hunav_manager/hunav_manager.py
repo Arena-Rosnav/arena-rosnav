@@ -4,13 +4,14 @@ import re
 import time
 import traceback
 import typing
+from geometry_msgs.msg import Point
 
 import attrs
 import geometry_msgs.msg
 from arena_rclpy_mixins.shared import Namespace
-from hunav_msgs.msg import Agent, AgentBehavior, Agents
+from hunav_msgs.msg import Agent, AgentBehavior, Agents, WallSegment
 from hunav_msgs.srv import (ComputeAgent, ComputeAgents, GetAgents, MoveAgent,
-                            ResetAgents)
+                            ResetAgents, GetWalls)
 
 from task_generator.manager.entity_manager.dummy_manager import \
     DummyEntityManager
@@ -35,7 +36,7 @@ def _create_robot_message():
 
 class _PedestrianHelper:
     _ANIMATION_MAP = {
-        AgentBehavior.BEH_REGULAR: "07_01-walk.bvh",
+        AgentBehavior.BEH_REGULAR: "walk.dae",  # "07_01-walk.bvh",
         AgentBehavior.BEH_IMPASSIVE: "69_02_walk_forward.bvh",
         AgentBehavior.BEH_SURPRISED: "137_28-normal_wait.bvh",
         AgentBehavior.BEH_SCARED: "142_17-walk_scared.bvh",
@@ -72,7 +73,7 @@ class _PedestrianHelper:
 
         # Animation mapping based on behavior
 
-        animation_file = cls._ANIMATION_MAP.get(agent_config.behavior.type, "07_01-walk.bvh")
+        animation_file = "walk.dae"  # cls._ANIMATION_MAP.get(agent_config.behavior.type, "07_01-walk.bvh")
 
         # Get workspace root
         def get_workspace_root():
@@ -94,10 +95,24 @@ class _PedestrianHelper:
 
         animation_path = os.path.join(
             get_workspace_root(),
-            'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/animations',
-            animation_file
+            'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/models/walk.dae'
         )
 
+        # # Temporärer Logger für Debug
+        # import rclpy
+        # if not rclpy.ok():
+        #     rclpy.init()
+        # temp_node = rclpy.create_node('temp_debug_node')
+        # logger = temp_node.get_logger()
+
+        #         # DEBUG
+        # logger.warn(f"DEBUG: Looking for animation at: {animation_path}")
+        # logger.warn(f"DEBUG: Animation exists: {os.path.exists(animation_path)}")
+
+        # # Cleanup
+        # temp_node.destroy_node()
+
+        # Create the SDF with a COMPLETE plugin block containing all required parameters
         sdf = f"""<?xml version="1.0" ?>
         <sdf version="1.9">
             <actor name="{agent_config.name}">
@@ -108,16 +123,28 @@ class _PedestrianHelper:
                     <scale>1.0</scale>
                 </skin>
 
-                <animation name="07_01-walk">
+                <animation name="walking">
                     <filename>{animation_path}</filename>
                     <scale>1.0</scale>
                     <interpolate_x>true</interpolate_x>
                 </animation>
 
                 <plugin name="HuNavSystemPluginIGN" filename="libHuNavSystemPluginIGN.so">
-
+                    <update_rate>1000.0</update_rate>
+                    <robot_name>jackal</robot_name>
+                    <use_gazebo_obs>true</use_gazebo_obs>
+                    <global_frame_to_publish>map</global_frame_to_publish>
+                    <use_navgoal_to_start>false</use_navgoal_to_start>
+                    <navgoal_topic>goal_pose</navgoal_topic>
+                    <ignore_models>
+                        <model>ground_plane</model>
+                        <model>sun</model>
+                        <model>main_floor</model>
+                        <model>surface</model>
+                        <model>column</model>
+                        <model>point_light</model>
+                    </ignore_models>
                 </plugin>
-
             </actor>
         </sdf>"""
 
@@ -137,44 +164,45 @@ class HunavManager(DummyEntityManager):
     SERVICE_MOVE_AGENT = 'move_agent'
     SERVICE_RESET_AGENTS = 'reset_agents'
     SERVICE_GET_AGENTS = 'get_agents'
+    SERVICE_GET_WALLS = 'get_walls'
 
     def __init__(self, namespace: Namespace, simulator: BaseSimulator):
         """Initialize HunavManager with debug logging"""
         super().__init__(namespace=namespace, simulator=simulator)
 
-        self._logger.warn("=== HUNAVMANAGER INIT START ===")
-        self._logger.warn("Parent class initialized")
+        self._logger.info("=== HUNAVMANAGER INIT START ===")
+        self._logger.debug("Parent class initialized")
 
         # Initialize collections
-        self._logger.warn("Initializing collections...")
+        self._logger.debug("Initializing collections...")
         self._pedestrians = {}
         self._wall_points = []
         self._agents_container = Agents()  # Container to hold all registered agents
         self._agents_container.header.frame_id = "map"
-        self._logger.warn("Collections initialized")
+        self._logger.debug("Collections initialized")
 
         # Setup services
-        self._logger.warn("Setting up services...")
+        self._logger.debug("Setting up services...")
         setup_success = self._setup_services()
         if not setup_success:
             self._logger.error("Service setup failed!")
         else:
-            self._logger.warn("Services setup complete")
+            self._logger.info("Services setup complete")
 
         # Wait to be sure that all services are ready
-        self._logger.warn("Waiting for services to be ready...")
+        self._logger.debug("Waiting for services to be ready...")
         time.sleep(2.0)
-        self._logger.warn("Service wait complete")
+        self._logger.debug("Service wait complete")
 
-        self._logger.warn("=== HUNAVMANAGER INIT COMPLETE ===")
+        self._logger.info("=== HUNAVMANAGER INIT COMPLETE ===")
 
     def _setup_services(self):
         """Initialize all required services with debug logging"""
-        self._logger.warn("=== SETUP_SERVICES START ===")
+        self._logger.info("=== SETUP_SERVICES START ===")
 
         # Debug namespace information
-        self._logger.warn(f"Node namespace: {self.node.get_namespace()}")
-        self._logger.warn(f"Task generator namespace: {self._namespace}")
+        self._logger.debug(f"Node namespace: {self.node.get_namespace()}")
+        self._logger.debug(f"Task generator namespace: {self._namespace}")
 
         # Create service names with full namespace path
         service_names = {
@@ -182,45 +210,55 @@ class HunavManager(DummyEntityManager):
             'compute_agents': f'/{self.SERVICE_COMPUTE_AGENTS}',
             'move_agent': f'/{self.SERVICE_MOVE_AGENT}',
             'reset_agents': f'/{self.SERVICE_RESET_AGENTS}',
-            'get_agents': f'/{self.SERVICE_GET_AGENTS}'
+            'get_agents': f'/{self.SERVICE_GET_AGENTS}',
+            'get_walls': f'/{self.SERVICE_GET_WALLS}'
         }
 
         # Log service creation attempts
         for service, full_name in service_names.items():
-            self._logger.warn(f"Creating service client for {service} at: {full_name}")
+            self._logger.info(f"Creating service client for {service} at: {full_name}")
 
         # Create service clients
-        self._logger.warn("Creating compute_agent client...")
+        self._logger.debug("Creating compute_agent client...")
         self._compute_agent_client = self.node.create_client(
             ComputeAgent,
             service_names['compute_agent']
         )
 
-        self._logger.warn("Creating compute_agents client...")
+        self._logger.debug("Creating compute_agents client...")
         self._compute_agents_client = self.node.create_client(
             ComputeAgents,
             service_names['compute_agents']
         )
 
-        self._logger.warn("Creating move_agent client...")
+        self._logger.debug("Creating move_agent client...")
         self._move_agent_client = self.node.create_client(
             MoveAgent,
             service_names['move_agent']
         )
 
-        self._logger.warn("Creating reset_agents client...")
+        self._logger.debug("Creating reset_agents client...")
         self._reset_agents_client = self.node.create_client(
             ResetAgents,
             service_names['reset_agents']
         )
        # Create GetAgents service provider
-        self._logger.warn(f"Creating get_agents service provider at: {service_names['get_agents']}")
+        self._logger.debug(f"Creating get_agents service provider at: {service_names['get_agents']}")
         self._get_agents_server = self.node.create_service(
             GetAgents,
             service_names['get_agents'],
             self._get_agents_callback
         )
-        self._logger.warn("GetAgents service provider created")
+        self._logger.debug("GetAgents service provider created")
+
+        # Create GetWalls service provider
+        self._logger.debug(f"Creating get_walls service provider at: {service_names['get_walls']}")
+        self._get_walls_service = self.node.create_service(
+            GetWalls,
+            service_names['get_walls'],
+            self._get_walls_callback
+        )
+        self._logger.debug("GetWalls service provider created")
 
         # Wait for Services
         required_services = [
@@ -233,14 +271,14 @@ class HunavManager(DummyEntityManager):
         max_attempts = 5
         for client, name in required_services:
             attempts = 0
-            self._logger.warn(f"Waiting for service {name}...")
+            self._logger.debug(f"Waiting for service {name}...")
 
             while attempts < max_attempts:
                 if client.wait_for_service(timeout_sec=2.0):
-                    self._logger.warn(f'Service {name} is available')
+                    self._logger.debug(f'Service {name} is available')
                     break
                 attempts += 1
-                self._logger.warn(
+                self._logger.debug(
                     f'Waiting for service {name} (attempt {attempts}/{max_attempts})\n'
                     f'Looking for service at: {service_names[name]}'
                 )
@@ -250,15 +288,15 @@ class HunavManager(DummyEntityManager):
                     f'Service {name} not available after {max_attempts} attempts\n'
                     f'Was looking for service at: {service_names[name]}'
                 )
-                self._logger.warn("=== SETUP_SERVICES FAILED ===")
+                self._logger.error("=== SETUP_SERVICES FAILED ===")
                 return False
 
-        self._logger.warn("=== SETUP_SERVICES COMPLETE ===")
+        self._logger.info("=== SETUP_SERVICES COMPLETE ===")
         return True
 
     def _get_agents_callback(self, request, response):
         """Service callback for GetAgents service"""
-        self._logger.warn("=== GET_AGENTS SERVICE CALLED ===")
+        self._logger.debug("=== GET_AGENTS SERVICE CALLED ===")
 
         # Update header timestamp
         self._agents_container.header.stamp = self.node.get_clock().now().to_msg()
@@ -266,20 +304,26 @@ class HunavManager(DummyEntityManager):
         # Create a copy of the agents container
         response.agents = self._agents_container
 
-        self._logger.warn(f"Returning {len(response.agents.agents)} agents")
+        self._logger.debug(f"Returning {len(response.agents.agents)} agents")
 
+        return response
+
+    def _get_walls_callback(self, request, response):
+        """Service callback für Wall-Segments"""
+        response.walls = self._wall_segments
+        self._logger.info(f"Sent {len(self._wall_segments)} wall segments")
         return response
 
     def spawn_dynamic_obstacles(self, obstacles: typing.Collection[DynamicObstacle]):
         """Override to handle batch registration after all spawns"""
-        self._logger.warn(f"=== SPAWNING {len(obstacles)} DYNAMIC OBSTACLES ===")
+        self._logger.debug(f"=== SPAWNING {len(obstacles)} DYNAMIC OBSTACLES ===")
 
         # Call parent method which handles individual spawns
         super().spawn_dynamic_obstacles(obstacles)
 
         # Now all obstacles have been spawned - register them with HuNav
         if self._agents_container.agents:
-            self._logger.warn(f"All spawns complete. Registering {len(self._agents_container.agents)} agents with HuNav")
+            self._logger.debug(f"All spawns complete. Registering {len(self._agents_container.agents)} agents with HuNav")
 
             # Update timestamp
             self._agents_container.header.stamp = self.node.get_clock().now().to_msg()
@@ -293,7 +337,7 @@ class HunavManager(DummyEntityManager):
             response = self._compute_agents_client.call(request)
 
             if response:
-                self._logger.warn(f"Successfully registered {len(response.updated_agents.agents)} agents")
+                self._logger.debug(f"Successfully registered {len(response.updated_agents.agents)} agents")
 
                 # Update local agents with response data
                 for updated_agent in response.updated_agents.agents:
@@ -308,7 +352,7 @@ class HunavManager(DummyEntityManager):
             else:
                 self._logger.error("Failed to register agents with HuNav")
         else:
-            self._logger.warn("No agents to register")
+            self._logger.debug("No agents to register")
 
     def _spawn_dynamic_obstacle_impl(self, obstacle: DynamicObstacle) -> DynamicObstacle | None:
         """Create agent but don't register with HuNav yet"""
@@ -374,12 +418,12 @@ class HunavManager(DummyEntityManager):
                     agent_msg.goals.append(goal)
 
             # Add wall obstacles
-            self._logger.warn(f"Hunav Manager Wallpoints: {self._wall_points}")
-            agent_msg.closest_obs.extend(self._wall_points)
-            self._logger.warn(f"Hunav Manager Closest Obstacles: {agent_msg.closest_obs}")
+            # self._logger.debug(f"Hunav Manager Wallpoints: {self._wall_points}")
+            # agent_msg.closest_obs.extend(self._wall_points)
+            # self._logger.debug(f"Hunav Manager Closest Obstacles: {agent_msg.closest_obs}")
 
             # After creating the agent message:
-            self._logger.warn(f"""            ##Complete Debug for the set attributes
+            self._logger.debug(f"""            ##Complete Debug for the set attributes
             Full HunavObstacle Details:
             ID: {agent_msg.id}
             Name: {agent_msg.name}
@@ -455,27 +499,28 @@ class HunavManager(DummyEntityManager):
             return None
 
     def _spawn_walls_impl(self, walls) -> bool:
-        spacing = 0.1
 
-        for wall in walls:
-            self._logger.warn(f"_spawn_wall: {wall}")
+        self._wall_segments = []
+
+        for i, wall in enumerate(walls):
             dx = wall.End.x - wall.Start.x
             dy = wall.End.y - wall.Start.y
             length = math.sqrt(dx * dx + dy * dy)
-            steps = max(1, int(length / spacing))
 
-            for i in range(steps + 1):
-                t = i / steps
-                point = geometry_msgs.msg.Point()
-                point.x = wall.Start.x + t * dx
-                point.y = wall.Start.y + t * dy
-                point.z = 0.0
-                self._wall_points.append(point)
-            self._logger.warn(f"_spawn_walls_impl Wallpoints: {self._wall_points}")
-            
+            segment = WallSegment()
+            segment.id = i
+            segment.start = Point(x=wall.Start.x, y=wall.Start.y, z=0.0)
+            segment.end = Point(x=wall.End.x, y=wall.End.y, z=0.0)
+            segment.length = length
+            segment.height = wall.height
+
+            self._wall_segments.append(segment)
+
+        self._logger.info(f"Cached {len(self._wall_segments)} wall segments")
+        self._logger.info(f"Wallsegments{self._wall_segments} ")
         return True
 
     def _remove_obstacles_impl(self):
-        #self._wall_points = []
+        # self._wall_points = []
         # TODO remove obstacles
         return True

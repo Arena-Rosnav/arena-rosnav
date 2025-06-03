@@ -64,11 +64,7 @@ def generate_launch_description():
     )
     entity_manager = LaunchArgument(
         name='entity_manager',
-        default_value=IfElseSubstitution(
-            condition=PythonExpression(['"', simulator.substitution, '"', '=="isaac"']),
-            if_value='isaac',
-            else_value='dummy'
-        ),
+        default_value=PythonExpression([str({"gazebo": "hunav", "isaac": "isaac"}), '.get("', simulator.substitution, '", "dummy")']),
     )
     # sfm = LaunchArgument(
     #     name='sfm',
