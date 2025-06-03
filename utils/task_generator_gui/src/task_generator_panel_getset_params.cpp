@@ -67,7 +67,7 @@ namespace task_generator_gui
         selected_world = worlds[0];
     }
 
-    void TaskGeneratorPanel::getCurrentTaskGeneratorNodeParams()
+    void TaskGeneratorPanel::getCurrentTaskGeneratorNodeParams(bool init)
     {
         if (!parameters_client)
         {
@@ -93,25 +93,27 @@ namespace task_generator_gui
             {
                 auto current_obstacles_tm = parameters_client->get_parameter<std::string>("tm_obstacles");
 
-                RCLCPP_INFO(service_node->get_logger(), "Current Obstacles Task Mode: %s", current_obstacles_tm.c_str());
-
-                if (current_obstacles_tm == "environment")
+                // rclcpp::SyncParametersClient::SharedPtr does not support nested parameters for has_parameter function
+                if (hasNestedParameter("task.environment.file"))
                 {
-                    obstacles_task_mode = QString("Environment");
+                    if (init)
+                        obstacles_task_mode = QString("Environment");
 
                     auto config_file = parameters_client->get_parameter<std::string>("task.environment.file");
                     selected_environment_config_file = config_file;
                 }
-                else if (current_obstacles_tm == "parametrized")
+                if (hasNestedParameter("task.parametrized.file"))
                 {
-                    obstacles_task_mode = QString("Parametrized");
+                    if (init)
+                        obstacles_task_mode = QString("Parametrized");
 
                     auto config_file = parameters_client->get_parameter<std::string>("task.parametrized.file");
                     selected_parametrized_config_file = config_file;
                 }
-                else if (current_obstacles_tm == "random")
+                if (hasNestedParameter("task.random.static.models"))
                 {
-                    obstacles_task_mode = QString("Random");
+                    if (init)
+                        obstacles_task_mode = QString("Random");
 
                     auto current_static_models = parameters_client->get_parameter<std::vector<std::string>>("task.random.static.models");
                     auto current_interactive_models = parameters_client->get_parameter<std::vector<std::string>>("task.random.interactive.models");
@@ -160,9 +162,10 @@ namespace task_generator_gui
 
                     n_dynamic_obstacles_range = parameters_client->get_parameter<std::vector<int64_t>>("task.random.dynamic.n");
                 }
-                else if (current_obstacles_tm == "scenario")
+                if (hasNestedParameter("task.scenario.file"))
                 {
-                    obstacles_task_mode = QString("Scenario");
+                    if (init)
+                        obstacles_task_mode = QString("Scenario");
 
                     auto config_file = parameters_client->get_parameter<std::string>("task.scenario.file");
 
@@ -176,19 +179,23 @@ namespace task_generator_gui
 
                 if (current_robots_tm == "explore")
                 {
-                    robots_task_mode = QString("Explore");
+                    if (init)
+                        robots_task_mode = QString("Explore");
                 }
-                else if (current_robots_tm == "guided")
+                if (current_robots_tm == "guided")
                 {
-                    robots_task_mode = QString("Guided");
+                    if (init)
+                        robots_task_mode = QString("Guided");
                 }
-                else if (current_robots_tm == "random")
+                if (current_robots_tm == "random")
                 {
-                    robots_task_mode = QString("Random");
+                    if (init)
+                        robots_task_mode = QString("Random");
                 }
-                else if (current_robots_tm == "scenario")
+                if (current_robots_tm == "scenario")
                 {
-                    robots_task_mode = QString("Scenario");
+                    if (init)
+                        robots_task_mode = QString("Scenario");
                 }
 
                 RCLCPP_INFO(service_node->get_logger(), "Current Robot Task Mode: %s", current_robots_tm.c_str());
@@ -599,7 +606,6 @@ namespace task_generator_gui
     {
         std::stringstream ss(selected_robot_model);
         std::string temp;
-        char del = ',';
         auto choosen_robot = robot_combobox->currentText().toStdString();
 
         RCLCPP_INFO(service_node->get_logger(), "Selected robot model: %s", choosen_robot.c_str());
@@ -610,5 +616,28 @@ namespace task_generator_gui
         //         return;
         // }
         selected_robot_model.append(",").append(choosen_robot);
+    }
+
+    bool TaskGeneratorPanel::hasNestedParameter(std::string parameter_name)
+    {
+        try
+        {
+            // Get all parameter names from the node
+            auto all_parameters = parameters_client->list_parameters({}, 10);
+
+            for (const auto &param_name : all_parameters.names)
+            {
+                if (param_name == parameter_name)
+                {
+                    return true;
+                }
+            }
+        }
+        catch (const std::exception &e)
+        {
+            RCLCPP_ERROR(service_node->get_logger(), "Error while listing parameters: %s", e.what());
+        }
+
+        return false;
     }
 } // namespace task_generator_gui

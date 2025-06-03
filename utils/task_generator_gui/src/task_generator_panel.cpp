@@ -48,8 +48,7 @@ namespace task_generator_gui
         getWorlds();
         getTMObstaclesParams();
         getTMRobotsParams();
-        getCurrentTaskGeneratorNodeParams();
-
+        getCurrentTaskGeneratorNodeParams(true);
         setupUi();
         onWorldChanged(QString::fromStdString(selected_world));
     }
@@ -259,6 +258,7 @@ namespace task_generator_gui
         {
             auto param_config_file_combobox = new QComboBox();
             param_config_file_combobox->addItems(scenario_config_files_qstringlist);
+            param_config_file_combobox->setCurrentText(QString::fromStdString(selected_scenario_config_file));
             auto item = new QTreeWidgetItem(obstacles_tree);
             item->setText(0, "Configuration File");
             obstacles_tree->setItemWidget(item, 1, param_config_file_combobox);
@@ -286,6 +286,7 @@ namespace task_generator_gui
         {
             auto param_config_file_combobox = new QComboBox();
             param_config_file_combobox->addItems(scenario_config_files_qstringlist);
+            param_config_file_combobox->setCurrentText(QString::fromStdString(selected_scenario_config_file));
             auto item = new QTreeWidgetItem(robots_tree);
             item->setText(0, "Configuration File");
             robots_tree->setItemWidget(item, 1, param_config_file_combobox);
@@ -331,7 +332,6 @@ namespace task_generator_gui
 
         for (int i = 0; i < int(check_box_texts.size()); i++)
         {
-            RCLCPP_INFO(service_node->get_logger(), "Connected hashmap value at %d: %d", i, connected_hash_map->at(i));
             group_check_box->addItem(QString::fromStdString(check_box_texts[i]), connected_hash_map->at(i));
         }
 

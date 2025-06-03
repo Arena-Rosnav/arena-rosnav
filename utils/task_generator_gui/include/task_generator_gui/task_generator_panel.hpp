@@ -56,7 +56,7 @@ namespace task_generator_gui
         // Get available worlds
         void getWorlds();
 
-        void getCurrentTaskGeneratorNodeParams();
+        void getCurrentTaskGeneratorNodeParams(bool init = false);
 
         void getTMObstaclesParams();
         void getScenarios(const std::string &world_name);
@@ -67,6 +67,7 @@ namespace task_generator_gui
         void setParams();
         void setRobot();
         void checkRobotModel();
+        bool hasNestedParameter(std::string parameter_name);
 
         void setupUi();
         QComboBox *setupComboBoxWithLabel(QLayout *parent, const QStringList &combobox_values, const QString &label);
