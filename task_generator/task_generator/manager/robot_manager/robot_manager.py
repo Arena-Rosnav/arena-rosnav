@@ -10,7 +10,6 @@ import launch
 import lifecycle_msgs.msg
 import nav_msgs.msg as nav_msgs
 import rclpy
-import rclpy.callback_groups
 import rclpy.client
 import rclpy.publisher
 import rclpy.timer
@@ -117,8 +116,9 @@ class RobotManager(NodeInterface):
         _gen_goal_topic = self.namespace("goal_pose")
 
         self._goal_pub = self.node.create_publisher(
-            geometry_msgs.PoseStamped, _gen_goal_topic, 10,
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
+            geometry_msgs.PoseStamped,
+            _gen_goal_topic,
+            10,
         )
 
         self.node.create_subscription(
@@ -179,7 +179,6 @@ class RobotManager(NodeInterface):
 
         state = self.node.get_lifecycle_state(
             node_name := self.node.service_namespace(self.name, 'local_costmap/local_costmap'),
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
         if state.id != lifecycle_msgs.msg.State.PRIMARY_STATE_ACTIVE:
             return False
@@ -190,7 +189,6 @@ class RobotManager(NodeInterface):
         self._clear_costmaps_srv = self.node.create_client(
             ClearCostmapAroundRobot,
             service_name,
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
         while not self._clear_costmaps_srv.wait_for_service(timeout_sec=1.0):
             self._logger.warn(f'{service_name} service not available, waiting...')
@@ -280,7 +278,6 @@ class RobotManager(NodeInterface):
         self._goal_timer = self.node.create_timer(
             3.0,
             self._publish_goal_callback,
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
         )
 
     def _launch_robot(self):

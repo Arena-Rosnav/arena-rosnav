@@ -7,7 +7,6 @@ import arena_simulation_setup.entities.robot
 import attrs
 import launch
 import launch_ros
-import rclpy
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from ros_gz_interfaces.msg import Entity as EntityMsg
 from ros_gz_interfaces.msg import EntityFactory, WorldControl
@@ -51,22 +50,18 @@ class GazeboSimulator(BaseSimulator):
         self._spawn_entity = self.node.create_client(
             SpawnEntity,
             '/world/default/create',
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
         self._delete_entity = self.node.create_client(
             DeleteEntity,
             '/world/default/remove',
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
         self._set_entity_pose = self.node.create_client(
             SetEntityPose,
             '/world/default/set_pose',
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
         self._control_world = self.node.create_client(
             ControlWorld,
             '/world/default/control',
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
 
         self._logger.info("Waiting for gazebo services...")
@@ -100,7 +95,6 @@ class GazeboSimulator(BaseSimulator):
             PoseStamped,
             self._namespace("goal"),
             10,
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
         self.entities = {}
         self._walls_entities = []
@@ -559,5 +553,4 @@ class GazeboSimulator(BaseSimulator):
             PoseWithCovarianceStamped,
             self.node.service_namespace(robot.name, "initialpose"),
             qos_profile=1,
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         ).publish(pose)

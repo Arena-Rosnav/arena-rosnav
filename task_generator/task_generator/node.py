@@ -10,7 +10,6 @@ import arena_simulation_setup.entities.robot
 import arena_simulation_setup.world
 import launch
 import rclpy
-import rclpy.callback_groups
 import std_srvs.srv as std_srvs
 import task_generator_msgs.srv
 import yaml
@@ -94,14 +93,12 @@ class TaskGenerator(NodeInterface.Taskgen_T):
             Int16,
             self.service_namespace('task_reset'),
             1,
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
         )
 
         self._pub_finished = self.create_publisher(
             Empty,
             self.service_namespace('finished'),
             10,
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
         )
 
         self._set_up_services()
@@ -110,7 +107,6 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         self.create_timer(
             0.5,
             self._check_task_status,
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
 
     def _initialize(self):

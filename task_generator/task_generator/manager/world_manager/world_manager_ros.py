@@ -213,7 +213,6 @@ class WorldManagerROS(WorldManager):
         self._cli = self.node.create_client(
             nav2_msgs.srv.LoadMap,
             self.node.service_namespace('map_server', 'load_map'),
-            callback_group=rclpy.callback_groups.MutuallyExclusiveCallbackGroup(),
         )
         while not self._cli.wait_for_service(timeout_sec=1.0):
             self._logger.warn('LoadMap service not available, waiting again...')

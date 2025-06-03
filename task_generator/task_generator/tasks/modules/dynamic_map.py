@@ -3,7 +3,6 @@
 from map_distance_server.srv import GetDistanceMap
 from nav_msgs.msg import OccupancyGrid
 from rcl_interfaces.msg import SetParametersResult
-from rclpy.callback_groups import ReentrantCallbackGroup
 from std_msgs.msg import String
 
 from task_generator import NodeInterface
@@ -28,8 +27,6 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
         NodeInterface.__init__(self)
         TM_Module.__init__(self, **kwargs)
 
-        self.callback_group = ReentrantCallbackGroup()
-
         self.__map_request_pub = self.node.create_publisher(
             String, self.TOPIC_REQUEST_MAP, 1)
         self.__task_reset_pub = self.node.create_publisher(
@@ -40,10 +37,9 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
             self.TOPIC_RESET,
             self._cb_task_reset,
             1,
-            callback_group=self.callback_group)
+        )
 
-        self.__get_dist_map_service = self.node.create_client(
-            GetDistanceMap, self.SERVICE_DISTANCE_MAP, callback_group=self.callback_group)
+        self.__get_dist_map_service = self.node.create_client(GetDistanceMap, self.SERVICE_DISTANCE_MAP)
 
         self.node.declare_parameter('num_envs', 1)
         self.node.declare_parameter(MAP_GENERATOR_NS('episode_per_map'), 1)
@@ -111,14 +107,12 @@ class Mod_DynamicMap(TM_Module, NodeInterface):
                 self.TOPIC_MAP,
                 lambda _: None,
                 1,
-                callback_group=self.callback_group
             )
             self.node.create_subscription(
                 String,
                 self.TOPIC_SIGNAL_MAP,
                 lambda _: None,
                 1,
-                callback_group=self.callback_group
             )
         except Exception as e:
             self._logger.warn(

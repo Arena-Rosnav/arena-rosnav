@@ -4,15 +4,14 @@ import re
 import time
 import traceback
 import typing
-from geometry_msgs.msg import Point
 
 import attrs
 import geometry_msgs.msg
 from arena_rclpy_mixins.shared import Namespace
+from geometry_msgs.msg import Point
 from hunav_msgs.msg import Agent, AgentBehavior, Agents, WallSegment
-from hunav_msgs.srv import (ComputeAgent, ComputeAgents, GetAgents, MoveAgent,
-                            ResetAgents, GetWalls)
-
+from hunav_msgs.srv import (ComputeAgent, ComputeAgents, GetAgents, GetWalls,
+                            MoveAgent, ResetAgents)
 from task_generator.manager.entity_manager.dummy_manager import \
     DummyEntityManager
 from task_generator.manager.entity_manager.hunav_manager import \
@@ -228,26 +227,26 @@ class HunavManager(DummyEntityManager):
         self._logger.debug("Creating compute_agents client...")
         self._compute_agents_client = self.node.create_client(
             ComputeAgents,
-            service_names['compute_agents']
+            service_names['compute_agents'],
         )
 
         self._logger.debug("Creating move_agent client...")
         self._move_agent_client = self.node.create_client(
             MoveAgent,
-            service_names['move_agent']
+            service_names['move_agent'],
         )
 
         self._logger.debug("Creating reset_agents client...")
         self._reset_agents_client = self.node.create_client(
             ResetAgents,
-            service_names['reset_agents']
+            service_names['reset_agents'],
         )
        # Create GetAgents service provider
         self._logger.debug(f"Creating get_agents service provider at: {service_names['get_agents']}")
         self._get_agents_server = self.node.create_service(
             GetAgents,
             service_names['get_agents'],
-            self._get_agents_callback
+            self._get_agents_callback,
         )
         self._logger.debug("GetAgents service provider created")
 
@@ -256,7 +255,7 @@ class HunavManager(DummyEntityManager):
         self._get_walls_service = self.node.create_service(
             GetWalls,
             service_names['get_walls'],
-            self._get_walls_callback
+            self._get_walls_callback,
         )
         self._logger.debug("GetWalls service provider created")
 

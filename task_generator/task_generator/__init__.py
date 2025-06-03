@@ -2,13 +2,28 @@ import typing
 
 import launch
 import rclpy
+import rclpy.node
+import rclpy.client
+import rclpy.callback_groups
 import rclpy.impl.rcutils_logger
 from arena_rclpy_mixins import ArenaMixinNode
 from arena_rclpy_mixins.ROSParamServer import ROSParamServer
+from rclpy.qos import QoSProfile, qos_profile_services_default
+
+
+class SafeCallbackNode(rclpy.node.Node):
+    """
+    Automatically make clients part of a new MutuallyExclusiveCallbackGroup to avoid deadlocks.
+    """
+
+    def create_client(self, *args, callback_group: rclpy.callback_groups.CallbackGroup | None = None, **kwargs) -> rclpy.client.Client:
+        if callback_group is None:
+            callback_group = rclpy.callback_groups.MutuallyExclusiveCallbackGroup()
+        return super().create_client(*args, callback_group=callback_group, **kwargs)
 
 
 class NodeInterface:
-    class Taskgen_T(ArenaMixinNode):
+    class Taskgen_T(ArenaMixinNode, SafeCallbackNode):
         ...
 
     node: Taskgen_T
