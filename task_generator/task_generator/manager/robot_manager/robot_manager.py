@@ -186,7 +186,7 @@ class RobotManager(NodeInterface):
 
         service_name = os.path.abspath(node_name('../clear_around_local_costmap'))
 
-        self._logger.warn(f"Service name: {service_name}")
+        self._logger.info(f"Service name: {service_name}")
         self._clear_costmaps_srv = self.node.create_client(
             ClearCostmapAroundRobot,
             service_name,
