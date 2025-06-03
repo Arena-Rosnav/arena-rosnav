@@ -5,14 +5,14 @@ import typing
 import arena_simulation_setup.entities.robot
 import attrs
 import rclpy
+import rclpy.client
 # Import dependencies.
 from isaacsim_msgs.srv import (DeletePrim, GetPrimAttributes, ImportObstacles,
                                ImportUsd, MovePrim, Pedestrian, SpawnWall,
                                UrdfToUsd)
+
 from task_generator.shared import DynamicObstacle, ModelType, Obstacle, Robot
 from task_generator.simulators import BaseSimulator
-
-# from omni.isaac.core.utils.rotations import euler_angles_to_quat
 
 
 @attrs.define()
