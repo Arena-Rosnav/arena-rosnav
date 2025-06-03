@@ -16,7 +16,7 @@ from task_generator.manager.entity_manager.dummy_manager import \
     DummyEntityManager
 from task_generator.manager.entity_manager.hunav_manager import \
     HunavDynamicObstacle
-from task_generator.shared import DynamicObstacle, ModelType
+from task_generator.shared import DynamicObstacle, ModelType, PositionOrientation
 from task_generator.simulators import BaseSimulator
 
 
@@ -348,6 +348,7 @@ class HunavManager(DummyEntityManager):
                     # Update pedestrians dictionary if exists
                     if updated_agent.id in self._pedestrians:
                         self._pedestrians[updated_agent.id]['agent'] = updated_agent
+                        self._simulator.move_entity(updated_agent.name, PositionOrientation.from_pose(updated_agent.position))
             else:
                 self._logger.error("Failed to register agents with HuNav")
         else:
