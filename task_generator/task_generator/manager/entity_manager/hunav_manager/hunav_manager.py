@@ -168,6 +168,9 @@ class HunavManager(DummyEntityManager):
     def __init__(self, namespace: Namespace, simulator: BaseSimulator):
         """Initialize HunavManager with debug logging"""
         super().__init__(namespace=namespace, simulator=simulator)
+        # Detect Simulator Type to decide between Plugin or move_entity callback
+        self._simulator_type = self._detect_simulator_type()
+        self._logger.info(f"Detected simulator type: {self._simulator_type}")
 
         self._logger.info("=== HUNAVMANAGER INIT START ===")
         self._logger.debug("Parent class initialized")
@@ -194,6 +197,17 @@ class HunavManager(DummyEntityManager):
         self._logger.debug("Service wait complete")
 
         self._logger.info("=== HUNAVMANAGER INIT COMPLETE ===")
+
+    def _detect_simulator_type(self) -> str: 
+        """Detect which simulator is being used"""
+        try:
+            #check the parameter 'simulator' which is given during launch
+            simulator_param = self.node.get_parameter('simulator').value
+            return simulator_param.lower()
+        except:
+            return self._simulator.__class__.__name__.lower()
+
+
 
     def _setup_services(self):
         """Initialize all required services with debug logging"""
