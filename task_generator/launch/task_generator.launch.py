@@ -85,6 +85,24 @@ def generate_launch_description():
         )
     )
 
+
+
+    # Hunavsim Pedestrians in rviz
+    pedestrian_marker_node = launch_ros.actions.Node(
+        package="rviz_utils",
+        executable="pedestrian_marker_publisher", 
+        name="pedestrian_marker_publisher",
+        parameters=[
+            {"use_sim_time": True},
+            {"body_height": 1.6},
+            {"body_radius": 0.25}, 
+            {"head_radius": 0.15},
+            {"arrow_length": 0.6},
+            {"show_labels": True},
+            {"show_velocity_arrows": True}
+        ],
+        output="screen"
+    )
     # Start the rviz config generator which launches also rviz2 with desired config file
     rviz_node = launch_ros.actions.Node(
         package="rviz_utils",
@@ -137,6 +155,7 @@ def generate_launch_description():
         launch.actions.GroupAction([
             launch_ros.actions.PushRosNamespace(namespace=namespace.substitution),
             map_server_node,
+            pedestrian_marker_node,
             rviz_node
         ]),
         task_generator_node,
