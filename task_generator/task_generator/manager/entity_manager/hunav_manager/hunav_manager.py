@@ -327,6 +327,36 @@ class HunavManager(DummyEntityManager):
         self._logger.info(f"Sent {len(self._wall_segments)} wall segments")
         return response
 
+    def _move_entity_callback(self):
+        """Pedestrian Move Entity Callback for non gazebo simulators"""
+        # Nur updaten wenn Agents vorhanden sind
+        if not self._agents_container.agents:
+            return
+        
+        # Timestamp aktualisieren
+        self._agents_container.header.stamp = self.node.get_clock().now().to_msg()
+        
+        # HuNav Service aufrufen
+        request = ComputeAgents.Request()
+        request.robot = _create_robot_message()
+        request.current_agents = self._agents_container
+        
+        try:
+            response = self._compute_agents_client.call(request)
+            if response:
+                #move_entity for each agent
+                for updated_agent in response.updated_agents.agents:
+                    position = PositionOrientation.from_pose(updated_agent.position)
+                    self._simulator.move_entity(updated_agent.name, position)
+                    
+                    for i, agent in enumerate(self._agents_container.agents):
+                        if agent.id == updated_agent.id:
+                            self._agents_container.agents[i] = updated_agent
+                            break
+                       
+        except Exception as e:
+            self._logger.error(f"Failed to update agent positions: {e}")
+
     def spawn_dynamic_obstacles(self, obstacles: typing.Collection[DynamicObstacle]):
         """Override to handle batch registration after all spawns"""
         self._logger.debug(f"=== SPAWNING {len(obstacles)} DYNAMIC OBSTACLES ===")
@@ -362,7 +392,13 @@ class HunavManager(DummyEntityManager):
                     # Update pedestrians dictionary if exists
                     if updated_agent.id in self._pedestrians:
                         self._pedestrians[updated_agent.id]['agent'] = updated_agent
-                        self._simulator.move_entity(updated_agent.name, PositionOrientation.from_pose(updated_agent.position))
+
+                if self._simulator_type != 'gazebo':
+                    self._logger.debug("Non-Gazebo detected - starting movement timer")
+                    self._update_timer = self.node.create_timer(
+                        0.1,  # 10 Hz
+                        self._move_entity_callback
+                    )
             else:
                 self._logger.error("Failed to register agents with HuNav")
         else:
