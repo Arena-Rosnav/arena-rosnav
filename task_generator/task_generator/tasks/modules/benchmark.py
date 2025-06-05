@@ -2,10 +2,11 @@ import datetime
 import hashlib
 import json
 import pathlib
-from task_generator.constants import Config, Constants
-from task_generator.shared import Namespace, get_parameter
+from task_generator.constants import Constants
+from task_generator.constants.runtime import Configuration
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.task_factory import TaskFactory
+from arena_rclpy_mixins.ROSParamServer import ROSParamServer
 
 import typing
 import os
@@ -18,28 +19,6 @@ from ament_index_python.packages import get_package_share_directory
 import arena_evaluation_msgs.srv as arena_evaluation_srvs
 
 import logging
-
-
-def _get_ros2_daemon_pid() -> int:
-    """Get the PID of the ros2 daemon process"""
-    try:
-        # Look for ros2 daemon process
-        result = subprocess.check_output(
-            ["pgrep", "-f", "ros2.*daemon"], 
-            stderr=subprocess.DEVNULL
-        ).decode().strip()
-        if result:
-            return int(result.split('\n')[0])
-        else:
-            # Fallback to looking for any ros2 process
-            result = subprocess.check_output(
-                ["pgrep", "-f", "ros2"], 
-                stderr=subprocess.DEVNULL
-            ).decode().strip()
-            return int(result.split('\n')[0])
-    except Exception as e:
-        raise RuntimeError("could not determine ros2 daemon pid") from e
-
 
 class _Config(typing.NamedTuple):
 
@@ -65,13 +44,13 @@ class _Config(typing.NamedTuple):
     contest: Contest
     general: General
 
-
 class Suite(typing.NamedTuple):
 
     @classmethod
-    def parse(cls, name: str, obj: typing.Dict):
+    def parse(cls, name: str, obj: typing.Dict, config_class=None):
         return cls(
-            name=name, stages=[cls.Stage.parse(stage) for stage in obj["stages"]]
+            name=name, 
+            stages=[cls.Stage.parse(stage, config_class) for stage in obj["stages"]]
         )
 
     class Index(int): ...
@@ -89,17 +68,38 @@ class Suite(typing.NamedTuple):
         timeout: float
 
         @classmethod
+        def _make_serializable(cls, item):
+            """Recursively convert non-serializable objects to JSON-serializable types."""
+            if isinstance(item, dict):
+                return {k: cls._make_serializable(v) for k, v in item.items()}
+            elif isinstance(item, (list, tuple)):
+                return [cls._make_serializable(i) for i in item]
+            elif hasattr(item, 'value'):  # Handle ROSParam_impl
+                return cls._make_serializable(item.value)
+            elif isinstance(item, Constants.TaskMode.TM_Robots) or isinstance(item, Constants.TaskMode.TM_Obstacles):
+                return item.value  # Convert enums to their string values
+            return item
+
+        @classmethod
         def hash(cls, obj: typing.Dict) -> int:
             """
-            hash json-serializable object to non-negative int32
+            Hash json-serializable object to non-negative int32, excluding config field
             """
+            # Debug: Log the types of obj fields
+            print("Debug: obj fields and types:", {k: type(v).__name__ for k, v in obj.items()})
+            hashable_obj = {k: v for k, v in obj.items() if k != "config"}
+            # Convert non-serializable types
+            hashable_obj = cls._make_serializable(hashable_obj)
+            print("Debug: hashable_obj:", hashable_obj)
             return 0x7F_FF_FF_FF & int.from_bytes(
-                hashlib.sha1(json.dumps(obj).encode()).digest()[-4:], byteorder="big"
+                hashlib.sha1(json.dumps(hashable_obj).encode()).digest()[-4:], byteorder="big"
             )
 
         @classmethod
-        def parse(cls, obj: typing.Dict) -> "Suite.Stage":
-            obj.setdefault("timeout", Config.Robot.TIMEOUT)
+        def parse(cls, obj: typing.Dict, config_class=None) -> "Suite.Stage":
+            if config_class is None:
+                raise ValueError("config_class must be provided to parse Suite.Stage")
+            obj.setdefault("timeout", config_class.Robot.TIMEOUT)
             obj.setdefault("seed", cls.hash(obj))
             return cls(**obj)
 
@@ -116,7 +116,6 @@ class Suite(typing.NamedTuple):
 
     def config(self, index: Index) -> Stage:
         return self.stages[index]
-
 
 class Contest(typing.NamedTuple):
 
@@ -156,17 +155,16 @@ class Contest(typing.NamedTuple):
     def config(self, index: Index) -> Contestant:
         return self.contestants[index]
 
-
 @TaskFactory.register_module(Constants.TaskMode.TM_Module.BENCHMARK)
 class Mod_Benchmark(TM_Module):
 
-    DIR: Namespace = Namespace(
-        os.path.join(get_package_share_directory("arena_bringup"), "config", "benchmark")
+    DIR = pathlib.Path(
+        os.path.join(get_package_share_directory("arena_bringup"), "configs", "benchmark")
     )
     LOCK_FILE = "resume.lock"
-    LOG_DIR = DIR("logs")
+    LOG_DIR = DIR / "logs"
     TASK_GENERATOR_CONFIG = os.path.join(
-        get_package_share_directory("arena_bringup"), "config", "task_generator.yaml"
+        get_package_share_directory("arena_bringup"), "configs", "task_generator.yaml"
     )
     TASK_GENERATOR_CONFIG_BKUP = TASK_GENERATOR_CONFIG + ".bkup"
 
@@ -182,29 +180,30 @@ class Mod_Benchmark(TM_Module):
 
     _requires_restart: bool
     _node: Node
+    _config_class: typing.Any  # Store the Config class from Configuration
 
     # CONFIGURATION
 
     @classmethod
     def _load_config(cls) -> _Config:
-        with open(cls.DIR("config.yaml")) as f:
+        with open(cls.DIR / "config.yaml") as f:
             return _Config.parse(yaml.safe_load(f))
 
     @classmethod
     def _load_contest(cls, contest: str) -> Contest:
-        with open(cls.DIR("contests", contest)) as f:
+        with open(cls.DIR / "contests" / contest) as f:
             return Contest.parse(
                 pathlib.Path(contest).stem, yaml.safe_load(f)
             )
 
     @classmethod
-    def _load_suite(cls, suite: str) -> Suite:
-        with open(cls.DIR("suites", suite)) as f:
-            return Suite.parse(pathlib.Path(suite).stem, yaml.safe_load(f))
+    def _load_suite(cls, suite: str, config_class) -> Suite:
+        with open(cls.DIR / "suites" / suite) as f:
+            return Suite.parse(pathlib.Path(suite).stem, yaml.safe_load(f), config_class)
 
     @classmethod
     def _resume(cls) -> typing.Tuple[str, Contest.Index, Suite.Index, int]:
-        with open(cls.DIR(cls.LOCK_FILE)) as f:
+        with open(cls.DIR / cls.LOCK_FILE) as f:
             runid, contest, suite, headless = f.read().split(" ")
         return runid, Contest.Index(contest), Suite.Index(suite), int(headless)
 
@@ -234,7 +233,6 @@ class Mod_Benchmark(TM_Module):
         for config in configs:
             overwrite(config, joint_config)
 
-        # yaml has problems with r+
         with open(cls.TASK_GENERATOR_CONFIG, "w") as f:
             yaml.dump(joint_config, f)
 
@@ -258,8 +256,11 @@ class Mod_Benchmark(TM_Module):
         else:
             self._node = node
 
+        # Initialize Configuration with ROSParamServer using a new node name
+        self._config_class = Configuration(ROSParamServer('benchmark_param_server'))
+
         self._config = self._load_config()
-        self._suite = self._load_suite(self._config.suite.config)
+        self._suite = self._load_suite(self._config.suite.config, self._config_class)
         self._contest = self._load_contest(self._config.contest.config)
 
         self._requires_restart = False
@@ -282,7 +283,7 @@ class Mod_Benchmark(TM_Module):
                 base_config = f.read()
 
             os.makedirs(self.LOG_DIR, exist_ok=True)
-            with open(self.LOG_DIR(f"{self._runid}.log"), "w") as f:
+            with open(self.LOG_DIR / f"{self._runid}.log", "w") as f:
                 f.write(f"run {self._runid}\n")
                 f.write(
                     f"of contest {self._contest.name} with {len(self._contest.contestants)} contestants\n"
@@ -312,20 +313,20 @@ class Mod_Benchmark(TM_Module):
             suite_index,
             headless,
         )
-        self._episode = -1
+        self._episode_index = -1
 
     def before_reset(self):
         pass
 
     def after_reset(self):
-        self._episode += 1
+        self._episode_index += 1
 
     _logger_object: logging.Logger
 
     @property
     def _logger(self) -> logging.Logger:
         if not hasattr(self, "_logger_object"):
-            handler = logging.FileHandler(self.LOG_DIR(f"{self._runid}.log"))
+            handler = logging.FileHandler(self.LOG_DIR / f"{self._runid}.log")
             handler.setFormatter(logging.Formatter("%(created)f: %(message)s"))
 
             logger = logging.getLogger("benchmark")
@@ -338,23 +339,23 @@ class Mod_Benchmark(TM_Module):
 
     def _log_contest(self):
         self._logger.info(
-            f"\tC [{1+self.contest_index:0>{len(str(1+self._contest.max_index))}}/{1+self._contest.max_index}] {self._contest.config(self._contest_index).name}"
+            f"\tC [{1+self._contest_index:0>{len(str(1+self._contest.max_index))}}/{1+self._contest.max_index}] {self._contest.config(self._contest_index).name}"
         )
 
     def _log_suite(self):
         self._logger.info(
-            f"\t\tS [{1+self.suite_index:0>{len(str(1+self._suite.max_index))}}/{1+self._suite.max_index}] {self._suite.config(self._suite_index).name}"
+            f"\t\tS [{1+self._suite_index:0>{len(str(1+self._suite.max_index))}}/{1+self._suite.max_index}] {self._suite.config(self._suite_index).name}"
         )
 
     def _log_episode(self):
-        if self._episode < 0:
+        if self._episode_index < 0:
             return  # pre-init
         episode_limit = int(
             self._suite.config(self._suite_index).episodes
             * self._config.suite.scale_episodes
         )
         self._logger.info(
-            f"\t\t\tE [{1+self._episode:0>{len(str(episode_limit))}}/{episode_limit}]"
+            f"\t\t\tE [{1+self._episode_index:0>{len(str(episode_limit))}}/{episode_limit}]"
         )
 
     @property
@@ -367,7 +368,7 @@ class Mod_Benchmark(TM_Module):
 
         if self._contest_index > self._contest.max_index:
             self._logger.info("BENCHMARK COMPLETED SUCCESSFULLY")
-            os.remove(self.DIR(self.LOCK_FILE))
+            os.remove(self.DIR / self.LOCK_FILE)
             self._taskgen_restore(cleanup=True)
             self._suicide()
         else:
@@ -384,7 +385,6 @@ class Mod_Benchmark(TM_Module):
 
     @suite_index.setter
     def suite_index(self, index: int):
-
         old_config = self._suite.config(self._suite_index)
         self._suite_index = Suite.Index(index)
 
@@ -397,12 +397,12 @@ class Mod_Benchmark(TM_Module):
             new_config = self._suite.config(self._suite_index)
 
             if new_config.map != old_config.map:
-                self._logger.debug(f"map change requires restart")
-                self._requires_restart = True
+                self._logger.debug(f"map change - will use service calls")
+                # No restart needed, just mark for service calls
 
             if new_config.robot != old_config.robot:
-                self._logger.debug(f"robot change requires restart")
-                self._requires_restart = True
+                self._logger.debug(f"robot change - will use service calls")
+                # No restart needed, just mark for service calls
 
             self._reincarnate()
 
@@ -423,8 +423,7 @@ class Mod_Benchmark(TM_Module):
             self._log_episode()
 
     def _reincarnate(self):
-
-        with open(self.DIR(self.LOCK_FILE), "w") as f:
+        with open(self.DIR / self.LOCK_FILE, "w") as f:
             f.write(
                 f"{self._runid} {self._contest_index} {self._suite_index} {self._headless}"
             )
@@ -447,9 +446,9 @@ class Mod_Benchmark(TM_Module):
         record_data_dir = f"{self._runid}/{contest_config.name}/{suite_config.name}"
 
         if self._requires_restart:
-            self._logger.info(f"Restarting with ROS2 daemon PID: {_get_ros2_daemon_pid()}")
+            # Initial bootstrap - launch the simulator with initial config
+            self._logger.info("Bootstrapping ROS2 system with initial configuration")
             
-            # Create launch file arguments for ROS2
             launch_args = [
                 "ros2", "launch", "arena_bringup", "start_arena.launch.py",
                 f"tm_modules:=benchmark",
@@ -470,52 +469,60 @@ class Mod_Benchmark(TM_Module):
                 f"agent_name:={contest_config.agent_name}",
             ]
             
-            subprocess.Popen(
-                launch_args,
-                start_new_session=True,
-            )
-            self._suicide()
+            subprocess.Popen(launch_args, start_new_session=True)
+            
+            import sys
+            sys.exit(0)
 
         else:
-            # Create service client for directory change
-            client = self._node.create_client(
-                arena_evaluation_srvs.ChangeDirectory,
-                f"/{suite_config.robot}/change_directory"
-            )
+            self._change_world_via_services(record_data_dir, suite_config)
+            self._episode = 0
+
+    def _change_world_via_services(self, record_data_dir: str, suite_config):
+        """Change world configuration via service calls instead of restarting"""
+        
+
+        change_dir_client = self._node.create_client(
+            arena_evaluation_srvs.ChangeDirectory,
+            f"/{suite_config.robot}/change_directory"
+        )
+        
+        if change_dir_client.wait_for_service(timeout_sec=5.0):
+            request = arena_evaluation_srvs.ChangeDirectory.Request()
+            request.directory = record_data_dir
             
-            # Wait for service to be available
-            if client.wait_for_service(timeout_sec=5.0):
-                request = arena_evaluation_srvs.ChangeDirectory.Request()
-                request.directory = record_data_dir
-                
-                future = client.call_async(request)
-                rclpy.spin_until_future_complete(self._node, future)
-                
-                if future.result() is not None:
-                    self._episode = 0
-                else:
-                    self._logger.error("Failed to call change_directory service")
+            future = change_dir_client.call_async(request)
+            rclpy.spin_until_future_complete(self._node, future)
+            
+            if future.result() is not None:
+                self._logger.info(f"Successfully changed recording directory to: {record_data_dir}")
             else:
-                self._logger.error("change_directory service not available")
+                self._logger.error("Failed to change recording directory")
+        else:
+            self._logger.error("change_directory service not available")
+        
+        # Add other service calls here for changing map, robot config, etc.
 
     def _suicide(self):
+        """Clean shutdown of the benchmark module"""
         try:
-            # Gracefully shutdown ROS2
+            self._logger.info("Shutting down benchmark module")
+            
             if hasattr(self, '_node') and self._node is not None:
-                self._node.destroy_node()
+                try:
+                    self._node.destroy_node()
+                    self._node = None
+                except Exception as e:
+                    self._logger.warning(f"Error destroying node: {e}")
             
             if rclpy.ok():
-                rclpy.shutdown()
-            
-            # Kill ros2 daemon if needed
-            subprocess.run(["pkill", "-f", "ros2.*daemon"], stderr=subprocess.DEVNULL)
+                try:
+                    rclpy.shutdown()
+                except Exception as e:
+                    self._logger.warning(f"Error shutting down rclpy: {e}")
+                    
         except Exception as e:
             self._logger.error(f"Error during shutdown: {e}")
-            # Force kill as fallback
-            try:
-                subprocess.run(["kill", f"{_get_ros2_daemon_pid()}"], stderr=subprocess.DEVNULL)
-            except:
-                pass
 
     def __del__(self):
         """Cleanup when object is destroyed"""
