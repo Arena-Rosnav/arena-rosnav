@@ -170,7 +170,7 @@ class HunavManager(DummyEntityManager):
         super().__init__(namespace=namespace, simulator=simulator)
         # Detect Simulator Type to decide between Plugin or move_entity callback
         self._simulator_type = self._detect_simulator_type()
-        self._logger.info(f"Detected simulator type: {self._simulator_type}")
+        self._logger.error(f"Detected simulator type: {self._simulator_type}")
 
         self._logger.info("=== HUNAVMANAGER INIT START ===")
         self._logger.debug("Parent class initialized")
@@ -491,21 +491,21 @@ class HunavManager(DummyEntityManager):
 
             self._logger.info(f"Added agent {agent_msg.name} to container. Total agents: {len(self._agents_container.agents)}")
 
-            # Create visual model
-            sdf = _PedestrianHelper.create_sdf(hunav_obstacle)
-
-            self._logger.info(f"created sdf for agent {agent_msg.name}")
-
-            new_obstacle = attrs.evolve(
-                obstacle,
-                model=obstacle.model.override(
-                    ModelType.SDF,
-                    lambda model: model.replace(description=sdf), noload=True)
-            )
-
-            self._logger.info(f"created sdf for agent {agent_msg.name}")
-
-            return new_obstacle
+            if self._simulator_type == 'gazebo':
+                # Create SDF with plugin for Gazebo
+                sdf = _PedestrianHelper.create_sdf(hunav_obstacle)
+                new_obstacle = attrs.evolve(
+                    obstacle,
+                    model=obstacle.model.override(
+                        ModelType.SDF,
+                        lambda model: model.replace(description=sdf), noload=True)
+                )
+                self._logger.info(f"Created SDF and loaded System Plugin for: {agent_msg.name}")
+                return new_obstacle
+            else:
+                # For other simulators: use simple model without plugin
+                self._logger.info(f"Using simple spawning for simulator: {self._simulator_type}")
+                return obstacle  # Return original obstacle without SDF modification
 
         except Exception as e:
             self._logger.error(f"Error preparing agent: {str(e)}")
