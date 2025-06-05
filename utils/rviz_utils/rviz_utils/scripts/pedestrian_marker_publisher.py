@@ -58,6 +58,7 @@ class PedestrianMarkerPublisher(Node):
         self.declare_parameter('arrow_length', 0.6)  # Length of direction arrow
         self.declare_parameter('show_labels', True)  # Show name labels
         self.declare_parameter('show_velocity_arrows', True)  # Show velocity arrows
+        self.declare_parameter('show_orientation_arrows', True)  # Show orientation arrows
         
         self.get_logger().info('Pedestrian Marker Publisher initialized')
         self.get_logger().info('Subscribing to /people, publishing to /pedestrian_markers')
@@ -75,6 +76,7 @@ class PedestrianMarkerPublisher(Node):
         arrow_length = self.get_parameter('arrow_length').value
         show_labels = self.get_parameter('show_labels').value
         show_velocity_arrows = self.get_parameter('show_velocity_arrows').value
+        show_orientation_arrows = self.get_parameter('show_orientation_arrows').value
         
         # Clear existing markers first (important for dynamic number of people)
         delete_marker = Marker()
@@ -107,7 +109,13 @@ class PedestrianMarkerPublisher(Node):
                                                              arrow_length, body_height, msg.header)
                     markers.append(arrow_marker)
             
-            # 4. Name Label
+            # 4. Orientation Arrow (shows where pedestrian is facing)
+            if show_orientation_arrows:
+                orientation_marker = self._create_orientation_arrow(person, person_id,
+                                                                  arrow_length, body_height, msg.header)
+                markers.append(orientation_marker)
+            
+            # 5. Name Label
             if show_labels:
                 label_marker = self._create_name_label(person, person_id, body_height, msg.header)
                 markers.append(label_marker)
@@ -149,7 +157,6 @@ class PedestrianMarkerPublisher(Node):
         marker.action = Marker.ADD
         
         # Position (cylinder center is at middle height)
-        # FIX: Force Z to ground level (0.0) + half height
         marker.pose.position.x = person.position.x
         marker.pose.position.y = person.position.y
         marker.pose.position.z = 0.0 + height/2  # Always start from ground level
@@ -166,6 +173,39 @@ class PedestrianMarkerPublisher(Node):
         
         return marker
 
+    def _create_orientation_arrow(self, person: Person, person_id: int,
+                                arrow_length: float, body_height: float, header) -> Marker:
+        """Create arrow marker showing walking/movement direction"""
+        marker = Marker()
+        marker.header = header
+        marker.ns = "pedestrian_orientation"
+        marker.id = person_id
+        marker.type = Marker.ARROW
+        marker.action = Marker.ADD
+        
+        # Position at person center, slightly higher than velocity arrow
+        marker.pose.position.x = person.position.x
+        marker.pose.position.y = person.position.y
+        marker.pose.position.z = 0.0 + body_height/2 + 0.2  # Slightly above velocity arrow
+        
+        # Use velocity direction for orientation (same as movement direction)
+        velocity_yaw = math.atan2(person.velocity.y, person.velocity.x)
+        
+        # Set orientation based on velocity direction
+        marker.pose.orientation.z = math.sin(velocity_yaw/2)
+        marker.pose.orientation.w = math.cos(velocity_yaw/2)
+        
+        # Size (fixed length for orientation arrow)
+        marker.scale = Vector3(x=arrow_length * 0.8, y=0.08, z=0.08)  # Slightly smaller than velocity
+        
+        # Color (blue for orientation vs orange for velocity)
+        marker.color = ColorRGBA(r=0.0, g=0.5, b=1.0, a=1.0)  # Blue
+        
+        # Lifetime
+        marker.lifetime.sec = 1
+        
+        return marker
+
     def _create_head_marker(self, person: Person, person_id: int, color: ColorRGBA,
                            radius: float, body_height: float, header) -> Marker:
         """Create sphere marker for person head"""
@@ -177,7 +217,6 @@ class PedestrianMarkerPublisher(Node):
         marker.action = Marker.ADD
         
         # Position (on top of body)
-        # FIX: Force Z to ground level + body height + head radius
         marker.pose.position.x = person.position.x
         marker.pose.position.y = person.position.y
         marker.pose.position.z = 0.0 + body_height + radius  # Ground + body + head

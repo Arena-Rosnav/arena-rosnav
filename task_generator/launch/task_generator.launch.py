@@ -99,7 +99,8 @@ def generate_launch_description():
             {"head_radius": 0.15},
             {"arrow_length": 0.6},
             {"show_labels": True},
-            {"show_velocity_arrows": True}
+            {"show_velocity_arrows": True},
+            {"show_orientation_arrows": True}
         ],
         output="screen"
     )
