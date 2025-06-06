@@ -274,3 +274,52 @@ class Utils:
                 },
                 'Value': True,
             }
+
+        # Hunavsim-Pedestrian Display Methods
+        @classmethod
+        def pedestrians(cls, topic, queue_size=20):
+            """
+            Create a MarkerArray display specifically for pedestrians using people_msgs/msg/People topic.
+            This will be used with a custom node that converts People messages to MarkerArray.
+            """
+            return {
+                'Class': 'rviz_default_plugins/MarkerArray',
+                'Name': 'Pedestrians',
+                'Enabled': True,
+                'Topic': {
+                    'Value': topic,
+                    'Depth': queue_size,
+                    'History Policy': 'Keep Last',
+                    'Reliability Policy': 'Best Effort',
+                    'Durability Policy': 'Volatile',
+                },
+                'Namespaces': {
+                    'pedestrian_bodies': True,
+                    'pedestrian_heads': True, 
+                    'pedestrian_arrows': True,
+                    'pedestrian_labels': True
+                },
+                'Value': True
+            }
+
+        @classmethod
+        def pedestrians_raw(cls, topic, queue_size=20):
+            """
+            Alternative: Display raw people topic as simple markers
+            Fallback if MarkerArray conversion node is not available
+            """
+            return {
+                'Class': 'rviz_default_plugins/Marker',
+                'Name': 'Pedestrians (Raw)',
+                'Enabled': True,
+                'Topic': {
+                    'Value': topic,
+                    'Depth': queue_size,
+                    'History Policy': 'Keep Last',
+                    'Reliability Policy': 'Best Effort',
+                    'Durability Policy': 'Volatile',
+                },
+                'Color': '50; 150; 255',  # Light blue for pedestrians
+                'Alpha': 0.8,
+                'Value': True
+            }

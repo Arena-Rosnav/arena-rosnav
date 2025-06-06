@@ -127,6 +127,16 @@ def generate_launch_description():
         return IsolatedGroupAction([
             launch.actions.IncludeLaunchDescription(
                 launch.launch_description_sources.PythonLaunchDescriptionSource(
+                    os.path.join(bringup_dir, 'launch/shared/entity_manager/entity_manager.launch.py')
+                ),
+                launch_arguments={
+                    **entity_manager.dict,
+                    **entity_manager.dict,
+                    'namespace': namespace,
+                }.items()
+            ),
+            launch.actions.IncludeLaunchDescription(
+                launch.launch_description_sources.PythonLaunchDescriptionSource(
                     os.path.join(
                         get_package_share_directory('task_generator'),
                         'launch/task_generator.launch.py'
@@ -222,22 +232,11 @@ def generate_launch_description():
         }.items(),
     )
 
-    launch_entity_manager = launch.actions.IncludeLaunchDescription(
-        launch.launch_description_sources.PythonLaunchDescriptionSource(
-            os.path.join(bringup_dir, 'launch/shared/entity_manager/entity_manager.launch.py')
-        ),
-        launch_arguments={
-            **entity_manager.dict,
-            **entity_manager.dict,
-        }.items()
-    )
-
     ld = launch.LaunchDescription([
         *ld_items,
         SetGlobalLogLevelAction(log_level.substitution),
         launch_task_generators,
         IsolatedGroupAction([launch_simulator]),
-        IsolatedGroupAction([launch_entity_manager]),
     ])
     return ld
 

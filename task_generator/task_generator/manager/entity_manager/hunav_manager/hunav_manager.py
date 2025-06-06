@@ -168,6 +168,9 @@ class HunavManager(DummyEntityManager):
     def __init__(self, namespace: Namespace, simulator: BaseSimulator):
         """Initialize HunavManager with debug logging"""
         super().__init__(namespace=namespace, simulator=simulator)
+        # Detect Simulator Type to decide between Plugin or move_entity callback
+        self._simulator_type = self._detect_simulator_type()
+        self._logger.error(f"Detected simulator type: {self._simulator_type}")
 
         self._logger.info("=== HUNAVMANAGER INIT START ===")
         self._logger.debug("Parent class initialized")
@@ -195,6 +198,15 @@ class HunavManager(DummyEntityManager):
 
         self._logger.info("=== HUNAVMANAGER INIT COMPLETE ===")
 
+    def _detect_simulator_type(self) -> str:
+        """Detect which simulator is being used"""
+        try:
+            # check the parameter 'simulator' which is given during launch
+            simulator_param = self.node.get_parameter('simulator').value
+            return simulator_param.lower()
+        except BaseException:
+            return self._simulator.__class__.__name__.lower()
+
     def _setup_services(self):
         """Initialize all required services with debug logging"""
         self._logger.info("=== SETUP_SERVICES START ===")
@@ -205,12 +217,12 @@ class HunavManager(DummyEntityManager):
 
         # Create service names with full namespace path
         service_names = {
-            'compute_agent': f'/{self.SERVICE_COMPUTE_AGENT}',
-            'compute_agents': f'/{self.SERVICE_COMPUTE_AGENTS}',
-            'move_agent': f'/{self.SERVICE_MOVE_AGENT}',
-            'reset_agents': f'/{self.SERVICE_RESET_AGENTS}',
-            'get_agents': f'/{self.SERVICE_GET_AGENTS}',
-            'get_walls': f'/{self.SERVICE_GET_WALLS}'
+            'compute_agent': self.node.service_namespace(self.SERVICE_COMPUTE_AGENT),
+            'compute_agents': self.node.service_namespace(self.SERVICE_COMPUTE_AGENTS),
+            'move_agent': self.node.service_namespace(self.SERVICE_MOVE_AGENT),
+            'reset_agents': self.node.service_namespace(self.SERVICE_RESET_AGENTS),
+            'get_agents': self.node.service_namespace(self.SERVICE_GET_AGENTS),
+            'get_walls': self.node.service_namespace(self.SERVICE_GET_WALLS)
         }
 
         # Log service creation attempts
@@ -313,6 +325,36 @@ class HunavManager(DummyEntityManager):
         self._logger.info(f"Sent {len(self._wall_segments)} wall segments")
         return response
 
+    def _move_entity_callback(self):
+        """Pedestrian Move Entity Callback for non gazebo simulators"""
+        # Nur updaten wenn Agents vorhanden sind
+        if not self._agents_container.agents:
+            return
+
+        # Timestamp aktualisieren
+        self._agents_container.header.stamp = self.node.get_clock().now().to_msg()
+
+        # HuNav Service aufrufen
+        request = ComputeAgents.Request()
+        request.robot = _create_robot_message()
+        request.current_agents = self._agents_container
+
+        try:
+            response = self._compute_agents_client.call(request)
+            if response:
+                # move_entity for each agent
+                for updated_agent in response.updated_agents.agents:
+                    position = PositionOrientation.from_pose(updated_agent.position)
+                    self._simulator.move_entity(updated_agent.name, position)
+
+                    for i, agent in enumerate(self._agents_container.agents):
+                        if agent.id == updated_agent.id:
+                            self._agents_container.agents[i] = updated_agent
+                            break
+
+        except Exception as e:
+            self._logger.error(f"Failed to update agent positions: {e}")
+
     def spawn_dynamic_obstacles(self, obstacles: typing.Collection[DynamicObstacle]):
         """Override to handle batch registration after all spawns"""
         self._logger.debug(f"=== SPAWNING {len(obstacles)} DYNAMIC OBSTACLES ===")
@@ -348,7 +390,13 @@ class HunavManager(DummyEntityManager):
                     # Update pedestrians dictionary if exists
                     if updated_agent.id in self._pedestrians:
                         self._pedestrians[updated_agent.id]['agent'] = updated_agent
-                        self._simulator.move_entity(updated_agent.name, PositionOrientation.from_pose(updated_agent.position))
+
+                if self._simulator_type != 'gazebo':
+                    self._logger.debug("Non-Gazebo detected - starting movement timer")
+                    self._update_timer = self.node.create_timer(
+                        0.1,  # 10 Hz
+                        self._move_entity_callback
+                    )
             else:
                 self._logger.error("Failed to register agents with HuNav")
         else:
@@ -477,21 +525,21 @@ class HunavManager(DummyEntityManager):
 
             self._logger.info(f"Added agent {agent_msg.name} to container. Total agents: {len(self._agents_container.agents)}")
 
-            # Create visual model
-            sdf = _PedestrianHelper.create_sdf(hunav_obstacle)
-
-            self._logger.info(f"created sdf for agent {agent_msg.name}")
-
-            new_obstacle = attrs.evolve(
-                obstacle,
-                model=obstacle.model.override(
-                    ModelType.SDF,
-                    lambda model: model.replace(description=sdf), noload=True)
-            )
-
-            self._logger.info(f"created sdf for agent {agent_msg.name}")
-
-            return new_obstacle
+            if self._simulator_type == 'gazebo':
+                # Create SDF with plugin for Gazebo
+                sdf = _PedestrianHelper.create_sdf(hunav_obstacle)
+                new_obstacle = attrs.evolve(
+                    obstacle,
+                    model=obstacle.model.override(
+                        ModelType.SDF,
+                        lambda model: model.replace(description=sdf), noload=True)
+                )
+                self._logger.info(f"Created SDF and loaded System Plugin for: {agent_msg.name}")
+                return new_obstacle
+            else:
+                # For other simulators: use simple model without plugin
+                self._logger.info(f"Using simple spawning for simulator: {self._simulator_type}")
+                return obstacle  # Return original obstacle without SDF modification
 
         except Exception as e:
             self._logger.error(f"Error preparing agent: {str(e)}")

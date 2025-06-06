@@ -144,7 +144,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         )
 
         def on_world_change():
-            # self._environment_manager.reset()
+            self._environment_manager.reset()
             self._environment_manager.spawn_world_obstacles(self._world_manager.world)
         self._world_manager.on_world_change(on_world_change)
         self._world_manager.start()
