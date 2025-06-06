@@ -16,4 +16,4 @@ repositories:
   gazebo/hunav_gz_plugin:
     type: git
     url: https://github.com/Arena-Rosnav/hunav_gz_plugin
-    version: main@7c9ce32
+    version: main@1abd02b2

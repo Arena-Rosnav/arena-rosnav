@@ -65,7 +65,7 @@ class _PedestrianHelper:
     }
 
     @classmethod
-    def create_sdf(cls, agent_config: HunavDynamicObstacle) -> str:
+    def create_sdf(cls, agent_config: HunavDynamicObstacle, namespace: str) -> str:
         """Create SDF description for pedestrian using gz-sim actor format"""
         # Get skin type
         skin_type = cls._SKIN_TYPES.get(agent_config.skin, 'casual_man.dae')
@@ -130,6 +130,7 @@ class _PedestrianHelper:
 
                 <plugin name="HuNavSystemPluginIGN" filename="libHuNavSystemPluginIGN.so">
                     <update_rate>1000.0</update_rate>
+                    <namespace>{namespace}</namespace>
                     <robot_name>jackal</robot_name>
                     <use_gazebo_obs>true</use_gazebo_obs>
                     <global_frame_to_publish>map</global_frame_to_publish>
@@ -527,7 +528,7 @@ class HunavManager(DummyEntityManager):
 
             if self._simulator_type == 'gazebo':
                 # Create SDF with plugin for Gazebo
-                sdf = _PedestrianHelper.create_sdf(hunav_obstacle)
+                sdf = _PedestrianHelper.create_sdf(hunav_obstacle, namespace=self.node.service_namespace())
                 new_obstacle = attrs.evolve(
                     obstacle,
                     model=obstacle.model.override(
