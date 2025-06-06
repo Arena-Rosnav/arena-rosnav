@@ -8,6 +8,10 @@ from arena_bringup.substitutions import LaunchArgument, SelectAction
 
 def generate_launch_description():
 
+    namespace = LaunchArgument(
+        name='namespace',
+    )
+
     launch_entity_manager = SelectAction(launch.substitutions.LaunchConfiguration('entity_manager'))
 
     launch_entity_manager.add(
@@ -29,7 +33,8 @@ def generate_launch_description():
             ),
             launch_arguments={
                 'use_sim_time': 'true',
-                'world_file': ''
+                'world_file': '',
+                **namespace.dict
             }.items(),
         )
     )
@@ -40,6 +45,7 @@ def generate_launch_description():
     )
 
     ld = launch.LaunchDescription([
+        namespace,
         entity_manager,
         launch_entity_manager,
     ])

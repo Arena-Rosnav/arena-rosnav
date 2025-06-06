@@ -65,7 +65,7 @@ class _PedestrianHelper:
     }
 
     @classmethod
-    def create_sdf(cls, agent_config: HunavDynamicObstacle) -> str:
+    def create_sdf(cls, agent_config: HunavDynamicObstacle, namespace: str) -> str:
         """Create SDF description for pedestrian using gz-sim actor format"""
         # Get skin type
         skin_type = cls._SKIN_TYPES.get(agent_config.skin, 'casual_man.dae')
@@ -130,6 +130,7 @@ class _PedestrianHelper:
 
                 <plugin name="HuNavSystemPluginIGN" filename="libHuNavSystemPluginIGN.so">
                     <update_rate>1000.0</update_rate>
+                    <namespace>{namespace}</namespace>
                     <robot_name>jackal</robot_name>
                     <use_gazebo_obs>true</use_gazebo_obs>
                     <global_frame_to_publish>map</global_frame_to_publish>
@@ -198,16 +199,14 @@ class HunavManager(DummyEntityManager):
 
         self._logger.info("=== HUNAVMANAGER INIT COMPLETE ===")
 
-    def _detect_simulator_type(self) -> str: 
+    def _detect_simulator_type(self) -> str:
         """Detect which simulator is being used"""
         try:
-            #check the parameter 'simulator' which is given during launch
+            # check the parameter 'simulator' which is given during launch
             simulator_param = self.node.get_parameter('simulator').value
             return simulator_param.lower()
-        except:
+        except BaseException:
             return self._simulator.__class__.__name__.lower()
-
-
 
     def _setup_services(self):
         """Initialize all required services with debug logging"""
@@ -219,12 +218,12 @@ class HunavManager(DummyEntityManager):
 
         # Create service names with full namespace path
         service_names = {
-            'compute_agent': f'/{self.SERVICE_COMPUTE_AGENT}',
-            'compute_agents': f'/{self.SERVICE_COMPUTE_AGENTS}',
-            'move_agent': f'/{self.SERVICE_MOVE_AGENT}',
-            'reset_agents': f'/{self.SERVICE_RESET_AGENTS}',
-            'get_agents': f'/{self.SERVICE_GET_AGENTS}',
-            'get_walls': f'/{self.SERVICE_GET_WALLS}'
+            'compute_agent': self.node.service_namespace(self.SERVICE_COMPUTE_AGENT),
+            'compute_agents': self.node.service_namespace(self.SERVICE_COMPUTE_AGENTS),
+            'move_agent': self.node.service_namespace(self.SERVICE_MOVE_AGENT),
+            'reset_agents': self.node.service_namespace(self.SERVICE_RESET_AGENTS),
+            'get_agents': self.node.service_namespace(self.SERVICE_GET_AGENTS),
+            'get_walls': self.node.service_namespace(self.SERVICE_GET_WALLS)
         }
 
         # Log service creation attempts
@@ -332,28 +331,28 @@ class HunavManager(DummyEntityManager):
         # Nur updaten wenn Agents vorhanden sind
         if not self._agents_container.agents:
             return
-        
+
         # Timestamp aktualisieren
         self._agents_container.header.stamp = self.node.get_clock().now().to_msg()
-        
+
         # HuNav Service aufrufen
         request = ComputeAgents.Request()
         request.robot = _create_robot_message()
         request.current_agents = self._agents_container
-        
+
         try:
             response = self._compute_agents_client.call(request)
             if response:
-                #move_entity for each agent
+                # move_entity for each agent
                 for updated_agent in response.updated_agents.agents:
                     position = PositionOrientation.from_pose(updated_agent.position)
                     self._simulator.move_entity(updated_agent.name, position)
-                    
+
                     for i, agent in enumerate(self._agents_container.agents):
                         if agent.id == updated_agent.id:
                             self._agents_container.agents[i] = updated_agent
                             break
-                       
+
         except Exception as e:
             self._logger.error(f"Failed to update agent positions: {e}")
 
@@ -529,7 +528,7 @@ class HunavManager(DummyEntityManager):
 
             if self._simulator_type == 'gazebo':
                 # Create SDF with plugin for Gazebo
-                sdf = _PedestrianHelper.create_sdf(hunav_obstacle)
+                sdf = _PedestrianHelper.create_sdf(hunav_obstacle, namespace=self.node.service_namespace())
                 new_obstacle = attrs.evolve(
                     obstacle,
                     model=obstacle.model.override(

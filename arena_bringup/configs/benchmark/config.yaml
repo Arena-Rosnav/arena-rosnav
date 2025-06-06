@@ -1,7 +1,7 @@
 contest:
   config: basic.yaml
 general:
-  simulator: flatland
+  simulator: gazebo
 suite:
   config: meta_suite.yaml
   scale_episodes: 1
