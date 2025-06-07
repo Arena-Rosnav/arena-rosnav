@@ -234,12 +234,12 @@ namespace task_generator_gui
             auto n_static_obstacles_widget = setupMinMaxSpinBox(&n_static_obstacles_range);
             obstacles_tree->setItemWidget(n_static_obstacles_widgetitem, 1, n_static_obstacles_widget);
 
-            // Set up the spinbox for n_interactive_obstacles
-            auto n_interactive_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
-            n_interactive_obstacles_widgetitem->setText(0, "Number of Interactive Obstacles");
+            // // Set up the spinbox for n_interactive_obstacles
+            // auto n_interactive_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
+            // n_interactive_obstacles_widgetitem->setText(0, "Number of Interactive Obstacles");
 
-            auto n_interactive_obstacles_widget = setupMinMaxSpinBox(&n_interactive_obstacles_range);
-            obstacles_tree->setItemWidget(n_interactive_obstacles_widgetitem, 1, n_interactive_obstacles_widget);
+            // auto n_interactive_obstacles_widget = setupMinMaxSpinBox(&n_interactive_obstacles_range);
+            // obstacles_tree->setItemWidget(n_interactive_obstacles_widgetitem, 1, n_interactive_obstacles_widget);
 
             // Set up the spinbox for n_dynamic_obstacles
             auto n_dynamic_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
@@ -255,12 +255,12 @@ namespace task_generator_gui
             static_obstacles_models_groupbox = setupGroupCheckBox(static_obstacles_all_models, &static_obstacles_models_selected);
             obstacles_tree->setItemWidget(static_obstacles_widgetitem, 1, static_obstacles_models_groupbox);
 
-            // Set up check boxes to choose interactive obstacles models
-            auto interactive_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
-            interactive_obstacles_widgetitem->setText(0, "Interactive Obstacles Models");
+            // // Set up check boxes to choose interactive obstacles models
+            // auto interactive_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
+            // interactive_obstacles_widgetitem->setText(0, "Interactive Obstacles Models");
 
-            interactive_obstacles_models_groupbox = setupGroupCheckBox(interactive_obstacles_all_models, &interactive_obstacles_models_selected);
-            obstacles_tree->setItemWidget(interactive_obstacles_widgetitem, 1, interactive_obstacles_models_groupbox);
+            // interactive_obstacles_models_groupbox = setupGroupCheckBox(interactive_obstacles_all_models, &interactive_obstacles_models_selected);
+            // obstacles_tree->setItemWidget(interactive_obstacles_widgetitem, 1, interactive_obstacles_models_groupbox);
 
             // Set up check boxes to choose dynamic obstacles models
             auto dynamic_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);

@@ -131,16 +131,16 @@ namespace task_generator_gui
                         }
                     }
 
-                    for (int i = 0; i < int(interactive_obstacles_all_models.size()); i++)
-                    {
-                        for (auto &model : current_interactive_models)
-                        {
-                            if (interactive_obstacles_all_models[i] == model)
-                            {
-                                interactive_obstacles_models_selected[i] = 1;
-                            }
-                        }
-                    }
+                    // for (int i = 0; i < int(interactive_obstacles_all_models.size()); i++)
+                    // {
+                    //     for (auto &model : current_interactive_models)
+                    //     {
+                    //         if (interactive_obstacles_all_models[i] == model)
+                    //         {
+                    //             interactive_obstacles_models_selected[i] = 1;
+                    //         }
+                    //     }
+                    // }
 
                     for (int i = 0; i < int(dynamic_obstacles_all_models.size()); i++)
                     {
@@ -158,7 +158,7 @@ namespace task_generator_gui
 
                     n_static_obstacles_range = parameters_client->get_parameter<std::vector<int64_t>>("task.random.static.n");
 
-                    n_interactive_obstacles_range = parameters_client->get_parameter<std::vector<int64_t>>("task.random.interactive.n");
+                    // n_interactive_obstacles_range = parameters_client->get_parameter<std::vector<int64_t>>("task.random.interactive.n");
 
                     n_dynamic_obstacles_range = parameters_client->get_parameter<std::vector<int64_t>>("task.random.dynamic.n");
                 }
@@ -312,13 +312,13 @@ namespace task_generator_gui
 
             auto random_response = random_future.get();
             n_static_obstacles_range = random_response->n_static_obstacles;
-            n_interactive_obstacles_range = random_response->n_interactive_obstacles;
+            // n_interactive_obstacles_range = random_response->n_interactive_obstacles;
             n_dynamic_obstacles_range = random_response->n_dynamic_obstacles;
 
             static_obstacles_all_models = random_response->models_static_obstacles;
             static_obstacles_models_selected = std::vector<int>(static_obstacles_all_models.size(), 0);
-            interactive_obstacles_all_models = random_response->models_interactive_obstacles;
-            interactive_obstacles_models_selected = std::vector<int>(interactive_obstacles_all_models.size(), 0);
+            // interactive_obstacles_all_models = random_response->models_interactive_obstacles;
+            // interactive_obstacles_models_selected = std::vector<int>(interactive_obstacles_all_models.size(), 0);
             dynamic_obstacles_all_models = random_response->models_dynamic_obstacles;
             dynamic_obstacles_models_selected = std::vector<int>(dynamic_obstacles_all_models.size(), 0);
 
@@ -421,12 +421,12 @@ namespace task_generator_gui
             parameter.value.string_array_value = selected_static_obstacles_models;
             request->parameters.push_back(parameter);
 
-            parameter = rcl_interfaces::msg::Parameter();
-            parameter.name = "task.random.interactive.models";
-            parameter.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY;
-            std::vector<std::string> selected_interactive_obstacles_models = convert(interactive_obstacles_models_groupbox->currentText());
-            parameter.value.string_array_value = selected_interactive_obstacles_models;
-            request->parameters.push_back(parameter);
+            // parameter = rcl_interfaces::msg::Parameter();
+            // parameter.name = "task.random.interactive.models";
+            // parameter.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY;
+            // std::vector<std::string> selected_interactive_obstacles_models = convert(interactive_obstacles_models_groupbox->currentText());
+            // parameter.value.string_array_value = selected_interactive_obstacles_models;
+            // request->parameters.push_back(parameter);
 
             parameter = rcl_interfaces::msg::Parameter();
             parameter.name = "task.random.dynamic.models";
