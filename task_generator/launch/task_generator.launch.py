@@ -144,11 +144,7 @@ def generate_launch_description():
                 **reference.param(typing.List[float]),
                 **prefix.str_param,
             },
-            os.path.join(
-                bringup_dir,
-                'configs',
-                'task_generator.yaml'
-            ),
+            parameter_file.substitution,
         ],
     )
 

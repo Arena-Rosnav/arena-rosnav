@@ -25,24 +25,40 @@ namespace task_generator_gui
 
         // Create a new node for the service clients
         service_node = std::make_shared<rclcpp::Node>("tm_service_node");
+    }
 
-        get_environments_client = service_node->create_client<task_generator_msgs::srv::GetEnvironments>("/task_generator_node/get_environments");
+    void TaskGeneratorPanel::load(const rviz_common::Config &config)
+    {
+        rviz_common::Panel::load(config);
 
-        get_parametrizeds_client = service_node->create_client<task_generator_msgs::srv::GetParametrizeds>("/task_generator_node/get_parametrizeds");
+        QString result;
 
-        get_randoms_client = service_node->create_client<task_generator_msgs::srv::GetRandoms>("/task_generator_node/get_randoms");
+        if (config.mapGetString("Target", &result))
+        {
+            task_generator_node = result.toStdString();
+        }
+        else
+        {
+            task_generator_node = "/task_generator_node";
+        }
 
-        get_scenarios_client = service_node->create_client<task_generator_msgs::srv::GetScenarios>("/task_generator_node/get_scenarios");
+        get_environments_client = service_node->create_client<task_generator_msgs::srv::GetEnvironments>(task_generator_node + "/get_environments");
 
-        set_param_client = service_node->create_client<rcl_interfaces::srv::SetParameters>("/task_generator_node/set_parameters");
+        get_parametrizeds_client = service_node->create_client<task_generator_msgs::srv::GetParametrizeds>(task_generator_node + "/get_parametrizeds");
 
-        get_worlds_client = service_node->create_client<task_generator_msgs::srv::GetWorlds>("/task_generator_node/get_worlds");
+        get_randoms_client = service_node->create_client<task_generator_msgs::srv::GetRandoms>(task_generator_node + "/get_randoms");
 
-        get_robots_client = service_node->create_client<task_generator_msgs::srv::GetRobots>("/task_generator_node/get_robots");
+        get_scenarios_client = service_node->create_client<task_generator_msgs::srv::GetScenarios>(task_generator_node + "/get_scenarios");
 
-        parameters_client = std::make_shared<rclcpp::SyncParametersClient>(service_node, "task_generator_node");
+        set_param_client = service_node->create_client<rcl_interfaces::srv::SetParameters>(task_generator_node + "/set_parameters");
 
-        reset_task_client = service_node->create_client<std_srvs::srv::Empty>("/task_generator_node/reset_task");
+        get_worlds_client = service_node->create_client<task_generator_msgs::srv::GetWorlds>(task_generator_node + "/get_worlds");
+
+        get_robots_client = service_node->create_client<task_generator_msgs::srv::GetRobots>(task_generator_node + "/get_robots");
+
+        parameters_client = std::make_shared<rclcpp::SyncParametersClient>(service_node, task_generator_node);
+
+        reset_task_client = service_node->create_client<std_srvs::srv::Empty>(task_generator_node + "/reset_task");
 
         getRobots();
         getWorlds();

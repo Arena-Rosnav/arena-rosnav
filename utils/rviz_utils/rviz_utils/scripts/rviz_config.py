@@ -245,7 +245,8 @@ class ConfigFileGenerator(Node):
         }
 
         # Add robot model using RobotModel display
-        robot_group['Displays'].append(Utils.Displays.robot_model(robot_name))
+        robot_model_topic = f'{self._TASKGEN_NODE}/{robot_name}/robot_description'
+        robot_group['Displays'].append(Utils.Displays.robot_model(topic=robot_model_topic, robot_name=robot_name))
 
         # Add odometry visualization
         odom_topic = f'{self._TASKGEN_NODE}/{robot_name}/odom'
@@ -340,13 +341,15 @@ class ConfigFileGenerator(Node):
 
         return robot_group
 
-    @staticmethod
-    def _read_default_file():
+    def _read_default_file(self):
         package_path = get_package_share_directory("rviz_utils")
         file_path = os.path.join(package_path, "config", "rviz_default.rviz")
 
         with open(file_path) as file:
-            return yaml.safe_load(file)
+            content = file.read()
+            # i'm lazy, bite me
+            content = content.format(task_generator_node=self._TASKGEN_NODE)
+            return yaml.safe_load(content)
 
     @classmethod
     def _tmp_config_file(cls, config_file):

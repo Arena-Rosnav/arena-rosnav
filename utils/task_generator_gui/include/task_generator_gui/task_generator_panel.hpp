@@ -50,6 +50,7 @@ namespace task_generator_gui
         explicit TaskGeneratorPanel(QWidget *parent = 0);
         ~TaskGeneratorPanel() override;
         void onInitialize() override;
+        void load(const rviz_common::Config &config) override;
 
         // Get available robot models
         void getRobots();
@@ -87,6 +88,8 @@ namespace task_generator_gui
 
         // Node to get configs
         std::shared_ptr<rclcpp::Node> service_node;
+        // namespace of taskgen node
+        std::string task_generator_node;
         // Client to get list of all available environments
         rclcpp::Client<task_generator_msgs::srv::GetEnvironments>::SharedPtr get_environments_client;
         // Client to get list of all available parametrizeds

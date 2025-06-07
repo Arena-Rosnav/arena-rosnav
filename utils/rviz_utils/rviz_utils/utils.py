@@ -238,14 +238,14 @@ class Utils:
             }
 
         @classmethod
-        def robot_model(cls, robot_name, queue_size=20):
+        def robot_model(cls, topic, robot_name, queue_size=20):
             return {
                 'Class': 'rviz_default_plugins/RobotModel',
                 'Name': 'Robot Model',
                 'Enabled': True,
                 'TF Prefix': robot_name,
                 'Description Topic': {
-                    'Value': f'/task_generator_node/{robot_name}/robot_description',
+                    'Value': topic,
                     'Depth': queue_size,
                     'History Policy': 'Keep Last',
                     'Reliability Policy': 'Reliable',
@@ -295,7 +295,7 @@ class Utils:
                 },
                 'Namespaces': {
                     'pedestrian_bodies': True,
-                    'pedestrian_heads': True, 
+                    'pedestrian_heads': True,
                     'pedestrian_arrows': True,
                     'pedestrian_labels': True
                 },
