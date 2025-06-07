@@ -75,6 +75,7 @@ class ConfigFileGenerator(Node):
 
         # self.cli_load = self.create_client('/rviz2/load_config', rcl_interfaces.srv.SetString)
 
+
     def _create_pedestrian_group(self):
             """Creates a Pedestrian Group with stylized human visualizations"""
             
@@ -88,12 +89,13 @@ class ConfigFileGenerator(Node):
             # Check if pedestrian topics exist
             pedestrian_topics = []
             for topic_name, topic_types in self.topics:
-                if topic_name == '/people' and 'people_msgs/msg/People' in topic_types:
-                    pedestrian_topics.append(('/people', 'people_msgs/msg/People'))
-                elif topic_name == '/human_states' and 'hunav_msgs/msg/Agents' in topic_types:
-                    pedestrian_topics.append(('/human_states', 'hunav_msgs/msg/Agents'))
-                elif topic_name == '/pedestrian_markers' and 'visualization_msgs/msg/MarkerArray' in topic_types:
-                    pedestrian_topics.append(('/pedestrian_markers', 'visualization_msgs/msg/MarkerArray'))
+                # Check for namespaced people topics
+                if topic_name.endswith('/people') and 'people_msgs/msg/People' in topic_types:
+                    pedestrian_topics.append((topic_name, 'people_msgs/msg/People'))
+                elif topic_name.endswith('/human_states') and 'hunav_msgs/msg/Agents' in topic_types:
+                    pedestrian_topics.append((topic_name, 'hunav_msgs/msg/Agents'))
+                elif topic_name.endswith('/pedestrian_markers') and 'visualization_msgs/msg/MarkerArray' in topic_types:
+                    pedestrian_topics.append((topic_name, 'visualization_msgs/msg/MarkerArray'))
 
             if not pedestrian_topics:
                 self.get_logger().warn("No pedestrian topics found. Pedestrian group will be empty.")
