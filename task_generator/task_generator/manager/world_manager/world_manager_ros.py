@@ -13,6 +13,7 @@ import rclpy
 import rclpy.callback_groups
 import rclpy.client
 import yaml
+
 from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.shared import Position, Wall
 from task_generator.utils.time import Time
@@ -21,21 +22,22 @@ from .utils import (WorldMap, WorldObstacleConfiguration,
                     WorldObstacleConfigurations, WorldWalls, WorldZones, Zone)
 from .world_manager import WorldManager
 
-_DUMMY_MAP_SHAPE = (200, 200)
+_DUMMY_MAP_SHAPE = (1, 1)
+_DUMMY_MAP_PADDING = 1
 _DUMMY_MAP = nav_msgs.msg.OccupancyGrid(
     info=nav_msgs.msg.MapMetaData(
-        height=_DUMMY_MAP_SHAPE[0],
-        width=_DUMMY_MAP_SHAPE[1],
+        height=_DUMMY_MAP_SHAPE[0] + 2 * _DUMMY_MAP_PADDING,
+        width=_DUMMY_MAP_SHAPE[1] + 2 * _DUMMY_MAP_PADDING,
         resolution=0.1,
         map_load_time=Time(-1, 0).to_time(),
     ),
     data=list(
         np.pad(
             np.zeros(
-                (_DUMMY_MAP_SHAPE[0] - 2, _DUMMY_MAP_SHAPE[1] - 2),
+                (_DUMMY_MAP_SHAPE[0], _DUMMY_MAP_SHAPE[1]),
                 dtype=int,
             ),
-            ((1, 1), (1, 1)),
+            ((_DUMMY_MAP_PADDING, _DUMMY_MAP_PADDING), (_DUMMY_MAP_PADDING, _DUMMY_MAP_PADDING)),
             mode='constant',
             constant_values=1
         ).flat
@@ -48,8 +50,8 @@ class WorldManagerROS(WorldManager):
     _environment_manager: EnvironmentManager
 
     _cli: rclpy.client.Client
-    _first_world: bool
     _world_name: str
+    _map_name: str | None
     _callbacks: list[typing.Callable[[], None]]
 
     @classmethod
@@ -133,16 +135,12 @@ class WorldManagerROS(WorldManager):
         world_name = str(value)
 
         # if world_name != self._world_name and \
-        #         not self._first_world and \
         #         (simulator := self.node.conf.Arena.SIMULATOR.value) in (Constants.Simulator.GAZEBO,):
         #     raise RuntimeError(
         #         f'Simulator {simulator.value} does not support world reloading.')
 
         self._logger.warn(f'LOADING WORLD {world_name}')
         self._world_name = world_name
-        self._first_world = False
-
-        import arena_simulation_setup.world
 
         tmp_map = self._shift_map(
             arena_simulation_setup.world.World(world_name).map.path
@@ -169,10 +167,8 @@ class WorldManagerROS(WorldManager):
 
         return True
 
-    async def _map_callback(self, costmap: nav_msgs.msg.OccupancyGrid):
-        if self._first_world:
-            return
-        if True or self._world.map.time < costmap.info.map_load_time:
+    def _map_callback(self, costmap: nav_msgs.msg.OccupancyGrid):
+        if self._world.map.time <= costmap.info.map_load_time:
 
             world_config = arena_simulation_setup.world.World(self.world_name)
 
@@ -185,6 +181,8 @@ class WorldManagerROS(WorldManager):
                 walls=walls,
                 zones=zones,
             )
+
+            self._map_name = self.world_name
 
             for callback in self._callbacks:
                 try:
@@ -206,7 +204,7 @@ class WorldManagerROS(WorldManager):
             self.node.service_namespace('map_server'),
             callback_group=rclpy.callback_groups.ReentrantCallbackGroup(),
         ).id != lifecycle_msgs.msg.State.PRIMARY_STATE_ACTIVE:
-            self._logger.warn('map_server is not active, waiting again...')
+            self._logger.info('map_server is not active, waiting again...')
             time.sleep(1.0)
 
         # publishing map to map_server
@@ -215,7 +213,7 @@ class WorldManagerROS(WorldManager):
             self.node.service_namespace('map_server', 'load_map'),
         )
         while not self._cli.wait_for_service(timeout_sec=1.0):
-            self._logger.warn('LoadMap service not available, waiting again...')
+            self._logger.info('LoadMap service not available, waiting again...')
 
         self.node.rosparam.callback(
             'world',
@@ -231,11 +229,24 @@ class WorldManagerROS(WorldManager):
 
         self._callbacks = []
         self.update_world(world_map=WorldMap.from_costmap(_DUMMY_MAP), obstacles=None, walls=[])
-        self._first_world = True
         self._world_name = ''
+        self._map_name = None
 
     def start(self):
         self._setup_world_callbacks()
+
+    def sync(self, timeout: float = -1) -> bool:
+        if timeout < 0:
+            timeout = float('inf')
+        import sys
+        while self._map_name != self._world_name:
+            print(self._map_name, self._world_name, 'while', self.node.rosparam.get('world', None), file=sys.stderr)
+            self._world_callback(self.node.rosparam.get('world', None))
+            time.sleep(dt := 1)
+            timeout -= dt
+            if timeout < 0:
+                return False
+        return True
 
     @property
     def world_name(self) -> str:

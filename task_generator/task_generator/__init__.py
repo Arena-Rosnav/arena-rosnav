@@ -8,7 +8,6 @@ import rclpy.callback_groups
 import rclpy.impl.rcutils_logger
 from arena_rclpy_mixins import ArenaMixinNode
 from arena_rclpy_mixins.ROSParamServer import ROSParamServer
-from rclpy.qos import QoSProfile, qos_profile_services_default
 
 
 class SafeCallbackNode(rclpy.node.Node):
@@ -35,16 +34,17 @@ class NodeInterface:
     def _logger(self) -> rclpy.impl.rcutils_logger.RcutilsLogger:
         return self.node.get_logger().get_child(type(self).__name__)
 
+    @classmethod
+    def init_task_gen_node(
+        cls,
+        do_launch: typing.Callable[[launch.LaunchDescription], None],
+    ) -> ROSParamServer:
 
-def init_task_gen_node(
-    do_launch: typing.Callable[[launch.LaunchDescription], None],
-) -> ROSParamServer:
+        from .node import TaskGenerator
+        NodeInterface.node = TaskGenerator(do_launch=do_launch)
 
-    from .node import TaskGenerator
-    NodeInterface.node = TaskGenerator(do_launch=do_launch)
+        # TODO deprecate
+        from .shared import configure_node
+        configure_node(NodeInterface.node)
 
-    # TODO deprecate
-    from .shared import configure_node
-    configure_node(NodeInterface.node)
-
-    return NodeInterface.node
+        return NodeInterface.node

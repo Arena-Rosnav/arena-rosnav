@@ -118,9 +118,9 @@ def main(args=None):
         CONCURRENT=CONCURRENT
     )
 
-    from . import init_task_gen_node
+    from . import NodeInterface
 
-    node = init_task_gen_node(do_launch=do_launch)
+    node = NodeInterface.init_task_gen_node(do_launch=do_launch)
 
     executor.add_node(node)
 
