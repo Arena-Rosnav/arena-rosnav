@@ -570,6 +570,36 @@ class HunavManager(DummyEntityManager):
         return True
 
     def _remove_obstacles_impl(self):
-        # self._wall_points = []
-        # TODO remove obstacles
+        """Remove all spawned pedestrians from simulation"""
+        self._logger.error(f"=== REMOVE_OBSTACLES_IMPL CALLED - REMOVING {len(self._pedestrians)} PEDESTRIANS ===")
+        self._logger.debug(f"=== REMOVING {len(self._pedestrians)} PEDESTRIANS ===")
+        
+        
+        self._logger.error(f"Pedestrians dict: {list(self._pedestrians.keys())}")
+        for ped_id, ped_data in self._pedestrians.items():
+            self._logger.error(f"Ped {ped_id}: {ped_data}")
+            obstacle = ped_data.get('obstacle')
+            if obstacle:
+                self._logger.debug(f"Removing pedestrian: {obstacle.name}")
+                self._simulator.remove_entity(obstacle.name)
+        
+        # Clear internal data structures
+        self._pedestrians.clear()
+        self._agents_container.agents.clear()
+        
+        if hasattr(self, '_update_timer') and self._update_timer:
+            self._update_timer.destroy()
+            self._update_timer = None
+        
+        # Reset hunav service
+        if self._reset_agents_client:
+            request = ResetAgents.Request()
+            try:
+                response = self._reset_agents_client.call(request)
+                if response:
+                    self._logger.debug("Successfully reset HuNav agents")
+            except Exception as e:
+                self._logger.error(f"Failed to reset HuNav agents: {e}")
+        
+        self._logger.debug("All pedestrians removed successfully")
         return True
