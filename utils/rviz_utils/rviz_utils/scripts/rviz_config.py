@@ -75,65 +75,64 @@ class ConfigFileGenerator(Node):
 
         # self.cli_load = self.create_client('/rviz2/load_config', rcl_interfaces.srv.SetString)
 
-
     def _create_pedestrian_group(self):
-            """Creates a Pedestrian Group with stylized human visualizations"""
-            
-            pedestrian_group = {
-                'Class': 'rviz_common/Group',
-                'Name': 'Pedestrians',
-                'Enabled': True,
-                'Displays': []
-            }
+        """Creates a Pedestrian Group with stylized human visualizations"""
 
-            # Check if pedestrian topics exist
-            pedestrian_topics = []
-            for topic_name, topic_types in self.topics:
-                # Check for namespaced people topics
-                if topic_name.endswith('/people') and 'people_msgs/msg/People' in topic_types:
-                    pedestrian_topics.append((topic_name, 'people_msgs/msg/People'))
-                elif topic_name.endswith('/human_states') and 'hunav_msgs/msg/Agents' in topic_types:
-                    pedestrian_topics.append((topic_name, 'hunav_msgs/msg/Agents'))
-                elif topic_name.endswith('/pedestrian_markers') and 'visualization_msgs/msg/MarkerArray' in topic_types:
-                    pedestrian_topics.append((topic_name, 'visualization_msgs/msg/MarkerArray'))
+        pedestrian_group = {
+            'Class': 'rviz_common/Group',
+            'Name': 'Pedestrians',
+            'Enabled': True,
+            'Displays': []
+        }
 
-            if not pedestrian_topics:
-                self.get_logger().warn("No pedestrian topics found. Pedestrian group will be empty.")
-                return pedestrian_group
+        # Check if pedestrian topics exist
+        pedestrian_topics = []
+        for topic_name, topic_types in self.topics:
+            # Check for namespaced people topics
+            if topic_name.endswith('/people') and 'people_msgs/msg/People' in topic_types:
+                pedestrian_topics.append((topic_name, 'people_msgs/msg/People'))
+            elif topic_name.endswith('/human_states') and 'hunav_msgs/msg/Agents' in topic_types:
+                pedestrian_topics.append((topic_name, 'hunav_msgs/msg/Agents'))
+            elif topic_name.endswith('/pedestrian_markers') and 'visualization_msgs/msg/MarkerArray' in topic_types:
+                pedestrian_topics.append((topic_name, 'visualization_msgs/msg/MarkerArray'))
 
-            # Add displays for found pedestrian topics
-            for topic_name, topic_type in pedestrian_topics:
-                if topic_type == 'visualization_msgs/msg/MarkerArray':
-                    # Use MarkerArray display for converted pedestrian markers
-                    display = Utils.Displays.pedestrians(topic_name)
-                    pedestrian_group['Displays'].append(display)
-                    self.get_logger().info(f"Added MarkerArray display for pedestrians: {topic_name}")
-                    
-                elif topic_type == 'people_msgs/msg/People':
-                    # Add raw people display as fallback
-                    display = Utils.Displays.pedestrians_raw(topic_name)
-                    pedestrian_group['Displays'].append(display)
-                    self.get_logger().info(f"Added raw People display: {topic_name}")
-                    
-                elif topic_type == 'hunav_msgs/msg/Agents':
-                    # Could add custom agent display here if needed
-                    self.get_logger().info(f"Found HuNav agents topic: {topic_name} (not yet implemented)")
-
-            # Add TF display for pedestrian frames (disabled fallback only)
-            tf_display = {
-                'Class': 'rviz_default_plugins/TF',
-                'Name': 'Pedestrian TF Frames',
-                'Enabled': False,  # Disabled by default since we have proper markers
-                'Frame Timeout': 15,
-                'Marker Scale': 0.3,
-                'Show Arrows': True,
-                'Show Axes': False,
-                'Show Names': True,
-                # No static tree - frames will be discovered dynamically by RViz
-            }
-            pedestrian_group['Displays'].append(tf_display)
-
+        if not pedestrian_topics:
+            self.get_logger().info("No pedestrian topics found. Pedestrian group will be empty.")
             return pedestrian_group
+
+        # Add displays for found pedestrian topics
+        for topic_name, topic_type in pedestrian_topics:
+            if topic_type == 'visualization_msgs/msg/MarkerArray':
+                # Use MarkerArray display for converted pedestrian markers
+                display = Utils.Displays.pedestrians(topic_name)
+                pedestrian_group['Displays'].append(display)
+                self.get_logger().info(f"Added MarkerArray display for pedestrians: {topic_name}")
+
+            elif topic_type == 'people_msgs/msg/People':
+                # Add raw people display as fallback
+                display = Utils.Displays.pedestrians_raw(topic_name)
+                pedestrian_group['Displays'].append(display)
+                self.get_logger().info(f"Added raw People display: {topic_name}")
+
+            elif topic_type == 'hunav_msgs/msg/Agents':
+                # Could add custom agent display here if needed
+                self.get_logger().info(f"Found HuNav agents topic: {topic_name} (not yet implemented)")
+
+        # Add TF display for pedestrian frames (disabled fallback only)
+        tf_display = {
+            'Class': 'rviz_default_plugins/TF',
+            'Name': 'Pedestrian TF Frames',
+            'Enabled': False,  # Disabled by default since we have proper markers
+            'Frame Timeout': 15,
+            'Marker Scale': 0.3,
+            'Show Arrows': True,
+            'Show Axes': False,
+            'Show Names': True,
+            # No static tree - frames will be discovered dynamically by RViz
+        }
+        pedestrian_group['Displays'].append(tf_display)
+
+        return pedestrian_group
 
     def create_config(self) -> str:
         default_file = self._read_default_file()

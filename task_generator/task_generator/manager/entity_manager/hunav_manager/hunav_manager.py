@@ -171,7 +171,7 @@ class HunavManager(DummyEntityManager):
         super().__init__(namespace=namespace, simulator=simulator)
         # Detect Simulator Type to decide between Plugin or move_entity callback
         self._simulator_type = self._detect_simulator_type()
-        self._logger.error(f"Detected simulator type: {self._simulator_type}")
+        self._logger.info(f"Detected simulator type: {self._simulator_type}")
 
         self._logger.info("=== HUNAVMANAGER INIT START ===")
         self._logger.debug("Parent class initialized")
