@@ -1,4 +1,4 @@
 contestants:
-- inter_planner: bypass
+- inter_planner: navigate_w_replanning_time
   local_planner: teb
   name: teb
