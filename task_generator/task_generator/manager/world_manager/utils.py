@@ -5,15 +5,14 @@
 import itertools
 from typing import Callable, Collection, Optional, TypeVar
 
-import arena_simulation_setup
 import attrs
 import nav_msgs.msg
 import numpy as np
 import scipy.interpolate
 import shapely
+import collections.abc
 
-from task_generator.shared import (Obstacle, Position, PositionOrientation,
-                                   PositionRadius, Wall)
+from task_generator.shared import (Obstacle, Position, Orientation, Pose, PositionRadius, Wall)
 from task_generator.utils.time import Time
 
 # CONVERTERS
@@ -65,7 +64,7 @@ class WorldObstacleConfiguration:
     """
     only use this for receiving ros messages
     """
-    position: PositionOrientation
+    pose: Pose
     model_name: str
     extra: dict
 
@@ -77,10 +76,12 @@ class WorldObstacleConfiguration:
         θ = obj['position'][2]
 
         return cls(
-            position=PositionOrientation(
-                x=x,
-                y=y,
-                orientation=θ,
+            pose=Pose(
+                Position(
+                    x=x,
+                    y=y
+                ),
+                Orientation.from_yaw(θ),
             ),
             model_name=obj['model'],
             extra=obj,
@@ -108,7 +109,7 @@ class WorldOccupancy:
     @staticmethod
     def from_map(input_map: np.ndarray) -> "WorldOccupancy":
         remap = scipy.interpolate.interp1d([input_map.max(), input_map.min()], [
-                                           WorldOccupancy.EMPTY, WorldOccupancy.FULL])
+            WorldOccupancy.EMPTY, WorldOccupancy.FULL])
         return WorldOccupancy(remap(input_map))
 
     @staticmethod
@@ -279,8 +280,7 @@ class WorldMap:
             y=(grid_pos[0]) * self.resolution + self.origin.x
         )
 
-    def tf_posr2rect(
-            self, posr: PositionRadius) -> tuple[tuple[int, int], tuple[int, int]]:
+    def tf_posr2rect(self, posr: PositionRadius) -> tuple[tuple[int, int], tuple[int, int]]:
         lo = self.tf_pos2grid(
             Position(
                 x=posr.x - posr.radius,
@@ -331,6 +331,8 @@ class _WallLines(dict[float, list[tuple[float, float]]]):
     Helper class for efficiently merging collinear line segments
     """
 
+    WallsT = collections.abc.Collection[tuple[tuple[float, float], tuple[float, float]]]
+
     _inverted: bool
 
     def __init__(self, inverted: bool = False, *args, **kwargs):
@@ -356,28 +358,39 @@ class _WallLines(dict[float, list[tuple[float, float]]]):
             self[major].append((minor, minor + length))
 
     @property
-    def lines(self) -> WorldWalls:
+    def lines(self) -> WallsT:
         """
         get WorldWalls object
         """
         if not self._inverted:
-            return set([
-                Wall(
-                    Start=Position(x=start, y=major),
-                    End=Position(x=end, y=major)
+            return [
+                (
+                    (start, major),
+                    (end, major),
                 )
                 for major, segment in self.items()
-                for start, end in segment]
-            )
+                for start, end in segment
+            ]
+
         else:
             return set([
-                Wall(
-                    Start=Position(x=major, y=start),
-                    End=Position(x=major, y=end)
+                (
+                    (major, start),
+                    (major, end)
                 )
                 for major, segment in self.items()
-                for start, end in segment]
+                for start, end in segment
+            ])
+
+    @classmethod
+    def walls(cls, walls: WallsT) -> WorldWalls:
+        return [
+            Wall(
+                Start=Position(x=sx, y=sy),
+                End=Position(x=ex, y=ey)
             )
+            for (sx, sy), (ex, ey) in walls
+        ]
 
 
 def RLE_2D(grid: np.ndarray) -> WorldWalls:
@@ -400,7 +413,7 @@ def RLE_2D(grid: np.ndarray) -> WorldWalls:
             distance += run
             walls_y.add(distance, x)
 
-    return set().union(walls_x.lines, walls_y.lines)
+    return _WallLines.walls(set().union(walls_x.lines, walls_y.lines))
 
 
 def occupancy_to_walls(
@@ -431,7 +444,7 @@ def configurations_to_obstacles(
     name_gen = itertools.count()
 
     return [Obstacle(
-        position=configuration.position,
+        pose=configuration.pose,
         name=f"world_obstacle_{next(name_gen)}",
         model=configuration.model_name,
         extra=configuration.extra

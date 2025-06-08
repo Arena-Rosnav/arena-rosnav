@@ -7,11 +7,13 @@ from typing import Callable, Collection, Optional, Type, TypeVar, overload
 import attrs
 import rclpy
 import rclpy.node
-from arena_simulation_setup.shared import (DynamicObstacle, Entity, Obstacle, Wall, Robot as Robot_)  # noqa
-
-from arena_simulation_setup.utils.models import (ModelType, Model, ModelWrapper)  # noqa
-from arena_simulation_setup.utils.geometry import (Position, PositionOrientation, PositionRadius)  # noqa
-
+from arena_simulation_setup.shared import DynamicObstacle, Entity, Obstacle
+from arena_simulation_setup.shared import Robot as Robot_  # noqa
+from arena_simulation_setup.shared import Wall
+from arena_simulation_setup.utils.geometry import (Orientation, Pose,  # noqa
+                                                   Position, PositionRadius)
+from arena_simulation_setup.utils.models import (Model, ModelType,  # noqa
+                                                 ModelWrapper)
 
 _node: rclpy.node.Node
 
@@ -46,7 +48,7 @@ def rosparam_set(
     return _node.rosparam.set(param_name, value)
 
 
-@attrs.frozen()
+@attrs.define
 class Robot(Robot_):
     inter_planner: str
     local_planner: str
@@ -77,7 +79,7 @@ class Robot(Robot_):
     @classmethod
     def parse(cls, obj: dict) -> "Robot":
         name = str(obj.get("name", ""))
-        position = PositionOrientation(*obj.get("pos", (0, 0, 0)))
+        pose = Pose.parse(obj.get("pos", (0, 0, 0)))
         inter_planner = str(
             obj.get("inter_planner", rosparam_get(str, "inter_planner", ""))
         )
@@ -95,7 +97,7 @@ class Robot(Robot_):
 
         return cls(
             name=name,
-            position=position,
+            pose=pose,
             inter_planner=inter_planner,
             local_planner=local_planner,
             global_planner=global_planner,

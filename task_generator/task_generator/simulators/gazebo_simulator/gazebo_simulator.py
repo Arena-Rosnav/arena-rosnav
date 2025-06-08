@@ -14,9 +14,8 @@ from ros_gz_interfaces.srv import (ControlWorld, DeleteEntity, SetEntityPose,
                                    SpawnEntity)
 
 from task_generator.shared import (Entity, Model, ModelType, ModelWrapper,
-                                   PositionOrientation, Robot, Wall)
+                                   Pose, Robot, Wall)
 from task_generator.simulators import BaseSimulator
-from arena_simulation_setup.utils.geometry import quaternion_from_euler
 
 from .robot_bridge import BridgeConfiguration
 
@@ -113,17 +112,17 @@ class GazeboSimulator(BaseSimulator):
             traceback.print_exc()
             raise
 
-    def move_entity(self, name, position):
+    def move_entity(self, name, pose):
         self._logger.info(
             f"Attempting to move entity: {name}")
         self._logger.info(
-            f"Moving entity {name} to position: {position}")
+            f"Moving entity {name} to position: {pose}")
         request = SetEntityPose.Request()
         request.entity = EntityMsg(
             name=name,
             type=EntityMsg.MODEL,
         )
-        request.pose = position.to_pose()
+        request.pose = pose.to_msg()
 
         try:
             self._set_entity_pose.wait_for_service()
@@ -136,7 +135,7 @@ class GazeboSimulator(BaseSimulator):
             self._logger.info(f"Move result for {name}: {result.success}")
 
             if result.success and isinstance((entity := self.entities.get(name, None)), Robot):
-                entity = attrs.evolve(entity, position=position)
+                entity.pose = pose
                 self.entities[name] = entity
                 self._robot_initialpose(entity)
 
@@ -169,13 +168,12 @@ class GazeboSimulator(BaseSimulator):
                         f"Failed to set initial pose for {name} after {max_attempts} attempts"
                     )
 
-                quat = quaternion_from_euler(0.0, 0.0, entity.position.orientation, axes="xyzs")
-                qx, qy, qz, qw = quat
+                qx, qy, qz, qw = entity.pose.orientation.x, entity.pose.orientation.y, entity.pose.orientation.z, entity.pose.orientation.w
                 transform_pub_node = launch_ros.actions.Node(
                     package="tf2_ros",
                     executable="static_transform_publisher",
                     name="map_to_odomframe_publisher",
-                    arguments=[str(entity.position.x), str(entity.position.y), "0", str(qx), str(qy), str(qz), str(qw), "map", entity.frame + "odom"],
+                    arguments=[str(entity.pose.position.x), str(entity.pose.position.y), "0", str(qx), str(qy), str(qz), str(qw), "map", entity.frame + "odom"],
                     parameters=[{'use_sim_time': True}],
                 )
                 self.node.do_launch(transform_pub_node)
@@ -211,10 +209,10 @@ class GazeboSimulator(BaseSimulator):
             request.entity_factory.sdf = model_description
 
             # Set pose
-            request.entity_factory.pose = entity.position.to_pose()
+            request.entity_factory.pose = entity.pose.to_msg()
 
             self._logger.info(
-                f"Spawn position for {entity.name}: x={entity.position.x}, y={entity.position.y}")
+                f"Spawn position for {entity.name}: x={entity.pose.position.x}, y={entity.pose.position.y}")
 
             self._spawn_entity.wait_for_service()
             self._logger.info(f"Sending spawn request for {entity.name}")
@@ -344,13 +342,13 @@ class GazeboSimulator(BaseSimulator):
             traceback.print_exc()
             return False
 
-    def _publish_goal(self, goal: PositionOrientation):
+    def _publish_goal(self, goal: Pose):
         self._logger.info(
             f"Publishing goal: x={goal.x}, y={goal.y}, orientation={goal.orientation}")
         goal_msg = PoseStamped()
         goal_msg.header.stamp = self.node.get_clock().now().to_msg()
         goal_msg.header.frame_id = "map"
-        goal_msg.pose = goal.to_pose()
+        goal_msg.pose = goal.to_msg()
         self._goal_pub.publish(goal_msg)
         self._logger.info("Goal published")
 
@@ -379,7 +377,7 @@ class GazeboSimulator(BaseSimulator):
             return False
 
         entity = Entity(
-            position=PositionOrientation(x=0, y=0, orientation=0),
+            pose=Pose(),
             model=ModelWrapper.from_model(
                 Model(
                     type=ModelType.SDF,
@@ -546,7 +544,7 @@ class GazeboSimulator(BaseSimulator):
 
     def _robot_initialpose(self, robot: Robot):
         pose = PoseWithCovarianceStamped()
-        pose.pose.pose = robot.position.to_pose()
+        pose.pose.pose = robot.pose.to_msg()
         pose.header.frame_id = "map"
 
         self.node.create_publisher(

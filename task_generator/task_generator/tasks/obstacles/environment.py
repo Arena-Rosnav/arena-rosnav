@@ -9,8 +9,9 @@ import numpy as np
 import shapely
 from arena_rclpy_mixins.ROSParamServer import ROSParamT
 from shapely.geometry import Point
-from task_generator.shared import (DynamicObstacle, Obstacle,
-                                   PositionOrientation)
+
+from task_generator.shared import (DynamicObstacle, Obstacle, Orientation,
+                                   Pose, Position)
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 
 
@@ -447,7 +448,10 @@ class TM_Environment(TM_Obstacles):
                                 obs_name = f"G_{group_name}_{idx}_{n_groups}_{entity['model']}_{j}"
                                 new_obstacle = Obstacle(
                                     name=obs_name,
-                                    position=PositionOrientation(x=obstacle_x, y=obstacle_y, orientation=rot_theta),
+                                    pose=Pose(
+                                        Position(x=obstacle_x, y=obstacle_y),
+                                        Orientation.from_yaw(rot_theta)
+                                    ),
                                     model=entity["model"],
                                     extra={},
                                 )
@@ -466,7 +470,10 @@ class TM_Environment(TM_Obstacles):
                                 obs_name = f"G_{group_name}_{idx}_{n_groups}_{entity['model']}_{j}"
                                 new_obstacle = DynamicObstacle(
                                     name=obs_name,
-                                    position=PositionOrientation(x=obstacle_x, y=obstacle_y, orientation=rot_theta),
+                                    pose=Pose(
+                                        Position(x=obstacle_x, y=obstacle_y),
+                                        Orientation.from_yaw(rot_theta)
+                                    ),
                                     model=entity["model"],
                                     waypoints=entity['waypoints'],
                                     extra={},

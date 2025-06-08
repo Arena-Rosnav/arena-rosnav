@@ -54,10 +54,10 @@ class TM_Scenario(TM_Robots):
             self._PROPS.world_manager.forbid(
                 [
                     PositionRadius(
-                        x=config.start.x, y=config.start.y, radius=robot.safe_distance
+                        x=config.start.position.x, y=config.start.position.y, radius=robot.safe_distance
                     ),
                     PositionRadius(
-                        x=config.goal.x, y=config.goal.y, radius=robot.safe_distance
+                        x=config.goal.position.x, y=config.goal.position.y, radius=robot.safe_distance
                     ),
                 ]
             )

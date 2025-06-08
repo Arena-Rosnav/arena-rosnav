@@ -120,18 +120,18 @@ class IsaacSimulator(BaseSimulator):
         assert isinstance(entity, Obstacle)
         return self._spawn_obstacle(entity)
 
-    def move_entity(self, name, position):
+    def move_entity(self, name, pose):
         self._logger.info(
             f"Attempting to move entitiy: {name}"
         )
 
-        self._logger.info(f"position: {position.x,position.y}")
-        self._logger.info(f"orientation: {position.orientation}")
+        self._logger.info(f"position: {pose.position.x,pose.position.y}")
+        self._logger.info(f"orientation: {pose.orientation}")
 
         response = self.services.move_prim.client.call_async(
             MovePrim.Request(
                 name=name,
-                pose=position.to_pose(),
+                pose=pose.to_msg(),
             )
         )
         if response is None:
@@ -221,7 +221,7 @@ class IsaacSimulator(BaseSimulator):
                     no_localization=False,
                     base_frame=robot_params.base_frame,
                     odom_frame=robot_params.odom_frame,
-                    pose=robot.position.to_pose(),
+                    pose=robot.pose.to_msg(),
                     cmd_vel_topic=self.node.service_namespace(robot.name, 'cmd_vel')
                 )
             )
@@ -237,7 +237,7 @@ class IsaacSimulator(BaseSimulator):
             ImportObstacles.Request(
                 name=obstacle.name,
                 usd_path=usd_path,
-                pose=obstacle.position.to_pose(),
+                pose=obstacle.pose.to_msg(),
             )
         )
         return True

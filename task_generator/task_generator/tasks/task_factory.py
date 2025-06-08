@@ -12,7 +12,7 @@ from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.manager.robot_manager.robots_manager_ros import \
     RobotsManager
 from task_generator.manager.world_manager.world_manager_ros import WorldManager
-from task_generator.shared import PositionOrientation, rosparam_set
+from task_generator.shared import Pose, rosparam_set
 from task_generator.tasks import Namespaced, Task
 from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.obstacles import TM_Obstacles
@@ -240,6 +240,7 @@ class TaskFactory(Namespaced):
 
                 except Exception as e:
                     self.node.get_logger().error(repr(e))
+                    raise
                     rclpy.shutdown()
                     raise Exception("reset error!") from e
 
@@ -297,21 +298,21 @@ class TaskFactory(Namespaced):
                 """
                 return self._force_reset or self.__tm_robots.done
 
-            def set_robot_position(self, position: PositionOrientation):
+            def set_robot_position(self, pose: Pose):
                 """
                 Sets the position of the robot.
 
                 Args:
-                    position (PositionOrientation): The position and orientation of the robot.
+                    position (Pose): The position and orientation of the robot.
                 """
                 self.__tm_robots.set_position(position)
 
-            def set_robot_goal(self, position: PositionOrientation):
+            def set_robot_goal(self, pose: Pose):
                 """
                 Sets the goal position for the robot.
 
                 Args:
-                    position (PositionOrientation): The goal position for the robot.
+                    position (Pose): The goal position for the robot.
                 """
                 self.__tm_robots.set_goal(position)
 

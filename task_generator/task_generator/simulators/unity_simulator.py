@@ -96,15 +96,7 @@ class UnitySimulator(BaseSimulator):
         request.reference_frame = "world"
 
         # send coordinates in the normal ROS refrence frame (FLU)
-        request.initial_pose = Pose(
-            position=Point(
-                x=entity.position.x,
-                y=entity.position.y,
-                z=0.35
-            ),
-            orientation=Quaternion(
-                *quaternion_from_euler(0.0, 0.0, entity.position[2], axes="sxyz"))
-        )
+        request.initial_pose = entity.pose.to_msg()
 
         if isinstance(entity, Robot):
             full_robot_ns = self._namespace(entity.name)
@@ -119,24 +111,14 @@ class UnitySimulator(BaseSimulator):
         res = self.spawn_model(model.type, request)
         return res.success
 
-    def move_entity(self, name, position):
+    def move_entity(self, name, pose):
         # rospy.loginfo("[Unity Simulator ns:" + self._namespace + "] Move Request for " + name)
 
         request = SetModelStateRequest()
         request.model_state = ModelState()
 
         request.model_state.model_name = name
-        pose = Pose(
-            position=Point(
-                x=position[0],
-                y=position[1],
-                z=0.35
-            ),
-            orientation=Quaternion(
-                *quaternion_from_euler(0.0, 0.0, position[2], axes="sxyz")
-            )
-        )
-        request.model_state.pose = pose
+        request.model_state.pose = pose.to_msg()
         request.model_state.reference_frame = "world"
 
         self._move_model_srv(request)
@@ -172,8 +154,8 @@ class UnitySimulator(BaseSimulator):
         request.walls = []
         for wall in walls:
             wall_req = Wall(
-                start=Point(x=wall[0].x, y=wall[0].y, z=0),
-                end=Point(x=wall[1].x, y=wall[1].y,
+                start=Point(x=wall.Start.x, y=wall.Start.y, z=0),
+                end=Point(x=wall.End.x, y=wall.End.y,
                           z=UnityConstants.WALL_HEIGHT)
             )
             request.walls.append(wall_req)

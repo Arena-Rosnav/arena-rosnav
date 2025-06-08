@@ -7,15 +7,16 @@ import attrs
 import numpy as np
 import rclpy
 from arena_rclpy_mixins.ROSParamServer import ROSParamT
+from arena_simulation_setup.entities.obstacles.dynamic import \
+    loader as DYNAMIC_OBSTACLE_LOADER
+from arena_simulation_setup.entities.obstacles.static import \
+    loader as OBSTACLE_LOADER
+from arena_simulation_setup.utils.models.model_loader import ModelLoader
 
-from task_generator.shared import (DynamicObstacle, Obstacle,
-                                   PositionOrientation, PositionRadius)
+from task_generator.shared import (DynamicObstacle, Obstacle, Orientation,
+                                   Pose, Position, PositionRadius)
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
 from task_generator.tasks.obstacles.utils import ITF_Obstacle
-
-from arena_simulation_setup.utils.models.model_loader import ModelLoader
-from arena_simulation_setup.entities.obstacles.static import loader as OBSTACLE_LOADER
-from arena_simulation_setup.entities.obstacles.dynamic import loader as DYNAMIC_OBSTACLE_LOADER
 
 
 @attrs.define()
@@ -152,10 +153,9 @@ class TM_Random(TM_Obstacles):
         )
 
         _positions = [
-            PositionOrientation(
-                x=pos.x,
-                y=pos.y,
-                orientation=2 * np.pi * self.node.conf.General.RNG.value.random(),
+            Pose(
+                pos,
+                orientation=Orientation.from_yaw(2 * np.pi * self.node.conf.General.RNG.value.random())
             )
             for pos in points[
                 : (N_STATIC_OBSTACLES + N_INTERACTIVE_OBSTACLES + N_DYNAMIC_OBSTACLES)
@@ -182,7 +182,7 @@ class TM_Random(TM_Obstacles):
                     self._PROPS,
                     name=f"S_{model}_{index(model)}",
                     model=model,
-                    position=next(positions),
+                    pose=next(positions),
                 )
                 for model in self.node.conf.General.RNG.value.choice(
                     a=MODELS_STATIC_OBSTACLES.a,
@@ -201,7 +201,7 @@ class TM_Random(TM_Obstacles):
                     self._PROPS,
                     name=f"I_{model}_{index(model)}",
                     model=model,
-                    position=next(positions),
+                    pose=next(positions),
                 )
                 for model in self.node.conf.General.RNG.value.choice(
                     a=MODELS_INTERACTIVE_OBSTACLES.a,
@@ -227,7 +227,7 @@ class TM_Random(TM_Obstacles):
                         itertools.islice(
                             waypoints,
                             waypoints_per_ped)),
-                    position=next(positions),
+                    pose=next(positions),
                 )
                 for model in self.node.conf.General.RNG.value.choice(
                     a=MODELS_DYNAMIC_OBSTACLES.a,

@@ -11,7 +11,7 @@ from task_generator.constants import Constants
 from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.manager.robot_manager import RobotManager
 from task_generator.manager.world_manager.world_manager_ros import WorldManager
-from task_generator.shared import PositionOrientation
+from task_generator.shared import Pose
 
 
 class Props_Manager:
@@ -76,8 +76,8 @@ class Task(Props_, abc.ABC):
         is_done() -> bool: Check if the task is done.
         robot_names() -> list[str]: Get the names of the robots in the task.
         _clock_callback(clock: rosgraph_msgs.Clock): Callback function for the clock message.
-        set_robot_position(position: PositionOrientation): Set the position of the robot.
-        set_robot_goal(position: PositionOrientation): Set the goal position of the robot.
+        set_robot_position(pose: Pose): Set the position of the robot.
+        set_robot_goal(pose: Pose): Set the goal position of the robot.
     """
 
     last_reset_time: int
@@ -122,11 +122,11 @@ class Task(Props_, abc.ABC):
         self.clock = clock
 
     @abc.abstractmethod
-    def set_robot_position(self, position: PositionOrientation):
+    def set_robot_position(self, pose: Pose):
         ...
 
     @abc.abstractmethod
-    def set_robot_goal(self, position: PositionOrientation):
+    def set_robot_goal(self, pose: Pose):
         ...
 
 

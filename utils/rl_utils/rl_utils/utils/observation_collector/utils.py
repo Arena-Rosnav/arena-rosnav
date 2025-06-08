@@ -3,7 +3,9 @@ from typing import Tuple
 
 import numpy as np
 from geometry_msgs.msg import Pose2D
-from arena_simulation_setup.utils.geometry import euler_from_quaternion
+
+from task_generator.shared import Orientation
+
 
 DistanceToGoal = float
 AngleToGoal = float
@@ -31,8 +33,7 @@ def pose3d_to_pose2d(pose3d) -> Pose2D:
         pose3d.orientation.z,
         pose3d.orientation.w,
     )
-    euler = euler_from_quaternion(quaternion)
-    yaw = euler[2]
+    yaw = Orientation(*quaternion).to_yaw()
     pose2d.theta = yaw
     return pose2d
 
