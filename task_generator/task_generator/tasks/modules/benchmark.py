@@ -20,6 +20,7 @@ from arena_rclpy_mixins.ROSParamServer import ROSParamServer
 import logging
 from logging import FileHandler, Formatter
 import geometry_msgs.msg
+from copy import deepcopy
 
 class _Config(typing.NamedTuple):
     @classmethod
@@ -71,7 +72,7 @@ class Suite(typing.NamedTuple):
                 return {k: cls._make_serializable(v) for k, v in item.items()}
             elif isinstance(item, (list, tuple)):
                 return [cls._make_serializable(i) for i in item]
-            elif isinstance(item, Constants.TaskMode.TM_Robots) or isinstance(item, Constants.TaskMode.TM_Obstacles):
+            elif isinstance(item, (Constants.TaskMode.TM_Robots, Constants.TaskMode.TM_Obstacles)):
                 return item.value
             elif hasattr(item, 'value'):
                 return cls._make_serializable(item.value)
@@ -85,10 +86,8 @@ class Suite(typing.NamedTuple):
         @classmethod
         def hash(cls, obj: typing.Dict) -> int:
             logger = logging.getLogger("benchmark")
-            logger.debug(f"obj fields and types: {{k: type(v).__name__ for k, v in obj.items()}}")
             hashable_obj = {k: v for k, v in obj.items() if k != "config"}
             hashable_obj = cls._make_serializable(hashable_obj)
-            logger.debug(f"hashable_obj: {hashable_obj}")
             try:
                 return 0x7fffffff & int.from_bytes(
                     hashlib.sha1(json.dumps(hashable_obj).encode()).digest()[-4:], byteorder="big"
@@ -111,10 +110,8 @@ class Suite(typing.NamedTuple):
                         raise
                 elif hasattr(obj["tm_robots"], 'value'):
                     obj["tm_robots"] = Constants.TaskMode.TM_Robots[obj["tm_robots"].value.upper()]
-                    logger.debug(f"Converted ROSParam_impl tm_robots to {obj['tm_robots']}")
                 elif hasattr(obj["tm_robots"], 'get_value'):
                     obj["tm_robots"] = Constants.TaskMode.TM_Robots[obj["tm_robots"].get_value().upper()]
-                    logger.debug(f"Converted ROSParam_impl tm_robots to {obj['tm_robots']}")
                 else:
                     logger.error(f"Invalid tm_robots type: {type(obj['tm_robots'])}")
                     raise ValueError(f"Invalid tm_robots type: {type(obj['tm_robots'])}")
@@ -127,10 +124,8 @@ class Suite(typing.NamedTuple):
                         raise
                 elif hasattr(obj["tm_obstacles"], 'value'):
                     obj["tm_obstacles"] = Constants.TaskMode.TM_Obstacles[obj["tm_obstacles"].value.upper()]
-                    logger.debug(f"Converted ROSParam_impl tm_obstacles to {obj['tm_obstacles']}")
                 elif hasattr(obj["tm_obstacles"], 'get_value'):
                     obj["tm_obstacles"] = Constants.TaskMode.TM_Obstacles[obj["tm_obstacles"].get_value().upper()]
-                    logger.debug(f"Converted ROSParam_impl tm_obstacles to {obj['tm_obstacles']}")
                 else:
                     logger.error(f"Invalid tm_obstacles type: {type(obj['tm_obstacles'])}")
                     raise ValueError(f"Invalid tm_obstacles type: {type(obj['tm_obstacles'])}")
@@ -169,7 +164,7 @@ class Contest(typing.NamedTuple):
         agent_name: str = ""
 
         @classmethod
-        def parse(cls, obj: typing.Dict) -> "Contest.Contestant":
+        def parse(cls, obj: typing.Dict) -> "Contestant":
             obj.setdefault("inter_planner", "navigate_w_replanning_time")
             return cls(**obj)
 
@@ -184,7 +179,7 @@ class Contest(typing.NamedTuple):
     def max_index(self) -> Index:
         return self.Index(len(self.contestants) - 1)
 
-    def config(self, index: Index) -> Contestant:
+    def config(self, index: int) -> Contestant:
         return self.contestants[index]
 
 @TaskFactory.register_module(Constants.TaskMode.TM_Module.BENCHMARK)
@@ -244,35 +239,161 @@ class Mod_Benchmark(TM_Module):
             logging.getLogger("benchmark").error(f"Failed to backup task_generator.yaml: {e}")
 
     @classmethod
-    def _taskgen_write(cls, *configs: typing.Dict):
-        def overwrite(source: typing.Dict, target: typing.Dict):
-            for k, v in source.items():
-                if isinstance(v, dict):
-                    target.setdefault(k, {})
-                    overwrite(v, target[k])
-                else:
-                    target[k] = v
+    def _load_scenario(cls, map_name: str, scenario_file: str) -> typing.Dict:
+        """Load scenario file content from possible paths."""
+        logger = logging.getLogger("benchmark")
+        possible_paths = [
+            os.path.join(get_package_share_directory("arena_simulation_setup"), "worlds", map_name, "scenarios", os.path.basename(scenario_file)),
+            os.path.join(get_package_share_directory("arena_bringup"), "configs", "scenarios", map_name, os.path.basename(scenario_file)),
+            os.path.join(get_package_share_directory("arena_bringup"), "configs", "scenarios", os.path.basename(scenario_file)),
+            os.path.join("/root/arena4_ws/src/arena/simulation-setup/worlds", map_name, "scenarios", os.path.basename(scenario_file)),
+            os.path.join("/root/arena4_ws/src/arena/simulation-setup/worlds", os.path.basename(scenario_file))
+        ]
+        for path in possible_paths:
+            logger.debug(f"Attempting to load scenario from: {path}")
+            if os.path.exists(path):
+                try:
+                    with open(path, 'r') as f:
+                        scenario_data = json.load(f)
+                    logger.info(f"Successfully loaded scenario {scenario_file} from {path}: {scenario_data}")
+                    if "robots" not in scenario_data or not scenario_data["robots"]:
+                        logger.error(f"Scenario {path} missing valid 'robots' field")
+                        return {}
+                    if "obstacles" not in scenario_data:
+                        logger.error(f"Scenario {path} missing 'obstacles' field")
+                        return {}
+                    return scenario_data
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to parse scenario {path}: {e}")
+                    return {}
+                except Exception as e:
+                    logger.error(f"Unexpected error loading scenario {path}: {e}")
+                    return {}
+            else:
+                logger.debug(f"Scenario file not found at: {path}")
+        logger.error(f"Could not find scenario file {scenario_file} for map {map_name}")
+        return {}
 
+    def _taskgen_write(self):
+        """Write task configuration to task_generator.yaml based on meta_suite.yaml."""
+        logger = self._logger
+        suite_config = self._suite.config(self._suite_index)
+        logger.info(f"Preparing task_generator.yaml for stage: {suite_config.name}")
+
+        # Load scenario data for tm_robots: scenario or tm_obstacles: scenario
+        scenario_file = suite_config.config.get("SCENARIO", {}).get("file", "")
+        scenario_data = self._load_scenario(suite_config.map, scenario_file) if scenario_file else {}
+        logger.debug(f"Scenario data for {scenario_file}: {scenario_data}")
+
+        # Stage-specific task configuration
+        task_config = {
+            "episodes": suite_config.episodes,
+            "RANDOM": {
+                "seed": int(suite_config.seed) ^ Suite.Stage.hash({"name": self._runid})
+            },
+            "tm_robots": suite_config.tm_robots.value,
+            "tm_obstacles": suite_config.tm_obstacles.value,
+            "model": suite_config.robot,
+            "map_file": suite_config.map,
+            "SCENARIO": suite_config.config.get("SCENARIO", {})
+        }
+
+        # Embed scenario data for scenario modes
+        if scenario_data and (
+            suite_config.tm_robots == Constants.TaskMode.TM_Robots.SCENARIO or
+            suite_config.tm_obstacles == Constants.TaskMode.TM_Obstacles.SCENARIO
+        ):
+            logger.info(f"Embedding scenario data from {scenario_file} into task_generator.yaml")
+            task_config["robots"] = scenario_data.get("robots", [])
+            task_config["obstacles"] = scenario_data.get("obstacles", {})
+
+        # Include RANDOM settings for tm_obstacles: random
+        if suite_config.tm_obstacles == Constants.TaskMode.TM_Obstacles.RANDOM:
+            logger.info("Including RANDOM settings for obstacles")
+            task_config["random"] = suite_config.config.get("RANDOM", {})
+
+        logger.debug(f"Intended task_config: {json.dumps(task_config, indent=2)}")
+
+        # Load existing task_generator.yaml to preserve structure
+        default_config = {
+            "task_generator_node": {
+                "ros__parameters": {
+                    "task": {
+                        "parametrized": {"file": "default.xml"},
+                        "random": {
+                            "dynamic": {"n": [1, 3], "models": ["gazebo_actor"]},
+                            "interactive": {"n": [0, 0], "models": ["shelf"]},
+                            "static": {"n": [3, 5], "models": ["shelf"]},
+                            "seed": -1
+                        },
+                        "scenario": {"file": "default.json"},
+                        "staged": {"curriculum": "default.yaml", "index": 0},
+                        "environment": {"file": "canteen.yaml"}
+                    },
+                    "hunavsim": {
+                        "parameters": {
+                            "max_vel": 0.3,
+                            "force_factor_desired": 1.0,
+                            "force_factor_obstacle": 1.0,
+                            "force_factor_social": 5.0,
+                            "force_factor_robot": 0.0
+                        }
+                    }
+                }
+            }
+        }
         try:
-            with open(cls.TASK_GENERATOR_CONFIG, "r") as f:
-                joint_config = yaml.safe_load(f) or {"task_generator_node": {"ros__parameters": {"task": {}, "hunav": {}}}}
+            with open(self.TASK_GENERATOR_CONFIG, "r") as f:
+                joint_config = yaml.safe_load(f) or deepcopy(default_config)
+            logger.debug(f"Existing task_generator.yaml content: {json.dumps(joint_config, indent=2)}")
         except Exception as e:
-            logging.getLogger("benchmark").error(f"Failed to read task_generator.yaml: {e}")
-            joint_config = {"task_generator_node": {"ros__parameters": {"task": {}, "hunav": {}}}}
+            logger.warning(f"Failed to read task_generator.yaml: {e}, using default structure")
+            joint_config = deepcopy(default_config)
 
-        task_params = joint_config.setdefault("task_generator_node", {}).setdefault("ros__parameters", {}).setdefault("task", {})
-        for config in configs:
-            overwrite(config, task_params)
+        # Merge existing task section with new task_config
+        existing_task = joint_config["task_generator_node"]["ros__parameters"]["task"]
+        for key in ["parametrized", "random", "scenario", "staged", "environment"]:
+            if key in existing_task:
+                task_config.setdefault(key, existing_task[key])
+        joint_config["task_generator_node"]["ros__parameters"]["task"] = task_config
+        logger.debug(f"Merged joint_config: {json.dumps(joint_config, indent=2)}")
 
+        # Verify file permissions
         try:
-            with open(cls.TASK_GENERATOR_CONFIG, "w") as f:
-                yaml.safe_dump(joint_config, f)
-            logging.getLogger("benchmark").debug(f"Updated task_generator.yaml: {joint_config}")
+            if os.path.exists(self.TASK_GENERATOR_CONFIG):
+                os.chmod(self.TASK_GENERATOR_CONFIG, 0o666)
+                logger.debug(f"Set permissions to 666 for {self.TASK_GENERATOR_CONFIG}")
+            else:
+                logger.debug(f"task_generator.yaml does not exist, will create at {self.TASK_GENERATOR_CONFIG}")
+        except Exception as e:
+            logger.error(f"Failed to set permissions for {self.TASK_GENERATOR_CONFIG}: {e}")
+            raise
+
+        # Write task_generator.yaml
+        try:
+            yaml_str = yaml.safe_dump(joint_config, default_flow_style=False)
+            logger.debug(f"Generated YAML content:\n{yaml_str}")
+            with open(self.TASK_GENERATOR_CONFIG, "w") as f:
+                f.write(yaml_str)
+            logger.info(f"Successfully updated task_generator.yaml with config: {task_config}")
         except IOError as e:
-            logging.getLogger("benchmark").error(f"Failed to write task_generator.yaml: {e}")
+            logger.error(f"Failed to write task_generator.yaml: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error writing task_generator.yaml: {e}")
+            raise
+
+        # Verify write
+        try:
+            with open(self.TASK_GENERATOR_CONFIG, "r") as f:
+                written_config = yaml.safe_load(f)
+            logger.debug(f"Verified task_generator.yaml content: {written_config}")
+        except Exception as e:
+            logger.error(f"Failed to verify task_generator.yaml after write: {e}")
 
     @classmethod
     def _taskgen_restore(cls, cleanup: bool = False):
+        logger = logging.getLogger("benchmark")
         try:
             if os.path.exists(cls.TASK_GENERATOR_CONFIG_BKUP):
                 with open(cls.TASK_GENERATOR_CONFIG_BKUP) as fr:
@@ -280,9 +401,11 @@ class Mod_Benchmark(TM_Module):
                         fw.write(fr.read())
                 if cleanup:
                     os.remove(cls.TASK_GENERATOR_CONFIG_BKUP)
-            logging.getLogger("benchmark").debug("Restored task_generator.yaml")
+                logger.debug("Restored task_generator.yaml")
+            else:
+                logger.debug("No task_generator.yaml.bkup found for restore")
         except IOError as e:
-            logging.getLogger("benchmark").error(f"Failed to restore task_generator.yaml: {e}")
+            logger.error(f"Failed to restore task_generator.yaml: {e}")
 
     def __init__(self, node: Node = None, **kwargs):
         if node is None:
@@ -354,7 +477,40 @@ class Mod_Benchmark(TM_Module):
 
     def after_reset(self):
         self._episode_index += 1
-        self._logger.info(f"After task reset, episode: {self._episode_index}")
+        episode_limit = int(self._suite.config(self._suite_index).episodes * self._config.suite.scale_episodes)
+        self._logger.info(f"After task reset, episode: {self._episode_index + 1}/{episode_limit}")
+        self._log_episode()
+        if self._episode_index < episode_limit - 1:
+            self._logger.debug(f"Requesting task reset for episode {self._episode_index + 2}/{episode_limit}")
+            if not self._reset_task():
+                self._logger.error(f"Task reset failed for episode {self._episode_index + 2}, retrying")
+                time.sleep(1)
+                self._reset_task()
+        else:
+            self._logger.info(f"Completed episode {self._episode_index + 1}/{episode_limit}, advancing to next stage")
+            self._episode_index = -1
+            self.suite_index += 1
+
+    def _reset_task(self):
+        logger = self._logger
+        reset_task_client = self._node.create_client(EmptySrv, "/task_generator_node/reset_task")
+        if reset_task_client.wait_for_service(timeout_sec=10.0):
+            request = EmptySrv.Request()
+            try:
+                future = reset_task_client.call_async(request)
+                rclpy.spin_until_future_complete(self._node, future, timeout_sec=5.0)
+                if future.result():
+                    logger.info("Task reset successfully")
+                    return True
+                else:
+                    logger.error("Task reset service returned no result")
+                    return False
+            except Exception as e:
+                logger.error(f"Reset task service failed: {e}")
+                return False
+        else:
+            logger.error("Service /task_generator_node/reset_task not available")
+            return False
 
     _logger_object: logging.Logger
 
@@ -431,11 +587,14 @@ class Mod_Benchmark(TM_Module):
 
     @_episode.setter
     def _episode(self, episode: int):
-        if episode >= int(
+        episode_limit = int(
             self._suite.config(self._suite_index).episodes
             * self._config.suite.scale_episodes
-        ):
-            self._episode_index = 0
+        )
+        self._logger.debug(f"Setting episode {episode + 1}/{episode_limit}")
+        if episode >= episode_limit:
+            self._logger.info(f"Reached episode limit {episode_limit}, advancing stage")
+            self._episode_index = -1
             self.suite_index += 1
         else:
             self._episode_index = episode
@@ -454,20 +613,33 @@ class Mod_Benchmark(TM_Module):
         return str(temp_file)
 
     def _check_duplicate_nodes(self, robot: str) -> bool:
-        """Check for duplicate navigation nodes to prevent re-launching."""
         self._logger.debug("Checking for duplicate navigation nodes")
         try:
             node_list = self._node.get_node_names_and_namespaces()
             lifecycle_manager = f"/task_generator_node/{robot}/lifecycle_manager_navigation"
             count = sum(1 for name, ns in node_list if f"{ns}/{name}" == lifecycle_manager)
             if count > 1:
-                self._logger.warning(f"Found {count} instances of {lifecycle_manager}")
+                self._logger.warning(f"Found {count} instances of {lifecycle_manager}, terminating duplicates")
                 return True
             self._logger.debug("No duplicate navigation nodes found")
             return False
         except Exception as e:
             self._logger.error(f"Failed to check nodes: {e}")
             return False
+
+    def _terminate_duplicate_nodes(self, robot: str):
+        logger = self._logger
+        try:
+            node_list = self._node.get_node_names_and_namespaces()
+            lifecycle_manager = f"/task_generator_node/{robot}/lifecycle_manager_navigation"
+            nodes = [(name, ns) for name, ns in node_list if f"{ns}/{name}" == lifecycle_manager]
+            if len(nodes) > 1:
+                logger.info(f"Terminating {len(nodes)-1} duplicate {lifecycle_manager} nodes")
+                # TODO: Implement node termination logic (e.g., via ROS 2 service or process kill)
+                # For now, log and rely on launch cleanup
+                logger.warning("Node termination not implemented, relying on launch cleanup")
+        except Exception as e:
+            logger.error(f"Failed to terminate duplicate nodes: {e}")
 
     def _reincarnate(self):
         if self._restart_count >= self.MAX_RESTARTS:
@@ -481,28 +653,16 @@ class Mod_Benchmark(TM_Module):
         with open(self.DIR / self.LOCK_FILE, "w") as f:
             f.write(f"{self._runid} {self._contest_index} {self._suite_index} {self._headless}")
 
-        config = self._config
         contest_config = self._contest.config(self._contest_index)
         suite_config = self._suite.config(self._suite_index)
 
         self._logger.debug(f"Stage config: {suite_config._asdict()}")
 
-        # Update task_generator.yaml
-        self._taskgen_restore()
-        self._taskgen_write(
-            {
-                "episodes": -1,
-                "RANDOM": {
-                    "seed": int(suite_config.seed) ^ Suite.Stage.hash({"": self._runid})
-                },
-                "tm_robots": suite_config.tm_robots.value,
-                "tm_obstacles": suite_config.tm_obstacles.value,
-                "model": suite_config.robot,
-                "map_file": suite_config.map,
-                "SCENARIO": suite_config.config.get("SCENARIO", {})
-            },
-            suite_config.config,
-        )
+        # Terminate duplicate nodes
+        self._terminate_duplicate_nodes(suite_config.robot)
+
+        # Write task_generator.yaml
+        self._taskgen_write()
 
         record_data_dir = f"{self._runid}/{contest_config.name}/{suite_config.name}"
         self._logger.debug(f"Record data dir: {record_data_dir}")
@@ -512,14 +672,17 @@ class Mod_Benchmark(TM_Module):
             self._configure_stage(record_data_dir, suite_config)
             self._requires_restart = False
         else:
-            self._logger.debug("Skipping stage configuration due to no restart needed or duplicates detected")
+            self._logger.debug("Skipping stage configuration due to no restart needed or duplicates")
             self._episode = 0
+            if not self._reset_task():
+                self._logger.error("Initial task reset failed, retrying after delay")
+                time.sleep(2)
+                self._reset_task()
 
     def _configure_stage(self, record_data_dir: str, suite_config):
         temp_setup_file = self._create_temp_robot_setup_file(record_data_dir, suite_config.robot)
         self._logger.debug(f"Created temporary robot setup file: {temp_setup_file}")
 
-        # Set parameters
         try:
             self._node.set_parameters([
                 Parameter('model', Parameter.Type.STRING, suite_config.robot),
@@ -531,13 +694,12 @@ class Mod_Benchmark(TM_Module):
         except Exception as e:
             self._logger.error(f"Failed to set parameters: {e}")
 
-        # Change recording directory
         change_dir_client = self._node.create_client(
-            arena_evaluation_srvs.ChangeDirectory,
+            arena_evaluation_msgs.srv.ChangeDirectory,
             f"/task_generator_node/{suite_config.robot}/change_directory"
         )
         if change_dir_client.wait_for_service(timeout_sec=10.0):
-            request = arena_evaluation_srvs.ChangeDirectory.Request()
+            request = arena_evaluation_msgs.srv.ChangeDirectory.Request()
             request.directory = record_data_dir
             try:
                 future = change_dir_client.call_async(request)
@@ -551,7 +713,6 @@ class Mod_Benchmark(TM_Module):
         else:
             self._logger.error(f"Service /task_generator_node/{suite_config.robot}/change_directory not available")
 
-        # Check nodes before reset
         self._logger.debug("Checking nodes before reset_task")
         try:
             node_list = self._node.get_node_names_and_namespaces()
@@ -560,49 +721,8 @@ class Mod_Benchmark(TM_Module):
         except Exception as e:
             self._logger.error(f"Failed to list nodes: {e}")
 
-        # Reset task
-        reset_task_client = self._node.create_client(
-            EmptySrv,
-            "/task_generator_node/reset_task"
-        )
-        if reset_task_client.wait_for_service(timeout_sec=10.0):
-            request = EmptySrv.Request()
-            try:
-                future = reset_task_client.call_async(request)
-                rclpy.spin_until_future_complete(self._node, future)
-                if future.result():
-                    self._logger.info("Task reset successfully")
-                else:
-                    self._logger.error("Failed to reset task")
-            except Exception as e:
-                self._logger.error(f"Reset task service failed: {e}")
-        else:
-            self._logger.error("Service /task_generator_node/reset_task not available")
-
-        # Check nodes after reset
-        self._logger.debug("Checking nodes after reset_task")
-        try:
-            node_list = self._node.get_node_names_and_namespaces()
-            lifecycle_manager = f"/task_generator_node/{suite_config.robot}/lifecycle_manager_navigation"
-            count = sum(1 for name, ns in node_list if f"{ns}/{name}" == lifecycle_manager)
-            if count > 1:
-                self._logger.warning(f"Duplicate nodes detected: {count} instances of {lifecycle_manager}")
-            for name, ns in node_list:
-                self._logger.debug(f"Node: {name} in namespace {ns}")
-        except Exception as e:
-            self._logger.error(f"Failed to list nodes: {e}")
-
-        # Verify goal publication
-        self._logger.debug("Checking goal pose publication")
-        goal_publisher = self._node.create_publisher(
-            geometry_msgs.msg.PoseStamped,
-            f"/task_generator_node/{suite_config.robot}/goal_pose",
-            10
-        )
-        if goal_publisher.get_subscription_count() > 0:
-            self._logger.debug("Goal pose topic has subscribers")
-        else:
-            self._logger.warning("No subscribers to goal pose topic")
+        if self._reset_task():
+            self._logger.info(f"Initial stage setup complete for {suite_config.name}")
 
     def _suicide(self):
         try:
