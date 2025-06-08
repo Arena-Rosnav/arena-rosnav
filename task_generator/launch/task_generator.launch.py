@@ -99,7 +99,8 @@ def generate_launch_description():
             {"arrow_length": 0.6},
             {"show_labels": True},
             {"show_velocity_arrows": True},
-            {"show_orientation_arrows": True}
+            {"show_orientation_arrows": True},
+            {"namespace": namespace.substitution},
         ],
         output="screen",
         condition=launch.conditions.IfCondition(PythonExpression(['"', entity_manager.substitution, '" == "hunav"'])),
@@ -143,11 +144,7 @@ def generate_launch_description():
                 **reference.param(typing.List[float]),
                 **prefix.str_param,
             },
-            os.path.join(
-                bringup_dir,
-                'configs',
-                'task_generator.yaml'
-            ),
+            parameter_file.substitution,
         ],
     )
 

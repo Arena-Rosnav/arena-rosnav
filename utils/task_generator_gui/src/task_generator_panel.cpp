@@ -25,24 +25,40 @@ namespace task_generator_gui
 
         // Create a new node for the service clients
         service_node = std::make_shared<rclcpp::Node>("tm_service_node");
+    }
 
-        get_environments_client = service_node->create_client<task_generator_msgs::srv::GetEnvironments>("/task_generator_node/get_environments");
+    void TaskGeneratorPanel::load(const rviz_common::Config &config)
+    {
+        rviz_common::Panel::load(config);
 
-        get_parametrizeds_client = service_node->create_client<task_generator_msgs::srv::GetParametrizeds>("/task_generator_node/get_parametrizeds");
+        QString result;
 
-        get_randoms_client = service_node->create_client<task_generator_msgs::srv::GetRandoms>("/task_generator_node/get_randoms");
+        if (config.mapGetString("Target", &result))
+        {
+            task_generator_node = result.toStdString();
+        }
+        else
+        {
+            task_generator_node = "/task_generator_node";
+        }
 
-        get_scenarios_client = service_node->create_client<task_generator_msgs::srv::GetScenarios>("/task_generator_node/get_scenarios");
+        get_environments_client = service_node->create_client<task_generator_msgs::srv::GetEnvironments>(task_generator_node + "/get_environments");
 
-        set_param_client = service_node->create_client<rcl_interfaces::srv::SetParameters>("/task_generator_node/set_parameters");
+        get_parametrizeds_client = service_node->create_client<task_generator_msgs::srv::GetParametrizeds>(task_generator_node + "/get_parametrizeds");
 
-        get_worlds_client = service_node->create_client<task_generator_msgs::srv::GetWorlds>("/task_generator_node/get_worlds");
+        get_randoms_client = service_node->create_client<task_generator_msgs::srv::GetRandoms>(task_generator_node + "/get_randoms");
 
-        get_robots_client = service_node->create_client<task_generator_msgs::srv::GetRobots>("/task_generator_node/get_robots");
+        get_scenarios_client = service_node->create_client<task_generator_msgs::srv::GetScenarios>(task_generator_node + "/get_scenarios");
 
-        parameters_client = std::make_shared<rclcpp::SyncParametersClient>(service_node, "task_generator_node");
+        set_param_client = service_node->create_client<rcl_interfaces::srv::SetParameters>(task_generator_node + "/set_parameters");
 
-        reset_task_client = service_node->create_client<std_srvs::srv::Empty>("/task_generator_node/reset_task");
+        get_worlds_client = service_node->create_client<task_generator_msgs::srv::GetWorlds>(task_generator_node + "/get_worlds");
+
+        get_robots_client = service_node->create_client<task_generator_msgs::srv::GetRobots>(task_generator_node + "/get_robots");
+
+        parameters_client = std::make_shared<rclcpp::SyncParametersClient>(service_node, task_generator_node);
+
+        reset_task_client = service_node->create_client<std_srvs::srv::Empty>(task_generator_node + "/reset_task");
 
         getRobots();
         getWorlds();
@@ -218,12 +234,12 @@ namespace task_generator_gui
             auto n_static_obstacles_widget = setupMinMaxSpinBox(&n_static_obstacles_range);
             obstacles_tree->setItemWidget(n_static_obstacles_widgetitem, 1, n_static_obstacles_widget);
 
-            // Set up the spinbox for n_interactive_obstacles
-            auto n_interactive_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
-            n_interactive_obstacles_widgetitem->setText(0, "Number of Interactive Obstacles");
+            // // Set up the spinbox for n_interactive_obstacles
+            // auto n_interactive_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
+            // n_interactive_obstacles_widgetitem->setText(0, "Number of Interactive Obstacles");
 
-            auto n_interactive_obstacles_widget = setupMinMaxSpinBox(&n_interactive_obstacles_range);
-            obstacles_tree->setItemWidget(n_interactive_obstacles_widgetitem, 1, n_interactive_obstacles_widget);
+            // auto n_interactive_obstacles_widget = setupMinMaxSpinBox(&n_interactive_obstacles_range);
+            // obstacles_tree->setItemWidget(n_interactive_obstacles_widgetitem, 1, n_interactive_obstacles_widget);
 
             // Set up the spinbox for n_dynamic_obstacles
             auto n_dynamic_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
@@ -239,12 +255,12 @@ namespace task_generator_gui
             static_obstacles_models_groupbox = setupGroupCheckBox(static_obstacles_all_models, &static_obstacles_models_selected);
             obstacles_tree->setItemWidget(static_obstacles_widgetitem, 1, static_obstacles_models_groupbox);
 
-            // Set up check boxes to choose interactive obstacles models
-            auto interactive_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
-            interactive_obstacles_widgetitem->setText(0, "Interactive Obstacles Models");
+            // // Set up check boxes to choose interactive obstacles models
+            // auto interactive_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);
+            // interactive_obstacles_widgetitem->setText(0, "Interactive Obstacles Models");
 
-            interactive_obstacles_models_groupbox = setupGroupCheckBox(interactive_obstacles_all_models, &interactive_obstacles_models_selected);
-            obstacles_tree->setItemWidget(interactive_obstacles_widgetitem, 1, interactive_obstacles_models_groupbox);
+            // interactive_obstacles_models_groupbox = setupGroupCheckBox(interactive_obstacles_all_models, &interactive_obstacles_models_selected);
+            // obstacles_tree->setItemWidget(interactive_obstacles_widgetitem, 1, interactive_obstacles_models_groupbox);
 
             // Set up check boxes to choose dynamic obstacles models
             auto dynamic_obstacles_widgetitem = new QTreeWidgetItem(obstacles_tree);

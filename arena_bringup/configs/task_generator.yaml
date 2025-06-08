@@ -1,4 +1,4 @@
-task_generator_node:
+/**:
   ros__parameters:
     task:
       parametrized:

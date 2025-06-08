@@ -1,5 +1,3 @@
-import os
-import traceback
 import typing
 
 import arena_simulation_setup.configs.environment
@@ -12,11 +10,10 @@ import launch
 import rclpy
 import std_srvs.srv as std_srvs
 import task_generator_msgs.srv
-import yaml
-from ament_index_python.packages import get_package_share_directory
 from arena_rclpy_mixins.shared import Namespace
 from std_msgs.msg import Empty, Int16
 from std_srvs.srv import Empty as EmptySrv
+
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Configuration
 from task_generator.manager.entity_manager import (EntityManager,
@@ -32,26 +29,6 @@ from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory
 
 from . import NodeInterface
-
-
-def read_robot_setup_file(setup_file: str) -> list[dict]:
-    try:
-        with open(
-            os.path.join(
-                get_package_share_directory("arena_bringup"),
-                "configs",
-                "robot_setup",
-                setup_file,
-            ),
-            "r",
-        ) as f:
-            robots: list[dict] = yaml.safe_load(f)["robots"]
-
-        return robots
-
-    except BaseException:
-        traceback.print_exc()
-        raise Exception("Failed to read robot setup file")
 
 
 class TaskGenerator(NodeInterface.Taskgen_T):
@@ -101,6 +78,16 @@ class TaskGenerator(NodeInterface.Taskgen_T):
             10,
         )
 
+        self._post_init_timer = self.create_timer(
+            0.5,
+            self._post_init,
+        )
+
+    def _post_init(self):
+        # run once
+        self._post_init_timer.cancel()
+
+        self._set_up_managers()
         self._set_up_services()
 
         self._initialized = False
@@ -109,21 +96,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
             self._check_task_status,
         )
 
-    def _initialize(self):
-        self._start_time = self.get_clock().now().seconds_nanoseconds()[0]
-        self._task = self._get_predefined_task()
-
-        self._number_of_resets = 0
-
-        self.reset_task(first_map=True)
-
-        self._initialized = True
-        self.rosparam[bool].set('initialized', True)
-
-    def _get_predefined_task(self, **kwargs):
-        """
-        Gets the task based on the passed mode
-        """
+    def _set_up_managers(self):
         self._simulator = SimulatorRegistry.get(self.conf.Arena.SIMULATOR.value)(
             self._namespace
         )
@@ -154,12 +127,30 @@ class TaskGenerator(NodeInterface.Taskgen_T):
             environment_manager=self._environment_manager
         )
 
+    def _initialize(self):
+        self._start_time = self.get_clock().now().seconds_nanoseconds()[0]
+        self._task = self._get_predefined_task()
+
+        self._number_of_resets = 0
+
+        self.reset_task(first_map=True)
+
+        self._initialized = True
+        self.rosparam[bool].set('initialized', True)
+
+    def _get_predefined_task(self, **kwargs):
+        """
+        Gets the task based on the passed mode
+        """
+
         tm_modules = self.conf.TaskMode.TM_MODULES.value
         tm_modules.add(Constants.TaskMode.TM_Module.CLEAR_FORBIDDEN_ZONES)
         tm_modules.add(Constants.TaskMode.TM_Module.RVIZ_UI)
 
         if self.conf.Arena.WORLD.value == "dynamic_map":
             tm_modules.add(Constants.TaskMode.TM_Module.DYNAMIC_MAP)
+
+        self._world_manager.sync()
 
         self.get_logger().debug("utils calls task factory")
         return TaskFactory.combine(list(tm_modules))(
