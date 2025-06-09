@@ -116,7 +116,7 @@ namespace task_generator_gui
                         obstacles_task_mode = QString("Random");
 
                     auto current_static_models = parameters_client->get_parameter<std::vector<std::string>>("task.random.static.models");
-                    auto current_interactive_models = parameters_client->get_parameter<std::vector<std::string>>("task.random.interactive.models");
+                    // auto current_interactive_models = parameters_client->get_parameter<std::vector<std::string>>("task.random.interactive.models");
                     auto current_dynamic_models = parameters_client->get_parameter<std::vector<std::string>>("task.random.dynamic.models");
 
                     for (int i = 0; i < int(static_obstacles_all_models.size()); i++)
@@ -441,11 +441,11 @@ namespace task_generator_gui
             parameter.value.integer_array_value = n_static_obstacles_range;
             request->parameters.push_back(parameter);
 
-            parameter = rcl_interfaces::msg::Parameter();
-            parameter.name = "task.random.interactive.n";
-            parameter.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER_ARRAY;
-            parameter.value.integer_array_value = n_interactive_obstacles_range;
-            request->parameters.push_back(parameter);
+            // parameter = rcl_interfaces::msg::Parameter();
+            // parameter.name = "task.random.interactive.n";
+            // parameter.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER_ARRAY;
+            // parameter.value.integer_array_value = n_interactive_obstacles_range;
+            // request->parameters.push_back(parameter);
 
             parameter = rcl_interfaces::msg::Parameter();
             parameter.name = "task.random.dynamic.n";
@@ -505,6 +505,31 @@ namespace task_generator_gui
         }
     }
 
+    bool TaskGeneratorPanel::generateWorld()
+    {
+        auto generate_world_future = reset_task_client->async_send_request(std::make_shared<std_srvs::srv::Empty::Request>());
+        if (rclcpp::spin_until_future_complete(service_node, generate_world_future) == rclcpp::FutureReturnCode::SUCCESS)
+        {
+            RCLCPP_INFO(service_node->get_logger(), "Successfully generated world");
+            return true;
+        }
+        else
+        {
+            RCLCPP_ERROR(service_node->get_logger(), "Failed to generate world");
+            return false;
+        }
+    }
+
+    void TaskGeneratorPanel::getParams()
+    {
+        getRobots();
+        getWorlds();
+        getCurrentTaskGeneratorNodeParams(false);
+        updateTabs();
+        getTMObstaclesParams();
+        getTMRobotsParams();
+    }
+
     void TaskGeneratorPanel::setParams()
     {
         while (!set_param_client->wait_for_service(std::chrono::seconds(1)))
@@ -554,6 +579,8 @@ namespace task_generator_gui
         {
             RCLCPP_ERROR(service_node->get_logger(), "Failed to reset task scenario");
         }
+
+        getParams();
     }
 
     void TaskGeneratorPanel::setRobot()

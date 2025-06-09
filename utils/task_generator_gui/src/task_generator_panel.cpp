@@ -58,6 +58,7 @@ namespace task_generator_gui
 
         parameters_client = std::make_shared<rclcpp::SyncParametersClient>(service_node, task_generator_node);
 
+        generate_world_client = service_node->create_client<std_srvs::srv::Empty>("/world_generator/generate_world");
         reset_task_client = service_node->create_client<std_srvs::srv::Empty>(task_generator_node + "/reset_task");
 
         getRobots();
@@ -84,6 +85,11 @@ namespace task_generator_gui
         connect(spawn_robot_button, &QPushButton::clicked, this, &TaskGeneratorPanel::spawnRobotButtonActivated);
         robot_combobox->parentWidget()->layout()->addWidget(spawn_robot_button);
 
+        // Button to generate world
+        generate_world_button = new QPushButton("Generate World");
+        connect(generate_world_button, &QPushButton::clicked, this, &TaskGeneratorPanel::generateWorldButtonActivated);
+        this->root_layout->addWidget(generate_world_button);
+
         // Setup Combobox for choosing World
         auto worlds_combobox_values = QStringList();
         for (const auto &world : worlds)
@@ -93,6 +99,7 @@ namespace task_generator_gui
         world_combobox = setupComboBoxWithLabel(this->root_layout, worlds_combobox_values, QString("World"));
         world_combobox->setCurrentText(QString::fromStdString(selected_world));
         connect(world_combobox, &QComboBox::currentTextChanged, this, &TaskGeneratorPanel::onWorldChanged);
+
 
         setupTabs(this->root_layout);
 
@@ -134,7 +141,6 @@ namespace task_generator_gui
             obstacles_tab_layout,
             QStringList({"Environment", "Parametrized", "Random", "Scenario"}),
             QString("Obstacles Task Mode"));
-        obstacles_task_mode_combobox->setCurrentText(obstacles_task_mode);
         connect(
             obstacles_task_mode_combobox,
             &QComboBox::currentTextChanged,
@@ -145,7 +151,6 @@ namespace task_generator_gui
             robot_tab_layout,
             QStringList({"Explore", "Guided", "Random", "Scenario"}),
             QString("Robots Task Mode"));
-        robot_task_mode_combobox->setCurrentText(robots_task_mode);
         connect(robot_task_mode_combobox,
                 &QComboBox::currentTextChanged,
                 this,
@@ -165,7 +170,16 @@ namespace task_generator_gui
         setupRobotsTreeItem();
 
         parent->addWidget(tabs);
+
+        updateTabs();
         return tabs;
+    }
+
+    void TaskGeneratorPanel::updateTabs()
+    {
+        obstacles_task_mode_combobox->setCurrentText(obstacles_task_mode);
+        robot_task_mode_combobox->setCurrentText(robots_task_mode);
+        world_combobox->setCurrentText(QString::fromStdString(selected_world));
     }
 
     QTreeWidget *TaskGeneratorPanel::setupTree(QLayout *parent)
@@ -370,6 +384,14 @@ namespace task_generator_gui
         setupRobotsTreeItem();
     }
 
+    void TaskGeneratorPanel::generateWorldButtonActivated()
+    {
+        if (generateWorld())
+        {
+            selected_world = ".generated";
+            setParams();
+        }
+    }
     void TaskGeneratorPanel::resetScenarioButtonActivated()
     {
         setParams();

@@ -23,7 +23,7 @@
         curriculum: default.yaml
         index: 0
       environment:
-        file: canteen.yaml
+        file: office.yaml
     hunavsim:       
       parameters:
         max_vel: 0.3
