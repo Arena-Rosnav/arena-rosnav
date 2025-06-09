@@ -174,9 +174,8 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
             config.name = robot_name
             config.pose = next(self._initialpose)
             manager = RobotManager(
-                namespace=Namespace(
-                    self.node.get_namespace())(
-                        self.node.get_name(),
+                namespace=Namespace(self.node.get_namespace())(
+                    self.node.get_name(),
                 ),
                 entity_manager=self._entity_manager,
                 environment_manager=self._environment_manager,

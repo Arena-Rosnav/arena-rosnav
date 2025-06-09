@@ -1,4 +1,7 @@
+import itertools
 import os
+
+import yaml
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -32,6 +35,7 @@ def generate_launch_description():
     # Set environment variables
     package_root = get_package_share_directory('arena_bringup')
     ss_root = get_package_share_directory('arena_simulation_setup')
+    ss_models = os.path.join(ss_root, '../..', 'models')
 
     # Set paths for Gazebo, Physics Engine, and Resource
 
@@ -44,17 +48,29 @@ def generate_launch_description():
     #     workspace_root, "build", "gz-physics7"
     # )
 
+    staging_path = os.path.join(package_root, '..', 'staging')
+    os.makedirs(staging_path, exist_ok=True)
+
+    import subprocess
+    subprocess.run(['ros2', 'run', 'arena_simulation_setup', 'model_staging', staging_path])
+
     GZ_SIM_RESOURCE_PATHS = [
-        os.path.join(ss_root, "configs", "gazebo"),
-        os.path.join(ss_root, "entities"),
-        os.path.join(ss_root, "worlds"),
-        os.path.join(ss_root, "gazebo_models"),
-        os.path.join(ss_root, "entities", "obstacles", "static"),
-        os.path.join(ss_root, "entities", "obstacles", "robots"),
-        os.path.join(get_package_share_directory("jackal_description"), '..'),
-        os.path.join(get_package_share_directory("turtlebot4_description"), '..'),
-        os.path.join(get_package_share_directory("irobot_create_description"), '..'),
+        os.path.join(staging_path),
     ]
+
+    deps_file = os.path.join(staging_path, 'deps')
+    if os.path.isfile(deps_file):
+        with open(deps_file) as f:
+            deps = f.readlines()
+            for package in itertools.chain(deps, ('arena_simulation_setup',)):
+                try:
+                    package_path = get_package_share_directory(package.strip())
+                    GZ_SIM_RESOURCE_PATHS.append(os.path.join(package_path, '..'))
+                except BaseException:
+                    pass
+
+    GZ_SIM_RESOURCE_PATHS = [os.path.normpath(path) for path in GZ_SIM_RESOURCE_PATHS]
+
     # GZ_CONFIG_PATH = ":".join(GZ_CONFIG_PATHS)
     GZ_CONFIG_PATH = "/usr/share/gz"
 
