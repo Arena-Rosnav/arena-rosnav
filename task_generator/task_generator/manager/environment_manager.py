@@ -7,12 +7,11 @@ from task_generator import NodeInterface
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.world_manager.utils import World
-from task_generator.shared import (DynamicObstacle, Entity, Obstacle, Position,
-                                   PositionOrientation, Robot, Wall)
+from task_generator.shared import (DynamicObstacle, Entity, Obstacle,
+                                   Orientation, Pose, Position, Robot, Wall)
 from task_generator.simulators import BaseSimulator
 
 EntityPropsT = typing.TypeVar('EntityPropsT', bound=Entity)
-PositionT = typing.TypeVar('PositionT', bound=Position)
 
 
 class _Realizer:
@@ -30,25 +29,31 @@ class _Realizer:
     def _prefix(self, s: str) -> str:
         return self._config.prefix + s
 
-    @typing.overload
-    def realize(self, target: PositionT) -> PositionT: ...
+    def _realize_position(self, position: Position) -> Position:
+        position.x += self._config.x
+        position.y += self._config.y
+        return position
 
-    def _realize_position(self, position: PositionT) -> PositionT:
-        return attrs.evolve(
-            position,
-            x=position.x + self._config.x,
-            y=position.y + self._config.y,
-        )
+    def _realize_orientation(self, orientation: Orientation) -> Orientation:
+        return orientation
+
+    def _realize_pose(self, pose: Pose) -> Pose:
+        pose.position = self._realize_position(pose.position)
+        return pose
 
     @typing.overload
     def realize(self, target: EntityPropsT) -> EntityPropsT: ...
 
+    @typing.overload
+    def realize(self, target: Position) -> Position: ...
+
+    @typing.overload
+    def realize(self, target: Pose) -> Pose: ...
+
     def _realize_entity(self, entity: EntityPropsT) -> EntityPropsT:
-        return attrs.evolve(
-            entity,
-            position=self._realize_position(entity.position),
-            name=self._prefix(entity.name),
-        )
+        entity.pose = self._realize_pose(entity.pose)
+        entity.name = self._prefix(entity.name)
+        return entity
 
     @typing.overload
     def realize(self, target: Wall) -> Wall: ...
@@ -69,6 +74,9 @@ class _Realizer:
 
         if isinstance(target, Position):
             return self._realize_position(target)
+
+        if isinstance(target, Pose):
+            return self._realize_pose(target)
 
         if isinstance(target, Entity):
             return self._realize_entity(target)
@@ -143,13 +151,13 @@ class EnvironmentManager(NodeInterface, _Realizer):
         self._entity_manager.spawn_robot(robot)
         return robot
 
-    def move_robot(self, name: str, position: PositionOrientation):
+    def move_robot(self, name: str, pose: Pose):
         """
         Moves given robot
         """
         self._entity_manager.move_robot(
             name=name,
-            position=self._realize_position(position),
+            pose=self._realize_pose(pose),
         )
 
     def respawn(self, callback: Callable[[], Any]):

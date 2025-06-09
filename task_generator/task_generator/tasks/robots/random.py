@@ -1,6 +1,6 @@
 import math
 
-from task_generator.shared import PositionOrientation, PositionRadius
+from task_generator.shared import Orientation, Pose, Position, PositionRadius
 from task_generator.tasks.robots import TM_Robots
 
 
@@ -25,7 +25,7 @@ class TM_Random(TM_Robots):
         super().reset(**kwargs)
 
         ROBOT_POSITIONS: list[
-            tuple[PositionOrientation, PositionOrientation]
+            tuple[Pose, Pose]
         ] = kwargs.get("ROBOT_POSITIONS", [])
         biggest_robot = max(
             (robot.safe_distance for robot in self._PROPS.robot_managers.values()),
@@ -35,9 +35,8 @@ class TM_Random(TM_Robots):
         for robot_start, robot_goal in ROBOT_POSITIONS:
             self._PROPS.world_manager.forbid(
                 [
-                    PositionRadius(
-                        robot_start.x, robot_start.y, biggest_robot),
-                    PositionRadius(robot_goal.x, robot_goal.y, biggest_robot),
+                    PositionRadius(robot_start.position.x, robot_start.position.y, biggest_robot),
+                    PositionRadius(robot_goal.position.x, robot_goal.position.y, biggest_robot),
                 ]
             )
 
@@ -53,8 +52,9 @@ class TM_Random(TM_Robots):
             )
 
             generated_positions = [
-                PositionOrientation(
-                    position.x, position.y, orientation
+                Pose(
+                    position,
+                    Orientation.from_yaw(orientation)
                 )
                 for (orientation, position) in zip(
                     orientations,

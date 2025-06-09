@@ -103,8 +103,8 @@ class WorldManager(NodeInterface):
             self.world.map.occupancy.obstacle_occupy(
                 *self.world.map.tf_posr2rect(
                     PositionRadius(
-                        x=obstacle.position.x,
-                        y=obstacle.position.y,
+                        x=obstacle.pose.position.x,
+                        y=obstacle.pose.position.y,
                         radius=1,   # TODO actual radius
                     )
                 )

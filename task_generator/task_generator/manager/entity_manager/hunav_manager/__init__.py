@@ -8,17 +8,10 @@ import geometry_msgs.msg
 import yaml
 from ament_index_python.packages import get_package_share_directory
 
-from task_generator.shared import DynamicObstacle, ModelWrapper
+from task_generator.shared import DynamicObstacle, ModelWrapper, Pose, Position
 
 
-@attrs.frozen()
-class Position:
-    x: float = attrs.field(converter=float)
-    y: float = attrs.field(converter=float)
-    z: float = attrs.field(default=0., converter=float)
-
-
-@attrs.frozen()
+@attrs.define
 class PositionH(Position):
     h: float = attrs.field(default=0., converter=float)
 
@@ -39,13 +32,7 @@ class Goals(list[Position]):
 
     def as_poses(self) -> list[geometry_msgs.msg.Pose]:
         return [
-            geometry_msgs.msg.Pose(
-                position=geometry_msgs.msg.Point(
-                    x=p.x,
-                    y=p.y,
-                    z=p.z
-                )
-            )
+            Pose(p).to_msg()
             for p
             in self
         ]
@@ -141,12 +128,12 @@ class HunavDynamicObstacle:
         return cls(
             name=obj.name,
             init_pose=PositionH(
-                x=extra.get('position', {}).get('x', obj.position.x),
-                y=extra.get('position', {}).get('y', obj.position.y),
+                x=extra.get('position', {}).get('x', obj.pose.position.x),
+                y=extra.get('position', {}).get('y', obj.pose.position.y),
                 z=extra.get('position', {}).get('z', cls._default.init_pose.z),
                 h=extra.get('position', {}).get('h', cls._default.init_pose.h),
             ),
-            yaw=extra.get('yaw', obj.position.orientation),
+            yaw=extra.get('yaw', obj.pose.orientation.to_yaw()),
             model=obj.model,
             goals=waypoints,
             velocity=extra.get('velocity', cls._default.velocity),
@@ -284,8 +271,8 @@ def test_hunav_services(self):
     test_agent.id = 1
     test_agent.name = "test_pedestrian"
     test_agent.type = Agent.PERSON
-    test_agent.position.position.x = 2.0
-    test_agent.position.position.y = 2.0
+    test_agent.pose.position.x = 2.0
+    test_agent.pose.position.y = 2.0
     test_agent.yaw = 0.0
     test_agent.desired_velocity = 1.0
     test_agent.radius = 0.35
@@ -318,8 +305,8 @@ def test_hunav_services(self):
     test_robot.id = 0
     test_robot.name = "test_robot"
     test_robot.type = Agent.ROBOT
-    test_robot.position.position.x = 0.0
-    test_robot.position.position.y = 0.0
+    test_robot.pose.position.x = 0.0
+    test_robot.pose.position.y = 0.0
     test_robot.yaw = 0.0
     test_robot.radius = 0.3
 
@@ -338,7 +325,7 @@ def test_hunav_services(self):
             for agent in response.updated_agents.agents:
                 self.node.get_logger().warn(
                     f"\nAgent {agent.name} (ID: {agent.id}):"
-                    f"\n  Position: ({agent.position.position.x:.2f}, {agent.position.position.y:.2f})"
+                    f"\n  Position: ({agent.pose.position.x:.2f}, {agent.pose.position.y:.2f})"
                     f"\n  Behavior Type: {agent.behavior.type}"
                     f"\n  Current State: {agent.behavior.state}"
                     f"\n  Linear Velocity: {agent.linear_vel:.2f}"

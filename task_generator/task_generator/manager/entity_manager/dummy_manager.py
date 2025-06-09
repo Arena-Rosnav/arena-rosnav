@@ -42,6 +42,6 @@ class DummyEntityManager(EntityManager):
     def _move_robot_impl(
         self,
         name,
-        position,
+        pose,
     ) -> bool:
         return True

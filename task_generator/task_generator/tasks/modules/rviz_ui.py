@@ -1,7 +1,7 @@
 import geometry_msgs.msg as geometry_msgs
 from builtin_interfaces.msg import Time
 
-from task_generator.shared import PositionOrientation
+from task_generator.shared import Pose
 from task_generator.tasks import Task
 from task_generator.tasks.modules import TM_Module
 
@@ -45,14 +45,14 @@ class Mod_OverrideRobot(TM_Module):
 
     def _cb_set_position(self, pos: geometry_msgs.PoseWithCovarianceStamped):
         self._TASK.set_robot_position(
-            PositionOrientation.from_pose(
+            Pose.from_msg(
                 pos.pose.pose
             )
         )
 
     def _cb_set_goal(self, pos: geometry_msgs.PoseStamped):
         self._TASK.set_robot_goal(
-            PositionOrientation.from_pose(
+            Pose.from_msg(
                 pos.pose
             )
         )

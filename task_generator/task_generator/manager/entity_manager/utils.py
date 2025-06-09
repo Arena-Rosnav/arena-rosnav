@@ -1,4 +1,3 @@
-import arena_simulation_setup
 import enum
 import os
 import typing
@@ -6,6 +5,7 @@ import xml.etree.ElementTree as ET
 from io import StringIO
 from typing import Any, Optional, Union
 
+import arena_simulation_setup
 import attrs
 import cv2
 import numpy as np
@@ -16,7 +16,7 @@ import task_generator.utils.arena as Utils
 from task_generator.constants import Constants
 from task_generator.manager.world_manager.utils import WorldMap, WorldOccupancy
 from task_generator.shared import (Model, ModelType, ModelWrapper, Obstacle,
-                                   PositionOrientation, rosparam_get)
+                                   Pose, Position, rosparam_get)
 
 
 class SDFUtil:
@@ -308,7 +308,7 @@ def walls_to_obstacle(world_map: WorldMap, height: float = 3) -> Obstacle:
     )
 
     return Obstacle(
-        position=PositionOrientation(0, 0, 0),
+        pose=Pose(),
         name=model_name,
         model=model,
         extra=dict(),

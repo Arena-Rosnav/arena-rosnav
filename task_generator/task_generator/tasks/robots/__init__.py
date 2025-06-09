@@ -1,4 +1,4 @@
-from task_generator.shared import PositionOrientation
+from task_generator.shared import Pose
 from task_generator.tasks import TaskMode
 
 
@@ -22,27 +22,27 @@ class TM_Robots(TaskMode):
     def reset(self, **kwargs):
         self._last_reset = self._PROPS.clock.clock.sec
 
-    def set_position(self, position: PositionOrientation):
+    def set_position(self, pose: Pose):
         """
         Set the position of all robots.
 
         Args:
-            position (PositionOrientation): The desired position and orientation.
+            position (Pose): The desired position and orientation.
 
         """
         for robot_manager in self._PROPS.robot_managers.values():
-            robot_manager.reset(position, None)
+            robot_manager.reset(pose, None)
 
-    def set_goal(self, position: PositionOrientation):
+    def set_goal(self, pose: Pose):
         """
         Set the goal position for all robots.
 
         Args:
-            position (PositionOrientation): The desired goal position and orientation.
+            position (Pose): The desired goal position and orientation.
 
         """
         for robot_manager in self._PROPS.robot_managers.values():
-            robot_manager.reset(None, position)
+            robot_manager.reset(None, pose)
 
     @property
     def done(self):
