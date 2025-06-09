@@ -570,7 +570,7 @@ class HunavManager(DummyEntityManager):
         return True
 
     def _remove_obstacles_impl(self):
-        """Remove all spawned pedestrians from simulation"""
+        # """Remove all spawned pedestrians from simulation"""
         self._logger.error(f"=== REMOVE_OBSTACLES_IMPL CALLED - REMOVING {len(self._pedestrians)} PEDESTRIANS ===")
         self._logger.debug(f"=== REMOVING {len(self._pedestrians)} PEDESTRIANS ===")
         
@@ -581,7 +581,7 @@ class HunavManager(DummyEntityManager):
             obstacle = ped_data.get('obstacle')
             if obstacle:
                 self._logger.debug(f"Removing pedestrian: {obstacle.name}")
-                self._simulator.remove_entity(obstacle.name)
+                self._simulator.delete_entity(obstacle.name)
         
         # Clear internal data structures
         self._pedestrians.clear()
@@ -591,15 +591,15 @@ class HunavManager(DummyEntityManager):
             self._update_timer.destroy()
             self._update_timer = None
         
-        # Reset hunav service
-        if self._reset_agents_client:
-            request = ResetAgents.Request()
-            try:
-                response = self._reset_agents_client.call(request)
-                if response:
-                    self._logger.debug("Successfully reset HuNav agents")
-            except Exception as e:
-                self._logger.error(f"Failed to reset HuNav agents: {e}")
+        # # Reset hunav service
+        # if self._reset_agents_client:
+        #     request = ResetAgents.Request()
+        #     try:
+        #         response = self._reset_agents_client.call(request)
+        #         if response:
+        #             self._logger.debug("Successfully reset HuNav agents")
+        #     except Exception as e:
+        #         self._logger.error(f"Failed to reset HuNav agents: {e}")
         
-        self._logger.debug("All pedestrians removed successfully")
+        # self._logger.debug("All pedestrians removed successfully")
         return True
