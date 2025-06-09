@@ -100,9 +100,12 @@ class PythonExpression(Substitution):
 
 
 class IfElseSubstitution(Substitution):
-    def __init__(self, condition,
-                 if_value='',
-                 else_value=''):
+    def __init__(
+        self,
+        condition,
+        if_value: SomeSubstitutionsType = '',
+        else_value: SomeSubstitutionsType = ''
+    ):
         super().__init__()
         if if_value == else_value == '':
             raise RuntimeError('One of if_value and else_value must be specified')

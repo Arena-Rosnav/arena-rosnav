@@ -7,8 +7,8 @@ from typing import Optional
 import attrs
 
 from task_generator import NodeInterface
-from task_generator.shared import (DynamicObstacle, ModelWrapper, Obstacle,
-                                   PositionOrientation, PositionRadius)
+from task_generator.shared import (DynamicObstacle, Obstacle, Orientation,
+                                   Pose, Position, PositionRadius)
 from task_generator.tasks import Props_
 
 
@@ -39,7 +39,7 @@ class ITF_Obstacle:
 
         if waypoints is None:
 
-            waypoints = [PositionRadius(setup.position.x, setup.position.y, 1)]
+            waypoints = [PositionRadius(setup.pose.position.x, setup.pose.position.y, radius=1)]
             safe_distance = 0.1  # the other waypoints don't need to avoid robot
 
             waypoints += [
@@ -70,7 +70,7 @@ class ITF_Obstacle:
         props: Props_,
         name: str,
         model: str,
-        position: Optional[PositionOrientation] = None,
+        pose: Optional[Pose] = None,
         extra: Optional[dict] = None,
         **kwargs,
     ) -> Obstacle:
@@ -84,14 +84,16 @@ class ITF_Obstacle:
 
         safe_distance = 1
 
-        if position is None:
+        if pose is None:
             point = props.world_manager.get_position_on_map(safe_distance)
-            position = PositionOrientation(
-                point.x, point.y, node.conf.General.RNG.value.random() * 2 * math.pi)
+            pose = Pose(
+                point,
+                Orientation.from_yaw(node.conf.General.RNG.value.random() * 2 * math.pi)
+            )
 
         if extra is None:
             extra = dict()
 
         return Obstacle(
-            position=position, name=name, model=model, extra=extra, **kwargs
+            pose=pose, name=name, model=model, extra=extra, **kwargs
         )

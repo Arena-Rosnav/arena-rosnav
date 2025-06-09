@@ -204,7 +204,7 @@ class WorldManagerROS(WorldManager):
             self.node.service_namespace('map_server'),
             callback_group=rclpy.callback_groups.ReentrantCallbackGroup(),
         ).id != lifecycle_msgs.msg.State.PRIMARY_STATE_ACTIVE:
-            self._logger.info('map_server is not active, waiting again...')
+            self._logger.warn('map_server is not active, waiting again...')
             time.sleep(1.0)
 
         # publishing map to map_server
@@ -213,7 +213,7 @@ class WorldManagerROS(WorldManager):
             self.node.service_namespace('map_server', 'load_map'),
         )
         while not self._cli.wait_for_service(timeout_sec=1.0):
-            self._logger.info('LoadMap service not available, waiting again...')
+            self._logger.warn('LoadMap service not available, waiting again...')
 
         self.node.rosparam.callback(
             'world',
@@ -238,10 +238,7 @@ class WorldManagerROS(WorldManager):
     def sync(self, timeout: float = -1) -> bool:
         if timeout < 0:
             timeout = float('inf')
-        import sys
         while self._map_name != self._world_name:
-            print(self._map_name, self._world_name, 'while', self.node.rosparam.get('world', None), file=sys.stderr)
-            self._world_callback(self.node.rosparam.get('world', None))
             time.sleep(dt := 1)
             timeout -= dt
             if timeout < 0:

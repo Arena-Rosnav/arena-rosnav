@@ -1,4 +1,4 @@
-from task_generator.shared import PositionOrientation
+from task_generator.shared import Pose
 from task_generator.tasks.robots.random import TM_Random
 
 
@@ -10,21 +10,21 @@ class TM_Guided(TM_Random):
 
     Attributes:
         PARAM_WAYPOINTS (str): The parameter name for storing the guided waypoints.
-        _waypoints (list[PositionOrientation]): The list of waypoints for the guided task.
+        _waypoints (list[Pose]): The list of waypoints for the guided task.
         _waypoint_states (dict[str, int]): The dictionary storing the current waypoint state for each robot.
 
     Methods:
         __init__(self, **kwargs): Initializes the TM_Guided object.
         reset(self, **kwargs): Resets the TM_Guided object.
         done(self): Checks if the guided task is done.
-        set_position(self, position: PositionOrientation): Sets the position for the guided task.
-        set_goal(self, position: PositionOrientation): Sets the goal for the guided task.
+        set_position(self, pose: Pose): Sets the position for the guided task.
+        set_goal(self, pose: Pose): Sets the goal for the guided task.
         _reset_waypoints(self, *args, **kwargs): Resets the waypoints for the guided task.
     """
 
     PARAM_WAYPOINTS = "guided_waypoints"
 
-    _waypoints: list[PositionOrientation]
+    _waypoints: list[Pose]
     _waypoint_states: dict[str, int]
 
     def reset(self, **kwargs):
@@ -60,32 +60,32 @@ class TM_Guided(TM_Random):
 
         return False
 
-    def set_position(self, position: PositionOrientation):
+    def set_position(self, pose: Pose):
         """
         Sets the position for the guided task.
 
         Args:
-            position (PositionOrientation): The position to set.
+            position (Pose): The position to set.
 
         Returns:
             None
         """
         self._reset_waypoints()
 
-    def set_goal(self, position: PositionOrientation):
+    def set_goal(self, pose: Pose):
         """
         Sets the goal for the guided task.
 
         Args:
-            position (PositionOrientation): The goal position to set.
+            position (Pose): The goal position to set.
 
         Returns:
             None
         """
-        self._waypoints.append(position)
+        self._waypoints.append(pose)
         self.node.rosparam[list[list[float]]].set(
             self.PARAM_WAYPOINTS, [
-                [wp.x, wp.y, wp.orientation]
+                [wp.position.x, wp.position.y, wp.orientation.to_yaw()]
                 for wp in
                 self._waypoints
             ]
@@ -93,7 +93,7 @@ class TM_Guided(TM_Random):
 
         if len(self._waypoints) == 1:
             for robot in self._PROPS.robot_managers.values():
-                robot.reset(None, position)
+                robot.reset(None, pose)
 
     def _reset_waypoints(self, *args, **kwargs):
         """

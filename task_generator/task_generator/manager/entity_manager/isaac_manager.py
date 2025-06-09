@@ -44,9 +44,9 @@ class IsaacEntityManager(DummyEntityManager):
                         people=[Person(
                             stage_prefix=obstacle.name,
                             character_name=model_name,
-                            initial_pose=[obstacle.position.x, obstacle.position.y, .1],
+                            initial_pose=[obstacle.pose.position.x, obstacle.pose.position.y, .1],
                             goal_pose=[obstacle.waypoints[-1].x, obstacle.waypoints[-1].y, 0.0],
-                            orientation=obstacle.position.orientation,
+                            orientation=obstacle.pose.orientation.to_yaw(),
                             controller_stats=False,
                             velocity=0.407306046952996
                         )
@@ -54,5 +54,5 @@ class IsaacEntityManager(DummyEntityManager):
                     )
                 )
             else:
-                self._simulator.move_entity(obstacle.name, obstacle.position)
+                self._simulator.move_entity(obstacle.name, obstacle.pose)
             known.layer = ObstacleLayer.INUSE

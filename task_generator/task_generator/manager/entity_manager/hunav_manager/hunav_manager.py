@@ -16,7 +16,7 @@ from task_generator.manager.entity_manager.dummy_manager import \
     DummyEntityManager
 from task_generator.manager.entity_manager.hunav_manager import \
     HunavDynamicObstacle
-from task_generator.shared import DynamicObstacle, ModelType, PositionOrientation
+from task_generator.shared import DynamicObstacle, ModelType, Pose
 from task_generator.simulators import BaseSimulator
 
 
@@ -345,8 +345,8 @@ class HunavManager(DummyEntityManager):
             if response:
                 # move_entity for each agent
                 for updated_agent in response.updated_agents.agents:
-                    position = PositionOrientation.from_pose(updated_agent.position)
-                    self._simulator.move_entity(updated_agent.name, position)
+                    pose = Pose.from_msg(updated_agent.position)
+                    self._simulator.move_entity(updated_agent.name, pose)
 
                     for i, agent in enumerate(self._agents_container.agents):
                         if agent.id == updated_agent.id:

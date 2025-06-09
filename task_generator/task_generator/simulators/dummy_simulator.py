@@ -1,6 +1,6 @@
 from arena_rclpy_mixins.shared import Namespace
 
-from task_generator.shared import Entity, PositionOrientation, Wall
+from task_generator.shared import Entity, Pose, Wall
 from task_generator.simulators import BaseSimulator
 
 
@@ -22,8 +22,8 @@ class DummySimulator(BaseSimulator):
         self._logger.debug(f"spawning {entity.name} {repr(entity)}")
         return True
 
-    def move_entity(self, name: str, position: PositionOrientation) -> bool:
-        self._logger.debug(f"moving {name} {repr(position)}")
+    def move_entity(self, name: str, pose: Pose) -> bool:
+        self._logger.debug(f"moving {name} {repr(pose)}")
         return True
 
     def delete_entity(self, name: str) -> bool:

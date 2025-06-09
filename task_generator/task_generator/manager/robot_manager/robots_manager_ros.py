@@ -9,7 +9,7 @@ from arena_rclpy_mixins.shared import Namespace
 from task_generator import NodeInterface
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.environment_manager import EnvironmentManager
-from task_generator.shared import PositionOrientation, Robot
+from task_generator.shared import Pose, Position, Robot
 import arena_simulation_setup.configs.robot_setup
 
 from .robot_manager import RobotManager
@@ -17,7 +17,7 @@ from .robot_manager import RobotManager
 
 def _initialpose_generator(x: float, y: float, d: float):
     while True:
-        yield PositionOrientation(x=x, y=y, orientation=0)
+        yield Pose(Position(x=x, y=y))
         y += d
 
 
@@ -170,6 +170,9 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
         self._diff.to_update.clear()
 
         for robot_name, config in self._diff.to_add.items():
+            config = attrs.evolve(config)
+            config.name = robot_name
+            config.pose = next(self._initialpose)
             manager = RobotManager(
                 namespace=Namespace(
                     self.node.get_namespace())(
@@ -177,11 +180,7 @@ class RobotsManagerROS(NodeInterface, RobotsManager):
                 ),
                 entity_manager=self._entity_manager,
                 environment_manager=self._environment_manager,
-                robot=attrs.evolve(
-                    config,
-                    name=robot_name,
-                    position=next(self._initialpose)
-                ),
+                robot=config
             )
             manager.set_up_robot()
             self._robot_managers[robot_name] = manager

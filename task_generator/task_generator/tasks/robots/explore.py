@@ -2,7 +2,7 @@ import math
 
 from task_generator.utils.time import Time
 
-from task_generator.shared import PositionOrientation
+from task_generator.shared import Pose, Position, Orientation
 from task_generator.tasks.robots.random import TM_Random
 
 
@@ -35,8 +35,10 @@ class TM_Explore(TM_Random):
                 )
                 self._set_goal(
                     robot,
-                    PositionOrientation(
-                        waypoint.x, waypoint.y, self.node.conf.General.RNG.value.random() * 2 * math.pi)
+                    Pose(
+                        waypoint,
+                        Orientation.from_yaw(self.node.conf.General.RNG.value.random() * 2 * math.pi)
+                    )
                 )
 
             elif (self._PROPS.clock.clock.sec - self._timeouts.get(robot, Time()).sec) >= self.node.conf.Robot.TIMEOUT.value:
@@ -45,8 +47,10 @@ class TM_Explore(TM_Random):
                 )
                 self._set_position(
                     robot,
-                    PositionOrientation(
-                        waypoint.x, waypoint.y, self.node.conf.General.RNG.value.random() * 2 * math.pi)
+                    Pose(
+                        waypoint,
+                        Orientation.from_yaw(self.node.conf.General.RNG.value.random() * 2 * math.pi)
+                    )
                 )
 
         return False
@@ -60,27 +64,27 @@ class TM_Explore(TM_Random):
         """
         self._timeouts[robot] = self._PROPS.clock.clock
 
-    def _set_position(self, name: str, position: PositionOrientation):
+    def _set_position(self, name: str, pose: Pose):
         """
         Sets the position of a specific robot and resets the timeout.
 
         Args:
             name (str): The name of the robot.
-            position (PositionOrientation): The new position of the robot.
+            position (Pose): The new position of the robot.
         """
         self._reset_timeout(name)
-        self._PROPS.robot_managers[name].reset(position, None)
+        self._PROPS.robot_managers[name].reset(pose, None)
 
-    def _set_goal(self, name: str, position: PositionOrientation):
+    def _set_goal(self, name: str, pose: Pose):
         """
         Sets the goal position of a specific robot and resets the timeout.
 
         Args:
             name (str): The name of the robot.
-            position (PositionOrientation): The new goal position of the robot.
+            position (Pose): The new goal position of the robot.
         """
         self._reset_timeout(name)
-        self._PROPS.robot_managers[name].reset(None, position)
+        self._PROPS.robot_managers[name].reset(None, pose)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
