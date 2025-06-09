@@ -18,9 +18,12 @@ from task_generator.tasks.modules import TM_Module
 from task_generator.tasks.task_factory import TaskFactory
 from arena_rclpy_mixins.ROSParamServer import ROSParamServer
 import logging
-from logging import FileHandler, Formatter
-import geometry_msgs.msg
+from logging import FileHandler, StreamHandler, Formatter
 from copy import deepcopy
+from nav2_msgs.action import NavigateToPose
+from action_msgs.msg import GoalStatus
+from rclpy.action import ActionClient
+from geometry_msgs.msg import PoseStamped
 
 class _Config(typing.NamedTuple):
     @classmethod
@@ -191,6 +194,9 @@ class Mod_Benchmark(TM_Module):
     TASK_GENERATOR_CONFIG_BKUP = TASK_GENERATOR_CONFIG + ".bkup"
     TEMP_ROBOT_SETUP_DIR = DIR / "temp"
     MAX_RESTARTS = 5
+    RESET_RETRY_LIMIT = 5
+    RESET_RETRY_DELAY = 10.0
+    NAV_TIMEOUT = 30.0
 
     _config: _Config
     _suite: Suite
@@ -204,6 +210,7 @@ class Mod_Benchmark(TM_Module):
     _node: Node
     _config_class: typing.Any
     _restart_count: int
+    _nav_client: ActionClient
 
     @classmethod
     def _load_config(cls) -> _Config:
@@ -240,14 +247,13 @@ class Mod_Benchmark(TM_Module):
 
     @classmethod
     def _load_scenario(cls, map_name: str, scenario_file: str) -> typing.Dict:
-        """Load scenario file content from possible paths."""
         logger = logging.getLogger("benchmark")
         possible_paths = [
             os.path.join(get_package_share_directory("arena_simulation_setup"), "worlds", map_name, "scenarios", os.path.basename(scenario_file)),
             os.path.join(get_package_share_directory("arena_bringup"), "configs", "scenarios", map_name, os.path.basename(scenario_file)),
             os.path.join(get_package_share_directory("arena_bringup"), "configs", "scenarios", os.path.basename(scenario_file)),
-            os.path.join("/root/arena4_ws/src/arena/simulation-setup/worlds", map_name, "scenarios", os.path.basename(scenario_file)),
-            os.path.join("/root/arena4_ws/src/arena/simulation-setup/worlds", os.path.basename(scenario_file))
+            os.path.join("/root/arena4_ws/src/arena/simulation_setup/worlds", map_name, "scenarios", os.path.basename(scenario_file)),
+            os.path.join("/root/arena4_ws/src/arena/simulation_setup/worlds", os.path.basename(scenario_file))
         ]
         for path in possible_paths:
             logger.debug(f"Attempting to load scenario from: {path}")
@@ -255,7 +261,7 @@ class Mod_Benchmark(TM_Module):
                 try:
                     with open(path, 'r') as f:
                         scenario_data = json.load(f)
-                    logger.info(f"Successfully loaded scenario {scenario_file} from {path}: {scenario_data}")
+                    logger.info(f"Successfully loaded scenario {scenario_file} from {path}")
                     if "robots" not in scenario_data or not scenario_data["robots"]:
                         logger.error(f"Scenario {path} missing valid 'robots' field")
                         return {}
@@ -275,17 +281,14 @@ class Mod_Benchmark(TM_Module):
         return {}
 
     def _taskgen_write(self):
-        """Write task configuration to task_generator.yaml based on meta_suite.yaml."""
         logger = self._logger
         suite_config = self._suite.config(self._suite_index)
         logger.info(f"Preparing task_generator.yaml for stage: {suite_config.name}")
 
-        # Load scenario data for tm_robots: scenario or tm_obstacles: scenario
         scenario_file = suite_config.config.get("SCENARIO", {}).get("file", "")
         scenario_data = self._load_scenario(suite_config.map, scenario_file) if scenario_file else {}
         logger.debug(f"Scenario data for {scenario_file}: {scenario_data}")
 
-        # Stage-specific task configuration
         task_config = {
             "episodes": suite_config.episodes,
             "RANDOM": {
@@ -298,7 +301,6 @@ class Mod_Benchmark(TM_Module):
             "SCENARIO": suite_config.config.get("SCENARIO", {})
         }
 
-        # Embed scenario data for scenario modes
         if scenario_data and (
             suite_config.tm_robots == Constants.TaskMode.TM_Robots.SCENARIO or
             suite_config.tm_obstacles == Constants.TaskMode.TM_Obstacles.SCENARIO
@@ -307,14 +309,12 @@ class Mod_Benchmark(TM_Module):
             task_config["robots"] = scenario_data.get("robots", [])
             task_config["obstacles"] = scenario_data.get("obstacles", {})
 
-        # Include RANDOM settings for tm_obstacles: random
         if suite_config.tm_obstacles == Constants.TaskMode.TM_Obstacles.RANDOM:
             logger.info("Including RANDOM settings for obstacles")
             task_config["random"] = suite_config.config.get("RANDOM", {})
 
         logger.debug(f"Intended task_config: {json.dumps(task_config, indent=2)}")
 
-        # Load existing task_generator.yaml to preserve structure
         default_config = {
             "task_generator_node": {
                 "ros__parameters": {
@@ -342,23 +342,37 @@ class Mod_Benchmark(TM_Module):
                 }
             }
         }
-        try:
-            with open(self.TASK_GENERATOR_CONFIG, "r") as f:
-                joint_config = yaml.safe_load(f) or deepcopy(default_config)
-            logger.debug(f"Existing task_generator.yaml content: {json.dumps(joint_config, indent=2)}")
-        except Exception as e:
-            logger.warning(f"Failed to read task_generator.yaml: {e}, using default structure")
-            joint_config = deepcopy(default_config)
 
-        # Merge existing task section with new task_config
-        existing_task = joint_config["task_generator_node"]["ros__parameters"]["task"]
+        joint_config = deepcopy(default_config)
+        if os.path.exists(self.TASK_GENERATOR_CONFIG):
+            try:
+                with open(self.TASK_GENERATOR_CONFIG, "r") as f:
+                    loaded_config = yaml.safe_load(f)
+                    if loaded_config and isinstance(loaded_config, dict):
+                        if "task_generator_node" in loaded_config:
+                            joint_config = loaded_config
+                            logger.debug(f"Loaded existing task_generator.yaml: {json.dumps(joint_config, indent=2)}")
+                        else:
+                            logger.warning("Existing task_generator.yaml missing 'task_generator_node', using default")
+                    else:
+                        logger.warning("Existing task_generator.yaml is empty or invalid, using default")
+            except Exception as e:
+                logger.error(f"Failed to read task_generator.yaml: {e}, using default")
+        else:
+            logger.warning(f"task_generator.yaml not found at {self.TASK_GENERATOR_CONFIG}, creating with default")
+
+        if "task_generator_node" not in joint_config:
+            joint_config["task_generator_node"] = {"ros__parameters": {}}
+        if "ros__parameters" not in joint_config["task_generator_node"]:
+            joint_config["task_generator_node"]["ros__parameters"] = {}
+
+        existing_task = joint_config["task_generator_node"]["ros__parameters"].get("task", {})
         for key in ["parametrized", "random", "scenario", "staged", "environment"]:
             if key in existing_task:
                 task_config.setdefault(key, existing_task[key])
         joint_config["task_generator_node"]["ros__parameters"]["task"] = task_config
         logger.debug(f"Merged joint_config: {json.dumps(joint_config, indent=2)}")
 
-        # Verify file permissions
         try:
             if os.path.exists(self.TASK_GENERATOR_CONFIG):
                 os.chmod(self.TASK_GENERATOR_CONFIG, 0o666)
@@ -369,7 +383,6 @@ class Mod_Benchmark(TM_Module):
             logger.error(f"Failed to set permissions for {self.TASK_GENERATOR_CONFIG}: {e}")
             raise
 
-        # Write task_generator.yaml
         try:
             yaml_str = yaml.safe_dump(joint_config, default_flow_style=False)
             logger.debug(f"Generated YAML content:\n{yaml_str}")
@@ -383,7 +396,6 @@ class Mod_Benchmark(TM_Module):
             logger.error(f"Unexpected error writing task_generator.yaml: {e}")
             raise
 
-        # Verify write
         try:
             with open(self.TASK_GENERATOR_CONFIG, "r") as f:
                 written_config = yaml.safe_load(f)
@@ -426,6 +438,7 @@ class Mod_Benchmark(TM_Module):
         self._contest = self._load_contest(self._config.contest.config)
         self._requires_restart = False
         self._restart_count = 0
+        self._nav_client = ActionClient(self._node, NavigateToPose, '/task_generator_node/jackal/navigate_to_pose')
 
         benchmark_resume = self._node.get_parameter_or(
             'benchmark_resume',
@@ -475,17 +488,104 @@ class Mod_Benchmark(TM_Module):
     def before_reset(self):
         self._logger.debug("Before task reset")
 
+    def _check_navigation_success(self):
+        logger = self._logger
+        logger.debug("Checking navigation success")
+
+        suite_config = self._suite.config(self._suite_index)
+        scenario_file = suite_config.config.get("SCENARIO", {}).get("file", "")
+        scenario_data = self._load_scenario(suite_config.map, scenario_file) if scenario_file else {}
+        
+        if not scenario_data or "robots" not in scenario_data or not scenario_data["robots"]:
+            logger.error("Failed to load valid scenario data or robot positions")
+            return False
+
+        robot_data = scenario_data["robots"][0]  # Assuming single robot (jackal)
+        goal_pos = robot_data.get("goal", [0.0, 0.0, 0.0])
+        logger.info(f"Using goal position from scenario {scenario_file}: {goal_pos}")
+
+        if not self._nav_client.wait_for_server(timeout_sec=10.0):
+            logger.error("NavigateToPose action server not available")
+            return False
+
+        goal_handle = None
+        try:
+            goal_msg = NavigateToPose.Goal()
+            goal_msg.pose = PoseStamped()
+            goal_msg.pose.header.frame_id = "map"
+            goal_msg.pose.header.stamp = self._node.get_clock().now().to_msg()
+            goal_msg.pose.pose.position.x = float(goal_pos[0])
+            goal_msg.pose.pose.position.y = float(goal_pos[1])
+            goal_msg.pose.pose.position.z = float(goal_pos[2])
+            goal_msg.pose.pose.orientation.w = 1.0  # Neutral orientation
+
+            goal_handle = self._nav_client.send_goal_async(goal_msg)
+            rclpy.spin_until_future_complete(self._node, goal_handle, timeout_sec=self.NAV_TIMEOUT)
+            if not goal_handle.done():
+                logger.error("Navigation goal request timed out")
+                return False
+
+            goal_handle = goal_handle.result()
+            if not goal_handle.accepted:
+                logger.error("Navigation goal rejected")
+                return False
+
+            result_future = goal_handle.get_result_async()
+            rclpy.spin_until_future_complete(self._node, result_future, timeout_sec=self.NAV_TIMEOUT)
+            if not result_future.done():
+                logger.error("Navigation result timed out")
+                return False
+
+            result = result_future.result()
+            if result.status == GoalStatus.STATUS_SUCCEEDED:
+                logger.info("Navigation goal succeeded")
+                return True
+            else:
+                logger.error(f"Navigation goal failed with status: {result.status}")
+                return False
+        except Exception as e:
+            logger.error(f"Navigation check failed: {e}")
+            return False
+        finally:
+            if goal_handle and goal_handle.accepted:
+                goal_handle.cancel_goal_async()
+
     def after_reset(self):
+        self._logger.debug(f"Entering after_reset, current episode_index: {self._episode_index}")
         self._episode_index += 1
         episode_limit = int(self._suite.config(self._suite_index).episodes * self._config.suite.scale_episodes)
         self._logger.info(f"After task reset, episode: {self._episode_index + 1}/{episode_limit}")
         self._log_episode()
+
+        if not self._check_navigation_success():
+            self._logger.warning(f"Navigation failed for episode {self._episode_index + 1}, retrying reset")
+            self._episode_index -= 1
+            for attempt in range(self.RESET_RETRY_LIMIT):
+                if self._reset_task():
+                    self._logger.debug(f"Task reset successful for episode {self._episode_index + 2}")
+                    if self._check_navigation_success():
+                        self._logger.info(f"Navigation succeeded after retry {attempt + 1}")
+                        break
+                self._logger.error(f"Task reset failed, attempt {attempt + 1}/{self.RESET_RETRY_LIMIT}")
+                time.sleep(self.RESET_RETRY_DELAY)
+            else:
+                self._logger.error(f"Navigation failed after {self.RESET_RETRY_LIMIT} reset attempts, advancing stage")
+                self._episode_index = -1
+                self.suite_index += 1
+                return
+
         if self._episode_index < episode_limit - 1:
             self._logger.debug(f"Requesting task reset for episode {self._episode_index + 2}/{episode_limit}")
-            if not self._reset_task():
-                self._logger.error(f"Task reset failed for episode {self._episode_index + 2}, retrying")
-                time.sleep(1)
-                self._reset_task()
+            for attempt in range(self.RESET_RETRY_LIMIT):
+                if self._reset_task():
+                    self._logger.debug(f"Task reset successful for episode {self._episode_index + 2}")
+                    break
+                self._logger.error(f"Task reset failed for episode {self._episode_index + 2}, attempt {attempt + 1}/{self.RESET_RETRY_LIMIT}")
+                time.sleep(self.RESET_RETRY_DELAY)
+            else:
+                self._logger.error(f"Failed to reset task after {self.RESET_RETRY_LIMIT} attempts, advancing to next stage")
+                self._episode_index = -1
+                self.suite_index += 1
         else:
             self._logger.info(f"Completed episode {self._episode_index + 1}/{episode_limit}, advancing to next stage")
             self._episode_index = -1
@@ -493,23 +593,23 @@ class Mod_Benchmark(TM_Module):
 
     def _reset_task(self):
         logger = self._logger
+        logger.debug("Attempting task reset")
         reset_task_client = self._node.create_client(EmptySrv, "/task_generator_node/reset_task")
-        if reset_task_client.wait_for_service(timeout_sec=10.0):
-            request = EmptySrv.Request()
-            try:
-                future = reset_task_client.call_async(request)
-                rclpy.spin_until_future_complete(self._node, future, timeout_sec=5.0)
-                if future.result():
-                    logger.info("Task reset successfully")
-                    return True
-                else:
-                    logger.error("Task reset service returned no result")
-                    return False
-            except Exception as e:
-                logger.error(f"Reset task service failed: {e}")
-                return False
-        else:
+        if not reset_task_client.wait_for_service(timeout_sec=10.0):
             logger.error("Service /task_generator_node/reset_task not available")
+            return False
+        request = EmptySrv.Request()
+        try:
+            future = reset_task_client.call_async(request)
+            rclpy.spin_until_future_complete(self._node, future, timeout_sec=5.0)
+            if future.result():
+                logger.info("Task reset successfully")
+                return True
+            else:
+                logger.error("Task reset service returned no result")
+                return False
+        except Exception as e:
+            logger.error(f"Reset task service failed: {e}")
             return False
 
     _logger_object: logging.Logger
@@ -519,9 +619,12 @@ class Mod_Benchmark(TM_Module):
         if not hasattr(self, "_logger_object"):
             handler = FileHandler(self.LOG_DIR / f"{self._runid}.log")
             handler.setFormatter(Formatter("%(asctime)s: %(levelname)s: %(message)s"))
+            console_handler = StreamHandler()
+            console_handler.setFormatter(Formatter("%(asctime)s: %(levelname)s: %(message)s"))
             logger = logging.getLogger("benchmark")
             logger.setLevel(logging.DEBUG)
             logger.addHandler(handler)
+            logger.addHandler(console_handler)
             self._logger_object = logger
         return self._logger_object
 
@@ -619,7 +722,7 @@ class Mod_Benchmark(TM_Module):
             lifecycle_manager = f"/task_generator_node/{robot}/lifecycle_manager_navigation"
             count = sum(1 for name, ns in node_list if f"{ns}/{name}" == lifecycle_manager)
             if count > 1:
-                self._logger.warning(f"Found {count} instances of {lifecycle_manager}, terminating duplicates")
+                self._logger.warning(f"Found {count} instances of {lifecycle_manager}")
                 return True
             self._logger.debug("No duplicate navigation nodes found")
             return False
@@ -634,21 +737,37 @@ class Mod_Benchmark(TM_Module):
             lifecycle_manager = f"/task_generator_node/{robot}/lifecycle_manager_navigation"
             nodes = [(name, ns) for name, ns in node_list if f"{ns}/{name}" == lifecycle_manager]
             if len(nodes) > 1:
-                logger.info(f"Terminating {len(nodes)-1} duplicate {lifecycle_manager} nodes")
-                # TODO: Implement node termination logic (e.g., via ROS 2 service or process kill)
-                # For now, log and rely on launch cleanup
-                logger.warning("Node termination not implemented, relying on launch cleanup")
+                logger.info(f"Found {len(nodes)} instances of {lifecycle_manager}, terminating duplicates")
+                for i, (name, ns) in enumerate(nodes[1:], 1):  # Skip first instance
+                    service_name = f"{ns}/{name}/change_state"
+                    client = self._node.create_client(arena_evaluation_msgs.srv.ChangeState, service_name)
+                    if client.wait_for_service(timeout_sec=2.0):
+                        request = arena_evaluation_msgs.srv.ChangeState.Request()
+                        request.transition.id = 5  # Deactivate
+                        try:
+                            future = client.call_async(request)
+                            rclpy.spin_until_future_complete(self._node, future, timeout_sec=2.0)
+                            if future.result():
+                                logger.info(f"Successfully deactivated duplicate node {ns}/{name}")
+                            else:
+                                logger.error(f"Failed to deactivate {ns}/{name}: No result")
+                        except Exception as e:
+                            logger.error(f"Failed to deactivate {ns}/{name}: {e}")
+                    else:
+                        logger.warning(f"Service {service_name} not available, cannot deactivate node")
         except Exception as e:
             logger.error(f"Failed to terminate duplicate nodes: {e}")
 
     def _reincarnate(self):
+        logger = self._logger
+        logger.debug("Starting reincarnation process")
         if self._restart_count >= self.MAX_RESTARTS:
-            self._logger.error(f"Reached maximum restarts ({self.MAX_RESTARTS}), aborting")
+            logger.error(f"Reached maximum restarts ({self.MAX_RESTARTS}), aborting")
             self._suicide()
             raise RuntimeError("Max restarts reached")
 
         self._restart_count += 1
-        self._logger.info(f"Stage transition attempt {self._restart_count}/{self.MAX_RESTARTS}")
+        logger.info(f"Stage transition attempt {self._restart_count}/{self.MAX_RESTARTS}")
 
         with open(self.DIR / self.LOCK_FILE, "w") as f:
             f.write(f"{self._runid} {self._contest_index} {self._suite_index} {self._headless}")
@@ -656,32 +775,36 @@ class Mod_Benchmark(TM_Module):
         contest_config = self._contest.config(self._contest_index)
         suite_config = self._suite.config(self._suite_index)
 
-        self._logger.debug(f"Stage config: {suite_config._asdict()}")
+        logger.debug(f"Stage config: {suite_config._asdict()}")
 
-        # Terminate duplicate nodes
         self._terminate_duplicate_nodes(suite_config.robot)
 
-        # Write task_generator.yaml
-        self._taskgen_write()
+        try:
+            self._taskgen_write()
+        except Exception as e:
+            logger.error(f"Failed to write task_generator.yaml: {e}")
+            raise
 
         record_data_dir = f"{self._runid}/{contest_config.name}/{suite_config.name}"
-        self._logger.debug(f"Record data dir: {record_data_dir}")
+        logger.debug(f"Record data dir: {record_data_dir}")
 
         if self._requires_restart and not self._check_duplicate_nodes(suite_config.robot):
-            self._logger.info("Configuring stage via parameters and services")
+            logger.info("Configuring stage via parameters and services")
             self._configure_stage(record_data_dir, suite_config)
             self._requires_restart = False
         else:
-            self._logger.debug("Skipping stage configuration due to no restart needed or duplicates")
+            logger.debug("Skipping stage configuration due to no restart needed or duplicates")
             self._episode = 0
             if not self._reset_task():
-                self._logger.error("Initial task reset failed, retrying after delay")
-                time.sleep(2)
+                logger.error("Initial task reset failed, retrying after delay")
+                time.sleep(self.RESET_RETRY_DELAY)
                 self._reset_task()
 
     def _configure_stage(self, record_data_dir: str, suite_config):
+        logger = self._logger
+        logger.debug(f"Configuring stage for {suite_config.name}")
         temp_setup_file = self._create_temp_robot_setup_file(record_data_dir, suite_config.robot)
-        self._logger.debug(f"Created temporary robot setup file: {temp_setup_file}")
+        logger.debug(f"Created temporary robot setup file: {temp_setup_file}")
 
         try:
             self._node.set_parameters([
@@ -690,9 +813,9 @@ class Mod_Benchmark(TM_Module):
                 Parameter('tm_robots', Parameter.Type.STRING, suite_config.tm_robots.value),
                 Parameter('tm_obstacles', Parameter.Type.STRING, suite_config.tm_obstacles.value)
             ])
-            self._logger.info(f"Set parameters: model={suite_config.robot}, map_file={suite_config.map}, tm_robots={suite_config.tm_robots.value}, tm_obstacles={suite_config.tm_obstacles.value}")
+            logger.info(f"Set parameters: model={suite_config.robot}, map_file={suite_config.map}, tm_robots={suite_config.tm_robots.value}, tm_obstacles={suite_config.tm_obstacles.value}")
         except Exception as e:
-            self._logger.error(f"Failed to set parameters: {e}")
+            logger.error(f"Failed to set parameters: {e}")
 
         change_dir_client = self._node.create_client(
             arena_evaluation_msgs.srv.ChangeDirectory,
@@ -703,40 +826,55 @@ class Mod_Benchmark(TM_Module):
             request.directory = record_data_dir
             try:
                 future = change_dir_client.call_async(request)
-                rclpy.spin_until_future_complete(self._node, future)
+                rclpy.spin_until_future_complete(self._node, future, timeout_sec=5.0)
                 if future.result():
-                    self._logger.info(f"Changed recording directory to: {record_data_dir}")
+                    logger.info(f"Successfully changed recording directory to: {record_data_dir}")
                 else:
-                    self._logger.error("Failed to change recording directory")
+                    logger.error(f"Failed to change recording directory: {record_data_dir}")
             except Exception as e:
-                self._logger.error(f"Change directory service failed: {e}")
+                logger.error(f"Failed to change directory: {e}")
         else:
-            self._logger.error(f"Service /task_generator_node/{suite_config.robot}/change_directory not available")
+            logger.error(f"Service /task_generator_node/{suite_config.robot}/change_directory not available")
 
-        self._logger.debug("Checking nodes before reset_task")
+        logger.debug("Checking nodes before reset_task")
         try:
             node_list = self._node.get_node_names_and_namespaces()
             for name, ns in node_list:
-                self._logger.debug(f"Node: {name} in namespace {ns}")
+                logger.debug(f"Node: {name} in namespace {ns}")
         except Exception as e:
-            self._logger.error(f"Failed to list nodes: {e}")
+            logger.error(f"Failed to list nodes: {e}")
 
         if self._reset_task():
-            self._logger.info(f"Initial stage setup complete for {suite_config.name}")
+            logger.info(f"Initial stage setup complete for {suite_config.name}")
+        else:
+            logger.error(f"Failed to complete initial stage setup for {suite_config.name}")
 
     def _suicide(self):
+        logger = self._logger
         try:
-            self._logger.info("Shutting down benchmark module")
-            if self._node:
+            logger.info(f"Shutting down benchmark module: {self._runid}")
+            if self._node is not None:
                 self._node.destroy_node()
             if rclpy.ok():
                 rclpy.shutdown()
         except Exception as e:
-            self._logger.error(f"Shutdown error: {e}")
+            logger.error(f"Shutdown error for {self._runid}: {e}")
 
     def __del__(self):
-        if hasattr(self, '_node') and self._node:
-            try:
+        logger = self._logger
+        try:
+            if hasattr(self, '_node') and self._node is not None:
+                logger.debug(f"Cleaning up node for {self._runid}")
                 self._node.destroy_node()
-            except Exception:
-                pass
+        except Exception as e:
+            logger.error(f"Failed to destroy node during cleanup: {e}")
+        finally:
+            if rclpy.ok():
+                try:
+                    logger.debug(f"Shutting down rclpy for {self._runid}")
+                    rclpy.shutdown()
+                except Exception as e:
+                    logger.warning(f"Failed to shutdown rclpy during cleanup: {e}")
+
+    def shutdown(self):
+        self._suicide()
