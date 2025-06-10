@@ -9,6 +9,10 @@ from arena_bringup.extensions.NodeLogLevelExtension import \
 from arena_bringup.future import IfElseSubstitution, PythonExpression
 from arena_bringup.substitutions import LaunchArgument
 
+import launch_ros.actions
+
+
+
 
 def generate_launch_description():
 
@@ -232,11 +236,19 @@ def generate_launch_description():
         }.items(),
     )
 
+    world_generator_node = launch_ros.actions.Node(
+        package='arena_simulation_setup',
+        executable='world_generator',
+        name='world_generator',
+        output='screen',
+    )
+
     ld = launch.LaunchDescription([
         *ld_items,
         SetGlobalLogLevelAction(log_level.substitution),
         launch_task_generators,
         IsolatedGroupAction([launch_simulator]),
+        world_generator_node,
     ])
     return ld
 

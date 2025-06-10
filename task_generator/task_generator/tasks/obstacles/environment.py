@@ -386,9 +386,7 @@ class TM_Environment(TM_Obstacles):
         # print(rooms)
 
         groups = environment["groups"]
-        offset = random.randint(0, len(groups))
-        groups_selection = list(itertools.islice(itertools.cycle(groups), offset, offset + len(rooms)))
-        random.shuffle(groups_selection)
+        groups_selection = random.choices(groups, k=len(rooms))
         groups_iter = iter(groups_selection)
 
         # self.visualize_rooms(walls, rooms)
