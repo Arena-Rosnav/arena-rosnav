@@ -305,7 +305,7 @@ class TaskFactory(Namespaced):
                 Args:
                     position (Pose): The position and orientation of the robot.
                 """
-                self.__tm_robots.set_position(position)
+                self.__tm_robots.set_position(pose)
 
             def set_robot_goal(self, pose: Pose):
                 """
@@ -314,7 +314,7 @@ class TaskFactory(Namespaced):
                 Args:
                     position (Pose): The goal position for the robot.
                 """
-                self.__tm_robots.set_goal(position)
+                self.__tm_robots.set_goal(pose)
 
             def force_reset(self):
                 self._force_reset = True
