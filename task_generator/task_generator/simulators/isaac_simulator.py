@@ -1,16 +1,26 @@
 import os
 import time
 import typing
+import random
 
 import arena_simulation_setup.entities.robot
 import attrs
 import rclpy
 import rclpy.client
-# Import dependencies.
-from isaacsim_msgs.srv import (DeletePrim, GetPrimAttributes, ImportObstacles,
-                               ImportUsd, MovePrim, Pedestrian, SpawnWall,
-                               UrdfToUsd)
 
+# Import dependencies.
+from isaacsim_msgs.srv import (
+    DeletePrim,
+    GetPrimAttributes,
+    ImportObstacles,
+    ImportUsd,
+    MovePrim,
+    Pedestrian,
+    SpawnWall,
+    UrdfToUsd,
+    MovePed,
+)
+from isaacsim_msgs.msg import Person
 from task_generator.shared import DynamicObstacle, ModelType, Obstacle, Robot
 from task_generator.simulators import BaseSimulator
 
@@ -42,6 +52,8 @@ class _Services(typing.NamedTuple):
     delete_prim: _Service
     spawn_wall: _Service
     import_pedestrians: _Service
+    move_pedestrians:_Service
+    delete_all_pedestrians:_Service
 
 
 class IsaacSimulator(BaseSimulator):
@@ -54,38 +66,22 @@ class IsaacSimulator(BaseSimulator):
 
         # Define services with their corresponding client attributes
         self.services = _Services(
-            urdf_to_usd=_Service(
-                type_=UrdfToUsd,
-                name='isaac/urdf_to_usd'
-            ),
-            import_usd=_Service(
-                type_=ImportUsd,
-                name='isaac/import_usd'
-            ),
-            delete_prim=_Service(
-                type_=DeletePrim,
-                name='isaac/delete_prim'
-            ),
+            urdf_to_usd=_Service(type_=UrdfToUsd, name="isaac/urdf_to_usd"),
+            import_usd=_Service(type_=ImportUsd, name="isaac/import_usd"),
+            delete_prim=_Service(type_=DeletePrim, name="isaac/delete_prim"),
             get_prim_attributes=_Service(
-                type_=GetPrimAttributes,
-                name='isaac/get_prim_attributes'
+                type_=GetPrimAttributes, name="isaac/get_prim_attributes"
             ),
-            move_prim=_Service(
-                type_=MovePrim,
-                name='isaac/move_prim'
-            ),
-            spawn_wall=_Service(
-                type_=SpawnWall,
-                name='isaac/spawn_wall'
-            ),
+            move_prim=_Service(type_=MovePrim, name="isaac/move_prim"),
+            spawn_wall=_Service(type_=SpawnWall, name="isaac/spawn_wall"),
             import_obstacle=_Service(
-                type_=ImportObstacles,
-                name='isaac/import_obstacle'
+                type_=ImportObstacles, name="isaac/import_obstacle"
             ),
             import_pedestrians=_Service(
-                type_=Pedestrian,
-                name='isaac/spawn_pedestrian'
+                type_=Pedestrian, name="isaac/spawn_pedestrian"
             ),
+            move_pedestrians=_Service(type_=MovePed, name="isaac/move_pedestrians"),
+            delete_all_pedestrians = _Service(type_=DeletePrim, name="isaac/delete_all_pedestrians")
         )
 
         # Initialize and wait for each service client
@@ -99,7 +95,9 @@ class IsaacSimulator(BaseSimulator):
             # Wait for the service to become available
             timeout_sec = 10.0
             while not service.client.wait_for_service(timeout_sec=timeout_sec):
-                self._logger.warning(f'Service "{service.name}" not available after waiting {timeout_sec}s')
+                self._logger.warning(
+                    f'Service "{service.name}" not available after waiting {timeout_sec}s'
+                )
                 # raise TimeoutError(f'Service "{service_name}" not available')
 
             self._logger.info(f'Service "{service.name}" is now available.')
@@ -107,9 +105,7 @@ class IsaacSimulator(BaseSimulator):
         self._logger.info("All service clients initialized and available.")
 
     def spawn_entity(self, entity):
-        self._logger.info(
-            f"Attempting to spawn model: {entity.name}"
-        )
+        self._logger.info(f"Attempting to spawn model: {entity.name}")
 
         if isinstance(entity, DynamicObstacle):
             return self._spawn_pedestrian(entity)
@@ -121,9 +117,7 @@ class IsaacSimulator(BaseSimulator):
         return self._spawn_obstacle(entity)
 
     def move_entity(self, name, position):
-        self._logger.info(
-            f"Attempting to move entitiy: {name}"
-        )
+        self._logger.info(f"Attempting to move entitiy: {name}")
 
         self._logger.info(f"position: {position.x,position.y}")
         self._logger.info(f"orientation: {position.orientation}")
@@ -135,33 +129,26 @@ class IsaacSimulator(BaseSimulator):
             )
         )
         if response is None:
-            raise RuntimeError(f'failed to move entity: service timed out')
+            raise RuntimeError(f"failed to move entity: service timed out")
 
         return True
 
     def delete_entity(self, name):
-        self._logger.info(
-            f"Attempting to delete prim named {name}"
-        )
+        self._logger.info(f"Attempting to delete prim named {name}")
 
         response = self.services.delete_prim.client.call_async(
-            DeletePrim.Request(
-                name=name
-            )
+            DeletePrim.Request(name=name)
         )
 
         return True
 
         # TODO
         if response is None:
-            raise RuntimeError(
-                f'failed to delete entity: service timed out')
+            raise RuntimeError(f"failed to delete entity: service timed out")
 
     def spawn_walls(self, walls):
         # return True
-        self._logger.info(
-            f"Attempting to spawn walls"
-        )
+        self._logger.info(f"Attempting to spawn walls")
 
         self.delete_walls()
         time.sleep(0.01)
@@ -173,10 +160,7 @@ class IsaacSimulator(BaseSimulator):
                 end = [wall.End.x, wall.End.y]
                 future = self.services.spawn_wall.client.call_async(
                     SpawnWall.Request(
-                        name=f"wall_{i+1}",
-                        start=start,
-                        end=end,
-                        height=wall.height
+                        name=f"wall_{i+1}", start=start, end=end, height=wall.height
                     )
                 )
 
@@ -200,7 +184,64 @@ class IsaacSimulator(BaseSimulator):
     def _spawn_pedestrian(self, pedestrian: DynamicObstacle) -> bool:
         # TODO
         # implement externally managed pedestrians
+        model_name = random.choice(
+            [
+                # "F_Business_02",
+                # "F_Medical_01",
+                # "M_Medical_01",
+                # "biped_demo",
+                # "female_adult_police_01_new",
+                # "female_adult_police_02",
+                # "female_adult_police_03_new",
+                # "male_adult_construction_01_new",
+                # "male_adult_construction_03",
+                # "male_adult_construction_05_new",
+                # "male_adult_police_04",
+                # "original_female_adult_business_02",
+                # "original_female_adult_medical_01",
+                # "original_female_adult_police_01",
+                # "original_female_adult_police_02",
+                # "original_female_adult_police_03",
+                # "original_male_adult_construction_01",
+                # "original_male_adult_construction_02",
+                # "original_male_adult_construction_03",
+                # "original_male_adult_construction_05",
+                # "original_male_adult_medical_01",
+                "original_male_adult_police_04",
+            ]
+        )
+        self.services.import_pedestrians.client.call(
+            Pedestrian.Request(
+                people=[
+                    Person(
+                        stage_prefix="/Characters/" + pedestrian.name,
+                        character_name=model_name,
+                        initial_pose=[
+                            pedestrian.position.x,
+                            pedestrian.position.y,
+                            0.0,
+                        ],
+                        orientation=pedestrian.position.orientation,
+                        controller_stats=False,
+                    )
+                ]
+            )
+        )
+
         return True
+    
+    # def _move_pedestrian(self, name):
+
+
+    def _delete_all_pedestrians(self, prim_path):
+        self._logger.info(f"Attempting to delete prim named {prim_path}")
+
+        response = self.services.delete_all_pedestrians.client.call_async(
+            DeletePrim.Request(name=prim_path)
+        )
+
+        return True
+
 
     def _spawn_robot(self, robot: Robot) -> bool:
         model = robot.model.get(
@@ -222,13 +263,15 @@ class IsaacSimulator(BaseSimulator):
                     base_frame=robot_params.base_frame,
                     odom_frame=robot_params.odom_frame,
                     pose=robot.position.to_pose(),
-                    cmd_vel_topic=self.node.service_namespace(robot.name, 'cmd_vel')
+                    cmd_vel_topic=self.node.service_namespace(robot.name, "cmd_vel"),
                 )
             )
             return True
 
         # TODO
-        raise NotImplementedError(f"robot model of type {model.type} can't be spawned by {self.__class__.__name__}")
+        raise NotImplementedError(
+            f"robot model of type {model.type} can't be spawned by {self.__class__.__name__}"
+        )
 
     def _spawn_obstacle(self, obstacle: Obstacle) -> bool:
         model = obstacle.model.get([ModelType.USD])
@@ -249,13 +292,11 @@ class IsaacSimulator(BaseSimulator):
             namespace: Namespace for the simulator
         """
 
-        self._logger.info(
-            f"Initializing IsaacSimulator with namespace: {namespace}")
+        self._logger.info(f"Initializing IsaacSimulator with namespace: {namespace}")
 
         self.init_service_clients()
 
-        self._logger.info(
-            f"Done initializing Isaac Sim")
+        self._logger.info(f"Done initializing Isaac Sim")
 
     def delete_walls(self):
-        self.delete_entity('walls')
+        self.delete_entity("walls")
