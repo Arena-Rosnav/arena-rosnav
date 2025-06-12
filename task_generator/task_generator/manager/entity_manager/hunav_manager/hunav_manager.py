@@ -11,7 +11,7 @@ from arena_rclpy_mixins.shared import Namespace
 from geometry_msgs.msg import Point
 from hunav_msgs.msg import Agent, AgentBehavior, Agents, WallSegment
 from hunav_msgs.srv import (ComputeAgent, ComputeAgents, GetAgents, GetWalls,
-                            MoveAgent, ResetAgents)
+                            MoveAgent, ResetAgents, DeleteActors)
 from task_generator.manager.entity_manager.dummy_manager import \
     DummyEntityManager
 from task_generator.manager.entity_manager.hunav_manager import \
@@ -165,6 +165,7 @@ class HunavManager(DummyEntityManager):
     SERVICE_RESET_AGENTS = 'reset_agents'
     SERVICE_GET_AGENTS = 'get_agents'
     SERVICE_GET_WALLS = 'get_walls'
+    SERVICE_DELETE_ACTORS = 'delete_actors'
 
     def __init__(self, namespace: Namespace, simulator: BaseSimulator):
         """Initialize HunavManager with debug logging"""
@@ -223,7 +224,8 @@ class HunavManager(DummyEntityManager):
             'move_agent': self.node.service_namespace(self.SERVICE_MOVE_AGENT),
             'reset_agents': self.node.service_namespace(self.SERVICE_RESET_AGENTS),
             'get_agents': self.node.service_namespace(self.SERVICE_GET_AGENTS),
-            'get_walls': self.node.service_namespace(self.SERVICE_GET_WALLS)
+            'get_walls': self.node.service_namespace(self.SERVICE_GET_WALLS),
+            'delete_actors': self.node.service_namespace(self.SERVICE_DELETE_ACTORS)
         }
 
         # Log service creation attempts
@@ -254,6 +256,12 @@ class HunavManager(DummyEntityManager):
             ResetAgents,
             service_names['reset_agents'],
         )
+
+        self._logger.debug("Creating delete_actors client...")
+        self._delete_actors_client = self.node.create_client(
+            DeleteActors,  
+            service_names['delete_actors'],
+        )
        # Create GetAgents service provider
         self._logger.debug(f"Creating get_agents service provider at: {service_names['get_agents']}")
         self._get_agents_server = self.node.create_service(
@@ -262,6 +270,7 @@ class HunavManager(DummyEntityManager):
             self._get_agents_callback,
         )
         self._logger.debug("GetAgents service provider created")
+
 
         # Create GetWalls service provider
         self._logger.debug(f"Creating get_walls service provider at: {service_names['get_walls']}")
@@ -277,7 +286,9 @@ class HunavManager(DummyEntityManager):
             (self._compute_agent_client, 'compute_agent'),
             (self._compute_agents_client, 'compute_agents'),
             (self._move_agent_client, 'move_agent'),
-            (self._reset_agents_client, 'reset_agents')
+            (self._reset_agents_client, 'reset_agents'),
+            (self._delete_actors_client, 'delete_actors')
+
         ]
 
         max_attempts = 5
@@ -570,36 +581,62 @@ class HunavManager(DummyEntityManager):
         return True
 
     def _remove_obstacles_impl(self):
-        # """Remove all spawned pedestrians from simulation"""
-        self._logger.error(f"=== REMOVE_OBSTACLES_IMPL CALLED - REMOVING {len(self._pedestrians)} PEDESTRIANS ===")
-        self._logger.debug(f"=== REMOVING {len(self._pedestrians)} PEDESTRIANS ===")
+        """Remove all spawned pedestrians from simulation safely"""
+        self._logger.info(f"=== REMOVING {len(self._pedestrians)} PEDESTRIANS ===")
         
+        # Phase 1: Clear agents container immediately
+        self._agents_container.agents.clear()
+        self._logger.debug("Cleared agents container")
         
-        self._logger.error(f"Pedestrians dict: {list(self._pedestrians.keys())}")
-        for ped_id, ped_data in self._pedestrians.items():
-            self._logger.error(f"Ped {ped_id}: {ped_data}")
-            obstacle = ped_data.get('obstacle')
-            if obstacle:
-                self._logger.debug(f"Removing pedestrian: {obstacle.name}")
-                self._simulator.delete_entity(obstacle.name)
+        # Phase 2: Call plugin to delete actors from ECM
+        success = self._call_delete_actors_service()
         
-        # Clear internal data structures
+        # Phase 3: Clean up local data
+        self._clear_local_data()
+        
+        self._logger.info(f"Actor deletion completed: {success}")
+        return success
+
+    def _call_delete_actors_service(self):
+        """Call the plugin's delete actors service"""
+        try:
+            if not self._delete_actors_client.wait_for_service(timeout_sec=2.0):
+                self._logger.error("Delete actors service not available")
+                return False
+            
+            request = DeleteActors.Request()
+            
+            self._logger.debug("Calling delete_actors service...")
+            
+            response = self._delete_actors_client.call(request)
+            
+            if response and response.success:
+                self._logger.info(f"Successfully deleted {response.deleted_count} actors")
+                return True
+            else:
+                self._logger.error("Delete actors service failed")
+                return False
+                
+        except Exception as e:
+            self._logger.error(f"Error calling delete_actors service: {e}")
+            return False
+
+    def _clear_local_data(self):
+        """Clear all local data structures safely"""
+        # Clear pedestrians dictionary
         self._pedestrians.clear()
+        
+        # Clear agents container (if not already done)
         self._agents_container.agents.clear()
         
+        # Stop and cleanup movement timer if running (for non-gazebo simulators)
         if hasattr(self, '_update_timer') and self._update_timer:
-            self._update_timer.destroy()
-            self._update_timer = None
+            try:
+                self._update_timer.destroy()
+                self._update_timer = None
+                self._logger.debug("Movement timer stopped and cleaned up")
+            except Exception as e:
+                self._logger.error(f"Error stopping movement timer: {e}")
+    
         
-        # # Reset hunav service
-        # if self._reset_agents_client:
-        #     request = ResetAgents.Request()
-        #     try:
-        #         response = self._reset_agents_client.call(request)
-        #         if response:
-        #             self._logger.debug("Successfully reset HuNav agents")
-        #     except Exception as e:
-        #         self._logger.error(f"Failed to reset HuNav agents: {e}")
-        
-        # self._logger.debug("All pedestrians removed successfully")
-        return True
+        self._logger.debug("All local data structures cleared")
