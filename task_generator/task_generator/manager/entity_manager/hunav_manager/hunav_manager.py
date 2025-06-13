@@ -226,6 +226,8 @@ class HunavManager(DummyEntityManager):
             'get_agents': self.node.service_namespace(self.SERVICE_GET_AGENTS),
             'get_walls': self.node.service_namespace(self.SERVICE_GET_WALLS),
             'delete_actors': self.node.service_namespace(self.SERVICE_DELETE_ACTORS)
+
+
         }
 
         # Log service creation attempts
@@ -286,8 +288,7 @@ class HunavManager(DummyEntityManager):
             (self._compute_agent_client, 'compute_agent'),
             (self._compute_agents_client, 'compute_agents'),
             (self._move_agent_client, 'move_agent'),
-            (self._reset_agents_client, 'reset_agents'),
-            (self._delete_actors_client, 'delete_actors')
+            (self._reset_agents_client, 'reset_agents')
 
         ]
 
@@ -416,6 +417,8 @@ class HunavManager(DummyEntityManager):
 
     def _spawn_dynamic_obstacle_impl(self, obstacle: DynamicObstacle) -> DynamicObstacle | None:
         """Create agent but don't register with HuNav yet"""
+        self._logger.error(f"=== spawn_dynamic_obstacles_aufruf===")
+
         try:
             # Get unique ID
             try:
@@ -580,28 +583,65 @@ class HunavManager(DummyEntityManager):
         self._logger.info(f"Wallsegments{self._wall_segments} ")
         return True
 
+
+
     def _remove_obstacles_impl(self):
         """Remove all spawned pedestrians from simulation safely"""
         self._logger.info(f"=== REMOVING {len(self._pedestrians)} PEDESTRIANS ===")
         
-        # Phase 1: Clear agents container immediately
-        self._agents_container.agents.clear()
-        self._logger.debug("Cleared agents container")
+        # Phase 1: Reset HuNav agents FIRST
+        success = self._reset_hunav_agents()
+        if not success:
+            self._logger.error("Failed to reset HuNav agents - continuing anyway")
+            # Don't return False - continue with deletion
         
-        # Phase 2: Call plugin to delete actors from ECM
+        # Phase 2: Clear local agents container
+        self._agents_container.agents.clear()
+        self._logger.debug("Cleared local agents container")
+        
+        # Phase 3: Call plugin to delete actors from ECM
         success = self._call_delete_actors_service()
         
-        # Phase 3: Clean up local data
+        # Phase 4: Clean up local data
         self._clear_local_data()
         
-        self._logger.info(f"Actor deletion completed: {success}")
+        self._logger.info(f"Complete reset completed: {success}")
         return success
+
+    def _reset_hunav_agents(self):
+        """Reset HuNav by calling ResetAgents service"""
+        try:
+            if not self._reset_agents_client.wait_for_service(timeout_sec=2.0):
+                self._logger.error("ResetAgents service not available")
+                return False
+            
+            request = ResetAgents.Request()
+            request.robot = _create_robot_message()
+            
+            # Empty agents = complete reset signal
+            request.current_agents = Agents()
+            request.current_agents.header.stamp = self.node.get_clock().now().to_msg()
+            request.current_agents.header.frame_id = "map"
+            
+            self._logger.info("Calling HuNav ResetAgents service...")
+            response = self._reset_agents_client.call(request)
+            
+            if response and response.ok:
+                self._logger.info("HuNav reset successful - ready for new agents")
+                return True
+            else:
+                self._logger.error("HuNav reset failed")
+                return False
+                
+        except Exception as e:
+            self._logger.error(f"Error calling ResetAgents: {e}")
+            return False
 
     def _call_delete_actors_service(self):
         """Call the plugin's delete actors service"""
         try:
             if not self._delete_actors_client.wait_for_service(timeout_sec=2.0):
-                self._logger.error("Delete actors service not available")
+                self._logger.error("Delete actors service currently not available")
                 return False
             
             request = DeleteActors.Request()
