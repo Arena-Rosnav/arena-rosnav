@@ -230,7 +230,11 @@ class IsaacSimulator(BaseSimulator):
 
         return True
     
-    # def _move_pedestrian(self, name):
+    def _move_pedestrian(self, nav_list: MovePed.Request):
+        response = self.services.move_pedestrians.client.call_async(
+            MovePed.Request
+        )
+        return True
 
 
     def _delete_all_pedestrians(self, prim_path):
