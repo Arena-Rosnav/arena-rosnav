@@ -5,6 +5,8 @@ import time
 import typing
 
 import arena_simulation_setup.world
+import launch
+import launch.actions
 import lifecycle_msgs.msg
 import nav2_msgs.srv
 import nav_msgs.msg
@@ -13,7 +15,9 @@ import rclpy
 import rclpy.callback_groups
 import rclpy.client
 import yaml
+from ament_index_python.packages import get_package_share_directory
 
+from task_generator import NodeInterface
 from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.shared import Position, Wall
 from task_generator.utils.time import Time
@@ -45,7 +49,59 @@ _DUMMY_MAP = nav_msgs.msg.OccupancyGrid(
 )
 
 
-class WorldManagerROS(WorldManager):
+class MapServerHandler(NodeInterface):
+    def restart_map_server(self):
+        """
+        Relaunch the map server if it is not active.
+        """
+        self._logger.warn('shutting down map server...')
+
+        change_state_client = self.node.create_client(
+            lifecycle_msgs.srv.ChangeState,
+            self.node.service_namespace('map_server', 'change_state')
+        )
+        while not change_state_client.wait_for_service(timeout_sec=1.0):
+            self.node.get_logger().warn('ChangeState service not available, waiting again...')
+
+        request = lifecycle_msgs.srv.ChangeState.Request()
+        request.transition.id = lifecycle_msgs.msg.Transition.TRANSITION_SHUTDOWN
+        change_state_client.call(request)
+
+        self._logger.warn('map server shut down.')
+        self._logger.warn('relaunching map server...')
+
+        self.node.do_launch(
+            launch.LaunchDescription([
+                launch.actions.IncludeLaunchDescription(
+                    launch.launch_description_sources.PythonLaunchDescriptionSource(
+                        os.path.join(
+                            get_package_share_directory('arena_bringup'),
+                            'launch/utils/map_server.launch.py'
+                        )
+                    )
+                )
+            ])
+        )
+
+        self._logger.warn('map server relaunched.')
+
+    def check_map_server(self, timeout: float = 10.0, period: float = 1.0) -> bool:
+        """
+        Wait for the the map server to be active.
+        """
+        while self.node.get_lifecycle_state(
+            self.node.service_namespace('map_server'),
+            callback_group=rclpy.callback_groups.ReentrantCallbackGroup(),
+        ).id != lifecycle_msgs.msg.State.PRIMARY_STATE_ACTIVE:
+            self.node.get_logger().warn('map_server is not active, waiting again...')
+            time.sleep(period if timeout > period else timeout)
+            timeout -= period
+            if timeout <= 0:
+                return False
+        return True
+
+
+class WorldManagerROS(MapServerHandler, WorldManager):
 
     _environment_manager: EnvironmentManager
 
@@ -200,12 +256,8 @@ class WorldManagerROS(WorldManager):
             1,
         )
 
-        while self.node.get_lifecycle_state(
-            self.node.service_namespace('map_server'),
-            callback_group=rclpy.callback_groups.ReentrantCallbackGroup(),
-        ).id != lifecycle_msgs.msg.State.PRIMARY_STATE_ACTIVE:
-            self._logger.warn('map_server is not active, waiting again...')
-            time.sleep(1.0)
+        while not self.check_map_server():
+            self.restart_map_server()
 
         # publishing map to map_server
         self._cli = self.node.create_client(

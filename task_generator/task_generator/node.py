@@ -45,8 +45,6 @@ class TaskGenerator(NodeInterface.Taskgen_T):
 
     _initialized: bool
 
-    do_launch: typing.Callable[[launch.LaunchDescription], None]
-
     def __init__(
         self,
         namespace: str = "task_generator_node",

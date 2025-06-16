@@ -23,7 +23,7 @@ class SafeCallbackNode(rclpy.node.Node):
 
 class NodeInterface:
     class Taskgen_T(ArenaMixinNode, SafeCallbackNode):
-        ...
+        do_launch: typing.Callable[[launch.LaunchDescription], None]
 
     node: Taskgen_T
 
