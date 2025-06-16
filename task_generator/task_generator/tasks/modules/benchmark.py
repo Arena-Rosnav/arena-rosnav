@@ -1,25 +1,20 @@
-import datetime
 import hashlib
 import json
-import pathlib
-import yaml
+import logging
 import os
+import pathlib
 import time
 import typing
+from logging import FileHandler, Formatter, StreamHandler
+
 import rclpy
-from rclpy.node import Node
-from rclpy.parameter import Parameter
-from rcl_interfaces.srv import SetParameters, DescribeParameters
+import yaml
 from ament_index_python.packages import get_package_share_directory
-from std_srvs.srv import Empty as EmptySrv
+from rcl_interfaces.srv import DescribeParameters, SetParameters
+from rclpy.parameter import Parameter
+
 from task_generator.constants import Constants
-from task_generator.constants.runtime import Configuration
 from task_generator.tasks.modules import TM_Module
-from task_generator.tasks.task_factory import TaskFactory
-from arena_rclpy_mixins.ROSParamServer import ROSParamServer
-import logging
-from logging import FileHandler, StreamHandler, Formatter
-from rclpy.validate_full_topic_name import validate_full_topic_name
 
 
 class _Config(typing.NamedTuple):
@@ -168,7 +163,7 @@ class Contest(typing.NamedTuple):
         agent_name: str = ""
 
         @classmethod
-        def parse(cls, obj: typing.Dict) -> "Contestant":
+        def parse(cls, obj: typing.Dict) -> "Contest.Contestant":
             obj.setdefault("inter_planner", "navigate_w_replanning_time")
             return cls(**obj)
 
