@@ -236,9 +236,9 @@ class Mod_Benchmark(TM_Module):
         namespace = os.path.normpath(namespace)
         return os.path.join("/", namespace) if namespace else self.node.service_namespace()
 
-    def _validate_parameters(self, node_name, param_names):
+    def _validate_parameters(self, param_names):
         logger = self._logger
-        clean_node_name = self._normalize_namespace(node_name)
+        clean_node_name = self._primary_node
         service_name = os.path.join(clean_node_name, "describe_parameters")
         logger.debug(f"Creating client for service: {service_name}")
         describe_client = self.node.create_client(DescribeParameters, service_name)
@@ -263,9 +263,14 @@ class Mod_Benchmark(TM_Module):
         finally:
             self.node.destroy_client(describe_client)
 
-    def _set_node_parameters(self, node_name, suite_config):
+    def _set_node_parameters(self, suite_config):
         logger = self._logger
-        clean_node_name = self._normalize_namespace(node_name)
+
+        self.node.conf.TaskMode.TM_ROBOTS.value = Constants.TaskMode.TM_Robots(suite_config.tm_robots).value
+        self.node.conf.TaskMode.TM_OBSTACLES.value = Constants.TaskMode.TM_Obstacles(suite_config.tm_obstacles).value
+        return True
+
+        clean_node_name = self._primary_node
         logger.debug(f"Setting parameters for {clean_node_name}")
 
         params_to_set = [
@@ -274,10 +279,10 @@ class Mod_Benchmark(TM_Module):
         ]
 
         # Check if parameters are declared
-        valid_params = self._validate_parameters(clean_node_name, [name for name, _, _ in params_to_set])
-        if not all(name in valid_params for name, _, _ in params_to_set):
-            logger.warning(f"Parameters {', '.join(name for name, _, _ in params_to_set if name not in valid_params)} not declared on {clean_node_name}. Please declare them in task_generator_node.py.")
-            return False
+        # valid_params = self._validate_parameters([name for name, _, _ in params_to_set])
+        # if not all(name in valid_params for name, _, _ in params_to_set):
+        #     logger.warning(f"Parameters {', '.join(name for name, _, _ in params_to_set if name not in valid_params)} not declared on {clean_node_name}. Please declare them in task_generator_node.py.")
+        #     return False
 
         service_name = os.path.join(clean_node_name, "set_parameters")
         logger.debug(f"Creating client for service: {service_name}")
@@ -311,63 +316,14 @@ class Mod_Benchmark(TM_Module):
         self.node.destroy_client(set_client)
         return success
 
-    def _select_task_generator_node(self, node_list):
-        logger = self._logger
-        task_generator_nodes = []
-        for item in node_list:
-            if hasattr(item, 'name') and hasattr(item, 'namespace'):
-                name, ns = item.name, item.namespace
-            else:
-                try:
-                    name, ns = item
-                except (TypeError, ValueError):
-                    logger.debug(f"Invalid node list item: {item}")
-                    continue
-            if name.startswith("task_generator_node"):
-                task_generator_nodes.append(self._normalize_namespace(os.path.join(ns, name)))
-
-        if not task_generator_nodes:
-            logger.error("No task_generator_node found. Check task_generator.launch.py and ensure the node is running.")
-            return "/task_generator_node"
-        if len(task_generator_nodes) > 1:
-            logger.warning(f"Multiple task_generator_nodes detected: {task_generator_nodes}. Selecting first valid node. Ensure env_n=1 in start_arena.launch.py.")
-
-        for node_name in task_generator_nodes:
-            clean_node_name = self._normalize_namespace(node_name)
-            service_name = os.path.join(clean_node_name, "reset_task")
-            logger.debug(f"Checking service availability for {service_name}")
-            client = self.node.create_client(EmptySrv, service_name)
-            if not client.wait_for_service(timeout_sec=1.0):
-                logger.debug(f"No reset_task service for {clean_node_name}")
-                self.node.destroy_client(client)
-                continue
-            self.node.destroy_client(client)
-            valid_params = self._validate_parameters(clean_node_name, ['tm_robots', 'tm_obstacles'])
-            if 'tm_robots' in valid_params and 'tm_obstacles' in valid_params:
-                logger.info(f"Selected task_generator_node: {clean_node_name} with valid parameters")
-                return clean_node_name
-            logger.debug(f"Node {clean_node_name} lacks required parameters: {valid_params}")
-
-        logger.warning("No task_generator_node with required parameters and services found. Using first detected node.")
-        return task_generator_nodes[0] if task_generator_nodes else self.node.service_namespace()
-
     def __init__(self, task, **kwargs):
         super().__init__(task, **kwargs)
 
+        self.needs_reincarnation: bool = True
+
         self._runid = f"t{int(time.time())}"
         # Log detected task_generator_nodes
-        node_list = self.node.get_node_names_and_namespaces()
-        task_generator_nodes = [self._normalize_namespace(os.path.join(ns, name)) for name, ns in node_list if name.startswith("task_generator_node")]
-        logger = self._logger
-        if len(task_generator_nodes) > 1:
-            logger.warning(f"Multiple task_generator_nodes detected: {task_generator_nodes}. Selecting one with valid parameters and services. Ensure env_n=1 in start_arena.launch.py.")
-            self._primary_node = self._select_task_generator_node(task_generator_nodes)
-        elif not task_generator_nodes:
-            logger.error("No task_generator_node found. Check task_generator.launch.py and ensure the node is running.")
-            self._primary_node = self.node.service_namespace()
-        else:
-            self._primary_node = task_generator_nodes[0]
-            logger.info(f"Single task_generator_node detected: {self._primary_node}")
+        self._primary_node = self.node.service_namespace()
 
         # self._config_class = Configuration(ROSParamServer(f'benchmark_param_server_{int(time.time())}'))
         self._config = self._load_config()
@@ -386,52 +342,28 @@ class Mod_Benchmark(TM_Module):
 
         self._log_contest()
         self._log_suite()
-        self._reincarnate()
+        # self._reincarnate()
 
     def before_reset(self):
         self._logger.debug("Before task reset")
+        if self.needs_reincarnation:
+            self.needs_reincarnation = False
+            self._episode_index = -1
+            self.suite_index += 1
+            self._reincarnate()
 
     def after_reset(self):
         self._logger.debug(f"Episode: {self._episode_index + 1}")
         self._episode_index += 1
         episode_limit = int(self._suite.config(self._suite_index).episodes * self._config.suite.scale_episodes)
         if self._episode_index < episode_limit - 1:
-            self._reset_task()
+            # self._reset_task()
+            pass
         else:
-            self._episode_index = -1
-            self.suite_index += 1
+            self.needs_reincarnation = True
 
-    def _reset_task(self, primary_node: str = None):
-        logger = self._logger
-        primary_node = self._normalize_namespace(primary_node or self._primary_node)
-        logger.debug(f"Attempting task reset on {primary_node}")
-        service_name = os.path.join(primary_node, "reset_task")
-
-        try:
-            validate_full_topic_name(service_name, is_service=True)
-        except rclpy.exceptions.InvalidServiceNameException as e:
-            logger.error(f"Invalid service name: {service_name}. Error: {str(e)}")
-            return False
-
-        reset_task_client = self.node.create_client(EmptySrv, service_name)
-        if not reset_task_client.wait_for_service(timeout_sec=self.SERVICE_WAIT_TIMEOUT):
-            logger.warning(f"Service {service_name} not available")
-            return False
-        request = EmptySrv.Request()
-        try:
-            future = reset_task_client.call_async(request)
-            rclpy.spin_until_future_complete(self.node, future, timeout_sec=self.PARAM_SET_TIMEOUT)
-            if future.result():
-                logger.info(f"Task reset successfully on {service_name}")
-                return True
-            else:
-                logger.warning(f"Task reset failed on {service_name}")
-                return False
-        except Exception as e:
-            logger.warning(f"Reset task failed on {service_name}: {e}")
-            return False
-        finally:
-            self.node.destroy_client(reset_task_client)
+    def _reset_task(self):
+        self._TASK.reset()
 
     @property
     def _logger(self) -> logging.Logger:
@@ -470,7 +402,7 @@ class Mod_Benchmark(TM_Module):
             self._logger.info("Benchmark completed")
         else:
             self._log_contest()
-            self._reincarnate()
+            # self._reincarnate()
 
     @property
     def suite_index(self) -> Suite.Index:
@@ -484,7 +416,7 @@ class Mod_Benchmark(TM_Module):
             self.contest_index += 1
         else:
             self._log_suite()
-            self._reincarnate()
+            # self._reincarnate()
 
     @property
     def _episode(self) -> int:
@@ -505,21 +437,10 @@ class Mod_Benchmark(TM_Module):
         logger.debug("Starting reincarnation process")
         suite_config = self._suite.config(self._suite_index)
         logger.info(f"Transitioning to stage: {suite_config.name} (tm_robots={suite_config.tm_robots.value}, tm_obstacles={suite_config.tm_obstacles.value})")
-        node_list = self.node.get_node_names_and_namespaces()
-        task_generator_nodes = [self._normalize_namespace(os.path.join(ns, name)) for name, ns in node_list if name.startswith("task_generator_node")]
-        logger.debug(f"Detected task_generator_nodes: {task_generator_nodes}")
         success = False
         selected_node = self._primary_node
-        if len(task_generator_nodes) > 1:
-            logger.warning(f"Multiple task_generator_nodes detected: {task_generator_nodes}. Selecting one with valid parameters and services.")
-            selected_node = self._select_task_generator_node(task_generator_nodes)
-        elif task_generator_nodes:
-            selected_node = task_generator_nodes[0]
-
-        selected_node = self.node.service_namespace()
-        if self._set_node_parameters(selected_node, suite_config):
+        if self._set_node_parameters(suite_config):
             logger.info(f"Stage setup complete for {suite_config.name} on {selected_node}")
-            self._primary_node = selected_node
             success = True
         else:
             logger.error(f"Failed to set parameters for {suite_config.name} on {selected_node}")
