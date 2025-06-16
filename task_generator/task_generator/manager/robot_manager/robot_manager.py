@@ -24,6 +24,8 @@ from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.shared import ModelType, Pose, Position, Orientation, Robot
 
+import arena_simulation_setup.entities.robot
+
 
 class RobotManager(NodeInterface):
     """
@@ -47,6 +49,7 @@ class RobotManager(NodeInterface):
     _clear_costmaps_srv: rclpy.client.Client
     _is_goal_reached: bool
     _rate_setup: rclpy.timer.Rate
+    _config: arena_simulation_setup.entities.robot.Robot
 
     @property
     def robot(self) -> Robot:
@@ -69,6 +72,8 @@ class RobotManager(NodeInterface):
     ):
         NodeInterface.__init__(self)
         self._rate_setup = self.node.create_rate(.1)
+
+        self._config = arena_simulation_setup.entities.robot.Robot(robot.model.name)
 
         self._namespace = namespace
         self._entity_manager = entity_manager
@@ -96,22 +101,19 @@ class RobotManager(NodeInterface):
         self._goal_timer = None
 
     def set_up_robot(self):
-        self._robot = self._environment_manager.spawn_robot(
-            attrs.evolve(
-                self._robot,
-                model=self._robot.model.override(
-                    model_type=ModelType.YAML,
-                    override=lambda model: model.replace(
-                        description=YAMLUtil.serialize(
-                            YAMLUtil.update_plugins(
-                                namespace=self.namespace,
-                                description=YAMLUtil.parse_yaml(model.description),
-                            )
-                        )
-                    ),
+        self._robot.model = self._robot.model.override(
+            model_type=ModelType.YAML,
+            override=lambda model: model.replace(
+                description=YAMLUtil.serialize(
+                    YAMLUtil.update_plugins(
+                        namespace=self.namespace,
+                        description=YAMLUtil.parse_yaml(model.description),
+                    )
                 )
-            )
+            ),
         )
+        self._robot.pose.position.z += self._config.model_params.z_offset
+        self._robot = self._environment_manager.spawn_robot(self._robot)
 
         _gen_goal_topic = self.namespace("goal_pose")
 
@@ -171,6 +173,7 @@ class RobotManager(NodeInterface):
         return self._is_goal_reached
 
     def move_robot_to_pos(self, pose: Pose):
+        pose.position.z += self._config.model_params.z_offset
         self._entity_manager.move_robot(name=self.name, pose=pose)
         self.clearCostmapAroundRobot(5.0)
 
@@ -304,7 +307,7 @@ class RobotManager(NodeInterface):
                 # 'train_mode': self.node.declare_parameter('train_mode', False).value,
                 'agent_name': self._robot.agent,
                 'use_sim_time': 'True',
-                'amcl': 'true' if self.node.conf.Arena.SIMULATOR.value == Constants.Simulator.GAZEBO else 'false',
+                'amcl': 'true' if self.node.conf.Arena.SIMULATOR.value in (Constants.Simulator.GAZEBO,) else 'false',
             }
 
             if self._robot.record_data_dir:
