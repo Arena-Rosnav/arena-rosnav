@@ -106,6 +106,70 @@ def generate_launch_description():
         description='space between environments'
     )
 
+    def create_task_generators(
+        context: launch.LaunchContext,
+        *,
+        n_substitution: launch.SomeSubstitutionsType,
+        d_substitution: launch.SomeSubstitutionsType,
+    ) -> typing.Optional[typing.List[launch.LaunchDescriptionEntity]]:
+        n = launch.utilities.type_utils.perform_typed_substitution(
+            context,
+            launch.utilities.normalize_to_list_of_substitutions([n_substitution]),
+            int,
+        )
+        d = launch.utilities.type_utils.perform_typed_substitution(
+            context,
+            launch.utilities.normalize_to_list_of_substitutions([d_substitution]),
+            float,
+        )
+
+        # Log env_n value
+        launch.actions.LogInfo(
+            msg=[
+                TextSubstitution(text="env_n value: "),
+                TextSubstitution(text=str(n))
+            ]
+        ).execute(context)
+
+        if n < 1:
+            return None
+
+        task_generators = []
+        base_namespace = 'task_generator_node'
+        base_prefix = 'env'
+        references = snail_grid(d)
+
+        # first task generator
+        task_generators.append(
+            create_task_generator(
+                headlessness=PythonExpression([headless.substitution, '>1']),
+                namespace=base_namespace,
+                prefix='', 
+                reference=list(next(references))
+            )
+        )
+
+        # all following ones
+        for i in range(1, n):
+            task_generators.append(
+                create_task_generator(
+                    headlessness=PythonExpression([headless.substitution, '>-1']),
+                    namespace=base_namespace + '_' + str(i),
+                    prefix=base_prefix + str(i) + '_',
+                    reference=list(next(references))
+                )
+            )
+
+        # Log total task generators
+        launch.actions.LogInfo(
+            msg=[
+                TextSubstitution(text="Total task_generator nodes spawned: "),
+                TextSubstitution(text=str(len(task_generators)))
+            ]
+        ).execute(context)
+
+        return task_generators
+
     def create_task_generator(
         headlessness,
         namespace: str,
@@ -113,6 +177,10 @@ def generate_launch_description():
         reference: typing.List[float]
     ):
         return IsolatedGroupAction([
+            LogInfo(msg=[
+                TextSubstitution(text="Spawning task_generator with namespace: "),
+                TextSubstitution(text=namespace)
+            ]),
             launch.actions.IncludeLaunchDescription(
                 launch.launch_description_sources.PythonLaunchDescriptionSource(
                     os.path.join(bringup_dir, 'launch/shared/entity_manager/entity_manager.launch.py')
@@ -149,54 +217,6 @@ def generate_launch_description():
                 }.items(),
             )
         ])
-
-    def create_task_generators(
-        context: launch.LaunchContext,
-        *,
-        n_substitution: launch.SomeSubstitutionsType,
-        d_substitution: launch.SomeSubstitutionsType,
-    ) -> typing.Optional[typing.List[launch.LaunchDescriptionEntity]]:
-        n = launch.utilities.type_utils.perform_typed_substitution(
-            context,
-            launch.utilities.normalize_to_list_of_substitutions([n_substitution]),
-            int,
-        )
-        d = launch.utilities.type_utils.perform_typed_substitution(
-            context,
-            launch.utilities.normalize_to_list_of_substitutions([d_substitution]),
-            float,
-        )
-
-        if n < 1:
-            return None
-
-        task_generators = []
-        base_namespace = 'task_generator_node'
-        base_prefix = 'env'
-        references = snail_grid(d)
-
-        # first task generator
-        task_generators.append(
-            create_task_generator(
-                headlessness=PythonExpression([headless.substitution, '>1']),
-                namespace=base_namespace + ('_0' if n > 1 else ''),
-                prefix=(base_prefix + '0_') if n > 1 else '',
-                reference=list(next(references))
-            )
-        )
-
-        # all following ones
-        for i in range(1, n):
-            task_generators.append(
-                create_task_generator(
-                    headlessness=PythonExpression([headless.substitution, '>-1']),
-                    namespace=base_namespace + '_' + str(i),
-                    prefix=base_prefix + str(i) + '_',
-                    reference=list(next(references))
-                )
-            )
-
-        return task_generators
 
     launch_task_generators = launch.actions.OpaqueFunction(
         function=create_task_generators,
