@@ -156,6 +156,7 @@ class HunavManager(DummyEntityManager):
 
     _pedestrians: dict[int, dict]
     _agents_container: Agents
+    _get_agents_container: Agents
     _wall_points: list[geometry_msgs.msg.Point]
 
     # Service Names
@@ -182,6 +183,7 @@ class HunavManager(DummyEntityManager):
         self._pedestrians = {}
         self._wall_points = []
         self._agents_container = Agents()  # Container to hold all registered agents
+        self._get_agents_container = Agents() #Container specifically just to send the Agent attributes to Hunavsystemplugin 
         self._agents_container.header.frame_id = "map"
         self._logger.debug("Collections initialized")
 
@@ -319,18 +321,28 @@ class HunavManager(DummyEntityManager):
         return True
 
     def _get_agents_callback(self, request, response):
-        """Service callback for GetAgents service"""
-        self._logger.debug("=== GET_AGENTS SERVICE CALLED ===")
-
-        # Update header timestamp
-        self._agents_container.header.stamp = self.node.get_clock().now().to_msg()
-
-        # Create a copy of the agents container
-        response.agents = self._agents_container
-
-        self._logger.debug(f"Returning {len(response.agents.agents)} agents")
-
-        return response
+        """Handle get_agents service request - return UNMODIFIED agents"""
+        try:
+            self._logger.error("=== GET AGENTS CALLBACK ===")
+            self._logger.error(f"Returning {len(self._get_agents_container.agents)} unmodified agents")
+            
+            # Update timestamp
+            self._get_agents_container.header.stamp = self.node.get_clock().now().to_msg()
+            self._get_agents_container.header.frame_id = "map"
+            
+            # Return the UNMODIFIED container
+            response.agents = self._get_agents_container
+            
+            # Debug output
+            # for agent in self._get_agents_container.agents:
+            #     self._logger.error(f"Sending agent {agent.name}: desired_velocity={agent.desired_velocity}, goal_force_factor={agent.behavior.goal_force_factor}")
+            
+            return response
+            
+        except Exception as e:
+            self._logger.error(f"Error in get_agents_callback: {e}")
+            response.agents = Agents()  # Empty response on error
+            return response
 
     def _get_walls_callback(self, request, response):
         """Service callback für Wall-Segments"""
@@ -377,7 +389,7 @@ class HunavManager(DummyEntityManager):
 
         # Now all obstacles have been spawned - register them with HuNav
         if self._agents_container.agents:
-            self._logger.debug(f"All spawns complete. Registering {len(self._agents_container.agents)} agents with HuNav")
+            self._logger.error(f"All spawns complete. Registering {len(self._agents_container.agents)} agents with HuNav")
 
             # Update timestamp
             self._agents_container.header.stamp = self.node.get_clock().now().to_msg()
@@ -391,7 +403,7 @@ class HunavManager(DummyEntityManager):
             response = self._compute_agents_client.call(request)
 
             if response:
-                self._logger.debug(f"Successfully registered {len(response.updated_agents.agents)} agents")
+                self._logger.error(f"Successfully registered {len(response.updated_agents.agents)} agents")
 
                 # Update local agents with response data
                 for updated_agent in response.updated_agents.agents:
@@ -440,6 +452,7 @@ class HunavManager(DummyEntityManager):
             agent_msg.skin = hunav_obstacle.skin
             agent_msg.group_id = hunav_obstacle.group_id
             agent_msg.desired_velocity = hunav_obstacle.desired_velocity
+            #self._logger.error(f"=== spawn_dynamic_obstacles_desired_velocity: {agent_msg.desired_velocity}===")
             agent_msg.radius = hunav_obstacle.radius
 
             # Set position
@@ -457,7 +470,7 @@ class HunavManager(DummyEntityManager):
             agent_msg.behavior.once = hunav_obstacle.behavior.once
             agent_msg.behavior.vel = hunav_obstacle.behavior.vel
             agent_msg.behavior.dist = hunav_obstacle.behavior.dist
-            agent_msg.behavior.goal_force_factor = hunav_obstacle.behavior.goal_force_factor
+            agent_msg.behavior.goal_force_factor = 20.0#hunav_obstacle.behavior.goal_force_factor
             agent_msg.behavior.obstacle_force_factor = hunav_obstacle.behavior.obstacle_force_factor
             agent_msg.behavior.social_force_factor = hunav_obstacle.behavior.social_force_factor
             agent_msg.behavior.other_force_factor = hunav_obstacle.behavior.other_force_factor
@@ -528,7 +541,10 @@ class HunavManager(DummyEntityManager):
             """)
 
             # Add to container - NO ComputeAgents call here!
+            self._get_agents_container.agents.append(agent_msg)
             self._agents_container.agents.append(agent_msg)
+            self._logger.error(f"spawn_dynamic_obstacle_agents_container {self._agents_container}")
+
 
             # Store in pedestrians dictionary
             self._pedestrians[agent_msg.id] = {
@@ -590,17 +606,21 @@ class HunavManager(DummyEntityManager):
         self._logger.info(f"=== REMOVING {len(self._pedestrians)} PEDESTRIANS ===")
         
         # Phase 1: Reset HuNav agents FIRST
-        success = self._reset_hunav_agents()
+        success = self._call_delete_actors_service()
+        
         if not success:
-            self._logger.error("Failed to reset HuNav agents - continuing anyway")
+            self._logger.error("Failed to delete  HuNav agents from ECM - continuing anyway")
             # Don't return False - continue with deletion
         
         # Phase 2: Clear local agents container
-        self._agents_container.agents.clear()
+        self._agents_container = Agents()
+        self._get_agents_container= Agents()
         self._logger.debug("Cleared local agents container")
         
         # Phase 3: Call plugin to delete actors from ECM
-        success = self._call_delete_actors_service()
+        success = self._reset_hunav_agents()
+        if not success:
+            self._logger.error("Failed to reset HuNav agents - continuing anyway")
         
         # Phase 4: Clean up local data
         self._clear_local_data()
