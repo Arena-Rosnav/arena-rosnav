@@ -521,10 +521,6 @@ class GazeboSimulator(BaseSimulator):
                     {'robot_description': description},
                     {'frame_prefix': robot.frame}
                 ],
-                remappings=[
-                    ('/tf', 'tf'),
-                    ('/tf_static', 'tf_static')
-                ]
             )
         )
 

@@ -211,7 +211,7 @@ class IsaacSimulator(BaseSimulator):
             loader_args=robot.asdict(),
         )
         if model.type == ModelType.URDF:
-            robot_params = arena_simulation_setup.entities.robot.Robot(robot.model.name)
+            robot_params = arena_simulation_setup.entities.robot.Robot(robot.model.name).model_params
 
             response = self.services.urdf_to_usd.client.call(
                 UrdfToUsd.Request(

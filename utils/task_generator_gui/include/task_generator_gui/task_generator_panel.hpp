@@ -65,6 +65,8 @@ namespace task_generator_gui
 
         void setTMObstaclesParamsRequest(rcl_interfaces::srv::SetParameters::Request::SharedPtr request);
         void setTMRobotsParamsRequest(rcl_interfaces::srv::SetParameters::Request::SharedPtr request);
+        bool generateWorld();
+        void getParams();
         void setParams();
         void setRobot();
         void checkRobotModel();
@@ -73,6 +75,7 @@ namespace task_generator_gui
         void setupUi();
         QComboBox *setupComboBoxWithLabel(QLayout *parent, const QStringList &combobox_values, const QString &label);
         QTabWidget *setupTabs(QLayout *Parent);
+        void updateTabs();
         QTreeWidget *setupTree(QLayout *parent);
         void setupObstaclesTreeItem();
         void setupRobotsTreeItem();
@@ -107,6 +110,7 @@ namespace task_generator_gui
         // Client to set ROS parameters for Node "/task_generator_node"
         rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr set_param_client;
         // Client to reset task
+        rclcpp::Client<std_srvs::srv::Empty>::SharedPtr generate_world_client;
         rclcpp::Client<std_srvs::srv::Empty>::SharedPtr reset_task_client;
 
         // Selected robot model
@@ -151,6 +155,7 @@ namespace task_generator_gui
         QComboBox *robot_task_mode_combobox;
         QComboBox *robot_combobox;
         QComboBox *world_combobox;
+        QPushButton *generate_world_button;
         QPushButton *reset_scenario_button;
         QPushButton *spawn_robot_button;
         MultiSelectComboBox *static_obstacles_models_groupbox;
@@ -158,6 +163,7 @@ namespace task_generator_gui
         MultiSelectComboBox *dynamic_obstacles_models_groupbox;
 
     private Q_SLOTS:
+        void generateWorldButtonActivated();
         void resetScenarioButtonActivated();
         void spawnRobotButtonActivated();
 

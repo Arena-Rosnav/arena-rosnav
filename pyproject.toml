@@ -29,6 +29,8 @@ PyQt5 = "5.15.2" #qt_gui_cpp
 PyQt5-sip = "12.8.1" #qt_gui_cpp
 sip = "5.5.0" #qt_gui_cpp
 setuptools = "<80"
+pydantic = "^2.11.5"
+pillow = "^11.2.1"
 
 
 [tool.poetry.group.planners]
