@@ -34,6 +34,8 @@ def _create_robot_message():
 
 
 class _PedestrianHelper:
+    _plugin_loaded = False # Flag to spawn HunavPlugin only one time (first actor)
+
     _ANIMATION_MAP = {
         AgentBehavior.BEH_REGULAR: "walk.dae",  # "07_01-walk.bvh",
         AgentBehavior.BEH_IMPASSIVE: "69_02_walk_forward.bvh",
@@ -110,44 +112,62 @@ class _PedestrianHelper:
 
         # # Cleanup
         # temp_node.destroy_node()
+        if not cls._plugin_loaded:
+            # Create the SDF with a COMPLETE plugin block containing all required parameters (for first actor)
+            sdf = f"""<?xml version="1.0" ?>
+            <sdf version="1.9">
+                <actor name="{agent_config.name}">
+                    <pose>{agent_config.init_pose.x} {agent_config.init_pose.y} {cls._HEIGHTS.get(agent_config.skin, 1.0)} 0 0 {agent_config.yaw}</pose>
 
-        # Create the SDF with a COMPLETE plugin block containing all required parameters
-        sdf = f"""<?xml version="1.0" ?>
-        <sdf version="1.9">
-            <actor name="{agent_config.name}">
-                <pose>{agent_config.init_pose.x} {agent_config.init_pose.y} {cls._HEIGHTS.get(agent_config.skin, 1.0)} 0 0 {agent_config.yaw}</pose>
+                    <skin>
+                        <filename>{mesh_path}</filename>
+                        <scale>1.0</scale>
+                    </skin>
 
-                <skin>
-                    <filename>{mesh_path}</filename>
-                    <scale>1.0</scale>
-                </skin>
+                    <animation name="walking">
+                        <filename>{animation_path}</filename>
+                        <scale>1.0</scale>
+                        <interpolate_x>true</interpolate_x>
+                    </animation>
 
-                <animation name="walking">
-                    <filename>{animation_path}</filename>
-                    <scale>1.0</scale>
-                    <interpolate_x>true</interpolate_x>
-                </animation>
+                    <plugin name="HuNavSystemPluginIGN" filename="libHuNavSystemPluginIGN.so">
+                        <update_rate>1000.0</update_rate>
+                        <namespace>{namespace}</namespace>
+                        <robot_name>jackal</robot_name>
+                        <use_gazebo_obs>true</use_gazebo_obs>
+                        <global_frame_to_publish>map</global_frame_to_publish>
+                        <use_navgoal_to_start>false</use_navgoal_to_start>
+                        <navgoal_topic>goal_pose</navgoal_topic>
+                        <ignore_models>
+                            <model>ground_plane</model>
+                            <model>sun</model>
+                            <model>main_floor</model>
+                            <model>surface</model>
+                            <model>column</model>
+                            <model>point_light</model>
+                        </ignore_models>
+                    </plugin>
+                </actor>
+            </sdf>"""
+        else:
+            # Create the SDF without Plugin
+            sdf = f"""<?xml version="1.0" ?>
+            <sdf version="1.9">
+                <actor name="{agent_config.name}">
+                    <pose>{agent_config.init_pose.x} {agent_config.init_pose.y} {cls._HEIGHTS.get(agent_config.skin, 1.0)} 0 0 {agent_config.yaw}</pose>
 
-                <plugin name="HuNavSystemPluginIGN" filename="libHuNavSystemPluginIGN.so">
-                    <update_rate>1000.0</update_rate>
-                    <namespace>{namespace}</namespace>
-                    <robot_name>jackal</robot_name>
-                    <use_gazebo_obs>true</use_gazebo_obs>
-                    <global_frame_to_publish>map</global_frame_to_publish>
-                    <use_navgoal_to_start>false</use_navgoal_to_start>
-                    <navgoal_topic>goal_pose</navgoal_topic>
-                    <ignore_models>
-                        <model>ground_plane</model>
-                        <model>sun</model>
-                        <model>main_floor</model>
-                        <model>surface</model>
-                        <model>column</model>
-                        <model>point_light</model>
-                    </ignore_models>
-                </plugin>
-            </actor>
-        </sdf>"""
+                    <skin>
+                        <filename>{mesh_path}</filename>
+                        <scale>1.0</scale>
+                    </skin>
 
+                    <animation name="walking">
+                        <filename>{animation_path}</filename>
+                        <scale>1.0</scale>
+                        <interpolate_x>true</interpolate_x>
+                    </animation>
+                </actor>
+            </sdf>"""
         return sdf
 
 
@@ -324,7 +344,7 @@ class HunavManager(DummyEntityManager):
         """Handle get_agents service request - return UNMODIFIED agents"""
         try:
             self._logger.error("=== GET AGENTS CALLBACK ===")
-            self._logger.error(f"Returning {len(self._get_agents_container.agents)} unmodified agents")
+            self._logger.error(f"Returning {len(self._get_agents_container.agents)} agents")
             
             # Update timestamp
             self._get_agents_container.header.stamp = self.node.get_clock().now().to_msg()
@@ -429,7 +449,7 @@ class HunavManager(DummyEntityManager):
 
     def _spawn_dynamic_obstacle_impl(self, obstacle: DynamicObstacle) -> DynamicObstacle | None:
         """Create agent but don't register with HuNav yet"""
-        self._logger.error(f"=== spawn_dynamic_obstacles_aufruf===")
+        #self._logger.error(f"=== spawn_dynamic_obstacles_aufruf===")
 
         try:
             # Get unique ID
@@ -543,7 +563,7 @@ class HunavManager(DummyEntityManager):
             # Add to container - NO ComputeAgents call here!
             self._get_agents_container.agents.append(agent_msg)
             self._agents_container.agents.append(agent_msg)
-            self._logger.error(f"spawn_dynamic_obstacle_agents_container {self._agents_container}")
+            #self._logger.error(f"spawn_dynamic_obstacle_agents_container {self._agents_container}")
 
 
             # Store in pedestrians dictionary
@@ -617,6 +637,7 @@ class HunavManager(DummyEntityManager):
         self._get_agents_container= Agents()
         self._logger.debug("Cleared local agents container")
         
+        _PedestrianHelper._plugin_loaded = False
         # Phase 3: Call plugin to delete actors from ECM
         success = self._reset_hunav_agents()
         if not success:
