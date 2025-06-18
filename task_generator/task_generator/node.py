@@ -9,6 +9,7 @@ import arena_simulation_setup.world
 import launch
 import rclpy
 import std_srvs.srv as std_srvs
+from task_generator.manager.entity_manager.utils import ObstacleLayer
 import task_generator_msgs.srv
 from arena_rclpy_mixins.shared import Namespace
 from std_msgs.msg import Empty, Int16
@@ -115,7 +116,7 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         )
 
         def on_world_change():
-            self._environment_manager.reset()
+            self._environment_manager.reset(ObstacleLayer.WORLD)
             self._environment_manager.spawn_world_obstacles(self._world_manager.world)
         self._world_manager.on_world_change(on_world_change)
         self._world_manager.start()
