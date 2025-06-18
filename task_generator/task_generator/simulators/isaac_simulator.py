@@ -20,7 +20,7 @@ from isaacsim_msgs.srv import (
     UrdfToUsd,
     MovePed,
 )
-from isaacsim_msgs.msg import Person
+from isaacsim_msgs.msg import Person, NavPed
 from task_generator.shared import DynamicObstacle, ModelType, Obstacle, Robot
 from task_generator.simulators import BaseSimulator
 
@@ -52,8 +52,8 @@ class _Services(typing.NamedTuple):
     delete_prim: _Service
     spawn_wall: _Service
     import_pedestrians: _Service
-    move_pedestrians:_Service
-    delete_all_pedestrians:_Service
+    move_pedestrians: _Service
+    delete_all_pedestrians: _Service
 
 
 class IsaacSimulator(BaseSimulator):
@@ -81,7 +81,9 @@ class IsaacSimulator(BaseSimulator):
                 type_=Pedestrian, name="isaac/spawn_pedestrian"
             ),
             move_pedestrians=_Service(type_=MovePed, name="isaac/move_pedestrians"),
-            delete_all_pedestrians = _Service(type_=DeletePrim, name="isaac/delete_all_pedestrians")
+            delete_all_pedestrians=_Service(
+                type_=DeletePrim, name="isaac/delete_all_pedestrians"
+            ),
         )
 
         # Initialize and wait for each service client
@@ -102,6 +104,7 @@ class IsaacSimulator(BaseSimulator):
 
             self._logger.info(f'Service "{service.name}" is now available.')
 
+        self.ped_dict = {}
         self._logger.info("All service clients initialized and available.")
 
     def spawn_entity(self, entity):
@@ -190,13 +193,13 @@ class IsaacSimulator(BaseSimulator):
                 # "F_Medical_01",
                 # "M_Medical_01",
                 # "biped_demo",
-                # "female_adult_police_01_new",
-                # "female_adult_police_02",
-                # "female_adult_police_03_new",
-                # "male_adult_construction_01_new",
-                # "male_adult_construction_03",
-                # "male_adult_construction_05_new",
-                # "male_adult_police_04",
+                "female_adult_police_01_new",
+                "female_adult_police_02",
+                "female_adult_police_03_new",
+                "male_adult_construction_01_new",
+                "male_adult_construction_03",
+                "male_adult_construction_05_new",
+                "male_adult_police_04",
                 # "original_female_adult_business_02",
                 # "original_female_adult_medical_01",
                 # "original_female_adult_police_01",
@@ -207,9 +210,10 @@ class IsaacSimulator(BaseSimulator):
                 # "original_male_adult_construction_03",
                 # "original_male_adult_construction_05",
                 # "original_male_adult_medical_01",
-                "original_male_adult_police_04",
+                # "original_male_adult_police_04",
             ]
         )
+        self.ped_dict[pedestrian.name] = model_name
         self.services.import_pedestrians.client.call(
             Pedestrian.Request(
                 people=[
@@ -227,15 +231,27 @@ class IsaacSimulator(BaseSimulator):
                 ]
             )
         )
-
-        return True
-    
-    def _move_pedestrian(self, nav_list: MovePed.Request):
-        response = self.services.move_pedestrians.client.call_async(
-            MovePed.Request
+        nav_ped = NavPed()
+        # /Characters/D_gazebo_actor_1/ManRoot/male_adult_police_04
+        # nav_ped.path = "/Characters/D_gazebo_actor_1/ManRoot/male_adult_police_04"
+        nav_ped.path = (
+            "/Characters/"
+            + pedestrian.name
+            + "/"
+            + model_name
+            + "/ManRoot/"
+            + model_name
         )
+        nav_ped.goal_pose = [pedestrian.waypoints[-1].x, pedestrian.waypoints[-1].y, 0.0]
+        nav_ped.velocity = 0.5
+        req = MovePed.Request()
+        req.nav_list = [nav_ped]
+        self._move_pedestrian(req)
         return True
 
+    def _move_pedestrian(self, nav_list: MovePed.Request):
+        response = self.services.move_pedestrians.client.call_async(nav_list)
+        return True
 
     def _delete_all_pedestrians(self, prim_path):
         self._logger.info(f"Attempting to delete prim named {prim_path}")
@@ -245,7 +261,6 @@ class IsaacSimulator(BaseSimulator):
         )
 
         return True
-
 
     def _spawn_robot(self, robot: Robot) -> bool:
         model = robot.model.get(
