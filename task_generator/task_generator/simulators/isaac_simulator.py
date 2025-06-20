@@ -193,24 +193,24 @@ class IsaacSimulator(BaseSimulator):
                 # "F_Medical_01",
                 # "M_Medical_01",
                 # "biped_demo",
-                "female_adult_police_01_new",
-                "female_adult_police_02",
-                "female_adult_police_03_new",
-                "male_adult_construction_01_new",
-                "male_adult_construction_03",
-                "male_adult_construction_05_new",
-                "male_adult_police_04",
-                # "original_female_adult_business_02",
-                # "original_female_adult_medical_01",
-                # "original_female_adult_police_01",
-                # "original_female_adult_police_02",
-                # "original_female_adult_police_03",
-                # "original_male_adult_construction_01",
-                # "original_male_adult_construction_02",
-                # "original_male_adult_construction_03",
-                # "original_male_adult_construction_05",
-                # "original_male_adult_medical_01",
-                # "original_male_adult_police_04",
+                # "female_adult_police_01_new",
+                # "female_adult_police_02",
+                # "female_adult_police_03_new",
+                # "male_adult_construction_01_new",
+                # "male_adult_construction_03",
+                # "male_adult_construction_05_new",
+                # "male_adult_police_04",
+                "original_female_adult_business_02",
+                "original_female_adult_medical_01",
+                "original_female_adult_police_01",
+                "original_female_adult_police_02",
+                "original_female_adult_police_03",
+                "original_male_adult_construction_01",
+                "original_male_adult_construction_02",
+                "original_male_adult_construction_03",
+                "original_male_adult_construction_05",
+                "original_male_adult_medical_01",
+                "original_male_adult_police_04",
             ]
         )
         self.ped_dict[pedestrian.name] = model_name
@@ -237,12 +237,13 @@ class IsaacSimulator(BaseSimulator):
         nav_ped.path = (
             "/Characters/"
             + pedestrian.name
-            + "/"
-            + model_name
+            # + "/"
+            # + model_name
             + "/ManRoot/"
-            + model_name
+            + model_name.removeprefix("original_")
         )
         nav_ped.goal_pose = [pedestrian.waypoints[-1].x, pedestrian.waypoints[-1].y, 0.0]
+        nav_ped.goal_pose = [5.0, 2.0, 0.0]
         nav_ped.velocity = 0.5
         req = MovePed.Request()
         req.nav_list = [nav_ped]
