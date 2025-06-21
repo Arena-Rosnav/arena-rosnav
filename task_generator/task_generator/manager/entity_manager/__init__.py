@@ -133,9 +133,10 @@ class EntityManager(NodeInterface, abc.ABC):
         @purge: remove obstacles down to this layer
         """
         self._logger.debug(f'removing obstacles (level {purge})')
-
+        if purge >= ObstacleLayer.WORLD: self._simulator.remove_walls()
         for obstacle_id, obstacle in list(self._known_obstacles.items()):
             if purge >= obstacle.layer:
+                self._logger.info(f'!???')
                 self._simulator.delete_entity(name=obstacle_id)
                 self._known_obstacles.forget(name=obstacle_id)
 

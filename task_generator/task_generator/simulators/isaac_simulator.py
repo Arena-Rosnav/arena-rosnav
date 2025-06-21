@@ -13,7 +13,7 @@ from isaacsim_msgs.srv import (DeletePrim, GetPrimAttributes, ImportObstacles,
 
 from task_generator.shared import DynamicObstacle, ModelType, Obstacle, Robot
 from task_generator.simulators import BaseSimulator
-
+import itertools
 
 @attrs.define()
 class _Service:
@@ -128,7 +128,7 @@ class IsaacSimulator(BaseSimulator):
         self._logger.info(f"position: {pose.position.x,pose.position.y}")
         self._logger.info(f"orientation: {pose.orientation}")
 
-        response = self.services.move_prim.client.call_async(
+        response = self.services.move_prim.client.call(
             MovePrim.Request(
                 name=name,
                 pose=pose.to_msg(),
@@ -136,15 +136,17 @@ class IsaacSimulator(BaseSimulator):
         )
         if response is None:
             raise RuntimeError(f'failed to move entity: service timed out')
-
+        self._all_removed = False
         return True
 
     def delete_entity(self, name):
+        if self._all_removed == True:
+            return True
         self._logger.info(
             f"Attempting to delete prim named {name}"
         )
 
-        response = self.services.delete_prim.client.call_async(
+        response = self.services.delete_prim.client.call(
             DeletePrim.Request(
                 name=name
             )
@@ -163,17 +165,16 @@ class IsaacSimulator(BaseSimulator):
             f"Attempting to spawn walls"
         )
 
-        self.delete_walls()
+        # self.delete_walls()
         time.sleep(0.01)
-
         for i, wall in enumerate(walls):
             try:
                 # print(f"wall {i+1}: {wall}")
                 start = [wall.Start.x, wall.Start.y]
                 end = [wall.End.x, wall.End.y]
-                future = self.services.spawn_wall.client.call_async(
+                future = self.services.spawn_wall.client.call(
                     SpawnWall.Request(
-                        name=f"wall_{i+1}",
+                        name=f"wall_{next(self.wall_counter)}",
                         start=start,
                         end=end,
                         height=wall.height
@@ -187,6 +188,7 @@ class IsaacSimulator(BaseSimulator):
                 raise  # Re-raise exception after logging
 
         self._logger.info("All walls spawned successfully.")
+        self._all_removed=False
         return True
 
     # TODO: update
@@ -233,7 +235,7 @@ class IsaacSimulator(BaseSimulator):
     def _spawn_obstacle(self, obstacle: Obstacle) -> bool:
         model = obstacle.model.get([ModelType.USD])
         usd_path = os.path.abspath(model.path)
-        response = self.services.import_obstacle.client.call_async(
+        response = self.services.import_obstacle.client.call(
             ImportObstacles.Request(
                 name=obstacle.name,
                 usd_path=usd_path,
@@ -253,9 +255,12 @@ class IsaacSimulator(BaseSimulator):
             f"Initializing IsaacSimulator with namespace: {namespace}")
 
         self.init_service_clients()
-
+        self.wall_counter = itertools.count()
+        self._all_removed: bool = True
         self._logger.info(
             f"Done initializing Isaac Sim")
 
-    def delete_walls(self):
+    def remove_walls(self):
         self.delete_entity('walls')
+        self.delete_entity('obstacles')
+        self._all_removed = True

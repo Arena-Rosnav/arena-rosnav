@@ -19,6 +19,7 @@ from task_generator.constants import Constants
 from task_generator.constants.runtime import Configuration
 from task_generator.manager.entity_manager import (EntityManager,
                                                    EntityManagerRegistry)
+from task_generator.manager.entity_manager.utils import ObstacleLayer
 from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.manager.robot_manager import RobotsManagerROS
 from task_generator.manager.robot_manager.robots_manager_ros import \
