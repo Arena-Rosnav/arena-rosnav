@@ -259,10 +259,57 @@ class Mod_Benchmark(TM_Module):
             self.node.destroy_client(describe_client)
 
     def _set_node_parameters(self, suite_config):
-        logger = self._logger
+        """
+        Apply map/world, task modes, and scenario file for the current stage.
+        Only touches parameters that actually need to change.
+        Returns True on success, False on error.
+        """
+        logger   = self._logger
+        updated  = False
 
-        self.node.conf.TaskMode.TM_ROBOTS.value = Constants.TaskMode.TM_Robots(suite_config.tm_robots).value
-        self.node.conf.TaskMode.TM_OBSTACLES.value = Constants.TaskMode.TM_Obstacles(suite_config.tm_obstacles).value
+        # Task-mode enums (robots / obstacles)
+        new_tm_r = Constants.TaskMode.TM_Robots(suite_config.tm_robots).value
+        new_tm_o = Constants.TaskMode.TM_Obstacles(suite_config.tm_obstacles).value
+
+        if self.node.conf.TaskMode.TM_ROBOTS.value != new_tm_r:
+            self.node.conf.TaskMode.TM_ROBOTS.value = new_tm_r
+            logger.info(f"[Benchmark] TM_ROBOTS → {new_tm_r}")
+            updated = True
+
+        if self.node.conf.TaskMode.TM_OBSTACLES.value != new_tm_o:
+            self.node.conf.TaskMode.TM_OBSTACLES.value = new_tm_o
+            logger.info(f"[Benchmark] TM_OBSTACLES → {new_tm_o}")
+            updated = True
+
+        # Map / world
+        if suite_config.map and self.node.conf.Arena.WORLD.value != suite_config.map:
+            self.node.conf.Arena.WORLD.value = suite_config.map
+            logger.info(f"[Benchmark] World  → {suite_config.map}")
+            updated = True
+
+        # Scenario JSON
+        scenario_file = suite_config.config.get("SCENARIO", {}).get("file")
+        if scenario_file:
+            # Declare once (ignored if already declared)
+            if not self.node.has_parameter("task.scenario.file"):
+                self.node.declare_parameter("task.scenario.file", scenario_file)
+
+            current = self.node.get_parameter("task.scenario.file").value
+            if current != scenario_file:
+                try:
+                    self.node.set_parameters([
+                        Parameter("task.scenario.file",
+                                Parameter.Type.STRING,
+                                scenario_file)
+                    ])
+                    logger.info(f"[Benchmark] Scenario file → {scenario_file}")
+                    updated = True
+                except Exception as e:
+                    logger.error(f"[Benchmark] Could not set scenario file: {e}")
+                    return False
+
+        if not updated:
+            logger.debug("[Benchmark] No parameter changes for this stage.")
         return True
 
         clean_node_name = self._primary_node
