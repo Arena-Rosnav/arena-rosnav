@@ -1,4 +1,4 @@
-<?xml version="1.0" ?>
+<?xml version="1.0"?>
 <sdf version="1.9">
   <world name="default">
     <plugin
@@ -25,9 +25,10 @@
       name="gz::sim::systems::Sensors">
       <render_engine>ogre2</render_engine>
     </plugin>
-    <physics name="fast" type="ignored">
-      <max_step_size>0.001</max_step_size>
-      <real_time_factor>0</real_time_factor>
+
+    <physics name="physics" type="ignored">
+      <max_step_size>0.0333</max_step_size> <!-- minimum 30 steps per second -->
+      <real_time_update_rate>0</real_time_update_rate>
     </physics>
 
     <light type="directional" name="sun">
