@@ -1,12 +1,11 @@
-import os
+import math
 
 from arena_rclpy_mixins.ROSParamServer import ROSParamT
+from arena_simulation_setup.configs.parametrized import (Parametrized,
+                                                         ParametrizedConfig)
 
-from task_generator.shared import DynamicObstacle, Obstacle
+from task_generator.shared import DynamicObstacle, Obstacle, Pose, Orientation
 from task_generator.tasks.obstacles import TM_Obstacles
-from task_generator.tasks.obstacles.utils import ITF_Obstacle
-
-from arena_simulation_setup.configs.parametrized import ParametrizedConfig, Parametrized
 
 
 class TM_Parametrized(TM_Obstacles):
@@ -15,6 +14,18 @@ class TM_Parametrized(TM_Obstacles):
 
     def _parse(self, config_name: str) -> ParametrizedConfig:
         return Parametrized(config_name).load()
+
+    def _get_pose(self):
+        return Pose(
+            self._PROPS.world_manager.get_position_on_map(1),
+            Orientation.from_yaw(self.node.conf.General.RNG.value.random() * 2 * math.pi)
+        )
+
+    def _get_points(self, n):
+        return self._PROPS.world_manager.get_positions_on_map(
+            n=n,
+            safe_dist=1.0
+        )
 
     def reset(self, **kwargs):
         dynamic_obstacles: list[DynamicObstacle] = []
@@ -29,11 +40,10 @@ class TM_Parametrized(TM_Obstacles):
                     endpoint=True
                 )
             ):
-                obstacle = ITF_Obstacle.create_obstacle(
-                    self.node,
-                    self._PROPS,
+                obstacle = Obstacle(
                     name=f'S_{config.model}_{i + 1}',
-                    model=config.model
+                    model=config.model,
+                    pose=self._get_pose(),
                 )
                 obstacle.extra["type"] = config.type
                 obstacles.append(obstacle)
@@ -47,11 +57,10 @@ class TM_Parametrized(TM_Obstacles):
                     endpoint=True
                 )
             ):
-                obstacle = ITF_Obstacle.create_obstacle(
-                    self.node,
-                    self._PROPS,
+                obstacle = Obstacle(
                     name=f'S_{config.model}_{i + 1}',
-                    model=config.model
+                    model=config.model,
+                    pose=self._get_pose(),
                 )
                 obstacle.extra["type"] = config.type
                 obstacles.append(obstacle)
@@ -65,11 +74,11 @@ class TM_Parametrized(TM_Obstacles):
                     endpoint=True
                 )
             ):
-                obstacle = ITF_Obstacle.create_dynamic_obstacle(
-                    self.node,
-                    self._PROPS,
+                obstacle = DynamicObstacle(
                     name=f'S_{config.model}_{i + 1}',
-                    model=config.model
+                    model=config.model,
+                    pose=self._get_pose(),
+                    waypoints=self._get_points(2),
                 )
                 obstacle.extra["type"] = config.type
                 dynamic_obstacles.append(obstacle)

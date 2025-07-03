@@ -12,6 +12,7 @@ from launch.substitutions import LaunchConfiguration, TextSubstitution
 
 import launch_ros.actions
 
+
 def generate_launch_description():
     bringup_dir = get_package_share_directory('arena_bringup')
 
@@ -79,7 +80,7 @@ def generate_launch_description():
     )
     tm_obstacles = LaunchArgument(
         name='tm_obstacles',
-        default_value='random'
+        default_value='scenario'
     )
     tm_modules = LaunchArgument(
         name='tm_modules',
@@ -144,7 +145,7 @@ def generate_launch_description():
             create_task_generator(
                 headlessness=PythonExpression([headless.substitution, '>1']),
                 namespace=base_namespace,
-                prefix='', 
+                prefix='',
                 reference=list(next(references))
             )
         )
@@ -261,6 +262,7 @@ def generate_launch_description():
     ])
     return ld
 
+
 def snail_grid(d: float, initial=None):
     if initial is None:
         initial = (0, 0)
@@ -289,6 +291,7 @@ def snail_grid(d: float, initial=None):
         x += d
         y += d
         step += 2
+
 
 if __name__ == '__main__':
     generate_launch_description()

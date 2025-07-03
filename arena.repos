@@ -52,7 +52,7 @@ repositories:
   deps/hunav/hunav_sim:
     type: git
     url: https://github.com/voshch/hunav_sim.git
-    version: humble@025b9151
+    version: humble@a69cf96
   deps/hunav/people_msgs:
     type: git
     url: https://github.com/wg-perception/people.git

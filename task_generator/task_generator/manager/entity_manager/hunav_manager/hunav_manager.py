@@ -7,17 +7,21 @@ import typing
 
 import attrs
 import geometry_msgs.msg
+from ament_index_python.packages import get_package_share_directory
 from arena_rclpy_mixins.shared import Namespace
 from geometry_msgs.msg import Point
 from hunav_msgs.msg import Agent, AgentBehavior, Agents, WallSegment
-from hunav_msgs.srv import (ComputeAgent, ComputeAgents, GetAgents, GetWalls,
-                            MoveAgent, ResetAgents)
+from hunav_msgs.srv import (ComputeAgent, ComputeAgents, DeleteActors,
+                            GetAgents, GetWalls, MoveAgent, ResetAgents)
+
+from task_generator.constants import Constants
 from task_generator.manager.entity_manager.dummy_manager import \
     DummyEntityManager
-from task_generator.manager.entity_manager.hunav_manager import \
-    HunavDynamicObstacle
-from task_generator.shared import DynamicObstacle, ModelType, Pose
+from task_generator.shared import (DynamicObstacle, Model, ModelType,
+                                   ModelWrapper, Obstacle, Pose, Position)
 from task_generator.simulators import BaseSimulator
+
+from . import HunavDynamicObstacle
 
 
 def _create_robot_message():
@@ -34,8 +38,9 @@ def _create_robot_message():
 
 
 class _PedestrianHelper:
+
     _ANIMATION_MAP = {
-        AgentBehavior.BEH_REGULAR: "walk.dae",  # "07_01-walk.bvh",
+        AgentBehavior.BEH_REGULAR: "07_01-walk.bvh",
         AgentBehavior.BEH_IMPASSIVE: "69_02_walk_forward.bvh",
         AgentBehavior.BEH_SURPRISED: "137_28-normal_wait.bvh",
         AgentBehavior.BEH_SCARED: "142_17-walk_scared.bvh",
@@ -65,36 +70,72 @@ class _PedestrianHelper:
     }
 
     @classmethod
-    def create_sdf(cls, agent_config: HunavDynamicObstacle, namespace: str) -> str:
+    def plugin_entity(cls, namespace: str) -> Obstacle:
+
+        sdf_content = f"""<?xml version="1.0" ?>
+            <sdf version="1.9">
+                <model name="hunav_plugin">
+                    <static>true</static>
+                    <link name="empty">
+                        <visual name="visual">
+                            <geometry>
+                                <box>
+                                    <size>0.01 0.01 0.01</size>
+                                </box>
+                            </geometry>
+                        </visual>
+                    </link>
+                    <plugin name="HuNavSystemPluginIGN" filename="libHuNavSystemPluginIGN.so">
+                        <update_rate>1000.0</update_rate>
+                        <namespace>{namespace}</namespace>
+                        <!-- <robot_name>jackal</robot_name> -->
+                        <use_gazebo_obs>true</use_gazebo_obs>
+                        <global_frame_to_publish>map</global_frame_to_publish>
+                        <use_navgoal_to_start>false</use_navgoal_to_start>
+                        <navgoal_topic>goal_pose</navgoal_topic>
+                        <ignore_models>
+                            <model>ground_plane</model>
+                            <model>sun</model>
+                        </ignore_models>
+                    </plugin>
+                </model>
+            </sdf>"""
+
+        return Obstacle(
+            name="hunav_plugin",
+            pose=Pose(Position(x=0.0, y=0.0, z=-1.0)),
+            model=ModelWrapper.Constant("hunav_plugin", {
+                ModelType.SDF: Model(
+                    type=ModelType.SDF,
+                    name="hunav_plugin",
+                    description=sdf_content,
+                    path="",
+                )
+            })
+        )
+
+    @classmethod
+    def create_sdf(cls, agent_config: HunavDynamicObstacle) -> str:
         """Create SDF description for pedestrian using gz-sim actor format"""
+
         # Get skin type
         skin_type = cls._SKIN_TYPES.get(agent_config.skin, 'casual_man.dae')
 
         # Animation mapping based on behavior
-
-        animation_file = "walk.dae"  # cls._ANIMATION_MAP.get(agent_config.behavior.type, "07_01-walk.bvh")
-
-        # Get workspace root
-        def get_workspace_root():
-            workspace_root = os.environ.get('ARENA_WS_DIR', None)
-            if workspace_root is not None:
-                return workspace_root
-
-            workspace_root = os.path.abspath(__file__)
-            while not re.match('arena.*_ws', os.path.basename(workspace_root)):
-                workspace_root = os.path.dirname(workspace_root)
-            return workspace_root
+        animation_file = cls._ANIMATION_MAP.get(agent_config.behavior.type, "07_01-walk.bvh")
+        animation_file = '../models/walk.dae'  # temp
 
         # Construct paths
         mesh_path = os.path.join(
-            get_workspace_root(),
-            'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/models',
+            get_package_share_directory('hunav_rviz2_panel'),
+            'meshes/models',
             skin_type
         )
 
         animation_path = os.path.join(
-            get_workspace_root(),
-            'src/deps/hunav/hunav_sim/hunav_rviz2_panel/meshes/models/walk.dae'
+            get_package_share_directory('hunav_rviz2_panel'),
+            'meshes/animations',
+            animation_file
         )
 
         # # Temporärer Logger für Debug
@@ -111,7 +152,7 @@ class _PedestrianHelper:
         # # Cleanup
         # temp_node.destroy_node()
 
-        # Create the SDF with a COMPLETE plugin block containing all required parameters
+        # Create the SDF
         sdf = f"""<?xml version="1.0" ?>
         <sdf version="1.9">
             <actor name="{agent_config.name}">
@@ -127,27 +168,8 @@ class _PedestrianHelper:
                     <scale>1.0</scale>
                     <interpolate_x>true</interpolate_x>
                 </animation>
-
-                <plugin name="HuNavSystemPluginIGN" filename="libHuNavSystemPluginIGN.so">
-                    <update_rate>1000.0</update_rate>
-                    <namespace>{namespace}</namespace>
-                    <robot_name>jackal</robot_name>
-                    <use_gazebo_obs>true</use_gazebo_obs>
-                    <global_frame_to_publish>map</global_frame_to_publish>
-                    <use_navgoal_to_start>false</use_navgoal_to_start>
-                    <navgoal_topic>goal_pose</navgoal_topic>
-                    <ignore_models>
-                        <model>ground_plane</model>
-                        <model>sun</model>
-                        <model>main_floor</model>
-                        <model>surface</model>
-                        <model>column</model>
-                        <model>point_light</model>
-                    </ignore_models>
-                </plugin>
             </actor>
         </sdf>"""
-
         return sdf
 
 
@@ -156,6 +178,7 @@ class HunavManager(DummyEntityManager):
 
     _pedestrians: dict[int, dict]
     _agents_container: Agents
+    _get_agents_container: Agents
     _wall_points: list[geometry_msgs.msg.Point]
 
     # Service Names
@@ -165,12 +188,12 @@ class HunavManager(DummyEntityManager):
     SERVICE_RESET_AGENTS = 'reset_agents'
     SERVICE_GET_AGENTS = 'get_agents'
     SERVICE_GET_WALLS = 'get_walls'
+    SERVICE_DELETE_ACTORS = 'delete_actors'
 
     def __init__(self, namespace: Namespace, simulator: BaseSimulator):
         """Initialize HunavManager with debug logging"""
         super().__init__(namespace=namespace, simulator=simulator)
         # Detect Simulator Type to decide between Plugin or move_entity callback
-        self._simulator_type = self._detect_simulator_type()
         self._logger.info(f"Detected simulator type: {self._simulator_type}")
 
         self._logger.info("=== HUNAVMANAGER INIT START ===")
@@ -181,6 +204,7 @@ class HunavManager(DummyEntityManager):
         self._pedestrians = {}
         self._wall_points = []
         self._agents_container = Agents()  # Container to hold all registered agents
+        self._get_agents_container = Agents()  # Container specifically just to send the Agent attributes to Hunavsystemplugin
         self._agents_container.header.frame_id = "map"
         self._logger.debug("Collections initialized")
 
@@ -199,14 +223,12 @@ class HunavManager(DummyEntityManager):
 
         self._logger.info("=== HUNAVMANAGER INIT COMPLETE ===")
 
-    def _detect_simulator_type(self) -> str:
+        self._gz_plugin_spawned: bool = False
+
+    @property
+    def _simulator_type(self) -> Constants.Simulator:
         """Detect which simulator is being used"""
-        try:
-            # check the parameter 'simulator' which is given during launch
-            simulator_param = self.node.get_parameter('simulator').value
-            return simulator_param.lower()
-        except BaseException:
-            return self._simulator.__class__.__name__.lower()
+        return self.node.conf.Arena.SIMULATOR.value
 
     def _setup_services(self):
         """Initialize all required services with debug logging"""
@@ -223,7 +245,9 @@ class HunavManager(DummyEntityManager):
             'move_agent': self.node.service_namespace(self.SERVICE_MOVE_AGENT),
             'reset_agents': self.node.service_namespace(self.SERVICE_RESET_AGENTS),
             'get_agents': self.node.service_namespace(self.SERVICE_GET_AGENTS),
-            'get_walls': self.node.service_namespace(self.SERVICE_GET_WALLS)
+            'get_walls': self.node.service_namespace(self.SERVICE_GET_WALLS),
+            'delete_actors': self.node.service_namespace(self.SERVICE_DELETE_ACTORS)
+
         }
 
         # Log service creation attempts
@@ -254,6 +278,12 @@ class HunavManager(DummyEntityManager):
             ResetAgents,
             service_names['reset_agents'],
         )
+
+        self._logger.debug("Creating delete_actors client...")
+        self._delete_actors_client = self.node.create_client(
+            DeleteActors,
+            service_names['delete_actors'],
+        )
        # Create GetAgents service provider
         self._logger.debug(f"Creating get_agents service provider at: {service_names['get_agents']}")
         self._get_agents_server = self.node.create_service(
@@ -278,6 +308,7 @@ class HunavManager(DummyEntityManager):
             (self._compute_agents_client, 'compute_agents'),
             (self._move_agent_client, 'move_agent'),
             (self._reset_agents_client, 'reset_agents')
+
         ]
 
         max_attempts = 5
@@ -307,18 +338,28 @@ class HunavManager(DummyEntityManager):
         return True
 
     def _get_agents_callback(self, request, response):
-        """Service callback for GetAgents service"""
-        self._logger.debug("=== GET_AGENTS SERVICE CALLED ===")
+        """Handle get_agents service request - return UNMODIFIED agents"""
+        try:
+            self._logger.error("=== GET AGENTS CALLBACK ===")
+            self._logger.error(f"Returning {len(self._get_agents_container.agents)} agents")
 
-        # Update header timestamp
-        self._agents_container.header.stamp = self.node.get_clock().now().to_msg()
+            # Update timestamp
+            self._get_agents_container.header.stamp = self.node.get_clock().now().to_msg()
+            self._get_agents_container.header.frame_id = "map"
 
-        # Create a copy of the agents container
-        response.agents = self._agents_container
+            # Return the UNMODIFIED container
+            response.agents = self._get_agents_container
 
-        self._logger.debug(f"Returning {len(response.agents.agents)} agents")
+            # Debug output
+            # for agent in self._get_agents_container.agents:
+            #     self._logger.error(f"Sending agent {agent.name}: desired_velocity={agent.desired_velocity}, goal_force_factor={agent.behavior.goal_force_factor}")
 
-        return response
+            return response
+
+        except Exception as e:
+            self._logger.error(f"Error in get_agents_callback: {e}")
+            response.agents = Agents()  # Empty response on error
+            return response
 
     def _get_walls_callback(self, request, response):
         """Service callback für Wall-Segments"""
@@ -365,7 +406,7 @@ class HunavManager(DummyEntityManager):
 
         # Now all obstacles have been spawned - register them with HuNav
         if self._agents_container.agents:
-            self._logger.debug(f"All spawns complete. Registering {len(self._agents_container.agents)} agents with HuNav")
+            self._logger.error(f"All spawns complete. Registering {len(self._agents_container.agents)} agents with HuNav")
 
             # Update timestamp
             self._agents_container.header.stamp = self.node.get_clock().now().to_msg()
@@ -379,10 +420,11 @@ class HunavManager(DummyEntityManager):
             response = self._compute_agents_client.call(request)
 
             if response:
-                self._logger.debug(f"Successfully registered {len(response.updated_agents.agents)} agents")
+                self._logger.error(f"Successfully registered {len(response.updated_agents.agents)} agents")
 
                 # Update local agents with response data
                 for updated_agent in response.updated_agents.agents:
+
                     for i, agent in enumerate(self._agents_container.agents):
                         if agent.id == updated_agent.id:
                             self._agents_container.agents[i] = updated_agent
@@ -392,7 +434,7 @@ class HunavManager(DummyEntityManager):
                     if updated_agent.id in self._pedestrians:
                         self._pedestrians[updated_agent.id]['agent'] = updated_agent
 
-                if self._simulator_type != 'gazebo':
+                if self._simulator_type != Constants.Simulator.GAZEBO:
                     self._logger.debug("Non-Gazebo detected - starting movement timer")
                     self._update_timer = self.node.create_timer(
                         0.1,  # 10 Hz
@@ -405,6 +447,8 @@ class HunavManager(DummyEntityManager):
 
     def _spawn_dynamic_obstacle_impl(self, obstacle: DynamicObstacle) -> DynamicObstacle | None:
         """Create agent but don't register with HuNav yet"""
+        # self._logger.error(f"=== spawn_dynamic_obstacles_aufruf===")
+
         try:
             # Get unique ID
             try:
@@ -426,6 +470,7 @@ class HunavManager(DummyEntityManager):
             agent_msg.skin = hunav_obstacle.skin
             agent_msg.group_id = hunav_obstacle.group_id
             agent_msg.desired_velocity = hunav_obstacle.desired_velocity
+            # self._logger.error(f"=== spawn_dynamic_obstacles_desired_velocity: {agent_msg.desired_velocity}===")
             agent_msg.radius = hunav_obstacle.radius
 
             # Set position
@@ -443,7 +488,7 @@ class HunavManager(DummyEntityManager):
             agent_msg.behavior.once = hunav_obstacle.behavior.once
             agent_msg.behavior.vel = hunav_obstacle.behavior.vel
             agent_msg.behavior.dist = hunav_obstacle.behavior.dist
-            agent_msg.behavior.goal_force_factor = hunav_obstacle.behavior.goal_force_factor
+            agent_msg.behavior.goal_force_factor = 20.0  # hunav_obstacle.behavior.goal_force_factor
             agent_msg.behavior.obstacle_force_factor = hunav_obstacle.behavior.obstacle_force_factor
             agent_msg.behavior.social_force_factor = hunav_obstacle.behavior.social_force_factor
             agent_msg.behavior.other_force_factor = hunav_obstacle.behavior.other_force_factor
@@ -514,7 +559,9 @@ class HunavManager(DummyEntityManager):
             """)
 
             # Add to container - NO ComputeAgents call here!
+            self._get_agents_container.agents.append(agent_msg)
             self._agents_container.agents.append(agent_msg)
+            # self._logger.error(f"spawn_dynamic_obstacle_agents_container {self._agents_container}")
 
             # Store in pedestrians dictionary
             self._pedestrians[agent_msg.id] = {
@@ -526,9 +573,14 @@ class HunavManager(DummyEntityManager):
 
             self._logger.info(f"Added agent {agent_msg.name} to container. Total agents: {len(self._agents_container.agents)}")
 
-            if self._simulator_type == 'gazebo':
+            if self._simulator_type == Constants.Simulator.GAZEBO:
+                # spawn plugin if not already spawned
+                if not self._gz_plugin_spawned:
+                    self._simulator.spawn_entity(_PedestrianHelper.plugin_entity(self.node.service_namespace()))
+                    self._gz_plugin_spawned = True
+
                 # Create SDF with plugin for Gazebo
-                sdf = _PedestrianHelper.create_sdf(hunav_obstacle, namespace=self.node.service_namespace())
+                sdf = _PedestrianHelper.create_sdf(hunav_obstacle)
                 new_obstacle = attrs.evolve(
                     obstacle,
                     model=obstacle.model.override(
@@ -570,6 +622,100 @@ class HunavManager(DummyEntityManager):
         return True
 
     def _remove_obstacles_impl(self):
-        # self._wall_points = []
-        # TODO remove obstacles
-        return True
+        """Remove all spawned pedestrians from simulation safely"""
+        self._logger.info(f"=== REMOVING {len(self._pedestrians)} PEDESTRIANS ===")
+
+        # Phase 1: Reset HuNav agents FIRST
+        success = self._call_delete_actors_service()
+
+        if not success:
+            self._logger.error("Failed to delete  HuNav agents from ECM - continuing anyway")
+            # Don't return False - continue with deletion
+
+        # Phase 2: Clear local agents container
+        self._agents_container = Agents()
+        self._get_agents_container = Agents()
+        self._logger.debug("Cleared local agents container")
+
+        # Phase 3: Call plugin to delete actors from ECM
+        success = self._reset_hunav_agents()
+        if not success:
+            self._logger.error("Failed to reset HuNav agents - continuing anyway")
+
+        # Phase 4: Clean up local data
+        self._clear_local_data()
+
+        self._logger.info(f"Complete reset completed: {success}")
+        return success
+
+    def _reset_hunav_agents(self):
+        """Reset HuNav by calling ResetAgents service"""
+        try:
+            if not self._reset_agents_client.wait_for_service(timeout_sec=2.0):
+                self._logger.error("ResetAgents service not available")
+                return False
+
+            request = ResetAgents.Request()
+            request.robot = _create_robot_message()
+
+            # Empty agents = complete reset signal
+            request.current_agents = Agents()
+            request.current_agents.header.stamp = self.node.get_clock().now().to_msg()
+            request.current_agents.header.frame_id = "map"
+
+            self._logger.info("Calling HuNav ResetAgents service...")
+            response = self._reset_agents_client.call(request)
+
+            if response and response.ok:
+                self._logger.info("HuNav reset successful - ready for new agents")
+                return True
+            else:
+                self._logger.error("HuNav reset failed")
+                return False
+
+        except Exception as e:
+            self._logger.error(f"Error calling ResetAgents: {e}")
+            return False
+
+    def _call_delete_actors_service(self):
+        """Call the plugin's delete actors service"""
+        try:
+            if not self._delete_actors_client.wait_for_service(timeout_sec=2.0):
+                self._logger.error("Delete actors service currently not available")
+                return False
+
+            request = DeleteActors.Request()
+
+            self._logger.debug("Calling delete_actors service...")
+
+            response = self._delete_actors_client.call(request)
+
+            if response and response.success:
+                self._logger.info(f"Successfully deleted {response.deleted_count} actors")
+                return True
+            else:
+                self._logger.error("Delete actors service failed")
+                return False
+
+        except Exception as e:
+            self._logger.error(f"Error calling delete_actors service: {e}")
+            return False
+
+    def _clear_local_data(self):
+        """Clear all local data structures safely"""
+        # Clear pedestrians dictionary
+        self._pedestrians.clear()
+
+        # Clear agents container (if not already done)
+        self._agents_container.agents.clear()
+
+        # Stop and cleanup movement timer if running (for non-gazebo simulators)
+        if hasattr(self, '_update_timer') and self._update_timer:
+            try:
+                self._update_timer.destroy()
+                self._update_timer = None
+                self._logger.debug("Movement timer stopped and cleaned up")
+            except Exception as e:
+                self._logger.error(f"Error stopping movement timer: {e}")
+
+        self._logger.debug("All local data structures cleared")

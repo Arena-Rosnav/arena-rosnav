@@ -13,10 +13,8 @@ from arena_simulation_setup.entities.obstacles.static import \
     loader as OBSTACLE_LOADER
 from arena_simulation_setup.utils.models.model_loader import ModelLoader
 
-from task_generator.shared import (DynamicObstacle, Obstacle, Orientation,
-                                   Pose, Position, PositionRadius)
+from task_generator.shared import DynamicObstacle, Obstacle, Orientation, Pose
 from task_generator.tasks.obstacles import Obstacles, TM_Obstacles
-from task_generator.tasks.obstacles.utils import ITF_Obstacle
 
 
 @attrs.define()
@@ -152,24 +150,8 @@ class TM_Random(TM_Obstacles):
             safe_dist=1
         )
 
-        _positions = [
-            Pose(
-                pos,
-                orientation=Orientation.from_yaw(2 * np.pi * self.node.conf.General.RNG.value.random())
-            )
-            for pos in points[
-                : (N_STATIC_OBSTACLES + N_INTERACTIVE_OBSTACLES + N_DYNAMIC_OBSTACLES)
-            ]
-        ]
-        positions = iter(_positions)
-
-        _waypoints = [
-            PositionRadius(pos.x, pos.y, 1)
-            for pos in points[
-                (N_STATIC_OBSTACLES + N_INTERACTIVE_OBSTACLES + N_DYNAMIC_OBSTACLES):
-            ]
-        ]
-        waypoints = iter(_waypoints)
+        positions = map(lambda pos: Pose(pos, orientation=Orientation.from_yaw(2 * np.pi * self.node.conf.General.RNG.value.random())), points[:(N_STATIC_OBSTACLES + N_INTERACTIVE_OBSTACLES + N_DYNAMIC_OBSTACLES)])
+        waypoints = iter(points[(N_STATIC_OBSTACLES + N_INTERACTIVE_OBSTACLES + N_DYNAMIC_OBSTACLES):])
 
         obstacles: list[Obstacle] = []
 
@@ -177,9 +159,7 @@ class TM_Random(TM_Obstacles):
         if N_STATIC_OBSTACLES:
             index = indexer()
             obstacles += [
-                ITF_Obstacle.create_obstacle(
-                    self.node,
-                    self._PROPS,
+                Obstacle(
                     name=f"S_{model}_{index(model)}",
                     model=model,
                     pose=next(positions),
@@ -196,9 +176,7 @@ class TM_Random(TM_Obstacles):
             index = indexer()
 
             obstacles += [
-                ITF_Obstacle.create_obstacle(
-                    self.node,
-                    self._PROPS,
+                Obstacle(
                     name=f"I_{model}_{index(model)}",
                     model=model,
                     pose=next(positions),
@@ -218,15 +196,10 @@ class TM_Random(TM_Obstacles):
             index = indexer()
 
             dynamic_obstacles += [
-                ITF_Obstacle.create_dynamic_obstacle(
-                    self.node,
-                    self._PROPS,
+                DynamicObstacle(
                     name=f"D_{model}_{index(model)}",
                     model=model,
-                    waypoints=list(
-                        itertools.islice(
-                            waypoints,
-                            waypoints_per_ped)),
+                    waypoints=list(itertools.islice(waypoints, waypoints_per_ped)),
                     pose=next(positions),
                 )
                 for model in self.node.conf.General.RNG.value.choice(
