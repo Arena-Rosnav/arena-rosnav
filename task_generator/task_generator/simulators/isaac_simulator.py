@@ -178,6 +178,8 @@ class IsaacSimulator(BaseSimulator):
 
     # TODO: update
     def before_reset_task(self):
+        self._delete_all_pedestrians("/Characters")
+        # time.sleep(0.5)
         return True
 
     # TODO: update
@@ -213,12 +215,13 @@ class IsaacSimulator(BaseSimulator):
                 "original_male_adult_police_04",
             ]
         )
+        # new_name = pedestrian.name + str(self.num_of_peds)
         self.ped_dict[pedestrian.name] = model_name
         self.services.import_pedestrians.client.call(
             Pedestrian.Request(
                 people=[
                     Person(
-                        stage_prefix="/Characters/" + pedestrian.name,
+                        stage_prefix=f"/Characters/" + pedestrian.name,
                         character_name=model_name,
                         initial_pose=[
                             pedestrian.position.x,
@@ -235,29 +238,34 @@ class IsaacSimulator(BaseSimulator):
         # /Characters/D_gazebo_actor_1/ManRoot/male_adult_police_04
         # nav_ped.path = "/Characters/D_gazebo_actor_1/ManRoot/male_adult_police_04"
         nav_ped.path = (
-            "/Characters/"
+            f"/Characters/"
             + pedestrian.name
             # + "/"
             # + model_name
             + "/ManRoot/"
             + model_name.removeprefix("original_")
         )
-        nav_ped.goal_pose = [pedestrian.waypoints[-1].x, pedestrian.waypoints[-1].y, 0.0]
-        nav_ped.goal_pose = [5.0, 2.0, 0.0]
+        nav_ped.goal_pose = [
+            pedestrian.waypoints[-1].x,
+            pedestrian.waypoints[-1].y,
+            0.0,
+        ]
+        # nav_ped.goal_pose = [5.0, 2.0, 0.0]
         nav_ped.velocity = 0.5
         req = MovePed.Request()
         req.nav_list = [nav_ped]
         self._move_pedestrian(req)
+        self.num_of_peds += 1
         return True
 
     def _move_pedestrian(self, nav_list: MovePed.Request):
-        response = self.services.move_pedestrians.client.call_async(nav_list)
+        response = self.services.move_pedestrians.client.call(nav_list)
         return True
 
     def _delete_all_pedestrians(self, prim_path):
         self._logger.info(f"Attempting to delete prim named {prim_path}")
 
-        response = self.services.delete_all_pedestrians.client.call_async(
+        response = self.services.delete_all_pedestrians.client.call(
             DeletePrim.Request(name=prim_path)
         )
 
@@ -317,6 +325,7 @@ class IsaacSimulator(BaseSimulator):
         self.init_service_clients()
 
         self._logger.info(f"Done initializing Isaac Sim")
+        self.num_of_peds = 0
 
     def delete_walls(self):
         self.delete_entity("walls")
