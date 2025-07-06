@@ -64,7 +64,7 @@ class MapServerHandler(NodeInterface):
             self.node.get_logger().warn('ChangeState service not available, waiting again...')
 
         request = lifecycle_msgs.srv.ChangeState.Request()
-        request.transition.id = lifecycle_msgs.msg.Transition.TRANSITION_SHUTDOWN
+        request.transition.id = lifecycle_msgs.msg.Transition.TRANSITION_DESTROY
         change_state_client.call(request)
 
         self._logger.warn('map server shut down.')
