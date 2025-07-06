@@ -2,4 +2,4 @@ repositories:
   arena/isaac:
     type: git
     url: https://github.com/Arena-Rosnav/arena-isaac
-    version: master@23d9d9b2
+    version: master@dfbfadd5
