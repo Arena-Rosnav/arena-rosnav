@@ -3,9 +3,10 @@ import typing
 
 import action_msgs.msg
 import ament_index_python
-import attrs
+import arena_simulation_setup.entities.robot
 import geometry_msgs.msg as geometry_msgs
 import launch
+import launch_ros
 import lifecycle_msgs.msg
 import nav_msgs.msg as nav_msgs
 import rclpy
@@ -22,9 +23,7 @@ from task_generator.constants import Constants
 from task_generator.manager.entity_manager import EntityManager
 from task_generator.manager.entity_manager.utils import YAMLUtil
 from task_generator.manager.environment_manager import EnvironmentManager
-from task_generator.shared import ModelType, Pose, Position, Orientation, Robot
-
-import arena_simulation_setup.entities.robot
+from task_generator.shared import ModelType, Orientation, Pose, Position, Robot
 
 
 class RobotManager(NodeInterface):
@@ -100,6 +99,22 @@ class RobotManager(NodeInterface):
         self._pose = self._start_pos
         self._goal_timer = None
 
+    def _odom_base_transform(self):
+        self.node.do_launch(
+            launch_ros.actions.Node(
+                package="tf2_ros",
+                executable="static_transform_publisher",
+                name="odom_to_baseframe_publisher",
+                arguments=[
+                    "0", "0", "0",
+                    "0", "0", "0", "1",
+                    self.frame(self._config.model_params.odom_frame),
+                    self.frame(self._config.model_params.base_frame),
+                ],
+                parameters=[{'use_sim_time': True}],
+            )
+        )
+
     def set_up_robot(self):
         self._robot.model = self._robot.model.override(
             model_type=ModelType.YAML,
@@ -138,6 +153,7 @@ class RobotManager(NodeInterface):
         )
 
         self._launch_robot()
+        self._odom_base_transform()
 
         self._robot_radius = self.node.rosparam[float].get(
             'robot_radius',
@@ -156,7 +172,8 @@ class RobotManager(NodeInterface):
     def name(self) -> str:
         return self._robot.name
 
-    def frame(self) -> str:
+    @property
+    def frame(self) -> Namespace:
         return self._robot.frame
 
     @property
@@ -299,7 +316,7 @@ class RobotManager(NodeInterface):
                 'task_generator_node': os.path.join(self.node.get_namespace(), self.node.get_name()),
                 'namespace': self.namespace,
                 # 'use_namespace': 'True',
-                'frame': self._robot.frame,
+                'frame': self._robot.frame(''),  # trailing slash
                 'inter_planner': self._robot.inter_planner,
                 'global_planner': self._robot.global_planner,
                 'local_planner': self._robot.local_planner,

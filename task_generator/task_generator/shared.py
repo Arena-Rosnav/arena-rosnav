@@ -1,8 +1,8 @@
 from __future__ import annotations
+from arena_rclpy_mixins.shared import Namespace
 
-import enum
 import typing
-from typing import Callable, Collection, Optional, Type, TypeVar, overload
+from typing import Optional, Type, TypeVar
 
 import attrs
 import rclpy
@@ -71,10 +71,10 @@ class Robot(Robot_):
             and self.record_data_dir == value.record_data_dir
 
     @property
-    def frame(self) -> str:
+    def frame(self) -> Namespace:
         if not self.name:
-            return ''
-        return self.name + '/'
+            return Namespace('')
+        return Namespace(self.name)
 
     @classmethod
     def parse(cls, obj: dict) -> "Robot":

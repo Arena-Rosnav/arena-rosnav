@@ -168,12 +168,22 @@ class GazeboSimulator(BaseSimulator):
                         f"Failed to set initial pose for {name} after {max_attempts} attempts"
                     )
 
+                odom_frame = 'odom'
+
+                if isinstance(entity, Robot):
+                    odom_frame = arena_simulation_setup.entities.robot.Robot(entity.model.name).model_params.odom_frame
+
                 qx, qy, qz, qw = entity.pose.orientation.x, entity.pose.orientation.y, entity.pose.orientation.z, entity.pose.orientation.w
                 transform_pub_node = launch_ros.actions.Node(
                     package="tf2_ros",
                     executable="static_transform_publisher",
                     name="map_to_odomframe_publisher",
-                    arguments=[str(entity.pose.position.x), str(entity.pose.position.y), "0", str(qx), str(qy), str(qz), str(qw), "map", entity.frame + "odom"],
+                    arguments=[
+                        str(entity.pose.position.x), str(entity.pose.position.y), str(entity.pose.position.z),
+                        str(qx), str(qy), str(qz), str(qw),
+                        "map",
+                        entity.frame(odom_frame),
+                    ],
                     parameters=[{'use_sim_time': True}],
                 )
                 self.node.do_launch(transform_pub_node)
@@ -489,8 +499,10 @@ class GazeboSimulator(BaseSimulator):
             )
         )
 
+        robot_config = arena_simulation_setup.entities.robot.Robot(robot.model.name)
+
         mappings = BridgeConfiguration.from_file(
-            arena_simulation_setup.entities.robot.Robot(robot.model.name).mappings
+            robot_config.mappings
         ).substitute({
             'robot_name': robot.name,
             'world': '/world/default',
@@ -519,7 +531,7 @@ class GazeboSimulator(BaseSimulator):
                 parameters=[
                     {'use_sim_time': True},
                     {'robot_description': description},
-                    {'frame_prefix': robot.frame}
+                    {'frame_prefix': robot.frame('')}  # add trailing slash
                 ],
             )
         )
