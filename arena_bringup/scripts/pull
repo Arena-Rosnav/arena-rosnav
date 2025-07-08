@@ -22,7 +22,7 @@ run(){
     fi
 }
 
-run '(cd src/arena/arena-rosnav && git pull --autostash || true);'
+run '(cd src/arena/arena-rosnav && git pull --ff-only --autostash || true);'
 run '(vcs import --input src/arena/arena-rosnav/arena.repos --recursive --ff --add-existing src);' '$? > 1'
 
 
