@@ -264,7 +264,7 @@ class Utils:
                 'Median window': 5,
                 'Min Value': 0,
                 'Name': 'Image',
-                'Normalize Range': True,
+                'Normalize Range': False,
                 'Topic': {
                     'Value': topic,
                     'Depth': queue_size,
