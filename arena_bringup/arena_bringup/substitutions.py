@@ -305,7 +305,7 @@ class _YAMLReplacer:
         replacement: None | _YAMLReplacer.Replacement = None
 
         while str_v is not None:
-            if (match := re.match(r'^\$\{(.*)\}$', str_v)) is None:
+            if (match := re.match(r'^\$\{(.*)\}$', str_v)) is None:  # not a full-length substitution
                 return self.NoReplacement(value=str_v)
 
             sub, *defaults = match.group(1).split(':-', 1)
@@ -325,6 +325,8 @@ class _YAMLReplacer:
             str_v = default
 
         if replacement is None:
+            if (inter_sub := self._replace_inter_string(v)) is not None:
+                return inter_sub
             raise ValueError(f'could not find substitution for {v}')
 
         return replacement
@@ -383,9 +385,9 @@ class _YAMLReplacer:
         return obj
 
     def _replace_str(self, obj: str) -> typing.Any:
-        replacement = self._sub_match(obj)
         if (inter_v := self._replace_inter_string(obj)) is not None:
             return self.replace(inter_v.value)
+        replacement = self._sub_match(obj)
         if isinstance(replacement, self.DictSpreadReplacement):
             raise ValueError('dict spread argument placed outside dict')
         elif isinstance(replacement, self.ListSpreadReplacement):
