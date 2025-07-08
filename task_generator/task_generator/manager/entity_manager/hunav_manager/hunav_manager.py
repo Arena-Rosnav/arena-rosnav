@@ -311,7 +311,7 @@ class HunavManager(DummyEntityManager):
 
         ]
 
-        max_attempts = 5
+        max_attempts = float('inf')
         for client, name in required_services:
             attempts = 0
             self._logger.debug(f"Waiting for service {name}...")
