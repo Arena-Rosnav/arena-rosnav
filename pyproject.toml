@@ -31,11 +31,12 @@ sip = "5.5.0" #qt_gui_cpp
 setuptools = "<80"
 pydantic = "^2.11.5"
 pillow = "^11.2.1"
+requests = "^2.32.4"
 
 
 [tool.poetry.group.planners]
 # all planners except rosnav and aio
-optional = true                                                                                                                                                                 
+optional = true
 [tool.poetry.group.planners.dependencies]
 torch = "^1.11.0"       # applr, crowdnav, lflh, rlca, sarl, trail
 seaborn = "^0.12.2"     # lflh
