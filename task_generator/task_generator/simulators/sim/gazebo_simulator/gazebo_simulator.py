@@ -1,3 +1,4 @@
+import itertools
 import math
 import os
 import time
@@ -97,6 +98,7 @@ class GazeboSimulator(BaseSim):
         )
         self.entities = {}
         self._walls_entities = []
+        self._wall_counter = itertools.count()
 
     def before_reset_task(self):
         self._logger.info("Pausing simulation before reset")
@@ -363,7 +365,7 @@ class GazeboSimulator(BaseSim):
         self._logger.info("Goal published")
 
     def spawn_walls(self, walls) -> bool:
-        wall_name = self.node._environment_manager.realize(f"custom_wall_{len(self._walls_entities)}")
+        wall_name = self.node._environment_manager.realize(f"walls_{next(self._wall_counter)}")
         # wall_positions = [(0, 0), (5, 0), (5, 5), (0, 5), (0, 0)]  # A square wall
         wall_height = 3.0  # Wall height in meters
         wall_thickness = 0.2  # Wall thickness in meters
