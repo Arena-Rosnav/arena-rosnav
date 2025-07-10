@@ -23,7 +23,7 @@ run(){
 }
 
 run '(cd src/arena/arena-rosnav && git pull --ff-only --autostash || true);'
-run '(vcs import --input src/arena/arena-rosnav/arena.repos --recursive --ff --add-existing src);' '$? > 1'
+run '(vcs import --input src/arena/arena-rosnav/.repos/arena.repos --recursive --ff --add-existing src);' '$? > 1'
 
 
 if [ -f src/arena/arena-rosnav/.installed ] ; then

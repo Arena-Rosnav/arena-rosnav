@@ -217,7 +217,7 @@ if [ ! -f "$INSTALLED" ] ; then
   . poetry_install
 fi
 
-vcs import src < src/arena/arena-rosnav/arena.repos
+vcs import src < src/arena/arena-rosnav/.repos/arena.repos
 rosdep install -y \
   --from-paths src \
   --ignore-src \
