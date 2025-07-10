@@ -10,7 +10,7 @@ repositories:
   arena/tools:
     type: git
     url: https://github.com/voshch/arena-tools.git
-    version: main@ac04acf
+    version: main@384d549f
 
 
   # deps/xacro:
