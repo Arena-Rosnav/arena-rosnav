@@ -340,8 +340,8 @@ class HunavManager(DummyEntityManager):
     def _get_agents_callback(self, request, response):
         """Handle get_agents service request - return UNMODIFIED agents"""
         try:
-            self._logger.error("=== GET AGENTS CALLBACK ===")
-            self._logger.error(f"Returning {len(self._get_agents_container.agents)} agents")
+            self._logger.info("=== GET AGENTS CALLBACK ===")
+            self._logger.info(f"Returning {len(self._get_agents_container.agents)} agents")
 
             # Update timestamp
             self._get_agents_container.header.stamp = self.node.get_clock().now().to_msg()
@@ -406,7 +406,7 @@ class HunavManager(DummyEntityManager):
 
         # Now all obstacles have been spawned - register them with HuNav
         if self._agents_container.agents:
-            self._logger.error(f"All spawns complete. Registering {len(self._agents_container.agents)} agents with HuNav")
+            self._logger.debug(f"All spawns complete. Registering {len(self._agents_container.agents)} agents with HuNav")
 
             # Update timestamp
             self._agents_container.header.stamp = self.node.get_clock().now().to_msg()
@@ -420,7 +420,7 @@ class HunavManager(DummyEntityManager):
             response = self._compute_agents_client.call(request)
 
             if response:
-                self._logger.error(f"Successfully registered {len(response.updated_agents.agents)} agents")
+                self._logger.debug(f"Successfully registered {len(response.updated_agents.agents)} agents")
 
                 # Update local agents with response data
                 for updated_agent in response.updated_agents.agents:
@@ -447,7 +447,7 @@ class HunavManager(DummyEntityManager):
 
     def _spawn_dynamic_obstacle_impl(self, obstacle: DynamicObstacle) -> DynamicObstacle | None:
         """Create agent but don't register with HuNav yet"""
-        # self._logger.error(f"=== spawn_dynamic_obstacles_aufruf===")
+        # self._logger.info(f"=== spawn_dynamic_obstacles_aufruf===")
 
         try:
             # Get unique ID
@@ -470,7 +470,7 @@ class HunavManager(DummyEntityManager):
             agent_msg.skin = hunav_obstacle.skin
             agent_msg.group_id = hunav_obstacle.group_id
             agent_msg.desired_velocity = hunav_obstacle.desired_velocity
-            # self._logger.error(f"=== spawn_dynamic_obstacles_desired_velocity: {agent_msg.desired_velocity}===")
+            # self._logger.info(f"=== spawn_dynamic_obstacles_desired_velocity: {agent_msg.desired_velocity}===")
             agent_msg.radius = hunav_obstacle.radius
 
             # Set position
