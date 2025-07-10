@@ -10,7 +10,7 @@ from task_generator.simulators.human.dummy_manager import \
 from task_generator.simulators.human.utils import ObstacleLayer
 from task_generator.shared import DynamicObstacle
 from task_generator.simulators.sim import BaseSim
-from task_generator.simulators.isaac_simulator import IsaacSimulator
+from task_generator.simulators.sim.isaac_simulator import IsaacSimulator
 
 
 class IsaacHumanSimulator(DummyHumanSimulator):
