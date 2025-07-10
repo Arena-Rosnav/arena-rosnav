@@ -58,7 +58,7 @@ namespace task_generator_gui
 
         parameters_client = std::make_shared<rclcpp::SyncParametersClient>(service_node, task_generator_node);
 
-        generate_world_client = service_node->create_client<std_srvs::srv::Empty>("/world_generator/generate_world");
+        generate_world_client = service_node->create_client<std_srvs::srv::Trigger>("/world_generator/generate_world");
         reset_task_client = service_node->create_client<std_srvs::srv::Empty>(task_generator_node + "/reset_task");
 
         getRobots();

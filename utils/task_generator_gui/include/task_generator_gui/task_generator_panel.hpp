@@ -17,6 +17,7 @@
 
 #include <std_msgs/msg/string.hpp>
 #include <std_srvs/srv/empty.hpp>
+#include <std_srvs/srv/trigger.hpp>
 
 #include <QLabel>
 #include <QPushButton>
@@ -110,7 +111,7 @@ namespace task_generator_gui
         // Client to set ROS parameters for Node "/task_generator_node"
         rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr set_param_client;
         // Client to reset task
-        rclcpp::Client<std_srvs::srv::Empty>::SharedPtr generate_world_client;
+        rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr generate_world_client;
         rclcpp::Client<std_srvs::srv::Empty>::SharedPtr reset_task_client;
 
         // Selected robot model

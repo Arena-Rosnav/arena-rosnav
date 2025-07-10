@@ -507,7 +507,7 @@ namespace task_generator_gui
 
     bool TaskGeneratorPanel::generateWorld()
     {
-        auto generate_world_future = reset_task_client->async_send_request(std::make_shared<std_srvs::srv::Empty::Request>());
+        auto generate_world_future = generate_world_client->async_send_request(std::make_shared<std_srvs::srv::Trigger::Request>());
         if (rclcpp::spin_until_future_complete(service_node, generate_world_future) == rclcpp::FutureReturnCode::SUCCESS)
         {
             RCLCPP_INFO(service_node->get_logger(), "Successfully generated world");
