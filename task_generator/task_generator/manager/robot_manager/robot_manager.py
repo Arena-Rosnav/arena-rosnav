@@ -152,8 +152,8 @@ class RobotManager(NodeInterface):
             1
         )
 
-        self._odom_base_transform()
         self._launch_robot()
+        self._odom_base_transform()
 
         self._robot_radius = self.node.rosparam[float].get(
             'robot_radius',
