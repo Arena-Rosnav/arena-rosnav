@@ -1,10 +1,7 @@
-from collections.abc import Sequence
 import math
 import os
-import re
 import time
 import traceback
-import typing
 
 import attrs
 import geometry_msgs.msg
@@ -18,8 +15,8 @@ from hunav_msgs.srv import (ComputeAgent, ComputeAgents, DeleteActors,
 from task_generator.constants import Constants
 from task_generator.simulators.human.dummy_manager import \
     DummyHumanSimulator
-from task_generator.shared import (DynamicObstacle, Model, ModelType,
-                                   ModelWrapper, Obstacle, Pose, Position)
+from task_generator.shared import (Model, ModelType, ModelWrapper,
+                                   Obstacle, Pose, Position)
 from task_generator.simulators.sim import BaseSim
 
 from . import HunavDynamicObstacle

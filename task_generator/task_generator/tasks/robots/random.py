@@ -1,6 +1,6 @@
 import math
 
-from task_generator.shared import Orientation, Pose, Position, PositionRadius
+from task_generator.shared import Orientation, Pose, PositionRadius
 from task_generator.tasks.robots import TM_Robots
 
 

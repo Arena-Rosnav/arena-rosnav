@@ -6,8 +6,7 @@ from gazebo_msgs.srv import (DeleteModel, DeleteModelRequest,
                              DeleteModelResponse, SetModelState,
                              SetModelStateRequest, SpawnModel,
                              SpawnModelRequest)
-from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
-from tf.transformations import quaternion_from_euler
+from geometry_msgs.msg import Point, PoseStamped
 from unity_msgs.msg import Wall
 from unity_msgs.srv import SpawnWalls, SpawnWallsRequest
 

@@ -1,15 +1,16 @@
 import itertools
 import typing
+from collections.abc import Callable, Collection, Iterator
 from typing import Any
-from collections.abc import Collection, Iterator, Callable
 
 import attrs
+
 from task_generator import NodeInterface
-from task_generator.simulators.human import BaseHumanSimulator
-from task_generator.simulators.human.utils import ObstacleLayer
 from task_generator.manager.world_manager.utils import World
 from task_generator.shared import (DynamicObstacle, Entity, Obstacle,
                                    Orientation, Pose, Position, Robot, Wall)
+from task_generator.simulators.human import BaseHumanSimulator
+from task_generator.simulators.human.utils import ObstacleLayer
 from task_generator.simulators.sim import BaseSim
 
 EntityPropsT = typing.TypeVar('EntityPropsT', bound=Entity)

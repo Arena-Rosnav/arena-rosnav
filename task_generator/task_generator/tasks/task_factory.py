@@ -1,6 +1,5 @@
 import typing
 
-import arena_simulation_setup
 import rclpy
 import rosgraph_msgs.msg as rosgraph_msgs
 import std_msgs.msg as std_msgs

@@ -1,11 +1,9 @@
 import itertools
 import math
-import os
 import time
 import traceback
 
 import arena_simulation_setup.entities.robot
-import attrs
 import launch
 import launch_ros
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped

@@ -2,7 +2,7 @@ import math
 
 from task_generator.utils.time import Time
 
-from task_generator.shared import Pose, Position, Orientation
+from task_generator.shared import Pose, Orientation
 from task_generator.tasks.robots.random import TM_Random
 
 

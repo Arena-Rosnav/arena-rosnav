@@ -16,7 +16,7 @@ import task_generator.utils.arena as Utils
 from task_generator.constants import Constants
 from task_generator.manager.world_manager.utils import WorldMap, WorldOccupancy
 from task_generator.shared import (Model, ModelType, ModelWrapper, Obstacle,
-                                   Pose, Position, rosparam_get)
+                                   Pose, rosparam_get)
 
 
 class SDFUtil:
