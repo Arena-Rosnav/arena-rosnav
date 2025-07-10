@@ -1,6 +1,7 @@
 import itertools
 from math import floor
-from typing import Collection, Optional
+from typing import Optional
+from collections.abc import Collection
 
 import numpy as np
 import scipy.signal

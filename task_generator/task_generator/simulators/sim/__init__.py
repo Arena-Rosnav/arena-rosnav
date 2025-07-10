@@ -1,3 +1,4 @@
+from collections.abc import Collection
 import itertools
 import typing
 
@@ -29,7 +30,7 @@ class BaseSim(NodeInterface):
         return f"random_name_{next(self.__counter)}"
 
     @property
-    def MODEL_TYPES(self) -> typing.Collection[ModelType]:
+    def MODEL_TYPES(self) -> Collection[ModelType]:
         return self._spawn_model.keys()
 
     def spawn_model(self, model_type: ModelType, *args, **kwargs):

@@ -1,6 +1,7 @@
 import itertools
 import typing
-from typing import Any, Callable, Collection, Iterator
+from typing import Any
+from collections.abc import Collection, Iterator, Callable
 
 import attrs
 from task_generator import NodeInterface

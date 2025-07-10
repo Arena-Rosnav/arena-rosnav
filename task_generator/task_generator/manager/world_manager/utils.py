@@ -3,7 +3,8 @@
 """
 
 import itertools
-from typing import Callable, Collection, Optional, TypeVar
+from collections.abc import Callable, Collection
+from typing import Optional, TypeVar
 
 import attrs
 import nav_msgs.msg
