@@ -5,13 +5,13 @@ from task_generator.shared import DynamicObstacle, Obstacle
 
 class DummyHumanSimulator(BaseHumanSimulator):
 
-    def _spawn_obstacle_impl(
+    def _spawn_obstacles_impl(
         self,
         obstacles,
     ) -> Sequence[Obstacle | None]:
         return obstacles
 
-    def _spawn_dynamic_obstacle_impl(
+    def _spawn_dynamic_obstacles_impl(
         self,
         obstacles,
     ) -> Sequence[DynamicObstacle | None]:

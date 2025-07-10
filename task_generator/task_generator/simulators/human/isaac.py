@@ -1,14 +1,14 @@
-from collections.abc import Sequence
 import random
 import typing
+from collections.abc import Sequence
 
 from arena_rclpy_mixins.shared import Namespace
 from isaacsim_msgs.msg import Person
 from isaacsim_msgs.srv import Pedestrian
-from task_generator.simulators.human.dummy_manager import \
-    DummyHumanSimulator
-from task_generator.simulators.human.utils import ObstacleLayer
+
 from task_generator.shared import DynamicObstacle
+from task_generator.simulators.human.dummy import DummyHumanSimulator
+from task_generator.simulators.human.utils import ObstacleLayer
 from task_generator.simulators.sim import BaseSim
 from task_generator.simulators.sim.isaac_simulator import IsaacSimulator
 

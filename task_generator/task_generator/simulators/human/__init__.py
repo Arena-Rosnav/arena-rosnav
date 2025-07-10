@@ -188,7 +188,7 @@ class BaseHumanSimulator(NodeInterface, abc.ABC):
     # impl
 
     @abc.abstractmethod
-    def _spawn_obstacle_impl(
+    def _spawn_obstacles_impl(
         self,
         obstacles: Sequence[Obstacle],
     ) -> Sequence[Obstacle | None]:
@@ -242,17 +242,17 @@ EntityManagerRegistry = Registry[Constants.HumanSimulator, BaseHumanSimulator]()
 
 @EntityManagerRegistry.register(Constants.HumanSimulator.DUMMY)
 def dummy():
-    from .dummy_manager import DummyHumanSimulator
+    from .dummy import DummyHumanSimulator
     return DummyHumanSimulator
 
 
 @EntityManagerRegistry.register(Constants.HumanSimulator.HUNAV)
 def lazy_hunavsim():
-    from .hunav_manager.hunav_manager import HunavManager
-    return HunavManager
+    from .hunav.hunav import HunavHumanSimulator
+    return HunavHumanSimulator
 
 
 @EntityManagerRegistry.register(Constants.HumanSimulator.ISAAC)
 def isaacsim():
-    from .isaac_manager import IsaacHumanSimulator
+    from .isaac import IsaacHumanSimulator
     return IsaacHumanSimulator

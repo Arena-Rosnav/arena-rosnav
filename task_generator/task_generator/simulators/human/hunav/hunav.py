@@ -13,10 +13,9 @@ from hunav_msgs.srv import (ComputeAgent, ComputeAgents, DeleteActors,
                             GetAgents, GetWalls, MoveAgent, ResetAgents)
 
 from task_generator.constants import Constants
-from task_generator.simulators.human.dummy_manager import \
-    DummyHumanSimulator
-from task_generator.shared import (Model, ModelType, ModelWrapper,
-                                   Obstacle, Pose, Position)
+from task_generator.shared import (Model, ModelType, ModelWrapper, Obstacle,
+                                   Pose, Position)
+from task_generator.simulators.human.dummy import DummyHumanSimulator
 from task_generator.simulators.sim import BaseSim
 
 from . import HunavDynamicObstacle
@@ -171,7 +170,7 @@ class _PedestrianHelper:
         return sdf
 
 
-class HunavManager(DummyHumanSimulator):
+class HunavHumanSimulator(DummyHumanSimulator):
     """HunavManager with debug logging for tracking execution flow"""
 
     _pedestrians: dict[int, dict]
