@@ -17,6 +17,7 @@ from task_generator.shared import (Model, ModelType, ModelWrapper, Obstacle,
                                    Pose, Position)
 from task_generator.simulators.human.dummy import DummyHumanSimulator
 from task_generator.simulators.sim import BaseSim
+from task_generator.shared import Orientation
 
 from . import HunavDynamicObstacle
 
@@ -430,14 +431,13 @@ class HunavHumanSimulator(DummyHumanSimulator):
 
                     # Create SDF with plugin for Gazebo
                     sdf = _PedestrianHelper.create_sdf(hunav_obstacle)
-                    new_obstacle = attrs.evolve(
-                        obstacle,
-                        model=obstacle.model.override(
-                            ModelType.SDF,
-                            lambda model: model.replace(description=sdf), noload=True)
+                    obstacle.model = obstacle.model.override(
+                        ModelType.SDF,
+                        lambda model: model.replace(description=sdf), noload=True
                     )
+                    obstacle.pose.orientation = Orientation.from_yaw(hunav_obstacle.yaw)
                     self._logger.info(f"Created SDF and loaded System Plugin for: {agent_msg.name}")
-                    results.append(new_obstacle)
+                    results.append(obstacle)
                 else:
                     # For other simulators: use simple model without plugin
                     self._logger.info(f"Using simple spawning for simulator: {self._simulator_type}")
