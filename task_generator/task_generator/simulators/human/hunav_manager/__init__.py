@@ -38,10 +38,10 @@ class Goals(list[Position]):
         ]
 
 
-@attrs.frozen()
+@attrs.define()
 class HunavDynamicObstacle:
 
-    @attrs.frozen()
+    @attrs.define()
     class Behavior:
         type: int
         state: int

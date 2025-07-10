@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 import random
 import typing
 
@@ -5,14 +6,14 @@ from arena_rclpy_mixins.shared import Namespace
 from isaacsim_msgs.msg import Person
 from isaacsim_msgs.srv import Pedestrian
 from task_generator.simulators.human.dummy_manager import \
-    DummyEntityManager
+    DummyHumanSimulator
 from task_generator.simulators.human.utils import ObstacleLayer
 from task_generator.shared import DynamicObstacle
 from task_generator.simulators.sim import BaseSim
 from task_generator.simulators.isaac_simulator import IsaacSimulator
 
 
-class IsaacEntityManager(DummyEntityManager):
+class IsaacHumanSimulator(DummyHumanSimulator):
 
     def __init__(self, namespace: Namespace, simulator: BaseSim):
         if not isinstance(simulator, IsaacSimulator):
@@ -24,7 +25,7 @@ class IsaacEntityManager(DummyEntityManager):
 
     def spawn_dynamic_obstacles(
         self,
-        obstacles: typing.Collection[DynamicObstacle],
+        obstacles: Sequence[DynamicObstacle],
     ):
         self._logger.debug(f'spawning {len(obstacles)} dynamic obstacles')
         for obstacle in obstacles:

@@ -1,5 +1,6 @@
 import abc
 import typing
+from collections.abc import Sequence
 
 import rclpy
 import rclpy.publisher
@@ -47,7 +48,7 @@ class BaseHumanSimulator(NodeInterface, abc.ABC):
 
     def spawn_obstacles(
         self,
-        obstacles: typing.Collection[Obstacle]
+        obstacles: Sequence[Obstacle]
     ):
         """
         Loads given obstacles into the simulator.
@@ -75,12 +76,15 @@ class BaseHumanSimulator(NodeInterface, abc.ABC):
 
     def spawn_dynamic_obstacles(
         self,
-        obstacles: typing.Collection[DynamicObstacle]
+        obstacles: typing.Sequence[DynamicObstacle]
     ):
         """
         Loads given obstacles into the simulator.
         """
         self._logger.debug(f'spawning {len(obstacles)} dynamic obstacles')
+
+        unspawneds = []
+
         for obstacle in obstacles:
             if (known := self._known_obstacles.get(obstacle.name)) is not None:
                 known.obstacle = obstacle
@@ -91,11 +95,14 @@ class BaseHumanSimulator(NodeInterface, abc.ABC):
                     name=obstacle.name,
                     obstacle=obstacle
                 )
-
             if not known.spawned:
-                if (obs := self._spawn_dynamic_obstacle_impl(obstacle)):
-                    known.obstacle = obs
-                    known.spawned = True
+                unspawneds.append(known)
+
+        for (known, obstacle) in zip(unspawneds, self._spawn_dynamic_obstacles_impl([unspawned.obstacle for unspawned in unspawneds])):
+            if not obstacle:
+                continue
+            known.obstacle = obstacle
+            known.spawned = True
 
             if known.layer == ObstacleLayer.UNUSED:
                 if self._simulator.spawn_entity(known.obstacle):
@@ -103,7 +110,7 @@ class BaseHumanSimulator(NodeInterface, abc.ABC):
 
     def spawn_walls(
         self,
-        walls: typing.Collection[Wall]
+        walls: Sequence[Wall]
     ):
         """
         Adds walls to the simulator.
@@ -183,15 +190,15 @@ class BaseHumanSimulator(NodeInterface, abc.ABC):
     @abc.abstractmethod
     def _spawn_obstacle_impl(
         self,
-        obstacle: Obstacle,
-    ) -> Obstacle | None:
+        obstacles: Sequence[Obstacle],
+    ) -> Sequence[Obstacle | None]:
         ...
 
     @abc.abstractmethod
-    def _spawn_dynamic_obstacle_impl(
+    def _spawn_dynamic_obstacles_impl(
         self,
-        obstacle: DynamicObstacle,
-    ) -> DynamicObstacle | None:
+        obstacles: Sequence[DynamicObstacle],
+    ) -> Sequence[DynamicObstacle | None]:
         ...
 
     @abc.abstractmethod
@@ -203,7 +210,7 @@ class BaseHumanSimulator(NodeInterface, abc.ABC):
     @abc.abstractmethod
     def _spawn_walls_impl(
         self,
-        walls: typing.Collection[Wall],
+        walls: Sequence[Wall],
     ) -> bool:
         ...
 
@@ -235,8 +242,8 @@ EntityManagerRegistry = Registry[Constants.HumanSimulator, BaseHumanSimulator]()
 
 @EntityManagerRegistry.register(Constants.HumanSimulator.DUMMY)
 def dummy():
-    from .dummy_manager import DummyEntityManager
-    return DummyEntityManager
+    from .dummy_manager import DummyHumanSimulator
+    return DummyHumanSimulator
 
 
 @EntityManagerRegistry.register(Constants.HumanSimulator.HUNAV)
@@ -247,5 +254,5 @@ def lazy_hunavsim():
 
 @EntityManagerRegistry.register(Constants.HumanSimulator.ISAAC)
 def isaacsim():
-    from .isaac_manager import IsaacEntityManager
-    return IsaacEntityManager
+    from .isaac_manager import IsaacHumanSimulator
+    return IsaacHumanSimulator

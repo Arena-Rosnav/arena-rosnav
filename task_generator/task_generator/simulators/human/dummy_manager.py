@@ -1,20 +1,21 @@
+from collections.abc import Sequence
 from task_generator.simulators.human import BaseHumanSimulator
 from task_generator.shared import DynamicObstacle, Obstacle
 
 
-class DummyEntityManager(BaseHumanSimulator):
+class DummyHumanSimulator(BaseHumanSimulator):
 
     def _spawn_obstacle_impl(
         self,
-        obstacle,
-    ) -> Obstacle | None:
-        return obstacle
+        obstacles,
+    ) -> Sequence[Obstacle | None]:
+        return obstacles
 
     def _spawn_dynamic_obstacle_impl(
         self,
-        obstacle,
-    ) -> DynamicObstacle | None:
-        return obstacle
+        obstacles,
+    ) -> Sequence[DynamicObstacle | None]:
+        return obstacles
 
     def _remove_obstacles_impl(
         self,

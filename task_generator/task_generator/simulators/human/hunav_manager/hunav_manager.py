@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 import math
 import os
 import re
@@ -16,7 +17,7 @@ from hunav_msgs.srv import (ComputeAgent, ComputeAgents, DeleteActors,
 
 from task_generator.constants import Constants
 from task_generator.simulators.human.dummy_manager import \
-    DummyEntityManager
+    DummyHumanSimulator
 from task_generator.shared import (DynamicObstacle, Model, ModelType,
                                    ModelWrapper, Obstacle, Pose, Position)
 from task_generator.simulators.sim import BaseSim
@@ -173,7 +174,7 @@ class _PedestrianHelper:
         return sdf
 
 
-class HunavManager(DummyEntityManager):
+class HunavManager(DummyHumanSimulator):
     """HunavManager with debug logging for tracking execution flow"""
 
     _pedestrians: dict[int, dict]
@@ -397,14 +398,62 @@ class HunavManager(DummyEntityManager):
         except Exception as e:
             self._logger.error(f"Failed to update agent positions: {e}")
 
-    def spawn_dynamic_obstacles(self, obstacles: typing.Collection[DynamicObstacle]):
-        """Override to handle batch registration after all spawns"""
-        self._logger.debug(f"=== SPAWNING {len(obstacles)} DYNAMIC OBSTACLES ===")
+    def _spawn_dynamic_obstacles_impl(self, obstacles):
 
-        # Call parent method which handles individual spawns
-        super().spawn_dynamic_obstacles(obstacles)
+        results = []
 
-        # Now all obstacles have been spawned - register them with HuNav
+        for obstacle in obstacles:
+            try:
+                # Get unique ID
+                unique_id = len(self._agents_container.agents) + 1
+                hunav_obstacle = HunavDynamicObstacle.from_dynamic_obstacle(obstacle)
+                hunav_obstacle = attrs.evolve(hunav_obstacle, id=unique_id)
+
+                agent_msg = self._create_agent_msg(hunav_obstacle)
+
+                # Add to container - NO ComputeAgents call here!
+                self._get_agents_container.agents.append(agent_msg)
+                self._agents_container.agents.append(agent_msg)
+                # self._logger.error(f"spawn_dynamic_obstacle_agents_container {self._agents_container}")
+
+                # Store in pedestrians dictionary
+                self._pedestrians[agent_msg.id] = {
+                    'last_update': time.time(),
+                    'current_state': agent_msg.behavior.state,
+                    'agent': agent_msg,
+                    'animation_time': 0.0
+                }
+
+                self._logger.info(f"Added agent {agent_msg.name} to container. Total agents: {len(self._agents_container.agents)}")
+
+                if self._simulator_type == Constants.SimSimulator.GAZEBO:
+                    # spawn plugin if not already spawned
+                    if not self._gz_plugin_spawned:
+                        self._simulator.spawn_entity(_PedestrianHelper.plugin_entity(self.node.service_namespace()))
+                        self._gz_plugin_spawned = True
+
+                    # Create SDF with plugin for Gazebo
+                    sdf = _PedestrianHelper.create_sdf(hunav_obstacle)
+                    new_obstacle = attrs.evolve(
+                        obstacle,
+                        model=obstacle.model.override(
+                            ModelType.SDF,
+                            lambda model: model.replace(description=sdf), noload=True)
+                    )
+                    self._logger.info(f"Created SDF and loaded System Plugin for: {agent_msg.name}")
+                    results.append(new_obstacle)
+                else:
+                    # For other simulators: use simple model without plugin
+                    self._logger.info(f"Using simple spawning for simulator: {self._simulator_type}")
+                    return obstacles  # Return original obstacle without SDF modification
+
+            except Exception as e:
+                self._logger.error(f"Error preparing agent: {str(e)}")
+                self._logger.error(traceback.format_exc())
+                results.append(None)
+
+        # Now all obstacles have been prepared - register them with HuNav
+
         if self._agents_container.agents:
             self._logger.debug(f"All spawns complete. Registering {len(self._agents_container.agents)} agents with HuNav")
 
@@ -445,159 +494,7 @@ class HunavManager(DummyEntityManager):
         else:
             self._logger.debug("No agents to register")
 
-    def _spawn_dynamic_obstacle_impl(self, obstacle: DynamicObstacle) -> DynamicObstacle | None:
-        """Create agent but don't register with HuNav yet"""
-        # self._logger.info(f"=== spawn_dynamic_obstacles_aufruf===")
-
-        try:
-            # Get unique ID
-            try:
-                agent_number = int(obstacle.name.split('_')[-1])
-                unique_id = agent_number
-            except (ValueError, IndexError):
-                unique_id = len(self._agents_container.agents) + 1
-
-            hunav_obstacle = HunavDynamicObstacle.from_dynamic_obstacle(obstacle)
-            hunav_obstacle = attrs.evolve(hunav_obstacle, id=unique_id)
-
-            self._logger.info(f"Preparing agent {hunav_obstacle.name} (ID: {unique_id})")
-
-            # Create agent message
-            agent_msg = Agent()
-            agent_msg.id = unique_id
-            agent_msg.name = hunav_obstacle.name
-            agent_msg.type = hunav_obstacle.type
-            agent_msg.skin = hunav_obstacle.skin
-            agent_msg.group_id = hunav_obstacle.group_id
-            agent_msg.desired_velocity = hunav_obstacle.desired_velocity
-            # self._logger.info(f"=== spawn_dynamic_obstacles_desired_velocity: {agent_msg.desired_velocity}===")
-            agent_msg.radius = hunav_obstacle.radius
-
-            # Set position
-            agent_msg.position = geometry_msgs.msg.Pose()
-            agent_msg.position.position.x = hunav_obstacle.init_pose.x
-            agent_msg.position.position.y = hunav_obstacle.init_pose.y
-            agent_msg.position.position.z = 1.250000
-            agent_msg.yaw = hunav_obstacle.yaw
-
-            # Set behavior
-            agent_msg.behavior = AgentBehavior()
-            agent_msg.behavior.type = hunav_obstacle.behavior.type
-            agent_msg.behavior.configuration = hunav_obstacle.behavior.configuration
-            agent_msg.behavior.duration = hunav_obstacle.behavior.duration
-            agent_msg.behavior.once = hunav_obstacle.behavior.once
-            agent_msg.behavior.vel = hunav_obstacle.behavior.vel
-            agent_msg.behavior.dist = hunav_obstacle.behavior.dist
-            agent_msg.behavior.goal_force_factor = 20.0  # hunav_obstacle.behavior.goal_force_factor
-            agent_msg.behavior.obstacle_force_factor = hunav_obstacle.behavior.obstacle_force_factor
-            agent_msg.behavior.social_force_factor = hunav_obstacle.behavior.social_force_factor
-            agent_msg.behavior.other_force_factor = hunav_obstacle.behavior.other_force_factor
-
-            # Set goals
-            agent_msg.goal_radius = hunav_obstacle.goal_radius
-            agent_msg.cyclic_goals = hunav_obstacle.cyclic_goals
-            if hunav_obstacle.goals:
-                agent_msg.goals = hunav_obstacle.goals.as_poses()
-            else:
-                # Default goals if none exist
-                goals = [
-                    (-3.133759, -4.166653, 1.250000),
-                    (0.997901, -4.131655, 1.250000),
-                    (-0.227549, -20.187146, 1.250000)
-                ]
-                for x, y, h in goals:
-                    goal = geometry_msgs.msg.Pose()
-                    goal.position.x = x
-                    goal.position.y = y
-                    agent_msg.goals.append(goal)
-
-            # Add wall obstacles
-            # self._logger.debug(f"Hunav Manager Wallpoints: {self._wall_points}")
-            # agent_msg.closest_obs.extend(self._wall_points)
-            # self._logger.debug(f"Hunav Manager Closest Obstacles: {agent_msg.closest_obs}")
-
-            # After creating the agent message:
-            self._logger.debug(f"""            ##Complete Debug for the set attributes
-            Full HunavObstacle Details:
-            ID: {agent_msg.id}
-            Name: {agent_msg.name}
-            Type: {agent_msg.type}
-            Skin: {agent_msg.skin}
-            Group ID: {agent_msg.group_id}
-
-            Position:
-            - X: {agent_msg.position.position.x}
-            - Y: {agent_msg.position.position.y}
-            - Z: {agent_msg.position.position.z}
-            - Yaw: {agent_msg.yaw}
-
-            Velocities:
-            - Desired: {agent_msg.desired_velocity}
-            - Linear: {agent_msg.linear_vel}
-            - Angular: {agent_msg.angular_vel}
-
-            Physical:
-            - Radius: {agent_msg.radius}
-
-            Behavior:
-            - Type: {agent_msg.behavior.type}
-            - Configuration: {agent_msg.behavior.configuration}
-            - Duration: {agent_msg.behavior.duration}
-            - Once: {agent_msg.behavior.once}
-            - Velocity: {agent_msg.behavior.vel}
-            - Distance: {agent_msg.behavior.dist}
-            - Goal Force: {agent_msg.behavior.goal_force_factor}
-            - Obstacle Force: {agent_msg.behavior.obstacle_force_factor}
-            - Social Force: {agent_msg.behavior.social_force_factor}
-            - Other Force: {agent_msg.behavior.other_force_factor}
-
-            Goals:
-            - Count: {len(agent_msg.goals)}
-            - Cyclic: {agent_msg.cyclic_goals}
-            - Radius: {agent_msg.goal_radius}
-            - Goals List: {[f'({g.position.x}, {g.position.y})' for g in agent_msg.goals]}
-            """)
-
-            # Add to container - NO ComputeAgents call here!
-            self._get_agents_container.agents.append(agent_msg)
-            self._agents_container.agents.append(agent_msg)
-            # self._logger.error(f"spawn_dynamic_obstacle_agents_container {self._agents_container}")
-
-            # Store in pedestrians dictionary
-            self._pedestrians[agent_msg.id] = {
-                'last_update': time.time(),
-                'current_state': agent_msg.behavior.state,
-                'agent': agent_msg,
-                'animation_time': 0.0
-            }
-
-            self._logger.info(f"Added agent {agent_msg.name} to container. Total agents: {len(self._agents_container.agents)}")
-
-            if self._simulator_type == Constants.SimSimulator.GAZEBO:
-                # spawn plugin if not already spawned
-                if not self._gz_plugin_spawned:
-                    self._simulator.spawn_entity(_PedestrianHelper.plugin_entity(self.node.service_namespace()))
-                    self._gz_plugin_spawned = True
-
-                # Create SDF with plugin for Gazebo
-                sdf = _PedestrianHelper.create_sdf(hunav_obstacle)
-                new_obstacle = attrs.evolve(
-                    obstacle,
-                    model=obstacle.model.override(
-                        ModelType.SDF,
-                        lambda model: model.replace(description=sdf), noload=True)
-                )
-                self._logger.info(f"Created SDF and loaded System Plugin for: {agent_msg.name}")
-                return new_obstacle
-            else:
-                # For other simulators: use simple model without plugin
-                self._logger.info(f"Using simple spawning for simulator: {self._simulator_type}")
-                return obstacle  # Return original obstacle without SDF modification
-
-        except Exception as e:
-            self._logger.error(f"Error preparing agent: {str(e)}")
-            self._logger.error(traceback.format_exc())
-            return None
+        return results
 
     def _spawn_walls_impl(self, walls) -> bool:
 
@@ -719,3 +616,104 @@ class HunavManager(DummyEntityManager):
                 self._logger.error(f"Error stopping movement timer: {e}")
 
         self._logger.debug("All local data structures cleared")
+
+    def _create_agent_msg(self, hunav_obstacle: HunavDynamicObstacle) -> Agent:
+        self._logger.info(f"Preparing agent {hunav_obstacle.name} (ID: {hunav_obstacle.id})")
+
+        # Create agent message
+        agent_msg = Agent()
+        agent_msg.id = hunav_obstacle.id
+        agent_msg.name = hunav_obstacle.name
+        agent_msg.type = hunav_obstacle.type
+        agent_msg.skin = hunav_obstacle.skin
+        agent_msg.group_id = hunav_obstacle.group_id
+        agent_msg.desired_velocity = hunav_obstacle.desired_velocity
+        # self._logger.info(f"=== spawn_dynamic_obstacles_desired_velocity: {agent_msg.desired_velocity}===")
+        agent_msg.radius = hunav_obstacle.radius
+
+        # Set position
+        agent_msg.position = geometry_msgs.msg.Pose()
+        agent_msg.position.position.x = hunav_obstacle.init_pose.x
+        agent_msg.position.position.y = hunav_obstacle.init_pose.y
+        agent_msg.position.position.z = 1.250000
+        agent_msg.yaw = hunav_obstacle.yaw
+
+        # Set behavior
+        agent_msg.behavior = AgentBehavior()
+        agent_msg.behavior.type = hunav_obstacle.behavior.type
+        agent_msg.behavior.configuration = hunav_obstacle.behavior.configuration
+        agent_msg.behavior.duration = hunav_obstacle.behavior.duration
+        agent_msg.behavior.once = hunav_obstacle.behavior.once
+        agent_msg.behavior.vel = hunav_obstacle.behavior.vel
+        agent_msg.behavior.dist = hunav_obstacle.behavior.dist
+        agent_msg.behavior.goal_force_factor = 20.0  # hunav_obstacle.behavior.goal_force_factor
+        agent_msg.behavior.obstacle_force_factor = hunav_obstacle.behavior.obstacle_force_factor
+        agent_msg.behavior.social_force_factor = hunav_obstacle.behavior.social_force_factor
+        agent_msg.behavior.other_force_factor = hunav_obstacle.behavior.other_force_factor
+
+        # Set goals
+        agent_msg.goal_radius = hunav_obstacle.goal_radius
+        agent_msg.cyclic_goals = hunav_obstacle.cyclic_goals
+        if hunav_obstacle.goals:
+            agent_msg.goals = hunav_obstacle.goals.as_poses()
+        else:
+            # Default goals if none exist
+            goals = [
+                (-3.133759, -4.166653, 1.250000),
+                (0.997901, -4.131655, 1.250000),
+                (-0.227549, -20.187146, 1.250000)
+            ]
+            for x, y, h in goals:
+                goal = geometry_msgs.msg.Pose()
+                goal.position.x = x
+                goal.position.y = y
+                agent_msg.goals.append(goal)
+
+        # Add wall obstacles
+        # self._logger.debug(f"Hunav Manager Wallpoints: {self._wall_points}")
+        # agent_msg.closest_obs.extend(self._wall_points)
+        # self._logger.debug(f"Hunav Manager Closest Obstacles: {agent_msg.closest_obs}")
+
+        # After creating the agent message:
+        self._logger.debug(f"""            ##Complete Debug for the set attributes
+                Full HunavObstacle Details:
+                ID: {agent_msg.id}
+                Name: {agent_msg.name}
+                Type: {agent_msg.type}
+                Skin: {agent_msg.skin}
+                Group ID: {agent_msg.group_id}
+
+                Position:
+                - X: {agent_msg.position.position.x}
+                - Y: {agent_msg.position.position.y}
+                - Z: {agent_msg.position.position.z}
+                - Yaw: {agent_msg.yaw}
+
+                Velocities:
+                - Desired: {agent_msg.desired_velocity}
+                - Linear: {agent_msg.linear_vel}
+                - Angular: {agent_msg.angular_vel}
+
+                Physical:
+                - Radius: {agent_msg.radius}
+
+                Behavior:
+                - Type: {agent_msg.behavior.type}
+                - Configuration: {agent_msg.behavior.configuration}
+                - Duration: {agent_msg.behavior.duration}
+                - Once: {agent_msg.behavior.once}
+                - Velocity: {agent_msg.behavior.vel}
+                - Distance: {agent_msg.behavior.dist}
+                - Goal Force: {agent_msg.behavior.goal_force_factor}
+                - Obstacle Force: {agent_msg.behavior.obstacle_force_factor}
+                - Social Force: {agent_msg.behavior.social_force_factor}
+                - Other Force: {agent_msg.behavior.other_force_factor}
+
+                Goals:
+                - Count: {len(agent_msg.goals)}
+                - Cyclic: {agent_msg.cyclic_goals}
+                - Radius: {agent_msg.goal_radius}
+                - Goals List: {[f'({g.position.x}, {g.position.y})' for g in agent_msg.goals]}
+                """)
+
+        return agent_msg
