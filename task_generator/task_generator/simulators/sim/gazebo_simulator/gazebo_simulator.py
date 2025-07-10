@@ -15,12 +15,12 @@ from ros_gz_interfaces.srv import (ControlWorld, DeleteEntity, SetEntityPose,
 
 from task_generator.shared import (Entity, Model, ModelType, ModelWrapper,
                                    Pose, Robot, Wall)
-from task_generator.simulators import BaseSimulator
+from task_generator.simulators.sim import BaseSim
 
 from .robot_bridge import BridgeConfiguration
 
 
-class GazeboSimulator(BaseSimulator):
+class GazeboSimulator(BaseSim):
 
     _walls_entities: list[str]
 

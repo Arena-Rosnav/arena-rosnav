@@ -191,7 +191,7 @@ class WorldManagerROS(MapServerHandler, WorldManager):
         world_name = str(value)
 
         # if world_name != self._world_name and \
-        #         (simulator := self.node.conf.Arena.SIMULATOR.value) in (Constants.Simulator.GAZEBO,):
+        #         (simulator := self.node.conf.Arena.SIM.value) in (Constants.Simulator.GAZEBO,):
         #     raise RuntimeError(
         #         f'Simulator {simulator.value} does not support world reloading.')
 

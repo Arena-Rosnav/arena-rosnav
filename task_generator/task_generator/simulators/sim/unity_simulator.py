@@ -15,12 +15,12 @@ from task_generator.constants import UnityConstants
 from task_generator.constants.runtime import Configuration
 from task_generator.manager.world_manager.utils import WorldWalls
 from task_generator.shared import ModelType, Obstacle, Robot, rosparam_get
-from task_generator.simulators import BaseSimulator
+from task_generator.simulators.sim import BaseSim
 
 T = Configuration.General.WAIT_FOR_SERVICE_TIMEOUT
 
 
-class UnitySimulator(BaseSimulator):
+class UnitySimulator(BaseSim):
 
     _robot_name: str
 

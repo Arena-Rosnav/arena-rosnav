@@ -23,21 +23,21 @@ def Configuration(server: ROSParamServer):
             Formerly arena.py.
             """
 
-            SIMULATOR = server.ROSParam[Constants.Simulator](
-                'simulator',
-                Constants.Simulator.DUMMY.value,
-                parse=Constants.Simulator
+            SIM = server.ROSParam[Constants.SimSimulator](
+                'sim',
+                Constants.SimSimulator.DUMMY.value,
+                parse=Constants.SimSimulator
+            )
+
+            HUMAN = server.ROSParam[Constants.HumanSimulator](
+                'human',
+                Constants.HumanSimulator.DUMMY.value,
+                parse=Constants.HumanSimulator
             )
 
             WORLD = server.ROSParam[str](
                 'world',
                 type_=rclpy.Parameter.Type.STRING,
-            )
-
-            ENTITY_MANAGER = server.ROSParam[Constants.EntityManager](
-                'entity_manager',
-                Constants.EntityManager.DUMMY.value,
-                parse=Constants.EntityManager
             )
 
         class General:

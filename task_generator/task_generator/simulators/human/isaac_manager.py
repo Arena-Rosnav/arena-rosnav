@@ -4,17 +4,17 @@ import typing
 from arena_rclpy_mixins.shared import Namespace
 from isaacsim_msgs.msg import Person
 from isaacsim_msgs.srv import Pedestrian
-from task_generator.manager.entity_manager.dummy_manager import \
+from task_generator.simulators.human.dummy_manager import \
     DummyEntityManager
-from task_generator.manager.entity_manager.utils import ObstacleLayer
+from task_generator.simulators.human.utils import ObstacleLayer
 from task_generator.shared import DynamicObstacle
-from task_generator.simulators import BaseSimulator
+from task_generator.simulators.sim import BaseSim
 from task_generator.simulators.isaac_simulator import IsaacSimulator
 
 
 class IsaacEntityManager(DummyEntityManager):
 
-    def __init__(self, namespace: Namespace, simulator: BaseSimulator):
+    def __init__(self, namespace: Namespace, simulator: BaseSim):
         if not isinstance(simulator, IsaacSimulator):
             raise ValueError("IsaacEntityManager only works with IsaacSimulator")
         super().__init__(namespace, simulator)

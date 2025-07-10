@@ -23,12 +23,12 @@ def generate_launch_description():
         default_value='task_generator_node'
     )
 
-    simulator = LaunchArgument(
-        name='simulator',
-        description='[dummy, gazebo]'
+    sim = LaunchArgument(
+        name='sim',
+        description='[dummy, gazebo, isaac]'
     )
-    entity_manager = LaunchArgument(
-        name='entity_manager',
+    human = LaunchArgument(
+        name='human',
         description='[dummy]'
     )
     robot = LaunchArgument(
@@ -103,7 +103,7 @@ def generate_launch_description():
             {"namespace": namespace.substitution},
         ],
         output="screen",
-        condition=launch.conditions.IfCondition(PythonExpression(['"', entity_manager.substitution, '" == "hunav"'])),
+        condition=launch.conditions.IfCondition(PythonExpression(['"', human.substitution, '" == "hunav"'])),
     )
     # Start the rviz config generator which launches also rviz2 with desired config file
     rviz_node = launch_ros.actions.Node(
@@ -130,8 +130,8 @@ def generate_launch_description():
         output='screen',
         parameters=[
             {
-                **simulator.str_param,
-                **entity_manager.str_param,
+                **sim.str_param,
+                **human.str_param,
                 **robot.str_param,
                 **tm_robots.str_param,
                 **tm_obstacles.str_param,

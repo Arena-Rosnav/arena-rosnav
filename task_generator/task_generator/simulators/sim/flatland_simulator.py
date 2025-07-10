@@ -9,10 +9,10 @@ from rosros import rospify as rospy
 
 from task_generator.constants.runtime import Configuration
 from task_generator.shared import ModelType, rosparam_get
-from task_generator.simulators import BaseSimulator
+from task_generator.simulators.sim import BaseSim
 
 
-class FlatlandSimulator(BaseSimulator):
+class FlatlandSimulator(BaseSim):
     """
     This is the flatland encoder for connecting
     flatland with the arena-benchmark task

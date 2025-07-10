@@ -8,14 +8,13 @@ from geometry_msgs.msg import PoseStamped
 
 from task_generator import NodeInterface
 from task_generator.constants import Constants
-from task_generator.manager.entity_manager.utils import (KnownObstacles,
-                                                         ObstacleLayer)
 from task_generator.shared import DynamicObstacle, Obstacle, Pose, Robot, Wall
-from task_generator.simulators import BaseSimulator
+from task_generator.simulators.human.utils import KnownObstacles, ObstacleLayer
+from task_generator.simulators.sim import BaseSim
 from task_generator.utils.registry import Registry
 
 
-class EntityManager(NodeInterface, abc.ABC):
+class BaseHumanSimulator(NodeInterface, abc.ABC):
 
     _goal_pub: rclpy.publisher.Publisher
     _known_obstacles: KnownObstacles
@@ -23,7 +22,7 @@ class EntityManager(NodeInterface, abc.ABC):
     def __init__(
         self,
         namespace: Namespace,
-        simulator: BaseSimulator,
+        simulator: BaseSim,
     ):
         """
         Initialize dynamic obstacle manager.
@@ -133,10 +132,10 @@ class EntityManager(NodeInterface, abc.ABC):
         @purge: remove obstacles down to this layer
         """
         self._logger.debug(f'removing obstacles (level {purge})')
-        if purge >= ObstacleLayer.WORLD: self._simulator.remove_walls()
+        if purge >= ObstacleLayer.WORLD:
+            self._simulator.remove_walls()
         for obstacle_id, obstacle in list(self._known_obstacles.items()):
             if purge >= obstacle.layer:
-                self._logger.info(f'!???')
                 self._simulator.delete_entity(name=obstacle_id)
                 self._known_obstacles.forget(name=obstacle_id)
 
@@ -231,22 +230,22 @@ class EntityManager(NodeInterface, abc.ABC):
         ...
 
 
-EntityManagerRegistry = Registry[Constants.EntityManager, EntityManager]()
+EntityManagerRegistry = Registry[Constants.HumanSimulator, BaseHumanSimulator]()
 
 
-@EntityManagerRegistry.register(Constants.EntityManager.DUMMY)
+@EntityManagerRegistry.register(Constants.HumanSimulator.DUMMY)
 def dummy():
     from .dummy_manager import DummyEntityManager
     return DummyEntityManager
 
 
-@EntityManagerRegistry.register(Constants.EntityManager.HUNAV)
+@EntityManagerRegistry.register(Constants.HumanSimulator.HUNAV)
 def lazy_hunavsim():
     from .hunav_manager.hunav_manager import HunavManager
     return HunavManager
 
 
-@EntityManagerRegistry.register(Constants.EntityManager.ISAAC)
+@EntityManagerRegistry.register(Constants.HumanSimulator.ISAAC)
 def isaacsim():
     from .isaac_manager import IsaacEntityManager
     return IsaacEntityManager

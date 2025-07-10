@@ -1,8 +1,8 @@
-from task_generator.manager.entity_manager import EntityManager
+from task_generator.simulators.human import BaseHumanSimulator
 from task_generator.shared import DynamicObstacle, Obstacle
 
 
-class DummyEntityManager(EntityManager):
+class DummyEntityManager(BaseHumanSimulator):
 
     def _spawn_obstacle_impl(
         self,

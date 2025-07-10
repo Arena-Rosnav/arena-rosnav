@@ -46,9 +46,9 @@ def generate_launch_description():
         default_value='navfn',
         description='global planner type [navfn]'
     )
-    simulator = LaunchArgument(
-        name='simulator',
-        default_value='dummy',
+    sim = LaunchArgument(
+        name='sim',
+        default_value='dummy',  # todo select first installed simulator
     )
     headless = LaunchArgument(
         name='headless',
@@ -56,9 +56,10 @@ def generate_launch_description():
         choices=['-1', '0', '1', '2'],
         description='-1 = show all environments, 0 = show all, 1 = show only rviz, 2 = show nothing'
     )
-    entity_manager = LaunchArgument(
-        name='entity_manager',
-        default_value=PythonExpression([str({"gazebo": "hunav", "isaac": "isaac"}), '.get("', simulator.substitution, '", "dummy")']),
+    human = LaunchArgument(
+        name='human',
+        description='human simulator to use',
+        default_value=PythonExpression([str({"gazebo": "hunav", "isaac": "isaac"}), '.get("', sim.substitution, '", "dummy")']),
     )
     complexity = LaunchArgument(
         name='complexity',
@@ -184,10 +185,10 @@ def generate_launch_description():
             ]),
             launch.actions.IncludeLaunchDescription(
                 launch.launch_description_sources.PythonLaunchDescriptionSource(
-                    os.path.join(bringup_dir, 'launch/shared/entity_manager/entity_manager.launch.py')
+                    os.path.join(bringup_dir, 'launch/simulator/human/human.launch.py')
                 ),
                 launch_arguments={
-                    **entity_manager.dict,
+                    'simulator': human.substitution,
                     'namespace': namespace,
                 }.items()
             ),
@@ -199,8 +200,8 @@ def generate_launch_description():
                     )
                 ),
                 launch_arguments={
-                    **simulator.dict,
-                    **entity_manager.dict,
+                    **sim.dict,
+                    **human.dict,
                     **tm_obstacles.dict,
                     **tm_robots.dict,
                     **tm_modules.dict,
@@ -229,11 +230,11 @@ def generate_launch_description():
 
     launch_simulator = launch.actions.IncludeLaunchDescription(
         launch.launch_description_sources.PythonLaunchDescriptionSource(
-            os.path.join(bringup_dir, 'launch/shared/simulator/simulator.launch.py')
+            os.path.join(bringup_dir, 'launch/simulator/sim/sim.launch.py')
         ),
         launch_arguments={
             **use_sim_time.dict,
-            **simulator.dict,
+            'simulator': sim.substitution,
             **world.dict,
             'headless': PythonExpression([headless.substitution, '>0']),
         }.items(),

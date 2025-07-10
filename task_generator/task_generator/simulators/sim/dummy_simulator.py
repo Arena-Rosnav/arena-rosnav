@@ -1,10 +1,10 @@
 from arena_rclpy_mixins.shared import Namespace
 
 from task_generator.shared import Entity, Pose, Wall
-from task_generator.simulators import BaseSimulator
+from task_generator.simulators.sim import BaseSim
 
 
-class DummySimulator(BaseSimulator):
+class DummySimulator(BaseSim):
     """
     Does nothing.
     """

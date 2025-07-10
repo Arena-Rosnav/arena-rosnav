@@ -15,11 +15,11 @@ from hunav_msgs.srv import (ComputeAgent, ComputeAgents, DeleteActors,
                             GetAgents, GetWalls, MoveAgent, ResetAgents)
 
 from task_generator.constants import Constants
-from task_generator.manager.entity_manager.dummy_manager import \
+from task_generator.simulators.human.dummy_manager import \
     DummyEntityManager
 from task_generator.shared import (DynamicObstacle, Model, ModelType,
                                    ModelWrapper, Obstacle, Pose, Position)
-from task_generator.simulators import BaseSimulator
+from task_generator.simulators.sim import BaseSim
 
 from . import HunavDynamicObstacle
 
@@ -190,7 +190,7 @@ class HunavManager(DummyEntityManager):
     SERVICE_GET_WALLS = 'get_walls'
     SERVICE_DELETE_ACTORS = 'delete_actors'
 
-    def __init__(self, namespace: Namespace, simulator: BaseSimulator):
+    def __init__(self, namespace: Namespace, simulator: BaseSim):
         """Initialize HunavManager with debug logging"""
         super().__init__(namespace=namespace, simulator=simulator)
         # Detect Simulator Type to decide between Plugin or move_entity callback
@@ -226,9 +226,9 @@ class HunavManager(DummyEntityManager):
         self._gz_plugin_spawned: bool = False
 
     @property
-    def _simulator_type(self) -> Constants.Simulator:
+    def _simulator_type(self) -> Constants.SimSimulator:
         """Detect which simulator is being used"""
-        return self.node.conf.Arena.SIMULATOR.value
+        return self.node.conf.Arena.SIM.value
 
     def _setup_services(self):
         """Initialize all required services with debug logging"""
@@ -434,7 +434,7 @@ class HunavManager(DummyEntityManager):
                     if updated_agent.id in self._pedestrians:
                         self._pedestrians[updated_agent.id]['agent'] = updated_agent
 
-                if self._simulator_type != Constants.Simulator.GAZEBO:
+                if self._simulator_type != Constants.SimSimulator.GAZEBO:
                     self._logger.debug("Non-Gazebo detected - starting movement timer")
                     self._update_timer = self.node.create_timer(
                         0.1,  # 10 Hz
@@ -573,7 +573,7 @@ class HunavManager(DummyEntityManager):
 
             self._logger.info(f"Added agent {agent_msg.name} to container. Total agents: {len(self._agents_container.agents)}")
 
-            if self._simulator_type == Constants.Simulator.GAZEBO:
+            if self._simulator_type == Constants.SimSimulator.GAZEBO:
                 # spawn plugin if not already spawned
                 if not self._gz_plugin_spawned:
                     self._simulator.spawn_entity(_PedestrianHelper.plugin_entity(self.node.service_namespace()))

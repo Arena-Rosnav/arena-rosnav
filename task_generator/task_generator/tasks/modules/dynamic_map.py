@@ -6,7 +6,7 @@ from rcl_interfaces.msg import SetParametersResult
 from std_msgs.msg import String
 
 from task_generator import NodeInterface
-from task_generator.manager.entity_manager.utils import ObstacleLayer
+from task_generator.simulators.human.utils import ObstacleLayer
 from task_generator.manager.world_manager.utils import WorldMap
 from task_generator.shared import rosparam_set
 from task_generator.tasks.modules import TM_Module

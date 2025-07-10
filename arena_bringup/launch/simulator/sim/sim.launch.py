@@ -10,6 +10,9 @@ from arena_bringup.substitutions import LaunchArgument, SelectAction
 
 def generate_launch_description():
 
+    ld = []
+    LaunchArgument.auto_append(ld)
+
     use_sim_time = LaunchArgument(
         name='use_sim_time',
     )
@@ -24,19 +27,19 @@ def generate_launch_description():
         name='world'
     )
 
-    launch_simulator = SelectAction(launch.substitutions.LaunchConfiguration('simulator'))
+    launch_physics_simulator = SelectAction(launch.substitutions.LaunchConfiguration('simulator'))
 
-    launch_simulator.add(
+    launch_physics_simulator.add(
         'dummy',
         launch.actions.GroupAction([])
     )
 
-    launch_simulator.add(
+    launch_physics_simulator.add(
         'gazebo',
         launch.actions.IncludeLaunchDescription(
             launch.launch_description_sources.PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory(
-                    'arena_bringup'), 'launch/shared/simulator/gazebo/gazebo.launch.py')
+                    'arena_bringup'), 'launch/simulator/sim/gazebo/gazebo.launch.py')
             ),
             launch_arguments={
                 **use_sim_time.dict,
@@ -46,12 +49,12 @@ def generate_launch_description():
         )
     )
 
-    launch_simulator.add(
+    launch_physics_simulator.add(
         'isaac',
         launch.actions.IncludeLaunchDescription(
             launch.launch_description_sources.PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory(
-                    'arena_bringup'), 'launch/shared/simulator/isaac/isaac.launch.py')
+                    'arena_bringup'), 'launch/simulator/sim/isaac/isaac.launch.py')
             ),
             launch_arguments={
                 'use_sim_time': use_sim_time.substitution,
@@ -62,14 +65,12 @@ def generate_launch_description():
 
     simulator = LaunchArgument(
         name='simulator',
-        choices=launch_simulator.keys,
+        choices=launch_physics_simulator.keys,
     )
 
     ld = launch.LaunchDescription([
-        simulator,
-        headless,
-        world,
-        launch_simulator,
+        *ld,
+        launch_physics_simulator,
     ])
     return ld
 

@@ -8,28 +8,32 @@ from arena_bringup.substitutions import LaunchArgument, SelectAction
 
 def generate_launch_description():
 
+    ld = []
+
+    LaunchArgument.auto_append(ld)
+
     namespace = LaunchArgument(
         name='namespace',
     )
 
-    launch_entity_manager = SelectAction(launch.substitutions.LaunchConfiguration('entity_manager'))
+    launch_human_simulator = SelectAction(launch.substitutions.LaunchConfiguration('simulator'))
 
-    launch_entity_manager.add(
+    launch_human_simulator.add(
         'dummy',
         launch.actions.GroupAction([])
     )
 
-    launch_entity_manager.add(
+    launch_human_simulator.add(
         'isaac',
         launch.actions.GroupAction([])
     )
 
-    launch_entity_manager.add(
+    launch_human_simulator.add(
         'hunav',
         launch.actions.IncludeLaunchDescription(
             os.path.join(
                 get_package_share_directory('arena_bringup'),
-                'launch/shared/entity_manager/hunav/hunav.launch.py'
+                'launch/simulator/human/hunav/hunav.launch.py'
             ),
             launch_arguments={
                 'use_sim_time': 'true',
@@ -39,15 +43,14 @@ def generate_launch_description():
         )
     )
 
-    entity_manager = LaunchArgument(
-        name='entity_manager',
-        choices=launch_entity_manager.keys,
+    simulator = LaunchArgument(
+        name='simulator',
+        choices=launch_human_simulator.keys,
     )
 
     ld = launch.LaunchDescription([
-        namespace,
-        entity_manager,
-        launch_entity_manager,
+        *ld,
+        launch_human_simulator,
     ])
     return ld
 

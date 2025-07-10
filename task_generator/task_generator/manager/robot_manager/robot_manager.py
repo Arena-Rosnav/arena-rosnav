@@ -20,8 +20,8 @@ import arena_bringup.extensions.NodeLogLevelExtension as NodeLogLevelExtension
 import task_generator.utils.arena as Utils
 from task_generator import NodeInterface
 from task_generator.constants import Constants
-from task_generator.manager.entity_manager import EntityManager
-from task_generator.manager.entity_manager.utils import YAMLUtil
+from task_generator.simulators.human import BaseHumanSimulator
+from task_generator.simulators.human.utils import YAMLUtil
 from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.shared import ModelType, Orientation, Pose, Position, Robot
 
@@ -33,7 +33,7 @@ class RobotManager(NodeInterface):
     """
 
     _namespace: Namespace
-    _entity_manager: EntityManager
+    _entity_manager: BaseHumanSimulator
     _environment_manager: EnvironmentManager
     _start_pos: Pose
     _goal_pos: Pose
@@ -65,7 +65,7 @@ class RobotManager(NodeInterface):
     def __init__(
         self,
         namespace: Namespace,
-        entity_manager: EntityManager,
+        entity_manager: BaseHumanSimulator,
         environment_manager: EnvironmentManager,
         robot: Robot,
     ):
@@ -311,7 +311,7 @@ class RobotManager(NodeInterface):
 
             launch_arguments = {
                 'robot': self.model_name,
-                # 'simulator': self.node.conf.Arena.SIMULATOR.value.value,
+                # 'simulator': self.node.conf.Arena.SIM.value.value,
                 # 'name': self.name,
                 'task_generator_node': os.path.join(self.node.get_namespace(), self.node.get_name()),
                 'namespace': self.namespace,
@@ -324,7 +324,7 @@ class RobotManager(NodeInterface):
                 # 'train_mode': self.node.declare_parameter('train_mode', False).value,
                 'agent_name': self._robot.agent,
                 'use_sim_time': 'True',
-                'amcl': 'true' if self.node.conf.Arena.SIMULATOR.value in (Constants.Simulator.GAZEBO,) else 'false',
+                'amcl': 'true' if self.node.conf.Arena.SIM.value in (Constants.SimSimulator.GAZEBO,) else 'false',
             }
 
             if self._robot.record_data_dir:

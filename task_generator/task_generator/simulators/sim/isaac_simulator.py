@@ -22,7 +22,7 @@ from isaacsim_msgs.srv import (
 )
 from isaacsim_msgs.msg import Person, NavPed
 from task_generator.shared import DynamicObstacle, ModelType, Obstacle, Robot
-from task_generator.simulators import BaseSimulator
+from task_generator.simulators.sim import BaseSim
 import itertools
 
 
@@ -57,7 +57,7 @@ class _Services(typing.NamedTuple):
     delete_all_pedestrians: _Service
 
 
-class IsaacSimulator(BaseSimulator):
+class IsaacSimulator(BaseSim):
 
     def init_service_clients(self):
         """

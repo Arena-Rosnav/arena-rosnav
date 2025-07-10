@@ -9,7 +9,7 @@ from task_generator.shared import Entity, ModelType, Pose, Wall
 from task_generator.utils.registry import Registry
 
 
-class BaseSimulator(NodeInterface):
+class BaseSim(NodeInterface):
 
     _namespace: Namespace
 
@@ -78,34 +78,34 @@ class BaseSimulator(NodeInterface):
         raise NotImplementedError()
 
 
-SimulatorRegistry = Registry[Constants.Simulator, BaseSimulator]()
+SimulatorRegistry = Registry[Constants.SimSimulator, BaseSim]()
 
 
-@SimulatorRegistry.register(Constants.Simulator.DUMMY)
+@SimulatorRegistry.register(Constants.SimSimulator.DUMMY)
 def lazy_dummy():
     from .dummy_simulator import DummySimulator
     return DummySimulator
 
 
-@SimulatorRegistry.register(Constants.Simulator.FLATLAND)
+@SimulatorRegistry.register(Constants.SimSimulator.FLATLAND)
 def lazy_flatland():
     from .flatland_simulator import FlatlandSimulator
     return FlatlandSimulator
 
 
-@SimulatorRegistry.register(Constants.Simulator.GAZEBO)
+@SimulatorRegistry.register(Constants.SimSimulator.GAZEBO)
 def lazy_gazebo():
     from .gazebo_simulator import GazeboSimulator
     return GazeboSimulator
 
 
-@SimulatorRegistry.register(Constants.Simulator.UNITY)
+@SimulatorRegistry.register(Constants.SimSimulator.UNITY)
 def lazy_unity():
     from .unity_simulator import UnitySimulator
     return UnitySimulator
 
 
-@SimulatorRegistry.register(Constants.Simulator.ISAAC)
+@SimulatorRegistry.register(Constants.SimSimulator.ISAAC)
 def lazy_isaac():
     from .isaac_simulator import IsaacSimulator
     return IsaacSimulator

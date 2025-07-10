@@ -8,7 +8,7 @@ class Constants:
     DEFAULT_PEDESTRIAN_MODEL = "actor1"
     TASK_GENERATOR_SERVER_NODE = Namespace("task_generator_server")
 
-    class Simulator(Enum):
+    class SimSimulator(Enum):
         DUMMY = "dummy"
         FLATLAND = "flatland"
         GAZEBO = "gazebo"
@@ -19,7 +19,7 @@ class Constants:
         TRAINING = "training"
         DEPLOYMENT = "deployment"
 
-    class EntityManager(Enum):
+    class HumanSimulator(Enum):
         DUMMY = "dummy"
         HUNAV = "hunav"  # Added Hunavsim
         ISAAC = 'isaac'

@@ -4,12 +4,12 @@ from typing import Any, Callable, Collection, Iterator
 
 import attrs
 from task_generator import NodeInterface
-from task_generator.manager.entity_manager import EntityManager
-from task_generator.manager.entity_manager.utils import ObstacleLayer
+from task_generator.simulators.human import BaseHumanSimulator
+from task_generator.simulators.human.utils import ObstacleLayer
 from task_generator.manager.world_manager.utils import World
 from task_generator.shared import (DynamicObstacle, Entity, Obstacle,
                                    Orientation, Pose, Position, Robot, Wall)
-from task_generator.simulators import BaseSimulator
+from task_generator.simulators.sim import BaseSim
 
 EntityPropsT = typing.TypeVar('EntityPropsT', bound=Entity)
 
@@ -90,16 +90,16 @@ class _Realizer:
 class EnvironmentManager(NodeInterface, _Realizer):
 
     _namespace: str
-    _entity_manager: EntityManager
-    _simulator: BaseSimulator
+    _entity_manager: BaseHumanSimulator
+    _simulator: BaseSim
 
     id_generator: Iterator[int]
 
     def __init__(
         self,
         namespace,
-        simulator: BaseSimulator,
-        entity_manager: EntityManager,
+        simulator: BaseSim,
+        entity_manager: BaseHumanSimulator,
     ):
         NodeInterface.__init__(self)
 

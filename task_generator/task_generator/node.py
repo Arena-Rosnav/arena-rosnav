@@ -9,7 +9,7 @@ import arena_simulation_setup.world
 import launch
 import rclpy
 import std_srvs.srv as std_srvs
-from task_generator.manager.entity_manager.utils import ObstacleLayer
+from task_generator.simulators.human.utils import ObstacleLayer
 import task_generator_msgs.srv
 from arena_rclpy_mixins.shared import Namespace
 from std_msgs.msg import Empty, Int16
@@ -17,16 +17,16 @@ from std_srvs.srv import Empty as EmptySrv
 
 from task_generator.constants import Constants
 from task_generator.constants.runtime import Configuration
-from task_generator.manager.entity_manager import (EntityManager,
-                                                   EntityManagerRegistry)
-from task_generator.manager.entity_manager.utils import ObstacleLayer
+from task_generator.simulators.human import (BaseHumanSimulator,
+                                             EntityManagerRegistry)
+from task_generator.simulators.human.utils import ObstacleLayer
 from task_generator.manager.environment_manager import EnvironmentManager
 from task_generator.manager.robot_manager import RobotsManagerROS
 from task_generator.manager.robot_manager.robots_manager_ros import \
     RobotsManager
 from task_generator.manager.world_manager.world_manager_ros import \
     WorldManagerROS as WorldManager
-from task_generator.simulators import BaseSimulator, SimulatorRegistry
+from task_generator.simulators.sim import BaseSim, SimulatorRegistry
 from task_generator.tasks import Task
 from task_generator.tasks.task_factory import TaskFactory
 
@@ -40,10 +40,10 @@ class TaskGenerator(NodeInterface.Taskgen_T):
     """
 
     _world_manager: WorldManager
-    _entity_manager: EntityManager
+    _entity_manager: BaseHumanSimulator
     _environment_manager: EnvironmentManager
     _robots_manager: RobotsManager
-    _simulator: BaseSimulator
+    _simulator: BaseSim
 
     _initialized: bool
 
@@ -97,11 +97,11 @@ class TaskGenerator(NodeInterface.Taskgen_T):
         )
 
     def _set_up_managers(self):
-        self._simulator = SimulatorRegistry.get(self.conf.Arena.SIMULATOR.value)(
+        self._simulator = SimulatorRegistry.get(self.conf.Arena.SIM.value)(
             self._namespace
         )
 
-        self._entity_manager = EntityManagerRegistry.get(self.conf.Arena.ENTITY_MANAGER.value)(
+        self._entity_manager = EntityManagerRegistry.get(self.conf.Arena.HUMAN.value)(
             namespace=self._namespace,
             simulator=self._simulator,
         )
