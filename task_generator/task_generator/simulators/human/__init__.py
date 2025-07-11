@@ -54,6 +54,9 @@ class BaseHumanSimulator(NodeInterface, abc.ABC):
         Loads given obstacles into the simulator.
         """
         self._logger.debug(f'spawning {len(obstacles)} static obstacles')
+
+        unspawneds = []
+
         for obstacle in obstacles:
             if (known := self._known_obstacles.get(obstacle.name)) is not None:
                 known.obstacle = obstacle
@@ -64,11 +67,14 @@ class BaseHumanSimulator(NodeInterface, abc.ABC):
                     name=obstacle.name,
                     obstacle=obstacle
                 )
-
             if not known.spawned:
-                if (obs := self._spawn_obstacle_impl(obstacle)):
-                    known.obstacle = obs
-                    known.spawned = True
+                unspawneds.append(known)
+
+        for (known, obstacle) in zip(unspawneds, self._spawn_obstacles_impl([unspawned.obstacle for unspawned in unspawneds])):
+            if not obstacle:
+                continue
+            known.obstacle = obstacle
+            known.spawned = True
 
             if known.layer == ObstacleLayer.UNUSED:
                 if self._simulator.spawn_entity(known.obstacle):

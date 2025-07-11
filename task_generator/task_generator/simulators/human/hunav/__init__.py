@@ -133,7 +133,7 @@ class HunavDynamicObstacle:
                 z=extra.get('position', {}).get('z', cls._default.init_pose.z),
                 h=extra.get('position', {}).get('h', cls._default.init_pose.h),
             ),
-            yaw=extra.get('yaw', obj.pose.orientation.to_yaw()),
+            yaw=0.0,
             model=obj.model,
             goals=waypoints,
             velocity=extra.get('velocity', cls._default.velocity),
